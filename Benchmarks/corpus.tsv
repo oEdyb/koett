@@ -1,0 +1,12 @@
+id	category	expected_empty	reference	local_file	microphone	capture_hz	audio_hz	duration_s	rms	peak	sha256
+silence-room-001	negative	true		Local/silence-room-001.wav	MacBook Air Microphone	48000	16000	5	0.00166	0.02022	a2441322aaefaae2be89951afafc621d8ef9958eeebc36b79c54c57d86636ea3
+normal-001	normal	false	Local voice input works.	Local/normal-001.wav	MacBook Air Microphone	48000	16000	5	0.06054	0.62895	49609f7f295eae5cc5acb2240b2e961348aca8524be3a4e742f9b6a3ec81096a
+technical-001	technical	false	FluidAudio converts forty-eight kilohertz audio to sixteen kilohertz.	Local/technical-001.wav	MacBook Air Microphone	48000	16000	5	0.07322	0.51111	8297a38720bae78d5d572a887d0159b54c17644b5207f4042ddf4b0e4b9a055c
+short-yes-001	short	false	yes	Local/short-yes-001.wav	MacBook Air Microphone	48000	16000	5	0.03595	0.65862	002e74a007ebfb8298a3f7667d7a4ac55a74c60a5b93bf278c3a91af36e4bda0
+normal-002	normal	false	Please send me the updated project notes after lunch.	Local/normal-002.wav	MacBook Air Microphone	16000	16000	6	0.05181	0.55927	c1b468170a8a1538cc6993285ee21988bad24fb8ff929c0bef6feef75c317685
+normal-003	normal	false	I need to finish this task before the meeting starts.	Local/normal-003.wav	MacBook Air Microphone	16000	16000	6	0.04030	0.48349	f2136d32fd634eb16883b86c43246dd9486d5918f3f574b82d55bdb432256c38
+technical-002	technical	false	The Swift package records microphone audio and transcribes it locally.	Local/technical-002.wav	MacBook Air Microphone	16000	16000	6	0.05673	0.48921	9e61980137cc3424ba12ad9d6aa685d310fe8d1756e942aceedb4d6c661c4b01
+technical-003	technical	false	Open the Local Voice Input project in Visual Studio Code.	Local/technical-003.wav	MacBook Air Microphone	16000	16000	6	0.06719	0.63803	2797241a7eb02cad4f1669f367defc68bea3cd24752f245cd5e7f620ab526761
+number-001	number	false	The API returned a timeout after three failed requests.	Local/number-001.wav	MacBook Air Microphone	16000	16000	6	0.09638	1.26668	95f1824004de83c1ca2228436c6dd56da3d448015dfb8611bced63a7203a4e1b
+negation-001	negation	false	Do not delete the file; move it to the archive instead.	Local/negation-001.wav	MacBook Air Microphone	16000	16000	6	0.05584	0.79862	dcbb06293cd884365b1b3053782aae5f888bc9a43f8b3e12242e808b9476ffeb
+short-stop-001	short	false	Stop.	Local/short-stop-001.wav	MacBook Air Microphone	16000	16000	6	0.03566	0.83653	0f6fb6f8455892c9e3ef4d42aecb3ea3951a41b01a0cdb3ed44e2190a66ef1cd

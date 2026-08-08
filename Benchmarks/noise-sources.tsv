@@ -1,0 +1,5 @@
+id	dataset	license	source_url	local_file	sha256
+air-conditioner-001	Microsoft MS-SNSD	CC BY-SA 3.0 (conservative)	https://raw.githubusercontent.com/microsoft/MS-SNSD/master/noise_test/AirConditioner_1.wav	Noise/AirConditioner_1.wav	3fe55d7035d7ef2599841738f818dc4463f5ef983eb4b5fefeee153d8caa2110
+babble-001	Microsoft MS-SNSD	CC BY-SA 3.0 (conservative)	https://raw.githubusercontent.com/microsoft/MS-SNSD/master/noise_test/Babble_1.wav	Noise/Babble_1.wav	d7a64dd995a92f4790308dbff196332585eec502734ac737bfc9e2ac317dacd6
+neighbor-001	Microsoft MS-SNSD	CC BY-SA 3.0 (conservative)	https://raw.githubusercontent.com/microsoft/MS-SNSD/master/noise_test/Neighbor_1.wav	Noise/Neighbor_1.wav	61021e8be14dd19d6a7ae54f8b9572597cb1e9a5258aaeb6ba8b1ef6ce26cda0
+typing-001	Microsoft MS-SNSD	CC BY-SA 3.0 (conservative)	https://raw.githubusercontent.com/microsoft/MS-SNSD/master/noise_test/Typing_1.wav	Noise/Typing_1.wav	47980660888977fb45e5cdfd4a14d6585139e90267c0e61a01eeadb4a5891222

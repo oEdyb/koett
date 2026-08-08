@@ -1,0 +1,8 @@
+id	category	reference
+normal-002	normal	Please send me the updated project notes after lunch.
+normal-003	normal	I need to finish this task before the meeting starts.
+technical-002	technical	The Swift package records microphone audio and transcribes it locally.
+technical-003	technical	Open the Local Voice Input project in Visual Studio Code.
+number-001	number	The API returned a timeout after three failed requests.
+negation-001	negation	Do not delete the file; move it to the archive instead.
+short-stop-001	short	Stop.
