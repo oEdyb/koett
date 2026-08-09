@@ -43,7 +43,7 @@ or transcript history.
 ## Run without installing
 
 ```sh
-swift run hold-to-talk
+swift run koett
 ```
 
 Allow microphone and Accessibility access when macOS asks. Press Control-C to quit.

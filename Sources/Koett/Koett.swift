@@ -8,7 +8,7 @@ import Foundation
 import ServiceManagement
 
 @MainActor
-private final class HoldToTalkController: NSObject {
+private final class KoettController: NSObject {
     private enum State {
         case loading
         case ready
@@ -104,9 +104,9 @@ private final class HoldToTalkController: NSObject {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(
             systemSymbolName: "waveform",
-            accessibilityDescription: "Local Voice Input"
+            accessibilityDescription: "Koett"
         )
-        item.button?.toolTip = "Local Voice Input"
+        item.button?.toolTip = "Koett"
         statusItem = item
         rebuildMenu()
     }
@@ -159,7 +159,7 @@ private final class HoldToTalkController: NSObject {
 
     private func startRecording() throws {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("local-voice-input-\(UUID().uuidString).wav")
+            .appendingPathComponent("koett-\(UUID().uuidString).wav")
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: 16_000.0,
@@ -303,7 +303,7 @@ private final class HoldToTalkController: NSObject {
         ))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
-            title: "Quit Local Voice Input",
+            title: "Quit Koett",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
@@ -371,12 +371,12 @@ private final class HoldToTalkController: NSObject {
     }
 
     private static func failure(_ message: String) -> NSError {
-        NSError(domain: "HoldToTalk", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+        NSError(domain: "Koett", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
     }
 }
 
 @main
-private struct HoldToTalk {
+private struct Koett {
     @MainActor
     static func main() {
         let arguments = CommandLine.arguments.dropFirst()
@@ -402,14 +402,14 @@ private struct HoldToTalk {
         }
 
         if arguments.contains("--help") {
-            print("Usage: hold-to-talk")
-            print("Hold either Option key to record. Release it to transcribe and paste.")
+            print("Usage: koett")
+            print("Use the menu-bar icon to choose Toggle or Hold and set the shortcut.")
             return
         }
 
         do {
-            let controller = try HoldToTalkController(defaults: .standard)
-            let delegate = HoldToTalkDelegate(controller: controller)
+            let controller = try KoettController(defaults: .standard)
+            let delegate = KoettDelegate(controller: controller)
             let application = NSApplication.shared
             application.setActivationPolicy(.accessory)
             application.delegate = delegate
@@ -430,10 +430,10 @@ private struct HoldToTalk {
         guard service.status == .enabled else {
             SMAppService.openSystemSettingsLoginItems()
             throw NSError(
-                domain: "HoldToTalk",
+                domain: "Koett",
                 code: 2,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "Enable Local Voice Input in System Settings > General > Login Items."
+                    NSLocalizedDescriptionKey: "Enable Koett in System Settings > General > Login Items."
                 ]
             )
         }
@@ -451,10 +451,10 @@ private struct HoldToTalk {
 }
 
 @MainActor
-private final class HoldToTalkDelegate: NSObject, NSApplicationDelegate {
-    private let controller: HoldToTalkController
+private final class KoettDelegate: NSObject, NSApplicationDelegate {
+    private let controller: KoettController
 
-    init(controller: HoldToTalkController) {
+    init(controller: KoettController) {
         self.controller = controller
     }
 
