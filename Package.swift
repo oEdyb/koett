@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "LocalVoiceInput",
+    name: "Koett",
     platforms: [.macOS(.v15)],
     products: [
         .executable(name: "audio-microscope", targets: ["AudioMicroscope"]),
@@ -11,7 +11,7 @@ let package = Package(
         .executable(name: "noise-mixer", targets: ["NoiseMixer"]),
         .executable(name: "parakeet-baseline", targets: ["ParakeetBaseline"]),
         .executable(name: "sentence-recorder", targets: ["SentenceRecorder"]),
-        .executable(name: "hold-to-talk", targets: ["HoldToTalk"]),
+        .executable(name: "koett", targets: ["Koett"]),
     ],
     dependencies: [
         .package(
@@ -36,7 +36,7 @@ let package = Package(
         ),
         .executableTarget(name: "SentenceRecorder"),
         .executableTarget(
-            name: "HoldToTalk",
+            name: "Koett",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ]

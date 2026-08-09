@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDisplayName</key>
-    <string>Local Voice Input</string>
+    <string>Koett</string>
     <key>CFBundleExecutable</key>
-    <string>hold-to-talk</string>
+    <string>koett</string>
     <key>CFBundleIdentifier</key>
-    <string>com.olledyberg.LocalVoiceInput</string>
+    <string>com.olledyberg.Koett</string>
     <key>CFBundleName</key>
-    <string>Local Voice Input</string>
+    <string>Koett</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -21,6 +21,6 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Local Voice Input records only while you hold the Option key.</string>
+    <string>Koett records microphone audio only during an active dictation.</string>
 </dict>
 </plist>
