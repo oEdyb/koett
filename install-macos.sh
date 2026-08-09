@@ -6,6 +6,7 @@ app_path="/Applications/Koett.app"
 legacy_app_path="/Applications/Local Voice Input.app"
 stage_dir=$(mktemp -d)
 stage_app="$stage_dir/Koett.app"
+signing_identity=${KOETT_CODESIGN_IDENTITY:-}
 
 trap 'rm -rf "$stage_dir"' EXIT
 
@@ -15,7 +16,21 @@ swift build -c release --product koett
 mkdir -p "$stage_app/Contents/MacOS"
 cp ".build/release/koett" "$stage_app/Contents/MacOS/koett"
 cp "Packaging/Info.plist" "$stage_app/Contents/Info.plist"
-codesign --force --sign - "$stage_app"
+
+if [[ -z "$signing_identity" ]]; then
+    signing_identity=$(security find-identity -v -p codesigning | sed -nE \
+        's/^[[:space:]]*[0-9]+\) ([0-9A-F]+) "Apple Development:.*$/\1/p' | head -n 1)
+fi
+
+if [[ -z "$signing_identity" ]]; then
+    signing_identity="-"
+    print -u2 "Warning: no Apple Development signing identity was found."
+    print -u2 "This ad-hoc build can require new macOS privacy approval after an update."
+else
+    echo "Signing Koett with a stable Apple Development identity."
+fi
+
+codesign --force --sign "$signing_identity" "$stage_app"
 
 if [[ -x "$legacy_app_path/Contents/MacOS/hold-to-talk" ]]; then
     "$legacy_app_path/Contents/MacOS/hold-to-talk" --unregister-login
@@ -51,6 +66,6 @@ else
 fi
 
 "$app_path/Contents/MacOS/koett" --register-login
-open -n -gj "$app_path"
+open -n -g "$app_path"
 
 echo "Installed and started Koett."

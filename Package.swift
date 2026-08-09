@@ -9,6 +9,7 @@ let package = Package(
         .executable(name: "audio-microscope", targets: ["AudioMicroscope"]),
         .executable(name: "apple-speech-baseline", targets: ["AppleSpeechBaseline"]),
         .executable(name: "noise-mixer", targets: ["NoiseMixer"]),
+        .executable(name: "nemotron-streaming-baseline", targets: ["NemotronStreamingBaseline"]),
         .executable(name: "parakeet-baseline", targets: ["ParakeetBaseline"]),
         .executable(name: "sentence-recorder", targets: ["SentenceRecorder"]),
         .executable(name: "koett", targets: ["Koett"]),
@@ -29,6 +30,12 @@ let package = Package(
         .executableTarget(name: "AppleSpeechBaseline"),
         .executableTarget(name: "NoiseMixer"),
         .executableTarget(
+            name: "NemotronStreamingBaseline",
+            dependencies: [
+                .product(name: "FluidAudio", package: "FluidAudio"),
+            ]
+        ),
+        .executableTarget(
             name: "ParakeetBaseline",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio"),
@@ -40,6 +47,10 @@ let package = Package(
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ]
+        ),
+        .testTarget(
+            name: "KoettTests",
+            dependencies: ["Koett"]
         ),
     ],
     swiftLanguageModes: [.v6]

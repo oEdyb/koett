@@ -7,8 +7,25 @@ import FluidAudio
 import Foundation
 import ServiceManagement
 
+private enum SpeechEngine: String {
+    case parakeet
+    case nemotron
+
+    var displayName: String {
+        switch self {
+        case .parakeet: "Parakeet v2"
+        case .nemotron: "Nemotron 560 ms"
+        }
+    }
+}
+
 @MainActor
 private final class KoettController: NSObject {
+    private enum StartupErrorCode: Int {
+        case microphone = 2
+        case accessibility = 3
+    }
+
     private enum State {
         case loading
         case ready
@@ -42,7 +59,11 @@ private final class KoettController: NSObject {
         }
     }
 
+    private let speechEngine: SpeechEngine
+    private let transcriptStore = TranscriptStore()
+    private let recordingOverlay = RecordingOverlayController()
     private let manager = AsrManager(config: .default)
+    private let nemotronAdapter: NemotronStreamingAdapter?
     private let startSound: AVAudioPlayer
     private let stopSound: AVAudioPlayer
     private var recordingMode: RecordingMode
@@ -50,10 +71,19 @@ private final class KoettController: NSObject {
     private var state = State.loading
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
+    private var nemotronRecorder: NemotronLiveRecorder?
     private var monitor: Any?
     private var statusItem: NSStatusItem?
+    private var isPreparing = false
+    private var isRelaunching = false
+    private var startupErrorMessage: String?
+    private var startupErrorCode: StartupErrorCode?
 
-    init(defaults: UserDefaults) throws {
+    init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
+        self.speechEngine = speechEngine
+        nemotronAdapter = speechEngine == .nemotron
+            ? NemotronStreamingAdapter()
+            : nil
         recordingMode = RecordingMode(
             rawValue: defaults.string(forKey: "recordingMode") ?? ""
         ) ?? .toggle
@@ -68,30 +98,75 @@ private final class KoettController: NSObject {
     func prepare() async throws {
         guard await Self.microphonePermission() else {
             throw Self.failure(
-                "Microphone access is not allowed. Enable it in System Settings > Privacy & Security > Microphone."
+                "Microphone access is not allowed. Enable it in System Settings > Privacy & Security > Microphone.",
+                code: StartupErrorCode.microphone.rawValue
             )
         }
 
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         guard AXIsProcessTrustedWithOptions(options) else {
             throw Self.failure(
-                "Allow Accessibility access in System Settings > Privacy & Security > Accessibility, then run this command again."
+                "Allow Accessibility access in System Settings > Privacy & Security > Accessibility, then run this command again.",
+                code: StartupErrorCode.accessibility.rawValue
             )
         }
 
         print("Loading Parakeet v2...")
         let models = try await AsrModels.downloadAndLoad(version: .v2)
         try await manager.loadModels(models)
-        state = .ready
-        print("Ready. Use the menu-bar icon to change the mode or shortcut.")
+        print("Warming Parakeet v2...")
+        let decoderLayers = await manager.decoderLayerCount
+        var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
+        let silence = [Float](repeating: 0, count: 4_800)
+        _ = try await manager.transcribe(silence, decoderState: &decoderState)
+
+        if let nemotronAdapter {
+            print("Loading Nemotron 560 ms...")
+            try await nemotronAdapter.prepare()
+            nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter)
+        }
+    }
+
+    func start() async {
+        guard state == .loading, !isPreparing else { return }
+        isPreparing = true
+        startupErrorMessage = nil
+        startupErrorCode = nil
+        rebuildMenu()
+
+        do {
+            try await prepare()
+            try installHotkey()
+            state = .ready
+            let engineName = speechEngine == .nemotron
+                ? "Nemotron test"
+                : "Parakeet"
+            print("Ready with \(engineName). Use the menu-bar icon to change the mode or shortcut.")
+        } catch {
+            startupErrorMessage = error.localizedDescription
+            let nsError = error as NSError
+            startupErrorCode = nsError.domain == "Koett"
+                ? StartupErrorCode(rawValue: nsError.code)
+                : nil
+            fputs("Error: \(error.localizedDescription)\n", stderr)
+        }
+
+        isPreparing = false
+        rebuildMenu()
     }
 
     func installHotkey() throws {
+        guard monitor == nil else { return }
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
             let keyCode = event.keyCode
             let modifierFlags = event.modifierFlags.rawValue
+            let eventTimestamp = event.timestamp
             Task { @MainActor [weak self] in
-                self?.handleShortcut(keyCode: keyCode, modifierFlags: modifierFlags)
+                self?.handleShortcut(
+                    keyCode: keyCode,
+                    modifierFlags: modifierFlags,
+                    eventTimestamp: eventTimestamp
+                )
             }
         }
 
@@ -111,7 +186,11 @@ private final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    private func handleShortcut(keyCode: UInt16, modifierFlags: UInt) {
+    private func handleShortcut(
+        keyCode: UInt16,
+        modifierFlags: UInt,
+        eventTimestamp: TimeInterval
+    ) {
         guard shortcut.keyCodes.contains(keyCode) else { return }
         let flags = NSEvent.ModifierFlags(rawValue: modifierFlags)
             .intersection(.deviceIndependentFlagsMask)
@@ -119,29 +198,29 @@ private final class KoettController: NSObject {
 
         switch recordingMode {
         case .hold:
-            handleHold(isDown: isDown)
+            handleHold(isDown: isDown, eventTimestamp: eventTimestamp)
         case .toggle:
             if isDown {
-                toggleRecording()
+                toggleRecording(eventTimestamp: eventTimestamp)
             }
         }
     }
 
-    private func handleHold(isDown: Bool) {
+    private func handleHold(isDown: Bool, eventTimestamp: TimeInterval) {
         if isDown {
             startRecordingIfReady()
         } else {
             guard state == .recording else { return }
-            stopRecording()
+            stopRecording(releaseEventTimestamp: eventTimestamp)
         }
     }
 
-    private func toggleRecording() {
+    private func toggleRecording(eventTimestamp: TimeInterval) {
         switch state {
         case .ready:
             startRecordingIfReady()
         case .recording:
-            stopRecording()
+            stopRecording(releaseEventTimestamp: eventTimestamp)
         case .loading, .transcribing:
             return
         }
@@ -158,6 +237,46 @@ private final class KoettController: NSObject {
     }
 
     private func startRecording() throws {
+        switch speechEngine {
+        case .parakeet:
+            try startParakeetRecording()
+        case .nemotron:
+            try startNemotronRecording()
+        }
+
+        state = .recording
+        if let recorder {
+            recordingOverlay.start(recorder: recorder)
+        }
+        play(startSound)
+        print("RECORDING")
+    }
+
+    private func startParakeetRecording() throws {
+        let (newRecorder, url) = try startFileRecording()
+        recorder = newRecorder
+        recordingURL = url
+    }
+
+    private func startNemotronRecording() throws {
+        guard let nemotronRecorder else {
+            throw Self.failure("Nemotron is not ready.")
+        }
+
+        let (recoveryRecorder, recoveryURL) = try startFileRecording()
+        do {
+            try nemotronRecorder.start()
+        } catch {
+            recoveryRecorder.stop()
+            cleanup(recoveryURL)
+            throw error
+        }
+
+        recorder = recoveryRecorder
+        recordingURL = recoveryURL
+    }
+
+    private func startFileRecording() throws -> (AVAudioRecorder, URL) {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("koett-\(UUID().uuidString).wav")
         let settings: [String: Any] = [
@@ -171,18 +290,25 @@ private final class KoettController: NSObject {
         ]
 
         let newRecorder = try AVAudioRecorder(url: url, settings: settings)
+        newRecorder.isMeteringEnabled = true
         guard newRecorder.prepareToRecord(), newRecorder.record() else {
             throw Self.failure("The microphone recorder could not start.")
         }
 
-        recorder = newRecorder
-        recordingURL = url
-        state = .recording
-        play(startSound)
-        print("RECORDING")
+        return (newRecorder, url)
     }
 
-    private func stopRecording() {
+    private func stopRecording(releaseEventTimestamp: TimeInterval) {
+        recordingOverlay.stop()
+        switch speechEngine {
+        case .parakeet:
+            stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp)
+        case .nemotron:
+            stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp)
+        }
+    }
+
+    private func stopParakeetRecording(releaseEventTimestamp: TimeInterval) {
         guard let recorder, let url = recordingURL else { return }
         let duration = recorder.currentTime
         recorder.stop()
@@ -200,20 +326,68 @@ private final class KoettController: NSObject {
         }
 
         Task { @MainActor [weak self] in
-            await self?.transcribe(url)
+            await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp)
         }
     }
 
-    private func transcribe(_ url: URL) async {
+    private func stopNemotronRecording(releaseEventTimestamp: TimeInterval) {
+        guard let nemotronRecorder,
+              let recoveryRecorder = recorder,
+              let recoveryURL = recordingURL else { return }
+
+        let duration = recoveryRecorder.currentTime
+        recoveryRecorder.stop()
+        recorder = nil
+        recordingURL = nil
+
+        do {
+            let pendingCapture = try nemotronRecorder.stop()
+            state = .transcribing
+            play(stopSound)
+            print("TRANSCRIBING")
+
+            Task { @MainActor [weak self] in
+                await self?.finishNemotron(
+                    pendingCapture,
+                    recoveryURL: recoveryURL,
+                    duration: duration,
+                    releaseEventTimestamp: releaseEventTimestamp
+                )
+            }
+        } catch {
+            state = .transcribing
+            play(stopSound)
+            print("TRANSCRIBING")
+            fputs(
+                "Warning: Nemotron stop failed; using Parakeet recovery: \(error.localizedDescription)\n",
+                stderr
+            )
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer {
+                    self.cleanup(recoveryURL)
+                    self.state = .ready
+                }
+                await self.transcribeRecoveryFile(
+                    recoveryURL,
+                    releaseEventTimestamp: releaseEventTimestamp
+                )
+            }
+        }
+    }
+
+    private func transcribe(_ url: URL, releaseEventTimestamp: TimeInterval) async {
         defer {
             cleanup(url)
             state = .ready
         }
 
         do {
+            let transcriptionStartedAt = ProcessInfo.processInfo.systemUptime
             let decoderLayers = await manager.decoderLayerCount
             var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
             let result = try await manager.transcribe(url, decoderState: &decoderState)
+            let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
             let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard !text.isEmpty else {
@@ -221,20 +395,142 @@ private final class KoettController: NSObject {
                 return
             }
 
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            guard pasteboard.setString(text, forType: .string) else {
-                throw Self.failure("The transcript could not be copied to the clipboard.")
-            }
-
-            guard pasteAtCursor() else {
-                throw Self.failure("The transcript is on the clipboard, but Command-V could not be sent.")
-            }
-
-            print("PASTED: \(text)")
+            let pastePostedAt = try deliver(text, model: speechEngine.displayName)
+            print("PASTE POSTED: \(text)")
+            print(String(
+                format: "LATENCY release-to-ASR-start %.1fms | ASR %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
+                (transcriptionStartedAt - releaseEventTimestamp) * 1_000,
+                (transcriptReadyAt - transcriptionStartedAt) * 1_000,
+                (pastePostedAt - transcriptReadyAt) * 1_000,
+                (pastePostedAt - releaseEventTimestamp) * 1_000
+            ))
         } catch {
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
+    }
+
+    private func finishNemotron(
+        _ pendingCapture: NemotronLiveRecorder.PendingCapture,
+        recoveryURL: URL,
+        duration: TimeInterval,
+        releaseEventTimestamp: TimeInterval
+    ) async {
+        defer {
+            cleanup(recoveryURL)
+            state = .ready
+        }
+        guard let nemotronAdapter else { return }
+
+        if duration < 0.3 {
+            do {
+                try await pendingCapture.processingTask.value
+            } catch {
+                fputs("Warning: Nemotron stopped with: \(error.localizedDescription)\n", stderr)
+            }
+            await nemotronAdapter.cancel()
+            print("Ignored: recording was too short.")
+            return
+        }
+
+        let finalizationStartedAt = ProcessInfo.processInfo.systemUptime
+        let text: String
+        do {
+            try await pendingCapture.processingTask.value
+            guard pendingCapture.store.droppedFrames == 0 else {
+                throw Self.failure(
+                    "Nemotron dropped \(pendingCapture.store.droppedFrames) microphone frames."
+                )
+            }
+
+            text = try await nemotronAdapter.finish()
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch {
+            fputs(
+                "Warning: Nemotron failed; using Parakeet recovery: \(error.localizedDescription)\n",
+                stderr
+            )
+            await nemotronAdapter.cancel()
+            await transcribeRecoveryFile(
+                recoveryURL,
+                releaseEventTimestamp: releaseEventTimestamp
+            )
+            return
+        }
+
+        let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
+        guard !text.isEmpty else {
+            print("No speech detected. Clipboard unchanged.")
+            return
+        }
+
+        do {
+            let pastePostedAt = try deliver(text, model: speechEngine.displayName)
+            print("PASTE POSTED: \(text)")
+            print(String(
+                format: "LATENCY Nemotron release-to-finish-start %.1fms | finish %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
+                (finalizationStartedAt - releaseEventTimestamp) * 1_000,
+                (transcriptReadyAt - finalizationStartedAt) * 1_000,
+                (pastePostedAt - transcriptReadyAt) * 1_000,
+                (pastePostedAt - releaseEventTimestamp) * 1_000
+            ))
+        } catch {
+            fputs("Error: \(error.localizedDescription)\n", stderr)
+        }
+    }
+
+    private func transcribeRecoveryFile(
+        _ url: URL,
+        releaseEventTimestamp: TimeInterval
+    ) async {
+        do {
+            let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
+            let decoderLayers = await manager.decoderLayerCount
+            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
+            let result = try await manager.transcribe(url, decoderState: &decoderState)
+            let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
+            let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else {
+                print("No speech detected. Clipboard unchanged.")
+                return
+            }
+
+            let pastePostedAt = try deliver(
+                text,
+                model: "Parakeet v2 (Nemotron recovery)"
+            )
+            print("PASTE POSTED (Parakeet recovery): \(text)")
+            print(String(
+                format: "LATENCY recovery-start %.1fms | recovery-ASR %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
+                (fallbackStartedAt - releaseEventTimestamp) * 1_000,
+                (transcriptReadyAt - fallbackStartedAt) * 1_000,
+                (pastePostedAt - transcriptReadyAt) * 1_000,
+                (pastePostedAt - releaseEventTimestamp) * 1_000
+            ))
+        } catch {
+            fputs("Error: Parakeet recovery failed: \(error.localizedDescription)\n", stderr)
+        }
+    }
+
+    private func deliver(_ text: String, model: String) throws -> TimeInterval {
+        defer {
+            do {
+                try transcriptStore.append(text, model: model)
+            } catch {
+                fputs("Warning: transcript was not saved: \(error.localizedDescription)\n", stderr)
+            }
+        }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        guard pasteboard.setString(text, forType: .string) else {
+            throw Self.failure("The transcript could not be copied to the clipboard.")
+        }
+
+        guard pasteAtCursor() else {
+            throw Self.failure("The transcript is on the clipboard, but Command-V could not be sent.")
+        }
+        let pastePostedAt = ProcessInfo.processInfo.systemUptime
+        return pastePostedAt
     }
 
     private func play(_ player: AVAudioPlayer) {
@@ -275,6 +571,49 @@ private final class KoettController: NSObject {
 
     private func rebuildMenu() {
         let menu = NSMenu()
+        if isPreparing {
+            let item = NSMenuItem(title: "Starting Koett…", action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            menu.addItem(item)
+            menu.addItem(.separator())
+        } else if let startupErrorMessage {
+            let item = NSMenuItem(title: "Setup Required", action: nil, keyEquivalent: "")
+            item.isEnabled = false
+            item.toolTip = startupErrorMessage
+            menu.addItem(item)
+            if startupErrorCode == .accessibility {
+                menu.addItem(menuItem(
+                    title: "Open Accessibility Settings",
+                    action: #selector(openAccessibilitySettings),
+                    selected: false
+                ))
+            }
+            menu.addItem(menuItem(
+                title: "Retry Setup",
+                action: #selector(retrySetup),
+                selected: false
+            ))
+            menu.addItem(.separator())
+        }
+        let canChangeModel = !isPreparing
+            && !isRelaunching
+            && state != .recording
+            && state != .transcribing
+        let parakeetItem = menuItem(
+            title: "Model: Parakeet v2",
+            action: #selector(useParakeetModel),
+            selected: speechEngine == .parakeet
+        )
+        parakeetItem.isEnabled = canChangeModel
+        menu.addItem(parakeetItem)
+        let nemotronItem = menuItem(
+            title: "Model: Nemotron 560 ms (Test)",
+            action: #selector(useNemotronModel),
+            selected: speechEngine == .nemotron
+        )
+        nemotronItem.isEnabled = canChangeModel
+        menu.addItem(nemotronItem)
+        menu.addItem(.separator())
         menu.addItem(menuItem(
             title: "Mode: Toggle",
             action: #selector(useToggleMode),
@@ -302,6 +641,11 @@ private final class KoettController: NSObject {
             selected: shortcut == .rightCommand
         ))
         menu.addItem(.separator())
+        menu.addItem(menuItem(
+            title: "Open Transcripts",
+            action: #selector(openTranscripts),
+            selected: false
+        ))
         menu.addItem(NSMenuItem(
             title: "Quit Koett",
             action: #selector(NSApplication.terminate(_:)),
@@ -321,6 +665,14 @@ private final class KoettController: NSObject {
         setRecordingMode(.toggle)
     }
 
+    @objc private func useParakeetModel() {
+        setSpeechEngine(.parakeet)
+    }
+
+    @objc private func useNemotronModel() {
+        setSpeechEngine(.nemotron)
+    }
+
     @objc private func useHoldMode() {
         setRecordingMode(.hold)
     }
@@ -337,6 +689,34 @@ private final class KoettController: NSObject {
         setShortcut(.rightCommand)
     }
 
+    @objc private func openAccessibilitySettings() {
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ), NSWorkspace.shared.open(url) else {
+            fputs("Error: Accessibility settings could not open.\n", stderr)
+            return
+        }
+    }
+
+    @objc private func openTranscripts() {
+        do {
+            try transcriptStore.prepare()
+            guard NSWorkspace.shared.open(transcriptStore.fileURL) else {
+                throw Self.failure("The transcript file could not open.")
+            }
+        } catch {
+            fputs("Error: \(error.localizedDescription)\n", stderr)
+        }
+    }
+
+    @objc private func retrySetup() {
+        Task { @MainActor [weak self] in
+            await self?.start()
+        }
+    }
+
     private func setRecordingMode(_ mode: RecordingMode) {
         recordingMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: "recordingMode")
@@ -347,6 +727,64 @@ private final class KoettController: NSObject {
         shortcut = newShortcut
         UserDefaults.standard.set(newShortcut.rawValue, forKey: "shortcut")
         rebuildMenu()
+    }
+
+    private func setSpeechEngine(_ newEngine: SpeechEngine) {
+        guard newEngine != speechEngine,
+              !isPreparing,
+              !isRelaunching,
+              state != .recording,
+              state != .transcribing else { return }
+
+        isRelaunching = true
+        rebuildMenu()
+        relaunch(with: newEngine)
+    }
+
+    private func relaunch(with engine: SpeechEngine) {
+        let argument = engine == .nemotron ? "--nemotron" : "--parakeet"
+        let bundleURL = Bundle.main.bundleURL
+        if bundleURL.pathExtension == "app" {
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = false
+            configuration.arguments = [argument]
+            configuration.createsNewApplicationInstance = true
+            NSWorkspace.shared.openApplication(
+                at: bundleURL,
+                configuration: configuration
+            ) { [weak self] _, error in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if let error {
+                        self.isRelaunching = false
+                        self.rebuildMenu()
+                        fputs(
+                            "Error: Koett could not restart: \(error.localizedDescription)\n",
+                            stderr
+                        )
+                        return
+                    }
+                    UserDefaults.standard.set(engine.rawValue, forKey: "speechEngine")
+                    NSApplication.shared.terminate(nil)
+                }
+            }
+            return
+        }
+
+        do {
+            let process = Process()
+            process.executableURL = URL(
+                fileURLWithPath: CommandLine.arguments[0]
+            ).standardizedFileURL
+            process.arguments = [argument]
+            try process.run()
+            UserDefaults.standard.set(engine.rawValue, forKey: "speechEngine")
+            NSApplication.shared.terminate(nil)
+        } catch {
+            isRelaunching = false
+            rebuildMenu()
+            fputs("Error: Koett could not restart: \(error.localizedDescription)\n", stderr)
+        }
     }
 
     private static func microphonePermission() async -> Bool {
@@ -370,8 +808,8 @@ private final class KoettController: NSObject {
         return player
     }
 
-    private static func failure(_ message: String) -> NSError {
-        NSError(domain: "Koett", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    private static func failure(_ message: String, code: Int = 1) -> NSError {
+        NSError(domain: "Koett", code: code, userInfo: [NSLocalizedDescriptionKey: message])
     }
 }
 
@@ -402,13 +840,28 @@ private struct Koett {
         }
 
         if arguments.contains("--help") {
-            print("Usage: koett")
-            print("Use the menu-bar icon to choose Toggle or Hold and set the shortcut.")
+            print("Usage: koett [--parakeet | --nemotron]")
+            print("Command-line model flags override the saved model for this launch.")
+            print("Use the menu-bar icon to choose the model, mode, and shortcut.")
             return
         }
 
         do {
-            let controller = try KoettController(defaults: .standard)
+            let savedEngine = SpeechEngine(
+                rawValue: UserDefaults.standard.string(forKey: "speechEngine") ?? ""
+            ) ?? .parakeet
+            let speechEngine: SpeechEngine
+            if arguments.contains("--nemotron") {
+                speechEngine = .nemotron
+            } else if arguments.contains("--parakeet") {
+                speechEngine = .parakeet
+            } else {
+                speechEngine = savedEngine
+            }
+            let controller = try KoettController(
+                defaults: .standard,
+                speechEngine: speechEngine
+            )
             let delegate = KoettDelegate(controller: controller)
             let application = NSApplication.shared
             application.setActivationPolicy(.accessory)
@@ -462,13 +915,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
         controller.installMenu()
         print("Checking microphone and Accessibility access...")
         Task { @MainActor in
-            do {
-                try await controller.prepare()
-                try controller.installHotkey()
-            } catch {
-                fputs("Error: \(error.localizedDescription)\n", stderr)
-                NSApplication.shared.terminate(nil)
-            }
+            await controller.start()
         }
     }
 }
