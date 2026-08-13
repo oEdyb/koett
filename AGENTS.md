@@ -14,6 +14,11 @@ measured Windows or Linux spike.
 
 ## Implementation status — 2026-08-24
 
+The first native Rust portability spike lives under `CrossPlatform/`. It uses
+CPAL 0.18.1, ringbuf 0.5.1, and statically linked sherpa-onnx 1.13.5. The
+headless WAV and microphone engine passes on macOS and source-checks for Windows.
+Real Windows and Linux runtime proof is still required before either port ships.
+
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
   optional local formatting, and optional Ask with spoken replies.
@@ -381,6 +386,17 @@ pgrep -alf '/Applications/Koett.app/Contents/MacOS/koett'
 
 The release and installed UUIDs must match. Keep the stable Apple Development
 signature so macOS does not request Accessibility approval after each build.
+
+For changes under `CrossPlatform/`, also run:
+
+```sh
+cd CrossPlatform
+cargo fmt --check
+cargo test --locked
+cargo clippy --all-targets -- -D warnings
+cargo build --release --locked
+cargo check --locked --target x86_64-pc-windows-msvc
+```
 
 ## Project memory
 

@@ -1,4 +1,5 @@
 .build/
+CrossPlatform/target/
 .swiftpm/
 .DS_Store
 .env
