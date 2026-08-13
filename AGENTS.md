@@ -9,6 +9,12 @@ Koett is currently an English-only macOS dictation app for Apple Silicon. Swift
 owns the macOS app. Do not rewrite it or add a cross-platform shell without a
 measured Windows or Linux spike.
 
+The isolated `cross-platform/headless-spike` branch now keeps its first native
+Rust spike under `CrossPlatform/`. It uses CPAL 0.18.1 and statically linked
+sherpa-onnx 1.13.5. Keep it headless until WAV and live microphone behavior pass
+on real Windows and Linux systems. Do not add Slint, shortcuts, paste, or a
+plugin system before that gate.
+
 ## Current behavior
 
 - Toggle recording is the default. Either Option key is the default shortcut.
@@ -76,6 +82,17 @@ pgrep -alf '/Applications/Koett.app/Contents/MacOS/koett'
 
 The release and installed UUIDs must match. Keep the stable Apple Development
 signature so macOS does not request Accessibility approval after each build.
+
+For changes under `CrossPlatform/`, also run:
+
+```sh
+cd CrossPlatform
+cargo fmt --check
+cargo test --locked
+cargo clippy --all-targets -- -D warnings
+cargo build --release --locked
+cargo check --locked --target x86_64-pc-windows-msvc
+```
 
 ## Project memory
 
