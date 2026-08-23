@@ -1,10 +1,12 @@
 .build/
 .swiftpm/
 .DS_Store
+.env
 Benchmarks/Local/
 Benchmarks/Mixed/
 Benchmarks/Noise/
 Benchmarks/LibriSpeech/
 Benchmarks/Transcripts/
+Benchmarks/Private/
 Benchmarks/__pycache__/
 *.pyc

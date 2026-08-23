@@ -1,0 +1,179 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 16px;
+  line-height: 1.52;
+  color: rgba(255, 255, 255, 0.94);
+  background: transparent;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: transparent;
+}
+
+body {
+  padding: 0 6px 14px 0;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+
+#content > :first-child {
+  margin-top: 0;
+}
+
+#content > :last-child {
+  margin-bottom: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1.15em 0 0.45em;
+  line-height: 1.22;
+  color: #fff;
+}
+
+h1 { font-size: 1.45rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.08rem; }
+h4,
+h5,
+h6 { font-size: 1rem; }
+
+p,
+ul,
+ol,
+blockquote,
+pre,
+table,
+.katex-display {
+  margin: 0 0 0.9em;
+}
+
+ul,
+ol {
+  padding-left: 1.45em;
+}
+
+li {
+  margin: 0.2em 0;
+}
+
+li > p {
+  margin: 0.25em 0;
+}
+
+a {
+  color: #8ec8ff;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+strong {
+  color: #fff;
+}
+
+blockquote {
+  padding: 0.05em 0 0.05em 0.9em;
+  border-left: 3px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.68);
+}
+
+blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+hr {
+  height: 1px;
+  margin: 1.1em 0;
+  border: 0;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+code,
+kbd {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.88em;
+}
+
+:not(pre) > code,
+kbd {
+  padding: 0.14em 0.36em;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+pre {
+  overflow-x: auto;
+  padding: 12px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.30);
+}
+
+pre code.hljs {
+  padding: 0;
+  background: transparent;
+}
+
+table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+th,
+td {
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-weight: 600;
+}
+
+tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.task-list-item {
+  list-style: none;
+}
+
+.task-list-item input {
+  margin: 0 0.45em 0 -1.35em;
+  accent-color: #79bfff;
+}
+
+img {
+  max-width: 100%;
+  border-radius: 9px;
+}
+
+.katex {
+  font-size: 1.04em;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.2em 0;
+}
+
+::selection {
+  background: rgba(80, 155, 255, 0.42);
+}

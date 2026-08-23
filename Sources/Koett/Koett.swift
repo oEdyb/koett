@@ -5,9 +5,8 @@ import CoreGraphics
 import Darwin
 import FluidAudio
 import Foundation
-import ServiceManagement
 
-private enum SpeechEngine: String {
+enum SpeechEngine: String {
     case parakeet
     case nemotron
 
@@ -20,64 +19,68 @@ private enum SpeechEngine: String {
 }
 
 @MainActor
-private final class KoettController: NSObject {
-    private enum StartupErrorCode: Int {
-        case microphone = 2
-        case accessibility = 3
-    }
-
-    private enum State {
+final class KoettController: NSObject {
+    enum State {
         case loading
         case ready
         case recording
         case transcribing
+        case media
+        case assistantRecording
+        case assistantWorking
     }
 
-    private enum RecordingMode: String {
+    enum RecordingMode: String {
         case hold
         case toggle
     }
 
-    private enum Shortcut: String {
-        case eitherOption
-        case rightOption
-        case rightCommand
-
-        var keyCodes: [UInt16] {
-            switch self {
-            case .eitherOption: [58, 61]
-            case .rightOption: [61]
-            case .rightCommand: [54]
-            }
-        }
-
-        var modifier: NSEvent.ModifierFlags {
-            switch self {
-            case .eitherOption, .rightOption: .option
-            case .rightCommand: .command
-            }
-        }
-    }
-
-    private let speechEngine: SpeechEngine
-    private let transcriptStore = TranscriptStore()
-    private let recordingOverlay = RecordingOverlayController()
-    private let manager = AsrManager(config: .default)
-    private let nemotronAdapter: NemotronStreamingAdapter?
-    private let startSound: AVAudioPlayer
-    private let stopSound: AVAudioPlayer
-    private var recordingMode: RecordingMode
-    private var shortcut: Shortcut
-    private var state = State.loading
-    private var recorder: AVAudioRecorder?
-    private var recordingURL: URL?
-    private var nemotronRecorder: NemotronLiveRecorder?
-    private var monitor: Any?
-    private var statusItem: NSStatusItem?
-    private var isPreparing = false
-    private var isRelaunching = false
-    private var startupErrorMessage: String?
-    private var startupErrorCode: StartupErrorCode?
+    let speechEngine: SpeechEngine
+    let transcriptStore = TranscriptStore()
+    let mediaTranscriptStore = MediaTranscriptStore()
+    let failedRecordingStore = FailedRecordingStore()
+    let failedTranscriptStore = FailedTranscriptStore()
+    let recordingOverlay = RecordingOverlayController()
+    let assistantPanel = AssistantPanelController()
+    let assistantClient = AssistantClient()
+    let assistantSpeech = CartesiaSpeechOutput()
+    let manager = AsrManager(config: .default)
+    let nemotronAdapter: NemotronStreamingAdapter?
+    let startSound: AVAudioPlayer
+    let stopSound: AVAudioPlayer
+    var recordingMode: RecordingMode
+    var dictationShortcut: ShortcutBinding
+    var mediaShortcut: ShortcutBinding
+    var assistantShortcut: ShortcutBinding
+    var assistantProvider: AssistantProvider
+    var assistantVoice: AssistantVoice
+    var assistantSpeechEnabled: Bool
+    var s1MiniEnabled: Bool
+    var s1MiniStyle: S1MiniStyle
+    var s1MiniStructure: S1MiniStructure
+    var s1MiniContext: S1MiniContext
+    var s1MiniCleaner: S1MiniCleaner?
+    lazy var formattingPopover = FormattingPopoverController(controller: self)
+    private var dictationModifierState = ModifierShortcutState()
+    private var mediaModifierState = ModifierShortcutState()
+    private var assistantModifierState = ModifierShortcutState()
+    var state = State.loading
+    var recorder: AVAudioRecorder?
+    var recordingURL: URL?
+    var screenCaptureTask: Task<Data, Error>?
+    var assistantWorkTask: Task<Void, Never>?
+    var nemotronRecorder: NemotronLiveRecorder?
+    private var modifierEventTap: CFMachPort?
+    private var modifierEventSource: CFRunLoopSource?
+    private var keyMonitor: Any?
+    var statusItem: NSStatusItem?
+    var isPreparing = false
+    var isRelaunching = false
+    private var isCapturingShortcut = false
+    var startupErrorMessage: String?
+    var startupErrorCode: StartupErrorCode?
+    var setupStatus = SetupStatus.checkingMicrophone
+    var startupNoticeMessage: String?
 
     init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
         self.speechEngine = speechEngine
@@ -87,15 +90,43 @@ private final class KoettController: NSObject {
         recordingMode = RecordingMode(
             rawValue: defaults.string(forKey: "recordingMode") ?? ""
         ) ?? .toggle
-        shortcut = Shortcut(
-            rawValue: defaults.string(forKey: "shortcut") ?? ""
-        ) ?? .eitherOption
+        dictationShortcut = Self.loadShortcut(
+            key: "dictationShortcut",
+            defaults: defaults
+        ) ?? ShortcutBinding.migratedDictation(
+            defaults.string(forKey: "shortcut")
+        )
+        mediaShortcut = Self.loadShortcut(
+            key: "mediaShortcut",
+            defaults: defaults
+        ) ?? .defaultMedia
+        assistantShortcut = Self.loadShortcut(
+            key: "assistantShortcut",
+            defaults: defaults
+        ) ?? .defaultAssistant
+        assistantProvider = AssistantProvider(
+            rawValue: defaults.string(forKey: "assistantProvider") ?? ""
+        ) ?? .groq
+        assistantVoice = AssistantVoice(
+            rawValue: defaults.string(forKey: "assistantVoice") ?? ""
+        ) ?? .katie
+        assistantSpeechEnabled = defaults.bool(forKey: "assistantSpeechEnabled")
+        let savedS1MiniStyle = defaults.string(forKey: "s1MiniStyle")
+            .flatMap(S1MiniStyle.init(rawValue:))
+        s1MiniEnabled = defaults.object(forKey: "s1MiniEnabled") as? Bool
+            ?? (savedS1MiniStyle != nil)
+        s1MiniStyle = savedS1MiniStyle ?? .semiCasual
+        s1MiniStructure = defaults.string(forKey: "s1MiniStructure")
+            .flatMap(S1MiniStructure.init(rawValue:)) ?? .prose
+        s1MiniContext = defaults.string(forKey: "s1MiniContext")
+            .flatMap(S1MiniContext.init(rawValue:)) ?? .general
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
     }
 
     func prepare() async throws {
+        setSetupStatus(.checkingMicrophone, showOverlay: false)
         guard await Self.microphonePermission() else {
             throw Self.failure(
                 "Microphone access is not allowed. Enable it in System Settings > Privacy & Security > Microphone.",
@@ -103,26 +134,59 @@ private final class KoettController: NSObject {
             )
         }
 
+        setSetupStatus(.checkingAccessibility, showOverlay: false)
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         guard AXIsProcessTrustedWithOptions(options) else {
             throw Self.failure(
-                "Allow Accessibility access in System Settings > Privacy & Security > Accessibility, then run this command again.",
+                "Allow Accessibility access in System Settings > Privacy & Security > Accessibility, then choose Retry Setup from the Koett menu.",
                 code: StartupErrorCode.accessibility.rawValue
             )
         }
 
+        setSetupStatus(.checkingModel("Parakeet v2"))
         print("Loading Parakeet v2...")
-        let models = try await AsrModels.downloadAndLoad(version: .v2)
+        let models = try await AsrModels.downloadAndLoad(
+            version: .v2,
+            progressHandler: fluidAudioProgressHandler(model: "Parakeet v2")
+        )
+        setSetupStatus(.loadingModel("Parakeet v2"))
         try await manager.loadModels(models)
+        setSetupStatus(.warmingModel("Parakeet v2"))
         print("Warming Parakeet v2...")
         let decoderLayers = await manager.decoderLayerCount
         var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
         let silence = [Float](repeating: 0, count: 4_800)
         _ = try await manager.transcribe(silence, decoderState: &decoderState)
 
+        if s1MiniEnabled {
+            setSetupStatus(.checkingModel("S1-mini"))
+            print("Loading S1-mini by Superwhisper...")
+            let cleaner = S1MiniCleaner()
+            do {
+                try await cleaner.prepare { [weak self] fraction in
+                    Task { @MainActor [weak self] in
+                        self?.setSetupStatus(
+                            .download(model: "S1-mini", fraction: fraction)
+                        )
+                    }
+                }
+                s1MiniCleaner = cleaner
+            } catch {
+                s1MiniEnabled = false
+                startupNoticeMessage = "S1-mini unavailable · Raw text active"
+                fputs(
+                    "Warning: S1-mini is unavailable for this launch: \(error.localizedDescription)\n",
+                    stderr
+                )
+            }
+        }
+
         if let nemotronAdapter {
+            setSetupStatus(.checkingModel("Nemotron 560 ms"))
             print("Loading Nemotron 560 ms...")
-            try await nemotronAdapter.prepare()
+            try await nemotronAdapter.prepare(
+                progressHandler: fluidAudioProgressHandler(model: "Nemotron 560 ms")
+            )
             nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter)
         }
     }
@@ -132,6 +196,7 @@ private final class KoettController: NSObject {
         isPreparing = true
         startupErrorMessage = nil
         startupErrorCode = nil
+        startupNoticeMessage = nil
         rebuildMenu()
 
         do {
@@ -152,26 +217,178 @@ private final class KoettController: NSObject {
         }
 
         isPreparing = false
+        if startupErrorMessage == nil {
+            setSetupStatus(.ready, showOverlay: startupNoticeMessage == nil)
+            if let startupNoticeMessage {
+                recordingOverlay.showError(startupNoticeMessage)
+            }
+        } else {
+            let message = SetupStatus.shortError(
+                code: startupErrorCode,
+                message: startupErrorMessage ?? ""
+            )
+            recordingOverlay.showError(message)
+            rebuildMenu()
+        }
+    }
+
+    func setSetupStatus(_ status: SetupStatus, showOverlay: Bool = true) {
+        guard status != setupStatus else { return }
+        setupStatus = status
+        statusItem?.button?.toolTip = status.menuTitle
         rebuildMenu()
+        guard showOverlay else { return }
+        if let fraction = status.progressFraction {
+            recordingOverlay.showProgress(status.overlayTitle, fraction: fraction)
+        } else if status == .ready {
+            recordingOverlay.showTransientStatus(status.overlayTitle)
+        } else {
+            recordingOverlay.showStatus(status.overlayTitle)
+        }
+    }
+
+    private func fluidAudioProgressHandler(model: String) -> ProgressHandler {
+        { [weak self] progress in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                switch progress.phase {
+                case .listing:
+                    self.setSetupStatus(.checkingModel(model))
+                case .downloading(_, let totalFiles):
+                    if totalFiles == 0 {
+                        self.setSetupStatus(.loadingModel(model))
+                    } else {
+                        self.setSetupStatus(
+                            .fluidAudioDownload(
+                                model: model,
+                                fraction: progress.fractionCompleted
+                            )
+                        )
+                    }
+                case .compiling:
+                    self.setSetupStatus(.loadingModel(model))
+                }
+            }
+        }
     }
 
     func installHotkey() throws {
-        guard monitor == nil else { return }
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+        guard modifierEventTap == nil, keyMonitor == nil else { return }
+
+        let eventMask = CGEventMask(1) << CGEventType.flagsChanged.rawValue
+        guard let eventTap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: eventMask,
+            callback: { _, type, event, userInfo in
+                guard let userInfo else {
+                    return Unmanaged.passUnretained(event)
+                }
+                let controller = Unmanaged<KoettController>
+                    .fromOpaque(userInfo)
+                    .takeUnretainedValue()
+
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    DispatchQueue.main.async {
+                        controller.recoverModifierEventTap()
+                    }
+                    return Unmanaged.passUnretained(event)
+                }
+
+                guard type == .flagsChanged else {
+                    return Unmanaged.passUnretained(event)
+                }
+                let keyCode = UInt16(
+                    event.getIntegerValueField(.keyboardEventKeycode)
+                )
+                let modifierKeyIsDown = CGEventSource.keyState(
+                    .combinedSessionState,
+                    key: CGKeyCode(keyCode)
+                )
+                let modifierFlags = UInt(event.flags.rawValue)
+                let eventTimestamp = TimeInterval(event.timestamp) / 1_000_000_000
+                DispatchQueue.main.async {
+                    controller.handleShortcutEvent(
+                        type: .flagsChanged,
+                        keyCode: keyCode,
+                        modifierFlags: modifierFlags,
+                        eventTimestamp: eventTimestamp,
+                        isRepeat: false,
+                        modifierKeyIsDown: modifierKeyIsDown
+                    )
+                }
+                return Unmanaged.passUnretained(event)
+            },
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) else {
+            throw Self.failure("macOS could not install the modifier shortcut monitor.")
+        }
+        guard let eventSource = CFMachPortCreateRunLoopSource(
+            kCFAllocatorDefault,
+            eventTap,
+            0
+        ) else {
+            throw Self.failure("macOS could not start the modifier shortcut monitor.")
+        }
+
+        let newKeyMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.keyDown, .keyUp]
+        ) { [weak self] event in
+            let type = event.type
             let keyCode = event.keyCode
             let modifierFlags = event.modifierFlags.rawValue
             let eventTimestamp = event.timestamp
-            Task { @MainActor [weak self] in
-                self?.handleShortcut(
+            let isRepeat = event.isARepeat
+            DispatchQueue.main.async { [weak self] in
+                self?.handleShortcutEvent(
+                    type: type,
                     keyCode: keyCode,
                     modifierFlags: modifierFlags,
-                    eventTimestamp: eventTimestamp
+                    eventTimestamp: eventTimestamp,
+                    isRepeat: isRepeat
                 )
             }
         }
 
-        guard monitor != nil else {
-            throw Self.failure("macOS could not install the global Option-key monitor.")
+        guard let newKeyMonitor else {
+            throw Self.failure("macOS could not install the key shortcut monitor.")
+        }
+
+        CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
+        modifierEventTap = eventTap
+        modifierEventSource = eventSource
+        keyMonitor = newKeyMonitor
+        enableModifierEventTap()
+    }
+
+    private func enableModifierEventTap() {
+        if let modifierEventTap {
+            CGEvent.tapEnable(tap: modifierEventTap, enable: true)
+        }
+    }
+
+    private func recoverModifierEventTap() {
+        enableModifierEventTap()
+
+        let keyState: (UInt16) -> Bool = { keyCode in
+            CGEventSource.keyState(
+                .combinedSessionState,
+                key: CGKeyCode(keyCode)
+            )
+        }
+        let dictationIsHeld = dictationModifierState.resync(
+            binding: dictationShortcut,
+            isKeyDown: keyState
+        )
+        mediaModifierState.resync(binding: mediaShortcut, isKeyDown: keyState)
+        assistantModifierState.resync(binding: assistantShortcut, isKeyDown: keyState)
+
+        if recordingMode == .hold,
+           dictationShortcut.modifierOnly,
+           state == .recording,
+           !dictationIsHeld {
+            stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime)
         }
     }
 
@@ -186,510 +403,119 @@ private final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    private func handleShortcut(
+    private func handleShortcutEvent(
+        type: NSEvent.EventType,
         keyCode: UInt16,
         modifierFlags: UInt,
-        eventTimestamp: TimeInterval
+        eventTimestamp: TimeInterval,
+        isRepeat: Bool,
+        modifierKeyIsDown: Bool? = nil
     ) {
-        guard shortcut.keyCodes.contains(keyCode) else { return }
-        let flags = NSEvent.ModifierFlags(rawValue: modifierFlags)
-            .intersection(.deviceIndependentFlagsMask)
-        let isDown = flags.contains(shortcut.modifier)
+        guard !isCapturingShortcut else { return }
+
+        if type == .keyDown, !isRepeat {
+            dictationModifierState.noteKeyDown()
+            mediaModifierState.noteKeyDown()
+            assistantModifierState.noteKeyDown()
+        }
+
+        let assistantModifierTransition = assistantModifierState.update(
+            binding: assistantShortcut,
+            type: type,
+            keyCode: keyCode,
+            modifierFlags: modifierFlags,
+            keyIsDown: modifierKeyIsDown
+        )
+        let mediaModifierTransition = mediaModifierState.update(
+            binding: mediaShortcut,
+            type: type,
+            keyCode: keyCode,
+            modifierFlags: modifierFlags,
+            keyIsDown: modifierKeyIsDown
+        )
+        let dictationModifierTransition = dictationModifierState.update(
+            binding: dictationShortcut,
+            type: type,
+            keyCode: keyCode,
+            modifierFlags: modifierFlags,
+            keyIsDown: modifierKeyIsDown
+        )
+        let assistantIsDown = assistantShortcut.modifierOnly
+            ? assistantModifierTransition.releasedWithoutChord
+            : assistantShortcut.matchesDown(
+                type: type,
+                keyCode: keyCode,
+                modifierFlags: modifierFlags,
+                isRepeat: isRepeat
+            )
+        if assistantIsDown {
+            toggleAssistant()
+            return
+        }
+
+        let mediaIsDown = mediaShortcut.modifierOnly
+            ? mediaModifierTransition.down
+            : mediaShortcut.matchesDown(
+                type: type,
+                keyCode: keyCode,
+                modifierFlags: modifierFlags,
+                isRepeat: isRepeat
+            )
+        if mediaIsDown {
+            startMediaTranscription()
+            return
+        }
+
+        let isDown = dictationShortcut.modifierOnly
+            ? dictationModifierTransition.down
+            : dictationShortcut.matchesDown(
+                type: type,
+                keyCode: keyCode,
+                modifierFlags: modifierFlags,
+                isRepeat: isRepeat
+            )
+        let isUp = dictationShortcut.modifierOnly
+            ? dictationModifierTransition.up
+            : dictationShortcut.matchesUp(
+                type: type,
+                keyCode: keyCode,
+                modifierFlags: modifierFlags
+            )
 
         switch recordingMode {
         case .hold:
-            handleHold(isDown: isDown, eventTimestamp: eventTimestamp)
-        case .toggle:
             if isDown {
+                startRecordingIfReady()
+            } else if isUp, state == .recording {
+                stopRecording(releaseEventTimestamp: eventTimestamp)
+            }
+        case .toggle:
+            let shouldToggle = dictationShortcut.modifierOnly
+                ? dictationModifierTransition.releasedWithoutChord
+                : isDown
+            if shouldToggle {
                 toggleRecording(eventTimestamp: eventTimestamp)
             }
         }
     }
 
-    private func handleHold(isDown: Bool, eventTimestamp: TimeInterval) {
-        if isDown {
-            startRecordingIfReady()
-        } else {
-            guard state == .recording else { return }
-            stopRecording(releaseEventTimestamp: eventTimestamp)
-        }
-    }
-
-    private func toggleRecording(eventTimestamp: TimeInterval) {
-        switch state {
-        case .ready:
-            startRecordingIfReady()
-        case .recording:
-            stopRecording(releaseEventTimestamp: eventTimestamp)
-        case .loading, .transcribing:
-            return
-        }
-    }
-
-    private func startRecordingIfReady() {
-        guard state == .ready else { return }
-        do {
-            try startRecording()
-        } catch {
-            state = .ready
-            fputs("Error: \(error.localizedDescription)\n", stderr)
-        }
-    }
-
-    private func startRecording() throws {
-        switch speechEngine {
-        case .parakeet:
-            try startParakeetRecording()
-        case .nemotron:
-            try startNemotronRecording()
-        }
-
-        state = .recording
-        if let recorder {
-            recordingOverlay.start(recorder: recorder)
-        }
-        play(startSound)
-        print("RECORDING")
-    }
-
-    private func startParakeetRecording() throws {
-        let (newRecorder, url) = try startFileRecording()
-        recorder = newRecorder
-        recordingURL = url
-    }
-
-    private func startNemotronRecording() throws {
-        guard let nemotronRecorder else {
-            throw Self.failure("Nemotron is not ready.")
-        }
-
-        let (recoveryRecorder, recoveryURL) = try startFileRecording()
-        do {
-            try nemotronRecorder.start()
-        } catch {
-            recoveryRecorder.stop()
-            cleanup(recoveryURL)
-            throw error
-        }
-
-        recorder = recoveryRecorder
-        recordingURL = recoveryURL
-    }
-
-    private func startFileRecording() throws -> (AVAudioRecorder, URL) {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("koett-\(UUID().uuidString).wav")
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16_000.0,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 32,
-            AVLinearPCMIsFloatKey: true,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsNonInterleaved: false,
-        ]
-
-        let newRecorder = try AVAudioRecorder(url: url, settings: settings)
-        newRecorder.isMeteringEnabled = true
-        guard newRecorder.prepareToRecord(), newRecorder.record() else {
-            throw Self.failure("The microphone recorder could not start.")
-        }
-
-        return (newRecorder, url)
-    }
-
-    private func stopRecording(releaseEventTimestamp: TimeInterval) {
-        recordingOverlay.stop()
-        switch speechEngine {
-        case .parakeet:
-            stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp)
-        case .nemotron:
-            stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp)
-        }
-    }
-
-    private func stopParakeetRecording(releaseEventTimestamp: TimeInterval) {
-        guard let recorder, let url = recordingURL else { return }
-        let duration = recorder.currentTime
-        recorder.stop()
-        self.recorder = nil
-        recordingURL = nil
-        state = .transcribing
-        play(stopSound)
-        print("TRANSCRIBING")
-
-        guard duration >= 0.25 else {
-            cleanup(url)
-            state = .ready
-            print("Ignored: recording was too short.")
-            return
-        }
-
-        Task { @MainActor [weak self] in
-            await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp)
-        }
-    }
-
-    private func stopNemotronRecording(releaseEventTimestamp: TimeInterval) {
-        guard let nemotronRecorder,
-              let recoveryRecorder = recorder,
-              let recoveryURL = recordingURL else { return }
-
-        let duration = recoveryRecorder.currentTime
-        recoveryRecorder.stop()
-        recorder = nil
-        recordingURL = nil
-
-        do {
-            let pendingCapture = try nemotronRecorder.stop()
-            state = .transcribing
-            play(stopSound)
-            print("TRANSCRIBING")
-
-            Task { @MainActor [weak self] in
-                await self?.finishNemotron(
-                    pendingCapture,
-                    recoveryURL: recoveryURL,
-                    duration: duration,
-                    releaseEventTimestamp: releaseEventTimestamp
-                )
-            }
-        } catch {
-            state = .transcribing
-            play(stopSound)
-            print("TRANSCRIBING")
-            fputs(
-                "Warning: Nemotron stop failed; using Parakeet recovery: \(error.localizedDescription)\n",
-                stderr
-            )
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                defer {
-                    self.cleanup(recoveryURL)
-                    self.state = .ready
-                }
-                await self.transcribeRecoveryFile(
-                    recoveryURL,
-                    releaseEventTimestamp: releaseEventTimestamp
-                )
-            }
-        }
-    }
-
-    private func transcribe(_ url: URL, releaseEventTimestamp: TimeInterval) async {
-        defer {
-            cleanup(url)
-            state = .ready
-        }
-
-        do {
-            let transcriptionStartedAt = ProcessInfo.processInfo.systemUptime
-            let decoderLayers = await manager.decoderLayerCount
-            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let result = try await manager.transcribe(url, decoderState: &decoderState)
-            let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
-            let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            guard !text.isEmpty else {
-                print("No speech detected. Clipboard unchanged.")
-                return
-            }
-
-            let pastePostedAt = try deliver(text, model: speechEngine.displayName)
-            print("PASTE POSTED: \(text)")
-            print(String(
-                format: "LATENCY release-to-ASR-start %.1fms | ASR %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
-                (transcriptionStartedAt - releaseEventTimestamp) * 1_000,
-                (transcriptReadyAt - transcriptionStartedAt) * 1_000,
-                (pastePostedAt - transcriptReadyAt) * 1_000,
-                (pastePostedAt - releaseEventTimestamp) * 1_000
-            ))
-        } catch {
-            fputs("Error: \(error.localizedDescription)\n", stderr)
-        }
-    }
-
-    private func finishNemotron(
-        _ pendingCapture: NemotronLiveRecorder.PendingCapture,
-        recoveryURL: URL,
-        duration: TimeInterval,
-        releaseEventTimestamp: TimeInterval
-    ) async {
-        defer {
-            cleanup(recoveryURL)
-            state = .ready
-        }
-        guard let nemotronAdapter else { return }
-
-        if duration < 0.3 {
-            do {
-                try await pendingCapture.processingTask.value
-            } catch {
-                fputs("Warning: Nemotron stopped with: \(error.localizedDescription)\n", stderr)
-            }
-            await nemotronAdapter.cancel()
-            print("Ignored: recording was too short.")
-            return
-        }
-
-        let finalizationStartedAt = ProcessInfo.processInfo.systemUptime
-        let text: String
-        do {
-            try await pendingCapture.processingTask.value
-            guard pendingCapture.store.droppedFrames == 0 else {
-                throw Self.failure(
-                    "Nemotron dropped \(pendingCapture.store.droppedFrames) microphone frames."
-                )
-            }
-
-            text = try await nemotronAdapter.finish()
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        } catch {
-            fputs(
-                "Warning: Nemotron failed; using Parakeet recovery: \(error.localizedDescription)\n",
-                stderr
-            )
-            await nemotronAdapter.cancel()
-            await transcribeRecoveryFile(
-                recoveryURL,
-                releaseEventTimestamp: releaseEventTimestamp
-            )
-            return
-        }
-
-        let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
-        guard !text.isEmpty else {
-            print("No speech detected. Clipboard unchanged.")
-            return
-        }
-
-        do {
-            let pastePostedAt = try deliver(text, model: speechEngine.displayName)
-            print("PASTE POSTED: \(text)")
-            print(String(
-                format: "LATENCY Nemotron release-to-finish-start %.1fms | finish %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
-                (finalizationStartedAt - releaseEventTimestamp) * 1_000,
-                (transcriptReadyAt - finalizationStartedAt) * 1_000,
-                (pastePostedAt - transcriptReadyAt) * 1_000,
-                (pastePostedAt - releaseEventTimestamp) * 1_000
-            ))
-        } catch {
-            fputs("Error: \(error.localizedDescription)\n", stderr)
-        }
-    }
-
-    private func transcribeRecoveryFile(
-        _ url: URL,
-        releaseEventTimestamp: TimeInterval
-    ) async {
-        do {
-            let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
-            let decoderLayers = await manager.decoderLayerCount
-            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let result = try await manager.transcribe(url, decoderState: &decoderState)
-            let transcriptReadyAt = ProcessInfo.processInfo.systemUptime
-            let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else {
-                print("No speech detected. Clipboard unchanged.")
-                return
-            }
-
-            let pastePostedAt = try deliver(
-                text,
-                model: "Parakeet v2 (Nemotron recovery)"
-            )
-            print("PASTE POSTED (Parakeet recovery): \(text)")
-            print(String(
-                format: "LATENCY recovery-start %.1fms | recovery-ASR %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
-                (fallbackStartedAt - releaseEventTimestamp) * 1_000,
-                (transcriptReadyAt - fallbackStartedAt) * 1_000,
-                (pastePostedAt - transcriptReadyAt) * 1_000,
-                (pastePostedAt - releaseEventTimestamp) * 1_000
-            ))
-        } catch {
-            fputs("Error: Parakeet recovery failed: \(error.localizedDescription)\n", stderr)
-        }
-    }
-
-    private func deliver(_ text: String, model: String) throws -> TimeInterval {
-        defer {
-            do {
-                try transcriptStore.append(text, model: model)
-            } catch {
-                fputs("Warning: transcript was not saved: \(error.localizedDescription)\n", stderr)
-            }
-        }
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        guard pasteboard.setString(text, forType: .string) else {
-            throw Self.failure("The transcript could not be copied to the clipboard.")
-        }
-
-        guard pasteAtCursor() else {
-            throw Self.failure("The transcript is on the clipboard, but Command-V could not be sent.")
-        }
-        let pastePostedAt = ProcessInfo.processInfo.systemUptime
-        return pastePostedAt
-    }
-
-    private func play(_ player: AVAudioPlayer) {
-        player.stop()
-        player.currentTime = 0
-        _ = player.play()
-    }
-
-    private func pasteAtCursor() -> Bool {
-        guard let source = CGEventSource(stateID: .hidSystemState),
-              let keyDown = CGEvent(
-                  keyboardEventSource: source,
-                  virtualKey: 9,
-                  keyDown: true
-              ),
-              let keyUp = CGEvent(
-                  keyboardEventSource: source,
-                  virtualKey: 9,
-                  keyDown: false
-              ) else {
-            return false
-        }
-
-        keyDown.flags = .maskCommand
-        keyUp.flags = .maskCommand
-        keyDown.post(tap: .cghidEventTap)
-        keyUp.post(tap: .cghidEventTap)
-        return true
-    }
-
-    private func cleanup(_ url: URL) {
-        do {
-            try FileManager.default.removeItem(at: url)
-        } catch {
-            fputs("Warning: temporary audio remains at \(url.path)\n", stderr)
-        }
-    }
-
-    private func rebuildMenu() {
-        let menu = NSMenu()
-        if isPreparing {
-            let item = NSMenuItem(title: "Starting Koett…", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            menu.addItem(item)
-            menu.addItem(.separator())
-        } else if let startupErrorMessage {
-            let item = NSMenuItem(title: "Setup Required", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            item.toolTip = startupErrorMessage
-            menu.addItem(item)
-            if startupErrorCode == .accessibility {
-                menu.addItem(menuItem(
-                    title: "Open Accessibility Settings",
-                    action: #selector(openAccessibilitySettings),
-                    selected: false
-                ))
-            }
-            menu.addItem(menuItem(
-                title: "Retry Setup",
-                action: #selector(retrySetup),
-                selected: false
-            ))
-            menu.addItem(.separator())
-        }
-        let canChangeModel = !isPreparing
-            && !isRelaunching
-            && state != .recording
-            && state != .transcribing
-        let parakeetItem = menuItem(
-            title: "Model: Parakeet v2",
-            action: #selector(useParakeetModel),
-            selected: speechEngine == .parakeet
-        )
-        parakeetItem.isEnabled = canChangeModel
-        menu.addItem(parakeetItem)
-        let nemotronItem = menuItem(
-            title: "Model: Nemotron 560 ms (Test)",
-            action: #selector(useNemotronModel),
-            selected: speechEngine == .nemotron
-        )
-        nemotronItem.isEnabled = canChangeModel
-        menu.addItem(nemotronItem)
-        menu.addItem(.separator())
-        menu.addItem(menuItem(
-            title: "Mode: Toggle",
-            action: #selector(useToggleMode),
-            selected: recordingMode == .toggle
-        ))
-        menu.addItem(menuItem(
-            title: "Mode: Hold",
-            action: #selector(useHoldMode),
-            selected: recordingMode == .hold
-        ))
-        menu.addItem(.separator())
-        menu.addItem(menuItem(
-            title: "Key: Either Option",
-            action: #selector(useEitherOption),
-            selected: shortcut == .eitherOption
-        ))
-        menu.addItem(menuItem(
-            title: "Key: Right Option",
-            action: #selector(useRightOption),
-            selected: shortcut == .rightOption
-        ))
-        menu.addItem(menuItem(
-            title: "Key: Right Command",
-            action: #selector(useRightCommand),
-            selected: shortcut == .rightCommand
-        ))
-        menu.addItem(.separator())
-        menu.addItem(menuItem(
-            title: "Open Transcripts",
-            action: #selector(openTranscripts),
-            selected: false
-        ))
-        menu.addItem(NSMenuItem(
-            title: "Quit Koett",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
-        ))
-        statusItem?.menu = menu
-    }
-
-    private func menuItem(title: String, action: Selector, selected: Bool) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-        item.target = self
-        item.state = selected ? .on : .off
-        return item
-    }
-
-    @objc private func useToggleMode() {
+    @objc func useToggleMode() {
         setRecordingMode(.toggle)
     }
 
-    @objc private func useParakeetModel() {
+    @objc func useParakeetModel() {
         setSpeechEngine(.parakeet)
     }
 
-    @objc private func useNemotronModel() {
+    @objc func useNemotronModel() {
         setSpeechEngine(.nemotron)
     }
 
-    @objc private func useHoldMode() {
+    @objc func useHoldMode() {
         setRecordingMode(.hold)
     }
 
-    @objc private func useEitherOption() {
-        setShortcut(.eitherOption)
-    }
-
-    @objc private func useRightOption() {
-        setShortcut(.rightOption)
-    }
-
-    @objc private func useRightCommand() {
-        setShortcut(.rightCommand)
-    }
-
-    @objc private func openAccessibilitySettings() {
+    @objc func openAccessibilitySettings() {
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
         guard let url = URL(
@@ -700,7 +526,27 @@ private final class KoettController: NSObject {
         }
     }
 
-    @objc private func openTranscripts() {
+    @objc func openMicrophoneSettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+        ), NSWorkspace.shared.open(url) else {
+            fputs("Error: Microphone settings could not open.\n", stderr)
+            return
+        }
+    }
+
+    @objc func showSetupError() {
+        guard let startupErrorMessage else { return }
+        let alert = NSAlert()
+        alert.messageText = "Koett setup failed"
+        alert.informativeText = startupErrorMessage
+        alert.addButton(withTitle: "OK")
+        _ = NSRunningApplication.current.activate(options: [.activateAllWindows])
+        NSApp.activate(ignoringOtherApps: true)
+        _ = alert.runModal()
+    }
+
+    @objc func openTranscripts() {
         do {
             try transcriptStore.prepare()
             guard NSWorkspace.shared.open(transcriptStore.fileURL) else {
@@ -711,21 +557,184 @@ private final class KoettController: NSObject {
         }
     }
 
-    @objc private func retrySetup() {
+    @objc func bindDictationShortcut() {
+        guard state == .ready else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.captureDictationShortcut()
+        }
+    }
+
+    private func captureDictationShortcut() {
+        guard state == .ready else { return }
+        isCapturingShortcut = true
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                self?.isCapturingShortcut = false
+            }
+        }
+        guard let binding = ShortcutCapture.run(title: "Set Dictation Shortcut") else {
+            return
+        }
+        guard !ShortcutBinding.shortcutsConflict(
+            dictation: binding,
+            media: mediaShortcut,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            showShortcutConflict(
+                with: "Media Shortcut",
+                binding: mediaShortcut
+            )
+            return
+        }
+        guard !ShortcutBinding.shortcutsConflict(
+            dictation: binding,
+            media: assistantShortcut,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            showShortcutConflict(
+                with: "Ask Shortcut",
+                binding: assistantShortcut
+            )
+            return
+        }
+        dictationShortcut = binding
+        dictationModifierState.reset()
+        saveShortcut(binding, key: "dictationShortcut")
+        rebuildMenu()
+    }
+
+    @objc func bindMediaShortcut() {
+        guard state == .ready else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.captureMediaShortcut()
+        }
+    }
+
+    @objc func bindAssistantShortcut() {
+        guard state == .ready else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.captureAssistantShortcut()
+        }
+    }
+
+    private func captureMediaShortcut() {
+        guard state == .ready else { return }
+        isCapturingShortcut = true
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                self?.isCapturingShortcut = false
+            }
+        }
+        guard let binding = ShortcutCapture.run(title: "Set Media Shortcut") else {
+            return
+        }
+        guard !ShortcutBinding.shortcutsConflict(
+            dictation: dictationShortcut,
+            media: binding,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            showShortcutConflict(
+                with: "Dictation Shortcut",
+                binding: dictationShortcut
+            )
+            return
+        }
+        guard !binding.conflicts(with: assistantShortcut) else {
+            showShortcutConflict(
+                with: "Ask Shortcut",
+                binding: assistantShortcut
+            )
+            return
+        }
+        mediaShortcut = binding
+        mediaModifierState.reset()
+        saveShortcut(binding, key: "mediaShortcut")
+        rebuildMenu()
+    }
+
+    private func captureAssistantShortcut() {
+        guard state == .ready else { return }
+        isCapturingShortcut = true
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                self?.isCapturingShortcut = false
+            }
+        }
+        guard let binding = ShortcutCapture.run(title: "Set Ask Shortcut") else {
+            return
+        }
+        guard !ShortcutBinding.shortcutsConflict(
+            dictation: dictationShortcut,
+            media: binding,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            showShortcutConflict(
+                with: "Dictation Shortcut",
+                binding: dictationShortcut
+            )
+            return
+        }
+        guard !binding.conflicts(with: mediaShortcut) else {
+            showShortcutConflict(
+                with: "Media Shortcut",
+                binding: mediaShortcut
+            )
+            return
+        }
+        assistantShortcut = binding
+        assistantModifierState.reset()
+        saveShortcut(binding, key: "assistantShortcut")
+        rebuildMenu()
+    }
+
+    @objc func resetShortcuts() {
+        guard state == .ready else { return }
+        dictationShortcut = .defaultDictation
+        mediaShortcut = .defaultMedia
+        assistantShortcut = .defaultAssistant
+        dictationModifierState.reset()
+        mediaModifierState.reset()
+        assistantModifierState.reset()
+        saveShortcut(dictationShortcut, key: "dictationShortcut")
+        saveShortcut(mediaShortcut, key: "mediaShortcut")
+        saveShortcut(assistantShortcut, key: "assistantShortcut")
+        rebuildMenu()
+    }
+
+    @objc func retrySetup() {
         Task { @MainActor [weak self] in
             await self?.start()
         }
     }
 
     private func setRecordingMode(_ mode: RecordingMode) {
+        guard state == .ready else { return }
+        if mode == .hold {
+            if ShortcutBinding.shortcutsConflict(
+                dictation: dictationShortcut,
+                media: mediaShortcut,
+                dictationUsesToggle: false
+            ) {
+                showShortcutConflict(
+                    with: "Media Shortcut",
+                    binding: mediaShortcut
+                )
+                return
+            }
+            if ShortcutBinding.shortcutsConflict(
+                dictation: dictationShortcut,
+                media: assistantShortcut,
+                dictationUsesToggle: false
+            ) {
+                showShortcutConflict(
+                    with: "Ask Shortcut",
+                    binding: assistantShortcut
+                )
+                return
+            }
+        }
         recordingMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: "recordingMode")
-        rebuildMenu()
-    }
-
-    private func setShortcut(_ newShortcut: Shortcut) {
-        shortcut = newShortcut
-        UserDefaults.standard.set(newShortcut.rawValue, forKey: "shortcut")
         rebuildMenu()
     }
 
@@ -734,7 +743,10 @@ private final class KoettController: NSObject {
               !isPreparing,
               !isRelaunching,
               state != .recording,
-              state != .transcribing else { return }
+              state != .transcribing,
+              state != .media,
+              state != .assistantRecording,
+              state != .assistantWorking else { return }
 
         isRelaunching = true
         rebuildMenu()
@@ -808,114 +820,76 @@ private final class KoettController: NSObject {
         return player
     }
 
-    private static func failure(_ message: String, code: Int = 1) -> NSError {
+    static func failure(_ message: String, code: Int = 1) -> NSError {
         NSError(domain: "Koett", code: code, userInfo: [NSLocalizedDescriptionKey: message])
     }
-}
 
-@main
-private struct Koett {
-    @MainActor
-    static func main() {
-        let arguments = CommandLine.arguments.dropFirst()
-
-        if arguments.contains("--register-login") {
-            do {
-                try registerLoginItem()
-            } catch {
-                fputs("Error: \(error.localizedDescription)\n", stderr)
-                exit(EXIT_FAILURE)
-            }
-            return
+    private static func loadShortcut(
+        key: String,
+        defaults: UserDefaults
+    ) -> ShortcutBinding? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        guard let binding = try? JSONDecoder().decode(ShortcutBinding.self, from: data),
+              binding.isValid else {
+            return nil
         }
+        return binding
+    }
 
-        if arguments.contains("--unregister-login") {
-            do {
-                try unregisterLoginItem()
-            } catch {
-                fputs("Error: \(error.localizedDescription)\n", stderr)
-                exit(EXIT_FAILURE)
-            }
-            return
-        }
-
-        if arguments.contains("--help") {
-            print("Usage: koett [--parakeet | --nemotron]")
-            print("Command-line model flags override the saved model for this launch.")
-            print("Use the menu-bar icon to choose the model, mode, and shortcut.")
-            return
-        }
-
+    private func saveShortcut(_ binding: ShortcutBinding, key: String) {
         do {
-            let savedEngine = SpeechEngine(
-                rawValue: UserDefaults.standard.string(forKey: "speechEngine") ?? ""
-            ) ?? .parakeet
-            let speechEngine: SpeechEngine
-            if arguments.contains("--nemotron") {
-                speechEngine = .nemotron
-            } else if arguments.contains("--parakeet") {
-                speechEngine = .parakeet
-            } else {
-                speechEngine = savedEngine
-            }
-            let controller = try KoettController(
-                defaults: .standard,
-                speechEngine: speechEngine
-            )
-            let delegate = KoettDelegate(controller: controller)
-            let application = NSApplication.shared
-            application.setActivationPolicy(.accessory)
-            application.delegate = delegate
-            application.run()
-            withExtendedLifetime(delegate) {}
+            UserDefaults.standard.set(try JSONEncoder().encode(binding), forKey: key)
         } catch {
-            fputs("Error: \(error.localizedDescription)\n", stderr)
-            exit(EXIT_FAILURE)
+            fputs("Error: The shortcut could not be saved.\n", stderr)
         }
     }
 
-    private static func registerLoginItem() throws {
-        let service = SMAppService.mainApp
-        if service.status != .enabled {
-            try service.register()
-        }
-
-        guard service.status == .enabled else {
-            SMAppService.openSystemSettingsLoginItems()
-            throw NSError(
-                domain: "Koett",
-                code: 2,
-                userInfo: [
-                    NSLocalizedDescriptionKey: "Enable Koett in System Settings > General > Login Items."
-                ]
-            )
-        }
-
-        print("Login Item enabled.")
+    private func showShortcutConflict(
+        with name: String,
+        binding: ShortcutBinding
+    ) {
+        let alert = NSAlert()
+        alert.messageText = "That conflicts with \(name)."
+        alert.informativeText = "Current shortcut: \(binding.displayName)"
+        alert.addButton(withTitle: "OK")
+        _ = alert.runModal()
     }
 
-    private static func unregisterLoginItem() throws {
-        let service = SMAppService.mainApp
-        if service.status != .notRegistered {
-            try service.unregister()
+    func promptForText(
+        title: String,
+        message: String,
+        current: String,
+        secure: Bool
+    ) -> String? {
+        let previousApplication = NSWorkspace.shared.frontmostApplication
+        isCapturingShortcut = true
+        defer {
+            previousApplication?.activate(options: [])
+            DispatchQueue.main.async { [weak self] in
+                self?.isCapturingShortcut = false
+            }
         }
-        print("Login Item disabled.")
-    }
-}
 
-@MainActor
-private final class KoettDelegate: NSObject, NSApplicationDelegate {
-    private let controller: KoettController
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
 
-    init(controller: KoettController) {
-        self.controller = controller
+        let field: NSTextField = secure
+            ? NSSecureTextField(frame: .zero)
+            : NSTextField(frame: .zero)
+        field.stringValue = current
+        field.placeholderString = secure ? "API key" : nil
+        field.frame = NSRect(x: 0, y: 0, width: 420, height: 24)
+        alert.accessoryView = field
+
+        _ = NSRunningApplication.current.activate(options: [.activateAllWindows])
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.initialFirstResponder = field
+        return alert.runModal() == .alertFirstButtonReturn
+            ? field.stringValue
+            : nil
     }
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        controller.installMenu()
-        print("Checking microphone and Accessibility access...")
-        Task { @MainActor in
-            await controller.start()
-        }
-    }
 }

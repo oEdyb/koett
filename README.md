@@ -4,12 +4,11 @@
 
 Koett turns speech into text on your Mac. It runs on your device and pastes the text into the focused app.
 
-Koett supports English on Apple Silicon Macs.
+English · Apple silicon · macOS 15+
 
 ## Install
 
-1. Open Terminal.
-2. Paste these commands:
+Paste this into Terminal:
 
 ```sh
 git clone https://github.com/oEdyb/koett.git
@@ -17,8 +16,7 @@ cd koett
 ./install-macos.sh
 ```
 
-3. Allow microphone and Accessibility access when macOS asks.
-4. Wait for Koett to download its speech model on the first run.
+Allow Microphone and Accessibility when macOS asks. Koett shows the model download on its first run.
 
 ## Use
 
@@ -26,11 +24,15 @@ cd koett
 2. Speak after the sound.
 3. Press Option again.
 
-Koett pastes the transcript at your cursor. It also saves the transcript under **Open Transcripts** in the waveform menu.
+Koett pastes and saves the transcript.
 
-Use the waveform menu to change the shortcut or switch between Toggle and Hold. Koett starts at login.
+The waveform menu contains shortcuts, formatting, saved transcripts, and optional tools.
 
-Koett has no account, telemetry, or cloud transcription.
+Media transcription needs `brew install yt-dlp ffmpeg`.
+
+Koett has no account or telemetry. Dictation stays local.
+Optional Ask sends one question and one screen image to the provider you configure.
+Optional spoken replies send a short part of the answer to Cartesia.
 
 ## License
 

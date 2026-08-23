@@ -54,7 +54,11 @@ struct NemotronStreamingAdapter: StreamingTranscriptionAdapter {
     }
 
     func prepare() async throws {
-        try await manager.loadModels()
+        try await prepare(progressHandler: nil)
+    }
+
+    func prepare(progressHandler: ProgressHandler?) async throws {
+        try await manager.loadModels(progressHandler: progressHandler)
         let loadedChunkMilliseconds = await manager.config.chunkMs
         guard loadedChunkMilliseconds == NemotronChunkSize.ms560.rawValue else {
             throw NSError(

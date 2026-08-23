@@ -22,5 +22,9 @@
     <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>Koett records microphone audio only during an active dictation.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Koett captures one screen image when you ask a screen-aware question.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Koett reads the current browser tab URL only when you start media transcription.</string>
 </dict>
 </plist>

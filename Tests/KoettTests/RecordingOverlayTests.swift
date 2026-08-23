@@ -16,4 +16,15 @@ final class RecordingOverlayTests: XCTestCase {
         XCTAssertGreaterThan(RecordingOverlayFormat.level(forDecibels: -20), 0.6)
         XCTAssertLessThan(RecordingOverlayFormat.level(forDecibels: -20), 1)
     }
+
+    func testBuildsOneBoundedTranscriptPreviewLine() {
+        XCTAssertEqual(
+            RecordingOverlayFormat.transcriptPreview("  Hello,\n\nwhat is up?  "),
+            "Hello, what is up?"
+        )
+        XCTAssertEqual(
+            RecordingOverlayFormat.transcriptPreview(String(repeating: "a", count: 120)).count,
+            96
+        )
+    }
 }

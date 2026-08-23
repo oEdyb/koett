@@ -29,4 +29,24 @@ final class TranscriptStoreTests: XCTestCase {
         XCTAssertTrue(savedText.contains("Model: Nemotron 560 ms"))
         XCTAssertTrue(savedText.contains("Second transcript\nwith two lines."))
     }
+
+    func testSavesRawAndCleanedTextTogether() throws {
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directoryURL) }
+
+        let fileURL = directoryURL.appendingPathComponent("Transcripts.md")
+        let store = TranscriptStore(fileURL: fileURL)
+        try store.append(
+            "Hello there.",
+            model: "Parakeet v2 + S1-mini by Superwhisper",
+            rawText: "hello um there",
+            at: Date(timeIntervalSince1970: 0)
+        )
+
+        let savedText = try String(contentsOf: fileURL, encoding: .utf8)
+        XCTAssertTrue(savedText.contains("Model: Parakeet v2 + S1-mini by Superwhisper"))
+        XCTAssertTrue(savedText.contains("Raw transcript:\n\nhello um there"))
+        XCTAssertTrue(savedText.contains("Cleaned transcript:\n\nHello there."))
+    }
 }

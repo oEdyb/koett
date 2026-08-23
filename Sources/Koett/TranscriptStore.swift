@@ -29,16 +29,35 @@ struct TranscriptStore {
         try Data("\(header)\n".utf8).write(to: fileURL, options: .atomic)
     }
 
-    func append(_ text: String, model: String, at date: Date = Date()) throws {
+    func append(
+        _ text: String,
+        model: String,
+        rawText: String? = nil,
+        at date: Date = Date()
+    ) throws {
         try prepare()
         let timestamp = ISO8601DateFormatter().string(from: date)
+        let transcript: String
+        if let rawText {
+            transcript = """
+
+            Raw transcript:
+
+            \(rawText)
+
+            Cleaned transcript:
+
+            \(text.isEmpty ? "(empty)" : text)
+            """
+        } else {
+            transcript = "\n\n\(text)"
+        }
         let entry = """
 
         ## \(timestamp)
 
         Model: \(model)
-
-        \(text)
+        \(transcript)
         """
         let handle = try FileHandle(forWritingTo: fileURL)
         defer { try? handle.close() }

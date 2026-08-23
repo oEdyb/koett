@@ -1,0 +1,154 @@
+[
+  {
+    "id": "official-self-correction",
+    "group": "official",
+    "input": "so um i need to like send the the report by uh friday no wait make that thursday",
+    "expected": "I need to send the report by Thursday.",
+    "required": ["Thursday"],
+    "forbidden": ["Friday"]
+  },
+  {
+    "id": "official-number-correction",
+    "group": "official",
+    "input": "i think the answer is forty two no sorry forty three",
+    "expected": "I think the answer is 43.",
+    "required": ["43"],
+    "forbidden": ["42"]
+  },
+  {
+    "id": "official-time-correction",
+    "group": "official",
+    "input": "let's meet at half past two tomorrow uh actually make it three fifteen p m",
+    "expected": "Let's meet at 3:15pm tomorrow.",
+    "required": ["3:15", "tomorrow"],
+    "forbidden": ["2:30", "half past two"]
+  },
+  {
+    "id": "official-currency-date",
+    "group": "official",
+    "input": "the invoice came to twenty three thousand four hundred and fifty dollars and it's due on march third twenty twenty six",
+    "expected": "The invoice came to $23,450, and it's due on March 3, 2026.",
+    "required": ["$23,450", "March 3, 2026"]
+  },
+  {
+    "id": "official-email-address",
+    "group": "official",
+    "input": "send it to support at superwhisper dot com",
+    "expected": "Send it to support@superwhisper.com.",
+    "required": ["support@superwhisper.com"]
+  },
+  {
+    "id": "official-filler-only",
+    "group": "official",
+    "input": "um",
+    "expected": ""
+  },
+  {
+    "id": "koett-option-once",
+    "group": "meaning",
+    "input": "i can press option once and then speak and once i'm done speaking i can press it again",
+    "required": ["option once", "press it again"],
+    "forbidden": ["option-1", "option one"]
+  },
+  {
+    "id": "koett-use-it",
+    "group": "meaning",
+    "input": "now i use it for basically everything i mean messages notes prompts for ai agents and random thoughts",
+    "required": ["use it for basically everything"],
+    "forbidden": ["before basically everything"]
+  },
+  {
+    "id": "negation",
+    "group": "meaning",
+    "input": "do not delete the file move it to the archive instead",
+    "required": ["do not delete", "archive instead"]
+  },
+  {
+    "id": "uncertainty",
+    "group": "meaning",
+    "input": "i think this might be the fastest option but i'm not completely sure yet",
+    "required": ["I think", "might", "not completely sure"]
+  },
+  {
+    "id": "uncertain-name",
+    "group": "meaning",
+    "input": "this is called i think it was called optimistic processing or batch processing",
+    "required": ["I think it was called", "optimistic processing", "batch processing"]
+  },
+  {
+    "id": "technical-names",
+    "group": "meaning",
+    "input": "koett uses parakeet v two through fluid audio and llama dot c p p",
+    "required": ["Koett", "Parakeet v2", "FluidAudio", "llama.cpp"]
+  },
+  {
+    "id": "list",
+    "group": "formatting",
+    "structure": "lists",
+    "input": "for the trip we need sunscreen a first aid kit and chargers for everything",
+    "required": ["Sunscreen", "first aid kit", "Chargers"]
+  },
+  {
+    "id": "email-layout",
+    "group": "formatting",
+    "context": "email",
+    "input": "hey sarah just wanted to follow up on the proposal can you send the numbers by end of week thanks john",
+    "required": ["Hey Sarah", "proposal", "Thanks", "John"]
+  },
+  {
+    "id": "koett-length-50w",
+    "group": "length",
+    "input_file": "Benchmarks/Transcripts/Video/Koett/koett-wispr-stress-test.txt",
+    "word_offset": 0,
+    "word_limit": 50
+  },
+  {
+    "id": "koett-length-100w",
+    "group": "length",
+    "input_file": "Benchmarks/Transcripts/Video/Koett/koett-wispr-stress-test.txt",
+    "word_offset": 60,
+    "word_limit": 100
+  },
+  {
+    "id": "koett-length-200w",
+    "group": "length",
+    "input_file": "Benchmarks/Transcripts/Video/Koett/koett-wispr-stress-test.txt",
+    "word_offset": 170,
+    "word_limit": 200
+  },
+  {
+    "id": "koett-length-350w",
+    "group": "length",
+    "input_file": "Benchmarks/Transcripts/Video/Koett/koett-wispr-stress-test.txt",
+    "word_offset": 0,
+    "word_limit": 350
+  },
+  {
+    "id": "koett-long-4m39s",
+    "group": "long",
+    "input_file": "Benchmarks/Transcripts/Video/Koett/koett-wispr-stress-test.txt",
+    "required": [
+      "option once",
+      "use it for basically everything",
+      "Windows and Linux",
+      "Rust",
+      "YouTube",
+      "I think it was called"
+    ],
+    "forbidden": ["option-1", "before basically everything"]
+  },
+  {
+    "id": "koett-file-long-4m39s",
+    "group": "long",
+    "input_file": "Benchmarks/Transcripts/Video/Koett-File/koett-wispr-stress-test.txt",
+    "required": [
+      "option once",
+      "use it for basically everything",
+      "Windows and Linux",
+      "Rust",
+      "YouTube",
+      "I think it was called"
+    ],
+    "forbidden": ["option-1", "before basically everything"]
+  }
+]
