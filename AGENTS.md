@@ -30,14 +30,31 @@ protection, first-run model progress, and visible failures. Windows uses Win32.
 Linux uses X11 APIs on X11 and XDG portals on Wayland. The macOS app is
 unchanged. Fedora 44 GNOME Wayland and Windows 11 now pass the real
 microphone-to-paste-and-history flow. A real X11 desktop test, Windows
-keyboard-only tray test, and bounded long-recording test are still required
-before either port ships.
+keyboard-only tray test, and one long-recording test in the real Windows app
+are still required before either port ships.
 
 Native CI also runs `koett-engine --self-test` on fresh Windows x86-64, Linux
 x86-64, and Linux ARM64 VMs. The self-test uses the desktop app's real pinned
-downloader and SHA-256 check, loads Parakeet, and transcribes the official
-7.435-second model sample. This proves model setup and local inference. It does
-not prove microphone, tray, shortcut, portal, or focused-app paste behavior.
+downloader and SHA-256 checks, loads Parakeet plus Silero VAD, and transcribes
+the official 7.435-second model sample. Windows also runs a 420-second,
+44.1 kHz long-input regression with a short utterance inside one minute of
+silence. [CI run 32765934319](https://github.com/oEdyb/koett/actions/runs/32765934319)
+passed at implementation commit `254a1b8`: 31 Windows tests, 29 common host
+tests, strict Clippy, release builds, fresh-model inference, packaging, and the
+long regression. Windows transcribed the 420-second fixture in 12.416 seconds
+and kept every required repeated-speech anchor plus the isolated short
+utterance. This proves model setup and bounded local inference. It does not
+prove microphone, tray, shortcut, portal, or focused-app paste behavior.
+
+Recordings up to 20 seconds keep the original one-shot decoder. Longer audio
+is resampled once to 16 kHz, split with the official Silero VAD, and decoded in
+hard-bounded chunks of at most 20 seconds. Adjacent chunks overlap by two
+seconds and use conservative word alignment so uncertain words are preserved.
+Custom Parakeet folders without the VAD file still work and use the same bounded
+fallback chunks. The default installer now downloads the 643,854-byte official
+`silero_vad.onnx` with exact size and SHA-256 verification. On the M5 host, the
+old one-shot 180-second fixture took 9.357 seconds and peaked near 1.711 GB. The
+final 420-second 44.1 kHz path took 9.264 seconds and peaked at 539 MB.
 
 Cross-platform history writes use private files. If the main history fails,
 Koett writes one collision-safe file under the durable `Failed Transcripts`
