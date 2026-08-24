@@ -24,11 +24,11 @@ Linux uses X11 APIs on X11 and XDG portals on Wayland. The macOS app is
 unchanged. Native CI builds are required, and real Windows and Linux desktop
 tests are still required before either port ships.
 
-Native CI also runs `koett-engine --self-test` on fresh Windows and Linux VMs.
-The self-test uses the desktop app's real pinned downloader and SHA-256 check,
-loads Parakeet, and transcribes the official 7.435-second model sample. This
-proves model setup and local inference. It does not prove microphone, tray,
-shortcut, portal, or focused-app paste behavior.
+Native CI also runs `koett-engine --self-test` on fresh Windows x86-64, Linux
+x86-64, and Linux ARM64 VMs. The self-test uses the desktop app's real pinned
+downloader and SHA-256 check, loads Parakeet, and transcribes the official
+7.435-second model sample. This proves model setup and local inference. It does
+not prove microphone, tray, shortcut, portal, or focused-app paste behavior.
 
 Cross-platform history writes use private files. If the main history fails,
 Koett writes one collision-safe file under the durable `Failed Transcripts`
@@ -372,10 +372,11 @@ Dictation and all audio transcription stay local.
 - The cross-platform core passes 22 unit tests and strict Clippy checks on the
   host and for `x86_64-pc-windows-msvc`. A Debian container passes the Linux
   tests, strict Clippy checks, and full release link. Actionlint passes the
-  Windows 2025 and Ubuntu 22.04 artifact workflow. Fresh native CI VMs also
-  download, verify, load, and run the pinned model against its official sample.
-  These checks still do not prove microphone, tray, shortcut, portal, or paste
-  behavior on a real desktop.
+  Windows 2025 and Ubuntu 22.04 artifact workflow. It packages Windows x86-64
+  plus Linux x86-64 and ARM64. Fresh native CI VMs also download, verify, load,
+  and run the pinned model against its official sample. These checks still do
+  not prove microphone, tray, shortcut, portal, or paste behavior on a real
+  desktop.
 
 ## Known unfinished work
 
