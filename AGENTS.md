@@ -24,6 +24,13 @@ Linux uses X11 APIs on X11 and XDG portals on Wayland. The macOS app is
 unchanged. Native CI builds are required, and real Windows and Linux desktop
 tests are still required before either port ships.
 
+Cross-platform history writes use private files. If the main history fails,
+Koett writes one collision-safe file under the durable `Failed Transcripts`
+data folder. A stalled first-run download checks cancellation at least every
+five seconds. Optional start-at-login failures warn the user but never block
+dictation. Linux requires a working StatusNotifier/AppIndicator tray host so it
+cannot run with all controls and errors hidden.
+
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
   optional local formatting, and optional Ask with spoken replies.

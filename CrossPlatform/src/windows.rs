@@ -95,9 +95,10 @@ pub fn run() -> Result<(), String> {
     let mutex = single_instance()?;
     let settings = Settings::load()?;
     let shortcut = Shortcut::from_str(&settings.shortcut)?;
-    if settings.start_at_login {
-        set_start_at_login(true)?;
-    }
+    let startup_warning = settings
+        .start_at_login
+        .then(|| set_start_at_login(true).err())
+        .flatten();
     let engine = runtime::start(settings.clone());
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
@@ -114,7 +115,7 @@ pub fn run() -> Result<(), String> {
         taskbar_created: 0,
     }));
 
-    let result = unsafe { run_message_loop(&app, shortcut) };
+    let result = unsafe { run_message_loop(&app, shortcut, startup_warning.as_deref()) };
     APP.store(ptr::null_mut(), Ordering::Release);
     let mut app = app.borrow_mut();
     if let Some(engine) = app.engine.take() {
@@ -163,6 +164,7 @@ fn single_instance() -> Result<HANDLE, String> {
 unsafe fn run_message_loop(
     app_cell: &RefCell<WindowsApp>,
     shortcut: Shortcut,
+    startup_warning: Option<&str>,
 ) -> Result<(), String> {
     let mut app = app_cell.borrow_mut();
     let instance = unsafe { GetModuleHandleW(None) }
@@ -279,6 +281,11 @@ unsafe fn run_message_loop(
         return Err("could not start the Koett event timer".to_string());
     }
     drop(app);
+    if let Some(error) = startup_warning {
+        show_fatal_error(&format!(
+            "Koett started, but start at login could not be enabled: {error}"
+        ));
+    }
 
     let mut message = MSG::default();
     loop {

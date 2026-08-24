@@ -1,11 +1,14 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
 use crate::paths;
+
+static NEXT_FAILED_TRANSCRIPT: AtomicU64 = AtomicU64::new(0);
 
 pub fn append_transcript(model: &str, text: &str) -> Result<(), String> {
     append_transcript_to(
@@ -20,7 +23,7 @@ pub fn append_transcript_resilient(model: &str, text: &str) -> Result<Option<Pat
     let primary = paths::history_file()?;
     append_transcript_with_fallback_to(
         &primary,
-        &std::env::temp_dir().join("Koett-Transcripts.md"),
+        &paths::failed_transcripts_directory()?,
         OffsetDateTime::now_utc(),
         model,
         text,
@@ -29,7 +32,7 @@ pub fn append_transcript_resilient(model: &str, text: &str) -> Result<Option<Pat
 
 fn append_transcript_with_fallback_to(
     primary: &Path,
-    fallback: &Path,
+    fallback_directory: &Path,
     timestamp: OffsetDateTime,
     model: &str,
     text: &str,
@@ -37,14 +40,60 @@ fn append_transcript_with_fallback_to(
     match append_transcript_to(primary, timestamp, model, text) {
         Ok(()) => Ok(None),
         Err(primary_error) => {
-            append_transcript_to(fallback, timestamp, model, text).map_err(|fallback_error| {
-                format!(
-                    "the main transcript history failed: {primary_error}; the fallback also failed: {fallback_error}"
-                )
-            })?;
-            Ok(Some(fallback.to_path_buf()))
+            let fallback = save_failed_transcript_to(fallback_directory, timestamp, model, text)
+                .map_err(|fallback_error| {
+                    format!(
+                        "the main transcript history failed: {primary_error}; the fallback also failed: {fallback_error}"
+                    )
+                })?;
+            Ok(Some(fallback))
         }
     }
+}
+
+fn save_failed_transcript_to(
+    directory: &Path,
+    timestamp: OffsetDateTime,
+    model: &str,
+    text: &str,
+) -> Result<PathBuf, String> {
+    fs::create_dir_all(directory)
+        .map_err(|error| format!("could not create {}: {error}", directory.display()))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o700))
+            .map_err(|error| format!("could not protect {}: {error}", directory.display()))?;
+    }
+    let entry = transcript_entry(timestamp, model, text)?;
+    for _ in 0..100 {
+        let sequence = NEXT_FAILED_TRANSCRIPT.fetch_add(1, Ordering::Relaxed);
+        let path = directory.join(format!(
+            "Transcript-{}-{}-{sequence}.md",
+            timestamp.unix_timestamp_nanos(),
+            std::process::id()
+        ));
+        let mut options = OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        match options.open(&path) {
+            Ok(mut file) => {
+                file.write_all(entry.as_bytes())
+                    .and_then(|_| file.sync_all())
+                    .map_err(|error| format!("could not write {}: {error}", path.display()))?;
+                return Ok(path);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => {
+                return Err(format!("could not create {}: {error}", path.display()));
+            }
+        }
+    }
+    Err("could not find a unique failed-transcript filename".to_string())
 }
 
 pub fn append_transcript_to(
@@ -62,10 +111,7 @@ pub fn append_transcript_to(
         .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
     fs::create_dir_all(parent)
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    let timestamp = timestamp
-        .format(&Rfc3339)
-        .map_err(|error| format!("could not format transcript time: {error}"))?;
-    let entry = format!("## {timestamp}\n\nModel: {model}\n\n{}\n\n", text.trim());
+    let entry = transcript_entry(timestamp, model, text)?;
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -79,6 +125,16 @@ pub fn append_transcript_to(
     }
     file.write_all(entry.as_bytes())
         .map_err(|error| format!("could not write {}: {error}", path.display()))
+}
+
+fn transcript_entry(timestamp: OffsetDateTime, model: &str, text: &str) -> Result<String, String> {
+    let timestamp = timestamp
+        .format(&Rfc3339)
+        .map_err(|error| format!("could not format transcript time: {error}"))?;
+    Ok(format!(
+        "## {timestamp}\n\nModel: {model}\n\n{}\n\n",
+        text.trim()
+    ))
 }
 
 #[cfg(test)]
@@ -135,25 +191,26 @@ mod tests {
     #[test]
     fn failed_primary_history_uses_the_fallback() {
         let primary = temporary_file();
-        let fallback = temporary_file();
+        let fallback_directory = temporary_file();
         fs::create_dir(&primary).unwrap();
 
         let used = append_transcript_with_fallback_to(
             &primary,
-            &fallback,
+            &fallback_directory,
             datetime!(2026-08-24 12:30 UTC),
             "Parakeet 110M",
             "Saved safely.",
         )
         .unwrap();
 
-        assert_eq!(used.as_deref(), Some(fallback.as_path()));
+        let fallback = used.unwrap();
+        assert_eq!(fallback.parent(), Some(fallback_directory.as_path()));
         assert!(
             fs::read_to_string(&fallback)
                 .unwrap()
                 .contains("Saved safely.")
         );
         fs::remove_dir(primary).unwrap();
-        fs::remove_file(fallback).unwrap();
+        fs::remove_dir_all(fallback_directory).unwrap();
     }
 }

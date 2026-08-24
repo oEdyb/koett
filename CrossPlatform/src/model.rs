@@ -69,6 +69,7 @@ fn download_archive(
         .timeout_global(Some(Duration::from_secs(30 * 60)))
         .timeout_connect(Some(Duration::from_secs(15)))
         .timeout_recv_response(Some(Duration::from_secs(30)))
+        .timeout_recv_body(Some(Duration::from_secs(5)))
         .tls_config(
             TlsConfig::builder()
                 .root_certs(RootCerts::PlatformVerifier)

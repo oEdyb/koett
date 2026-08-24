@@ -169,9 +169,10 @@ impl ksni::Tray for LinuxTray {
 pub fn run() -> Result<(), String> {
     let _instance = single_instance()?;
     let settings = Settings::load()?;
-    if settings.start_at_login {
-        set_start_at_login(true)?;
-    }
+    let startup_warning = settings
+        .start_at_login
+        .then(|| set_start_at_login(true).err())
+        .flatten();
     let (action_sender, action_receiver) = mpsc::channel();
     let tray = LinuxTray {
         action_sender,
@@ -179,9 +180,18 @@ pub fn run() -> Result<(), String> {
         shortcut: settings.shortcut.clone(),
         start_at_login: settings.start_at_login,
     }
-    .assume_sni_available(true)
     .spawn()
-    .ok();
+    .map_err(|error| {
+        format!(
+            "could not create the tray icon: {error}. Install or enable StatusNotifier/AppIndicator support"
+        )
+    })?;
+    if let Some(error) = startup_warning {
+        update_tray_status(Some(&tray), "Error: start at login could not be enabled");
+        let message = format!("Koett started, but start at login could not be enabled.\n\n{error}");
+        eprintln!("Koett: {message}");
+        show_desktop_message(&message);
+    }
     let session_type = std::env::var("XDG_SESSION_TYPE")
         .unwrap_or_default()
         .to_ascii_lowercase();
@@ -190,23 +200,25 @@ pub fn run() -> Result<(), String> {
             && std::env::var_os("WAYLAND_DISPLAY").is_none()
             && std::env::var_os("DISPLAY").is_some());
     let result = if use_x11 {
-        run_x11(settings, action_receiver, tray.as_ref())
+        run_x11(settings, action_receiver, Some(&tray))
     } else {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .map_err(|error| format!("could not start the Linux event loop: {error}"))?
-            .block_on(run_wayland(settings, action_receiver, tray.as_ref()))
+            .block_on(run_wayland(settings, action_receiver, Some(&tray)))
     };
-    if let Some(tray) = tray {
-        tray.shutdown().wait();
-    }
+    tray.shutdown().wait();
     result
 }
 
 pub fn show_fatal_error(error: &str) {
     eprintln!("Koett: {error}");
     let message = format!("Koett could not start.\n\n{error}");
+    show_desktop_message(&message);
+}
+
+fn show_desktop_message(message: &str) {
     let dialogs: [(&str, &[&str]); 3] = [
         ("zenity", &["--error", "--title=Koett", "--text"]),
         ("kdialog", &["--title", "Koett", "--error"]),
@@ -215,7 +227,7 @@ pub fn show_fatal_error(error: &str) {
     for (program, arguments) in dialogs {
         if Command::new(program)
             .args(arguments)
-            .arg(&message)
+            .arg(message)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())

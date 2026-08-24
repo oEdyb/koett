@@ -20,6 +20,10 @@ pub fn history_file() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Transcripts.md"))
 }
 
+pub fn failed_transcripts_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("Failed Transcripts"))
+}
+
 pub fn default_model_directory() -> Result<PathBuf, String> {
     if let Some(directory) = std::env::var_os("KOETT_MODEL_DIR") {
         return Ok(PathBuf::from(directory));
