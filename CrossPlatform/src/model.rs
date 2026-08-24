@@ -35,12 +35,12 @@ pub fn ensure_default_model(
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
     let destination = paths::default_model_directory()?;
-    let needs_asr = !asr_model_is_complete(&destination);
-    let needs_vad = !destination.join(VAD_FILE).is_file();
-    if !needs_asr && !needs_vad {
+    if default_model_is_complete(&destination) {
         progress(ModelProgress::Ready);
         return Ok(destination);
     }
+    let needs_asr = !asr_model_is_complete(&destination);
+    let needs_vad = !destination.join(VAD_FILE).is_file();
     let parent = destination
         .parent()
         .ok_or_else(|| format!("{} has no parent directory", destination.display()))?;
@@ -53,6 +53,7 @@ pub fn ensure_default_model(
 
     if needs_asr {
         let download = download_file(
+            "speech model",
             MODEL_URL,
             &archive,
             ARCHIVE_BYTES,
@@ -70,6 +71,7 @@ pub fn ensure_default_model(
     }
     if needs_vad {
         let download = download_file(
+            "voice detector",
             VAD_URL,
             &vad_download,
             VAD_BYTES,
@@ -116,6 +118,7 @@ pub fn ensure_default_model(
 
 #[allow(clippy::too_many_arguments)]
 fn download_file(
+    label: &str,
     url: &str,
     path: &Path,
     expected_bytes: u64,
@@ -143,7 +146,7 @@ fn download_file(
     let mut response = agent
         .get(url)
         .call()
-        .map_err(|error| format!("could not download the Koett model: {error}"))?;
+        .map_err(|error| format!("could not download the Koett {label}: {error}"))?;
     let mut input = response.body_mut().as_reader();
     let mut output = File::create(path)
         .map_err(|error| format!("could not create {}: {error}", path.display()))?;
@@ -160,7 +163,9 @@ fn download_file(
         }
         received += count as u64;
         if received > expected_bytes {
-            return Err("the model download is larger than the pinned release".to_string());
+            return Err(format!(
+                "the {label} download is larger than the pinned release"
+            ));
         }
         output
             .write_all(&buffer[..count])
@@ -176,7 +181,7 @@ fn download_file(
         .map_err(|error| format!("could not finish {}: {error}", path.display()))?;
     if received != expected_bytes {
         return Err(format!(
-            "the model download is incomplete: got {received} of {expected_bytes} bytes"
+            "the {label} download is incomplete: got {received} of {expected_bytes} bytes"
         ));
     }
     let digest = hasher
@@ -187,7 +192,7 @@ fn download_file(
             output
         });
     if digest != expected_sha256 {
-        return Err("the model download failed its SHA-256 check".to_string());
+        return Err(format!("the {label} download failed its SHA-256 check"));
     }
     Ok(())
 }
@@ -278,12 +283,16 @@ fn asr_model_is_complete(directory: &Path) -> bool {
     directory.join("model.int8.onnx").is_file() && directory.join("tokens.txt").is_file()
 }
 
+fn default_model_is_complete(directory: &Path) -> bool {
+    asr_model_is_complete(directory) && directory.join(VAD_FILE).is_file()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{DEFAULT_MODEL_ID, asr_model_is_complete};
+    use super::{DEFAULT_MODEL_ID, VAD_FILE, asr_model_is_complete, default_model_is_complete};
 
     #[test]
     fn asr_model_needs_both_required_files() {
@@ -297,6 +306,9 @@ mod tests {
         assert!(!asr_model_is_complete(&directory));
         fs::write(directory.join("tokens.txt"), []).unwrap();
         assert!(asr_model_is_complete(&directory));
+        assert!(!default_model_is_complete(&directory));
+        fs::write(directory.join(VAD_FILE), []).unwrap();
+        assert!(default_model_is_complete(&directory));
         fs::remove_dir_all(directory).unwrap();
     }
 

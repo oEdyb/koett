@@ -7,6 +7,7 @@ use std::time::Duration;
 use koett_engine::audio::{AudioRecording, capture_default_microphone};
 use koett_engine::model::{self, ModelProgress};
 use koett_engine::transcription::{ParakeetTranscriber, Transcriber};
+use sherpa_onnx::LinearResampler;
 
 struct Arguments {
     model_directory: PathBuf,
@@ -75,7 +76,7 @@ fn run() -> Result<(), String> {
 }
 
 fn run_self_test() -> Result<(), String> {
-    let (sample, mut transcriber) = load_self_test()?;
+    let (_, sample, mut transcriber) = load_self_test()?;
     let result = transcriber.transcribe(&sample)?;
     check_self_test_text(&result.text)?;
     print_result("official-model-sample", result);
@@ -84,31 +85,48 @@ fn run_self_test() -> Result<(), String> {
 }
 
 fn run_long_self_test(duration: Duration) -> Result<(), String> {
-    let (sample, mut transcriber) = load_self_test()?;
-    let target_samples = sample.sample_rate as usize * duration.as_secs() as usize;
-    let samples = sample
-        .samples
+    let (model_directory, sample, mut transcriber) = load_self_test()?;
+    let microphone_rate = 44_100;
+    let resampler = LinearResampler::create(sample.sample_rate, microphone_rate)
+        .ok_or_else(|| "could not create the long self-test resampler".to_string())?;
+    let pattern = resampler.resample(&sample.samples, true);
+    let target_samples = microphone_rate as usize * duration.as_secs() as usize;
+    let samples = pattern
         .iter()
         .copied()
         .cycle()
         .take(target_samples)
         .collect();
-    let expected_repetitions = target_samples / sample.samples.len();
-    let audio = AudioRecording::new(sample.sample_rate, samples)?;
+    let expected_repetitions = target_samples / pattern.len();
+    let audio = AudioRecording::new(microphone_rate, samples)?;
     let result = transcriber.transcribe(&audio)?;
     check_self_test_text(&result.text)?;
-    let recognized_repetitions = result
-        .text
-        .to_ascii_lowercase()
-        .matches("old portrait")
-        .count();
-    if recognized_repetitions < expected_repetitions {
+    let normalized = result.text.to_ascii_lowercase();
+    let recognized_starts = normalized.matches("phoebe").count();
+    let recognized_ends = normalized.matches("old portrait").count();
+    if recognized_starts < expected_repetitions || recognized_ends < expected_repetitions {
         return Err(format!(
-            "long self-test recognized {recognized_repetitions} of {expected_repetitions} repeated samples"
+            "long self-test recognized {recognized_starts} starts and {recognized_ends} ends for {expected_repetitions} repeated samples"
+        ));
+    }
+
+    let short_sample = AudioRecording::read_wav(&model_directory.join("test_wavs").join("1.wav"))?;
+    let short_resampler = LinearResampler::create(short_sample.sample_rate, microphone_rate)
+        .ok_or_else(|| "could not create the short-utterance resampler".to_string())?;
+    let short_samples = short_resampler.resample(&short_sample.samples, true);
+    let mut mostly_silent = vec![0.0_f32; microphone_rate as usize * 60];
+    let insertion = mostly_silent.len() / 2;
+    mostly_silent[insertion..insertion + short_samples.len()].copy_from_slice(&short_samples);
+    let short_result =
+        transcriber.transcribe(&AudioRecording::new(microphone_rate, mostly_silent)?)?;
+    if !short_result.text.to_ascii_lowercase().contains("love you") {
+        return Err(format!(
+            "long self-test lost the isolated short utterance: {}",
+            short_result.text
         ));
     }
     eprintln!(
-        "long_self_test=passed audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5} recognized_repetitions={recognized_repetitions}",
+        "long_self_test=passed sample_rate={microphone_rate} audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5} recognized_starts={recognized_starts} recognized_ends={recognized_ends} short_utterance=passed",
         result.audio_duration.as_secs_f64(),
         result.transcription.as_secs_f64() * 1_000.0,
         result.realtime_factor()
@@ -116,7 +134,7 @@ fn run_long_self_test(duration: Duration) -> Result<(), String> {
     Ok(())
 }
 
-fn load_self_test() -> Result<(AudioRecording, ParakeetTranscriber), String> {
+fn load_self_test() -> Result<(PathBuf, AudioRecording, ParakeetTranscriber), String> {
     let cancelled = AtomicBool::new(false);
     let mut last_percent = None;
     let model_directory = model::ensure_default_model(&cancelled, |progress| match progress {
@@ -133,7 +151,7 @@ fn load_self_test() -> Result<(AudioRecording, ParakeetTranscriber), String> {
     let sample = model_directory.join("test_wavs").join("0.wav");
     let audio = AudioRecording::read_wav(&sample)?;
     let transcriber = ParakeetTranscriber::load(&model_directory, 2)?;
-    Ok((audio, transcriber))
+    Ok((model_directory, audio, transcriber))
 }
 
 fn check_self_test_text(text: &str) -> Result<(), String> {

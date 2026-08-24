@@ -1,3 +1,4 @@
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
@@ -12,6 +13,9 @@ use crate::model::VAD_FILE;
 const MODEL_SAMPLE_RATE: i32 = 16_000;
 const LONG_RECORDING_THRESHOLD: Duration = Duration::from_secs(30);
 const VAD_WINDOW_SIZE: usize = 512;
+const MAX_DECODE_SAMPLES: usize = MODEL_SAMPLE_RATE as usize * 20;
+const DECODE_OVERLAP_SAMPLES: usize = MODEL_SAMPLE_RATE as usize * 2;
+const MAX_OVERLAP_WORDS: usize = 20;
 
 pub struct Transcript {
     pub text: String,
@@ -31,7 +35,7 @@ pub trait Transcriber {
 
 pub struct ParakeetTranscriber {
     recognizer: OfflineRecognizer,
-    vad: VoiceActivityDetector,
+    vad: Option<VoiceActivityDetector>,
     model_load: Duration,
 }
 
@@ -68,19 +72,25 @@ impl ParakeetTranscriber {
         let started = Instant::now();
         let recognizer = OfflineRecognizer::create(&config)
             .ok_or_else(|| "sherpa-onnx could not load the model".to_string())?;
-        let mut vad_config = VadModelConfig::default();
-        vad_config.silero_vad.model =
-            Some(path_string(&required_file(model_directory, VAD_FILE)?)?);
-        vad_config.silero_vad.threshold = 0.25;
-        vad_config.silero_vad.min_silence_duration = 0.5;
-        vad_config.silero_vad.min_speech_duration = 0.5;
-        vad_config.silero_vad.max_speech_duration = 10.0;
-        vad_config.silero_vad.window_size = VAD_WINDOW_SIZE as i32;
-        vad_config.sample_rate = MODEL_SAMPLE_RATE;
-        vad_config.num_threads = 1;
-        vad_config.provider = Some("cpu".to_string());
-        let vad = VoiceActivityDetector::create(&vad_config, 60.0)
-            .ok_or_else(|| "sherpa-onnx could not load voice detection".to_string())?;
+        let vad_path = model_directory.join(VAD_FILE);
+        let vad = if vad_path.is_file() {
+            let mut vad_config = VadModelConfig::default();
+            vad_config.silero_vad.model = Some(path_string(&vad_path)?);
+            vad_config.silero_vad.threshold = 0.5;
+            vad_config.silero_vad.min_silence_duration = 0.5;
+            vad_config.silero_vad.min_speech_duration = 0.25;
+            vad_config.silero_vad.max_speech_duration = 20.0;
+            vad_config.silero_vad.window_size = VAD_WINDOW_SIZE as i32;
+            vad_config.sample_rate = MODEL_SAMPLE_RATE;
+            vad_config.num_threads = 1;
+            vad_config.provider = Some("cpu".to_string());
+            Some(
+                VoiceActivityDetector::create(&vad_config, 60.0)
+                    .ok_or_else(|| "sherpa-onnx could not load voice detection".to_string())?,
+            )
+        } else {
+            None
+        };
 
         Ok(Self {
             recognizer,
@@ -141,34 +151,43 @@ impl ParakeetTranscriber {
             resampled.as_slice()
         };
 
-        self.vad.reset();
-        let mut chunks = samples.chunks_exact(VAD_WINDOW_SIZE);
-        for chunk in &mut chunks {
-            self.vad.accept_waveform(chunk);
-        }
-        let remainder = chunks.remainder();
-        if !remainder.is_empty() {
-            let mut final_window = [0.0_f32; VAD_WINDOW_SIZE];
-            final_window[..remainder.len()].copy_from_slice(remainder);
-            self.vad.accept_waveform(&final_window);
-        }
-        self.vad.flush();
-
         let mut parts = Vec::new();
-        while let Some(segment) = self.vad.front() {
-            self.vad.pop();
-            let stream = self.recognizer.create_stream();
-            stream.accept_waveform(MODEL_SAMPLE_RATE, segment.samples());
-            self.recognizer.decode(&stream);
-            let result = stream
-                .get_result()
-                .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
-            let text = result.text.trim();
+        let mut vad_segments = 0;
+        let mut decode_chunks = 0;
+        if let Some(vad) = &self.vad {
+            vad.reset();
+            let mut chunks = samples.chunks_exact(VAD_WINDOW_SIZE);
+            for chunk in &mut chunks {
+                vad.accept_waveform(chunk);
+            }
+            let remainder = chunks.remainder();
+            if !remainder.is_empty() {
+                let mut final_window = [0.0_f32; VAD_WINDOW_SIZE];
+                final_window[..remainder.len()].copy_from_slice(remainder);
+                vad.accept_waveform(&final_window);
+            }
+            vad.flush();
+
+            while let Some(segment) = vad.front() {
+                vad.pop();
+                vad_segments += 1;
+                let (text, chunks) = self.decode_bounded(segment.samples())?;
+                decode_chunks += chunks;
+                if !text.is_empty() {
+                    parts.push(text);
+                }
+            }
+        } else {
+            let (text, chunks) = self.decode_bounded(samples)?;
+            decode_chunks = chunks;
             if !text.is_empty() {
-                parts.push(text.to_string());
+                parts.push(text);
             }
         }
-        eprintln!("transcription_segments={}", parts.len());
+        eprintln!(
+            "transcription_vad={} transcription_segments={vad_segments} transcription_decode_chunks={decode_chunks}",
+            self.vad.is_some()
+        );
 
         Ok(Transcript {
             text: parts.join(" "),
@@ -176,6 +195,114 @@ impl ParakeetTranscriber {
             transcription: started.elapsed(),
         })
     }
+
+    fn decode_bounded(&self, samples: &[f32]) -> Result<(String, usize), String> {
+        let mut text = String::new();
+        let ranges = bounded_decode_ranges(samples.len());
+        for range in &ranges {
+            let stream = self.recognizer.create_stream();
+            stream.accept_waveform(MODEL_SAMPLE_RATE, &samples[range.clone()]);
+            self.recognizer.decode(&stream);
+            let result = stream
+                .get_result()
+                .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
+            merge_overlapping_text(&mut text, &result.text);
+        }
+        Ok((text, ranges.len()))
+    }
+}
+
+fn bounded_decode_ranges(sample_count: usize) -> Vec<Range<usize>> {
+    let mut ranges = Vec::new();
+    let mut start = 0;
+    while start < sample_count {
+        let end = (start + MAX_DECODE_SAMPLES).min(sample_count);
+        ranges.push(start..end);
+        if end == sample_count {
+            break;
+        }
+        start = end - DECODE_OVERLAP_SAMPLES;
+    }
+    ranges
+}
+
+fn merge_overlapping_text(existing: &mut String, next: &str) {
+    let next = next.trim();
+    if next.is_empty() {
+        return;
+    }
+    if existing.is_empty() {
+        existing.push_str(next);
+        return;
+    }
+
+    let existing_words = existing.split_whitespace().collect::<Vec<_>>();
+    let next_words = next.split_whitespace().collect::<Vec<_>>();
+    let overlap = overlapping_prefix_words(&existing_words, &next_words);
+    let remainder = next_words[overlap..].join(" ");
+    if !remainder.is_empty() {
+        existing.push(' ');
+        existing.push_str(&remainder);
+    }
+}
+
+fn overlapping_prefix_words(existing: &[&str], next: &[&str]) -> usize {
+    let existing = existing
+        .iter()
+        .rev()
+        .take(MAX_OVERLAP_WORDS)
+        .rev()
+        .map(|word| normalize_word(word))
+        .collect::<Vec<_>>();
+    let next = next
+        .iter()
+        .take(MAX_OVERLAP_WORDS)
+        .map(|word| normalize_word(word))
+        .collect::<Vec<_>>();
+    let mut best = None;
+    for existing_count in 2..=existing.len() {
+        for next_count in 2..=next.len() {
+            let distance = word_distance(
+                &existing[existing.len() - existing_count..],
+                &next[..next_count],
+            );
+            let compared = existing_count.max(next_count);
+            if distance * 3 > compared {
+                continue;
+            }
+            let common = compared - distance;
+            let score = common as isize * 10
+                - distance as isize * 3
+                - existing_count.abs_diff(next_count) as isize;
+            let candidate = (score, common, usize::MAX - distance, next_count);
+            if best.is_none_or(|current| candidate > current) {
+                best = Some(candidate);
+            }
+        }
+    }
+    best.map(|(_, _, _, next_count)| next_count).unwrap_or(0)
+}
+
+fn word_distance(left: &[String], right: &[String]) -> usize {
+    let mut previous = (0..=right.len()).collect::<Vec<_>>();
+    for (left_index, left_word) in left.iter().enumerate() {
+        let mut current = vec![left_index + 1; right.len() + 1];
+        for (right_index, right_word) in right.iter().enumerate() {
+            let substitution = previous[right_index] + usize::from(left_word != right_word);
+            let insertion = current[right_index] + 1;
+            let deletion = previous[right_index + 1] + 1;
+            current[right_index + 1] = substitution.min(insertion).min(deletion);
+        }
+        previous = current;
+    }
+    previous[right.len()]
+}
+
+fn normalize_word(word: &str) -> String {
+    word.chars()
+        .filter(|character| character.is_alphanumeric() || *character == '\'')
+        .flat_map(char::to_lowercase)
+        .collect()
 }
 
 fn required_file(directory: &Path, name: &str) -> Result<PathBuf, String> {
@@ -197,7 +324,10 @@ fn path_string(path: &Path) -> Result<String, String> {
 mod tests {
     use std::time::Duration;
 
-    use super::{Transcript, needs_segmentation};
+    use super::{
+        DECODE_OVERLAP_SAMPLES, MAX_DECODE_SAMPLES, Transcript, bounded_decode_ranges,
+        merge_overlapping_text, needs_segmentation,
+    };
 
     #[test]
     fn realtime_factor_uses_transcription_over_audio() {
@@ -214,5 +344,51 @@ mod tests {
     fn only_long_recordings_use_segmentation() {
         assert!(!needs_segmentation(Duration::from_secs(30)));
         assert!(needs_segmentation(Duration::from_secs(31)));
+    }
+
+    #[test]
+    fn decoder_chunks_have_a_hard_limit_and_overlap() {
+        let ranges = bounded_decode_ranges(MAX_DECODE_SAMPLES * 2);
+
+        assert!(ranges.iter().all(|range| range.len() <= MAX_DECODE_SAMPLES));
+        assert_eq!(ranges[0], 0..MAX_DECODE_SAMPLES);
+        assert_eq!(ranges[1].start, ranges[0].end - DECODE_OVERLAP_SAMPLES);
+        assert_eq!(ranges.last().unwrap().end, MAX_DECODE_SAMPLES * 2);
+    }
+
+    #[test]
+    fn overlapping_text_is_not_duplicated() {
+        let mut text = "One quiet sentence, with three shared words.".to_string();
+
+        merge_overlapping_text(&mut text, "three shared words. Then the next thought.");
+
+        assert_eq!(
+            text,
+            "One quiet sentence, with three shared words. Then the next thought."
+        );
+    }
+
+    #[test]
+    fn overlapping_text_tolerates_a_small_recognition_change() {
+        let mut text = "I don't wish to see it anymore, observed Phoebe, turning away.".to_string();
+
+        merge_overlapping_text(
+            &mut text,
+            "I don't wish to see it any more, observed Phoebe, turning away. The next thought.",
+        );
+
+        assert_eq!(
+            text,
+            "I don't wish to see it anymore, observed Phoebe, turning away. The next thought."
+        );
+    }
+
+    #[test]
+    fn unmatched_text_is_never_dropped() {
+        let mut text = "First chunk.".to_string();
+
+        merge_overlapping_text(&mut text, "Different second chunk.");
+
+        assert_eq!(text, "First chunk. Different second chunk.");
     }
 }
