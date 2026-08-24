@@ -28,8 +28,10 @@ toggle recording, one warmed local Parakeet 110M engine, paste, Markdown
 history, a configurable shortcut, start at login, a tray menu, single-instance
 protection, first-run model progress, and visible failures. Windows uses Win32.
 Linux uses X11 APIs on X11 and XDG portals on Wayland. The macOS app is
-unchanged. Native CI builds are required, and real Windows and Linux desktop
-tests are still required before either port ships.
+unchanged. Fedora 44 GNOME Wayland and Windows 11 now pass the real
+microphone-to-paste-and-history flow. A real X11 desktop test, Windows
+keyboard-only tray test, and bounded long-recording test are still required
+before either port ships.
 
 Native CI also runs `koett-engine --self-test` on fresh Windows x86-64, Linux
 x86-64, and Linux ARM64 VMs. The self-test uses the desktop app's real pinned
@@ -376,14 +378,21 @@ Dictation and all audio transcription stay local.
   to paste-post and Wispr Flow at 481 ms median through its finished-processing
   state. The supported claim is only: “about four times faster than Wispr Flow
   in my test on my M5 Mac.” Do not claim universal superiority.
-- The cross-platform core passes 22 unit tests and strict Clippy checks on the
+- The cross-platform core passes 23 unit tests and strict Clippy checks on the
   host and for `x86_64-pc-windows-msvc`. A Debian container passes the Linux
   tests, strict Clippy checks, and full release link. Actionlint passes the
   Windows 2025 and Ubuntu 22.04 artifact workflow. It packages Windows x86-64
   plus Linux x86-64 and ARM64. Fresh native CI VMs also download, verify, load,
-  and run the pinned model against its official sample. These checks still do
-  not prove microphone, tray, shortcut, portal, or paste behavior on a real
-  desktop.
+  and run the pinned model against its official sample. Native CI run
+  `32737928880` is green at `25e2aed` on all three targets.
+- Fedora 44 ARM64 GNOME Wayland passes the real global-shortcut, microphone,
+  local Parakeet, automatic-paste, and saved-history flow.
+- The exact Windows x86-64 CI artifact at `25e2aed` passes the real Windows 11
+  recording UI, microphone, local Parakeet, automatic-paste, saved-history,
+  one-process, and start-at-login registry checks. The successful five-second
+  capture had RMS `0.047456` and peak `0.499985`; recoverable WASAPI `Xrun`
+  notices did not abort it. The executable SHA-256 is
+  `4ffd96436b79e51a4604e4ff8da2534b111a05985f2dbc0e21f93235b971680d`.
 
 ## Known unfinished work
 
@@ -392,8 +401,11 @@ Dictation and all audio transcription stay local.
 - Live-confirm rich Markdown and math in the installed panel.
 - The public binary release is Apple silicon only. There is no Intel Mac build.
 - Windows and Linux have complete v0.1 implementation branches, but they are
-  not released platforms yet. Run clean Windows 11, Ubuntu GNOME Wayland, and
-  one X11 desktop test before merging or promising three-platform support.
+  not released platforms yet. One mostly-silent long Windows recording stalled
+  inside transcription in the emulated VM, while a fixed five-second spoken
+  recording passed. Isolate and bound that long-recording path. Also verify the
+  Windows tray through keyboard activation on a real keyboard and run one X11
+  desktop test before merging or promising three-platform support.
 - The Linux artifact targets glibc 2.35 or newer and needs the system ALSA
   runtime. Wayland also needs the GlobalShortcuts, RemoteDesktop, and Clipboard
   desktop portals. A GNOME tray needs AppIndicator support.
