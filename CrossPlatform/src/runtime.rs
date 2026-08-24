@@ -1,4 +1,6 @@
 use std::path::Path;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -27,11 +29,13 @@ pub enum EngineUpdate {
 pub struct EngineHandle {
     pub commands: Sender<EngineCommand>,
     pub updates: Receiver<EngineUpdate>,
+    cancelled: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
 }
 
 impl EngineHandle {
     pub fn stop(mut self) {
+        self.cancelled.store(true, Ordering::Release);
         let _ = self.commands.send(EngineCommand::Quit);
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
@@ -42,22 +46,31 @@ impl EngineHandle {
 pub fn start(settings: Settings) -> EngineHandle {
     let (command_sender, command_receiver) = mpsc::channel();
     let (update_sender, update_receiver) = mpsc::channel();
-    let worker = thread::spawn(move || run(settings, command_receiver, update_sender));
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let worker_cancelled = cancelled.clone();
+    let worker =
+        thread::spawn(move || run(settings, command_receiver, update_sender, worker_cancelled));
 
     EngineHandle {
         commands: command_sender,
         updates: update_receiver,
+        cancelled,
         worker: Some(worker),
     }
 }
 
-fn run(settings: Settings, commands: Receiver<EngineCommand>, updates: Sender<EngineUpdate>) {
+fn run(
+    settings: Settings,
+    commands: Receiver<EngineCommand>,
+    updates: Sender<EngineUpdate>,
+    cancelled: Arc<AtomicBool>,
+) {
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
 
     let model_directory = match settings.model_directory {
         Some(path) => Ok(path),
-        None => model::ensure_default_model(|progress| {
+        None => model::ensure_default_model(&cancelled, |progress| {
             let _ = updates.send(EngineUpdate::ModelProgress(progress));
         }),
     };
@@ -68,6 +81,9 @@ fn run(settings: Settings, commands: Receiver<EngineCommand>, updates: Sender<En
             return;
         }
     };
+    if cancelled.load(Ordering::Acquire) {
+        return;
+    }
     let model = model_name(&model_directory);
     let mut transcriber = match ParakeetTranscriber::load(&model_directory, 2) {
         Ok(transcriber) => transcriber,
@@ -76,6 +92,9 @@ fn run(settings: Settings, commands: Receiver<EngineCommand>, updates: Sender<En
             return;
         }
     };
+    if cancelled.load(Ordering::Acquire) {
+        return;
+    }
 
     status = match status.next(AppEvent::Prepared, None) {
         Ok(status) => status,
@@ -156,7 +175,6 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
         .clone()
         .next(AppEvent::Recovered, None)
         .expect("an error can recover");
-    send_status(updates, status);
 }
 
 fn send_status(updates: &Sender<EngineUpdate>, status: &AppStatus) {

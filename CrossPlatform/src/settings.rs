@@ -50,7 +50,14 @@ impl Settings {
         let data = serde_json::to_vec_pretty(self)
             .map_err(|error| format!("could not encode settings: {error}"))?;
         fs::write(path, data)
-            .map_err(|error| format!("could not write {}: {error}", path.display()))
+            .map_err(|error| format!("could not write {}: {error}", path.display()))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+                .map_err(|error| format!("could not protect {}: {error}", path.display()))?;
+        }
+        Ok(())
     }
 
     pub fn model_directory(&self) -> Result<PathBuf, String> {

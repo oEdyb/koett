@@ -10,7 +10,7 @@ fn main() {
 #[cfg(target_os = "linux")]
 fn main() {
     if let Err(error) = koett_engine::linux::run() {
-        eprintln!("Koett: {error}");
+        koett_engine::linux::show_fatal_error(&error);
     }
 }
 

@@ -36,7 +36,7 @@ pub fn default_model_directory() -> Result<PathBuf, String> {
     }
 
     Ok(project_directories()?
-        .data_dir()
+        .data_local_dir()
         .join("models")
         .join(DEFAULT_MODEL_ID))
 }

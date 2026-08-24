@@ -9,15 +9,20 @@ Koett stays a voice-to-text app first. Ask is optional and must not complicate,
 slow, or require cloud access for normal dictation.
 
 Koett is currently an English-only macOS dictation app for Apple Silicon. Swift
-owns the macOS app. Do not rewrite it or add a cross-platform shell without a
-measured Windows or Linux spike.
+owns the macOS app. Windows and Linux use the separate native Rust app under
+`CrossPlatform/`; do not rewrite the working macOS app.
 
 ## Implementation status — 2026-08-24
 
-The first native Rust portability spike lives under `CrossPlatform/`. It uses
-CPAL 0.18.1, ringbuf 0.5.1, and statically linked sherpa-onnx 1.13.5. The
-headless WAV and microphone engine passes on macOS and source-checks for Windows.
-Real Windows and Linux runtime proof is still required before either port ships.
+The native Rust Windows and Linux v0.1 implementation lives under
+`CrossPlatform/` on `feat/windows-linux-v0.1`. It is one small process with
+CPAL 0.18.2, ringbuf 0.5.1, and statically linked sherpa-onnx 1.13.5. It provides
+toggle recording, one warmed local Parakeet 110M engine, paste, Markdown
+history, a configurable shortcut, start at login, a tray menu, single-instance
+protection, first-run model progress, and visible failures. Windows uses Win32.
+Linux uses X11 APIs on X11 and XDG portals on Wayland. The macOS app is
+unchanged. Native CI builds are required, and real Windows and Linux desktop
+tests are still required before either port ships.
 
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
@@ -351,6 +356,12 @@ Dictation and all audio transcription stay local.
   to paste-post and Wispr Flow at 481 ms median through its finished-processing
   state. The supported claim is only: “about four times faster than Wispr Flow
   in my test on my M5 Mac.” Do not claim universal superiority.
+- The cross-platform core passes 22 unit tests and strict Clippy checks on the
+  host and for `x86_64-pc-windows-msvc`. A Debian container passes the Linux
+  tests, strict Clippy checks, and full release link. Actionlint passes the
+  Windows 2025 and Ubuntu 22.04 artifact workflow. These checks prove source and
+  package builds, not microphone, tray, shortcut, portal, or paste behavior on
+  a real desktop.
 
 ## Known unfinished work
 
@@ -358,9 +369,12 @@ Dictation and all audio transcription stay local.
   client returns HTTP 401. Koett intentionally does not import browser cookies.
 - Live-confirm rich Markdown and math in the installed panel.
 - The public binary release is Apple silicon only. There is no Intel Mac build.
-- Windows and Linux are product directions, not implemented platforms. First
-  prove a headless portability spike on real hardware before adding a shared
-  shell or promising three-platform support.
+- Windows and Linux have complete v0.1 implementation branches, but they are
+  not released platforms yet. Run clean Windows 11, Ubuntu GNOME Wayland, and
+  one X11 desktop test before merging or promising three-platform support.
+- The Linux artifact targets glibc 2.35 or newer and needs the system ALSA
+  runtime. Wayland also needs the GlobalShortcuts, RemoteDesktop, and Clipboard
+  desktop portals. A GNOME tray needs AppIndicator support.
 
 ## Required checks
 

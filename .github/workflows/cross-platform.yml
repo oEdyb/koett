@@ -54,7 +54,7 @@ jobs:
           if-no-files-found: error
 
   linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     defaults:
       run:
         working-directory: CrossPlatform
@@ -79,6 +79,7 @@ jobs:
         run: cargo build --release --locked --bin koett
       - name: Package
         run: |
+          strip target/release/koett
           install -Dm755 target/release/koett dist/Koett-Linux-x86_64/koett
           install -Dm755 packaging/linux/install.sh dist/Koett-Linux-x86_64/install.sh
           install -Dm644 packaging/linux/com.olledyberg.Koett.desktop \

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::mem::size_of;
 use std::ptr;
 use std::str::FromStr;
@@ -67,7 +68,10 @@ const MENU_START_AT_LOGIN: usize = 3;
 const MENU_QUIT: usize = 4;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
-static APP: AtomicPtr<WindowsApp> = AtomicPtr::new(ptr::null_mut());
+// All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
+// a window procedure while a menu or dialog is open, so callbacks use
+// try_borrow instead of creating overlapping references from a raw pointer.
+static APP: AtomicPtr<RefCell<WindowsApp>> = AtomicPtr::new(ptr::null_mut());
 
 struct WindowsApp {
     hwnd: HWND,
@@ -77,7 +81,7 @@ struct WindowsApp {
     paste_target: Option<HWND>,
     overlay: HWND,
     shortcut_window: HWND,
-    registered_shortcut: Shortcut,
+    registered_shortcut: Option<Shortcut>,
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
     tray: NOTIFYICONDATAW,
@@ -95,7 +99,7 @@ pub fn run() -> Result<(), String> {
         set_start_at_login(true)?;
     }
     let engine = runtime::start(settings.clone());
-    let mut app = Box::new(WindowsApp {
+    let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
         engine: Some(engine),
         settings,
@@ -103,15 +107,16 @@ pub fn run() -> Result<(), String> {
         paste_target: None,
         overlay: HWND::default(),
         shortcut_window: HWND::default(),
-        registered_shortcut: shortcut,
+        registered_shortcut: None,
         levels: None,
         recording_started: None,
         tray: NOTIFYICONDATAW::default(),
         taskbar_created: 0,
-    });
+    }));
 
-    let result = unsafe { run_message_loop(&mut app, shortcut) };
+    let result = unsafe { run_message_loop(&app, shortcut) };
     APP.store(ptr::null_mut(), Ordering::Release);
+    let mut app = app.borrow_mut();
     if let Some(engine) = app.engine.take() {
         engine.stop();
     }
@@ -155,7 +160,11 @@ fn single_instance() -> Result<HANDLE, String> {
     Ok(handle)
 }
 
-unsafe fn run_message_loop(app: &mut Box<WindowsApp>, shortcut: Shortcut) -> Result<(), String> {
+unsafe fn run_message_loop(
+    app_cell: &RefCell<WindowsApp>,
+    shortcut: Shortcut,
+) -> Result<(), String> {
+    let mut app = app_cell.borrow_mut();
     let instance = unsafe { GetModuleHandleW(None) }
         .map_err(|error| format!("could not find the Koett module: {error}"))?;
     let class = WNDCLASSEXW {
@@ -254,19 +263,32 @@ unsafe fn run_message_loop(app: &mut Box<WindowsApp>, shortcut: Shortcut) -> Res
         )
     }
     .map_err(|error| format!("could not create the Koett shortcut window: {error}"))?;
-    APP.store(&mut **app, Ordering::Release);
+    APP.store(ptr::from_ref(app_cell).cast_mut(), Ordering::Release);
     app.taskbar_created = unsafe { RegisterWindowMessageW(w!("TaskbarCreated")) };
     app.add_tray()?;
 
     let (modifiers, virtual_key) = windows_shortcut(shortcut);
-    unsafe { RegisterHotKey(Some(hwnd), HOTKEY_ID, modifiers | MOD_NOREPEAT, virtual_key) }
-        .map_err(|_| format!("the shortcut {shortcut} is already in use"))?;
+    if unsafe { RegisterHotKey(Some(hwnd), HOTKEY_ID, modifiers | MOD_NOREPEAT, virtual_key) }
+        .is_ok()
+    {
+        app.registered_shortcut = Some(shortcut);
+    } else {
+        app.update_tray();
+    }
     if unsafe { SetTimer(Some(hwnd), POLL_TIMER_ID, 33, None) } == 0 {
         return Err("could not start the Koett event timer".to_string());
     }
+    drop(app);
 
     let mut message = MSG::default();
-    while unsafe { GetMessageW(&mut message, None, 0, 0) }.as_bool() {
+    loop {
+        let result = unsafe { GetMessageW(&mut message, None, 0, 0) }.0;
+        if result == 0 {
+            break;
+        }
+        if result == -1 {
+            return Err("the Windows message loop failed".to_string());
+        }
         unsafe {
             let _ = TranslateMessage(&message);
             DispatchMessageW(&message);
@@ -275,7 +297,9 @@ unsafe fn run_message_loop(app: &mut Box<WindowsApp>, shortcut: Shortcut) -> Res
 
     unsafe {
         let _ = KillTimer(Some(hwnd), POLL_TIMER_ID);
-        let _ = UnregisterHotKey(Some(hwnd), HOTKEY_ID);
+        if app_cell.borrow().registered_shortcut.is_some() {
+            let _ = UnregisterHotKey(Some(hwnd), HOTKEY_ID);
+        }
     }
     Ok(())
 }
@@ -286,26 +310,32 @@ unsafe extern "system" fn window_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
-    let app = APP.load(Ordering::Acquire);
-    if !app.is_null() {
-        let app = unsafe { &mut *app };
+    let app_cell = APP.load(Ordering::Acquire);
+    if !app_cell.is_null() {
+        let app_cell = unsafe { &*app_cell };
         match message {
             WM_HOTKEY => {
-                app.toggle();
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.toggle();
+                }
                 return Default::default();
             }
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
-                app.poll_updates();
-                if app.status == AppStatus::Recording {
-                    unsafe {
-                        let _ = InvalidateRect(Some(app.overlay), None, false);
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.poll_updates();
+                    if app.status == AppStatus::Recording {
+                        unsafe {
+                            let _ = InvalidateRect(Some(app.overlay), None, false);
+                        }
                     }
                 }
                 return Default::default();
             }
             TRAY_MESSAGE => {
                 let event = lparam.0 as u32 & 0xffff;
-                if event == WM_RBUTTONUP || event == WM_LBUTTONUP {
+                if (event == WM_RBUTTONUP || event == WM_LBUTTONUP)
+                    && let Ok(mut app) = app_cell.try_borrow_mut()
+                {
                     app.show_menu();
                 }
                 return Default::default();
@@ -316,7 +346,9 @@ unsafe extern "system" fn window_proc(
             }
             _ => {}
         }
-        if message == app.taskbar_created {
+        if let Ok(mut app) = app_cell.try_borrow_mut()
+            && message == app.taskbar_created
+        {
             let _ = app.add_tray();
             return Default::default();
         }
@@ -331,9 +363,11 @@ unsafe extern "system" fn overlay_proc(
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
     if message == WM_PAINT {
-        let app = APP.load(Ordering::Acquire);
-        if !app.is_null() {
-            unsafe { paint_overlay(hwnd, &*app) };
+        let app_cell = APP.load(Ordering::Acquire);
+        if !app_cell.is_null()
+            && let Ok(app) = unsafe { &*app_cell }.try_borrow()
+        {
+            unsafe { paint_overlay(hwnd, &app) };
             return Default::default();
         }
     }
@@ -346,11 +380,13 @@ unsafe extern "system" fn shortcut_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
-    let app = APP.load(Ordering::Acquire);
+    let app_cell = APP.load(Ordering::Acquire);
     match message {
-        WM_KEYDOWN | WM_SYSKEYDOWN if !app.is_null() => {
-            if let Some(shortcut) = shortcut_from_virtual_key(wparam.0 as u32) {
-                unsafe { &mut *app }.change_shortcut(shortcut);
+        WM_KEYDOWN | WM_SYSKEYDOWN if !app_cell.is_null() => {
+            if let Some(shortcut) = shortcut_from_virtual_key(wparam.0 as u32)
+                && let Ok(mut app) = unsafe { &*app_cell }.try_borrow_mut()
+            {
+                app.change_shortcut(shortcut);
             }
             return Default::default();
         }
@@ -371,6 +407,12 @@ unsafe extern "system" fn shortcut_proc(
 
 impl WindowsApp {
     fn toggle(&mut self) {
+        if self.status != AppStatus::Ready
+            && self.status != AppStatus::Recording
+            && !matches!(self.status, AppStatus::Error(_))
+        {
+            return;
+        }
         if self.status == AppStatus::Recording {
             let focused = unsafe { GetForegroundWindow() };
             self.paste_target = (focused != self.hwnd).then_some(focused);
@@ -439,7 +481,7 @@ impl WindowsApp {
     }
 
     fn change_shortcut(&mut self, shortcut: Shortcut) {
-        if shortcut == self.registered_shortcut {
+        if self.registered_shortcut == Some(shortcut) {
             unsafe {
                 let _ = ShowWindow(self.shortcut_window, SW_HIDE);
             }
@@ -447,27 +489,33 @@ impl WindowsApp {
         }
 
         let old = self.registered_shortcut;
-        unsafe {
-            let _ = UnregisterHotKey(Some(self.hwnd), HOTKEY_ID);
+        if old.is_some() {
+            unsafe {
+                let _ = UnregisterHotKey(Some(self.hwnd), HOTKEY_ID);
+            }
         }
         let (modifiers, key) = windows_shortcut(shortcut);
         if unsafe { RegisterHotKey(Some(self.hwnd), HOTKEY_ID, modifiers | MOD_NOREPEAT, key) }
             .is_err()
         {
-            let (old_modifiers, old_key) = windows_shortcut(old);
-            let restored = unsafe {
-                RegisterHotKey(
-                    Some(self.hwnd),
-                    HOTKEY_ID,
-                    old_modifiers | MOD_NOREPEAT,
-                    old_key,
-                )
-            };
-            if restored.is_err() {
-                show_fatal_error("Koett could not restore the old shortcut. Restart Koett.");
-            } else {
+            self.registered_shortcut = old.filter(|old| {
+                let (old_modifiers, old_key) = windows_shortcut(*old);
+                unsafe {
+                    RegisterHotKey(
+                        Some(self.hwnd),
+                        HOTKEY_ID,
+                        old_modifiers | MOD_NOREPEAT,
+                        old_key,
+                    )
+                }
+                .is_ok()
+            });
+            if self.registered_shortcut.is_some() {
                 show_fatal_error("That shortcut is already in use. The old shortcut still works.");
+            } else {
+                show_fatal_error("That shortcut is already in use. Choose another shortcut.");
             }
+            self.update_tray();
             return;
         }
 
@@ -477,20 +525,25 @@ impl WindowsApp {
             unsafe {
                 let _ = UnregisterHotKey(Some(self.hwnd), HOTKEY_ID);
             }
-            let (old_modifiers, old_key) = windows_shortcut(old);
-            let _ = unsafe {
-                RegisterHotKey(
-                    Some(self.hwnd),
-                    HOTKEY_ID,
-                    old_modifiers | MOD_NOREPEAT,
-                    old_key,
-                )
-            };
+            self.registered_shortcut = old.filter(|old| {
+                let (old_modifiers, old_key) = windows_shortcut(*old);
+                unsafe {
+                    RegisterHotKey(
+                        Some(self.hwnd),
+                        HOTKEY_ID,
+                        old_modifiers | MOD_NOREPEAT,
+                        old_key,
+                    )
+                }
+                .is_ok()
+            });
             self.settings.shortcut = old_text;
             show_fatal_error(&error);
+            self.update_tray();
             return;
         }
-        self.registered_shortcut = shortcut;
+        self.registered_shortcut = Some(shortcut);
+        self.update_tray();
         unsafe {
             let _ = ShowWindow(self.shortcut_window, SW_HIDE);
         }
@@ -500,17 +553,33 @@ impl WindowsApp {
         if text.trim().is_empty() {
             return;
         }
-        if let Err(error) = copy_text(self.hwnd, text) {
-            show_fatal_error(&error);
+        let delivery_error = if let Err(error) = copy_text(self.hwnd, text) {
+            Some(error)
         } else if self.paste_target == Some(unsafe { GetForegroundWindow() })
             && let Err(error) = paste()
         {
-            show_fatal_error(&format!("Copied. Automatic paste failed: {error}"));
-        }
-        if let Err(error) = history::append_transcript(model, text) {
-            show_fatal_error(&format!(
-                "The text was delivered, but history failed: {error}"
-            ));
+            Some(format!("Copied. Automatic paste failed: {error}"))
+        } else {
+            None
+        };
+        let history_error = match history::append_transcript_resilient(model, text) {
+            Ok(Some(path)) => Some(format!(
+                "The main transcript history failed. Koett saved this transcript to {}",
+                path.display()
+            )),
+            Ok(None) => None,
+            Err(error) => Some(error),
+        };
+        if history_error.is_some() || delivery_error.is_some() {
+            let error = match (history_error, delivery_error) {
+                (Some(history), Some(delivery)) => {
+                    format!("{delivery}\nTranscript history also failed: {history}")
+                }
+                (Some(history), None) => format!("Transcript history failed: {history}"),
+                (None, Some(delivery)) => delivery,
+                (None, None) => unreachable!(),
+            };
+            show_fatal_error(&error);
         }
         self.paste_target = None;
     }
@@ -544,7 +613,11 @@ impl WindowsApp {
     }
 
     fn update_tray(&mut self) {
-        let status = status_text(&self.status);
+        let status = if self.registered_shortcut.is_some() {
+            status_text(&self.status).to_string()
+        } else {
+            "Shortcut unavailable — click Koett to change it".to_string()
+        };
         set_wide_array(&mut self.tray.szTip, &format!("Koett — {status}"));
         let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
     }

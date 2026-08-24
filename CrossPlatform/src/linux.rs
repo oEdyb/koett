@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
+use std::process::Stdio;
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
@@ -181,22 +182,49 @@ pub fn run() -> Result<(), String> {
     .assume_sni_available(true)
     .spawn()
     .ok();
-    let result = match std::env::var("XDG_SESSION_TYPE")
+    let session_type = std::env::var("XDG_SESSION_TYPE")
         .unwrap_or_default()
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "x11" => run_x11(settings, action_receiver, tray.as_ref()),
-        _ => tokio::runtime::Builder::new_multi_thread()
+        .to_ascii_lowercase();
+    let use_x11 = session_type == "x11"
+        || (session_type != "wayland"
+            && std::env::var_os("WAYLAND_DISPLAY").is_none()
+            && std::env::var_os("DISPLAY").is_some());
+    let result = if use_x11 {
+        run_x11(settings, action_receiver, tray.as_ref())
+    } else {
+        tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .map_err(|error| format!("could not start the Linux event loop: {error}"))?
-            .block_on(run_wayland(settings, action_receiver, tray.as_ref())),
+            .block_on(run_wayland(settings, action_receiver, tray.as_ref()))
     };
     if let Some(tray) = tray {
         tray.shutdown().wait();
     }
     result
+}
+
+pub fn show_fatal_error(error: &str) {
+    eprintln!("Koett: {error}");
+    let message = format!("Koett could not start.\n\n{error}");
+    let dialogs: [(&str, &[&str]); 3] = [
+        ("zenity", &["--error", "--title=Koett", "--text"]),
+        ("kdialog", &["--title", "Koett", "--error"]),
+        ("notify-send", &["--urgency=critical", "Koett"]),
+    ];
+    for (program, arguments) in dialogs {
+        if Command::new(program)
+            .args(arguments)
+            .arg(&message)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .is_ok()
+        {
+            break;
+        }
+    }
 }
 
 fn single_instance() -> Result<File, String> {
@@ -208,6 +236,7 @@ fn single_instance() -> Result<File, String> {
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
     let file = std::fs::OpenOptions::new()
         .create(true)
+        .truncate(false)
         .read(true)
         .write(true)
         .open(&path)
@@ -226,9 +255,13 @@ fn run_x11(
         .map_err(|error| format!("invalid shortcut {}: {error}", settings.shortcut))?;
     let hotkeys = GlobalHotKeyManager::new()
         .map_err(|error| format!("could not start X11 shortcuts: {error}"))?;
-    hotkeys
-        .register(shortcut)
-        .map_err(|error| format!("the shortcut {} is unavailable: {error}", settings.shortcut))?;
+    let mut shortcut_registered = hotkeys.register(shortcut).is_ok();
+    if !shortcut_registered {
+        update_tray_status(
+            tray,
+            "Error: shortcut unavailable — open settings to change it",
+        );
+    }
     let mut output = X11Output::new()?;
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
@@ -256,14 +289,25 @@ fn run_x11(
             }
         }
         while let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
-            if event.id == shortcut.id() && event.state == HotKeyState::Pressed {
+            if shortcut_registered
+                && event.id == shortcut.id()
+                && event.state == HotKeyState::Pressed
+            {
                 app.toggle(|| output.focused_window());
             }
         }
         app.poll(
             |model, text, target| {
                 let delivered = output.deliver(text, target);
-                let saved = history::append_transcript(model, text);
+                let saved =
+                    history::append_transcript_resilient(model, text).and_then(|fallback| {
+                        fallback.map_or(Ok(()), |path| {
+                            Err(format!(
+                                "the transcript was saved to the fallback file {}",
+                                path.display()
+                            ))
+                        })
+                    });
                 delivered.and(saved)
             },
             |status| update_tray_status(tray, status),
@@ -275,8 +319,11 @@ fn run_x11(
             {
                 match HotKey::from_str(&updated.shortcut) {
                     Ok(next) if hotkeys.register(next).is_ok() => {
-                        let _ = hotkeys.unregister(shortcut);
+                        if shortcut_registered {
+                            let _ = hotkeys.unregister(shortcut);
+                        }
                         shortcut = next;
+                        shortcut_registered = true;
                         settings.shortcut = updated.shortcut;
                         update_tray_settings(tray, &settings.shortcut, settings.start_at_login);
                     }
@@ -285,7 +332,13 @@ fn run_x11(
                 }
             }
         }
-        std::thread::sleep(Duration::from_millis(10));
+        std::thread::sleep(Duration::from_millis(
+            if app.status == AppStatus::Recording {
+                16
+            } else {
+                50
+            },
+        ));
     }
 }
 
@@ -354,13 +407,17 @@ async fn run_wayland(
         settings.start_at_login,
     );
 
-    let output = WaylandOutput::new(connection).await.ok();
+    let output = WaylandOutput::new(connection).await?;
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
     let mut activations = shortcuts
         .receive_activated()
         .await
         .map_err(|error| format!("could not listen for Koett shortcuts: {error}"))?;
+    let mut shortcut_changes = shortcuts
+        .receive_shortcuts_changed()
+        .await
+        .map_err(|error| format!("could not watch Koett shortcut changes: {error}"))?;
     let mut timer = tokio::time::interval(Duration::from_millis(10));
 
     loop {
@@ -373,6 +430,23 @@ async fn run_wayland(
                     app.toggle(|| None);
                 }
             }
+            change = shortcut_changes.next() => {
+                let Some(change) = change else {
+                    return Err("the desktop shortcut settings session closed".to_string());
+                };
+                if let Some(changed) = change
+                    .shortcuts()
+                    .iter()
+                    .find(|changed| changed.id() == SHORTCUT_ID)
+                {
+                    shortcut_label = Some(changed.trigger_description().to_string());
+                    update_tray_settings(
+                        tray,
+                        shortcut_label.as_deref().unwrap_or(&settings.shortcut),
+                        settings.start_at_login,
+                    );
+                }
+            }
             _ = timer.tick() => {
                 while let Ok(action) = actions.try_recv() {
                     match action {
@@ -383,14 +457,21 @@ async fn run_wayland(
                             open_path(&crate::paths::settings_file()?)?;
                         }
                         TrayAction::ConfigureShortcut => {
-                            shortcuts
-                                .configure_shortcuts(
-                                    &shortcut_session,
-                                    None,
-                                    ConfigureShortcutsOptions::default(),
-                                )
-                                .await
-                                .map_err(|error| format!("could not open shortcut settings: {error}"))?;
+                            if shortcuts.version() < 2 {
+                                update_tray_status(
+                                    tray,
+                                    "Error: this desktop cannot edit portal shortcuts",
+                                );
+                            } else {
+                                shortcuts
+                                    .configure_shortcuts(
+                                        &shortcut_session,
+                                        None,
+                                        ConfigureShortcutsOptions::default(),
+                                    )
+                                    .await
+                                    .map_err(|error| format!("could not open shortcut settings: {error}"))?;
+                            }
                         }
                         TrayAction::ToggleStartAtLogin => {
                             settings.start_at_login = !settings.start_at_login;
@@ -417,10 +498,23 @@ async fn run_wayland(
                     |status| update_tray_status(tray, status),
                 );
                 for (model, text) in completed {
-                    if let Some(output) = &output {
-                        let _ = output.deliver(&text).await;
+                    let mut error = None;
+                    if let Err(delivery_error) = output.deliver(&text).await {
+                        error = Some(delivery_error);
                     }
-                    history::append_transcript(&model, &text)?;
+                    match history::append_transcript_resilient(&model, &text) {
+                        Ok(Some(path)) => {
+                            error = Some(format!(
+                                "the transcript was saved to the fallback file {}",
+                                path.display()
+                            ));
+                        }
+                        Ok(None) => {}
+                        Err(save_error) => error = Some(save_error),
+                    }
+                    if let Some(error) = error {
+                        update_tray_status(tray, format!("Error: {error}").as_str());
+                    }
                 }
             }
         }
@@ -443,7 +537,10 @@ impl LinuxEngine {
     }
 
     fn toggle(&mut self, focused_window: impl FnOnce() -> Option<u32>) {
-        if self.status != AppStatus::Ready && self.status != AppStatus::Recording {
+        if self.status != AppStatus::Ready
+            && self.status != AppStatus::Recording
+            && !matches!(self.status, AppStatus::Error(_))
+        {
             return;
         }
         if self.status == AppStatus::Recording {
@@ -461,6 +558,7 @@ impl LinuxEngine {
         mut deliver: impl FnMut(&str, &str, Option<u32>) -> Result<(), String>,
         mut status_changed: impl FnMut(&str),
     ) {
+        let mut interaction_error = None;
         while let Ok(update) = self.engine.updates.try_recv() {
             match update {
                 EngineUpdate::Status(status) => {
@@ -471,6 +569,7 @@ impl LinuxEngine {
                     if let Err(error) = deliver(&model, &transcript.text, self.paste_target.take())
                     {
                         eprintln!("Koett: {error}");
+                        interaction_error = Some(error);
                     }
                 }
                 EngineUpdate::ModelProgress(ModelProgress::Downloading { received, total }) => {
@@ -485,6 +584,10 @@ impl LinuxEngine {
                 }
                 EngineUpdate::RecordingStarted(_) => {}
             }
+        }
+        if let Some(error) = interaction_error {
+            self.status = AppStatus::Error(error);
+            status_changed(status_text(&self.status).as_str());
         }
     }
 }
@@ -525,11 +628,14 @@ fn open_transcripts() -> Result<(), String> {
         .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
     std::fs::create_dir_all(parent)
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    std::fs::OpenOptions::new()
+    let file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(&path)
         .map_err(|error| format!("could not create {}: {error}", path.display()))?;
+    use std::os::unix::fs::PermissionsExt as _;
+    file.set_permissions(std::fs::Permissions::from_mode(0o600))
+        .map_err(|error| format!("could not protect {}: {error}", path.display()))?;
     open_path(&path)
 }
 
@@ -593,8 +699,7 @@ impl X11Output {
     fn paste(&self) -> Result<(), String> {
         let result = (|| {
             self.send_key(xproto::KEY_PRESS_EVENT, self.control_keycode)?;
-            self.send_key(xproto::KEY_PRESS_EVENT, self.v_keycode)?;
-            self.send_key(xproto::KEY_RELEASE_EVENT, self.v_keycode)
+            self.send_key(xproto::KEY_PRESS_EVENT, self.v_keycode)
         })();
         let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.v_keycode);
         let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.control_keycode);
@@ -658,11 +763,13 @@ impl WaylandOutput {
             .create_session(CreateSessionOptions::default())
             .await
             .map_err(|error| format!("could not create an automatic-paste session: {error}"))?;
+        let restore_token = read_restore_token();
         remote_desktop
             .select_devices(
                 &session,
                 SelectDevicesOptions::default()
                     .set_devices(Some(DeviceType::Keyboard.into()))
+                    .set_restore_token(restore_token.as_deref())
                     .set_persist_mode(PersistMode::ExplicitlyRevoked),
             )
             .await
@@ -679,6 +786,9 @@ impl WaylandOutput {
             .map_err(|error| format!("automatic paste was not enabled: {error}"))?;
         if !selected.devices().contains(DeviceType::Keyboard) || !selected.is_clipboard_enabled() {
             return Err("the desktop did not enable keyboard and clipboard access".to_string());
+        }
+        if let Some(token) = selected.restore_token() {
+            save_restore_token(token)?;
         }
 
         let current_text = Arc::new(RwLock::new(String::new()));
@@ -788,4 +898,51 @@ fn set_start_at_login(enabled: bool) -> Result<(), String> {
     );
     std::fs::write(&file, desktop)
         .map_err(|error| format!("could not write {}: {error}", file.display()))
+}
+
+fn restore_token_file() -> Result<std::path::PathBuf, String> {
+    let base = directories::BaseDirs::new()
+        .ok_or_else(|| "could not find the Linux state directory".to_string())?;
+    let directory = base
+        .state_dir()
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| base.config_dir().to_path_buf());
+    Ok(directory.join("koett").join("remote-desktop-token"))
+}
+
+fn read_restore_token() -> Option<String> {
+    let token = std::fs::read_to_string(restore_token_file().ok()?).ok()?;
+    let token = token.trim();
+    (!token.is_empty()).then(|| token.to_string())
+}
+
+fn save_restore_token(token: &str) -> Result<(), String> {
+    use std::os::unix::fs::{OpenOptionsExt as _, PermissionsExt as _};
+
+    let path = restore_token_file()?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
+    std::fs::create_dir_all(parent)
+        .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
+    std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700))
+        .map_err(|error| format!("could not protect {}: {error}", parent.display()))?;
+    let temporary = path.with_extension(format!("tmp-{}", std::process::id()));
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .mode(0o600)
+        .open(&temporary)
+        .map_err(|error| format!("could not create {}: {error}", temporary.display()))?;
+    file.write_all(token.as_bytes())
+        .and_then(|_| file.sync_all())
+        .map_err(|error| format!("could not write {}: {error}", temporary.display()))?;
+    std::fs::rename(&temporary, &path).map_err(|error| {
+        format!(
+            "could not install {} as {}: {error}",
+            temporary.display(),
+            path.display()
+        )
+    })
 }

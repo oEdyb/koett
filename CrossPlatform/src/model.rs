@@ -2,6 +2,7 @@ use std::fmt::Write as _;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use bzip2::read::BzDecoder;
@@ -24,7 +25,10 @@ pub enum ModelProgress {
     Ready,
 }
 
-pub fn ensure_default_model(mut progress: impl FnMut(ModelProgress)) -> Result<PathBuf, String> {
+pub fn ensure_default_model(
+    cancelled: &AtomicBool,
+    mut progress: impl FnMut(ModelProgress),
+) -> Result<PathBuf, String> {
     let destination = paths::default_model_directory()?;
     if model_is_complete(&destination) {
         progress(ModelProgress::Ready);
@@ -37,20 +41,34 @@ pub fn ensure_default_model(mut progress: impl FnMut(ModelProgress)) -> Result<P
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
     let archive = parent.join(format!("{DEFAULT_MODEL_ID}.tar.bz2.part"));
 
-    download_archive(&archive, &mut progress)?;
+    let download = download_archive(&archive, cancelled, &mut progress);
+    if let Err(error) = download {
+        let _ = fs::remove_file(&archive);
+        return Err(error);
+    }
+    if let Err(error) = check_cancelled(cancelled) {
+        let _ = fs::remove_file(&archive);
+        return Err(error);
+    }
     progress(ModelProgress::Installing);
-    let result = install_archive(&archive, parent, &destination);
+    let result = install_archive(&archive, parent, &destination, cancelled);
     let _ = fs::remove_file(&archive);
     result?;
     progress(ModelProgress::Ready);
     Ok(destination)
 }
 
-fn download_archive(path: &Path, progress: &mut impl FnMut(ModelProgress)) -> Result<(), String> {
+fn download_archive(
+    path: &Path,
+    cancelled: &AtomicBool,
+    progress: &mut impl FnMut(ModelProgress),
+) -> Result<(), String> {
     let agent = ureq::Agent::config_builder()
         .https_only(true)
         .max_redirects(5)
         .timeout_global(Some(Duration::from_secs(30 * 60)))
+        .timeout_connect(Some(Duration::from_secs(15)))
+        .timeout_recv_response(Some(Duration::from_secs(30)))
         .tls_config(
             TlsConfig::builder()
                 .root_certs(RootCerts::PlatformVerifier)
@@ -69,6 +87,7 @@ fn download_archive(path: &Path, progress: &mut impl FnMut(ModelProgress)) -> Re
     let mut received = 0_u64;
     let mut buffer = [0_u8; 64 * 1024];
     loop {
+        check_cancelled(cancelled)?;
         let count = input
             .read(&mut buffer)
             .map_err(|error| format!("could not read the model download: {error}"))?;
@@ -109,7 +128,12 @@ fn download_archive(path: &Path, progress: &mut impl FnMut(ModelProgress)) -> Re
     Ok(())
 }
 
-fn install_archive(archive: &Path, parent: &Path, destination: &Path) -> Result<(), String> {
+fn install_archive(
+    archive: &Path,
+    parent: &Path,
+    destination: &Path,
+    cancelled: &AtomicBool,
+) -> Result<(), String> {
     let staging = parent.join(format!(".{DEFAULT_MODEL_ID}-{}", std::process::id()));
     if staging.exists() {
         fs::remove_dir_all(&staging)
@@ -127,6 +151,7 @@ fn install_archive(archive: &Path, parent: &Path, destination: &Path) -> Result<
             .entries()
             .map_err(|error| format!("could not read the model archive: {error}"))?;
         for entry in entries {
+            check_cancelled(cancelled)?;
             let mut entry =
                 entry.map_err(|error| format!("could not read a model archive entry: {error}"))?;
             let kind = entry.header().entry_type();
@@ -164,6 +189,14 @@ fn install_archive(archive: &Path, parent: &Path, destination: &Path) -> Result<
     })();
     let _ = fs::remove_dir_all(&staging);
     result
+}
+
+fn check_cancelled(cancelled: &AtomicBool) -> Result<(), String> {
+    if cancelled.load(Ordering::Acquire) {
+        Err("model setup cancelled".to_string())
+    } else {
+        Ok(())
+    }
 }
 
 fn model_is_complete(directory: &Path) -> bool {
