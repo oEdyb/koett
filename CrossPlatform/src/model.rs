@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use bzip2::read::BzDecoder;
 use sha2::{Digest, Sha256};
-use ureq::tls::{RootCerts, TlsConfig};
+use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
 
 use crate::paths::{self, DEFAULT_MODEL_ID};
 
@@ -72,6 +72,7 @@ fn download_archive(
         .timeout_recv_body(Some(Duration::from_secs(5)))
         .tls_config(
             TlsConfig::builder()
+                .provider(tls_provider())
                 .root_certs(RootCerts::PlatformVerifier)
                 .build(),
         )
@@ -127,6 +128,17 @@ fn download_archive(
         return Err("the model download failed its SHA-256 check".to_string());
     }
     Ok(())
+}
+
+fn tls_provider() -> TlsProvider {
+    #[cfg(target_os = "windows")]
+    {
+        TlsProvider::NativeTls
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        TlsProvider::Rustls
+    }
 }
 
 fn install_archive(
