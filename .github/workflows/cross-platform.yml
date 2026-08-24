@@ -9,7 +9,6 @@ on:
   push:
     branches:
       - main
-      - "feat/windows-linux-v0.1"
     paths:
       - "CrossPlatform/**"
       - ".github/workflows/cross-platform.yml"
@@ -40,6 +39,8 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Runtime self-test
+        run: cargo run --release --locked --bin koett-engine -- --self-test
       - name: Package
         shell: pwsh
         run: |
@@ -77,6 +78,8 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Runtime self-test
+        run: cargo run --release --locked --bin koett-engine -- --self-test
       - name: Package
         run: |
           strip target/release/koett

@@ -1,9 +1,11 @@
 use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use koett_engine::audio::{AudioRecording, capture_default_microphone};
+use koett_engine::model::{self, ModelProgress};
 use koett_engine::transcription::{ParakeetTranscriber, Transcriber};
 
 struct Arguments {
@@ -28,6 +30,13 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), String> {
+    if env::args().nth(1).as_deref() == Some("--self-test") {
+        if env::args().count() != 2 {
+            return Err("--self-test does not take arguments".to_string());
+        }
+        return run_self_test();
+    }
+
     let arguments = parse_arguments()?;
     let mut transcriber = ParakeetTranscriber::load(&arguments.model_directory, arguments.threads)?;
     eprintln!(
@@ -52,6 +61,36 @@ fn run() -> Result<(), String> {
     Ok(())
 }
 
+fn run_self_test() -> Result<(), String> {
+    let cancelled = AtomicBool::new(false);
+    let mut last_percent = None;
+    let model_directory = model::ensure_default_model(&cancelled, |progress| match progress {
+        ModelProgress::Downloading { received, total } => {
+            let percent = received.saturating_mul(100) / total;
+            if last_percent != Some(percent) {
+                eprintln!("model_download_percent={percent}");
+                last_percent = Some(percent);
+            }
+        }
+        ModelProgress::Installing => eprintln!("model_installing=true"),
+        ModelProgress::Ready => eprintln!("model_ready=true"),
+    })?;
+    let sample = model_directory.join("test_wavs").join("0.wav");
+    let audio = AudioRecording::read_wav(&sample)?;
+    let mut transcriber = ParakeetTranscriber::load(&model_directory, 2)?;
+    let result = transcriber.transcribe(&audio)?;
+    let normalized = result.text.to_ascii_lowercase();
+    if !normalized.contains("phoebe") || !normalized.contains("old portrait") {
+        return Err(format!(
+            "the official model sample produced unexpected text: {}",
+            result.text
+        ));
+    }
+    print_result(&sample.display().to_string(), result);
+    eprintln!("self_test=passed");
+    Ok(())
+}
+
 fn print_result(source: &str, result: koett_engine::transcription::Transcript) {
     println!("{}\t{}", source, result.text);
     eprintln!(
@@ -67,7 +106,10 @@ fn parse_arguments() -> Result<Arguments, String> {
     let values = env::args().skip(1).collect::<Vec<_>>();
     if values.len() < 2 {
         return Err(format!(
-            "usage: {} MODEL_DIRECTORY WAV_FILE [WAV_FILE ...]\n       {} MODEL_DIRECTORY --mic SECONDS",
+            "usage: {} MODEL_DIRECTORY WAV_FILE [WAV_FILE ...]\n       {} MODEL_DIRECTORY --mic SECONDS\n       {} --self-test",
+            env::args()
+                .next()
+                .unwrap_or_else(|| "koett-engine".to_string()),
             env::args()
                 .next()
                 .unwrap_or_else(|| "koett-engine".to_string()),
