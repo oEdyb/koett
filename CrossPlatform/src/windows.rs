@@ -92,7 +92,9 @@ pub fn run() -> Result<(), String> {
     unsafe {
         let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     }
-    let mutex = single_instance()?;
+    let Some(mutex) = single_instance()? else {
+        return Ok(());
+    };
     let settings = Settings::load()?;
     let shortcut = Shortcut::from_str(&settings.shortcut)?;
     let startup_warning = settings
@@ -149,16 +151,16 @@ pub fn show_fatal_error(message: &str) {
     }
 }
 
-fn single_instance() -> Result<HANDLE, String> {
+fn single_instance() -> Result<Option<HANDLE>, String> {
     let handle = unsafe { CreateMutexW(None, true, w!("Local\\Koett")) }
         .map_err(|error| format!("could not create the Koett process lock: {error}"))?;
     if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
         unsafe {
             let _ = CloseHandle(handle);
         }
-        return Err("Koett is already running".to_string());
+        return Ok(None);
     }
-    Ok(handle)
+    Ok(Some(handle))
 }
 
 unsafe fn run_message_loop(
