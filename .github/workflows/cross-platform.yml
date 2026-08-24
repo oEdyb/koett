@@ -1,0 +1,95 @@
+name: Windows and Linux
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "CrossPlatform/**"
+      - ".github/workflows/cross-platform.yml"
+  push:
+    branches:
+      - main
+      - "feat/windows-linux-v0.1"
+    paths:
+      - "CrossPlatform/**"
+      - ".github/workflows/cross-platform.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2025
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install Rust
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal --component clippy
+          rustup default 1.92.0
+      - name: Test
+        run: cargo test --locked
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --release --locked --bin koett
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
+          Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
+          Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
+          Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: Koett-Windows-x86_64
+          path: CrossPlatform/dist/Koett-Windows-x86_64.zip
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
+            libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev pkg-config
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal --component clippy
+          rustup default 1.92.0
+      - name: Test
+        run: cargo test --locked
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --release --locked --bin koett
+      - name: Package
+        run: |
+          install -Dm755 target/release/koett dist/Koett-Linux-x86_64/koett
+          install -Dm755 packaging/linux/install.sh dist/Koett-Linux-x86_64/install.sh
+          install -Dm644 packaging/linux/com.olledyberg.Koett.desktop \
+            dist/Koett-Linux-x86_64/com.olledyberg.Koett.desktop
+          install -Dm644 packaging/linux/com.olledyberg.Koett.svg \
+            dist/Koett-Linux-x86_64/com.olledyberg.Koett.svg
+          install -Dm644 README.md THIRD_PARTY_NOTICES.md ../LICENSE \
+            -t dist/Koett-Linux-x86_64
+          tar -C dist -czf dist/Koett-Linux-x86_64.tar.gz Koett-Linux-x86_64
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: Koett-Linux-x86_64
+          path: CrossPlatform/dist/Koett-Linux-x86_64.tar.gz
+          if-no-files-found: error

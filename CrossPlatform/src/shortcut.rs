@@ -33,6 +33,29 @@ impl Shortcut {
         }
         Ok(Self { modifiers, key })
     }
+
+    pub fn portal_trigger(&self) -> String {
+        let mut parts = Vec::new();
+        if self.modifiers.control {
+            parts.push("CTRL".to_string());
+        }
+        if self.modifiers.alt {
+            parts.push("ALT".to_string());
+        }
+        if self.modifiers.shift {
+            parts.push("SHIFT".to_string());
+        }
+        if self.modifiers.super_key {
+            parts.push("LOGO".to_string());
+        }
+        parts.push(match self.key {
+            Key::Space => "space".to_string(),
+            Key::Letter(letter) => letter.to_ascii_lowercase().to_string(),
+            Key::Number(number) => number.to_string(),
+            Key::Function(number) => format!("F{number}"),
+        });
+        parts.join("+")
+    }
 }
 
 impl FromStr for Shortcut {
@@ -136,6 +159,16 @@ mod tests {
         assert_eq!(
             Shortcut::from_str("Win+Alt+K").unwrap().to_string(),
             "Alt+Super+K"
+        );
+    }
+
+    #[test]
+    fn shortcut_builds_an_xdg_preferred_trigger() {
+        assert_eq!(
+            Shortcut::from_str("Ctrl+Shift+Space")
+                .unwrap()
+                .portal_trigger(),
+            "CTRL+SHIFT+space"
         );
     }
 }

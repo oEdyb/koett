@@ -5,6 +5,7 @@ use directories::ProjectDirs;
 const QUALIFIER: &str = "com";
 const ORGANIZATION: &str = "DybergCo";
 const APPLICATION: &str = "Koett";
+pub const DEFAULT_MODEL_ID: &str = "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8";
 
 fn project_directories() -> Result<ProjectDirs, String> {
     ProjectDirs::from(QUALIFIER, ORGANIZATION, APPLICATION)
@@ -34,7 +35,10 @@ pub fn default_model_directory() -> Result<PathBuf, String> {
         return Ok(bundled);
     }
 
-    Ok(project_directories()?.data_dir().join("model"))
+    Ok(project_directories()?
+        .data_dir()
+        .join("models")
+        .join(DEFAULT_MODEL_ID))
 }
 
 #[cfg(test)]

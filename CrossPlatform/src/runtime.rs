@@ -4,6 +4,7 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 use crate::audio::{AudioLevels, MicrophoneRecorder};
+use crate::model::{self, ModelProgress};
 use crate::settings::Settings;
 use crate::state::{AppEvent, AppStatus};
 use crate::transcription::{ParakeetTranscriber, Transcriber, Transcript};
@@ -16,6 +17,7 @@ pub enum EngineCommand {
 pub enum EngineUpdate {
     Status(AppStatus),
     RecordingStarted(AudioLevels),
+    ModelProgress(ModelProgress),
     TranscriptReady {
         model: String,
         transcript: Transcript,
@@ -53,7 +55,13 @@ fn run(settings: Settings, commands: Receiver<EngineCommand>, updates: Sender<En
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
 
-    let model_directory = match settings.model_directory() {
+    let model_directory = match settings.model_directory {
+        Some(path) => Ok(path),
+        None => model::ensure_default_model(|progress| {
+            let _ = updates.send(EngineUpdate::ModelProgress(progress));
+        }),
+    };
+    let model_directory = match model_directory {
         Ok(path) => path,
         Err(error) => {
             send_error(&updates, error);
