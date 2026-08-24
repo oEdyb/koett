@@ -1,6 +1,6 @@
 use std::path::Path;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -95,7 +95,7 @@ pub struct MicrophoneRecorder {
     started: Instant,
     maximum_duration: Duration,
     overflowed: Arc<AtomicBool>,
-    stream_failed: Arc<AtomicBool>,
+    stream_error: Arc<Mutex<Option<String>>>,
     levels: AudioLevels,
 }
 
@@ -122,7 +122,7 @@ impl MicrophoneRecorder {
         let capacity = sample_rate * 2;
         let (producer, consumer) = HeapRb::<f32>::new(capacity).split();
         let overflowed = Arc::new(AtomicBool::new(false));
-        let stream_failed = Arc::new(AtomicBool::new(false));
+        let stream_error = Arc::new(Mutex::new(None));
         let levels = AudioLevels::new();
         let stop_collector = Arc::new(AtomicBool::new(false));
         let collector_stop = stop_collector.clone();
@@ -146,7 +146,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::I16 => build_stream::<i16>(
@@ -155,7 +155,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::I24 => build_stream::<I24>(
@@ -164,7 +164,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::I32 => build_stream::<i32>(
@@ -173,7 +173,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::I64 => build_stream::<i64>(
@@ -182,7 +182,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::U8 => build_stream::<u8>(
@@ -191,7 +191,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::U16 => build_stream::<u16>(
@@ -200,7 +200,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::U24 => build_stream::<U24>(
@@ -209,7 +209,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::U32 => build_stream::<u32>(
@@ -218,7 +218,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::U64 => build_stream::<u64>(
@@ -227,7 +227,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::F32 => build_stream::<f32>(
@@ -236,7 +236,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             SampleFormat::F64 => build_stream::<f64>(
@@ -245,7 +245,7 @@ impl MicrophoneRecorder {
                 channels,
                 producer,
                 overflowed.clone(),
-                stream_failed.clone(),
+                stream_error.clone(),
                 levels.clone(),
             ),
             format => return Err(format!("unsupported microphone sample format: {format}")),
@@ -263,7 +263,7 @@ impl MicrophoneRecorder {
             started: Instant::now(),
             maximum_duration,
             overflowed,
-            stream_failed,
+            stream_error,
             levels,
         })
     }
@@ -282,8 +282,15 @@ impl MicrophoneRecorder {
             .join()
             .map_err(|_| "the microphone collector stopped unexpectedly".to_string())?;
 
-        if self.stream_failed.load(Ordering::Relaxed) {
-            return Err("the microphone stream failed; the recording is incomplete".to_string());
+        let stream_error = self
+            .stream_error
+            .lock()
+            .map_err(|_| "the microphone error state is unavailable".to_string())?
+            .clone();
+        if let Some(error) = stream_error {
+            return Err(format!(
+                "the microphone stream failed; the recording is incomplete: {error}"
+            ));
         }
         if self.overflowed.load(Ordering::Relaxed) {
             return Err("microphone buffer overflowed; the recording is incomplete".to_string());
@@ -329,7 +336,7 @@ fn build_stream<T>(
     channels: usize,
     mut producer: HeapProd<f32>,
     overflowed: Arc<AtomicBool>,
-    stream_failed: Arc<AtomicBool>,
+    stream_error: Arc<Mutex<Option<String>>>,
     levels: AudioLevels,
 ) -> Result<cpal::Stream, String>
 where
@@ -357,15 +364,39 @@ where
                     levels.update((square_sum / frame_count as f32).sqrt(), peak);
                 }
             },
-            move |_| stream_failed.store(true, Ordering::Relaxed),
+            move |error| {
+                if is_recoverable_stream_error(error.kind()) {
+                    eprintln!(
+                        "microphone_stream_notice kind={:?} error={error}",
+                        error.kind()
+                    );
+                } else {
+                    eprintln!(
+                        "microphone_stream_error kind={:?} error={error}",
+                        error.kind()
+                    );
+                    if let Ok(mut stored) = stream_error.lock()
+                        && stored.is_none()
+                    {
+                        *stored = Some(error.to_string());
+                    }
+                }
+            },
             None,
         )
         .map_err(|error| format!("could not create the microphone stream: {error}"))
 }
 
+fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
+    matches!(
+        kind,
+        cpal::ErrorKind::DeviceChanged | cpal::ErrorKind::RealtimeDenied | cpal::ErrorKind::Xrun
+    )
+}
+
 #[cfg(test)]
 mod tests {
-    use super::AudioRecording;
+    use super::{AudioRecording, is_recoverable_stream_error};
 
     #[test]
     fn duration_uses_sample_count_and_rate() {
@@ -382,5 +413,15 @@ mod tests {
     fn levels_report_rms_and_peak() {
         let audio = AudioRecording::new(16_000, vec![-0.5, 0.5]).unwrap();
         assert_eq!(audio.levels(), (0.5, 0.5));
+    }
+
+    #[test]
+    fn recoverable_stream_notices_do_not_discard_recording() {
+        assert!(is_recoverable_stream_error(cpal::ErrorKind::DeviceChanged));
+        assert!(is_recoverable_stream_error(cpal::ErrorKind::RealtimeDenied));
+        assert!(is_recoverable_stream_error(cpal::ErrorKind::Xrun));
+        assert!(!is_recoverable_stream_error(
+            cpal::ErrorKind::StreamInvalidated
+        ));
     }
 }
