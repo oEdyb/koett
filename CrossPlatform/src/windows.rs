@@ -37,7 +37,8 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows::Win32::UI::Shell::{
     NIF_GUID, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NIM_SETFOCUS,
-    NIM_SETVERSION, NOTIFYICON_VERSION_4, NOTIFYICONDATAW, Shell_NotifyIconW, ShellExecuteW,
+    NIM_SETVERSION, NIN_SELECT, NINF_KEY, NOTIFYICON_VERSION_4, NOTIFYICONDATAW, Shell_NotifyIconW,
+    ShellExecuteW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
@@ -47,8 +48,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, SWP_NOACTIVATE,
     SWP_SHOWWINDOW, SetForegroundWindow, SetLayeredWindowAttributes, SetTimer, SetWindowPos,
     ShowWindow, TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
-    WINDOW_STYLE, WM_CLOSE, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP, WM_PAINT,
-    WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE,
+    WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
+    WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE,
     WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_OVERLAPPEDWINDOW, WS_POPUP,
 };
 use windows::core::{GUID, PCWSTR, w};
@@ -63,6 +64,7 @@ use crate::state::AppStatus;
 const HOTKEY_ID: i32 = 1;
 const POLL_TIMER_ID: usize = 1;
 const TRAY_MESSAGE: u32 = 0x8001;
+const NIN_KEYSELECT: u32 = NIN_SELECT | NINF_KEY;
 const MENU_CHANGE_SHORTCUT: usize = 1;
 const MENU_OPEN_HISTORY: usize = 2;
 const MENU_START_AT_LOGIN: usize = 3;
@@ -343,10 +345,14 @@ unsafe extern "system" fn window_proc(
             }
             TRAY_MESSAGE => {
                 let event = lparam.0 as u32 & 0xffff;
-                if (event == WM_RBUTTONUP || event == WM_LBUTTONUP)
-                    && let Ok(mut app) = app_cell.try_borrow_mut()
+                let anchor =
+                    matches!(event, NIN_SELECT | NIN_KEYSELECT).then(|| tray_anchor(wparam.0));
+                if matches!(
+                    event,
+                    WM_RBUTTONUP | WM_LBUTTONUP | WM_CONTEXTMENU | NIN_SELECT | NIN_KEYSELECT
+                ) && let Ok(mut app) = app_cell.try_borrow_mut()
                 {
-                    app.show_menu();
+                    app.show_menu(anchor);
                 }
                 return Default::default();
             }
@@ -644,7 +650,7 @@ impl WindowsApp {
         let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
     }
 
-    fn show_menu(&mut self) {
+    fn show_menu(&mut self, anchor: Option<POINT>) {
         unsafe {
             let Ok(menu) = CreatePopupMenu() else { return };
             let status = wide(&format!("Status: {}", status_text(&self.status)));
@@ -684,7 +690,13 @@ impl WindowsApp {
             let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("Quit Koett"));
 
             let mut point = POINT::default();
-            if GetCursorPos(&mut point).is_ok() {
+            let has_point = if let Some(anchor) = anchor {
+                point = anchor;
+                true
+            } else {
+                GetCursorPos(&mut point).is_ok()
+            };
+            if has_point {
                 let _ = SetForegroundWindow(self.hwnd);
                 let selected = TrackPopupMenu(
                     menu,
@@ -726,6 +738,13 @@ impl WindowsApp {
             MENU_QUIT => unsafe { PostQuitMessage(0) },
             _ => {}
         }
+    }
+}
+
+fn tray_anchor(value: usize) -> POINT {
+    POINT {
+        x: (value as u16 as i16) as i32,
+        y: ((value >> 16) as u16 as i16) as i32,
     }
 }
 
@@ -1075,7 +1094,7 @@ mod tests {
 
     use windows::Win32::UI::Input::KeyboardAndMouse::{MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT};
 
-    use super::{Shortcut, windows_shortcut};
+    use super::{Shortcut, tray_anchor, windows_shortcut};
 
     #[test]
     fn default_shortcut_maps_to_win32() {
@@ -1085,5 +1104,13 @@ mod tests {
             0x4000 | MOD_CONTROL.0 | MOD_SHIFT.0
         );
         assert_eq!(key, 0x20);
+    }
+
+    #[test]
+    fn tray_anchor_reads_signed_screen_coordinates() {
+        let packed = u32::from(u16::from_ne_bytes((-20_i16).to_ne_bytes())) as usize
+            | ((u32::from(u16::from_ne_bytes(300_i16.to_ne_bytes())) as usize) << 16);
+        let point = tray_anchor(packed);
+        assert_eq!((point.x, point.y), (-20, 300));
     }
 }
