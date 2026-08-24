@@ -5,6 +5,13 @@
 Keep Koett fast, local, barebones, and easy to understand. Make the smallest
 change that proves the next idea.
 
+For platform code and unfamiliar APIs, do not guess. First reproduce the
+problem and collect the exact error. Then read the current official platform
+documentation, the pinned library documentation, and a real reference example
+when one exists. Trace the root cause before editing code. Implement the
+smallest documented fix and verify the original user flow on the real platform.
+Do not ship a speculative workaround.
+
 Koett stays a voice-to-text app first. Ask is optional and must not complicate,
 slow, or require cloud access for normal dictation.
 
