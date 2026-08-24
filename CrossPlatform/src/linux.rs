@@ -5,6 +5,7 @@ use std::process::Stdio;
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use ashpd::desktop::clipboard::{Clipboard, SetSelectionOptions};
@@ -43,6 +44,20 @@ enum TrayAction {
     ConfigureShortcut,
     ToggleStartAtLogin,
     Quit,
+}
+
+enum TrayUpdate {
+    Status(String),
+    Settings {
+        shortcut: String,
+        start_at_login: bool,
+    },
+    Shutdown,
+}
+
+#[derive(Clone)]
+struct TrayUpdates {
+    sender: Sender<TrayUpdate>,
 }
 
 #[derive(Debug)]
@@ -186,8 +201,12 @@ pub fn run() -> Result<(), String> {
             "could not create the tray icon: {error}. Install or enable StatusNotifier/AppIndicator support"
         )
     })?;
+    let (tray_updates, tray_update_worker) = start_tray_updates(tray.clone());
     if let Some(error) = startup_warning {
-        update_tray_status(Some(&tray), "Error: start at login could not be enabled");
+        update_tray_status(
+            Some(&tray_updates),
+            "Error: start at login could not be enabled",
+        );
         let message = format!("Koett started, but start at login could not be enabled.\n\n{error}");
         eprintln!("Koett: {message}");
         show_desktop_message(&message);
@@ -200,16 +219,42 @@ pub fn run() -> Result<(), String> {
             && std::env::var_os("WAYLAND_DISPLAY").is_none()
             && std::env::var_os("DISPLAY").is_some());
     let result = if use_x11 {
-        run_x11(settings, action_receiver, Some(&tray))
+        run_x11(settings, action_receiver, Some(&tray_updates))
     } else {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .map_err(|error| format!("could not start the Linux event loop: {error}"))?
-            .block_on(run_wayland(settings, action_receiver, Some(&tray)))
+            .block_on(run_wayland(settings, action_receiver, Some(&tray_updates)))
     };
+    let _ = tray_updates.sender.send(TrayUpdate::Shutdown);
+    let _ = tray_update_worker.join();
     tray.shutdown().wait();
     result
+}
+
+fn start_tray_updates(tray: TrayHandle<LinuxTray>) -> (TrayUpdates, JoinHandle<()>) {
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        while let Ok(update) = receiver.recv() {
+            match update {
+                TrayUpdate::Status(status) => {
+                    let _ = tray.update(|tray| tray.status = status);
+                }
+                TrayUpdate::Settings {
+                    shortcut,
+                    start_at_login,
+                } => {
+                    let _ = tray.update(|tray| {
+                        tray.shortcut = shortcut;
+                        tray.start_at_login = start_at_login;
+                    });
+                }
+                TrayUpdate::Shutdown => break,
+            }
+        }
+    });
+    (TrayUpdates { sender }, worker)
 }
 
 pub fn show_fatal_error(error: &str) {
@@ -261,7 +306,7 @@ fn single_instance() -> Result<File, String> {
 fn run_x11(
     mut settings: Settings,
     actions: Receiver<TrayAction>,
-    tray: Option<&TrayHandle<LinuxTray>>,
+    tray: Option<&TrayUpdates>,
 ) -> Result<(), String> {
     let mut shortcut = HotKey::from_str(&settings.shortcut)
         .map_err(|error| format!("invalid shortcut {}: {error}", settings.shortcut))?;
@@ -357,7 +402,7 @@ fn run_x11(
 async fn run_wayland(
     mut settings: Settings,
     actions: Receiver<TrayAction>,
-    tray: Option<&TrayHandle<LinuxTray>>,
+    tray: Option<&TrayUpdates>,
 ) -> Result<(), String> {
     let shortcut = Shortcut::from_str(&settings.shortcut)?;
     let connection = ashpd::zbus::Connection::session()
@@ -614,21 +659,17 @@ fn status_text(status: &AppStatus) -> String {
     }
 }
 
-fn update_tray_status(tray: Option<&TrayHandle<LinuxTray>>, status: &str) {
+fn update_tray_status(tray: Option<&TrayUpdates>, status: &str) {
     if let Some(tray) = tray {
-        let _ = tray.update(|tray| tray.status = status.to_string());
+        let _ = tray.sender.send(TrayUpdate::Status(status.to_string()));
     }
 }
 
-fn update_tray_settings(
-    tray: Option<&TrayHandle<LinuxTray>>,
-    shortcut: &str,
-    start_at_login: bool,
-) {
+fn update_tray_settings(tray: Option<&TrayUpdates>, shortcut: &str, start_at_login: bool) {
     if let Some(tray) = tray {
-        let _ = tray.update(|tray| {
-            tray.shortcut = shortcut.to_string();
-            tray.start_at_login = start_at_login;
+        let _ = tray.sender.send(TrayUpdate::Settings {
+            shortcut: shortcut.to_string(),
+            start_at_login,
         });
     }
 }
