@@ -12,11 +12,17 @@ Koett is currently an English-only macOS dictation app for Apple Silicon. Swift
 owns the macOS app. Do not rewrite it or add a cross-platform shell without a
 measured Windows or Linux spike.
 
-## Implementation status — 2026-08-23
+## Implementation status — 2026-08-24
 
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
   optional local formatting, and optional Ask with spoken replies.
+- Public release `v0.1.0` provides the notarized Apple-silicon app at
+  `https://github.com/oEdyb/koett/releases/tag/v0.1.0`. It targets exact source
+  commit `10337fc9eeede3679ebc122a56f09197b86b01bd`. Apple accepted submission
+  `a37adefa-a412-473c-9444-d60257efbc6a`; the ticket is stapled, and host
+  Gatekeeper reports `source=Notarized Developer ID`. The release ZIP SHA-256
+  is `1f6a8eff4f0facc6e1018338781dfbfef15ac20987a21f14fd6697259630d6ae`.
 - The current signed release and installed app match UUID
   `30AB1997-EE20-3334-88C1-29B72CBFB7CD`. The Login Item is running. Olle
   live-confirmed no repeated Keychain prompt, clean text on the glass, and
@@ -201,10 +207,11 @@ measured Windows or Linux spike.
   after replacement restores the previous app and Login Item.
 - The installer prefers Developer ID Application, then Apple Development, then
   ad-hoc signing. It enables hardened runtime with the audio-input and Apple
-  Events entitlements. A public notarized artifact still needs a Developer ID
-  Application certificate and notarization credentials.
-- Keep the stable Apple Development signature. An ad-hoc or changing identity
-  can make macOS request Accessibility approval again after an update.
+  Events entitlements. The public `v0.1.0` ZIP is signed by
+  `Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)`, notarized, and
+  stapled.
+- Keep one stable signing identity. An ad-hoc or changing identity can make
+  macOS request Accessibility approval again after an update.
 
 ## Defaults and local data
 
@@ -345,8 +352,7 @@ Dictation and all audio transcription stay local.
 - Vimeo currently fails before download because yt-dlp's anonymous macOS OAuth
   client returns HTTP 401. Koett intentionally does not import browser cookies.
 - Live-confirm rich Markdown and math in the installed panel.
-- Create and notarize a public install artifact after a Developer ID Application
-  certificate is available. The current machine has Apple Development only.
+- The public binary release is Apple silicon only. There is no Intel Mac build.
 - Windows and Linux are product directions, not implemented platforms. First
   prove a headless portability spike on real hardware before adding a shared
   shell or promising three-platform support.

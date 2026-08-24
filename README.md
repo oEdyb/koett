@@ -8,15 +8,11 @@ English · Apple silicon · macOS 15+
 
 ## Install
 
-Paste this into Terminal:
+1. [Download the latest release](https://github.com/oEdyb/koett/releases/latest).
+2. Open the ZIP and move Koett to Applications.
+3. Open Koett and allow Microphone and Accessibility.
 
-```sh
-git clone https://github.com/oEdyb/koett.git
-cd koett
-./install-macos.sh
-```
-
-Allow Microphone and Accessibility when macOS asks. Koett shows the model download on its first run.
+Koett shows the model download on its first run.
 
 ## Use
 
