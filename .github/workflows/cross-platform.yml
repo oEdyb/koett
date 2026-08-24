@@ -55,7 +55,14 @@ jobs:
           if-no-files-found: error
 
   linux:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            architecture: x86_64
+          - runner: ubuntu-22.04-arm
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
     defaults:
       run:
         working-directory: CrossPlatform
@@ -83,17 +90,18 @@ jobs:
       - name: Package
         run: |
           strip target/release/koett
-          install -Dm755 target/release/koett dist/Koett-Linux-x86_64/koett
-          install -Dm755 packaging/linux/install.sh dist/Koett-Linux-x86_64/install.sh
+          install -Dm755 target/release/koett dist/Koett-Linux-${{ matrix.architecture }}/koett
+          install -Dm755 packaging/linux/install.sh dist/Koett-Linux-${{ matrix.architecture }}/install.sh
           install -Dm644 packaging/linux/com.olledyberg.Koett.desktop \
-            dist/Koett-Linux-x86_64/com.olledyberg.Koett.desktop
+            dist/Koett-Linux-${{ matrix.architecture }}/com.olledyberg.Koett.desktop
           install -Dm644 packaging/linux/com.olledyberg.Koett.svg \
-            dist/Koett-Linux-x86_64/com.olledyberg.Koett.svg
+            dist/Koett-Linux-${{ matrix.architecture }}/com.olledyberg.Koett.svg
           install -Dm644 README.md THIRD_PARTY_NOTICES.md ../LICENSE \
-            -t dist/Koett-Linux-x86_64
-          tar -C dist -czf dist/Koett-Linux-x86_64.tar.gz Koett-Linux-x86_64
+            -t dist/Koett-Linux-${{ matrix.architecture }}
+          tar -C dist -czf dist/Koett-Linux-${{ matrix.architecture }}.tar.gz \
+            Koett-Linux-${{ matrix.architecture }}
       - uses: actions/upload-artifact@v7.0.1
         with:
-          name: Koett-Linux-x86_64
-          path: CrossPlatform/dist/Koett-Linux-x86_64.tar.gz
+          name: Koett-Linux-${{ matrix.architecture }}
+          path: CrossPlatform/dist/Koett-Linux-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
