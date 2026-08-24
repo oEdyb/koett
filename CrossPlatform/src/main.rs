@@ -93,11 +93,22 @@ fn run_long_self_test(duration: Duration) -> Result<(), String> {
         .cycle()
         .take(target_samples)
         .collect();
+    let expected_repetitions = target_samples / sample.samples.len();
     let audio = AudioRecording::new(sample.sample_rate, samples)?;
     let result = transcriber.transcribe(&audio)?;
     check_self_test_text(&result.text)?;
+    let recognized_repetitions = result
+        .text
+        .to_ascii_lowercase()
+        .matches("old portrait")
+        .count();
+    if recognized_repetitions < expected_repetitions {
+        return Err(format!(
+            "long self-test recognized {recognized_repetitions} of {expected_repetitions} repeated samples"
+        ));
+    }
     eprintln!(
-        "long_self_test=passed audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5}",
+        "long_self_test=passed audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5} recognized_repetitions={recognized_repetitions}",
         result.audio_duration.as_secs_f64(),
         result.transcription.as_secs_f64() * 1_000.0,
         result.realtime_factor()

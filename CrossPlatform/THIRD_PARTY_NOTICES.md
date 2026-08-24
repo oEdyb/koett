@@ -11,3 +11,9 @@ On first use, Koett downloads NVIDIA's English Parakeet TDT-CTC 110M INT8
 model from the official sherpa-onnx model release. The model is licensed under
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Koett does not bundle
 the model in its app archive.
+
+Koett also downloads the 16 kHz
+[Silero VAD](https://github.com/snakers4/silero-vad) model maintained by
+sherpa-onnx. Silero VAD is licensed under the MIT License. Koett uses it only
+to split long recordings into small speech segments before local
+transcription.

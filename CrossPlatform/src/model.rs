@@ -17,6 +17,11 @@ const MODEL_URL: &str = concat!(
 );
 const ARCHIVE_BYTES: u64 = 104_337_827;
 const ARCHIVE_SHA256: &str = "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b";
+const VAD_URL: &str =
+    "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx";
+const VAD_BYTES: u64 = 643_854;
+const VAD_SHA256: &str = "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6";
+pub const VAD_FILE: &str = "silero_vad.onnx";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ModelProgress {
@@ -30,7 +35,9 @@ pub fn ensure_default_model(
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
     let destination = paths::default_model_directory()?;
-    if model_is_complete(&destination) {
+    let needs_asr = !asr_model_is_complete(&destination);
+    let needs_vad = !destination.join(VAD_FILE).is_file();
+    if !needs_asr && !needs_vad {
         progress(ModelProgress::Ready);
         return Ok(destination);
     }
@@ -40,26 +47,81 @@ pub fn ensure_default_model(
     fs::create_dir_all(parent)
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
     let archive = parent.join(format!("{DEFAULT_MODEL_ID}.tar.bz2.part"));
+    let vad_download = parent.join(format!(".{VAD_FILE}.part"));
+    let download_total = u64::from(needs_asr) * ARCHIVE_BYTES + u64::from(needs_vad) * VAD_BYTES;
+    let mut download_offset = 0;
 
-    let download = download_archive(&archive, cancelled, &mut progress);
-    if let Err(error) = download {
-        let _ = fs::remove_file(&archive);
-        return Err(error);
+    if needs_asr {
+        let download = download_file(
+            MODEL_URL,
+            &archive,
+            ARCHIVE_BYTES,
+            ARCHIVE_SHA256,
+            download_offset,
+            download_total,
+            cancelled,
+            &mut progress,
+        );
+        if let Err(error) = download {
+            let _ = fs::remove_file(&archive);
+            return Err(error);
+        }
+        download_offset += ARCHIVE_BYTES;
+    }
+    if needs_vad {
+        let download = download_file(
+            VAD_URL,
+            &vad_download,
+            VAD_BYTES,
+            VAD_SHA256,
+            download_offset,
+            download_total,
+            cancelled,
+            &mut progress,
+        );
+        if let Err(error) = download {
+            let _ = fs::remove_file(&archive);
+            let _ = fs::remove_file(&vad_download);
+            return Err(error);
+        }
     }
     if let Err(error) = check_cancelled(cancelled) {
         let _ = fs::remove_file(&archive);
+        let _ = fs::remove_file(&vad_download);
         return Err(error);
     }
     progress(ModelProgress::Installing);
-    let result = install_archive(&archive, parent, &destination, cancelled);
+    let result = if needs_asr {
+        install_archive(&archive, parent, &destination, cancelled)
+    } else {
+        Ok(())
+    };
     let _ = fs::remove_file(&archive);
-    result?;
+    if let Err(error) = result {
+        let _ = fs::remove_file(&vad_download);
+        return Err(error);
+    }
+    if needs_vad {
+        fs::rename(&vad_download, destination.join(VAD_FILE)).map_err(|error| {
+            format!(
+                "could not install {} as {}: {error}",
+                vad_download.display(),
+                destination.join(VAD_FILE).display()
+            )
+        })?;
+    }
     progress(ModelProgress::Ready);
     Ok(destination)
 }
 
-fn download_archive(
+#[allow(clippy::too_many_arguments)]
+fn download_file(
+    url: &str,
     path: &Path,
+    expected_bytes: u64,
+    expected_sha256: &str,
+    progress_offset: u64,
+    progress_total: u64,
     cancelled: &AtomicBool,
     progress: &mut impl FnMut(ModelProgress),
 ) -> Result<(), String> {
@@ -79,7 +141,7 @@ fn download_archive(
         .build()
         .new_agent();
     let mut response = agent
-        .get(MODEL_URL)
+        .get(url)
         .call()
         .map_err(|error| format!("could not download the Koett model: {error}"))?;
     let mut input = response.body_mut().as_reader();
@@ -97,7 +159,7 @@ fn download_archive(
             break;
         }
         received += count as u64;
-        if received > ARCHIVE_BYTES {
+        if received > expected_bytes {
             return Err("the model download is larger than the pinned release".to_string());
         }
         output
@@ -105,16 +167,16 @@ fn download_archive(
             .map_err(|error| format!("could not write {}: {error}", path.display()))?;
         hasher.update(&buffer[..count]);
         progress(ModelProgress::Downloading {
-            received,
-            total: ARCHIVE_BYTES,
+            received: progress_offset + received,
+            total: progress_total,
         });
     }
     output
         .sync_all()
         .map_err(|error| format!("could not finish {}: {error}", path.display()))?;
-    if received != ARCHIVE_BYTES {
+    if received != expected_bytes {
         return Err(format!(
-            "the model download is incomplete: got {received} of {ARCHIVE_BYTES} bytes"
+            "the model download is incomplete: got {received} of {expected_bytes} bytes"
         ));
     }
     let digest = hasher
@@ -124,7 +186,7 @@ fn download_archive(
             write!(&mut output, "{byte:02x}").expect("writing to a string cannot fail");
             output
         });
-    if digest != ARCHIVE_SHA256 {
+    if digest != expected_sha256 {
         return Err("the model download failed its SHA-256 check".to_string());
     }
     Ok(())
@@ -180,11 +242,11 @@ fn install_archive(
         }
 
         let extracted = staging.join(DEFAULT_MODEL_ID);
-        if !model_is_complete(&extracted) {
+        if !asr_model_is_complete(&extracted) {
             return Err("the model archive is missing model.int8.onnx or tokens.txt".to_string());
         }
         if destination.exists() {
-            if model_is_complete(destination) {
+            if asr_model_is_complete(destination) {
                 return Ok(());
             }
             return Err(format!(
@@ -212,7 +274,7 @@ fn check_cancelled(cancelled: &AtomicBool) -> Result<(), String> {
     }
 }
 
-fn model_is_complete(directory: &Path) -> bool {
+fn asr_model_is_complete(directory: &Path) -> bool {
     directory.join("model.int8.onnx").is_file() && directory.join("tokens.txt").is_file()
 }
 
@@ -221,10 +283,10 @@ mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{DEFAULT_MODEL_ID, model_is_complete};
+    use super::{DEFAULT_MODEL_ID, asr_model_is_complete};
 
     #[test]
-    fn complete_model_needs_both_required_files() {
+    fn asr_model_needs_both_required_files() {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -232,9 +294,9 @@ mod tests {
         let directory = std::env::temp_dir().join(format!("koett-model-{nonce}"));
         fs::create_dir(&directory).unwrap();
         fs::write(directory.join("model.int8.onnx"), []).unwrap();
-        assert!(!model_is_complete(&directory));
+        assert!(!asr_model_is_complete(&directory));
         fs::write(directory.join("tokens.txt"), []).unwrap();
-        assert!(model_is_complete(&directory));
+        assert!(asr_model_is_complete(&directory));
         fs::remove_dir_all(directory).unwrap();
     }
 
