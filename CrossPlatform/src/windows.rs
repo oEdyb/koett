@@ -420,9 +420,21 @@ impl WindowsApp {
         {
             return;
         }
+        let focused = unsafe { GetForegroundWindow() };
+        let focused = (!focused.is_invalid()
+            && focused != self.hwnd
+            && focused != self.overlay
+            && focused != self.shortcut_window)
+            .then_some(focused);
+        if self.status == AppStatus::Ready || matches!(self.status, AppStatus::Error(_)) {
+            self.paste_target = focused;
+        }
         if self.status == AppStatus::Recording {
-            let focused = unsafe { GetForegroundWindow() };
-            self.paste_target = (focused != self.hwnd).then_some(focused);
+            // Keep the app that was focused when recording started if the
+            // non-activating overlay is briefly reported during the stop.
+            if focused.is_some() {
+                self.paste_target = focused;
+            }
         }
         if let Some(engine) = &self.engine {
             let _ = engine.commands.send(EngineCommand::Toggle);
