@@ -1,13 +1,10 @@
-mod audio;
-mod transcription;
-
 use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use audio::{AudioRecording, capture_default_microphone};
-use transcription::{ParakeetTranscriber, Transcriber};
+use koett_engine::audio::{AudioRecording, capture_default_microphone};
+use koett_engine::transcription::{ParakeetTranscriber, Transcriber};
 
 struct Arguments {
     model_directory: PathBuf,
@@ -55,7 +52,7 @@ fn run() -> Result<(), String> {
     Ok(())
 }
 
-fn print_result(source: &str, result: transcription::Transcript) {
+fn print_result(source: &str, result: koett_engine::transcription::Transcript) {
     println!("{}\t{}", source, result.text);
     eprintln!(
         "source={} audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5}",

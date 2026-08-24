@@ -1,0 +1,183 @@
+use std::path::Path;
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
+
+use crate::audio::{AudioLevels, MicrophoneRecorder};
+use crate::settings::Settings;
+use crate::state::{AppEvent, AppStatus};
+use crate::transcription::{ParakeetTranscriber, Transcriber, Transcript};
+
+pub enum EngineCommand {
+    Toggle,
+    Quit,
+}
+
+pub enum EngineUpdate {
+    Status(AppStatus),
+    RecordingStarted(AudioLevels),
+    TranscriptReady {
+        model: String,
+        transcript: Transcript,
+    },
+}
+
+pub struct EngineHandle {
+    pub commands: Sender<EngineCommand>,
+    pub updates: Receiver<EngineUpdate>,
+    worker: Option<JoinHandle<()>>,
+}
+
+impl EngineHandle {
+    pub fn stop(mut self) {
+        let _ = self.commands.send(EngineCommand::Quit);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+pub fn start(settings: Settings) -> EngineHandle {
+    let (command_sender, command_receiver) = mpsc::channel();
+    let (update_sender, update_receiver) = mpsc::channel();
+    let worker = thread::spawn(move || run(settings, command_receiver, update_sender));
+
+    EngineHandle {
+        commands: command_sender,
+        updates: update_receiver,
+        worker: Some(worker),
+    }
+}
+
+fn run(settings: Settings, commands: Receiver<EngineCommand>, updates: Sender<EngineUpdate>) {
+    let mut status = AppStatus::Starting;
+    send_status(&updates, &status);
+
+    let model_directory = match settings.model_directory() {
+        Ok(path) => path,
+        Err(error) => {
+            send_error(&updates, error);
+            return;
+        }
+    };
+    let model = model_name(&model_directory);
+    let mut transcriber = match ParakeetTranscriber::load(&model_directory, 2) {
+        Ok(transcriber) => transcriber,
+        Err(error) => {
+            send_error(&updates, error);
+            return;
+        }
+    };
+
+    status = match status.next(AppEvent::Prepared, None) {
+        Ok(status) => status,
+        Err(error) => {
+            send_error(&updates, error);
+            return;
+        }
+    };
+    send_status(&updates, &status);
+
+    let mut recorder = None;
+    loop {
+        let command = if status == AppStatus::Recording {
+            match commands.recv_timeout(Duration::from_secs(10 * 60)) {
+                Ok(command) => command,
+                Err(RecvTimeoutError::Timeout) => EngineCommand::Toggle,
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+        } else {
+            match commands.recv() {
+                Ok(command) => command,
+                Err(_) => break,
+            }
+        };
+        match command {
+            EngineCommand::Quit => break,
+            EngineCommand::Toggle if status == AppStatus::Ready => {
+                match MicrophoneRecorder::start() {
+                    Ok(started) => {
+                        let levels = started.levels();
+                        recorder = Some(started);
+                        status = status
+                            .next(AppEvent::Toggle, None)
+                            .expect("ready can always start recording");
+                        send_status(&updates, &status);
+                        let _ = updates.send(EngineUpdate::RecordingStarted(levels));
+                    }
+                    Err(error) => recover_from_error(&updates, &mut status, error),
+                }
+            }
+            EngineCommand::Toggle if status == AppStatus::Recording => {
+                status = status
+                    .next(AppEvent::Toggle, None)
+                    .expect("recording can always stop");
+                send_status(&updates, &status);
+
+                let result = recorder
+                    .take()
+                    .ok_or_else(|| "the microphone recorder is missing".to_string())
+                    .and_then(MicrophoneRecorder::finish)
+                    .and_then(|audio| transcriber.transcribe(&audio));
+                match result {
+                    Ok(transcript) => {
+                        let _ = updates.send(EngineUpdate::TranscriptReady {
+                            model: model.clone(),
+                            transcript,
+                        });
+                        status = status
+                            .next(AppEvent::TranscriptionFinished, None)
+                            .expect("transcription can always finish");
+                        send_status(&updates, &status);
+                    }
+                    Err(error) => recover_from_error(&updates, &mut status, error),
+                }
+            }
+            EngineCommand::Toggle => {}
+        }
+    }
+}
+
+fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, error: String) {
+    *status = status
+        .clone()
+        .next(AppEvent::Failed, Some(error))
+        .expect("all states can fail");
+    send_status(updates, status);
+    *status = status
+        .clone()
+        .next(AppEvent::Recovered, None)
+        .expect("an error can recover");
+    send_status(updates, status);
+}
+
+fn send_status(updates: &Sender<EngineUpdate>, status: &AppStatus) {
+    let _ = updates.send(EngineUpdate::Status(status.clone()));
+}
+
+fn send_error(updates: &Sender<EngineUpdate>, error: String) {
+    let _ = updates.send(EngineUpdate::Status(AppStatus::Error(error)));
+}
+
+fn model_name(directory: &Path) -> String {
+    directory
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("local-model")
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::model_name;
+
+    #[test]
+    fn model_name_uses_the_model_folder() {
+        assert_eq!(
+            model_name(Path::new("models/parakeet-110m")),
+            "parakeet-110m"
+        );
+    }
+}

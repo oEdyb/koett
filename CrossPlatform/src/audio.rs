@@ -1,14 +1,16 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, I24, Sample, SampleFormat, SizedSample, U24};
 use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use ringbuf::{HeapProd, HeapRb};
 use sherpa_onnx::Wave;
+
+const MAX_RECORDING_DURATION: Duration = Duration::from_secs(10 * 60);
 
 pub struct AudioRecording {
     pub sample_rate: i32,
@@ -58,153 +60,267 @@ impl AudioRecording {
     }
 }
 
+#[derive(Clone)]
+pub struct AudioLevels {
+    rms: Arc<AtomicU32>,
+    peak: Arc<AtomicU32>,
+}
+
+impl AudioLevels {
+    fn new() -> Self {
+        Self {
+            rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
+            peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
+        }
+    }
+
+    pub fn current(&self) -> (f32, f32) {
+        (
+            f32::from_bits(self.rms.load(Ordering::Relaxed)),
+            f32::from_bits(self.peak.load(Ordering::Relaxed)),
+        )
+    }
+
+    fn update(&self, rms: f32, peak: f32) {
+        self.rms.store(rms.to_bits(), Ordering::Relaxed);
+        self.peak.store(peak.to_bits(), Ordering::Relaxed);
+    }
+}
+
+pub struct MicrophoneRecorder {
+    stream: Option<cpal::Stream>,
+    collector: Option<thread::JoinHandle<Vec<f32>>>,
+    stop_collector: Arc<AtomicBool>,
+    sample_rate: i32,
+    started: Instant,
+    maximum_duration: Duration,
+    overflowed: Arc<AtomicBool>,
+    stream_failed: Arc<AtomicBool>,
+    levels: AudioLevels,
+}
+
+impl MicrophoneRecorder {
+    pub fn start() -> Result<Self, String> {
+        Self::start_with_limit(MAX_RECORDING_DURATION)
+    }
+
+    pub fn start_with_limit(maximum_duration: Duration) -> Result<Self, String> {
+        if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
+            return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
+        }
+
+        let host = cpal::default_host();
+        let device = host
+            .default_input_device()
+            .ok_or_else(|| "no default microphone is available".to_string())?;
+        let supported = device
+            .default_input_config()
+            .map_err(|error| format!("could not read the microphone format: {error}"))?;
+        let config = supported.config();
+        let channels = config.channels as usize;
+        let sample_rate = config.sample_rate as usize;
+        let capacity = sample_rate * 2;
+        let (producer, consumer) = HeapRb::<f32>::new(capacity).split();
+        let overflowed = Arc::new(AtomicBool::new(false));
+        let stream_failed = Arc::new(AtomicBool::new(false));
+        let levels = AudioLevels::new();
+        let stop_collector = Arc::new(AtomicBool::new(false));
+        let collector_stop = stop_collector.clone();
+        let collector = thread::spawn(move || collect_samples(consumer, collector_stop));
+
+        eprintln!(
+            "microphone={} sample_rate={} channels={} format={}",
+            device
+                .description()
+                .map(|description| description.to_string())
+                .unwrap_or_else(|_| "default".to_string()),
+            sample_rate,
+            channels,
+            supported.sample_format()
+        );
+
+        let stream = match supported.sample_format() {
+            SampleFormat::I8 => build_stream::<i8>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::I16 => build_stream::<i16>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::I24 => build_stream::<I24>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::I32 => build_stream::<i32>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::I64 => build_stream::<i64>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::U8 => build_stream::<u8>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::U16 => build_stream::<u16>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::U24 => build_stream::<U24>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::U32 => build_stream::<u32>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::U64 => build_stream::<u64>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::F32 => build_stream::<f32>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            SampleFormat::F64 => build_stream::<f64>(
+                &device,
+                &config,
+                channels,
+                producer,
+                overflowed.clone(),
+                stream_failed.clone(),
+                levels.clone(),
+            ),
+            format => return Err(format!("unsupported microphone sample format: {format}")),
+        }?;
+
+        stream
+            .play()
+            .map_err(|error| format!("could not start the microphone: {error}"))?;
+
+        Ok(Self {
+            stream: Some(stream),
+            collector: Some(collector),
+            stop_collector,
+            sample_rate: sample_rate as i32,
+            started: Instant::now(),
+            maximum_duration,
+            overflowed,
+            stream_failed,
+            levels,
+        })
+    }
+
+    pub fn levels(&self) -> AudioLevels {
+        self.levels.clone()
+    }
+
+    pub fn finish(mut self) -> Result<AudioRecording, String> {
+        self.stream.take();
+        self.stop_collector.store(true, Ordering::Release);
+        let samples = self
+            .collector
+            .take()
+            .expect("a live recorder always has a collector")
+            .join()
+            .map_err(|_| "the microphone collector stopped unexpectedly".to_string())?;
+
+        if self.stream_failed.load(Ordering::Relaxed) {
+            return Err("the microphone stream failed; the recording is incomplete".to_string());
+        }
+        if self.overflowed.load(Ordering::Relaxed) {
+            return Err("microphone buffer overflowed; the recording is incomplete".to_string());
+        }
+        if self.started.elapsed() > self.maximum_duration + Duration::from_millis(250) {
+            return Err("the recording exceeded the ten-minute limit".to_string());
+        }
+
+        let recording = AudioRecording::new(self.sample_rate, samples)?;
+        let (rms, peak) = recording.levels();
+        eprintln!("microphone_rms={rms:.6} microphone_peak={peak:.6}");
+        Ok(recording)
+    }
+}
+
 pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, String> {
-    let host = cpal::default_host();
-    let device = host
-        .default_input_device()
-        .ok_or_else(|| "no default microphone is available".to_string())?;
-    let supported = device
-        .default_input_config()
-        .map_err(|error| format!("could not read the microphone format: {error}"))?;
-    let config = supported.config();
-    let channels = config.channels as usize;
-    let sample_rate = config.sample_rate as usize;
-    let capacity = ((duration.as_secs_f64() + 1.0) * sample_rate as f64) as usize;
-    let (producer, mut consumer) = HeapRb::<f32>::new(capacity).split();
-    let overflowed = Arc::new(AtomicBool::new(false));
-    let stream_failed = Arc::new(AtomicBool::new(false));
-
-    eprintln!(
-        "microphone={} sample_rate={} channels={} format={}",
-        device
-            .description()
-            .map(|description| description.to_string())
-            .unwrap_or_else(|_| "default".to_string()),
-        sample_rate,
-        channels,
-        supported.sample_format()
-    );
-
-    let stream = match supported.sample_format() {
-        SampleFormat::I8 => build_stream::<i8>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::I16 => build_stream::<i16>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::I24 => build_stream::<I24>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::I32 => build_stream::<i32>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::I64 => build_stream::<i64>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::U8 => build_stream::<u8>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::U16 => build_stream::<u16>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::U24 => build_stream::<U24>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::U32 => build_stream::<u32>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::U64 => build_stream::<u64>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::F32 => build_stream::<f32>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        SampleFormat::F64 => build_stream::<f64>(
-            &device,
-            &config,
-            channels,
-            producer,
-            overflowed.clone(),
-            stream_failed.clone(),
-        ),
-        format => return Err(format!("unsupported microphone sample format: {format}")),
-    }?;
-
-    stream
-        .play()
-        .map_err(|error| format!("could not start the microphone: {error}"))?;
+    if duration.is_zero() || duration > MAX_RECORDING_DURATION {
+        return Err("microphone duration must be between 0 and 600 seconds".to_string());
+    }
+    let recorder = MicrophoneRecorder::start()?;
     thread::sleep(duration);
-    drop(stream);
+    recorder.finish()
+}
 
-    if stream_failed.load(Ordering::Relaxed) {
-        return Err("the microphone stream failed; the recording is incomplete".to_string());
+fn collect_samples(mut consumer: ringbuf::HeapCons<f32>, stop: Arc<AtomicBool>) -> Vec<f32> {
+    let mut samples = Vec::new();
+    let mut chunk = [0.0_f32; 2_048];
+    loop {
+        let count = consumer.pop_slice(&mut chunk);
+        samples.extend_from_slice(&chunk[..count]);
+        if stop.load(Ordering::Acquire) && consumer.is_empty() {
+            return samples;
+        }
+        if count == 0 {
+            thread::sleep(Duration::from_millis(2));
+        }
     }
-    if overflowed.load(Ordering::Relaxed) {
-        return Err("microphone buffer overflowed; the recording is incomplete".to_string());
-    }
-
-    let mut samples = vec![0.0; consumer.occupied_len()];
-    let count = consumer.pop_slice(&mut samples);
-    samples.truncate(count);
-    let recording = AudioRecording::new(sample_rate as i32, samples)?;
-    let (rms, peak) = recording.levels();
-    eprintln!("microphone_rms={rms:.6} microphone_peak={peak:.6}");
-    Ok(recording)
 }
 
 fn build_stream<T>(
@@ -214,6 +330,7 @@ fn build_stream<T>(
     mut producer: HeapProd<f32>,
     overflowed: Arc<AtomicBool>,
     stream_failed: Arc<AtomicBool>,
+    levels: AudioLevels,
 ) -> Result<cpal::Stream, String>
 where
     T: Sample + SizedSample,
@@ -223,13 +340,21 @@ where
         .build_input_stream(
             *config,
             move |data: &[T], _| {
-                let frames = data.chunks_exact(channels);
-                let frame_count = frames.len();
-                let pushed = producer.push_iter(frames.map(|frame| {
-                    frame.iter().copied().map(f32::from_sample).sum::<f32>() / channels as f32
-                }));
-                if pushed != frame_count {
-                    overflowed.store(true, Ordering::Relaxed);
+                let mut square_sum = 0.0_f32;
+                let mut peak = 0.0_f32;
+                let mut frame_count = 0_usize;
+                for frame in data.chunks_exact(channels) {
+                    let sample =
+                        frame.iter().copied().map(f32::from_sample).sum::<f32>() / channels as f32;
+                    square_sum += sample * sample;
+                    peak = peak.max(sample.abs());
+                    frame_count += 1;
+                    if producer.try_push(sample).is_err() {
+                        overflowed.store(true, Ordering::Relaxed);
+                    }
+                }
+                if frame_count > 0 {
+                    levels.update((square_sum / frame_count as f32).sqrt(), peak);
                 }
             },
             move |_| stream_failed.store(true, Ordering::Relaxed),
