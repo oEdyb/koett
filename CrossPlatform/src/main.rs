@@ -36,6 +36,19 @@ fn run() -> Result<(), String> {
         }
         return run_self_test();
     }
+    if env::args().nth(1).as_deref() == Some("--long-self-test") {
+        let values = env::args().collect::<Vec<_>>();
+        if values.len() != 3 {
+            return Err("--long-self-test requires one duration in seconds".to_string());
+        }
+        let seconds = values[2]
+            .parse::<u64>()
+            .map_err(|_| "long self-test duration must be a whole number".to_string())?;
+        if !(60..=420).contains(&seconds) {
+            return Err("long self-test duration must be between 60 and 420 seconds".to_string());
+        }
+        return run_long_self_test(Duration::from_secs(seconds));
+    }
 
     let arguments = parse_arguments()?;
     let mut transcriber = ParakeetTranscriber::load(&arguments.model_directory, arguments.threads)?;
@@ -62,6 +75,37 @@ fn run() -> Result<(), String> {
 }
 
 fn run_self_test() -> Result<(), String> {
+    let (sample, mut transcriber) = load_self_test()?;
+    let result = transcriber.transcribe(&sample)?;
+    check_self_test_text(&result.text)?;
+    print_result("official-model-sample", result);
+    eprintln!("self_test=passed");
+    Ok(())
+}
+
+fn run_long_self_test(duration: Duration) -> Result<(), String> {
+    let (sample, mut transcriber) = load_self_test()?;
+    let target_samples = sample.sample_rate as usize * duration.as_secs() as usize;
+    let samples = sample
+        .samples
+        .iter()
+        .copied()
+        .cycle()
+        .take(target_samples)
+        .collect();
+    let audio = AudioRecording::new(sample.sample_rate, samples)?;
+    let result = transcriber.transcribe(&audio)?;
+    check_self_test_text(&result.text)?;
+    eprintln!(
+        "long_self_test=passed audio_seconds={:.3} transcribe_ms={:.1} realtime_factor={:.5}",
+        result.audio_duration.as_secs_f64(),
+        result.transcription.as_secs_f64() * 1_000.0,
+        result.realtime_factor()
+    );
+    Ok(())
+}
+
+fn load_self_test() -> Result<(AudioRecording, ParakeetTranscriber), String> {
     let cancelled = AtomicBool::new(false);
     let mut last_percent = None;
     let model_directory = model::ensure_default_model(&cancelled, |progress| match progress {
@@ -77,17 +121,17 @@ fn run_self_test() -> Result<(), String> {
     })?;
     let sample = model_directory.join("test_wavs").join("0.wav");
     let audio = AudioRecording::read_wav(&sample)?;
-    let mut transcriber = ParakeetTranscriber::load(&model_directory, 2)?;
-    let result = transcriber.transcribe(&audio)?;
-    let normalized = result.text.to_ascii_lowercase();
+    let transcriber = ParakeetTranscriber::load(&model_directory, 2)?;
+    Ok((audio, transcriber))
+}
+
+fn check_self_test_text(text: &str) -> Result<(), String> {
+    let normalized = text.to_ascii_lowercase();
     if !normalized.contains("phoebe") || !normalized.contains("old portrait") {
         return Err(format!(
-            "the official model sample produced unexpected text: {}",
-            result.text
+            "the official model sample produced unexpected text: {text}"
         ));
     }
-    print_result(&sample.display().to_string(), result);
-    eprintln!("self_test=passed");
     Ok(())
 }
 
@@ -106,7 +150,10 @@ fn parse_arguments() -> Result<Arguments, String> {
     let values = env::args().skip(1).collect::<Vec<_>>();
     if values.len() < 2 {
         return Err(format!(
-            "usage: {} MODEL_DIRECTORY WAV_FILE [WAV_FILE ...]\n       {} MODEL_DIRECTORY --mic SECONDS\n       {} --self-test",
+            "usage: {} MODEL_DIRECTORY WAV_FILE [WAV_FILE ...]\n       {} MODEL_DIRECTORY --mic SECONDS\n       {} --self-test\n       {} --long-self-test SECONDS",
+            env::args()
+                .next()
+                .unwrap_or_else(|| "koett-engine".to_string()),
             env::args()
                 .next()
                 .unwrap_or_else(|| "koett-engine".to_string()),

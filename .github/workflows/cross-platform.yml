@@ -41,6 +41,9 @@ jobs:
         run: cargo build --release --locked --bin koett
       - name: Runtime self-test
         run: cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Runtime long-input probe
+        timeout-minutes: 5
+        run: cargo run --release --locked --bin koett-engine -- --long-self-test 180
       - name: Package
         shell: pwsh
         run: |
