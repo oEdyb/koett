@@ -30,9 +30,10 @@ use windows::Win32::UI::HiDpi::{
     DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetKeyState, HOT_KEY_MODIFIERS, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT,
-    KEYEVENTF_KEYUP, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, MOD_WIN, RegisterHotKey,
-    SendInput, UnregisterHotKey, VIRTUAL_KEY, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
+    GetAsyncKeyState, GetKeyState, HOT_KEY_MODIFIERS, INPUT, INPUT_0, INPUT_KEYBOARD,
+    KEYBD_EVENT_FLAGS, KEYBDINPUT, KEYEVENTF_KEYUP, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT,
+    MOD_WIN, RegisterHotKey, SendInput, UnregisterHotKey, VIRTUAL_KEY, VK_CONTROL, VK_LWIN,
+    VK_MENU, VK_RWIN, VK_SHIFT,
 };
 use windows::Win32::UI::Shell::{
     NIF_GUID, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NIM_SETFOCUS,
@@ -1025,6 +1026,21 @@ unsafe fn write_open_clipboard(encoded: &[u16]) -> Result<(), String> {
 }
 
 fn paste() -> Result<(), String> {
+    let modifiers_are_down = || {
+        [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
+            .into_iter()
+            .any(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0)
+    };
+    let deadline = Instant::now() + Duration::from_millis(500);
+    while modifiers_are_down() {
+        if Instant::now() >= deadline {
+            return Err(
+                "release the shortcut keys; the transcript is still on the clipboard".to_string(),
+            );
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+
     let keyboard = |key: VIRTUAL_KEY, flags: KEYBD_EVENT_FLAGS| INPUT {
         r#type: INPUT_KEYBOARD,
         Anonymous: INPUT_0 {
