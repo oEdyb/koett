@@ -11,7 +11,7 @@ use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
 const MODEL_SAMPLE_RATE: i32 = 16_000;
-const LONG_RECORDING_THRESHOLD: Duration = Duration::from_secs(30);
+const DIRECT_DECODE_LIMIT: Duration = Duration::from_secs(20);
 const VAD_WINDOW_SIZE: usize = 512;
 const MAX_DECODE_SAMPLES: usize = MODEL_SAMPLE_RATE as usize * 20;
 const DECODE_OVERLAP_SAMPLES: usize = MODEL_SAMPLE_RATE as usize * 2;
@@ -115,7 +115,7 @@ impl Transcriber for ParakeetTranscriber {
 }
 
 fn needs_segmentation(duration: Duration) -> bool {
-    duration > LONG_RECORDING_THRESHOLD
+    duration > DIRECT_DECODE_LIMIT
 }
 
 impl ParakeetTranscriber {
@@ -238,15 +238,30 @@ fn merge_overlapping_text(existing: &mut String, next: &str) {
 
     let existing_words = existing.split_whitespace().collect::<Vec<_>>();
     let next_words = next.split_whitespace().collect::<Vec<_>>();
-    let overlap = overlapping_prefix_words(&existing_words, &next_words);
-    let remainder = next_words[overlap..].join(" ");
-    if !remainder.is_empty() {
+    if let Some((existing_overlap, next_overlap)) =
+        overlapping_word_counts(&existing_words, &next_words)
+    {
+        let mut merged = existing_words[..existing_words.len() - existing_overlap]
+            .iter()
+            .map(|word| (*word).to_string())
+            .collect::<Vec<_>>();
+        merged.extend(shortest_common_words(
+            &existing_words[existing_words.len() - existing_overlap..],
+            &next_words[..next_overlap],
+        ));
+        merged.extend(
+            next_words[next_overlap..]
+                .iter()
+                .map(|word| (*word).to_string()),
+        );
+        *existing = merged.join(" ");
+    } else {
         existing.push(' ');
-        existing.push_str(&remainder);
+        existing.push_str(next);
     }
 }
 
-fn overlapping_prefix_words(existing: &[&str], next: &[&str]) -> usize {
+fn overlapping_word_counts(existing: &[&str], next: &[&str]) -> Option<(usize, usize)> {
     let existing = existing
         .iter()
         .rev()
@@ -274,13 +289,60 @@ fn overlapping_prefix_words(existing: &[&str], next: &[&str]) -> usize {
             let score = common as isize * 10
                 - distance as isize * 3
                 - existing_count.abs_diff(next_count) as isize;
-            let candidate = (score, common, usize::MAX - distance, next_count);
+            let candidate = (
+                score,
+                common,
+                usize::MAX - distance,
+                existing_count,
+                next_count,
+            );
             if best.is_none_or(|current| candidate > current) {
                 best = Some(candidate);
             }
         }
     }
-    best.map(|(_, _, _, next_count)| next_count).unwrap_or(0)
+    best.map(|(_, _, _, existing_count, next_count)| (existing_count, next_count))
+}
+
+fn shortest_common_words(left: &[&str], right: &[&str]) -> Vec<String> {
+    let left_normalized = left
+        .iter()
+        .map(|word| normalize_word(word))
+        .collect::<Vec<_>>();
+    let right_normalized = right
+        .iter()
+        .map(|word| normalize_word(word))
+        .collect::<Vec<_>>();
+    let mut shared = vec![vec![0_usize; right.len() + 1]; left.len() + 1];
+    for left_index in (0..left.len()).rev() {
+        for right_index in (0..right.len()).rev() {
+            shared[left_index][right_index] =
+                if left_normalized[left_index] == right_normalized[right_index] {
+                    shared[left_index + 1][right_index + 1] + 1
+                } else {
+                    shared[left_index + 1][right_index].max(shared[left_index][right_index + 1])
+                };
+        }
+    }
+
+    let mut merged = Vec::new();
+    let (mut left_index, mut right_index) = (0, 0);
+    while left_index < left.len() && right_index < right.len() {
+        if left_normalized[left_index] == right_normalized[right_index] {
+            merged.push(left[left_index].to_string());
+            left_index += 1;
+            right_index += 1;
+        } else if shared[left_index + 1][right_index] >= shared[left_index][right_index + 1] {
+            merged.push(left[left_index].to_string());
+            left_index += 1;
+        } else {
+            merged.push(right[right_index].to_string());
+            right_index += 1;
+        }
+    }
+    merged.extend(left[left_index..].iter().map(|word| (*word).to_string()));
+    merged.extend(right[right_index..].iter().map(|word| (*word).to_string()));
+    merged
 }
 
 fn word_distance(left: &[String], right: &[String]) -> usize {
@@ -342,8 +404,8 @@ mod tests {
 
     #[test]
     fn only_long_recordings_use_segmentation() {
-        assert!(!needs_segmentation(Duration::from_secs(30)));
-        assert!(needs_segmentation(Duration::from_secs(31)));
+        assert!(!needs_segmentation(Duration::from_secs(20)));
+        assert!(needs_segmentation(Duration::from_secs(21)));
     }
 
     #[test]
@@ -379,8 +441,17 @@ mod tests {
 
         assert_eq!(
             text,
-            "I don't wish to see it anymore, observed Phoebe, turning away. The next thought."
+            "I don't wish to see it anymore, any more, observed Phoebe, turning away. The next thought."
         );
+    }
+
+    #[test]
+    fn uncertain_overlap_preserves_inserted_words() {
+        let mut text = "alpha beta gamma".to_string();
+
+        merge_overlapping_text(&mut text, "alpha beta important gamma new");
+
+        assert_eq!(text, "alpha beta important gamma new");
     }
 
     #[test]

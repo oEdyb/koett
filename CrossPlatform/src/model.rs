@@ -103,14 +103,13 @@ pub fn ensure_default_model(
         let _ = fs::remove_file(&vad_download);
         return Err(error);
     }
-    if needs_vad {
-        fs::rename(&vad_download, destination.join(VAD_FILE)).map_err(|error| {
-            format!(
-                "could not install {} as {}: {error}",
-                vad_download.display(),
-                destination.join(VAD_FILE).display()
-            )
-        })?;
+    if needs_vad && let Err(error) = fs::rename(&vad_download, destination.join(VAD_FILE)) {
+        let _ = fs::remove_file(&vad_download);
+        return Err(format!(
+            "could not install {} as {}: {error}",
+            vad_download.display(),
+            destination.join(VAD_FILE).display()
+        ));
     }
     progress(ModelProgress::Ready);
     Ok(destination)
