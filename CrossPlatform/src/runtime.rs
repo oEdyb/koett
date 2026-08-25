@@ -9,7 +9,9 @@ use crate::audio::{AudioLevels, MicrophoneRecorder};
 use crate::model::{self, ModelProgress};
 use crate::settings::Settings;
 use crate::state::{AppEvent, AppStatus};
-use crate::transcription::{ParakeetTranscriber, Transcriber, Transcript};
+use crate::transcription::{
+    BackgroundSession, ParakeetTranscriber, Transcript, TranscriptionWorker,
+};
 
 pub enum EngineCommand {
     Toggle,
@@ -85,7 +87,7 @@ fn run(
         return;
     }
     let model = model_name(&model_directory);
-    let mut transcriber = match ParakeetTranscriber::load(&model_directory, 2) {
+    let transcriber = match ParakeetTranscriber::load(&model_directory, 2) {
         Ok(transcriber) => transcriber,
         Err(error) => {
             send_error(&updates, error);
@@ -95,6 +97,13 @@ fn run(
     if cancelled.load(Ordering::Acquire) {
         return;
     }
+    let transcription = match TranscriptionWorker::start(transcriber) {
+        Ok(worker) => worker,
+        Err(error) => {
+            send_error(&updates, error);
+            return;
+        }
+    };
 
     status = match status.next(AppEvent::Prepared, None) {
         Ok(status) => status,
@@ -106,6 +115,7 @@ fn run(
     send_status(&updates, &status);
 
     let mut recorder = None;
+    let mut background: Option<BackgroundSession> = None;
     loop {
         let command = if status == AppStatus::Recording {
             match commands.recv_timeout(Duration::from_secs(10 * 60)) {
@@ -122,10 +132,14 @@ fn run(
         match command {
             EngineCommand::Quit => break,
             EngineCommand::Toggle if status == AppStatus::Ready => {
-                match MicrophoneRecorder::start() {
-                    Ok(started) => {
+                match MicrophoneRecorder::start_streaming().and_then(|(started, audio_chunks)| {
+                    let session = transcription.record(started.sample_rate(), audio_chunks)?;
+                    Ok((started, session))
+                }) {
+                    Ok((started, session)) => {
                         let levels = started.levels();
                         recorder = Some(started);
+                        background = Some(session);
                         status = status
                             .next(AppEvent::Toggle, None)
                             .expect("ready can always start recording");
@@ -141,11 +155,16 @@ fn run(
                     .expect("recording can always stop");
                 send_status(&updates, &status);
 
-                let result = recorder
-                    .take()
-                    .ok_or_else(|| "the microphone recorder is missing".to_string())
-                    .and_then(MicrophoneRecorder::finish)
-                    .and_then(|audio| transcriber.transcribe(&audio));
+                let result = (|| {
+                    let session = background
+                        .take()
+                        .ok_or_else(|| "background transcription is missing".to_string())?;
+                    let audio = recorder
+                        .take()
+                        .ok_or_else(|| "the microphone recorder is missing".to_string())?
+                        .finish()?;
+                    transcription.finish(session, audio)
+                })();
                 match result {
                     Ok(transcript) => {
                         let _ = updates.send(EngineUpdate::TranscriptReady {
@@ -163,6 +182,9 @@ fn run(
             EngineCommand::Toggle => {}
         }
     }
+    drop(background.take());
+    drop(recorder.take());
+    transcription.stop();
 }
 
 fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, error: String) {

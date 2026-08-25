@@ -10,6 +10,10 @@ use sherpa_onnx::{
 use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
+mod background;
+
+pub use background::{BackgroundSession, TranscriptionWorker};
+
 const MODEL_SAMPLE_RATE: i32 = 16_000;
 const DIRECT_DECODE_LIMIT: Duration = Duration::from_secs(20);
 const VAD_WINDOW_SIZE: usize = 512;
@@ -384,12 +388,18 @@ fn path_string(path: &Path) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
+    use std::env;
+    use std::path::PathBuf;
+    use std::sync::atomic::AtomicBool;
+    use std::sync::mpsc;
+    use std::time::{Duration, Instant};
 
     use super::{
-        DECODE_OVERLAP_SAMPLES, MAX_DECODE_SAMPLES, Transcript, bounded_decode_ranges,
+        DECODE_OVERLAP_SAMPLES, MAX_DECODE_SAMPLES, MODEL_SAMPLE_RATE, ParakeetTranscriber,
+        Transcriber, Transcript, TranscriptionWorker, VAD_WINDOW_SIZE, bounded_decode_ranges,
         merge_overlapping_text, needs_segmentation,
     };
+    use crate::audio::AudioRecording;
 
     #[test]
     fn realtime_factor_uses_transcription_over_audio() {
@@ -461,5 +471,199 @@ mod tests {
         merge_overlapping_text(&mut text, "Different second chunk.");
 
         assert_eq!(text, "First chunk. Different second chunk.");
+    }
+
+    #[test]
+    #[ignore = "requires KOETT_MODEL_DIR and measures the local machine"]
+    fn background_segment_latency_probe() {
+        let model_directory =
+            PathBuf::from(env::var("KOETT_MODEL_DIR").expect("set KOETT_MODEL_DIR"));
+        let mut transcriber = ParakeetTranscriber::load(&model_directory, 2).unwrap();
+        let vad = transcriber
+            .vad
+            .as_ref()
+            .expect("the model folder needs VAD");
+        let sample =
+            AudioRecording::read_wav(&model_directory.join("test_wavs").join("0.wav")).unwrap();
+        assert_eq!(sample.sample_rate, MODEL_SAMPLE_RATE);
+
+        let audio_seconds = 420_usize;
+        let sample_count = MODEL_SAMPLE_RATE as usize * audio_seconds;
+        let samples = sample
+            .samples
+            .iter()
+            .copied()
+            .cycle()
+            .take(sample_count)
+            .collect::<Vec<_>>();
+        let expected_repetitions = sample_count / sample.samples.len();
+        let mut worker_free_at = 0.0_f64;
+        let mut decode_times = Vec::new();
+        let mut parts = Vec::new();
+
+        vad.reset();
+        let mut windows = samples.chunks_exact(VAD_WINDOW_SIZE);
+        for (index, window) in windows.by_ref().enumerate() {
+            vad.accept_waveform(window);
+            let available_at =
+                (index + 1) as f64 * VAD_WINDOW_SIZE as f64 / MODEL_SAMPLE_RATE as f64;
+            drain_background_segments(
+                &transcriber,
+                available_at,
+                &mut worker_free_at,
+                &mut decode_times,
+                &mut parts,
+            );
+        }
+        let remainder = windows.remainder();
+        if !remainder.is_empty() {
+            let mut final_window = [0.0_f32; VAD_WINDOW_SIZE];
+            final_window[..remainder.len()].copy_from_slice(remainder);
+            vad.accept_waveform(&final_window);
+        }
+        vad.flush();
+        drain_background_segments(
+            &transcriber,
+            audio_seconds as f64,
+            &mut worker_free_at,
+            &mut decode_times,
+            &mut parts,
+        );
+
+        let text = parts.join(" ").to_ascii_lowercase();
+        let recognized_starts = text.matches("phoebe").count();
+        let recognized_ends = text.matches("old portrait").count();
+        assert!(recognized_starts >= expected_repetitions);
+        assert!(recognized_ends >= expected_repetitions);
+
+        decode_times.sort_unstable();
+        let total = decode_times.iter().sum::<Duration>();
+        let maximum = decode_times.last().copied().unwrap_or_default();
+        let p95_index = (decode_times.len() * 95).div_ceil(100).saturating_sub(1);
+        let p95 = decode_times.get(p95_index).copied().unwrap_or_default();
+        let post_stop_tail = (worker_free_at - audio_seconds as f64).max(0.0);
+        eprintln!(
+            "background_latency_probe=passed audio_seconds={audio_seconds} segments={} total_decode_ms={:.1} p95_decode_ms={:.1} max_decode_ms={:.1} simulated_post_stop_ms={:.1} recognized_starts={recognized_starts} recognized_ends={recognized_ends}",
+            decode_times.len(),
+            total.as_secs_f64() * 1_000.0,
+            p95.as_secs_f64() * 1_000.0,
+            maximum.as_secs_f64() * 1_000.0,
+            post_stop_tail * 1_000.0,
+        );
+
+        let (sender, receiver) = mpsc::channel();
+        for chunk in samples.chunks(2_048) {
+            sender.send(chunk.to_vec()).unwrap();
+        }
+        drop(sender);
+        let production_started = Instant::now();
+        let production_text = transcriber
+            .transcribe_while_recording(MODEL_SAMPLE_RATE, receiver, &AtomicBool::new(false))
+            .unwrap()
+            .expect("seven minutes must use background transcription")
+            .to_ascii_lowercase();
+        let production_elapsed = production_started.elapsed();
+        let production_starts = production_text.matches("phoebe").count();
+        let production_ends = production_text.matches("old portrait").count();
+        assert!(production_starts >= expected_repetitions);
+        assert!(production_ends >= expected_repetitions);
+        eprintln!(
+            "background_production_path=passed audio_seconds={audio_seconds} total_ms={:.1} recognized_starts={production_starts} recognized_ends={production_ends}",
+            production_elapsed.as_secs_f64() * 1_000.0,
+        );
+
+        let mut forced_text = String::new();
+        let mut forced_worker_free_at = 0.0_f64;
+        let mut forced_decode_times = Vec::new();
+        for range in bounded_decode_ranges(samples.len()) {
+            let available_at = range.end as f64 / MODEL_SAMPLE_RATE as f64;
+            let started = Instant::now();
+            let (text, chunks) = transcriber.decode_bounded(&samples[range]).unwrap();
+            let elapsed = started.elapsed();
+            assert_eq!(chunks, 1);
+            forced_worker_free_at = forced_worker_free_at.max(available_at) + elapsed.as_secs_f64();
+            forced_decode_times.push(elapsed);
+            merge_overlapping_text(&mut forced_text, &text);
+        }
+        let forced_text = forced_text.to_ascii_lowercase();
+        let forced_starts = forced_text.matches("don't wish to see it").count();
+        let forced_ends = forced_text.matches("old portrait").count();
+        let minimum_forced_anchors = expected_repetitions.saturating_sub(1);
+        assert!(
+            forced_starts >= minimum_forced_anchors,
+            "forced chunks kept {forced_starts} starts for {expected_repetitions} repetitions"
+        );
+        assert!(
+            forced_ends >= minimum_forced_anchors,
+            "forced chunks kept {forced_ends} ends for {expected_repetitions} repetitions"
+        );
+
+        forced_decode_times.sort_unstable();
+        let forced_total = forced_decode_times.iter().sum::<Duration>();
+        let forced_maximum = forced_decode_times.last().copied().unwrap_or_default();
+        let forced_p95_index = (forced_decode_times.len() * 95)
+            .div_ceil(100)
+            .saturating_sub(1);
+        let forced_p95 = forced_decode_times
+            .get(forced_p95_index)
+            .copied()
+            .unwrap_or_default();
+        let forced_post_stop_tail = (forced_worker_free_at - audio_seconds as f64).max(0.0);
+        eprintln!(
+            "background_forced_chunks=passed audio_seconds={audio_seconds} chunks={} total_decode_ms={:.1} p95_decode_ms={:.1} max_decode_ms={:.1} simulated_post_stop_ms={:.1} recognized_starts={forced_starts} recognized_ends={forced_ends}",
+            forced_decode_times.len(),
+            forced_total.as_secs_f64() * 1_000.0,
+            forced_p95.as_secs_f64() * 1_000.0,
+            forced_maximum.as_secs_f64() * 1_000.0,
+            forced_post_stop_tail * 1_000.0,
+        );
+
+        let direct_started = Instant::now();
+        let direct = transcriber.transcribe(&sample).unwrap();
+        let direct_elapsed = direct_started.elapsed();
+        let worker = TranscriptionWorker::start(transcriber).unwrap();
+        let (sender, receiver) = mpsc::channel();
+        let session = worker.record(sample.sample_rate, receiver).unwrap();
+        for chunk in sample.samples.chunks(2_048) {
+            sender.send(chunk.to_vec()).unwrap();
+        }
+        drop(sender);
+        let worker_started = Instant::now();
+        let through_worker = worker
+            .finish(
+                session,
+                AudioRecording::new(sample.sample_rate, sample.samples.clone()).unwrap(),
+            )
+            .unwrap();
+        let worker_elapsed = worker_started.elapsed();
+        assert_eq!(through_worker.text, direct.text);
+        eprintln!(
+            "background_short_path=passed audio_seconds={:.3} direct_total_ms={:.1} worker_post_stop_ms={:.1}",
+            sample.duration().as_secs_f64(),
+            direct_elapsed.as_secs_f64() * 1_000.0,
+            worker_elapsed.as_secs_f64() * 1_000.0,
+        );
+        worker.stop();
+    }
+
+    fn drain_background_segments(
+        transcriber: &ParakeetTranscriber,
+        available_at: f64,
+        worker_free_at: &mut f64,
+        decode_times: &mut Vec<Duration>,
+        parts: &mut Vec<String>,
+    ) {
+        let vad = transcriber.vad.as_ref().unwrap();
+        while let Some(segment) = vad.front() {
+            vad.pop();
+            let started = Instant::now();
+            let (text, _) = transcriber.decode_bounded(segment.samples()).unwrap();
+            let elapsed = started.elapsed();
+            *worker_free_at = worker_free_at.max(available_at) + elapsed.as_secs_f64();
+            decode_times.push(elapsed);
+            if !text.is_empty() {
+                parts.push(text);
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -105,6 +106,19 @@ impl MicrophoneRecorder {
     }
 
     pub fn start_with_limit(maximum_duration: Duration) -> Result<Self, String> {
+        Self::start_inner(maximum_duration, None)
+    }
+
+    pub fn start_streaming() -> Result<(Self, Receiver<Vec<f32>>), String> {
+        let (sender, receiver) = mpsc::channel();
+        let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender))?;
+        Ok((recorder, receiver))
+    }
+
+    fn start_inner(
+        maximum_duration: Duration,
+        audio_chunks: Option<Sender<Vec<f32>>>,
+    ) -> Result<Self, String> {
         if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
             return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
         }
@@ -125,8 +139,6 @@ impl MicrophoneRecorder {
         let stream_error = Arc::new(Mutex::new(None));
         let levels = AudioLevels::new();
         let stop_collector = Arc::new(AtomicBool::new(false));
-        let collector_stop = stop_collector.clone();
-        let collector = thread::spawn(move || collect_samples(consumer, collector_stop));
 
         eprintln!(
             "microphone={} sample_rate={} channels={} format={}",
@@ -254,6 +266,11 @@ impl MicrophoneRecorder {
         stream
             .play()
             .map_err(|error| format!("could not start the microphone: {error}"))?;
+        let collector_stop = stop_collector.clone();
+        let collector = thread::Builder::new()
+            .name("koett-audio-collector".to_string())
+            .spawn(move || collect_samples(consumer, collector_stop, audio_chunks))
+            .map_err(|error| format!("could not start the microphone collector: {error}"))?;
 
         Ok(Self {
             stream: Some(stream),
@@ -270,6 +287,10 @@ impl MicrophoneRecorder {
 
     pub fn levels(&self) -> AudioLevels {
         self.levels.clone()
+    }
+
+    pub fn sample_rate(&self) -> i32 {
+        self.sample_rate
     }
 
     pub fn finish(mut self) -> Result<AudioRecording, String> {
@@ -306,6 +327,16 @@ impl MicrophoneRecorder {
     }
 }
 
+impl Drop for MicrophoneRecorder {
+    fn drop(&mut self) {
+        self.stream.take();
+        self.stop_collector.store(true, Ordering::Release);
+        if let Some(collector) = self.collector.take() {
+            let _ = collector.join();
+        }
+    }
+}
+
 pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, String> {
     if duration.is_zero() || duration > MAX_RECORDING_DURATION {
         return Err("microphone duration must be between 0 and 600 seconds".to_string());
@@ -315,12 +346,22 @@ pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, 
     recorder.finish()
 }
 
-fn collect_samples(mut consumer: ringbuf::HeapCons<f32>, stop: Arc<AtomicBool>) -> Vec<f32> {
+fn collect_samples(
+    mut consumer: ringbuf::HeapCons<f32>,
+    stop: Arc<AtomicBool>,
+    mut audio_chunks: Option<Sender<Vec<f32>>>,
+) -> Vec<f32> {
     let mut samples = Vec::new();
     let mut chunk = [0.0_f32; 2_048];
     loop {
         let count = consumer.pop_slice(&mut chunk);
         samples.extend_from_slice(&chunk[..count]);
+        if count > 0
+            && let Some(sender) = &audio_chunks
+            && sender.send(chunk[..count].to_vec()).is_err()
+        {
+            audio_chunks = None;
+        }
         if stop.load(Ordering::Acquire) && consumer.is_empty() {
             return samples;
         }
@@ -396,7 +437,14 @@ fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{AudioRecording, is_recoverable_stream_error};
+    use std::sync::Arc;
+    use std::sync::atomic::AtomicBool;
+    use std::sync::mpsc;
+
+    use ringbuf::HeapRb;
+    use ringbuf::traits::{Producer, Split};
+
+    use super::{AudioRecording, collect_samples, is_recoverable_stream_error};
 
     #[test]
     fn duration_uses_sample_count_and_rate() {
@@ -423,5 +471,21 @@ mod tests {
         assert!(!is_recoverable_stream_error(
             cpal::ErrorKind::StreamInvalidated
         ));
+    }
+
+    #[test]
+    fn collector_keeps_recovery_audio_and_forwards_the_same_samples() {
+        let (mut producer, consumer) = HeapRb::<f32>::new(4).split();
+        producer.push_slice(&[0.1, 0.2, 0.3]);
+        let stop = Arc::new(AtomicBool::new(true));
+        let (sender, receiver) = mpsc::channel();
+
+        let recorded = collect_samples(consumer, stop, Some(sender));
+        let forwarded = receiver.recv().unwrap();
+
+        assert_eq!(
+            (recorded, forwarded),
+            (vec![0.1, 0.2, 0.3], vec![0.1, 0.2, 0.3])
+        );
     }
 }

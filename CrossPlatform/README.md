@@ -5,7 +5,8 @@ toggle shortcut, transcribes locally, pastes into the focused app, and saves
 every transcript.
 
 The default shortcut is `Ctrl+Shift+Space`. The 110M English model downloads
-once on first use and stays loaded while Koett runs.
+once on first use and stays loaded while Koett runs. Long recordings process in
+the background while you speak.
 
 Windows has a notification-area menu and recording pill. Linux has a tray menu,
 uses desktop portals on Wayland, and uses native X11 shortcuts and paste on X11.

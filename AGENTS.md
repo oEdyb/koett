@@ -47,14 +47,23 @@ utterance. This proves model setup and bounded local inference. It does not
 prove microphone, tray, shortcut, portal, or focused-app paste behavior.
 
 Recordings up to 20 seconds keep the original one-shot decoder. Longer audio
-is resampled once to 16 kHz, split with the official Silero VAD, and decoded in
-hard-bounded chunks of at most 20 seconds. Adjacent chunks overlap by two
-seconds and use conservative word alignment so uncertain words are preserved.
-Custom Parakeet folders without the VAD file still work and use the same bounded
-fallback chunks. The default installer now downloads the 643,854-byte official
-`silero_vad.onnx` with exact size and SHA-256 verification. On the M5 host, the
-old one-shot 180-second fixture took 9.357 seconds and peaked near 1.711 GB. The
-final 420-second 44.1 kHz path took 9.264 seconds and peaked at 539 MB.
+is resampled to 16 kHz while recording. One dedicated worker owns the warmed
+model and decodes completed official Silero VAD segments in the background.
+No model is copied or reloaded. The full microphone recording stays available
+until final success so any background error can use the existing bounded
+fallback. Custom Parakeet folders without the VAD file still use that fallback.
+The default installer downloads the 643,854-byte official `silero_vad.onnx`
+with exact size and SHA-256 verification. On the M5 host, the final production
+420-second, 44.1 kHz self-test kept every speech anchor, left 84.7 ms after stop,
+and used 450,363,392 bytes maximum RSS. The final direct and worker paths for
+the 7.435-second sample measured 228.7 ms and 197.8 ms, so the normal short path
+has no measured latency cost.
+
+All direct Rust dependencies were checked against crates.io and their upstream
+documentation on 2026-08-25. Keep sherpa-onnx at 1.13.5 because 1.13.6 has no
+relevant ASR fix and did not prove faster. Keep x11rb at 0.13.2 until
+global-hotkey can move with it; using 0.14.0 now adds a second x11rb copy for no
+Koett-relevant fix.
 
 Cross-platform history writes use private files. If the main history fails,
 Koett writes one collision-safe file under the durable `Failed Transcripts`
@@ -356,6 +365,8 @@ Dictation and all audio transcription stay local.
 - `Package.swift`: targets and exact FluidAudio version.
 - `install-macos.sh`: release build, signing, Login Item update, and launch.
 - `README.md`: public install, use, and privacy.
+- `CrossPlatform/src/transcription/background.rs`: warmed Rust model worker and
+  background long-recording path.
 
 ## Verification receipts
 
@@ -418,11 +429,11 @@ Dictation and all audio transcription stay local.
 - Live-confirm rich Markdown and math in the installed panel.
 - The public binary release is Apple silicon only. There is no Intel Mac build.
 - Windows and Linux have complete v0.1 implementation branches, but they are
-  not released platforms yet. One mostly-silent long Windows recording stalled
-  inside transcription in the emulated VM, while a fixed five-second spoken
-  recording passed. Isolate and bound that long-recording path. Also verify the
-  Windows tray through keyboard activation on a real keyboard and run one X11
-  desktop test before merging or promising three-platform support.
+  not released platforms yet. The bounded background path now passes the native
+  420-second regression, but it still needs one long recording through the real
+  Windows microphone UI. Also verify the Windows tray through keyboard
+  activation on a real keyboard and run one X11 desktop test before merging or
+  promising three-platform support.
 - The Linux artifact targets glibc 2.35 or newer and needs the system ALSA
   runtime. Wayland also needs the GlobalShortcuts, RemoteDesktop, and Clipboard
   desktop portals. A GNOME tray needs AppIndicator support.

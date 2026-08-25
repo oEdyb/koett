@@ -2,11 +2,14 @@ use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::atomic::AtomicBool;
+use std::sync::mpsc;
 use std::time::Duration;
 
 use koett_engine::audio::{AudioRecording, capture_default_microphone};
 use koett_engine::model::{self, ModelProgress};
-use koett_engine::transcription::{ParakeetTranscriber, Transcriber};
+use koett_engine::transcription::{
+    ParakeetTranscriber, Transcriber, Transcript, TranscriptionWorker,
+};
 use sherpa_onnx::LinearResampler;
 
 struct Arguments {
@@ -85,7 +88,8 @@ fn run_self_test() -> Result<(), String> {
 }
 
 fn run_long_self_test(duration: Duration) -> Result<(), String> {
-    let (model_directory, sample, mut transcriber) = load_self_test()?;
+    let (model_directory, sample, transcriber) = load_self_test()?;
+    let worker = TranscriptionWorker::start(transcriber)?;
     let microphone_rate = 44_100;
     let resampler = LinearResampler::create(sample.sample_rate, microphone_rate)
         .ok_or_else(|| "could not create the long self-test resampler".to_string())?;
@@ -99,7 +103,7 @@ fn run_long_self_test(duration: Duration) -> Result<(), String> {
         .collect();
     let expected_repetitions = target_samples / pattern.len();
     let audio = AudioRecording::new(microphone_rate, samples)?;
-    let result = transcriber.transcribe(&audio)?;
+    let result = transcribe_recording(&worker, audio)?;
     check_self_test_text(&result.text)?;
     let normalized = result.text.to_ascii_lowercase();
     let recognized_starts = normalized.matches("phoebe").count();
@@ -117,8 +121,10 @@ fn run_long_self_test(duration: Duration) -> Result<(), String> {
     let mut mostly_silent = vec![0.0_f32; microphone_rate as usize * 60];
     let insertion = mostly_silent.len() / 2;
     mostly_silent[insertion..insertion + short_samples.len()].copy_from_slice(&short_samples);
-    let short_result =
-        transcriber.transcribe(&AudioRecording::new(microphone_rate, mostly_silent)?)?;
+    let short_result = transcribe_recording(
+        &worker,
+        AudioRecording::new(microphone_rate, mostly_silent)?,
+    )?;
     if !short_result.text.to_ascii_lowercase().contains("love you") {
         return Err(format!(
             "long self-test lost the isolated short utterance: {}",
@@ -131,7 +137,23 @@ fn run_long_self_test(duration: Duration) -> Result<(), String> {
         result.transcription.as_secs_f64() * 1_000.0,
         result.realtime_factor()
     );
+    worker.stop();
     Ok(())
+}
+
+fn transcribe_recording(
+    worker: &TranscriptionWorker,
+    audio: AudioRecording,
+) -> Result<Transcript, String> {
+    let (sender, receiver) = mpsc::sync_channel(8);
+    let session = worker.record(audio.sample_rate, receiver)?;
+    for chunk in audio.samples.chunks(2_048) {
+        sender
+            .send(chunk.to_vec())
+            .map_err(|_| "the transcription worker stopped unexpectedly".to_string())?;
+    }
+    drop(sender);
+    worker.finish(session, audio)
 }
 
 fn load_self_test() -> Result<(PathBuf, AudioRecording, ParakeetTranscriber), String> {
