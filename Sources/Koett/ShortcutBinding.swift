@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import IOKit.hidsystem
 
 struct ShortcutBinding: Codable, Equatable {
     static let relevantModifiers: NSEvent.ModifierFlags = [
@@ -259,7 +260,10 @@ struct ModifierShortcutState {
         }
 
         let wasActive = !pressedKeyCodes.isEmpty
-        let eventIsDown = keyIsDown ?? !pressedKeyCodes.contains(keyCode)
+        let eventIsDown = Self.eventReportsKeyDown(
+            keyCode: keyCode,
+            modifierFlags: modifierFlags
+        ) ?? keyIsDown ?? !pressedKeyCodes.contains(keyCode)
         if eventIsDown {
             guard !pressedKeyCodes.contains(keyCode) else {
                 return (false, false, false)
@@ -290,6 +294,30 @@ struct ModifierShortcutState {
     mutating func reset() {
         pressedKeyCodes.removeAll()
         chordUsed = false
+    }
+
+    private static func eventReportsKeyDown(
+        keyCode: UInt16,
+        modifierFlags: UInt
+    ) -> Bool? {
+        guard modifierFlags != 0 else { return nil }
+
+        let deviceMask: UInt
+        switch keyCode {
+        case 54: deviceMask = UInt(NX_DEVICERCMDKEYMASK)
+        case 55: deviceMask = UInt(NX_DEVICELCMDKEYMASK)
+        case 56: deviceMask = UInt(NX_DEVICELSHIFTKEYMASK)
+        case 60: deviceMask = UInt(NX_DEVICERSHIFTKEYMASK)
+        case 58: deviceMask = UInt(NX_DEVICELALTKEYMASK)
+        case 61: deviceMask = UInt(NX_DEVICERALTKEYMASK)
+        case 59: deviceMask = UInt(NX_DEVICELCTLKEYMASK)
+        case 62: deviceMask = UInt(NX_DEVICERCTLKEYMASK)
+        case 63:
+            deviceMask = NSEvent.ModifierFlags.function.rawValue
+        default:
+            return nil
+        }
+        return modifierFlags & deviceMask != 0
     }
 
     @discardableResult

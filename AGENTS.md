@@ -12,7 +12,7 @@ Koett is currently an English-only macOS dictation app for Apple Silicon. Swift
 owns the macOS app. Do not rewrite it or add a cross-platform shell without a
 measured Windows or Linux spike.
 
-## Implementation status — 2026-08-24
+## Implementation status — 2026-08-25
 
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
@@ -23,7 +23,7 @@ measured Windows or Linux spike.
   `a37adefa-a412-473c-9444-d60257efbc6a`; the ticket is stapled, and host
   Gatekeeper reports `source=Notarized Developer ID`. The release ZIP SHA-256
   is `1f6a8eff4f0facc6e1018338781dfbfef15ac20987a21f14fd6697259630d6ae`.
-- The current signed release and installed app match UUID
+- The public signed release has UUID
   `30AB1997-EE20-3334-88C1-29B72CBFB7CD`. The Login Item is running. Olle
   live-confirmed no repeated Keychain prompt, clean text on the glass, and
   Katie speech on 2026-08-11. On 2026-08-23, Olle live-confirmed the final
@@ -37,7 +37,7 @@ measured Windows or Linux spike.
   pin, built in 149.75 seconds, installed, launched one process, passed strict
   signature verification, and matched its guest release UUID
   `E87B9F09-B5E0-37A2-BE7B-0A11D13B8D2F`. The small VM image has Command Line
-  Tools but no Xcode `XCTest` module, so run the 53-test suite on the host.
+  Tools but no Xcode `XCTest` module, so run the host test suite with Xcode.
 - `Koett.swift` was reduced from about 1,800 lines to 741. Startup, menus,
   dictation, media, and Ask now have focused files. Keep this simple split;
   do not add a framework, service container, or generic plugin system.
@@ -56,6 +56,10 @@ measured Windows or Linux spike.
 - A narrow active Core Graphics event tap receives modifier changes. AppKit
   receives ordinary key-down and key-up events. If macOS disables the event
   tap, Koett resyncs the physical modifier state before it continues.
+- Modifier-only shortcuts use the event's device-specific left/right flag as
+  their primary state. Do not replace this with a second
+  `CGEventSource.keyState` check: that check returned `false` during real Right
+  Option down events on this Mac.
 - Tink and Basso sounds mark recording start and stop.
 - A nonactivating bottom-center pill shows real microphone levels and elapsed
   recording time. It stays above apps without taking keyboard focus.
@@ -310,7 +314,7 @@ Dictation and all audio transcription stay local.
 
 ## Verification receipts
 
-- The current source passes 53 tests with zero failures. Setup tests cover
+- The current source passes 54 tests with zero failures. Setup tests cover
   model-progress normalization and permission messages. Failure tests cover
   visible paste/microphone errors and collision-safe failed-audio recovery.
   Media tests cover
@@ -331,6 +335,9 @@ Dictation and all audio transcription stay local.
   release executable at `30AB1997-EE20-3334-88C1-29B72CBFB7CD`.
 - Olle live-confirmed the installed core path with `Hello, hello, hello.` after
   the final signed replacement.
+- Olle live-confirmed the repaired Right Option toggle path with
+  `Hello, hello, hello.` on 2026-08-25. The stable Apple Development build is
+  installed with executable UUID `CEDFCAD1-74F2-3357-8AAB-4F4643C293C3`.
 - The focused-media expansion passed a read-only Swift review after fixes for
   full process-group termination and concurrent transcript-name collisions. No
   Critical or Important issue remains in the scoped media files.
