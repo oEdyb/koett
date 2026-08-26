@@ -17,17 +17,18 @@ measured Windows or Linux spike.
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
   optional local formatting, and optional Ask with spoken replies.
-- Public release `v0.1.0` provides the notarized Apple-silicon app at
-  `https://github.com/oEdyb/koett/releases/tag/v0.1.0`. It targets exact source
-  commit `10337fc9eeede3679ebc122a56f09197b86b01bd`. Apple accepted submission
-  `a37adefa-a412-473c-9444-d60257efbc6a`; the ticket is stapled, and host
+- Public release `v0.1.1` provides the notarized Apple-silicon app at
+  `https://github.com/oEdyb/koett/releases/tag/v0.1.1`. It targets exact source
+  commit `c72f83415b1d760c30316f07fc776f09b0ebdc0b`. Apple accepted submission
+  `175a1f2c-32d8-49f7-b6c5-f1bc2e0a5c8c`; the ticket is stapled, and host
   Gatekeeper reports `source=Notarized Developer ID`. The release ZIP SHA-256
-  is `1f6a8eff4f0facc6e1018338781dfbfef15ac20987a21f14fd6697259630d6ae`.
+  is `980fb0cc7db7f8060298912393b6e5c4904d6022005e94a4ed0cb6c8c08225f0`.
 - The public signed release has UUID
-  `30AB1997-EE20-3334-88C1-29B72CBFB7CD`. The Login Item is running. Olle
+  `CEDFCAD1-74F2-3357-8AAB-4F4643C293C3`. The Login Item is running. Olle
   live-confirmed no repeated Keychain prompt, clean text on the glass, and
   Katie speech on 2026-08-11. On 2026-08-23, Olle live-confirmed the final
   release-readiness install by dictating and pasting `Hello, hello, hello.`
+  The same live phrase verified the Right Option repair before v0.1.1 shipped.
 - A clean Tart macOS 26.6.2 VM passed the source-install path on 2026-08-23.
   The first run fetched FluidAudio 0.15.5, requested Microphone and
   Accessibility correctly, started at login after a reboot, downloaded the
@@ -211,7 +212,7 @@ measured Windows or Linux spike.
   after replacement restores the previous app and Login Item.
 - The installer prefers Developer ID Application, then Apple Development, then
   ad-hoc signing. It enables hardened runtime with the audio-input and Apple
-  Events entitlements. The public `v0.1.0` ZIP is signed by
+  Events entitlements. The public `v0.1.1` ZIP is signed by
   `Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)`, notarized, and
   stapled.
 - Keep one stable signing identity. An ad-hoc or changing identity can make
@@ -332,7 +333,7 @@ Dictation and all audio transcription stay local.
   packaging plist validations pass for the current source.
 - The installed app passes strict code-signature verification with hardened
   runtime and the expected entitlements. Its executable UUID matches the
-  release executable at `30AB1997-EE20-3334-88C1-29B72CBFB7CD`.
+  release executable at `CEDFCAD1-74F2-3357-8AAB-4F4643C293C3`.
 - Olle live-confirmed the installed core path with `Hello, hello, hello.` after
   the final signed replacement.
 - Olle live-confirmed the repaired Right Option toggle path with
