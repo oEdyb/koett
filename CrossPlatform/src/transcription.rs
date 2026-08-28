@@ -160,11 +160,10 @@ impl ParakeetTranscriber {
         let mut decode_chunks = 0;
         if let Some(vad) = &self.vad {
             vad.reset();
-            let mut chunks = samples.chunks_exact(VAD_WINDOW_SIZE);
-            for chunk in &mut chunks {
+            let (chunks, remainder) = samples.as_chunks::<VAD_WINDOW_SIZE>();
+            for chunk in chunks {
                 vad.accept_waveform(chunk);
             }
-            let remainder = chunks.remainder();
             if !remainder.is_empty() {
                 let mut final_window = [0.0_f32; VAD_WINDOW_SIZE];
                 final_window[..remainder.len()].copy_from_slice(remainder);
@@ -502,8 +501,8 @@ mod tests {
         let mut parts = Vec::new();
 
         vad.reset();
-        let mut windows = samples.chunks_exact(VAD_WINDOW_SIZE);
-        for (index, window) in windows.by_ref().enumerate() {
+        let (windows, remainder) = samples.as_chunks::<VAD_WINDOW_SIZE>();
+        for (index, window) in windows.iter().enumerate() {
             vad.accept_waveform(window);
             let available_at =
                 (index + 1) as f64 * VAD_WINDOW_SIZE as f64 / MODEL_SAMPLE_RATE as f64;
@@ -515,7 +514,6 @@ mod tests {
                 &mut parts,
             );
         }
-        let remainder = windows.remainder();
         if !remainder.is_empty() {
             let mut final_window = [0.0_f32; VAD_WINDOW_SIZE];
             final_window[..remainder.len()].copy_from_slice(remainder);

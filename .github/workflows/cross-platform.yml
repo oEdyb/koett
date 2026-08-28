@@ -21,18 +21,73 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  windows:
-    runs-on: windows-2025
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+
+  supply-chain:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: CrossPlatform
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
+      - name: Check workflow pins
+        run: python3 scripts/test_workflow_pins.py
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Audit locked dependencies
+        run: cargo audit
+
+  msrv:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
+            libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev pkg-config
+      - name: Install minimum Rust
+        run: rustup toolchain install 1.92.0 --profile minimal
+      - name: Check minimum Rust
+        run: cargo +1.92.0 check --locked --all-targets
+
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Rust
         shell: pwsh
         run: |
-          rustup toolchain install 1.92.0 --profile minimal --component clippy
-          rustup default 1.92.0
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
       - name: Test
         run: cargo test --locked
       - name: Lint
@@ -51,7 +106,7 @@ jobs:
           Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
           Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
           Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Koett-Windows-x86_64
           path: CrossPlatform/dist/Koett-Windows-x86_64.zip
@@ -66,11 +121,14 @@ jobs:
           - runner: ubuntu-22.04-arm
             architecture: arm64
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: CrossPlatform
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install system packages
         run: |
           sudo apt-get update
@@ -80,8 +138,8 @@ jobs:
             libxkbcommon-dev pkg-config
       - name: Install Rust
         run: |
-          rustup toolchain install 1.92.0 --profile minimal --component clippy
-          rustup default 1.92.0
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
       - name: Test
         run: cargo test --locked
       - name: Lint
@@ -103,7 +161,7 @@ jobs:
             -t dist/Koett-Linux-${{ matrix.architecture }}
           tar -C dist -czf dist/Koett-Linux-${{ matrix.architecture }}.tar.gz \
             Koett-Linux-${{ matrix.architecture }}
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Koett-Linux-${{ matrix.architecture }}
           path: CrossPlatform/dist/Koett-Linux-${{ matrix.architecture }}.tar.gz
