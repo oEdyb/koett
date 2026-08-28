@@ -1,0 +1,310 @@
+{
+  "schema": 1,
+  "status": "draft-source-inventory-not-release-compliance",
+  "license_choices": {
+    "(MIT OR Apache-2.0) AND Unicode-3.0": "MIT AND Unicode-3.0",
+    "0BSD OR MIT OR Apache-2.0": "MIT",
+    "Apache-2.0 OR ISC OR MIT": "MIT",
+    "Apache-2.0 OR MIT": "MIT",
+    "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT": "MIT",
+    "Apache-2.0/MIT": "MIT",
+    "BSD-2-Clause OR MIT OR Apache-2.0": "MIT",
+    "BSD-3-Clause OR MIT OR Apache-2.0": "MIT",
+    "MIT OR Apache-2.0": "MIT",
+    "MIT OR Apache-2.0 OR LGPL-2.1-or-later": "MIT",
+    "MIT OR Apache-2.0 OR Zlib": "MIT",
+    "MIT OR Zlib OR Apache-2.0": "MIT",
+    "MIT/Apache-2.0": "MIT",
+    "Unlicense OR MIT": "MIT",
+    "Unlicense/MIT": "MIT",
+    "Zlib OR Apache-2.0 OR MIT": "MIT"
+  },
+  "required_markers": {
+    "Package.resolved": [
+      "0.15.6",
+      "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b"
+    ],
+    "CrossPlatform/src/model.rs": [
+      "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+      "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    ],
+    "Sources/Koett/S1MiniCleaner.swift": [
+      "ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634"
+    ]
+  },
+  "manual_components": [
+    {
+      "bom_ref": "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+      "type": "library",
+      "group": "swift-package",
+      "name": "FluidAudio",
+      "version": "0.15.6",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/FluidInference/FluidAudio/tree/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:github/FluidInference/text-processing-rs@v0.3.0",
+      "type": "library",
+      "group": "native-library",
+      "name": "NemoTextProcessing.xcframework",
+      "version": "0.3.0",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/FluidInference/text-processing-rs/releases/tag/v0.3.0",
+      "hashes": [{ "alg": "SHA-256", "content": "76d0ee9a32b1ee2193231299180ca9bc4fc7e98794e771b3d55d66498352d85f" }],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "koett:native:fastcluster@FluidAudio-0.15.6",
+      "type": "library",
+      "group": "native-library",
+      "name": "fastcluster",
+      "version": "FluidAudio-0.15.6",
+      "license": { "expression": "BSD-2-Clause" },
+      "source_url": "https://github.com/FluidInference/FluidAudio/tree/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/Sources/FastClusterWrapper",
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:npm/marked@18.0.10",
+      "type": "library",
+      "group": "bundled-javascript",
+      "name": "marked",
+      "version": "18.0.10",
+      "license": { "expression": "MIT" },
+      "asset_paths": ["Sources/Koett/Resources/AssistantRenderer/marked.js"],
+      "asset_markers": ["marked v18.0.10"],
+      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt"],
+      "source_url": "https://github.com/markedjs/marked/tree/v18.0.10",
+      "notice_state": "bundled"
+    },
+    {
+      "bom_ref": "pkg:npm/katex@0.18.4",
+      "type": "library",
+      "group": "bundled-javascript",
+      "name": "KaTeX",
+      "version": "0.18.4",
+      "license": { "expression": "MIT" },
+      "asset_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/katex.js",
+        "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
+        "Sources/Koett/Resources/AssistantRenderer/katex.css",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_AMS-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Bold.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Bold.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Bold.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-BoldItalic.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Italic.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-BoldItalic.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-Italic.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Bold.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Italic.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Script-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size1-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size2-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size3-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
+        "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2"
+      ],
+      "asset_markers": ["version:\"0.18.4\""],
+      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt"],
+      "source_url": "https://github.com/KaTeX/KaTeX/tree/v0.18.4",
+      "notice_state": "bundled"
+    },
+    {
+      "bom_ref": "pkg:npm/highlight.js@11.12.0",
+      "type": "library",
+      "group": "bundled-javascript",
+      "name": "highlight.js",
+      "version": "11.12.0",
+      "license": { "expression": "BSD-3-Clause" },
+      "asset_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/highlight.js",
+        "Sources/Koett/Resources/AssistantRenderer/highlight.css"
+      ],
+      "asset_markers": ["Highlight.js v11.12.0"],
+      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt"],
+      "source_url": "https://github.com/highlightjs/highlight.js/tree/11.12.0",
+      "notice_state": "bundled"
+    },
+    {
+      "bom_ref": "pkg:npm/dompurify@3.4.14",
+      "type": "library",
+      "group": "bundled-javascript",
+      "name": "DOMPurify",
+      "version": "3.4.14",
+      "license": {
+        "declared_expression": "MPL-2.0 OR Apache-2.0",
+        "selected_expression": "Apache-2.0"
+      },
+      "asset_paths": ["Sources/Koett/Resources/AssistantRenderer/dompurify.js"],
+      "asset_markers": ["DOMPurify 3.4.14"],
+      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt"],
+      "source_url": "https://github.com/cure53/DOMPurify/tree/3.4.14",
+      "notice_state": "bundled"
+    },
+    {
+      "bom_ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "FluidInference/parakeet-tdt-0.6b-v2-coreml",
+      "version": "ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "license": { "expression": "CC-BY-4.0" },
+      "source_url": "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v2-coreml/tree/ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "FluidInference/nemotron-speech-streaming-en-0.6b-coreml",
+      "version": "e673531caa6d25ab7baf5a8c14c9b99ba1551838",
+      "license": {
+        "name": "NVIDIA Open Model License",
+        "url": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+      },
+      "source_url": "https://huggingface.co/FluidInference/nemotron-speech-streaming-en-0.6b-coreml/tree/e673531caa6d25ab7baf5a8c14c9b99ba1551838",
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "S1-mini by Superwhisper",
+      "version": "ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "license": {
+        "name": "S1-mini License (Apache-2.0 with model-name attribution term)",
+        "url": "https://huggingface.co/superwhisper/s1-mini-GGUF/blob/ee2c0f56e56345f475749a44ff2893e21c3cb292/LICENSE"
+      },
+      "source_url": "https://huggingface.co/superwhisper/s1-mini-GGUF/tree/ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "hashes": [{ "alg": "SHA-256", "content": "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634" }],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+      "version": "archive-sha256-17f945007b52",
+      "license": { "expression": "CC-BY-4.0" },
+      "source_url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m",
+      "hashes": [{ "alg": "SHA-256", "content": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b" }],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "koett:model:silero-vad@9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "Silero VAD",
+      "version": "sha256-9e2449e10874",
+      "license": { "expression": "MIT" },
+      "source_url": "https://github.com/snakers4/silero-vad",
+      "hashes": [{ "alg": "SHA-256", "content": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6" }],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "type": "library",
+      "group": "native-library",
+      "name": "sherpa-onnx",
+      "version": "1.13.5",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/tree/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/microsoft/onnxruntime@v1.27.1",
+      "type": "library",
+      "group": "native-library",
+      "name": "ONNX Runtime",
+      "version": "1.27.1",
+      "license": { "expression": "MIT" },
+      "source_url": "https://github.com/microsoft/onnxruntime/tree/v1.27.1",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
+      "type": "library",
+      "group": "native-library",
+      "name": "kaldi-native-fbank",
+      "version": "1.22.3",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/csukuangfj/kaldi-native-fbank/tree/v1.22.3",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
+      "type": "library",
+      "group": "native-library",
+      "name": "KISS FFT",
+      "version": "febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
+      "license": { "expression": "BSD-3-Clause" },
+      "source_url": "https://github.com/mborgerding/kissfft/tree/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
+      "type": "library",
+      "group": "native-library",
+      "name": "kaldi-decoder",
+      "version": "0.3.0",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/k2-fsa/kaldi-decoder/tree/v0.3.0",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/k2-fsa/kaldifst@v1.8.0",
+      "type": "library",
+      "group": "native-library",
+      "name": "kaldifst and OpenFst",
+      "version": "1.8.0",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/k2-fsa/kaldifst/tree/v1.8.0",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/pkufool/simple-sentencepiece@v0.7",
+      "type": "library",
+      "group": "native-library",
+      "name": "simple-sentencepiece",
+      "version": "0.7",
+      "license": { "expression": "Apache-2.0" },
+      "source_url": "https://github.com/pkufool/simple-sentencepiece/tree/v0.7",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
+      "type": "library",
+      "group": "native-library",
+      "name": "piper-phonemize",
+      "version": "f3ff95afc03640bc1399e113e83361192a2fafb4",
+      "license": { "expression": "MIT" },
+      "source_url": "https://github.com/csukuangfj/piper-phonemize/tree/f3ff95afc03640bc1399e113e83361192a2fafb4",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    },
+    {
+      "bom_ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "type": "library",
+      "group": "native-library",
+      "name": "eSpeak NG and ucd",
+      "version": "ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "license": { "expression": "GPL-3.0-or-later AND BSD-2-Clause" },
+      "source_url": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "notice_state": "missing",
+      "status": "blocked-control-only"
+    }
+  ]
+}

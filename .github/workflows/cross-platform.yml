@@ -46,6 +46,10 @@ jobs:
         run: python3 scripts/test_workflow_pins.py
       - name: Test build receipts
         run: python3 scripts/test_build_receipt.py
+      - name: Test supply-chain inventory
+        run: python3 scripts/test_supply_chain_inventory.py
+      - name: Check supply-chain inventory
+        run: python3 scripts/generate_supply_chain_inventory.py --check
       - name: Format
         run: cargo fmt --all -- --check
       - name: Install cargo-audit
