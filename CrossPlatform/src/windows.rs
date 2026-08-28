@@ -474,6 +474,7 @@ impl WindowsApp {
                 EngineUpdate::ModelProgress(progress) => {
                     use crate::model::ModelProgress;
                     let text = match progress {
+                        ModelProgress::Repairing => "Repairing model cache".to_string(),
                         ModelProgress::Downloading { received, total } => {
                             format!("Downloading model — {}%", received * 100 / total)
                         }

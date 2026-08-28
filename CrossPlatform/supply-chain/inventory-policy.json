@@ -25,8 +25,15 @@
       "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b"
     ],
     "CrossPlatform/src/model.rs": [
+      "parakeet-tdt-ctc-110m-int8.json"
+    ],
+    "CrossPlatform/model-manifests/parakeet-tdt-ctc-110m-int8.json": [
       "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
       "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "9177a9146cf32ee0cc8152276ef95116f312018d316be37ccf57f7efea81fc1a",
+      "450e56bd2f036fe5b6aa821865838cc5aa9d8b0106134ce9a9ba0664abe6cd10",
+      "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150",
+      "bdf1efef7dcc337b2604de864418f1b049f02a4dae6639ad3b1ead0b40c5f7f5",
       "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
     ],
     "Sources/Koett/S1MiniCleaner.swift": [
@@ -194,6 +201,15 @@
       "license": { "expression": "CC-BY-4.0" },
       "source_url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m",
       "hashes": [{ "alg": "SHA-256", "content": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b" }],
+      "asset_paths": ["CrossPlatform/model-manifests/parakeet-tdt-ctc-110m-int8.json"],
+      "asset_markers": [
+        "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+        "9177a9146cf32ee0cc8152276ef95116f312018d316be37ccf57f7efea81fc1a",
+        "450e56bd2f036fe5b6aa821865838cc5aa9d8b0106134ce9a9ba0664abe6cd10",
+        "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150",
+        "bdf1efef7dcc337b2604de864418f1b049f02a4dae6639ad3b1ead0b40c5f7f5",
+        "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+      ],
       "notice_state": "missing"
     },
     {

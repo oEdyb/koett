@@ -70,6 +70,7 @@ fn run(
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
 
+    let uses_default_model = settings.model_directory.is_none();
     let model_directory = match settings.model_directory {
         Some(path) => Ok(path),
         None => model::ensure_default_model(&cancelled, |progress| {
@@ -90,6 +91,22 @@ fn run(
     let transcriber = match ParakeetTranscriber::load(&model_directory, 2) {
         Ok(transcriber) => transcriber,
         Err(error) => {
+            let error = if uses_default_model {
+                match model::quarantine_default_model_after_load_failure(&model_directory) {
+                    Ok(Some(quarantine)) => format!(
+                        "the model failed to load and its cache failed verification. Koett moved it to {}. Restart Koett to download a verified copy",
+                        quarantine.display()
+                    ),
+                    Ok(None) => error,
+                    Err(verification_error) => {
+                        format!(
+                            "{error}. Model cache verification also failed: {verification_error}"
+                        )
+                    }
+                }
+            } else {
+                error
+            };
             send_error(&updates, error);
             return;
         }

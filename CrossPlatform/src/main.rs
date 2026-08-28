@@ -160,6 +160,7 @@ fn load_self_test() -> Result<(PathBuf, AudioRecording, ParakeetTranscriber), St
     let cancelled = AtomicBool::new(false);
     let mut last_percent = None;
     let model_directory = model::ensure_default_model(&cancelled, |progress| match progress {
+        ModelProgress::Repairing => eprintln!("model_repairing=true"),
         ModelProgress::Downloading { received, total } => {
             let percent = received.saturating_mul(100) / total;
             if last_percent != Some(percent) {

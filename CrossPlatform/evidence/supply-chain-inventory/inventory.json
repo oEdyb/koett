@@ -291,7 +291,13 @@
       "version": "sha256-9e2449e10874"
     },
     {
-      "assets": [],
+      "assets": [
+        {
+          "bytes": 2204,
+          "path": "CrossPlatform/model-manifests/parakeet-tdt-ctc-110m-int8.json",
+          "sha256": "8b93117489766aeee2ced4ad4d39d8beef018109b7840d4aee95f4fec9724d91"
+        }
+      ],
       "group": "model",
       "hashes": [
         {
@@ -9282,9 +9288,9 @@
       "sha256": "2ca81f7052d8ad1020967cf49899cddb6f489f3fbab3911ae5b786e493495d54"
     },
     {
-      "bytes": 13910,
+      "bytes": 14901,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
-      "sha256": "4550a8a57a56067d2433a6a9461e33fdf89aa36ad44d0c69380a6955178c017c"
+      "sha256": "d855221f019081eebe020c25d20b9fdf08a324d765dcd18e045578dd36527427"
     },
     {
       "bytes": 11341,

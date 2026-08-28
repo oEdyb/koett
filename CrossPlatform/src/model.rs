@@ -1,8 +1,7 @@
-use std::fmt::Write as _;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 
 use bzip2::read::BzDecoder;
@@ -11,20 +10,23 @@ use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
 
 use crate::paths::{self, DEFAULT_MODEL_ID};
 
-const MODEL_URL: &str = concat!(
-    "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/",
-    "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8.tar.bz2"
-);
-const ARCHIVE_BYTES: u64 = 104_337_827;
-const ARCHIVE_SHA256: &str = "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b";
-const VAD_URL: &str =
-    "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx";
-const VAD_BYTES: u64 = 643_854;
-const VAD_SHA256: &str = "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6";
+mod manifest;
+use manifest::{
+    ModelManifest, default_model_manifest, digest_hex, manifest_artifact, manifest_sha256,
+    quarantine_model_directory, validate_cached_model, validate_model_files,
+    write_verification_stamp,
+};
+
+const MODEL_MANIFEST_JSON: &str =
+    include_str!("../model-manifests/parakeet-tdt-ctc-110m-int8.json");
+const ASR_ARTIFACT: &str = "asr";
+const VAD_ARTIFACT: &str = "vad";
 pub const VAD_FILE: &str = "silero_vad.onnx";
+static TRANSACTION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ModelProgress {
+    Repairing,
     Downloading { received: u64, total: u64 },
     Installing,
     Ready,
@@ -34,85 +36,144 @@ pub fn ensure_default_model(
     cancelled: &AtomicBool,
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
+    let manifest = default_model_manifest()?;
+    let manifest_sha256 = manifest_sha256();
     let destination = paths::default_model_directory()?;
-    if default_model_is_complete(&destination) {
+    check_cancelled(cancelled)?;
+    if prepare_destination(
+        &destination,
+        &manifest,
+        &manifest_sha256,
+        cancelled,
+        &mut progress,
+    )? {
         progress(ModelProgress::Ready);
         return Ok(destination);
     }
-    let needs_asr = !asr_model_is_complete(&destination);
-    let needs_vad = !destination.join(VAD_FILE).is_file();
+    let asr = manifest_artifact(&manifest, ASR_ARTIFACT)?;
+    let vad = manifest_artifact(&manifest, VAD_ARTIFACT)?;
     let parent = destination
         .parent()
         .ok_or_else(|| format!("{} has no parent directory", destination.display()))?;
     fs::create_dir_all(parent)
         .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    let archive = parent.join(format!("{DEFAULT_MODEL_ID}.tar.bz2.part"));
-    let vad_download = parent.join(format!(".{VAD_FILE}.part"));
-    let download_total = u64::from(needs_asr) * ARCHIVE_BYTES + u64::from(needs_vad) * VAD_BYTES;
-    let mut download_offset = 0;
-
-    if needs_asr {
-        let download = download_file(
+    let transaction = create_install_transaction(parent)?;
+    let archive = transaction.join("model.tar.bz2.part");
+    let vad_download = transaction.join("silero_vad.onnx.part");
+    let download_total = asr.bytes + vad.bytes;
+    let result = (|| {
+        download_file(
             "speech model",
-            MODEL_URL,
+            &asr.source_url,
             &archive,
-            ARCHIVE_BYTES,
-            ARCHIVE_SHA256,
-            download_offset,
+            asr.bytes,
+            &asr.sha256,
+            0,
             download_total,
             cancelled,
             &mut progress,
-        );
-        if let Err(error) = download {
-            let _ = fs::remove_file(&archive);
-            return Err(error);
-        }
-        download_offset += ARCHIVE_BYTES;
-    }
-    if needs_vad {
-        let download = download_file(
+        )?;
+        download_file(
             "voice detector",
-            VAD_URL,
+            &vad.source_url,
             &vad_download,
-            VAD_BYTES,
-            VAD_SHA256,
-            download_offset,
+            vad.bytes,
+            &vad.sha256,
+            asr.bytes,
             download_total,
             cancelled,
             &mut progress,
-        );
-        if let Err(error) = download {
-            let _ = fs::remove_file(&archive);
-            let _ = fs::remove_file(&vad_download);
-            return Err(error);
+        )?;
+        check_cancelled(cancelled)?;
+        progress(ModelProgress::Installing);
+        install_archive(
+            &archive,
+            &vad_download,
+            &destination,
+            &manifest,
+            &manifest_sha256,
+            cancelled,
+            &mut progress,
+        )?;
+        progress(ModelProgress::Ready);
+        Ok(destination.clone())
+    })();
+    let _ = fs::remove_dir_all(&transaction);
+    result
+}
+
+fn create_install_transaction(parent: &Path) -> Result<PathBuf, String> {
+    for _ in 0..1_000_u16 {
+        let index = TRANSACTION_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let transaction = parent.join(format!(
+            ".{DEFAULT_MODEL_ID}.install-{}-{index}",
+            std::process::id()
+        ));
+        match fs::create_dir(&transaction) {
+            Ok(()) => return Ok(transaction),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => {
+                return Err(format!(
+                    "could not create model install folder {}: {error}",
+                    transaction.display()
+                ));
+            }
         }
     }
-    if let Err(error) = check_cancelled(cancelled) {
-        let _ = fs::remove_file(&archive);
-        let _ = fs::remove_file(&vad_download);
-        return Err(error);
+    Err(format!(
+        "could not create a unique model install folder in {}",
+        parent.display()
+    ))
+}
+
+fn prepare_destination(
+    destination: &Path,
+    manifest: &ModelManifest,
+    manifest_sha256: &str,
+    cancelled: &AtomicBool,
+    progress: &mut impl FnMut(ModelProgress),
+) -> Result<bool, String> {
+    for _ in 0..10_u8 {
+        match validate_cached_model(destination, &manifest.files, manifest_sha256, cancelled) {
+            Ok(()) => return Ok(true),
+            Err(error) if cancelled.load(Ordering::Acquire) => return Err(error),
+            Err(_) if !destination.exists() => return Ok(false),
+            Err(error) => {
+                progress(ModelProgress::Repairing);
+                let quarantine = match quarantine_model_directory(destination) {
+                    Ok(quarantine) => quarantine,
+                    Err(_) if !destination.exists() => continue,
+                    Err(quarantine_error) => {
+                        return Err(format!(
+                            "the model cache failed verification ({error}); {quarantine_error}"
+                        ));
+                    }
+                };
+                if validate_cached_model(&quarantine, &manifest.files, manifest_sha256, cancelled)
+                    .is_ok()
+                {
+                    if !destination.exists() {
+                        match fs::rename(&quarantine, destination) {
+                            Ok(()) => continue,
+                            Err(_) if destination.exists() => continue,
+                            Err(restore_error) => {
+                                return Err(format!(
+                                    "a valid model cache moved during repair and could not be restored from {}: {restore_error}",
+                                    quarantine.display()
+                                ));
+                            }
+                        }
+                    }
+                    continue;
+                }
+                return Ok(false);
+            }
+        }
     }
-    progress(ModelProgress::Installing);
-    let result = if needs_asr {
-        install_archive(&archive, parent, &destination, cancelled)
-    } else {
-        Ok(())
-    };
-    let _ = fs::remove_file(&archive);
-    if let Err(error) = result {
-        let _ = fs::remove_file(&vad_download);
-        return Err(error);
-    }
-    if needs_vad && let Err(error) = fs::rename(&vad_download, destination.join(VAD_FILE)) {
-        let _ = fs::remove_file(&vad_download);
-        return Err(format!(
-            "could not install {} as {}: {error}",
-            vad_download.display(),
-            destination.join(VAD_FILE).display()
-        ));
-    }
-    progress(ModelProgress::Ready);
-    Ok(destination)
+    Err(format!(
+        "the model cache changed too many times while Koett checked {}",
+        destination.display()
+    ))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -146,54 +207,75 @@ fn download_file(
         .get(url)
         .call()
         .map_err(|error| format!("could not download the Koett {label}: {error}"))?;
-    let mut input = response.body_mut().as_reader();
-    let mut output = File::create(path)
-        .map_err(|error| format!("could not create {}: {error}", path.display()))?;
-    let mut hasher = Sha256::new();
-    let mut received = 0_u64;
-    let mut buffer = [0_u8; 64 * 1024];
-    loop {
-        check_cancelled(cancelled)?;
-        let count = input
-            .read(&mut buffer)
-            .map_err(|error| format!("could not read the model download: {error}"))?;
-        if count == 0 {
-            break;
-        }
-        received += count as u64;
-        if received > expected_bytes {
-            return Err(format!(
-                "the {label} download is larger than the pinned release"
-            ));
+    write_verified_download(
+        label,
+        response.body_mut().as_reader(),
+        path,
+        expected_bytes,
+        expected_sha256,
+        cancelled,
+        |received| {
+            progress(ModelProgress::Downloading {
+                received: progress_offset + received,
+                total: progress_total,
+            });
+        },
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn write_verified_download(
+    label: &str,
+    mut input: impl Read,
+    path: &Path,
+    expected_bytes: u64,
+    expected_sha256: &str,
+    cancelled: &AtomicBool,
+    mut progress: impl FnMut(u64),
+) -> Result<(), String> {
+    let result = (|| {
+        let mut output = File::create(path)
+            .map_err(|error| format!("could not create {}: {error}", path.display()))?;
+        let mut hasher = Sha256::new();
+        let mut received = 0_u64;
+        let mut buffer = [0_u8; 64 * 1024];
+        loop {
+            check_cancelled(cancelled)?;
+            let count = input
+                .read(&mut buffer)
+                .map_err(|error| format!("could not read the model download: {error}"))?;
+            if count == 0 {
+                break;
+            }
+            received += count as u64;
+            if received > expected_bytes {
+                return Err(format!(
+                    "the {label} download is larger than the pinned release"
+                ));
+            }
+            output
+                .write_all(&buffer[..count])
+                .map_err(|error| format!("could not write {}: {error}", path.display()))?;
+            hasher.update(&buffer[..count]);
+            progress(received);
         }
         output
-            .write_all(&buffer[..count])
-            .map_err(|error| format!("could not write {}: {error}", path.display()))?;
-        hasher.update(&buffer[..count]);
-        progress(ModelProgress::Downloading {
-            received: progress_offset + received,
-            total: progress_total,
-        });
+            .sync_all()
+            .map_err(|error| format!("could not finish {}: {error}", path.display()))?;
+        if received != expected_bytes {
+            return Err(format!(
+                "the {label} download is incomplete: got {received} of {expected_bytes} bytes"
+            ));
+        }
+        if digest_hex(&hasher.finalize()) != expected_sha256 {
+            return Err(format!("the {label} download failed its SHA-256 check"));
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(path);
     }
-    output
-        .sync_all()
-        .map_err(|error| format!("could not finish {}: {error}", path.display()))?;
-    if received != expected_bytes {
-        return Err(format!(
-            "the {label} download is incomplete: got {received} of {expected_bytes} bytes"
-        ));
-    }
-    let digest = hasher
-        .finalize()
-        .iter()
-        .fold(String::with_capacity(64), |mut output, byte| {
-            write!(&mut output, "{byte:02x}").expect("writing to a string cannot fail");
-            output
-        });
-    if digest != expected_sha256 {
-        return Err(format!("the {label} download failed its SHA-256 check"));
-    }
-    Ok(())
+    result
 }
 
 fn tls_provider() -> TlsProvider {
@@ -209,65 +291,74 @@ fn tls_provider() -> TlsProvider {
 
 fn install_archive(
     archive: &Path,
-    parent: &Path,
+    vad_download: &Path,
     destination: &Path,
+    manifest: &ModelManifest,
+    manifest_sha256: &str,
     cancelled: &AtomicBool,
+    progress: &mut impl FnMut(ModelProgress),
 ) -> Result<(), String> {
-    let staging = parent.join(format!(".{DEFAULT_MODEL_ID}-{}", std::process::id()));
-    if staging.exists() {
-        fs::remove_dir_all(&staging)
-            .map_err(|error| format!("could not reset {}: {error}", staging.display()))?;
+    let transaction = archive
+        .parent()
+        .ok_or_else(|| format!("{} has no transaction folder", archive.display()))?;
+    let input = File::open(archive)
+        .map_err(|error| format!("could not open {}: {error}", archive.display()))?;
+    let decoder = BzDecoder::new(input);
+    let mut archive = tar::Archive::new(decoder);
+    let entries = archive
+        .entries()
+        .map_err(|error| format!("could not read the model archive: {error}"))?;
+    for entry in entries {
+        check_cancelled(cancelled)?;
+        let mut entry =
+            entry.map_err(|error| format!("could not read a model archive entry: {error}"))?;
+        let kind = entry.header().entry_type();
+        if !kind.is_file() && !kind.is_dir() {
+            return Err("the model archive contains an unsupported entry type".to_string());
+        }
+        if !entry
+            .unpack_in(transaction)
+            .map_err(|error| format!("could not unpack the model archive: {error}"))?
+        {
+            return Err("the model archive contains an unsafe path".to_string());
+        }
     }
-    fs::create_dir(&staging)
-        .map_err(|error| format!("could not create {}: {error}", staging.display()))?;
 
-    let result = (|| {
-        let input = File::open(archive)
-            .map_err(|error| format!("could not open {}: {error}", archive.display()))?;
-        let decoder = BzDecoder::new(input);
-        let mut archive = tar::Archive::new(decoder);
-        let entries = archive
-            .entries()
-            .map_err(|error| format!("could not read the model archive: {error}"))?;
-        for entry in entries {
-            check_cancelled(cancelled)?;
-            let mut entry =
-                entry.map_err(|error| format!("could not read a model archive entry: {error}"))?;
-            let kind = entry.header().entry_type();
-            if !kind.is_file() && !kind.is_dir() {
-                return Err("the model archive contains an unsupported entry type".to_string());
-            }
-            if !entry
-                .unpack_in(&staging)
-                .map_err(|error| format!("could not unpack the model archive: {error}"))?
-            {
-                return Err("the model archive contains an unsafe path".to_string());
-            }
-        }
+    let extracted = transaction.join(DEFAULT_MODEL_ID);
+    validate_model_files(
+        &extracted,
+        manifest
+            .files
+            .iter()
+            .filter(|file| file.artifact == ASR_ARTIFACT),
+        cancelled,
+    )
+    .map_err(|error| format!("the extracted speech model failed verification: {error}"))?;
+    fs::rename(vad_download, extracted.join(VAD_FILE)).map_err(|error| {
+        format!(
+            "could not add {} to the model transaction: {error}",
+            vad_download.display()
+        )
+    })?;
+    let verified_files = validate_model_files(&extracted, &manifest.files, cancelled)
+        .map_err(|error| format!("the complete model transaction failed verification: {error}"))?;
+    write_verification_stamp(&extracted, &verified_files, manifest_sha256)?;
 
-        let extracted = staging.join(DEFAULT_MODEL_ID);
-        if !asr_model_is_complete(&extracted) {
-            return Err("the model archive is missing model.int8.onnx or tokens.txt".to_string());
-        }
-        if destination.exists() {
-            if asr_model_is_complete(destination) {
-                return Ok(());
+    if prepare_destination(destination, manifest, manifest_sha256, cancelled, progress)? {
+        return Ok(());
+    }
+    match fs::rename(&extracted, destination) {
+        Ok(()) => Ok(()),
+        Err(rename_error) => {
+            match validate_cached_model(destination, &manifest.files, manifest_sha256, cancelled) {
+                Ok(()) => Ok(()),
+                Err(winner_error) => Err(format!(
+                    "could not promote the complete model transaction to {}: {rename_error}; the competing cache is not valid: {winner_error}",
+                    destination.display()
+                )),
             }
-            return Err(format!(
-                "the incomplete model folder needs attention: {}",
-                destination.display()
-            ));
         }
-        fs::rename(&extracted, destination).map_err(|error| {
-            format!(
-                "could not install {} as {}: {error}",
-                extracted.display(),
-                destination.display()
-            )
-        })
-    })();
-    let _ = fs::remove_dir_all(&staging);
-    result
+    }
 }
 
 fn check_cancelled(cancelled: &AtomicBool) -> Result<(), String> {
@@ -278,44 +369,21 @@ fn check_cancelled(cancelled: &AtomicBool) -> Result<(), String> {
     }
 }
 
-fn asr_model_is_complete(directory: &Path) -> bool {
-    directory.join("model.int8.onnx").is_file() && directory.join("tokens.txt").is_file()
-}
-
-fn default_model_is_complete(directory: &Path) -> bool {
-    asr_model_is_complete(directory) && directory.join(VAD_FILE).is_file()
+pub fn quarantine_default_model_after_load_failure(
+    directory: &Path,
+) -> Result<Option<PathBuf>, String> {
+    let manifest = default_model_manifest()?;
+    let cancelled = AtomicBool::new(false);
+    match validate_model_files(directory, &manifest.files, &cancelled) {
+        Ok(_) => Ok(None),
+        Err(error) if directory.exists() => quarantine_model_directory(directory)
+            .map(Some)
+            .map_err(|quarantine_error| {
+                format!("the model cache failed verification ({error}); {quarantine_error}")
+            }),
+        Err(error) => Err(error),
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use std::fs;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    use super::{DEFAULT_MODEL_ID, VAD_FILE, asr_model_is_complete, default_model_is_complete};
-
-    #[test]
-    fn asr_model_needs_both_required_files() {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let directory = std::env::temp_dir().join(format!("koett-model-{nonce}"));
-        fs::create_dir(&directory).unwrap();
-        fs::write(directory.join("model.int8.onnx"), []).unwrap();
-        assert!(!asr_model_is_complete(&directory));
-        fs::write(directory.join("tokens.txt"), []).unwrap();
-        assert!(asr_model_is_complete(&directory));
-        assert!(!default_model_is_complete(&directory));
-        fs::write(directory.join(VAD_FILE), []).unwrap();
-        assert!(default_model_is_complete(&directory));
-        fs::remove_dir_all(directory).unwrap();
-    }
-
-    #[test]
-    fn pinned_model_name_matches_the_archive_root() {
-        assert_eq!(
-            DEFAULT_MODEL_ID,
-            "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8"
-        );
-    }
-}
+mod tests;

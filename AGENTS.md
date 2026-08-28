@@ -72,6 +72,19 @@ five seconds. Optional start-at-login failures warn the user but never block
 dictation. Linux requires a working StatusNotifier/AppIndicator tray host so it
 cannot run with all controls and errors hidden.
 
+The Rust model cache now uses one embedded manifest for both release assets and
+all five runtime files, including both self-test WAV files. It verifies exact
+byte counts and SHA-256 values, assembles the complete ASR and VAD cache in one
+unique transaction directory, and promotes that full cache with one directory
+rename. Corrupt caches remain in quarantine. A model-load failure bypasses the
+fast verification stamp. A clean 105 MB download, offline relaunch, official
+7.435-second transcription, repeated concurrent-installer tests, both Rust
+toolchains, the Windows cross-target, strict Clippy, RustSec, supply checks,
+artifact inspection, secret scanning, and independent review passed on
+2026-08-28. The release-mode full 132 MB check took 132.0 ms. The unchanged
+stamp check took 0.166 ms. The branch remains unsigned and local-only. The
+default model did not change.
+
 - Public `main` contains the current Mac source described below: core dictation,
   configurable shortcuts, transcript recovery, optional media transcription,
   optional local formatting, and optional Ask with spoken replies.

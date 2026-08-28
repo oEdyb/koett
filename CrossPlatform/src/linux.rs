@@ -633,6 +633,9 @@ impl LinuxEngine {
                     let percent = received.saturating_mul(100) / total.max(1);
                     status_changed(format!("Downloading model… {percent}%").as_str());
                 }
+                EngineUpdate::ModelProgress(ModelProgress::Repairing) => {
+                    status_changed("Repairing model cache…");
+                }
                 EngineUpdate::ModelProgress(ModelProgress::Installing) => {
                     status_changed("Installing model…");
                 }
