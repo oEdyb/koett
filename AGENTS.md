@@ -159,6 +159,13 @@ default model did not change.
 - The repo includes standalone audio, corpus, noise, Apple Speech, Parakeet,
   and Nemotron benchmark executables. These harnesses stay separate from the
   small production app path.
+- `Benchmarks/benchmark_schema.py`, `benchmark_record.py`, and
+  `benchmark_summary.py` define the shared Python 3.10 JSON/TSV evidence
+  contract. They keep raw ASR and formatting separate, reject invalid causal
+  traces, group exact configurations and timing scopes, and compare matched
+  fixture/repeat runs with a speaker-block bootstrap. The 11-file local corpus
+  is one non-publishable speaker and lacks path/code fixtures, so it cannot pass
+  a public model gate. Keep that result fail-closed.
 - Raw Parakeet text remains the default. S1-mini by Superwhisper is an optional
   local cleanup mode because every tested quantization and style removed
   uncertainty in at least one meaning test.
@@ -419,7 +426,7 @@ Dictation and all audio transcription stay local.
   to paste-post and Wispr Flow at 481 ms median through its finished-processing
   state. The supported claim is only: “about four times faster than Wispr Flow
   in my test on my M5 Mac.” Do not claim universal superiority.
-- The cross-platform core passes 23 unit tests and strict Clippy checks on the
+- The cross-platform core passes 47 unit tests and strict Clippy checks on the
   host and for `x86_64-pc-windows-msvc`. A Debian container passes the Linux
   tests, strict Clippy checks, and full release link. Actionlint passes the
   Windows 2025 and Ubuntu 22.04 artifact workflow. It packages Windows x86-64
