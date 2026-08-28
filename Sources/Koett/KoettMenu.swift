@@ -248,6 +248,16 @@ extension KoettController {
             selected: false
         ))
         menu.addItem(.separator())
+        if let latestOutcome = recordingOverlay.latestOutcome {
+            let latestItem = NSMenuItem(
+                title: latestOutcome.menuTitle,
+                action: nil,
+                keyEquivalent: ""
+            )
+            latestItem.isEnabled = false
+            latestItem.toolTip = latestOutcome.message
+            menu.addItem(latestItem)
+        }
         menu.addItem(menuItem(
             title: "Open Transcripts",
             action: #selector(openTranscripts),

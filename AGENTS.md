@@ -218,6 +218,29 @@ measured Windows or Linux spike.
 - Keep one stable signing identity. An ad-hoc or changing identity can make
   macOS request Accessibility approval again after an update.
 
+### Recording feedback accessibility
+
+- The recording pill is one stable `AXStaticText` element with the label
+  `Koett status` and value `Recording`. Its 30 Hz waveform redraw never changes
+  the accessibility value.
+- Status and copied states are static text. Download progress is an
+  `AXProgressIndicator` with a numeric 0...1 value and a spoken percentage.
+  The media result is an `AXButton` with a labeled Copy action.
+- When macOS Reduce Motion is on, Koett stops waveform level motion and updates
+  only the elapsed timer at 1 Hz. Koett observes the workspace display-options
+  notification so a live recording follows a settings change.
+- The menu keeps the latest result or failure after its transient pill closes.
+  This state is session-only; durable transcript recovery remains in the
+  transcript and failed-transcript stores.
+- This implementation follows Apple's current
+  [AppKit custom-control guidance](https://developer.apple.com/documentation/appkit/custom-controls),
+  [`NSAccessibilityProtocol`](https://developer.apple.com/documentation/appkit/nsaccessibilityprotocol),
+  and
+  [`accessibilityDisplayShouldReduceMotion`](https://developer.apple.com/documentation/appkit/nsworkspace/accessibilitydisplayshouldreducemotion).
+  Apple does not publish an exact reference implementation for a nonactivating
+  dictation pill. Koett therefore uses the smallest direct AppKit solution from
+  those APIs. FluidAudio 0.15.6 is not part of this UI path and remains pinned.
+
 ## Defaults and local data
 
 | Item | Default or location |
@@ -315,7 +338,10 @@ Dictation and all audio transcription stay local.
 
 ## Verification receipts
 
-- The current source passes 54 tests with zero failures. Setup tests cover
+- The current source passes 58 tests with zero failures. Recording-overlay
+  tests snapshot every accessibility state, prove that waveform refreshes do
+  not change the accessibility representation, and prove the 1 Hz Reduce
+  Motion policy. Setup tests cover
   model-progress normalization and permission messages. Failure tests cover
   visible paste/microphone errors and collision-safe failed-audio recovery.
   Media tests cover

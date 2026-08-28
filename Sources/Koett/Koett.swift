@@ -123,6 +123,9 @@ final class KoettController: NSObject {
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
+        recordingOverlay.onLatestOutcomeChange = { [weak self] in
+            self?.rebuildMenu()
+        }
     }
 
     func prepare() async throws {
@@ -239,7 +242,12 @@ final class KoettController: NSObject {
         rebuildMenu()
         guard showOverlay else { return }
         if let fraction = status.progressFraction {
-            recordingOverlay.showProgress(status.overlayTitle, fraction: fraction)
+            recordingOverlay.showProgress(
+                status.overlayTitle,
+                accessibilityLabel: status.progressAccessibilityLabel
+                    ?? status.overlayTitle,
+                fraction: fraction
+            )
         } else if status == .ready {
             recordingOverlay.showTransientStatus(status.overlayTitle)
         } else {

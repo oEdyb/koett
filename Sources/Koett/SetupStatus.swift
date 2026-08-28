@@ -69,4 +69,9 @@ enum SetupStatus: Equatable, Sendable {
         guard case .downloading(_, let percent) = self else { return nil }
         return Double(percent) / 100
     }
+
+    var progressAccessibilityLabel: String? {
+        guard case .downloading(let model, _) = self else { return nil }
+        return "Downloading \(model)"
+    }
 }

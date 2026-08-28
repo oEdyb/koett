@@ -42,6 +42,7 @@ final class SetupStatusTests: XCTestCase {
         let status = SetupStatus.downloading(model: "Parakeet v2", percent: 34)
         XCTAssertEqual(status.menuTitle, "Downloading Parakeet v2… 34%")
         XCTAssertEqual(status.overlayTitle, "Parakeet v2 · 34%")
+        XCTAssertEqual(status.progressAccessibilityLabel, "Downloading Parakeet v2")
         XCTAssertEqual(status.progressFraction, 0.34)
     }
 

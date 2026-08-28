@@ -23,6 +23,44 @@ enum RecordingOverlayFormat {
         guard normalized.count > limit else { return normalized }
         return String(normalized.prefix(limit))
     }
+
+    static func refreshInterval(reduceMotion: Bool) -> TimeInterval {
+        reduceMotion ? 1 : 1.0 / 30.0
+    }
+
+    static func smoothedLevel(
+        previous: CGFloat,
+        target: CGFloat,
+        reduceMotion: Bool
+    ) -> CGFloat? {
+        guard !reduceMotion else { return nil }
+        return (previous * 0.55) + (target * 0.45)
+    }
+}
+
+enum RecordingOverlayOutcome: Equatable {
+    case result(String)
+    case failure(String)
+
+    var message: String {
+        switch self {
+        case .result(let message), .failure(let message):
+            message
+        }
+    }
+
+    var menuTitle: String {
+        let prefix = switch self {
+        case .result: "Last result: "
+        case .failure: "Last error: "
+        }
+        let normalized = message
+            .split(whereSeparator: \Character.isWhitespace)
+            .joined(separator: " ")
+        let limit = 72
+        guard normalized.count > limit else { return prefix + normalized }
+        return prefix + normalized.prefix(limit) + "…"
+    }
 }
 
 @MainActor
@@ -38,28 +76,29 @@ final class RecordingOverlayController: NSObject {
     private var timer: Timer?
     private var dismissWorkItem: DispatchWorkItem?
     private var smoothedLevel: CGFloat = 0
+    private(set) var latestOutcome: RecordingOverlayOutcome?
+    var onLatestOutcomeChange: (() -> Void)?
+
+    override init() {
+        super.init()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(displayOptionsDidChange(_:)),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: NSWorkspace.shared
+        )
+    }
 
     func start(recorder: AVAudioRecorder) {
         stop()
         self.recorder = recorder
         smoothedLevel = 0
-        meterView.reset()
+        meterView.reset(reduceMotion: reduceMotion)
         setPanelSize(Self.fullSize)
         panel.ignoresMouseEvents = true
         positionPanel()
         panel.orderFrontRegardless()
-
-        let timer = Timer(
-            timeInterval: 1.0 / 30.0,
-            target: self,
-            selector: #selector(refresh(_:)),
-            userInfo: nil,
-            repeats: true
-        )
-        timer.tolerance = 1.0 / 300.0
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
-        timer.fire()
+        startRefreshTimer()
     }
 
     func stop() {
@@ -85,13 +124,21 @@ final class RecordingOverlayController: NSObject {
         panel.orderFrontRegardless()
     }
 
-    func showProgress(_ text: String, fraction: Double) {
+    func showProgress(
+        _ text: String,
+        accessibilityLabel: String,
+        fraction: Double
+    ) {
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         timer?.invalidate()
         timer = nil
         recorder = nil
-        meterView.showProgress(text, fraction: fraction)
+        meterView.showProgress(
+            text,
+            accessibilityLabel: accessibilityLabel,
+            fraction: fraction
+        )
         setPanelSize(Self.fullSize)
         panel.ignoresMouseEvents = true
         positionPanel()
@@ -121,10 +168,14 @@ final class RecordingOverlayController: NSObject {
         panel.ignoresMouseEvents = false
         positionPanel()
         panel.orderFrontRegardless()
+        latestOutcome = .result(message)
+        onLatestOutcomeChange?()
     }
 
     func showError(_ text: String) {
         showStatus(text)
+        latestOutcome = .failure(text)
+        onLatestOutcomeChange?()
         dismiss(after: 5)
     }
 
@@ -147,11 +198,47 @@ final class RecordingOverlayController: NSObject {
         let target = RecordingOverlayFormat.level(
             forDecibels: recorder.averagePower(forChannel: 0)
         )
-        smoothedLevel = (smoothedLevel * 0.55) + (target * 0.45)
+        let displayedLevel = RecordingOverlayFormat.smoothedLevel(
+            previous: smoothedLevel,
+            target: target,
+            reduceMotion: reduceMotion
+        )
+        if let displayedLevel {
+            smoothedLevel = displayedLevel
+        }
         meterView.update(
-            level: smoothedLevel,
+            level: displayedLevel,
             elapsed: recorder.currentTime
         )
+    }
+
+    @objc private func displayOptionsDidChange(_ notification: Notification) {
+        guard recorder?.isRecording == true else { return }
+        smoothedLevel = 0
+        meterView.setReduceMotion(reduceMotion)
+        startRefreshTimer()
+    }
+
+    private var reduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    private func startRefreshTimer() {
+        timer?.invalidate()
+        let interval = RecordingOverlayFormat.refreshInterval(
+            reduceMotion: reduceMotion
+        )
+        let timer = Timer(
+            timeInterval: interval,
+            target: self,
+            selector: #selector(refresh(_:)),
+            userInfo: nil,
+            repeats: true
+        )
+        timer.tolerance = interval / 10
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+        timer.fire()
     }
 
     private func makePanel() -> NSPanel {
@@ -198,7 +285,7 @@ final class RecordingOverlayController: NSObject {
 }
 
 @MainActor
-private final class RecordingMeterView: NSView {
+final class RecordingMeterView: NSView {
     private enum Content {
         case recording
         case status(String)
@@ -212,38 +299,51 @@ private final class RecordingMeterView: NSView {
     private var content = Content.recording
     private var copyHovered = false
     private var copyTrackingArea: NSTrackingArea?
+    private var reduceMotion = false
     var onCopy: (() -> Void)?
 
     override var isOpaque: Bool { false }
 
-    func reset() {
+    func reset(reduceMotion: Bool) {
         content = .recording
-        setAccessibilityElement(false)
-        setAccessibilityValue(nil)
+        self.reduceMotion = reduceMotion
+        setStaticStatus("Recording")
         copyHovered = false
         levels = [CGFloat](repeating: 0, count: Self.barCount)
         elapsedText = "0:00"
         needsDisplay = true
     }
 
+    func setReduceMotion(_ reduceMotion: Bool) {
+        self.reduceMotion = reduceMotion
+        if reduceMotion {
+            levels = [CGFloat](repeating: 0, count: Self.barCount)
+        }
+        needsDisplay = true
+    }
+
     func showStatus(_ text: String) {
         content = .status(text)
-        setAccessibilityElement(true)
-        setAccessibilityRole(.staticText)
-        setAccessibilityLabel(text)
-        setAccessibilityValue(nil)
+        setStaticStatus(text)
         copyHovered = false
         onCopy = nil
         needsDisplay = true
     }
 
-    func showProgress(_ text: String, fraction: Double) {
+    func showProgress(
+        _ text: String,
+        accessibilityLabel: String,
+        fraction: Double
+    ) {
         let clamped = CGFloat(min(1, max(0, fraction)))
         content = .progress(text: text, fraction: clamped)
         setAccessibilityElement(true)
         setAccessibilityRole(.progressIndicator)
-        setAccessibilityLabel(text)
-        setAccessibilityValue("\(Int((clamped * 100).rounded())) percent")
+        setAccessibilityLabel(accessibilityLabel)
+        setAccessibilityValue(NSNumber(value: Double(clamped)))
+        setAccessibilityMinValue(NSNumber(value: 0))
+        setAccessibilityMaxValue(NSNumber(value: 1))
+        setAccessibilityValueDescription("\(Int((clamped * 100).rounded())) percent")
         copyHovered = false
         onCopy = nil
         needsDisplay = true
@@ -256,6 +356,9 @@ private final class RecordingMeterView: NSView {
         setAccessibilityRole(.button)
         setAccessibilityLabel("\(message). Copy transcript")
         setAccessibilityValue(nil)
+        setAccessibilityMinValue(nil)
+        setAccessibilityMaxValue(nil)
+        setAccessibilityValueDescription(nil)
         window?.invalidateCursorRects(for: self)
         needsDisplay = true
     }
@@ -264,14 +367,16 @@ private final class RecordingMeterView: NSView {
         guard case .result = content else { return }
         content = .result(message: "Copied", copied: true)
         copyHovered = false
-        setAccessibilityLabel("Transcript copied")
+        setStaticStatus("Transcript copied")
         window?.invalidateCursorRects(for: self)
         needsDisplay = true
     }
 
-    func update(level: CGFloat, elapsed: TimeInterval) {
-        levels.removeFirst()
-        levels.append(level)
+    func update(level: CGFloat?, elapsed: TimeInterval) {
+        if !reduceMotion, let level {
+            levels.removeFirst()
+            levels.append(level)
+        }
         elapsedText = RecordingOverlayFormat.elapsedTime(elapsed)
         needsDisplay = true
     }
@@ -351,6 +456,16 @@ private final class RecordingMeterView: NSView {
         guard case .result(_, copied: false) = content else { return false }
         onCopy?()
         return true
+    }
+
+    private func setStaticStatus(_ value: String) {
+        setAccessibilityElement(true)
+        setAccessibilityRole(.staticText)
+        setAccessibilityLabel("Koett status")
+        setAccessibilityValue(value)
+        setAccessibilityMinValue(nil)
+        setAccessibilityMaxValue(nil)
+        setAccessibilityValueDescription(nil)
     }
 
     private var copyButtonRect: NSRect {
