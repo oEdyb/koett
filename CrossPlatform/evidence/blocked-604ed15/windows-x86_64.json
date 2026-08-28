@@ -1,0 +1,333 @@
+{
+  "artifact": {
+    "binary_bytes": 20623872,
+    "binary_format": "PE32+-x86_64",
+    "binary_path": "Koett-Windows-x86_64/Koett.exe",
+    "binary_sha256": "19350c237a359eaf5580109347b5db788c8fa2e7b707b6f375d06aa9a15f76de",
+    "github_archive_bytes": 7909715,
+    "github_archive_sha256": "84f8f10cc66742dc6a43a8e53602eed58b10ea2b22ec4cdd1a0f30e37d5f1b4a",
+    "id": 9554527752,
+    "name": "Koett-Windows-x86_64",
+    "package_bytes": 7925800,
+    "package_sha256": "ca5fe7df8b9174b1f94a72101f95704bfc90dfb4c18be87ef6d4c1e684047238"
+  },
+  "control_commit": "604ed15e19b3cdeb1704aa8e658f98e5cbadb63c",
+  "inspection": {
+    "commands": [
+      [
+        "objdump",
+        "-p",
+        "Koett-Windows-x86_64/Koett.exe"
+      ],
+      [
+        "python-standard-library",
+        "ASCII-and-UTF-16LE-string-scan"
+      ]
+    ],
+    "imported_libraries": [
+      "ADVAPI32.dll",
+      "KERNEL32.dll",
+      "SETUPAPI.dll",
+      "VCRUNTIME140.dll",
+      "VCRUNTIME140_1.dll",
+      "WS2_32.dll",
+      "advapi32.dll",
+      "api-ms-win-core-path-l1-1-0.dll",
+      "api-ms-win-core-synch-l1-2-0.dll",
+      "api-ms-win-core-winrt-error-l1-1-0.dll",
+      "api-ms-win-crt-convert-l1-1-0.dll",
+      "api-ms-win-crt-environment-l1-1-0.dll",
+      "api-ms-win-crt-filesystem-l1-1-0.dll",
+      "api-ms-win-crt-heap-l1-1-0.dll",
+      "api-ms-win-crt-locale-l1-1-0.dll",
+      "api-ms-win-crt-math-l1-1-0.dll",
+      "api-ms-win-crt-runtime-l1-1-0.dll",
+      "api-ms-win-crt-stdio-l1-1-0.dll",
+      "api-ms-win-crt-string-l1-1-0.dll",
+      "api-ms-win-crt-time-l1-1-0.dll",
+      "api-ms-win-crt-utility-l1-1-0.dll",
+      "bcryptprimitives.dll",
+      "combase.dll",
+      "crypt32.dll",
+      "dbghelp.dll",
+      "dxgi.dll",
+      "gdi32.dll",
+      "kernel32.dll",
+      "mmdevapi.dll",
+      "ntdll.dll",
+      "ole32.dll",
+      "oleaut32.dll",
+      "secur32.dll",
+      "shell32.dll",
+      "user32.dll"
+    ],
+    "matched_indicators": [
+      "espeak",
+      "piper"
+    ],
+    "string_evidence": {
+      "espeak": {
+        "match_count": 64,
+        "samples": [
+          "%s/espeak-ng-data",
+          "/usr/share/espeak-ng-data",
+          "?phonemize_eSpeak@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUeSpeakPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z",
+          "ESPEAK_DATA_PATH",
+          "Failed to set eSpeak-ng voice",
+          "Software\\WOW6432Node\\eSpeak NG",
+          "Software\\eSpeak NG",
+          "The espeak-ng library has not been initialized",
+          "The requested functionality has not been built into espeak-ng",
+          "The specified espeak-ng voice does not exist",
+          "Wrong version of espeak-ng-data",
+          "espeak",
+          "espeak: Bad intonation data",
+          "espeak: No envelope",
+          "espeak_Cancel",
+          "espeak_Char",
+          "espeak_CompileDictionary",
+          "espeak_GetCurrentVoice",
+          "espeak_GetParameter",
+          "espeak_Info",
+          "espeak_Initialize",
+          "espeak_IsPlaying",
+          "espeak_Key",
+          "espeak_ListVoices",
+          "espeak_SetParameter",
+          "espeak_SetPhonemeCallback",
+          "espeak_SetPhonemeTrace",
+          "espeak_SetPunctuationList",
+          "espeak_SetSynthCallback",
+          "espeak_SetUriCallback",
+          "espeak_SetVoiceByFile",
+          "espeak_SetVoiceByName",
+          "espeak_SetVoiceByProperties",
+          "espeak_Synchronize",
+          "espeak_Synth",
+          "espeak_Synth_Mark",
+          "espeak_Terminate",
+          "espeak_TextToPhonemes",
+          "espeak_TextToPhonemesWithTerminator",
+          "espeak_ng_Cancel"
+        ],
+        "samples_truncated": true
+      },
+      "piper": {
+        "match_count": 2,
+        "samples": [
+          "?phonemize_codepoints@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUCodepointsPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z",
+          "?phonemize_eSpeak@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUeSpeakPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z"
+        ],
+        "samples_truncated": false
+      },
+      "tts": {
+        "match_count": 0,
+        "samples": [],
+        "samples_truncated": false
+      }
+    },
+    "symbol_or_header_evidence": {
+      "espeak": {
+        "match_count": 51,
+        "samples": [
+          "       2 0x6d06c0  ?phonemize_eSpeak@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUeSpeakPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z",
+          "       6 0x6cb330  espeak_Cancel",
+          "       7 0x6cb390  espeak_Char",
+          "       8 0x6cb3f0  espeak_CompileDictionary",
+          "       9 0xcc58e0  espeak_GetCurrentVoice",
+          "      10 0xcc2250  espeak_GetParameter",
+          "      11 0xcc2280  espeak_Info",
+          "      12 0x6cb450  espeak_Initialize",
+          "      13 0x14dc30  espeak_IsPlaying",
+          "      14 0x6cb520  espeak_Key",
+          "      15 0xcc58f0  espeak_ListVoices",
+          "      16 0x6cb580  espeak_SetParameter",
+          "      17 0xe30e10  espeak_SetPhonemeCallback",
+          "      18 0xcc22a0  espeak_SetPhonemeTrace",
+          "      19 0x6cb5e0  espeak_SetPunctuationList",
+          "      20 0xcc22d0  espeak_SetSynthCallback",
+          "      21 0xea3c20  espeak_SetUriCallback",
+          "      22 0x6cb640  espeak_SetVoiceByFile",
+          "      23 0x6cb6a0  espeak_SetVoiceByName",
+          "      24 0x6cb700  espeak_SetVoiceByProperties",
+          "      25 0x6cb760  espeak_Synchronize",
+          "      26 0x6cb7c0  espeak_Synth",
+          "      27 0x6cb850  espeak_Synth_Mark",
+          "      28 0x6cb8d0  espeak_Terminate",
+          "      29 0xcc22e0  espeak_TextToPhonemes",
+          "      30 0xcc22f0  espeak_TextToPhonemesWithTerminator",
+          "      31 0xcc2390  espeak_ng_Cancel",
+          "      32 0xcc1ba0  espeak_ng_ClearErrorContext",
+          "      33 0xcc82a0  espeak_ng_CompileDictionary",
+          "      34 0xe2b120  espeak_ng_EncodingFromName",
+          "      35 0xcc23e0  espeak_ng_GetSampleRate",
+          "      36 0xcc1be0  espeak_ng_GetStatusCodeMessage",
+          "      37 0xcc23f0  espeak_ng_Initialize",
+          "      38 0xcc25e0  espeak_ng_InitializeOutput",
+          "      39 0xcc26c0  espeak_ng_InitializePath",
+          "      40 0xcc1d80  espeak_ng_PrintStatusCodeMessage",
+          "      41 0xe36fa0  espeak_ng_SetConstF0",
+          "      42 0xe36fb0  espeak_ng_SetOutputHooks",
+          "      43 0xcc2900  espeak_ng_SetParameter",
+          "      44 0xcc2910  espeak_ng_SetPhonemeEvents"
+        ],
+        "samples_truncated": true
+      },
+      "piper": {
+        "match_count": 2,
+        "samples": [
+          "       1 0x6cfd50  ?phonemize_codepoints@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUCodepointsPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z",
+          "       2 0x6d06c0  ?phonemize_eSpeak@piper@@YAXV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAUeSpeakPhonemeConfig@1@AEAV?$vector@V?$vector@_UV?$allocator@_U@std@@@std@@V?$allocator@V?$vector@_UV?$allocator@_U@std@@@std@@@2@@3@@Z"
+        ],
+        "samples_truncated": false
+      },
+      "tts": {
+        "match_count": 0,
+        "samples": [],
+        "samples_truncated": false
+      }
+    },
+    "tools": {
+      "objdump": {
+        "bytes": 118928,
+        "path": "/usr/bin/objdump",
+        "sha256": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818",
+        "version": "Apple LLVM version 21.0.0"
+      },
+      "python": {
+        "bytes": 34640,
+        "path": "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "sha256": "4f00ea2ad53d62437a6a3946b73c73614a97e8accdc5b96dc095ea1a0d9c6a56",
+        "version": "3.14.6"
+      }
+    }
+  },
+  "limitations": [
+    "Imported-library inspection does not identify code linked from static archives.",
+    "String matches are supporting evidence and are not sufficient alone.",
+    "The verified native inputs and callable/exported symbol evidence provide the stronger provenance evidence."
+  ],
+  "mac_model_cache_manifest": {
+    "bytes": 7397,
+    "file": "mac-model-cache.json",
+    "model_ids": [
+      "nemotron-speech-streaming-en-0.6b-560ms",
+      "parakeet-tdt-0.6b-v2"
+    ],
+    "sha256": "c17ff5c7ee059239389172231a6cbc57aecfc09b1dd235fb0dbff1797b261712",
+    "verified": true
+  },
+  "schema_version": 1,
+  "source_linkage_evidence": {
+    "crate": {
+      "build_rs_sha256": "4a39abcde016314654a82a332cd466f1d99d94ab241b0a695316207eaaf72274",
+      "bytes": 31477,
+      "sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493"
+    },
+    "native_archives": [
+      {
+        "asset_id": 509849908,
+        "bytes": 120217991,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/espeak-ng.lib"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/piper_phonemize.lib"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib.tar.bz2",
+        "sha256": "b7080b6f470bac96ef0afe56b25ae9b2f9f0ca82d10dad19bf3a2fc5ffd6cffc"
+      },
+      {
+        "asset_id": 509858680,
+        "bytes": 22394054,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libespeak-ng.a"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libpiper_phonemize.a"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-linux-x64-static-lib.tar.bz2",
+        "sha256": "2ade8b7c62de66b9cf2e32bd7dbe077addaa4b18f422b49dc1bf3a1a0b1f762e"
+      },
+      {
+        "asset_id": 509806377,
+        "bytes": 20775501,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libespeak-ng.a"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libpiper_phonemize.a"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-linux-aarch64-static-lib.tar.bz2",
+        "sha256": "f78af8260892f3060c8c0aba9ae93e4e4c1b16fe509238b88e3688889235e1b2"
+      }
+    ],
+    "release_id": 368382218,
+    "schema_version": 1,
+    "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+    "source_tag": "v1.13.5",
+    "static_libraries_requested_by_build_script": [
+      "sherpa-onnx-c-api",
+      "sherpa-onnx-core",
+      "kaldi-decoder-core",
+      "sherpa-onnx-kaldifst-core",
+      "sherpa-onnx-fstfar",
+      "sherpa-onnx-fst",
+      "kaldi-native-fbank-core",
+      "kissfft-float",
+      "piper_phonemize",
+      "espeak-ng",
+      "ucd",
+      "onnxruntime",
+      "ssentencepiece_core"
+    ],
+    "verified": true
+  },
+  "verdict": "blocked",
+  "workflow_run": "https://github.com/oEdyb/koett/actions/runs/32824639724"
+}

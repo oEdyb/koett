@@ -1,0 +1,235 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": 9554527752,
+      "binary_bytes": 20623872,
+      "binary_path": "Koett-Windows-x86_64/Koett.exe",
+      "binary_sha256": "19350c237a359eaf5580109347b5db788c8fa2e7b707b6f375d06aa9a15f76de",
+      "github_archive_bytes": 7909715,
+      "github_archive_sha256": "84f8f10cc66742dc6a43a8e53602eed58b10ea2b22ec4cdd1a0f30e37d5f1b4a",
+      "name": "Koett-Windows-x86_64",
+      "package_bytes": 7925800,
+      "package_file": "Koett-Windows-x86_64.zip",
+      "package_sha256": "ca5fe7df8b9174b1f94a72101f95704bfc90dfb4c18be87ef6d4c1e684047238",
+      "report_file": "windows-x86_64.json"
+    },
+    {
+      "artifact_id": 9554518521,
+      "binary_bytes": 38141744,
+      "binary_path": "Koett-Linux-x86_64/koett",
+      "binary_sha256": "9a968b928252b9a536c13f1690281862df6ef9a4d6dad75718d5e65472b0b812",
+      "github_archive_bytes": 15015124,
+      "github_archive_sha256": "4fb96069abd0a80c8d684fd271ed35d8b6a4503944fce7191a7cdb2d9433a1e7",
+      "name": "Koett-Linux-x86_64",
+      "package_bytes": 15051818,
+      "package_file": "Koett-Linux-x86_64.tar.gz",
+      "package_sha256": "3d98cb89de3eb2d3a23a47ac67820f959bcc37c94c907dbec2223c5ab6b9fe18",
+      "report_file": "linux-x86_64.json"
+    },
+    {
+      "artifact_id": 9554495334,
+      "binary_bytes": 32967136,
+      "binary_path": "Koett-Linux-arm64/koett",
+      "binary_sha256": "fba77962e99cebb02690857b2424f04a305d19ac5236f98a1d50db393d8d962a",
+      "github_archive_bytes": 13256467,
+      "github_archive_sha256": "52ae154d7e5c15f916e0b7d4edb18bd9707ceb3840103abcf88c42839cee94c1",
+      "name": "Koett-Linux-arm64",
+      "package_bytes": 13291557,
+      "package_file": "Koett-Linux-arm64.tar.gz",
+      "package_sha256": "f784b59ef2c5505b6b5ccb903f52686b8b71765b9bb15e24c988c6e5db4755fb",
+      "report_file": "linux-arm64.json"
+    }
+  ],
+  "captured_on": "2026-08-28",
+  "cross_platform": {
+    "branch": "feat/windows-linux-v0.1",
+    "cargo_lock_sha256": "79f952d3221b69cc5421e9cca737ddecad2a428ad1d73ad312aaa05b28a383bd",
+    "ci_conclusion": "success",
+    "ci_jobs": [
+      {
+        "conclusion": "success",
+        "job_id": 97729880263,
+        "name": "windows",
+        "runner": "windows-2025"
+      },
+      {
+        "conclusion": "success",
+        "job_id": 97729880348,
+        "name": "linux (ubuntu-22.04, x86_64)",
+        "runner": "ubuntu-22.04"
+      },
+      {
+        "conclusion": "success",
+        "job_id": 97729880478,
+        "name": "linux (ubuntu-22.04-arm, arm64)",
+        "runner": "ubuntu-22.04-arm"
+      }
+    ],
+    "ci_run": "https://github.com/oEdyb/koett/actions/runs/32824639724",
+    "ci_run_attempt": 1,
+    "ci_run_id": 32824639724,
+    "commit": "604ed15e19b3cdeb1704aa8e658f98e5cbadb63c",
+    "pull_request": "https://github.com/oEdyb/koett/pull/2",
+    "rust_build_toolchain": "1.92.0",
+    "workflow_sha256": "417db9fe092224e0a18c8e8ba139f5b2fa4e042c4b836daad4054af2547f03b6"
+  },
+  "ci_logs": {
+    "bytes": 54444,
+    "jobs": [
+      {
+        "job_id": 97729880263,
+        "log_bytes": 58507,
+        "log_file": "1_windows.txt",
+        "log_sha256": "02ef529f082596a5a545e77535fbec9f02d1ae4b74cb41c8729b576290e38345",
+        "name": "windows",
+        "required_outputs": [
+          "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+          "test result: ok. 33 passed; 0 failed; 1 ignored",
+          "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+          "source=official-model-sample audio_seconds=7.435 transcribe_ms=180.7 realtime_factor=0.02430",
+          "self_test=passed",
+          "long_self_test=passed sample_rate=44100 audio_seconds=420.000 transcribe_ms=75.0 realtime_factor=0.00018 recognized_starts=57 recognized_ends=56 short_utterance=passed"
+        ]
+      },
+      {
+        "job_id": 97729880348,
+        "log_bytes": 90678,
+        "log_file": "2_linux (ubuntu-22.04, x86_64).txt",
+        "log_sha256": "877228eeebd5fa4400f28f14a74f7ad26bae6f8536874c8557b62c36b37a6b77",
+        "name": "linux (ubuntu-22.04, x86_64)",
+        "required_outputs": [
+          "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+          "test result: ok. 31 passed; 0 failed; 1 ignored",
+          "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+          "source=official-model-sample audio_seconds=7.435 transcribe_ms=187.6 realtime_factor=0.02523",
+          "self_test=passed"
+        ]
+      },
+      {
+        "job_id": 97729880478,
+        "log_bytes": 86244,
+        "log_file": "0_linux (ubuntu-22.04-arm, arm64).txt",
+        "log_sha256": "ba8ce476cb1e1968c057276b8e18e6ff037315fc5b1963a402625aa81d691251",
+        "name": "linux (ubuntu-22.04-arm, arm64)",
+        "required_outputs": [
+          "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+          "test result: ok. 31 passed; 0 failed; 1 ignored",
+          "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+          "source=official-model-sample audio_seconds=7.435 transcribe_ms=131.5 realtime_factor=0.01769",
+          "self_test=passed"
+        ]
+      }
+    ],
+    "sha256": "7b5f59910a0b7338f84aa4701c94526b3b412c00575478716872339fd42907d6"
+  },
+  "inspection_toolchain": {
+    "objdump": {
+      "bytes": 118928,
+      "path": "/usr/bin/objdump",
+      "sha256": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818",
+      "version": "Apple LLVM version 21.0.0"
+    },
+    "python": {
+      "bytes": 34640,
+      "path": "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "sha256": "4f00ea2ad53d62437a6a3946b73c73614a97e8accdc5b96dc095ea1a0d9c6a56",
+      "version": "3.14.6"
+    }
+  },
+  "mac_model_cache_manifest": {
+    "bytes": 7397,
+    "file": "mac-model-cache.json",
+    "sha256": "c17ff5c7ee059239389172231a6cbc57aecfc09b1dd235fb0dbff1797b261712"
+  },
+  "mac": {
+    "commit": "5384daa118a5d0cb2d07df5195e20855682cface",
+    "fluid_audio_revision": "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+    "fluid_audio_version": "0.15.6",
+    "package_resolved_sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416",
+    "swift": "Apple Swift 6.3.3",
+    "xcode": "26.6 (17F113)"
+  },
+  "models": [
+    {
+      "id": "parakeet-tdt-0.6b-v2",
+      "manifest": "mac-model-cache.json",
+      "source": "FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "platform": "macOS",
+      "role": "default ASR"
+    },
+    {
+      "id": "nemotron-speech-streaming-en-0.6b-560ms",
+      "manifest": "mac-model-cache.json",
+      "source": "FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838/nemotron_coreml_560ms",
+      "platform": "macOS",
+      "role": "optional streaming ASR"
+    },
+    {
+      "bytes": 484219808,
+      "id": "superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "platform": "macOS",
+      "role": "optional formatter",
+      "sha256": "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634"
+    },
+    {
+      "archive_bytes": 104337827,
+      "archive_sha256": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "id": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+      "platform": "Windows and Linux",
+      "role": "default ASR"
+    },
+    {
+      "bytes": 643854,
+      "id": "silero_vad.onnx",
+      "platform": "Windows and Linux",
+      "role": "long-recording segmentation",
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    }
+  ],
+  "repository": "oEdyb/koett",
+  "sherpa_onnx_1_13_5": {
+    "build_rs_sha256": "4a39abcde016314654a82a332cd466f1d99d94ab241b0a695316207eaaf72274",
+    "build_rs_path": "sherpa-onnx-sys-1.13.5/build.rs",
+    "crate_bytes": 31477,
+    "crate_checksum": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493",
+    "crate_url": "https://static.crates.io/crates/sherpa-onnx-sys/sherpa-onnx-sys-1.13.5.crate",
+    "native_archives_used_by_build_script": [
+      {
+        "asset_id": 509849908,
+        "bytes": 120217991,
+        "name": "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib.tar.bz2",
+        "sha256": "b7080b6f470bac96ef0afe56b25ae9b2f9f0ca82d10dad19bf3a2fc5ffd6cffc"
+      },
+      {
+        "asset_id": 509858680,
+        "bytes": 22394054,
+        "name": "sherpa-onnx-v1.13.5-linux-x64-static-lib.tar.bz2",
+        "sha256": "2ade8b7c62de66b9cf2e32bd7dbe077addaa4b18f422b49dc1bf3a1a0b1f762e"
+      },
+      {
+        "asset_id": 509806377,
+        "bytes": 20775501,
+        "name": "sherpa-onnx-v1.13.5-linux-aarch64-static-lib.tar.bz2",
+        "sha256": "f78af8260892f3060c8c0aba9ae93e4e4c1b16fe509238b88e3688889235e1b2"
+      }
+    ],
+    "repository": "k2-fsa/sherpa-onnx",
+    "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+    "source_tag": "v1.13.5",
+    "static_libraries_requested_by_build_script": [
+      "sherpa-onnx-c-api",
+      "sherpa-onnx-core",
+      "kaldi-decoder-core",
+      "sherpa-onnx-kaldifst-core",
+      "sherpa-onnx-fstfar",
+      "sherpa-onnx-fst",
+      "kaldi-native-fbank-core",
+      "kissfft-float",
+      "piper_phonemize",
+      "espeak-ng",
+      "ucd",
+      "onnxruntime",
+      "ssentencepiece_core"
+    ]
+  }
+}
