@@ -241,6 +241,27 @@ measured Windows or Linux spike.
   dictation pill. Koett therefore uses the smallest direct AppKit solution from
   those APIs. FluidAudio 0.15.6 is not part of this UI path and remains pinned.
 
+### Last transcript recovery
+
+- Koett keeps the newest nonempty completed transcript in
+  `Last Transcript.txt`. It uses an atomic Foundation write, so an interrupted
+  replacement does not expose a partly written file.
+- Copy Last and Paste Last read this file-backed state. They never run ASR and
+  never append another Markdown history row. An empty cleaned result keeps the
+  prior last transcript.
+- Paste Last writes the clipboard first. If Command-V cannot be created, the
+  text stays on the clipboard. Menu actions wait for AppKit menu tracking to
+  end, then run on the next main-loop turn so the status menu does not own the
+  event target.
+- This path follows Apple's current
+  [`Data.WritingOptions.atomic`](https://developer.apple.com/documentation/foundation/nsdata/writingoptions/atomic),
+  [`NSPasteboard`](https://developer.apple.com/documentation/appkit/nspasteboard),
+  [`NSMenuDelegate.menuDidClose`](https://developer.apple.com/documentation/appkit/nsmenudelegate/menudidclose(_:)),
+  and [`CGEvent.post`](https://developer.apple.com/documentation/coregraphics/cgevent/post(tap:))
+  contracts. Apple does not publish an exact status-item Copy Last or Paste Last
+  reference implementation. Koett uses the smallest direct combination of
+  those APIs. FluidAudio 0.15.6 is not part of this path and remains pinned.
+
 ## Defaults and local data
 
 | Item | Default or location |
@@ -256,6 +277,7 @@ measured Windows or Linux spike.
 | Spoken replies | Off for public installs |
 | Spoken voice | Katie |
 | Dictation history | `~/Library/Application Support/Koett/Transcripts.md` |
+| Last transcript | `~/Library/Application Support/Koett/Last Transcript.txt` |
 | Media history | `~/Library/Application Support/Koett/Media Transcripts/` |
 | Failed ASR audio | `~/Library/Application Support/Koett/Failed Recordings/` |
 | Failed history writes | `~/Library/Application Support/Koett/Failed Transcripts/` |
@@ -338,7 +360,9 @@ Dictation and all audio transcription stay local.
 
 ## Verification receipts
 
-- The current source passes 58 tests with zero failures. Recording-overlay
+- The current source passes 68 tests with zero failures. Last-transcript tests
+  cover missing, empty, corrupt, exact-copy, clipboard-failure, paste-failure,
+  no-duplicate-history, and one-shot post-menu-close behavior. Recording-overlay
   tests snapshot every accessibility state, prove that waveform refreshes do
   not change the accessibility representation, and prove the 1 Hz Reduce
   Motion policy. Setup tests cover

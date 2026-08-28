@@ -449,6 +449,19 @@ extension KoettController {
 
     private func saveTranscript(_ transcript: PreparedDictation) throws {
         do {
+            if try transcriptStore.saveLastTranscript(transcript.text) {
+                lastTranscript = transcript.text
+                rebuildMenu()
+            }
+        } catch {
+            recordingOverlay.showError("Transcript saved · Last action unavailable")
+            fputs(
+                "Warning: last transcript could not be saved: \(error.localizedDescription)\n",
+                stderr
+            )
+        }
+
+        do {
             try transcriptStore.append(
                 transcript.text,
                 model: transcript.model,
@@ -475,7 +488,7 @@ extension KoettController {
         _ = player.play()
     }
 
-    private func pasteAtCursor() -> Bool {
+    func pasteAtCursor() -> Bool {
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(
                   keyboardEventSource: source,

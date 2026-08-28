@@ -2,15 +2,20 @@ import Foundation
 
 struct TranscriptStore {
     let fileURL: URL
+    let lastTranscriptURL: URL
 
     init() {
-        fileURL = URL.applicationSupportDirectory
+        let directoryURL = URL.applicationSupportDirectory
             .appendingPathComponent("Koett", isDirectory: true)
-            .appendingPathComponent("Transcripts.md")
+        fileURL = directoryURL.appendingPathComponent("Transcripts.md")
+        lastTranscriptURL = directoryURL.appendingPathComponent("Last Transcript.txt")
     }
 
-    init(fileURL: URL) {
+    init(fileURL: URL, lastTranscriptURL: URL? = nil) {
         self.fileURL = fileURL
+        self.lastTranscriptURL = lastTranscriptURL
+            ?? fileURL.deletingLastPathComponent()
+                .appendingPathComponent("Last Transcript.txt")
     }
 
     func prepare() throws {
@@ -64,5 +69,37 @@ struct TranscriptStore {
         try handle.seekToEnd()
         try handle.write(contentsOf: Data("\(entry)\n".utf8))
         try handle.synchronize()
+    }
+
+    @discardableResult
+    func saveLastTranscript(_ text: String) throws -> Bool {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+
+        try FileManager.default.createDirectory(
+            at: lastTranscriptURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data(text.utf8).write(to: lastTranscriptURL, options: .atomic)
+        return true
+    }
+
+    func loadLastTranscript() throws -> String? {
+        guard FileManager.default.fileExists(atPath: lastTranscriptURL.path) else {
+            return nil
+        }
+
+        let data = try Data(contentsOf: lastTranscriptURL)
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw CocoaError(
+                .fileReadInapplicableStringEncoding,
+                userInfo: [NSFilePathErrorKey: lastTranscriptURL.path]
+            )
+        }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        return text
     }
 }

@@ -81,6 +81,8 @@ final class KoettController: NSObject {
     var startupErrorCode: StartupErrorCode?
     var setupStatus = SetupStatus.checkingMicrophone
     var startupNoticeMessage: String?
+    var lastTranscript: String?
+    var lastTranscriptMenuActions = LastTranscriptMenuActionQueue()
 
     init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
         self.speechEngine = speechEngine
@@ -123,6 +125,14 @@ final class KoettController: NSObject {
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
+        do {
+            lastTranscript = try transcriptStore.loadLastTranscript()
+        } catch {
+            fputs(
+                "Warning: last transcript could not be loaded: \(error.localizedDescription)\n",
+                stderr
+            )
+        }
         recordingOverlay.onLatestOutcomeChange = { [weak self] in
             self?.rebuildMenu()
         }

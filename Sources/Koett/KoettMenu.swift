@@ -4,6 +4,7 @@ import Foundation
 extension KoettController {
     func rebuildMenu() {
         let menu = NSMenu()
+        menu.delegate = self
         if isPreparing {
             let item = NSMenuItem(
                 title: setupStatus.menuTitle,
@@ -258,6 +259,20 @@ extension KoettController {
             latestItem.toolTip = latestOutcome.message
             menu.addItem(latestItem)
         }
+        let copyLastItem = menuItem(
+            title: "Copy Last Transcript",
+            action: #selector(copyLastTranscript),
+            selected: false
+        )
+        copyLastItem.isEnabled = state == .ready && lastTranscript != nil
+        menu.addItem(copyLastItem)
+        let pasteLastItem = menuItem(
+            title: "Paste Last Transcript",
+            action: #selector(pasteLastTranscript),
+            selected: false
+        )
+        pasteLastItem.isEnabled = state == .ready && lastTranscript != nil
+        menu.addItem(pasteLastItem)
         menu.addItem(menuItem(
             title: "Open Transcripts",
             action: #selector(openTranscripts),
