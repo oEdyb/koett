@@ -184,6 +184,17 @@ class SwedishBakeoffTests(unittest.TestCase):
                     expected_name="parakeet-tdt-0.6b-v3",
                 )
 
+    def test_cmake_cache_requires_an_exact_option(self) -> None:
+        cache = "CMAKE_BUILD_TYPE:STRING=Release\nGGML_METAL:BOOL=ON\n"
+
+        self.assertEqual(
+            bakeoff.cmake_cache_value(cache, "CMAKE_BUILD_TYPE"),
+            "Release",
+        )
+        self.assertEqual(bakeoff.cmake_cache_value(cache, "GGML_METAL"), "ON")
+        with self.assertRaisesRegex(ValueError, "missing GGML_BLAS"):
+            bakeoff.cmake_cache_value(cache, "GGML_BLAS")
+
 
 if __name__ == "__main__":
     unittest.main()

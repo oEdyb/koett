@@ -54,12 +54,14 @@ private struct ParakeetBaseline {
         let decoderLayers = await manager.decoderLayerCount
         if options.prewarm {
             var warmupState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let startedAt = Date()
+            let clock = ContinuousClock()
+            let startedAt = clock.now
             _ = try await manager.transcribe(
                 [Float](repeating: 0, count: 4_800),
                 decoderState: &warmupState
             )
-            print(String(format: "Full inference prewarm: %.3fs", Date().timeIntervalSince(startedAt)))
+            let elapsed = seconds(startedAt.duration(to: clock.now))
+            print(String(format: "Full inference prewarm: %.3fs", elapsed))
         }
         print("Long-audio chunk concurrency: \(options.concurrency)")
 
@@ -73,9 +75,10 @@ private struct ParakeetBaseline {
             var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
             let audioFile = try AVAudioFile(forReading: url)
             let audioDuration = Double(audioFile.length) / audioFile.processingFormat.sampleRate
-            let start = Date()
+            let clock = ContinuousClock()
+            let start = clock.now
             let result = try await manager.transcribe(url, decoderState: &decoderState)
-            let elapsed = Date().timeIntervalSince(start)
+            let elapsed = seconds(start.duration(to: clock.now))
             let realTimeSpeed = audioDuration / elapsed
             let realTimeFactor = elapsed / audioDuration
             let output = result.text.isEmpty ? "(no speech)" : result.text
@@ -266,6 +269,11 @@ private struct ParakeetBaseline {
 
     private static func failure(_ message: String) -> NSError {
         NSError(domain: "ParakeetBaseline", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    private static func seconds(_ duration: Duration) -> Double {
+        let components = duration.components
+        return Double(components.seconds) + Double(components.attoseconds) / 1e18
     }
 }
 

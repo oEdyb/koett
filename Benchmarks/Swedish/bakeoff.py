@@ -70,6 +70,13 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def cmake_cache_value(text: str, key: str) -> str:
+    match = re.search(rf"^{re.escape(key)}:[^=]+=(.*)$", text, re.MULTILINE)
+    if match is None:
+        raise ValueError(f"CMake cache is missing {key}")
+    return match.group(1).strip()
+
+
 def wave_info(path: Path) -> WaveInfo:
     """Read the small RIFF fields shared by integer and IEEE Float PCM WAV."""
     file_size = path.stat().st_size
@@ -429,9 +436,9 @@ def run_parakeet(
     identity: dict[str, str], output: Path,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     configuration = f"parakeet-{version}"
-    warmup_results = output / f"{configuration}-warmup.json"
+    warmup_results = output / f"{configuration}-{repeat}-warmup.json"
     warmup = run_timed(
-        f"{configuration}-warmup",
+        f"{configuration}-{repeat}-warmup",
         [
             str(binary), "--model-version", version,
             "--model-directory", str(model_directory), "--prewarm",
@@ -500,10 +507,11 @@ def run_whisper(
     transcript_root = output / f"{configuration}-{repeat}-transcripts"
     transcript_root.mkdir()
     warmup = run_timed(
-        f"{configuration}-warmup",
+        f"{configuration}-{repeat}-warmup",
         [
             str(binary), "-m", str(model), "-l", "sv", "-oj", "-np", "-nt",
-            "-of", str(output / f"{configuration}-warmup"), str(fixtures[0].audio_path),
+            "-of", str(output / f"{configuration}-{repeat}-warmup"),
+            str(fixtures[0].audio_path),
         ],
         output,
     )
@@ -607,12 +615,13 @@ def report(scored: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> str:
         f"{sum(record['audio_seconds'] for record in scored) / len(configurations) / 60:.1f} "
         "minutes per model.",
         "",
-        "| Configuration | WER | CER | Cold batch RTFx | Engine RTFx | Engine p50 | Engine p95 | Peak RSS | Model | Failures |",
+        "| Configuration | WER | CER | Fresh-process batch RTFx | Engine RTFx | Engine p50 | Engine p95 | Peak RSS | Model | Failures |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         *rows,
         "",
-        "Cold batch RTFx includes model load, transcription, and result writing. The separate "
-        "warmup process is excluded for every model. FluidAudio exposes per-file engine time; "
+        "Fresh-process batch RTFx includes model load, transcription, and result writing after "
+        "a separate cache-prime process. The cache-prime process is excluded for every model. "
+        "FluidAudio exposes per-file engine time; "
         "whisper.cpp CLI does not, so its engine cells stay empty.",
         "",
         "FLEURS does not publish stable speaker IDs in this TSV. This run can compare aggregate "
@@ -639,13 +648,24 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def verify_source_builds(arguments: argparse.Namespace, repo: Path) -> None:
+def verify_source_builds(arguments: argparse.Namespace, repo: Path) -> dict[str, str]:
     package = json.loads((repo / "Package.resolved").read_text(encoding="utf-8"))
     fluid_pins = [
         pin for pin in package.get("pins", []) if pin.get("identity") == "fluidaudio"
     ]
     if len(fluid_pins) != 1 or fluid_pins[0].get("state", {}).get("revision") != FLUID_REVISION:
         raise ValueError("Package.resolved does not contain the expected FluidAudio revision")
+    fluid_source = repo / ".build/checkouts/FluidAudio"
+    fluid_head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=fluid_source, text=True
+    ).strip()
+    if fluid_head != FLUID_REVISION:
+        raise ValueError("FluidAudio checkout is not at the pinned revision")
+    fluid_dirty = subprocess.check_output(
+        ["git", "status", "--porcelain"], cwd=fluid_source, text=True
+    ).strip()
+    if fluid_dirty:
+        raise ValueError("FluidAudio checkout is dirty")
 
     expected_parakeet = (repo / ".build/release/parakeet-baseline").resolve()
     if arguments.parakeet.resolve() != expected_parakeet:
@@ -679,6 +699,26 @@ def verify_source_builds(arguments: argparse.Namespace, repo: Path) -> None:
         ["cmake", "--build", str(whisper_source / "build"), "--config", "Release", "--target", "whisper-cli"],
         check=True,
     )
+    cmake_cache_path = whisper_source / "build/CMakeCache.txt"
+    cmake_cache = cmake_cache_path.read_text(encoding="utf-8")
+    build_type = cmake_cache_value(cmake_cache, "CMAKE_BUILD_TYPE")
+    metal = cmake_cache_value(cmake_cache, "GGML_METAL")
+    if build_type != "Release":
+        raise ValueError(f"whisper.cpp CMAKE_BUILD_TYPE is {build_type}, expected Release")
+    if metal != "ON":
+        raise ValueError(f"whisper.cpp GGML_METAL is {metal}, expected ON")
+    return {
+        "swift": subprocess.check_output(["swift", "--version"], text=True).strip(),
+        "clang": subprocess.check_output(
+            ["xcrun", "clang", "--version"], text=True
+        ).splitlines()[0],
+        "cmake": subprocess.check_output(
+            ["cmake", "--version"], text=True
+        ).splitlines()[0],
+        "whisper_cmake_build_type": build_type,
+        "whisper_ggml_metal": metal,
+        "whisper_cmake_cache_sha256": sha256_file(cmake_cache_path),
+    }
 
 
 def main() -> int:
@@ -713,7 +753,7 @@ def main() -> int:
     ).strip()
     if dirty:
         raise ValueError("commit the benchmark adapter and harness before running")
-    verify_source_builds(arguments, repo)
+    toolchain = verify_source_builds(arguments, repo)
     manifests = load_model_manifests(PARAKEET_MANIFEST)
     verify_model_directory(
         arguments.parakeet_v2_model,
@@ -762,6 +802,7 @@ def main() -> int:
                 "repeat": repeat,
                 "audio_files": len(fixtures),
                 "audio_seconds": sum(fixture.audio_seconds for fixture in fixtures),
+                "toolchain": toolchain,
             })
             records.extend(batch)
             receipts.append(receipt)

@@ -53,5 +53,5 @@ Primary sources:
 
 - [Google FLEURS](https://huggingface.co/datasets/google/fleurs)
 - [KBLab KB-Whisper Base](https://huggingface.co/KBLab/kb-whisper-base)
-- [whisper.cpp](https://github.com/ggml-org/whisper.cpp/tree/b4938)
+- [whisper.cpp](https://github.com/ggml-org/whisper.cpp/tree/371b5a7561823ab2bb32142d2751e35e7534727b)
 - [FluidAudio manual Parakeet loading](https://github.com/FluidInference/FluidAudio/blob/main/Documentation/ASR/ManualModelLoading.md)

@@ -102,7 +102,8 @@ cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DWHISPER_BUILD_TESTS=OFF \
     -DWHISPER_BUILD_SERVER=OFF \
-    -DWHISPER_BUILD_EXAMPLES=ON
+    -DWHISPER_BUILD_EXAMPLES=ON \
+    -DGGML_METAL=ON
 cmake --build "${whisper_root}/build" --config Release -j 4 --target whisper-cli
 
 printf 'FLEURS TSV: %s\n' "${fleurs_root}/test.tsv"
