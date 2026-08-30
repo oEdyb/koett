@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import platform
 import random
 import re
@@ -25,9 +26,12 @@ sys.path.insert(0, str(BENCHMARKS))
 import benchmark_record  # noqa: E402
 
 FLEURS_TSV_SHA256 = "55f48c5385a6e5fb8a62ea90212c04b005e2f77d7bd8fcf20bc3a5bda223aae2"
+FLEURS_EXPECTED_ROWS = 759
 KB_MODEL_SHA256 = "aead29b356bca8840e72a8dc2286e2d69e6702639751a1e60cb3c8eacefec546"
+KB_REVISION = "1499d2d2f0c7ed545bd6f2eec85287cf8d8c8b38"
 WHISPER_REVISION = "371b5a7561823ab2bb32142d2751e35e7534727b"
 FLUID_REVISION = "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b"
+PARAKEET_MANIFEST = Path(__file__).with_name("parakeet-models.tsv")
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,13 @@ class WaveInfo:
     channels: int
     sample_rate: int
     frames: int
+
+
+@dataclass(frozen=True)
+class ModelManifest:
+    repo: str
+    revision: str
+    files: dict[str, tuple[int, str]]
 
 
 def sha256_file(path: Path) -> str:
@@ -95,7 +106,10 @@ def wave_info(path: Path) -> WaveInfo:
     return WaveInfo(channels, sample_rate, data_bytes // block_align)
 
 
-def load_fleurs(tsv_path: Path, audio_directory: Path, limit: int | None) -> list[Fixture]:
+def load_fleurs(
+    tsv_path: Path, audio_directory: Path, limit: int | None,
+    expected_rows: int = FLEURS_EXPECTED_ROWS,
+) -> list[Fixture]:
     if sha256_file(tsv_path) != FLEURS_TSV_SHA256:
         raise ValueError("FLEURS TSV SHA-256 does not match the pinned test set")
 
@@ -127,7 +141,64 @@ def load_fleurs(tsv_path: Path, audio_directory: Path, limit: int | None) -> lis
                 break
     if not fixtures:
         raise ValueError("FLEURS test set is empty")
+    if limit is None and len(fixtures) != expected_rows:
+        raise ValueError(
+            f"FLEURS test set has {len(fixtures)} rows, expected {expected_rows}"
+        )
     return fixtures
+
+
+def load_model_manifests(path: Path) -> dict[str, ModelManifest]:
+    grouped: dict[str, dict[str, Any]] = {}
+    with path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        expected = {"version", "repo", "revision", "path", "bytes", "sha256"}
+        if set(reader.fieldnames or []) != expected:
+            raise ValueError("Parakeet model manifest has unexpected columns")
+        for row in reader:
+            version = row["version"]
+            group = grouped.setdefault(
+                version,
+                {"repo": row["repo"], "revision": row["revision"], "files": {}},
+            )
+            if group["repo"] != row["repo"] or group["revision"] != row["revision"]:
+                raise ValueError(f"Parakeet {version} manifest identity is inconsistent")
+            relative = row["path"]
+            if not relative or relative.startswith("/") or ".." in Path(relative).parts:
+                raise ValueError(f"Parakeet {version} manifest path is unsafe")
+            if relative in group["files"]:
+                raise ValueError(f"Parakeet {version} manifest repeats {relative}")
+            digest = row["sha256"]
+            if not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise ValueError(f"Parakeet {version} manifest SHA-256 is invalid")
+            group["files"][relative] = (int(row["bytes"]), digest)
+    if set(grouped) != {"v2", "v3"}:
+        raise ValueError("Parakeet model manifest must contain v2 and v3")
+    return {
+        version: ModelManifest(group["repo"], group["revision"], group["files"])
+        for version, group in grouped.items()
+    }
+
+
+def verify_model_directory(path: Path, manifest: ModelManifest) -> tuple[str, int]:
+    actual = {
+        file.relative_to(path).as_posix()
+        for file in path.rglob("*")
+        if file.is_file()
+    }
+    expected = set(manifest.files)
+    if actual != expected:
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        raise ValueError(
+            f"Parakeet model directory does not match its manifest; "
+            f"missing={missing}, extra={extra}"
+        )
+    for relative, (expected_bytes, expected_sha256) in manifest.files.items():
+        file = path / relative
+        if file.stat().st_size != expected_bytes or sha256_file(file) != expected_sha256:
+            raise ValueError(f"Parakeet model file does not match: {file}")
+    return tree_receipt(path)
 
 
 def write_corpus(path: Path, fixtures: list[Fixture]) -> None:
@@ -207,7 +278,89 @@ def tree_receipt(path: Path) -> tuple[str, int]:
 
 def whisper_text(path: Path) -> str:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    return "".join(segment["text"] for segment in payload["transcription"]).strip()
+    if not isinstance(payload, dict) or not isinstance(payload.get("transcription"), list):
+        raise ValueError("whisper JSON is missing its transcription array")
+    text = []
+    for segment in payload["transcription"]:
+        if not isinstance(segment, dict) or not isinstance(segment.get("text"), str):
+            raise ValueError("whisper JSON has an invalid segment")
+        text.append(segment["text"])
+    return "".join(text).strip()
+
+
+def parakeet_result(path: Path, fixture: Fixture) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    expected_fields = {
+        "audioFile", "audioSeconds", "engineMilliseconds", "realTimeFactor",
+        "confidence", "text",
+    }
+    if not isinstance(payload, dict) or set(payload) != expected_fields:
+        raise ValueError("Parakeet result has unexpected fields")
+    if payload["audioFile"] != fixture.filename or not isinstance(payload["text"], str):
+        raise ValueError("Parakeet result does not match its audio file")
+    for field in ("audioSeconds", "engineMilliseconds", "realTimeFactor", "confidence"):
+        value = payload[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            raise ValueError(f"Parakeet result has invalid {field}")
+    if abs(payload["audioSeconds"] - fixture.audio_seconds) > 0.001:
+        raise ValueError("Parakeet result audio duration does not match")
+    if payload["engineMilliseconds"] <= 0 or payload["realTimeFactor"] <= 0:
+        raise ValueError("Parakeet result timing must be positive")
+    expected_rtf = payload["engineMilliseconds"] / 1_000 / payload["audioSeconds"]
+    if abs(payload["realTimeFactor"] - expected_rtf) > 0.000_001:
+        raise ValueError("Parakeet result timing fields disagree")
+    if not 0 <= payload["confidence"] <= 1:
+        raise ValueError("Parakeet confidence is outside zero through one")
+    return payload
+
+
+def read_parakeet_outputs(
+    root: Path, fixtures: list[Fixture]
+) -> tuple[dict[str, tuple[dict[str, Any] | None, str]], set[str], set[str]]:
+    expected = {f"{Path(fixture.filename).stem}.json" for fixture in fixtures}
+    actual = {file.name for file in root.glob("*.json")} if root.is_dir() else set()
+    outputs = {}
+    for fixture in fixtures:
+        path = root / f"{Path(fixture.filename).stem}.json"
+        if not path.is_file():
+            outputs[fixture.fixture_id] = (None, "missing structured result")
+            continue
+        try:
+            outputs[fixture.fixture_id] = (parakeet_result(path, fixture), "")
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            outputs[fixture.fixture_id] = (None, f"invalid Parakeet JSON: {error}")
+    return outputs, actual, expected
+
+
+def read_whisper_outputs(
+    root: Path, fixtures: list[Fixture]
+) -> tuple[dict[str, tuple[str | None, str]], set[str], set[str]]:
+    expected = {f"{fixture.fixture_id}.json" for fixture in fixtures}
+    actual = {file.name for file in root.glob("*.json")} if root.is_dir() else set()
+    outputs = {}
+    for fixture in fixtures:
+        path = root / f"{fixture.fixture_id}.json"
+        if not path.is_file():
+            outputs[fixture.fixture_id] = (None, "missing structured result")
+            continue
+        try:
+            outputs[fixture.fixture_id] = (whisper_text(path), "")
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            outputs[fixture.fixture_id] = (None, f"invalid whisper JSON: {error}")
+    return outputs, actual, expected
+
+
+def checkpoint(output: Path, records: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> None:
+    records_path = output / "runs.partial.jsonl"
+    receipts_path = output / "receipts.partial.json"
+    records_temporary = output / "runs.partial.new.jsonl"
+    receipts_temporary = output / "receipts.partial.new.json"
+    benchmark_record.write_records(records_temporary, records)
+    receipts_temporary.write_text(
+        json.dumps(receipts, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    records_temporary.replace(records_path)
+    receipts_temporary.replace(receipts_path)
 
 
 def system_identity() -> dict[str, str]:
@@ -258,74 +411,67 @@ def base_record(
 
 
 def run_parakeet(
-    version: str, binary: Path, fixtures: list[Fixture], repeat: int,
-    app_commit: str, identity: dict[str, str], output: Path,
+    version: str, binary: Path, model_directory: Path, manifest: ModelManifest,
+    fixtures: list[Fixture], repeat: int, app_commit: str,
+    identity: dict[str, str], output: Path,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     configuration = f"parakeet-{version}"
     warmup_results = output / f"{configuration}-warmup.json"
     warmup = run_timed(
         f"{configuration}-warmup",
         [
-            str(binary), "--model-version", version, "--prewarm",
+            str(binary), "--model-version", version,
+            "--model-directory", str(model_directory), "--prewarm",
             "--results-json", str(warmup_results), str(fixtures[0].audio_path),
         ],
         output,
     )
-    results_path = output / f"{configuration}-{repeat}.json"
+    results_root = output / f"{configuration}-{repeat}-results"
     command = [
-        str(binary), "--model-version", version, "--prewarm",
-        "--results-json", str(results_path),
+        str(binary), "--model-version", version,
+        "--model-directory", str(model_directory),
+        "--results-directory", str(results_root),
         *(str(fixture.audio_path) for fixture in fixtures),
     ]
     receipt = run_timed(f"{configuration}-{repeat}", command, output)
     receipt["warmup"] = warmup
     receipt["runtime_binary_bytes"] = binary.stat().st_size
-    receipt["runtime_binary_sha256"] = sha256_file(binary)
-    model_directory = Path.home() / "Library/Application Support/FluidAudio/Models" / (
-        "parakeet-tdt-0.6b-v2" if version == "v2" else "parakeet-tdt-0.6b-v3"
-    )
-    if model_directory.is_dir():
-        tree_hash, model_bytes = tree_receipt(model_directory)
-    else:
-        tree_hash, model_bytes = "unavailable-after-failure", 0
+    binary_hash = sha256_file(binary)
+    receipt["runtime_binary_sha256"] = binary_hash
+    tree_hash, model_bytes = verify_model_directory(model_directory, manifest)
     receipt.update({"model_bytes": model_bytes, "model_tree_sha256": tree_hash})
     model_identity = {
         "adapter": "Koett ParakeetBaseline",
-        "adapter_revision": app_commit,
-        "runtime": "FluidAudio 0.15.6",
-        "model": f"FluidInference/parakeet-tdt-0.6b-{version}-coreml",
-        "model_revision": tree_hash,
+        "adapter_revision": f"sha256:{binary_hash}",
+        "runtime": f"FluidAudio 0.15.6 at {FLUID_REVISION}",
+        "model": manifest.repo,
+        "model_revision": manifest.revision,
         "decoder": "FluidAudio TDT default",
         "decoder_revision": FLUID_REVISION,
     }
-    if warmup["exit_code"] != 0 or receipt["exit_code"] != 0:
-        message = (
-            f"parakeet warmup exited {warmup['exit_code']}; "
-            f"scored process exited {receipt['exit_code']}"
-        )
-        return [
-            base_record(
-                configuration=configuration, fixture=fixture, repeat=repeat,
-                app_commit=app_commit, identity=identity, model_identity=model_identity,
-                hypothesis="", success=False, engine_ms=None, failure_message=message,
-            ) for fixture in fixtures
-        ], receipt
-    payload = json.loads(results_path.read_text(encoding="utf-8"))
-    by_file = {item["audioFile"]: item for item in payload}
     records = []
+    engine_seconds = 0.0
+    outputs, actual_files, expected_files = read_parakeet_outputs(results_root, fixtures)
     for fixture in fixtures:
-        item = by_file.get(fixture.filename)
-        success = item is not None
+        item, failure_message = outputs[fixture.fixture_id]
+        if item is not None:
+            engine_seconds += item["engineMilliseconds"] / 1_000
         records.append(base_record(
             configuration=configuration, fixture=fixture, repeat=repeat,
             app_commit=app_commit, identity=identity, model_identity=model_identity,
-            hypothesis="" if item is None else item["text"], success=success,
+            hypothesis="" if item is None else item["text"], success=item is not None,
             engine_ms=None if item is None else item["engineMilliseconds"],
-            failure_message="missing structured result" if item is None else "",
+            failure_message=failure_message,
         ))
-    receipt["exposed_engine_seconds"] = sum(
-        item["engineMilliseconds"] for item in payload
-    ) / 1_000
+    exact_output_set = actual_files == expected_files
+    receipt["exposed_engine_seconds"] = engine_seconds
+    receipt["batch_complete"] = (
+        receipt["exit_code"] == 0
+        and exact_output_set
+        and all(record["success"] for record in records)
+    )
+    receipt["unexpected_output_files"] = sorted(actual_files - expected_files)
+    receipt["missing_output_files"] = sorted(expected_files - actual_files)
     return records, receipt
 
 
@@ -335,7 +481,7 @@ def run_whisper(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     configuration = "kb-whisper-base-q5"
     transcript_root = output / f"{configuration}-{repeat}-transcripts"
-    transcript_root.mkdir(exist_ok=True)
+    transcript_root.mkdir()
     warmup = run_timed(
         f"{configuration}-warmup",
         [
@@ -356,40 +502,49 @@ def run_whisper(
         "runtime_binary_bytes": binary.stat().st_size,
         "runtime_binary_sha256": sha256_file(binary),
     })
+    binary_hash = receipt["runtime_binary_sha256"]
     model_identity = {
         "adapter": "whisper.cpp CLI",
-        "adapter_revision": WHISPER_REVISION,
-        "runtime": "whisper.cpp 1.9.3 Metal",
+        "adapter_revision": f"sha256:{binary_hash}",
+        "runtime": f"whisper.cpp 1.9.3 Metal at {WHISPER_REVISION}",
         "model": "KBLab/kb-whisper-base ggml Q5_0",
-        "model_revision": KB_MODEL_SHA256,
+        "model_revision": KB_REVISION,
         "decoder": "whisper.cpp default beam-size 5 best-of 5",
         "decoder_revision": WHISPER_REVISION,
     }
     records = []
+    outputs, actual_files, expected_files = read_whisper_outputs(
+        transcript_root, fixtures
+    )
     for fixture in fixtures:
-        transcript = transcript_root / f"{fixture.fixture_id}.json"
-        success = warmup["exit_code"] == 0 and receipt["exit_code"] == 0 and transcript.is_file()
-        hypothesis = ""
-        failure_message = ""
-        if success:
-            try:
-                hypothesis = whisper_text(transcript)
-            except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
-                success = False
-                failure_message = f"invalid whisper JSON: {error}"
-        if not success and not failure_message:
-            failure_message = (
-                f"whisper warmup exited {warmup['exit_code']}; "
-                f"scored process exited {receipt['exit_code']}"
-            )
+        hypothesis, failure_message = outputs[fixture.fixture_id]
         records.append(base_record(
             configuration=configuration, fixture=fixture, repeat=repeat,
             app_commit=app_commit, identity=identity, model_identity=model_identity,
-            hypothesis=hypothesis, success=success,
+            hypothesis="" if hypothesis is None else hypothesis,
+            success=hypothesis is not None,
             engine_ms=None,
             failure_message=failure_message,
         ))
+    receipt["batch_complete"] = (
+        receipt["exit_code"] == 0
+        and actual_files == expected_files
+        and all(record["success"] for record in records)
+    )
+    receipt["unexpected_output_files"] = sorted(actual_files - expected_files)
+    receipt["missing_output_files"] = sorted(expected_files - actual_files)
     return records, receipt
+
+
+def percentile(values: list[float], fraction: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * fraction
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = position - lower
+    return ordered[lower] * (1 - weight) + ordered[upper] * weight
 
 
 def report(scored: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> str:
@@ -406,18 +561,24 @@ def report(scored: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> str:
             item for item in receipts if item["label"].startswith(f"{configuration}-")
         ]
         wall_seconds = sum(item["wall_seconds"] for item in configuration_receipts)
+        complete = all(item["batch_complete"] for item in configuration_receipts)
         engine_values = [
             item["exposed_engine_seconds"] for item in configuration_receipts
             if "exposed_engine_seconds" in item
         ]
         engine_seconds = sum(engine_values) if engine_values else None
+        engine_ms = [record["engine_ms"] for record in records if record["engine_ms"] is not None]
+        engine_p50 = percentile(engine_ms, 0.50)
+        engine_p95 = percentile(engine_ms, 0.95)
         peak_rss_bytes = max(item["peak_rss_bytes"] for item in configuration_receipts)
         model_bytes = configuration_receipts[0]["model_bytes"]
         rows.append(
             f"| {configuration} | {100 * errors / reference_words:.2f}% | "
             f"{100 * character_errors / reference_characters:.2f}% | "
-            f"{total_audio / wall_seconds:.1f}x | "
-            f"{'—' if engine_seconds is None else f'{total_audio / engine_seconds:.1f}x'} | "
+            f"{'—' if not complete else f'{total_audio / wall_seconds:.1f}x'} | "
+            f"{'—' if not complete or engine_seconds is None else f'{total_audio / engine_seconds:.1f}x'} | "
+            f"{'—' if not complete or engine_p50 is None else f'{engine_p50:.0f} ms'} | "
+            f"{'—' if not complete or engine_p95 is None else f'{engine_p95:.0f} ms'} | "
             f"{peak_rss_bytes / 1_000_000:.0f} MB | "
             f"{model_bytes / 1_000_000:.1f} MB | "
             f"{sum(not record['success'] for record in records)} |"
@@ -429,12 +590,13 @@ def report(scored: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> str:
         f"{sum(record['audio_seconds'] for record in scored) / len(configurations) / 60:.1f} "
         "minutes per model.",
         "",
-        "| Configuration | WER | CER | Full-process RTFx | Exposed engine RTFx | Peak RSS | Model | Failures |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| Configuration | WER | CER | Cold batch RTFx | Engine RTFx | Engine p50 | Engine p95 | Peak RSS | Model | Failures |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         *rows,
         "",
-        "Full-process RTFx includes model load and prewarm. FluidAudio exposes per-file engine time; "
-        "whisper.cpp CLI does not, so its engine cell stays empty.",
+        "Cold batch RTFx includes model load, transcription, and result writing. The separate "
+        "warmup process is excluded for every model. FluidAudio exposes per-file engine time; "
+        "whisper.cpp CLI does not, so its engine cells stay empty.",
         "",
         "FLEURS does not publish stable speaker IDs in this TSV. This run can compare aggregate "
         "accuracy, speed, memory, and size, but it cannot pass Koett's speaker-block confidence "
@@ -446,7 +608,10 @@ def report(scored: list[dict[str, Any]], receipts: list[dict[str, Any]]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parakeet", required=True, type=Path)
+    parser.add_argument("--parakeet-v2-model", required=True, type=Path)
+    parser.add_argument("--parakeet-v3-model", required=True, type=Path)
     parser.add_argument("--whisper", required=True, type=Path)
+    parser.add_argument("--whisper-source", required=True, type=Path)
     parser.add_argument("--kb-model", required=True, type=Path)
     parser.add_argument("--fleurs-tsv", required=True, type=Path)
     parser.add_argument("--fleurs-audio", required=True, type=Path)
@@ -455,6 +620,48 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20260830)
     return parser.parse_args()
+
+
+def verify_source_builds(arguments: argparse.Namespace, repo: Path) -> None:
+    package = json.loads((repo / "Package.resolved").read_text(encoding="utf-8"))
+    fluid_pins = [
+        pin for pin in package.get("pins", []) if pin.get("identity") == "fluidaudio"
+    ]
+    if len(fluid_pins) != 1 or fluid_pins[0].get("state", {}).get("revision") != FLUID_REVISION:
+        raise ValueError("Package.resolved does not contain the expected FluidAudio revision")
+
+    expected_parakeet = (repo / ".build/release/parakeet-baseline").resolve()
+    if arguments.parakeet.resolve() != expected_parakeet:
+        raise ValueError("--parakeet must be this repository's release build")
+    subprocess.run(
+        ["swift", "build", "-c", "release", "--product", "parakeet-baseline"],
+        cwd=repo,
+        check=True,
+    )
+
+    whisper_source = arguments.whisper_source.resolve()
+    whisper_head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=whisper_source, text=True
+    ).strip()
+    if whisper_head != WHISPER_REVISION:
+        raise ValueError("whisper.cpp source is not at the pinned revision")
+    whisper_dirty = subprocess.check_output(
+        [
+            "git", "status", "--porcelain", "--", "CMakeLists.txt", "cmake",
+            "examples", "ggml", "include", "src",
+        ],
+        cwd=whisper_source,
+        text=True,
+    ).strip()
+    if whisper_dirty:
+        raise ValueError("whisper.cpp inference source is dirty")
+    expected_whisper = (whisper_source / "build/bin/whisper-cli").resolve()
+    if arguments.whisper.resolve() != expected_whisper:
+        raise ValueError("--whisper must be the pinned source tree's release build")
+    subprocess.run(
+        ["cmake", "--build", str(whisper_source / "build"), "--config", "Release", "--target", "whisper-cli"],
+        check=True,
+    )
 
 
 def main() -> int:
@@ -466,8 +673,13 @@ def main() -> int:
     for path in (arguments.parakeet, arguments.whisper, arguments.kb_model):
         if not path.is_file():
             raise ValueError(f"missing runner or model: {path}")
+    for path in (arguments.parakeet_v2_model, arguments.parakeet_v3_model):
+        if not path.is_dir():
+            raise ValueError(f"missing Parakeet model directory: {path}")
     if sha256_file(arguments.kb_model) != KB_MODEL_SHA256:
         raise ValueError("KB-Whisper model SHA-256 does not match")
+    if arguments.output.exists():
+        raise ValueError("--output must be a new path")
 
     repo = BENCHMARKS.parent
     exact_paths = [
@@ -476,17 +688,23 @@ def main() -> int:
         "Benchmarks/benchmark_record.py",
         "Benchmarks/benchmark_schema.py",
         "Benchmarks/Swedish",
+        "Package.swift",
+        "Package.resolved",
     ]
     dirty = subprocess.check_output(
         ["git", "status", "--porcelain", "--", *exact_paths], cwd=repo, text=True
     ).strip()
     if dirty:
         raise ValueError("commit the benchmark adapter and harness before running")
+    verify_source_builds(arguments, repo)
+    manifests = load_model_manifests(PARAKEET_MANIFEST)
+    verify_model_directory(arguments.parakeet_v2_model, manifests["v2"])
+    verify_model_directory(arguments.parakeet_v3_model, manifests["v3"])
     app_commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()
-    arguments.output.mkdir(parents=True, exist_ok=True)
     fixtures = load_fleurs(arguments.fleurs_tsv, arguments.fleurs_audio, arguments.limit)
+    arguments.output.mkdir(parents=True)
     corpus_path = arguments.output / "corpus.tsv"
     write_corpus(corpus_path, fixtures)
     identity = system_identity()
@@ -500,13 +718,15 @@ def main() -> int:
         for configuration in order:
             if configuration == "parakeet-v2":
                 batch, receipt = run_parakeet(
-                    "v2", arguments.parakeet, fixtures, repeat, app_commit,
-                    identity, arguments.output,
+                    "v2", arguments.parakeet, arguments.parakeet_v2_model,
+                    manifests["v2"], fixtures, repeat, app_commit, identity,
+                    arguments.output,
                 )
             elif configuration == "parakeet-v3":
                 batch, receipt = run_parakeet(
-                    "v3", arguments.parakeet, fixtures, repeat, app_commit,
-                    identity, arguments.output,
+                    "v3", arguments.parakeet, arguments.parakeet_v3_model,
+                    manifests["v3"], fixtures, repeat, app_commit, identity,
+                    arguments.output,
                 )
             else:
                 batch, receipt = run_whisper(
@@ -520,6 +740,7 @@ def main() -> int:
             })
             records.extend(batch)
             receipts.append(receipt)
+            checkpoint(arguments.output, records, receipts)
 
     raw_path = arguments.output / "runs.jsonl"
     benchmark_record.write_records(raw_path, records)

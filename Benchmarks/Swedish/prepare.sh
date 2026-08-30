@@ -5,6 +5,8 @@ set -euo pipefail
 cache_root="${1:-${HOME}/Library/Caches/koett-benchmarks}"
 fleurs_root="${cache_root}/fleurs-sv"
 whisper_root="${cache_root}/whisper.cpp"
+parakeet_root="${cache_root}/parakeet"
+script_root="${0:A:h}"
 
 fleurs_revision="70bb2e84b976b7e960aa89f1c648e09c59f894dd"
 fleurs_tsv_sha256="55f48c5385a6e5fb8a62ea90212c04b005e2f77d7bd8fcf20bc3a5bda223aae2"
@@ -17,6 +19,8 @@ download_verified() {
     local url="$1"
     local destination="$2"
     local expected_sha256="$3"
+
+    mkdir -p "$(dirname "${destination}")"
 
     if [[ -f "${destination}" ]] && \
         printf '%s  %s\n' "${expected_sha256}" "${destination}" | shasum -a 256 -c - >/dev/null; then
@@ -43,9 +47,40 @@ download_verified \
     "${cache_root}/kb-whisper-base-q5_0.bin" \
     "${kb_model_sha256}"
 
-if [[ ! -d "${fleurs_root}/audio/test" ]]; then
+tail -n +2 "${script_root}/parakeet-models.tsv" | \
+while IFS=$'\t' read -r version repo revision relative expected_bytes expected_sha256; do
+    model_directory="${parakeet_root}/${repo:t}"
+    destination="${model_directory}/${relative}"
+    download_verified \
+        "https://huggingface.co/${repo}/resolve/${revision}/${relative}" \
+        "${destination}" \
+        "${expected_sha256}"
+    actual_bytes="$(stat -f %z "${destination}")"
+    if [[ "${actual_bytes}" != "${expected_bytes}" ]]; then
+        printf 'Wrong model file size: %s\n' "${destination}" >&2
+        exit 1
+    fi
+done
+
+audio_test="${fleurs_root}/audio/test"
+audio_count=0
+if [[ -d "${audio_test}" ]]; then
+    audio_count="$(find "${audio_test}" -type f -name '*.wav' | wc -l | tr -d ' ')"
+fi
+if [[ "${audio_count}" != "759" ]]; then
+    extraction_root="$(mktemp -d "${fleurs_root}/audio-stage.XXXXXX")"
+    tar -xzf "${fleurs_root}/test.tar.gz" -C "${extraction_root}"
+    extracted_count="$(find "${extraction_root}/test" -type f -name '*.wav' | wc -l | tr -d ' ')"
+    if [[ "${extracted_count}" != "759" ]]; then
+        printf 'FLEURS archive contained %s WAV files, expected 759.\n' "${extracted_count}" >&2
+        exit 1
+    fi
     mkdir -p "${fleurs_root}/audio"
-    tar -xzf "${fleurs_root}/test.tar.gz" -C "${fleurs_root}/audio"
+    if [[ -d "${audio_test}" ]]; then
+        mv "${audio_test}" "${audio_test}.incomplete.${EPOCHSECONDS}"
+    fi
+    mv "${extraction_root}/test" "${audio_test}"
+    rmdir "${extraction_root}"
 fi
 
 if [[ ! -d "${whisper_root}/.git" ]]; then
@@ -66,4 +101,6 @@ cmake --build "${whisper_root}/build" --config Release -j 4 --target whisper-cli
 printf 'FLEURS TSV: %s\n' "${fleurs_root}/test.tsv"
 printf 'FLEURS audio: %s\n' "${fleurs_root}/audio/test"
 printf 'KB-Whisper model: %s\n' "${cache_root}/kb-whisper-base-q5_0.bin"
+printf 'Parakeet v2 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v2-coreml"
+printf 'Parakeet v3 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v3-coreml"
 printf 'whisper.cpp CLI: %s\n' "${whisper_root}/build/bin/whisper-cli"

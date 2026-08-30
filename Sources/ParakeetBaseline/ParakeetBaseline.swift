@@ -20,8 +20,9 @@ private struct ParakeetBaseline {
         guard !paths.isEmpty else {
             throw failure(
                 "Usage: parakeet-baseline [--model-version v2|v3] [--prewarm] "
+                    + "[--model-directory PATH] "
                     + "[--concurrency N] [--transcript-directory PATH] "
-                    + "[--results-json PATH] <audio-file>..."
+                    + "[--results-json PATH | --results-directory PATH] <audio-file>..."
             )
         }
 
@@ -34,7 +35,17 @@ private struct ParakeetBaseline {
             )
         }
         print("Loading Parakeet \(options.modelVersion.rawValue)...")
-        let models = try await AsrModels.downloadAndLoad(version: options.modelVersion.fluidVersion)
+        let models: AsrModels
+        if let directory = options.modelDirectory {
+            models = try await AsrModels.load(
+                from: directory,
+                version: options.modelVersion.fluidVersion
+            )
+        } else {
+            models = try await AsrModels.downloadAndLoad(
+                version: options.modelVersion.fluidVersion
+            )
+        }
         try await manager.loadModels(models)
         let decoderLayers = await manager.decoderLayerCount
         if options.prewarm {
@@ -64,14 +75,22 @@ private struct ParakeetBaseline {
             let realTimeSpeed = audioDuration / elapsed
             let realTimeFactor = elapsed / audioDuration
             let output = result.text.isEmpty ? "(no speech)" : result.text
-            records.append(ResultRecord(
+            let record = ResultRecord(
                 audioFile: url.lastPathComponent,
                 audioSeconds: audioDuration,
                 engineMilliseconds: elapsed * 1_000,
                 realTimeFactor: realTimeFactor,
                 confidence: Double(result.confidence),
                 text: result.text
-            ))
+            )
+            records.append(record)
+            if let directory = options.resultsDirectory {
+                let resultURL = directory
+                    .appendingPathComponent(url.deletingPathExtension().lastPathComponent)
+                    .appendingPathExtension("json")
+                let data = try JSONEncoder.pretty.encode(record)
+                try data.write(to: resultURL, options: [.atomic])
+            }
             if let directory = options.transcriptDirectory {
                 let transcriptURL = directory
                     .appendingPathComponent(url.deletingPathExtension().lastPathComponent)
@@ -123,19 +142,23 @@ private struct ParakeetBaseline {
 
     private struct Options {
         let modelVersion: ModelVersion
+        let modelDirectory: URL?
         let concurrency: Int
         let prewarm: Bool
         let transcriptDirectory: URL?
         let resultsJSON: URL?
+        let resultsDirectory: URL?
         let paths: [String]
     }
 
     private static func parseArguments(_ arguments: [String]) throws -> Options {
         var modelVersion = ModelVersion.v2
+        var modelDirectory: URL?
         var concurrency = ASRConfig.default.parallelChunkConcurrency
         var prewarm = false
         var transcriptDirectory: URL?
         var resultsJSON: URL?
+        var resultsDirectory: URL?
         var paths: [String] = []
         var index = 0
 
@@ -147,6 +170,17 @@ private struct ParakeetBaseline {
                     throw failure("--model-version must be v2 or v3.")
                 }
                 modelVersion = value
+                index += 2
+            } else if arguments[index] == "--model-directory" {
+                let valueIndex = index + 1
+                guard valueIndex < arguments.count,
+                      !arguments[valueIndex].hasPrefix("-") else {
+                    throw failure("--model-directory needs a path.")
+                }
+                modelDirectory = URL(
+                    fileURLWithPath: arguments[valueIndex],
+                    isDirectory: true
+                )
                 index += 2
             } else if arguments[index] == "--concurrency" {
                 let valueIndex = index + 1
@@ -179,6 +213,17 @@ private struct ParakeetBaseline {
                 }
                 resultsJSON = URL(fileURLWithPath: arguments[valueIndex])
                 index += 2
+            } else if arguments[index] == "--results-directory" {
+                let valueIndex = index + 1
+                guard valueIndex < arguments.count,
+                      !arguments[valueIndex].hasPrefix("-") else {
+                    throw failure("--results-directory needs a path.")
+                }
+                resultsDirectory = URL(
+                    fileURLWithPath: arguments[valueIndex],
+                    isDirectory: true
+                )
+                index += 2
             } else if arguments[index].hasPrefix("-") {
                 throw failure("Unknown option: \(arguments[index])")
             } else {
@@ -187,12 +232,30 @@ private struct ParakeetBaseline {
             }
         }
 
+        guard resultsJSON == nil || resultsDirectory == nil else {
+            throw failure("Use either --results-json or --results-directory, not both.")
+        }
+        if let directory = resultsDirectory {
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+            let names = paths.map {
+                URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent
+            }
+            guard Set(names).count == names.count else {
+                throw failure("--results-directory needs unique audio file names.")
+            }
+        }
+
         return Options(
             modelVersion: modelVersion,
+            modelDirectory: modelDirectory,
             concurrency: concurrency,
             prewarm: prewarm,
             transcriptDirectory: transcriptDirectory,
             resultsJSON: resultsJSON,
+            resultsDirectory: resultsDirectory,
             paths: paths
         )
     }
