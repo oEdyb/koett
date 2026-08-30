@@ -38,6 +38,11 @@ paint, and stable-text events. The record also keeps cold-load, prewarm,
 engine, visible-latency, installed-footprint, memory, CPU, and energy
 measurements when a harness can measure them.
 
+Use `timing_scope=accuracy` when a maintained external runner keeps one model
+loaded across a corpus but does not expose honest per-file engine timing. Keep
+its batch wall time and resource evidence in the run receipt. Do not divide one
+batch time across files or record model-reload time as warm inference latency.
+
 The scorer reports substitutions, deletions, insertions, normalized WER and CER,
 protected-term misses, first-word retention, final-word retention, expected
 silence, and failures. A protected term can contain more than one word. Terms

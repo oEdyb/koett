@@ -2,7 +2,14 @@
 
 SCHEMA_VERSION = 1
 STAGES = {"raw_asr", "formatting"}
-TIMING_SCOPES = {"cold_start", "engine", "full", "resource", "target_visible"}
+TIMING_SCOPES = {
+    "accuracy",
+    "cold_start",
+    "engine",
+    "full",
+    "resource",
+    "target_visible",
+}
 LOCKED_SAFETY_CATEGORIES = {"code", "negation", "number", "path"}
 
 IDENTITY_FIELDS = [

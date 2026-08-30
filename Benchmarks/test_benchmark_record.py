@@ -344,6 +344,14 @@ class BenchmarkRecordTests(unittest.TestCase):
             ["code", "negation", "number", "path"],
         )
 
+    def test_accuracy_scope_does_not_invent_per_file_timing(self) -> None:
+        record = run_record(timing_scope="accuracy", engine_ms=None)
+
+        scored = benchmark_record.score_record(record, fixture())
+
+        self.assertEqual(scored["timing_scope"], "accuracy")
+        self.assertIsNone(scored["engine_ms"])
+
     def test_paired_bootstrap_compares_matching_fixture_repeats(self) -> None:
         control = [
             benchmark_record.score_record(

@@ -343,7 +343,8 @@ def _validate_input_record(record: dict[str, Any]) -> None:
         raise ValueError("a successful run cannot retain failure details")
     if record.get("timing_scope") not in TIMING_SCOPES:
         raise ValueError(
-            "timing_scope must be cold_start, engine, full, resource, or target_visible"
+            "timing_scope must be accuracy, cold_start, engine, full, resource, "
+            "or target_visible"
         )
     for field in (
         "run_id",
@@ -429,6 +430,7 @@ def _validate_timing_scope(record: dict[str, Any]) -> None:
     if not record["success"]:
         return
     required_by_scope = {
+        "accuracy": (),
         "cold_start": ("cold_load_ms",),
         "engine": ("engine_ms",),
         "full": ("engine_ms", "stop_to_visible_ms", "final_sample_to_visible_ms"),
