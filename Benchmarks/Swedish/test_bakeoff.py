@@ -64,6 +64,33 @@ class SwedishBakeoffTests(unittest.TestCase):
             self.assertEqual(fixtures[0].reference, "hej världen")
             self.assertEqual(fixtures[0].audio_seconds, 0.1)
 
+    def test_fleurs_loader_treats_quotes_as_text(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            audio = root / "quoted.wav"
+            samples = b"\0\0" * 1_600
+            format_chunk = struct.pack("<HHIIHH", 1, 1, 16_000, 32_000, 2, 16)
+            body = (
+                b"WAVE"
+                + b"fmt " + struct.pack("<I", len(format_chunk)) + format_chunk
+                + b"data" + struct.pack("<I", len(samples)) + samples
+            )
+            audio.write_bytes(b"RIFF" + struct.pack("<I", len(body)) + body)
+            tsv = root / "test.tsv"
+            tsv.write_text(
+                "1\tquoted.wav\t\"\"\"Hej.\"\"\"\t\"\"\"hej.\"\"\t"
+                "\" h e j . \"\t1600\tFEMALE\n",
+                encoding="utf-8",
+            )
+            original = bakeoff.FLEURS_TSV_SHA256
+            bakeoff.FLEURS_TSV_SHA256 = hashlib.sha256(tsv.read_bytes()).hexdigest()
+            try:
+                fixtures = bakeoff.load_fleurs(tsv, root, None)
+            finally:
+                bakeoff.FLEURS_TSV_SHA256 = original
+
+            self.assertEqual(fixtures[0].reference, '\"\"\"hej.\"\"')
+
 
 if __name__ == "__main__":
     unittest.main()

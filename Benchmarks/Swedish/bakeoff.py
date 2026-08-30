@@ -101,7 +101,9 @@ def load_fleurs(tsv_path: Path, audio_directory: Path, limit: int | None) -> lis
 
     fixtures = []
     with tsv_path.open(encoding="utf-8", newline="") as handle:
-        for row_index, row in enumerate(csv.reader(handle, delimiter="\t"), 1):
+        for row_index, row in enumerate(
+            csv.reader(handle, delimiter="\t", quoting=csv.QUOTE_NONE), 1
+        ):
             if len(row) != 7:
                 raise ValueError(f"FLEURS row {row_index} has {len(row)} fields, expected 7")
             _, filename, _, normalized, _, sample_count, _ = row
