@@ -173,6 +173,17 @@ default model did not change.
   result because FLEURS does not provide the speaker blocks required by the
   public promotion gate. Keep the default unchanged until Olle's private
   Swedish/English corpus and target-visible latency test pass.
+- The first private Swedish calibration now has four Olle clips and 66 seconds
+  of short, natural, technical, and numbers/negation speech. Parakeet v3 scored
+  22.45% raw WER and 873.8 ms aggregate engine time, with 115–263 ms exposed
+  engine time per clip. KB-Whisper Tiny Q5_0 scored 22.45% WER with a 29.9 MB
+  model and 1,249.5 ms aggregate inference components; Base scored 25.51% with
+  55.3 MB and 1,375.8 ms; Small scored 20.41% with 175.2 MB and 4,063.6 ms.
+  whisper.cpp exposes only aggregate timing in this harness. Do not invent KB
+  p50 or p95 values. All three KB models merged or removed the final spoken
+  `inte version två`, while Parakeet v3 preserved the negation. Four clips are
+  not a promotion corpus. The private audio, transcripts, receipts, and full
+  caveat are git-ignored under `Benchmarks/Local/Swedish-2026-08-30/`.
 - `Benchmarks/benchmark_schema.py`, `benchmark_record.py`, and
   `benchmark_summary.py` define the shared Python 3.10 JSON/TSV evidence
   contract. They keep raw ASR and formatting separate, reject invalid causal
