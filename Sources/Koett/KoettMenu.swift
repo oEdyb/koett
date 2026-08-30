@@ -62,14 +62,21 @@ extension KoettController {
             && state != .assistantRecording
             && state != .assistantWorking
         let parakeetItem = menuItem(
-            title: "Model: Parakeet v2",
+            title: SpeechEngine.parakeet.menuTitle,
             action: #selector(useParakeetModel),
             selected: speechEngine == .parakeet
         )
         parakeetItem.isEnabled = canChangeModel
         menu.addItem(parakeetItem)
+        let parakeetV3Item = menuItem(
+            title: SpeechEngine.parakeetV3.menuTitle,
+            action: #selector(useParakeetV3Model),
+            selected: speechEngine == .parakeetV3
+        )
+        parakeetV3Item.isEnabled = canChangeModel
+        menu.addItem(parakeetV3Item)
         let nemotronItem = menuItem(
-            title: "Model: Nemotron 560 ms (Test)",
+            title: SpeechEngine.nemotron.menuTitle,
             action: #selector(useNemotronModel),
             selected: speechEngine == .nemotron
         )

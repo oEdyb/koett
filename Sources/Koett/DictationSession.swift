@@ -43,7 +43,7 @@ extension KoettController {
 
     private func startRecording() throws {
         switch speechEngine {
-        case .parakeet:
+        case .parakeet, .parakeetV3:
             try startParakeetRecording()
         case .nemotron:
             try startNemotronRecording()
@@ -106,7 +106,7 @@ extension KoettController {
     func stopRecording(releaseEventTimestamp: TimeInterval) {
         recordingOverlay.stop()
         switch speechEngine {
-        case .parakeet:
+        case .parakeet, .parakeetV3:
             stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp)
         case .nemotron:
             stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp)

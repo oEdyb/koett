@@ -6,18 +6,6 @@ import Darwin
 import FluidAudio
 import Foundation
 
-enum SpeechEngine: String {
-    case parakeet
-    case nemotron
-
-    var displayName: String {
-        switch self {
-        case .parakeet: "Parakeet v2"
-        case .nemotron: "Nemotron 560 ms"
-        }
-    }
-}
-
 @MainActor
 final class KoettController: NSObject {
     enum State {
@@ -44,7 +32,7 @@ final class KoettController: NSObject {
     let assistantPanel = AssistantPanelController()
     let assistantClient = AssistantClient()
     let assistantSpeech = CartesiaSpeechOutput()
-    let manager = AsrManager(config: .default)
+    let manager: AsrManager
     let nemotronAdapter: NemotronStreamingAdapter?
     let startSound: AVAudioPlayer
     let stopSound: AVAudioPlayer
@@ -84,6 +72,7 @@ final class KoettController: NSObject {
 
     init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
         self.speechEngine = speechEngine
+        manager = AsrManager(config: speechEngine.asrConfiguration)
         nemotronAdapter = speechEngine == .nemotron
             ? NemotronStreamingAdapter()
             : nil
@@ -143,16 +132,18 @@ final class KoettController: NSObject {
             )
         }
 
-        setSetupStatus(.checkingModel("Parakeet v2"))
-        print("Loading Parakeet v2...")
+        let parakeetModelName = speechEngine.parakeetModelName
+        setSetupStatus(.checkingModel(parakeetModelName))
+        print("Loading \(parakeetModelName)...")
         let models = try await AsrModels.downloadAndLoad(
-            version: .v2,
-            progressHandler: fluidAudioProgressHandler(model: "Parakeet v2")
+            version: speechEngine.parakeetVersion,
+            encoderPrecision: .int8,
+            progressHandler: fluidAudioProgressHandler(model: parakeetModelName)
         )
-        setSetupStatus(.loadingModel("Parakeet v2"))
+        setSetupStatus(.loadingModel(parakeetModelName))
         try await manager.loadModels(models)
-        setSetupStatus(.warmingModel("Parakeet v2"))
-        print("Warming Parakeet v2...")
+        setSetupStatus(.warmingModel(parakeetModelName))
+        print("Warming \(parakeetModelName)...")
         let decoderLayers = await manager.decoderLayerCount
         var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
         let silence = [Float](repeating: 0, count: 4_800)
@@ -203,10 +194,10 @@ final class KoettController: NSObject {
             try await prepare()
             try installHotkey()
             state = .ready
-            let engineName = speechEngine == .nemotron
-                ? "Nemotron test"
-                : "Parakeet"
-            print("Ready with \(engineName). Use the menu-bar icon to change the mode or shortcut.")
+            print(
+                "Ready with \(speechEngine.displayName). "
+                    + "Use the menu-bar icon to change the mode or shortcut."
+            )
         } catch {
             startupErrorMessage = error.localizedDescription
             let nsError = error as NSError
@@ -507,6 +498,10 @@ final class KoettController: NSObject {
         setSpeechEngine(.parakeet)
     }
 
+    @objc func useParakeetV3Model() {
+        setSpeechEngine(.parakeetV3)
+    }
+
     @objc func useNemotronModel() {
         setSpeechEngine(.nemotron)
     }
@@ -754,7 +749,7 @@ final class KoettController: NSObject {
     }
 
     private func relaunch(with engine: SpeechEngine) {
-        let argument = engine == .nemotron ? "--nemotron" : "--parakeet"
+        let argument = engine.launchArgument
         let bundleURL = Bundle.main.bundleURL
         if bundleURL.pathExtension == "app" {
             let configuration = NSWorkspace.OpenConfiguration()

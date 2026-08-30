@@ -56,7 +56,7 @@ extension KoettController {
                         text,
                         title: download.title,
                         source: download.source,
-                        model: "Parakeet v2"
+                        model: speechEngine.parakeetModelName
                     )
                 } catch {
                     fileURL = nil

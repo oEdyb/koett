@@ -126,7 +126,7 @@ extension KoettController {
             do {
                 try transcriptStore.append(
                     question,
-                    model: "Parakeet v2 (Koett Ask)"
+                    model: "\(speechEngine.parakeetModelName) (Koett Ask)"
                 )
             } catch {
                 fputs(

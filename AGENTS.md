@@ -150,12 +150,30 @@ default model did not change.
 
 - Parakeet v2 through FluidAudio `0.15.6` is the default. It downloads once,
   stays loaded, and is prewarmed at startup. Never reload it per recording.
+- Parakeet v3 is the optional multilingual Mac model. The menu labels v2 as
+  English and v3 as multilingual. Selecting a model saves the choice and
+  restarts Koett with one model; it does not keep v2 and v3 loaded together.
+  The `--parakeet-v3` flag overrides the saved choice for one launch.
+- The v3 path uses FluidAudio `0.15.6`'s exact `.v3` plus `.int8` loader. It
+  disables mel context because the pinned
+  [long-transcription guide](https://github.com/FluidInference/FluidAudio/blob/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/Documentation/ASR/LongTranscription.md)
+  documents wrong-language drift at multilingual chunk seams with the default
+  mel-context path. Keep dual-decode arbitration off until its added latency
+  earns a measured quality benefit.
+- FluidAudio's post-`0.15.6` [INT8-linear encoder change](https://github.com/FluidInference/FluidAudio/pull/872)
+  remains opt-in and unreleased. Its maintainer still lists multilingual WER
+  and physical-ANE speed checks before broad recommendation. Keep the stable
+  `.int8` encoder until the common Koett benchmark compares that replacement.
+- The v3 Core ML metadata and the upstream NVIDIA model card both say CC BY
+  4.0, although the converted model card body incorrectly says Apache 2.0.
+  Treat the model as CC BY 4.0. Koett downloads it directly and does not bundle
+  it in the app.
 - Nemotron Streaming EN 0.6B at the 560 ms configuration is an experimental
   menu option. It processes microphone audio while the user speaks.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery
   WAV. Use that recovery only after capture, streaming, or finalization fails.
-- Model changes restart Koett. Command-line `--parakeet` and `--nemotron`
-  flags override the saved model for one launch.
+- Model changes restart Koett. Command-line `--parakeet`, `--parakeet-v3`, and
+  `--nemotron` flags override the saved model for one launch.
 - The repo includes standalone audio, corpus, noise, Apple Speech, Parakeet,
   and Nemotron benchmark executables. These harnesses stay separate from the
   small production app path.
@@ -184,6 +202,12 @@ default model did not change.
   `inte version två`, while Parakeet v3 preserved the negation. Four clips are
   not a promotion corpus. The private audio, transcripts, receipts, and full
   caveat are git-ignored under `Benchmarks/Local/Swedish-2026-08-30/`.
+- The optional v3 app path was integrated on 2026-08-30 without changing the
+  v2 default or dependency graph. Nine focused selection/configuration tests,
+  all 62 Swift tests, and the release build passed. One cached-model offline
+  smoke loaded and prewarmed v3, then transcribed the 7.0-second private short
+  clip in 117 ms at 0.935 confidence. This is a load/inference check, not a new
+  quality or target-visible latency benchmark.
 - `Benchmarks/benchmark_schema.py`, `benchmark_record.py`, and
   `benchmark_summary.py` define the shared Python 3.10 JSON/TSV evidence
   contract. They keep raw ASR and formatting separate, reject invalid causal

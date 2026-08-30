@@ -77,24 +77,17 @@ private struct Koett {
         }
 
         if arguments.contains("--help") {
-            print("Usage: koett [--parakeet | --nemotron]")
+            print("Usage: koett [--parakeet | --parakeet-v3 | --nemotron]")
             print("Command-line model flags override the saved model for this launch.")
             print("Use the menu-bar icon to choose the model, mode, and shortcut.")
             return
         }
 
         do {
-            let savedEngine = SpeechEngine(
-                rawValue: UserDefaults.standard.string(forKey: "speechEngine") ?? ""
-            ) ?? .parakeet
-            let speechEngine: SpeechEngine
-            if arguments.contains("--nemotron") {
-                speechEngine = .nemotron
-            } else if arguments.contains("--parakeet") {
-                speechEngine = .parakeet
-            } else {
-                speechEngine = savedEngine
-            }
+            let speechEngine = SpeechEngine.selected(
+                arguments: Array(arguments),
+                savedRawValue: UserDefaults.standard.string(forKey: "speechEngine")
+            )
             let controller = try KoettController(
                 defaults: .standard,
                 speechEngine: speechEngine
