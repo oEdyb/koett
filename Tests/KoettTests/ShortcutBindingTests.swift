@@ -1,5 +1,6 @@
 @testable import Koett
 import AppKit
+import IOKit.hidsystem
 import XCTest
 
 final class ShortcutBindingTests: XCTestCase {
@@ -243,5 +244,27 @@ final class ShortcutBindingTests: XCTestCase {
         let leftUp = state.update(binding: binding, type: .flagsChanged, keyCode: 58)
         XCTAssertFalse(leftUp.down)
         XCTAssertFalse(leftUp.up)
+    }
+
+    func testRightOptionUsesEventFlagsWhenEventSourceStateIsStale() {
+        let binding = ShortcutBinding.defaultDictation
+        var state = ModifierShortcutState()
+        let rightOptionDownFlags = NSEvent.ModifierFlags.option.rawValue
+            | UInt(NX_DEVICERALTKEYMASK)
+
+        XCTAssertTrue(state.update(
+            binding: binding,
+            type: .flagsChanged,
+            keyCode: 61,
+            modifierFlags: rightOptionDownFlags,
+            keyIsDown: false
+        ).down)
+        XCTAssertTrue(state.update(
+            binding: binding,
+            type: .flagsChanged,
+            keyCode: 61,
+            modifierFlags: 0,
+            keyIsDown: false
+        ).releasedWithoutChord)
     }
 }

@@ -127,6 +127,10 @@ default model did not change.
 - A narrow active Core Graphics event tap receives modifier changes. AppKit
   receives ordinary key-down and key-up events. If macOS disables the event
   tap, Koett resyncs the physical modifier state before it continues.
+- For modifier-only shortcuts, use the device-specific flag on the current
+  event before `CGEventSource.keyState`. The global state query can still be
+  stale inside the callback, especially for Right Option key code `61`. Keep
+  the regression from public Mac fix `145cec7` on every long-lived branch.
 - Tink and Basso sounds mark recording start and stop.
 - A nonactivating bottom-center pill shows real microphone levels and elapsed
   recording time. It stays above apps without taking keyboard focus.
