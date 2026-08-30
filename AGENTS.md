@@ -159,6 +159,20 @@ default model did not change.
 - The repo includes standalone audio, corpus, noise, Apple Speech, Parakeet,
   and Nemotron benchmark executables. These harnesses stay separate from the
   small production app path.
+- The reproducible Swedish bakeoff under `Benchmarks/Swedish/` pins FLEURS,
+  both Parakeet Core ML trees, KB-Whisper Base Q5_0, FluidAudio, whisper.cpp,
+  source revisions, build options, and toolchains. On the M5 MacBook Air, one
+  full battery-power run scored all 759 FLEURS Swedish test clips (140.0 minutes
+  per model) with no failures. KB-Whisper Base Q5_0 produced 9.83% WER, used a
+  55.3 MB model, 235 MB peak RSS, and processed the batch at 26.5x real time.
+  Parakeet v3 produced 15.69% WER, used a 483.3 MB model, 124 MB peak RSS, and
+  processed the batch at 38.1x real time; its exposed engine latency was 239 ms
+  p50 and 602 ms p95 for FLEURS clips. Parakeet v2 produced 97.04% WER and is
+  not usable for Swedish. whisper.cpp does not expose honest per-file timing,
+  so KB-Whisper has no invented p50 or p95. This is an exploratory aggregate
+  result because FLEURS does not provide the speaker blocks required by the
+  public promotion gate. Keep the default unchanged until Olle's private
+  Swedish/English corpus and target-visible latency test pass.
 - `Benchmarks/benchmark_schema.py`, `benchmark_record.py`, and
   `benchmark_summary.py` define the shared Python 3.10 JSON/TSV evidence
   contract. They keep raw ASR and formatting separate, reject invalid causal
