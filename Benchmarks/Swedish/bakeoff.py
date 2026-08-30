@@ -10,10 +10,10 @@ import json
 import platform
 import random
 import re
+import struct
 import subprocess
 import sys
 import time
-import wave
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,12 +40,59 @@ class Fixture:
     sha256: str
 
 
+@dataclass(frozen=True)
+class WaveInfo:
+    channels: int
+    sample_rate: int
+    frames: int
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def wave_info(path: Path) -> WaveInfo:
+    """Read the small RIFF fields shared by integer and IEEE Float PCM WAV."""
+    file_size = path.stat().st_size
+    with path.open("rb") as handle:
+        header = handle.read(12)
+        if len(header) != 12 or header[:4] != b"RIFF" or header[8:] != b"WAVE":
+            raise ValueError(f"audio is not a RIFF WAVE file: {path}")
+        format_fields = None
+        data_bytes = None
+        while handle.tell() + 8 <= file_size:
+            chunk_id, chunk_size = struct.unpack("<4sI", handle.read(8))
+            chunk_end = handle.tell() + chunk_size
+            if chunk_end > file_size:
+                raise ValueError(f"WAV chunk exceeds the file: {path}")
+            if chunk_id == b"fmt ":
+                if chunk_size < 16:
+                    raise ValueError(f"WAV fmt chunk is too short: {path}")
+                format_fields = struct.unpack("<HHIIHH", handle.read(16))
+                handle.seek(chunk_end)
+            elif chunk_id == b"data":
+                data_bytes = chunk_size
+                handle.seek(chunk_end)
+            else:
+                handle.seek(chunk_end)
+            if chunk_size % 2:
+                handle.seek(1, 1)
+        if format_fields is None or data_bytes is None:
+            raise ValueError(f"WAV is missing fmt or data: {path}")
+
+    format_tag, channels, sample_rate, _, block_align, bits_per_sample = format_fields
+    if format_tag not in {1, 3}:
+        raise ValueError(f"WAV format {format_tag} is not uncompressed PCM: {path}")
+    expected_align = channels * bits_per_sample // 8
+    if channels < 1 or bits_per_sample % 8 or block_align != expected_align:
+        raise ValueError(f"WAV block alignment is invalid: {path}")
+    if data_bytes % block_align:
+        raise ValueError(f"WAV data is not a whole number of frames: {path}")
+    return WaveInfo(channels, sample_rate, data_bytes // block_align)
 
 
 def load_fleurs(tsv_path: Path, audio_directory: Path, limit: int | None) -> list[Fixture]:
@@ -61,11 +108,11 @@ def load_fleurs(tsv_path: Path, audio_directory: Path, limit: int | None) -> lis
             audio_path = audio_directory / filename
             if not audio_path.is_file():
                 raise ValueError(f"missing FLEURS audio: {audio_path}")
-            with wave.open(str(audio_path), "rb") as audio:
-                if audio.getnchannels() != 1 or audio.getframerate() != 16_000:
-                    raise ValueError(f"FLEURS audio is not mono 16 kHz: {audio_path}")
-                if audio.getnframes() != int(sample_count):
-                    raise ValueError(f"FLEURS sample count does not match: {audio_path}")
+            audio = wave_info(audio_path)
+            if audio.channels != 1 or audio.sample_rate != 16_000:
+                raise ValueError(f"FLEURS audio is not mono 16 kHz: {audio_path}")
+            if audio.frames != int(sample_count):
+                raise ValueError(f"FLEURS sample count does not match: {audio_path}")
             fixtures.append(Fixture(
                 fixture_id=f"fleurs-sv-{Path(filename).stem}",
                 filename=filename,

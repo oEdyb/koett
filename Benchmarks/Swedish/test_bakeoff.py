@@ -3,10 +3,10 @@
 import csv
 import hashlib
 import json
+import struct
 import sys
 import tempfile
 import unittest
-import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -39,11 +39,16 @@ class SwedishBakeoffTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             audio = root / "sample.wav"
-            with wave.open(str(audio), "wb") as output:
-                output.setnchannels(1)
-                output.setsampwidth(2)
-                output.setframerate(16_000)
-                output.writeframes(b"\0\0" * 1_600)
+            samples = b"\0\0\0\0" * 1_600
+            format_chunk = struct.pack("<HHIIHHH", 3, 1, 16_000, 64_000, 4, 32, 0)
+            fact_chunk = struct.pack("<I", 1_600)
+            body = (
+                b"WAVE"
+                + b"fmt " + struct.pack("<I", len(format_chunk)) + format_chunk
+                + b"fact" + struct.pack("<I", len(fact_chunk)) + fact_chunk
+                + b"data" + struct.pack("<I", len(samples)) + samples
+            )
+            audio.write_bytes(b"RIFF" + struct.pack("<I", len(body)) + body)
             row = ["1", audio.name, "Hej, världen.", "hej världen", "", "1600", "FEMALE"]
             tsv = root / "test.tsv"
             with tsv.open("w", encoding="utf-8", newline="") as handle:
