@@ -171,6 +171,19 @@ class SwedishBakeoffTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "extra=.*stale.bin"):
                 bakeoff.verify_model_directory(root, manifest)
 
+    def test_fluid_model_directory_requires_the_runtime_cache_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            wrong = Path(temporary) / "parakeet-tdt-0.6b-v3-coreml"
+            wrong.mkdir()
+            manifest = bakeoff.ModelManifest("owner/model", "revision", {})
+
+            with self.assertRaisesRegex(ValueError, "FluidAudio cache name"):
+                bakeoff.verify_model_directory(
+                    wrong,
+                    manifest,
+                    expected_name="parakeet-tdt-0.6b-v3",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

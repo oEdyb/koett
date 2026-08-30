@@ -32,6 +32,10 @@ KB_REVISION = "1499d2d2f0c7ed545bd6f2eec85287cf8d8c8b38"
 WHISPER_REVISION = "371b5a7561823ab2bb32142d2751e35e7534727b"
 FLUID_REVISION = "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b"
 PARAKEET_MANIFEST = Path(__file__).with_name("parakeet-models.tsv")
+PARAKEET_LOCAL_FOLDERS = {
+    "v2": "parakeet-tdt-0.6b-v2",
+    "v3": "parakeet-tdt-0.6b-v3",
+}
 
 
 @dataclass(frozen=True)
@@ -180,7 +184,16 @@ def load_model_manifests(path: Path) -> dict[str, ModelManifest]:
     }
 
 
-def verify_model_directory(path: Path, manifest: ModelManifest) -> tuple[str, int]:
+def verify_model_directory(
+    path: Path,
+    manifest: ModelManifest,
+    expected_name: str | None = None,
+) -> tuple[str, int]:
+    if expected_name is not None and path.name != expected_name:
+        raise ValueError(
+            f"Parakeet model directory needs FluidAudio cache name "
+            f"{expected_name}, got {path.name}"
+        )
     actual = {
         file.relative_to(path).as_posix()
         for file in path.rglob("*")
@@ -438,7 +451,11 @@ def run_parakeet(
     receipt["runtime_binary_bytes"] = binary.stat().st_size
     binary_hash = sha256_file(binary)
     receipt["runtime_binary_sha256"] = binary_hash
-    tree_hash, model_bytes = verify_model_directory(model_directory, manifest)
+    tree_hash, model_bytes = verify_model_directory(
+        model_directory,
+        manifest,
+        expected_name=PARAKEET_LOCAL_FOLDERS[version],
+    )
     receipt.update({"model_bytes": model_bytes, "model_tree_sha256": tree_hash})
     model_identity = {
         "adapter": "Koett ParakeetBaseline",
@@ -698,8 +715,16 @@ def main() -> int:
         raise ValueError("commit the benchmark adapter and harness before running")
     verify_source_builds(arguments, repo)
     manifests = load_model_manifests(PARAKEET_MANIFEST)
-    verify_model_directory(arguments.parakeet_v2_model, manifests["v2"])
-    verify_model_directory(arguments.parakeet_v3_model, manifests["v3"])
+    verify_model_directory(
+        arguments.parakeet_v2_model,
+        manifests["v2"],
+        expected_name=PARAKEET_LOCAL_FOLDERS["v2"],
+    )
+    verify_model_directory(
+        arguments.parakeet_v3_model,
+        manifests["v3"],
+        expected_name=PARAKEET_LOCAL_FOLDERS["v3"],
+    )
     app_commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()

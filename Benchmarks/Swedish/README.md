@@ -16,8 +16,8 @@ Run one complete 759-file accuracy and resource pass:
 ```sh
 python3 Benchmarks/Swedish/bakeoff.py \
   --parakeet .build/release/parakeet-baseline \
-  --parakeet-v2-model "$HOME/Library/Caches/koett-benchmarks/parakeet/parakeet-tdt-0.6b-v2-coreml" \
-  --parakeet-v3-model "$HOME/Library/Caches/koett-benchmarks/parakeet/parakeet-tdt-0.6b-v3-coreml" \
+  --parakeet-v2-model "$HOME/Library/Caches/koett-benchmarks/parakeet/parakeet-tdt-0.6b-v2" \
+  --parakeet-v3-model "$HOME/Library/Caches/koett-benchmarks/parakeet/parakeet-tdt-0.6b-v3" \
   --whisper "$HOME/Library/Caches/koett-benchmarks/whisper.cpp/build/bin/whisper-cli" \
   --whisper-source "$HOME/Library/Caches/koett-benchmarks/whisper.cpp" \
   --kb-model "$HOME/Library/Caches/koett-benchmarks/kb-whisper-base-q5_0.bin" \

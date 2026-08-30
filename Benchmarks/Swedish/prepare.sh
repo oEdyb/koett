@@ -49,7 +49,14 @@ download_verified \
 
 tail -n +2 "${script_root}/parakeet-models.tsv" | \
 while IFS=$'\t' read -r version repo revision relative expected_bytes expected_sha256; do
-    model_directory="${parakeet_root}/${repo:t}"
+    case "${version}" in
+        v2) model_directory="${parakeet_root}/parakeet-tdt-0.6b-v2" ;;
+        v3) model_directory="${parakeet_root}/parakeet-tdt-0.6b-v3" ;;
+        *)
+            printf 'Unknown Parakeet model version: %s\n' "${version}" >&2
+            exit 1
+            ;;
+    esac
     destination="${model_directory}/${relative}"
     download_verified \
         "https://huggingface.co/${repo}/resolve/${revision}/${relative}" \
@@ -101,6 +108,6 @@ cmake --build "${whisper_root}/build" --config Release -j 4 --target whisper-cli
 printf 'FLEURS TSV: %s\n' "${fleurs_root}/test.tsv"
 printf 'FLEURS audio: %s\n' "${fleurs_root}/audio/test"
 printf 'KB-Whisper model: %s\n' "${cache_root}/kb-whisper-base-q5_0.bin"
-printf 'Parakeet v2 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v2-coreml"
-printf 'Parakeet v3 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v3-coreml"
+printf 'Parakeet v2 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v2"
+printf 'Parakeet v3 model: %s\n' "${parakeet_root}/parakeet-tdt-0.6b-v3"
 printf 'whisper.cpp CLI: %s\n' "${whisper_root}/build/bin/whisper-cli"

@@ -37,9 +37,13 @@ private struct ParakeetBaseline {
         print("Loading Parakeet \(options.modelVersion.rawValue)...")
         let models: AsrModels
         if let directory = options.modelDirectory {
+            // A benchmark must fail on missing or invalid pinned files. It must
+            // never replace them with mutable network downloads.
+            ModelHub.offlineMode = true
             models = try await AsrModels.load(
                 from: directory,
-                version: options.modelVersion.fluidVersion
+                version: options.modelVersion.fluidVersion,
+                encoderPrecision: .int8
             )
         } else {
             models = try await AsrModels.downloadAndLoad(
