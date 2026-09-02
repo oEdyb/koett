@@ -8,15 +8,43 @@ change that proves the next idea.
 Koett stays a voice-to-text app first. Ask is optional and must not complicate,
 slow, or require cloud access for normal dictation.
 
-Koett is currently an English-only macOS dictation app for Apple Silicon. Swift
-owns the macOS app. Do not rewrite it or add a cross-platform shell without a
-measured Windows or Linux spike.
+The public Koett app is an English-only macOS dictation app for Apple Silicon.
+Swift owns the macOS app. A separate draft branch contains the measured native
+Windows/Linux implementation and the optional multilingual Mac model. Do not
+rewrite the working Mac app or add a cross-platform shell.
 
-## Implementation status — 2026-08-25
+## Takeover snapshot — 2026-09-02
 
-- Public `main` contains the current Mac source described below: core dictation,
-  configurable shortcuts, transcript recovery, optional media transcription,
-  optional local formatting, and optional Ask with spoken replies.
+- Mac worktree: `/Users/olle/dev/local-voice-input`, branch `main`. Its latest
+  product commit is `adf55db`. It contains two local product commits beyond
+  `origin/main`: recording-feedback accessibility (`b94bd4d`) and durable
+  Copy/Paste Last Transcript recovery (`adf55db`). Both were verified before
+  commit but were not pushed, installed, or released. The handoff commit above
+  them changes only agent documentation and the `CLAUDE.md` link.
+- Public state: `origin/main` is `5384daa`. The latest public release is
+  notarized Apple-silicon `v0.1.1` from source commit `c72f834`.
+- Cross-platform worktree: `/Users/olle/dev/koett-cross-platform`, branch
+  `feat/windows-linux-v0.1`, head `e85d0d0`. The branch matches its remote and
+  backs draft PR #2. GitHub reports that the draft PR conflicts with `main`.
+- The cross-platform worktree also contains uncommitted KTT-002 work. It builds
+  sherpa-onnx `v1.13.5` from pinned source with TTS disabled and patches only
+  the Rust native link boundary. Preserve that worktree. Do not clean, reset,
+  rebase, or regenerate its evidence before reading its own `AGENTS.md`.
+- The installed `/Applications/Koett.app` is the verified Developer ID build
+  from the feature branch, UUID `A4DAD2E8-83DF-372E-AD86-254BE236BCC9`, with
+  `parakeet-v3` selected. Its internal version is still `0.1.0`; it is not the
+  public `v0.1.1` binary.
+- Start autonomous work by finishing KTT-002 in the cross-platform worktree.
+  Do not merge PR #2, publish a release, change the default model, or discard
+  either worktree's local state without Olle's explicit approval.
+
+## Implementation status — 2026-09-02
+
+- Public `main` contains the released Mac source described below: core
+  dictation, configurable shortcuts, transcript history, optional media
+  transcription, optional local formatting, and optional Ask with spoken
+  replies. The two local commits above add accessibility and last-result
+  recovery on top of that public state.
 - Public release `v0.1.1` provides the notarized Apple-silicon app at
   `https://github.com/oEdyb/koett/releases/tag/v0.1.1`. It targets exact source
   commit `c72f83415b1d760c30316f07fc776f09b0ebdc0b`. Apple accepted submission
@@ -24,7 +52,7 @@ measured Windows or Linux spike.
   Gatekeeper reports `source=Notarized Developer ID`. The release ZIP SHA-256
   is `980fb0cc7db7f8060298912393b6e5c4904d6022005e94a4ed0cb6c8c08225f0`.
 - The public signed release has UUID
-  `CEDFCAD1-74F2-3357-8AAB-4F4643C293C3`. The Login Item is running. Olle
+  `CEDFCAD1-74F2-3357-8AAB-4F4643C293C3`. Olle
   live-confirmed no repeated Keychain prompt, clean text on the glass, and
   Katie speech on 2026-08-11. On 2026-08-23, Olle live-confirmed the final
   release-readiness install by dictating and pasting `Hello, hello, hello.`
@@ -360,7 +388,8 @@ Dictation and all audio transcription stay local.
 
 ## Verification receipts
 
-- The current source passes 68 tests with zero failures. Last-transcript tests
+- A fresh 2026-09-02 run passed all 68 tests with zero failures.
+  Last-transcript tests
   cover missing, empty, corrupt, exact-copy, clipboard-failure, paste-failure,
   no-duplicate-history, and one-shot post-menu-close behavior. Recording-overlay
   tests snapshot every accessibility state, prove that waveform refreshes do
@@ -411,9 +440,11 @@ Dictation and all audio transcription stay local.
   client returns HTTP 401. Koett intentionally does not import browser cookies.
 - Live-confirm rich Markdown and math in the installed panel.
 - The public binary release is Apple silicon only. There is no Intel Mac build.
-- Windows and Linux are product directions, not implemented platforms. First
-  prove a headless portability spike on real hardware before adding a shared
-  shell or promising three-platform support.
+- Windows and Linux are implemented on draft branch
+  `feat/windows-linux-v0.1`, but they are not released platforms. Finish the
+  ASR-only native build and artifact gates, reconcile the conflicting draft PR,
+  then complete the remaining real Windows, Linux, packaging, accessibility,
+  recovery, and clean-install checks before promising three-platform support.
 
 ## Required checks
 
