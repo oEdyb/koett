@@ -125,6 +125,9 @@
   provider controls its output limit. Length is controlled by the system prompt
   instead: answer in the first line, at most three bullets or one code block,
   80 words unless the user asks for detail, a list, or code. Temperature is 0.4.
+  The prompt tells the model that the question is a raw speech-to-text
+  transcript, so it reads for intent and resolves misheard words against the
+  screen instead of commenting on them.
 - Provider API keys stay in macOS Keychain. Never put keys in source,
   `AGENTS.md`, README, logs, screenshots, commits, or test fixtures.
 - The local renderer supports sanitized GFM, headings, lists, task lists,

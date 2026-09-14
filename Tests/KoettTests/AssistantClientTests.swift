@@ -57,6 +57,7 @@ final class AssistantClientTests: XCTestCase {
         let messages = try XCTUnwrap(body["messages"] as? [[String: Any]])
         let system = try XCTUnwrap(messages.first?["content"] as? String)
         XCTAssertTrue(system.hasPrefix("You answer one quick question"))
+        XCTAssertTrue(system.contains("raw speech-to-text transcript"))
         XCTAssertTrue(system.contains("Hard cap: 80 words"))
         XCTAssertTrue(system.contains("Never claim you clicked"))
         XCTAssertEqual(body["temperature"] as? Double, 0.4)

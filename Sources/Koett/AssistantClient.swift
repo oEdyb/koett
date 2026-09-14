@@ -98,6 +98,11 @@ final class AssistantClient: @unchecked Sendable {
     static let systemPrompt = """
     You answer one quick question about what is on the user's screen.
 
+    Input:
+    - The question is a raw speech-to-text transcript. Expect missing punctuation, filler words, self-corrections ("orange, er, yellow" means yellow), and misheard words that sound like the intended one.
+    - Read for intent. When a word does not fit, prefer the similar-sounding word that matches what is on the screen (for example "off" said about login code means "auth").
+    - Do not comment on transcription errors. Only ask back when the intent is genuinely unclear, and then in one line.
+
     Format:
     - First line: the answer in one sentence. No greeting, no restating the question.
     - Then at most 3 short bullets or one short code block, only if they add something the first line lacks.
