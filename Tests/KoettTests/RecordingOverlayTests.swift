@@ -57,6 +57,21 @@ final class RecordingOverlayTests: XCTestCase {
         ))
     }
 
+    func testTranscribingPillEndsOnlyWhenNothingReplacedIt() {
+        let controller = RecordingOverlayController()
+        controller.showTranscribing()
+        XCTAssertTrue(controller.isShowingTranscribing)
+        controller.endTranscribing()
+        XCTAssertFalse(controller.isShowingTranscribing)
+
+        controller.showTranscribing()
+        controller.showError("Dictation failed")
+        XCTAssertFalse(controller.isShowingTranscribing)
+        controller.endTranscribing()
+        XCTAssertEqual(controller.latestOutcome, .failure("Dictation failed"))
+        controller.stop()
+    }
+
     func testRecordingAccessibilitySnapshotDoesNotFollowWaveformUpdates() {
         let view = RecordingMeterView(
             frame: NSRect(x: 0, y: 0, width: 236, height: 48)

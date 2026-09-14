@@ -67,6 +67,7 @@ enum RecordingOverlayOutcome: Equatable {
 final class RecordingOverlayController: NSObject {
     private static let fullSize = NSSize(width: 236, height: 48)
     private static let resultSize = NSSize(width: 250, height: 48)
+    static let resultDisplayDuration: TimeInterval = 10
 
     private let meterView = RecordingMeterView(
         frame: NSRect(origin: .zero, size: fullSize)
@@ -77,6 +78,7 @@ final class RecordingOverlayController: NSObject {
     private var dismissWorkItem: DispatchWorkItem?
     private var smoothedLevel: CGFloat = 0
     private(set) var latestOutcome: RecordingOverlayOutcome?
+    private(set) var isShowingTranscribing = false
     var onLatestOutcomeChange: (() -> Void)?
 
     override init() {
@@ -107,6 +109,7 @@ final class RecordingOverlayController: NSObject {
         timer?.invalidate()
         timer = nil
         recorder = nil
+        isShowingTranscribing = false
         meterView.onCopy = nil
         panel.orderOut(nil)
     }
@@ -117,6 +120,7 @@ final class RecordingOverlayController: NSObject {
         timer?.invalidate()
         timer = nil
         recorder = nil
+        isShowingTranscribing = false
         meterView.showStatus(text)
         setPanelSize(Self.fullSize)
         panel.ignoresMouseEvents = true
@@ -134,6 +138,7 @@ final class RecordingOverlayController: NSObject {
         timer?.invalidate()
         timer = nil
         recorder = nil
+        isShowingTranscribing = false
         meterView.showProgress(
             text,
             accessibilityLabel: accessibilityLabel,
@@ -150,12 +155,25 @@ final class RecordingOverlayController: NSObject {
         dismiss(after: duration)
     }
 
+    /// Keeps the pill visible between the stop sound and the pasted text.
+    func showTranscribing() {
+        showStatus("Transcribing…")
+        isShowingTranscribing = true
+    }
+
+    /// Hides the transcribing pill unless a result or error replaced it.
+    func endTranscribing() {
+        guard isShowingTranscribing else { return }
+        stop()
+    }
+
     func showResult(_ text: String, message: String) {
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         timer?.invalidate()
         timer = nil
         recorder = nil
+        isShowingTranscribing = false
         meterView.showResult(message)
         setPanelSize(Self.resultSize)
         meterView.onCopy = { [weak self] in
@@ -170,6 +188,7 @@ final class RecordingOverlayController: NSObject {
         panel.orderFrontRegardless()
         latestOutcome = .result(message)
         onLatestOutcomeChange?()
+        dismiss(after: Self.resultDisplayDuration)
     }
 
     func showError(_ text: String) {

@@ -292,12 +292,24 @@ extension KoettController {
                 selected: false
             ))
         }
+        menu.addItem(.separator())
+        let versionItem = NSMenuItem(
+            title: "Koett \(Self.versionLabel)",
+            action: nil,
+            keyEquivalent: ""
+        )
+        versionItem.isEnabled = false
+        menu.addItem(versionItem)
         menu.addItem(NSMenuItem(
             title: "Quit Koett",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
         statusItem?.menu = menu
+    }
+
+    static var versionLabel: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
     private func menuItem(

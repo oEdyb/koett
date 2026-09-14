@@ -17,6 +17,8 @@
   `CGEventSource.keyState` check: that check returned `false` during real Right
   Option down events on this Mac.
 - Tink and Basso sounds mark recording start and stop.
+- After the stop sound, the same pill shows `Transcribing…` until the text is
+  pasted or an error replaces it. A too-short recording shows nothing.
 - A nonactivating bottom-center pill shows real microphone levels and elapsed
   recording time. It stays above apps without taking keyboard focus.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after
@@ -87,7 +89,8 @@
   result uses Koett's coral waveform, one normalized transcript preview line
   with a native trailing ellipsis, and a labeled `doc.on.doc` **Copy** button.
   The button has hover and pointer states, then shows a coral checkmark plus
-  **Copied** for one second.
+  **Copied** for one second. The result pill closes by itself after ten
+  seconds; the menu keeps the latest result.
 - Do not bundle third-party platform logos in the first version. Their trademark
   rules differ; TikTok requires prior written permission, and YouTube's in-app
   icon rules require a link back to YouTube content. Known platform names use
@@ -184,6 +187,7 @@
 - When macOS Reduce Motion is on, Koett stops waveform level motion and updates
   only the elapsed timer at 1 Hz. Koett observes the workspace display-options
   notification so a live recording follows a settings change.
+- The menu ends with a disabled `Koett <version>` item read from the bundle.
 - The menu keeps the latest result or failure after its transient pill closes.
   This state is session-only; durable transcript recovery remains in the
   transcript and failed-transcript stores.

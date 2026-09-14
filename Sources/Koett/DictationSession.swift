@@ -130,6 +130,7 @@ extension KoettController {
             return
         }
 
+        recordingOverlay.showTranscribing()
         Task { @MainActor [weak self] in
             await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp)
         }
@@ -150,6 +151,7 @@ extension KoettController {
             state = .transcribing
             play(stopSound)
             print("TRANSCRIBING")
+            recordingOverlay.showTranscribing()
 
             Task { @MainActor [weak self] in
                 await self?.finishNemotron(
@@ -163,6 +165,7 @@ extension KoettController {
             state = .transcribing
             play(stopSound)
             print("TRANSCRIBING")
+            recordingOverlay.showTranscribing()
             fputs(
                 "Warning: Nemotron stop failed; using Parakeet recovery: \(error.localizedDescription)\n",
                 stderr
@@ -178,6 +181,7 @@ extension KoettController {
                 } else {
                     self.preserveFailedRecording(recoveryURL)
                 }
+                self.recordingOverlay.endTranscribing()
                 self.state = .ready
             }
         }
@@ -189,6 +193,7 @@ extension KoettController {
             if transcriptionCompleted {
                 cleanup(url)
             }
+            recordingOverlay.endTranscribing()
             state = .ready
         }
 
@@ -250,6 +255,7 @@ extension KoettController {
         releaseEventTimestamp: TimeInterval
     ) async {
         defer {
+            recordingOverlay.endTranscribing()
             state = .ready
         }
         guard let nemotronAdapter else {
