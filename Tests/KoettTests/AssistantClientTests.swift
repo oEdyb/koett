@@ -59,6 +59,8 @@ final class AssistantClientTests: XCTestCase {
         XCTAssertTrue(system.hasPrefix("You are a quick-answer assistant"))
         XCTAssertTrue(system.contains("raw speech-to-text transcript"))
         XCTAssertTrue(system.contains("Then: why"))
+        XCTAssertTrue(system.contains("Never mention images, crops, or image numbers"))
+        XCTAssertTrue(system.contains("Never call the question a typo"))
         XCTAssertTrue(system.contains("Never exceed 120 words"))
         XCTAssertTrue(system.contains("Never claim you clicked"))
         XCTAssertEqual(body["temperature"] as? Double, 0.4)
