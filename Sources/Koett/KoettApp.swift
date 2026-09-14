@@ -102,6 +102,7 @@ private struct Koett {
             let delegate = KoettDelegate(controller: controller)
             let application = NSApplication.shared
             application.setActivationPolicy(.accessory)
+            EditMenu.install(into: application)
             application.delegate = delegate
             application.run()
             withExtendedLifetime(delegate) {}

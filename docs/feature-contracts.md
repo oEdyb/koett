@@ -3,6 +3,8 @@
 ### Core dictation
 
 - Koett is a hidden menu-bar Login Item with no Dock icon or main window.
+- A hidden Edit main menu gives the API key, model, and endpoint prompts
+  working Command-X, -C, -V, and -A. Do not remove it when trimming menus.
 - Toggle recording is the default. Either Option key is the default shortcut.
 - Hold mode remains available from the menu.
 - The menu records and saves custom dictation, media, and Ask shortcuts.

@@ -128,6 +128,8 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/Koett.swift`: shared app state, startup, shortcut routing, and
   settings actions.
 - `Sources/Koett/KoettApp.swift`: app entry point and Login Item setup.
+- `Sources/Koett/EditMenu.swift`: hidden Edit menu so text prompts accept
+  Command-V.
 - `Sources/Koett/KoettMenu.swift`: menu-bar menu construction.
 - `Sources/Koett/DictationSession.swift`: recording, local transcription,
   paste delivery, and Nemotron recovery.
