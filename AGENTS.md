@@ -29,7 +29,7 @@ rewrite the working Mac app or add a cross-platform shell.
   sherpa-onnx `v1.13.5` from pinned source with TTS disabled and patches only
   the Rust native link boundary. Preserve that worktree. Do not clean, reset,
   rebase, or regenerate its evidence before reading its own `AGENTS.md`.
-- The installed `/Applications/Koett.app` was built from the UI-feedback commit on
+- The installed `/Applications/Koett.app` was built from `a3e604e` on
   2026-09-14 with `install-macos.sh`, UUID `58DF3CA5-1D06-3BE2-B81C-D9C7D876DF24`,
   Apple Development signature, `parakeet-v2` selected, S1-mini off. Its
   internal version is `0.1.1`, but it is not the public notarized binary.
