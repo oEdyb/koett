@@ -108,7 +108,9 @@ if [[ ! -e "$app_path" \
 fi
 
 if [[ -e "$app_path" ]]; then
-    "$app_path/Contents/MacOS/koett" --unregister-login
+    # Keep the Login Item registered across upgrades. Unregistering and
+    # registering again makes macOS post a new "Background Items Added"
+    # notice on every install; the bundle keeps its path and identifier.
     osascript -e 'tell application id "com.olledyberg.Koett" to quit' 2>/dev/null || true
     for _ in {1..20}; do
         if ! pgrep -f '^/Applications/Koett\.app/Contents/MacOS/koett$' >/dev/null; then

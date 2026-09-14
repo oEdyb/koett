@@ -168,7 +168,8 @@
   errors. Permission errors include direct System Settings actions and Retry.
 - `install-macos.sh` builds and verifies a staged release app before it stops
   the installed app. It then makes an atomic same-volume replacement, verifies
-  the final signature, updates the Login Item, and launches Koett. Any failure
+  the final signature, keeps the existing Login Item registered, and launches
+  Koett. Any failure
   after replacement restores the previous app and Login Item.
 - The installer prefers Developer ID Application, then Apple Development, then
   ad-hoc signing. It enables hardened runtime with the audio-input and Apple
