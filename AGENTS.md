@@ -13,14 +13,13 @@ Swift owns the macOS app. A separate draft branch contains the measured native
 Windows/Linux implementation and the optional multilingual Mac model. Do not
 rewrite the working Mac app or add a cross-platform shell.
 
-## Takeover snapshot — 2026-09-02
+## Takeover snapshot — 2026-09-14
 
 - Mac worktree: `/Users/olle/dev/local-voice-input`, branch `main`. Its latest
-  product commit is `adf55db`. It contains two local product commits beyond
-  `origin/main`: recording-feedback accessibility (`b94bd4d`) and durable
-  Copy/Paste Last Transcript recovery (`adf55db`). Both were verified before
-  commit but were not pushed, installed, or released. The handoff commit above
-  them changes only agent documentation and the `CLAUDE.md` link.
+  product commit is `fd83546` (agent transcription CLI, feature contracts split
+  into `docs/`). Below it sit the unpushed local commits for recording-feedback
+  accessibility (`b94bd4d`) and durable Copy/Paste Last Transcript recovery
+  (`adf55db`). None of these are pushed or released.
 - Public state: `origin/main` is `5384daa`. The latest public release is
   notarized Apple-silicon `v0.1.1` from source commit `c72f834`.
 - Cross-platform worktree: `/Users/olle/dev/koett-cross-platform`, branch
@@ -30,12 +29,14 @@ rewrite the working Mac app or add a cross-platform shell.
   sherpa-onnx `v1.13.5` from pinned source with TTS disabled and patches only
   the Rust native link boundary. Preserve that worktree. Do not clean, reset,
   rebase, or regenerate its evidence before reading its own `AGENTS.md`.
-- The installed `/Applications/Koett.app` is the verified Developer ID build
-  from the feature branch, UUID `A4DAD2E8-83DF-372E-AD86-254BE236BCC9`, with
-  `parakeet-v3` selected. Its internal version is still `0.1.0`; it is not the
-  public `v0.1.1` binary.
-- Start autonomous work by finishing KTT-002 in the cross-platform worktree.
-  Do not merge PR #2, publish a release, change the default model, or discard
+- The installed `/Applications/Koett.app` was built from `fd83546` on
+  2026-09-14 with `install-macos.sh`, UUID `183D1232-43B0-30E2-BAF7-25BABBD54A1D`,
+  Apple Development signature, `parakeet-v2` selected, S1-mini off. Its
+  internal version is still `0.1.0`; it is not the public `v0.1.1` binary.
+- The `koett-transcribe` CLI is installed as a symlink at
+  `~/.local/bin/koett-transcribe` into this checkout; see
+  `docs/transcribe-cli.md`.
+- Do not merge PR #2, publish a release, change the default model, or discard
   either worktree's local state without Olle's explicit approval.
 
 ## Implementation status — 2026-09-02
