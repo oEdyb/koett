@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""One media URL or local file -> raw local ASR JSON. No browser automation."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+from urllib.parse import urlsplit
+
+REPO = Path(__file__).resolve().parent.parent
+CACHE = Path.home() / 'Library/Caches/Koett/CLI Transcripts'
+MAX_SECONDS = 10800
+
+
+def run(args, timeout=1800):
+    # A private log avoids filling stdout with downloader/model diagnostics.
+    # A process group also contains yt-dlp's FFmpeg children on cancellation.
+    with tempfile.TemporaryFile() as log:
+        process = subprocess.Popen([str(a) for a in args], stdout=log, stderr=log,
+                                   stdin=subprocess.DEVNULL, start_new_session=True)
+        try:
+            code = process.wait(timeout=timeout)
+        except BaseException:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+            raise
+        if code:
+            log.seek(0, 2)
+            log.seek(max(0, log.tell() - 3000))
+            detail = log.read().decode('utf-8', errors='replace').strip()
+            raise RuntimeError(f'{Path(args[0]).name} failed ({code}): {detail}')
+
+
+def require(name):
+    found = shutil.which(name)
+    if not found:
+        raise RuntimeError(f'Missing {name}. Install dependencies: brew install yt-dlp ffmpeg')
+    return found
+
+
+def source_identity(source):
+    parts = urlsplit(source)
+    if parts.scheme in ('http', 'https') and parts.hostname:
+        if parts.username or parts.password:
+            raise ValueError('URLs with embedded credentials are not supported.')
+        return source, True
+    path = Path(source).expanduser()
+    if not path.is_file():
+        raise ValueError('Supply one HTTP(S) video URL or an existing local media file.')
+    return str(path.resolve()), False
+
+
+def cache_path(source, model, remote):
+    identity = [1, source, model, 'FluidAudio-0.15.6']
+    if not remote:
+        stat = Path(source).stat()
+        identity += [stat.st_size, stat.st_mtime_ns]
+    key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
+    return CACHE / f'{key}.json'
+
+
+def download_args(url, folder, ffmpeg):
+    return [require('yt-dlp'), '--ignore-config', '--no-plugin-dirs',
+            '--no-cookies', '--no-cookies-from-browser', '--no-playlist',
+            '--playlist-end', '1', '--match-filters', '!is_live & duration<=?10800',
+            '--max-filesize', '2G', '--socket-timeout', '30', '--retries', '2',
+            '--fragment-retries', '2', '--no-progress', '--no-simulate',
+            '--format', 'bestaudio/best', '--ffmpeg-location', str(Path(ffmpeg).parent),
+            '--output', str(folder / 'media.%(ext)s'),
+            '--print-to-file', 'after_move:%(.{id,title,webpage_url,extractor})j',
+            str(folder / 'metadata.json'), '--', url]
+
+
+def transcribe(source, model, refresh=False, no_cache=False):
+    started = time.monotonic()
+    source, remote = source_identity(source)
+    cached = cache_path(source, model, remote)
+    if not no_cache and not refresh:
+        try:
+            result = json.loads(cached.read_text())
+            if result['source'] == source and result['model'] == f'Parakeet {model}' and isinstance(result['text'], str):
+                result['cached'] = True
+                result['elapsed_seconds'] = round(time.monotonic() - started, 3)
+                return result
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    ffmpeg = require('ffmpeg')
+    ffprobe = require('ffprobe')
+    binary = REPO / '.build/release/parakeet-baseline'
+    if not binary.is_file():
+        raise RuntimeError(f'Build the engine first: swift build --package-path {REPO} -c release --product parakeet-baseline')
+    with tempfile.TemporaryDirectory(prefix='koett-cli-') as temp:
+        folder = Path(temp)
+        metadata = {}
+        media = Path(source)
+        if remote:
+            print('Fetching audio…', file=sys.stderr)
+            run(download_args(source, folder, ffmpeg))
+            files = [p for p in folder.glob('media.*') if p.suffix not in ('.part', '.ytdl')]
+            if len(files) != 1 or not (folder / 'metadata.json').is_file():
+                raise RuntimeError('No single video downloaded. It may be live, over 3 hours/2 GiB, unavailable, or require login. Supply a video permalink or a local file.')
+            media = files[0]
+            metadata = json.loads((folder / 'metadata.json').read_text())
+        # Probe actual downloaded media, including sources with missing duration metadata.
+        probe = subprocess.run([ffprobe, '-v', 'error', '-show_entries',
+                                'format=duration:stream=codec_type', '-of', 'json', str(media)],
+                               capture_output=True, text=True, timeout=30, check=True)
+        info = json.loads(probe.stdout)
+        if not any(s.get('codec_type') == 'audio' for s in info.get('streams', [])):
+            raise ValueError('This media has no audio stream.')
+        duration = float(info.get('format', {}).get('duration', 'nan'))
+        if not 0 < duration <= MAX_SECONDS:
+            raise ValueError('Media duration must be known and between 0 and 10800 seconds.')
+        audio = folder / 'audio.wav'
+        run([ffmpeg, '-v', 'error', '-nostdin', '-i', media, '-map', '0:a:0',
+             '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_f32le', audio])
+        print(f'Transcribing locally with Parakeet {model}…', file=sys.stderr)
+        output = folder / 'result.json'
+        run([binary, '--model-version', model, '--results-json', output, audio])
+        record, = json.loads(output.read_text())
+        result = {'schema_version': 1, 'source': source,
+                  'title': metadata.get('title') or media.name,
+                  'source_id': metadata.get('id'),
+                  'model': f'Parakeet {model}', 'engine': 'FluidAudio 0.15.6',
+                  'transcript_status': 'raw_asr_unverified',
+                  'duration_seconds': record['audioSeconds'],
+                  'asr_seconds': round(record['engineMilliseconds'] / 1000, 3),
+                  'text': record['text'], 'cached': False,
+                  'elapsed_seconds': round(time.monotonic() - started, 3)}
+    if not no_cache:
+        try:
+            CACHE.mkdir(parents=True, exist_ok=True, mode=0o700)
+            with tempfile.NamedTemporaryFile(mode='w', dir=CACHE, delete=False) as handle:
+                staging = Path(handle.name)
+                json.dump(result, handle, ensure_ascii=False)
+            try:
+                staging.replace(cached)
+            finally:
+                staging.unlink(missing_ok=True)
+        except OSError as error:
+            print(f'Warning: transcript succeeded but cache write failed: {error}', file=sys.stderr)
+    return result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('source', help='One video permalink or local media file')
+    parser.add_argument('--model', choices=('v2', 'v3'), default='v3',
+                        help='v3: multilingual (default); v2: English')
+    parser.add_argument('--text', action='store_true', help='Print only transcript text')
+    parser.add_argument('--refresh', action='store_true', help='Replace cached result')
+    parser.add_argument('--no-cache', action='store_true', help='Do not read or write transcript cache')
+    args = parser.parse_args()
+    try:
+        result = transcribe(args.source, args.model, args.refresh, args.no_cache)
+        print(result['text'] if args.text else json.dumps(result, ensure_ascii=False))
+        return 0
+    except KeyboardInterrupt:
+        print('Cancelled.', file=sys.stderr)
+        return 130
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        print(json.dumps({'error': str(error)}), file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

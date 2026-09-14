@@ -33,3 +33,7 @@ Optional spoken replies send a short part of the answer to Cartesia.
 ## License
 
 [Apache License 2.0](LICENSE)
+
+## Agent transcription CLI
+
+Run `koett-transcribe "VIDEO_URL"` to fetch audio and return a local transcript as JSON. Use `--text` for plain text. See [installation and agent usage](docs/transcribe-cli.md).

@@ -10,3 +10,4 @@ Benchmarks/Transcripts/
 Benchmarks/Private/
 Benchmarks/__pycache__/
 *.pyc
+.tmp/

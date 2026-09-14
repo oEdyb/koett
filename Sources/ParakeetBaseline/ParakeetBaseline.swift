@@ -20,7 +20,7 @@ private struct ParakeetBaseline {
         guard !paths.isEmpty else {
             throw failure(
                 "Usage: parakeet-baseline [--prewarm] [--concurrency N] "
-                    + "[--transcript-directory PATH] <audio-file>..."
+                    + "[--transcript-directory PATH] [--model-version v2|v3] [--results-json PATH] <audio-file>..."
             )
         }
 
@@ -32,8 +32,10 @@ private struct ParakeetBaseline {
                 withIntermediateDirectories: true
             )
         }
-        print("Loading Parakeet v2...")
-        let models = try await AsrModels.downloadAndLoad(version: .v2)
+        print("Loading Parakeet \(options.modelVersion)...")
+        let models = try await AsrModels.downloadAndLoad(
+            version: options.modelVersion == "v3" ? .v3 : .v2
+        )
         try await manager.loadModels(models)
         let decoderLayers = await manager.decoderLayerCount
         if options.prewarm {
@@ -47,6 +49,7 @@ private struct ParakeetBaseline {
         }
         print("Long-audio chunk concurrency: \(options.concurrency)")
 
+        var records: [ResultRecord] = []
         for path in paths {
             let url = URL(fileURLWithPath: path)
             guard FileManager.default.fileExists(atPath: url.path) else {
@@ -61,6 +64,12 @@ private struct ParakeetBaseline {
             let elapsed = Date().timeIntervalSince(start)
             let realTimeSpeed = audioDuration / elapsed
             let realTimeFactor = elapsed / audioDuration
+            records.append(ResultRecord(
+                audioSeconds: audioDuration,
+                engineMilliseconds: elapsed * 1_000,
+                confidence: Double(result.confidence),
+                text: result.text
+            ))
             let output = result.text.isEmpty ? "(no speech)" : result.text
             if let directory = options.transcriptDirectory {
                 let transcriptURL = directory
@@ -83,9 +92,21 @@ private struct ParakeetBaseline {
                 output
             ))
         }
+        if let resultsJSON = options.resultsJSON {
+            try JSONEncoder().encode(records).write(to: resultsJSON, options: .atomic)
+        }
+    }
+
+    private struct ResultRecord: Encodable {
+        let audioSeconds: Double
+        let engineMilliseconds: Double
+        let confidence: Double
+        let text: String
     }
 
     private struct Options {
+        let modelVersion: String
+        let resultsJSON: URL?
         let concurrency: Int
         let prewarm: Bool
         let transcriptDirectory: URL?
@@ -93,6 +114,8 @@ private struct ParakeetBaseline {
     }
 
     private static func parseArguments(_ arguments: [String]) throws -> Options {
+        var modelVersion = "v2"
+        var resultsJSON: URL?
         var concurrency = ASRConfig.default.parallelChunkConcurrency
         var prewarm = false
         var transcriptDirectory: URL?
@@ -100,7 +123,21 @@ private struct ParakeetBaseline {
         var index = 0
 
         while index < arguments.count {
-            if arguments[index] == "--concurrency" {
+            if arguments[index] == "--model-version" {
+                guard index + 1 < arguments.count,
+                      ["v2", "v3"].contains(arguments[index + 1]) else {
+                    throw failure("--model-version must be v2 or v3.")
+                }
+                modelVersion = arguments[index + 1]
+                index += 2
+            } else if arguments[index] == "--results-json" {
+                guard index + 1 < arguments.count,
+                      !arguments[index + 1].hasPrefix("-") else {
+                    throw failure("--results-json needs a path.")
+                }
+                resultsJSON = URL(fileURLWithPath: arguments[index + 1])
+                index += 2
+            } else if arguments[index] == "--concurrency" {
                 let valueIndex = index + 1
                 guard valueIndex < arguments.count,
                       let value = Int(arguments[valueIndex]),
@@ -132,6 +169,8 @@ private struct ParakeetBaseline {
         }
 
         return Options(
+            modelVersion: modelVersion,
+            resultsJSON: resultsJSON,
             concurrency: concurrency,
             prewarm: prewarm,
             transcriptDirectory: transcriptDirectory,
