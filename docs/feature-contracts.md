@@ -120,7 +120,9 @@
   `~openai/gpt-latest`, and no custom model. The menu can change the provider,
   model, custom endpoint, and API key.
 - The request does not set `max_tokens` or `max_completion_tokens`. The selected
-  provider controls its output limit.
+  provider controls its output limit. Length is controlled by the system prompt
+  instead: answer in the first line, at most three bullets or one code block,
+  80 words unless the user asks for detail, a list, or code. Temperature is 0.4.
 - Provider API keys stay in macOS Keychain. Never put keys in source,
   `AGENTS.md`, README, logs, screenshots, commits, or test fixtures.
 - The local renderer supports sanitized GFM, headings, lists, task lists,

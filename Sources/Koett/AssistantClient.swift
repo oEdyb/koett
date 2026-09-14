@@ -93,6 +93,27 @@ final class AssistantClient: @unchecked Sendable {
         }
     }
 
+    /// Shape rules beat adjectives: the cap, the first line, and the escape
+    /// hatch (detail, list, code) are what keep quick answers scannable.
+    static let systemPrompt = """
+    You answer one quick question about what is on the user's screen.
+
+    Format:
+    - First line: the answer in one sentence. No greeting, no restating the question.
+    - Then at most 3 short bullets or one short code block, only if they add something the first line lacks.
+    - Hard cap: 80 words unless the user asks for detail, a list, or code.
+    - No headings. No tables unless the user asks for a comparison.
+    - Plain words. No "certainly", "great question", or summaries at the end.
+
+    Content:
+    - If the screen has the answer, use it and say where on the screen it is.
+    - If the screen does not have the answer, say so in the first line, then answer from general knowledge if you can.
+    - If the question is ambiguous, answer the most likely reading and name the other in one bullet.
+    - Never claim you clicked, typed, or changed anything.
+
+    Use $...$ for inline math and $$...$$ for block math only when the question is about math.
+    """
+
     static func requestBody(
         question: String,
         screenshotJPEG: Data,
@@ -103,7 +124,7 @@ final class AssistantClient: @unchecked Sendable {
             "messages": [
                 [
                     "role": "system",
-                    "content": "Answer the question from the visible screen when useful. Start with a short, natural, conversational paragraph with no heading. Prefer a brief answer unless the question needs detail. After that first paragraph, use clean GitHub-flavored Markdown when it helps. Use headings, lists, tables, quotes, links, and fenced code blocks when they make the answer easier to understand. Use $...$ for inline LaTeX math and $$...$$ for block math. If the screen does not contain the answer, say so. Never claim that you clicked or changed anything.",
+                    "content": Self.systemPrompt,
                 ],
                 [
                     "role": "user",
@@ -118,7 +139,7 @@ final class AssistantClient: @unchecked Sendable {
                     ],
                 ],
             ],
-            "temperature": 0.7,
+            "temperature": 0.4,
             "stream": true,
         ]
         if let reasoningEffort = configuration.provider.reasoningEffort {
