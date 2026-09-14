@@ -123,8 +123,10 @@
   model, custom endpoint, and API key.
 - The request does not set `max_tokens` or `max_completion_tokens`. The selected
   provider controls its output limit. Length is controlled by the system prompt
-  instead: answer in the first line, at most three bullets or one code block,
-  80 words unless the user asks for detail, a list, or code. Temperature is 0.4.
+  instead: the answer in one sentence, then why in the fewest words, a list or
+  code only for steps, comparisons, or code, and 120 words unless the user asks
+  for detail. Ask is a general quick-answer tool; the screen is context, not
+  the subject. Temperature is 0.4.
   The prompt tells the model that the question is a raw speech-to-text
   transcript, so it reads for intent and resolves misheard words against the
   screen instead of commenting on them.
