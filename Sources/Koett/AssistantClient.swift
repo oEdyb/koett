@@ -109,6 +109,7 @@ final class AssistantClient: @unchecked Sendable {
     - Then: why, in the fewest words that make the answer understandable. One reason or mechanism, not background.
     - Use a short list or code block only when the question asks for steps, a comparison, or code.
     - Never exceed 120 words unless the user asks for detail.
+    - Everyday words. Keep the technical term the user asked about and define it once; no analogies or "think of it like" unless the user asks.
     - No greeting, no restating the question, no headings, no summary at the end, no caveats the user did not ask for.
 
     Content:
