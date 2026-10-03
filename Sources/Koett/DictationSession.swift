@@ -31,11 +31,13 @@ extension KoettController {
         } catch {
             state = .ready
             recordingOverlay.showError(
-                DictationFailurePresentation.message(
-                    error: error.localizedDescription,
-                    transcriptionCompleted: false,
-                    audioSaved: false
-                )
+                (error as NSError).domain == "Koett.Microphone"
+                    ? "Microphone unavailable · See menu"
+                    : DictationFailurePresentation.message(
+                        error: error.localizedDescription,
+                        transcriptionCompleted: false,
+                        audioSaved: false
+                    )
             )
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
@@ -64,11 +66,14 @@ extension KoettController {
     }
 
     private func startNemotronRecording() throws {
-        guard let nemotronRecorder else {
+        guard let nemotronAdapter else {
             throw Self.failure("Nemotron is not ready.")
         }
 
-        let (recoveryRecorder, recoveryURL) = try startFileRecording()
+        let device = try selectedMicrophone()
+        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device)
+        self.nemotronRecorder = nemotronRecorder
+        let (recoveryRecorder, recoveryURL) = try startFileRecording(device: device)
         do {
             try nemotronRecorder.start()
         } catch {
@@ -81,26 +86,27 @@ extension KoettController {
         recordingURL = recoveryURL
     }
 
-    func startFileRecording() throws -> (AVAudioRecorder, URL) {
+    func startFileRecording(device: MicrophoneDevice? = nil) throws -> (MicrophoneRecorder, URL) {
+        let device = try device ?? selectedMicrophone()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("koett-\(UUID().uuidString).wav")
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16_000.0,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 32,
-            AVLinearPCMIsFloatKey: true,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsNonInterleaved: false,
-        ]
-
-        let newRecorder = try AVAudioRecorder(url: url, settings: settings)
-        newRecorder.isMeteringEnabled = true
-        guard newRecorder.prepareToRecord(), newRecorder.record() else {
-            throw Self.failure("The microphone recorder could not start.")
+        do {
+            let recorder = try MicrophoneRecorder(url: url, device: device)
+            print("MICROPHONE \(device.name) [\(device.uid)]")
+            return (recorder, url)
+        } catch {
+            cleanup(url)
+            throw error
         }
+    }
 
-        return (newRecorder, url)
+    func handleMicrophoneFailure(_ recorder: MicrophoneRecorder, url: URL) -> Bool {
+        guard let error = recorder.recordingError else { return false }
+        preserveFailedRecording(url)
+        recordingOverlay.showError(error.localizedDescription)
+        state = .ready
+        fputs("Error: \(error.localizedDescription)\n", stderr)
+        return true
     }
 
     func stopRecording(releaseEventTimestamp: TimeInterval) {
@@ -119,6 +125,7 @@ extension KoettController {
         recorder.stop()
         self.recorder = nil
         recordingURL = nil
+        guard !handleMicrophoneFailure(recorder, url: url) else { return }
         state = .transcribing
         play(stopSound)
         print("TRANSCRIBING")
@@ -157,11 +164,13 @@ extension KoettController {
                 await self?.finishNemotron(
                     pendingCapture,
                     recoveryURL: recoveryURL,
-                    duration: duration,
+                    duration: max(duration, pendingCapture.store.duration),
+                    recoveryError: recoveryRecorder.recordingError,
                     releaseEventTimestamp: releaseEventTimestamp
                 )
             }
         } catch {
+            guard !handleMicrophoneFailure(recoveryRecorder, url: recoveryURL) else { return }
             state = .transcribing
             play(stopSound)
             print("TRANSCRIBING")
@@ -252,6 +261,7 @@ extension KoettController {
         _ pendingCapture: NemotronLiveRecorder.PendingCapture,
         recoveryURL: URL,
         duration: TimeInterval,
+        recoveryError: Error?,
         releaseEventTimestamp: TimeInterval
     ) async {
         defer {
@@ -279,6 +289,7 @@ extension KoettController {
         let rawText: String
         do {
             try await pendingCapture.processingTask.value
+            if let error = pendingCapture.error { throw error }
             guard pendingCapture.store.droppedFrames == 0 else {
                 throw Self.failure(
                     "Nemotron dropped \(pendingCapture.store.droppedFrames) microphone frames."
@@ -293,6 +304,11 @@ extension KoettController {
                 stderr
             )
             await nemotronAdapter.cancel()
+            if let recoveryError {
+                fputs("Warning: Backup recording failed: \(recoveryError.localizedDescription)\n", stderr)
+                preserveFailedRecording(recoveryURL)
+                return
+            }
             let transcriptionCompleted = await transcribeRecoveryFile(
                 recoveryURL,
                 releaseEventTimestamp: releaseEventTimestamp

@@ -77,6 +77,8 @@ extension KoettController {
         nemotronItem.isEnabled = canChangeModel
         menu.addItem(nemotronItem)
 
+        menu.addItem(microphoneMenuItem())
+
         let formattingMode = s1MiniEnabled ? "S1-mini" : "Raw"
         let formattingItem = menuItem(
             title: "Formatting: \(formattingMode)…",
@@ -312,7 +314,7 @@ extension KoettController {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
-    private func menuItem(
+    func menuItem(
         title: String,
         action: Selector,
         selected: Bool

@@ -73,7 +73,7 @@ final class RecordingOverlayController: NSObject {
         frame: NSRect(origin: .zero, size: fullSize)
     )
     private lazy var panel: NSPanel = makePanel()
-    private weak var recorder: AVAudioRecorder?
+    private weak var recorder: MicrophoneRecorder?
     private var timer: Timer?
     private var dismissWorkItem: DispatchWorkItem?
     private var smoothedLevel: CGFloat = 0
@@ -91,7 +91,7 @@ final class RecordingOverlayController: NSObject {
         )
     }
 
-    func start(recorder: AVAudioRecorder) {
+    func start(recorder: MicrophoneRecorder) {
         stop()
         self.recorder = recorder
         smoothedLevel = 0
@@ -213,9 +213,8 @@ final class RecordingOverlayController: NSObject {
             return
         }
 
-        recorder.updateMeters()
         let target = RecordingOverlayFormat.level(
-            forDecibels: recorder.averagePower(forChannel: 0)
+            forDecibels: recorder.averagePower
         )
         let displayedLevel = RecordingOverlayFormat.smoothedLevel(
             previous: smoothedLevel,

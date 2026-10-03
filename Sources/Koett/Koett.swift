@@ -65,7 +65,8 @@ final class KoettController: NSObject {
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()
     var state = State.loading
-    var recorder: AVAudioRecorder?
+    var microphoneSelection: MicrophoneSelection
+    var recorder: MicrophoneRecorder?
     var recordingURL: URL?
     var screenCaptureTask: Task<Data, Error>?
     var assistantWorkTask: Task<Void, Never>?
@@ -86,6 +87,7 @@ final class KoettController: NSObject {
 
     init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
         self.speechEngine = speechEngine
+        microphoneSelection = MicrophoneSelection(defaults: defaults)
         nemotronAdapter = speechEngine == .nemotron
             ? NemotronStreamingAdapter()
             : nil
@@ -200,7 +202,6 @@ final class KoettController: NSObject {
             try await nemotronAdapter.prepare(
                 progressHandler: fluidAudioProgressHandler(model: "Nemotron 560 ms")
             )
-            nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter)
         }
     }
 

@@ -116,6 +116,8 @@ final class LiveAudioStore: Sendable {
         ))
     }
 
+    var duration: TimeInterval { state.withLock { Double($0.frameCount) / sampleRate } }
+
     func reset() {
         state.withLock { state in
             state.frameCount = 0
@@ -201,21 +203,24 @@ final class NemotronLiveRecorder {
     struct PendingCapture: Sendable {
         let store: LiveAudioStore
         let processingTask: Task<Void, Error>
+        let error: Error?
     }
 
     private let adapter: any StreamingTranscriptionAdapter
-    private let audioEngine = AVAudioEngine()
+    private let input: MicrophoneInput
     private let inputFormat: AVAudioFormat
     private let store: LiveAudioStore
     private var processingTask: Task<Void, Error>?
-    private var tapInstalled = false
+    private var isRecording = false
 
     init(
         adapter: any StreamingTranscriptionAdapter,
+        device: MicrophoneDevice,
         maximumDuration: TimeInterval = 600
     ) throws {
         self.adapter = adapter
-        let format = audioEngine.inputNode.outputFormat(forBus: 0)
+        input = try MicrophoneInput(device: device)
+        let format = input.format
         guard format.sampleRate > 0, format.channelCount > 0 else {
             throw NSError(
                 domain: "Koett",
@@ -236,11 +241,10 @@ final class NemotronLiveRecorder {
             sampleRate: format.sampleRate,
             maximumDuration: maximumDuration
         )
-        audioEngine.prepare()
     }
 
     func start() throws {
-        guard processingTask == nil, !tapInstalled else {
+        guard processingTask == nil, !isRecording else {
             throw NSError(
                 domain: "Koett",
                 code: 8,
@@ -259,20 +263,13 @@ final class NemotronLiveRecorder {
         }
         processingTask = task
 
-        let inputNode = audioEngine.inputNode
-        inputNode.installTap(
-            onBus: 0,
-            bufferSize: 1_024,
-            format: inputFormat,
-            block: Self.makeTap(store: store)
-        )
-        tapInstalled = true
+        isRecording = true
 
         do {
-            try audioEngine.start()
+            try input.start(onAudio: Self.makeTap(store: store))
         } catch {
-            inputNode.removeTap(onBus: 0)
-            tapInstalled = false
+            input.stop()
+            isRecording = false
             store.finish()
             task.cancel()
             processingTask = nil
@@ -281,7 +278,7 @@ final class NemotronLiveRecorder {
     }
 
     func stop() throws -> PendingCapture {
-        guard let processingTask, tapInstalled else {
+        guard let processingTask, isRecording else {
             throw NSError(
                 domain: "Koett",
                 code: 9,
@@ -289,13 +286,12 @@ final class NemotronLiveRecorder {
             )
         }
 
-        audioEngine.inputNode.removeTap(onBus: 0)
-        tapInstalled = false
-        audioEngine.stop()
+        isRecording = false
+        input.stop()
         store.finish()
         self.processingTask = nil
 
-        return PendingCapture(store: store, processingTask: processingTask)
+        return PendingCapture(store: store, processingTask: processingTask, error: input.error)
     }
 
     nonisolated private static func consume(
@@ -320,8 +316,8 @@ final class NemotronLiveRecorder {
 
     nonisolated private static func makeTap(
         store: LiveAudioStore
-    ) -> AVAudioNodeTapBlock {
-        { buffer, _ in
+    ) -> @Sendable (AVAudioPCMBuffer) -> Void {
+        { buffer in
             store.append(buffer)
         }
     }

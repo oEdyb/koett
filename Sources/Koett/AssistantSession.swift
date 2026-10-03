@@ -74,6 +74,13 @@ extension KoettController {
         recordingURL = nil
         recordingOverlay.stop()
         play(stopSound)
+        if handleMicrophoneFailure(recorder, url: url) {
+            screenCaptureTask?.cancel()
+            screenCaptureTask = nil
+            assistantPanel.showError(recorder.recordingError?.localizedDescription ?? "Microphone recording failed.")
+            rebuildMenu()
+            return
+        }
 
         guard duration >= 0.25 else {
             screenCaptureTask?.cancel()

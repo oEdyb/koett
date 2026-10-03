@@ -24,6 +24,8 @@ Koett pastes and saves the transcript.
 
 The waveform menu contains shortcuts, formatting, saved transcripts, and optional tools.
 
+Choose **Microphone** in that menu to select the built-in microphone or another input. Koett remembers the choice for dictation and Ask, even when headphones connect. **System Default** follows macOS. If a selected microphone is disconnected, Koett asks you to choose an available input.
+
 Media transcription needs `brew install yt-dlp ffmpeg`.
 
 Koett has no account or telemetry. Dictation stays local.

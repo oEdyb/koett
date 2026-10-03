@@ -23,6 +23,11 @@
   pasted or an error replaces it. A too-short recording shows nothing.
 - A nonactivating bottom-center pill shows real microphone levels and elapsed
   recording time. It stays above apps without taking keyboard focus.
+- The Microphone submenu selects a persistent Core Audio device UID for dictation
+  and Ask. System Default resolves the current macOS input at recording start.
+  An unavailable explicit selection fails visibly; it never switches silently.
+  Device choice does not change the macOS default. Both Nemotron capture and its
+  recovery WAV use the same resolved device and fresh hardware format.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after
   transcription or recovery.
 - If local ASR fails, Koett moves the WAV to
