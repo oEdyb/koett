@@ -275,6 +275,15 @@ extension KoettController {
         )
         pasteLastItem.isEnabled = state == .ready && lastTranscript != nil
         menu.addItem(pasteLastItem)
+        if transcriptPersistence.unsavedTranscriptText != nil {
+            let unsavedItem = menuItem(
+                title: "Copy Unsaved Transcripts",
+                action: #selector(copyUnsavedTranscripts),
+                selected: false
+            )
+            unsavedItem.isEnabled = state == .ready
+            menu.addItem(unsavedItem)
+        }
         menu.addItem(menuItem(
             title: "Open Transcripts",
             action: #selector(openTranscripts),

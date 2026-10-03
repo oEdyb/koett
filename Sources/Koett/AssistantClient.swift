@@ -1,6 +1,6 @@
 import Foundation
 
-final class AssistantClient: @unchecked Sendable {
+final class AssistantClient: Sendable {
     private struct StreamChunk: Decodable {
         struct Choice: Decodable {
             struct Delta: Decodable {
@@ -24,12 +24,20 @@ final class AssistantClient: @unchecked Sendable {
 
     private let session: URLSession
 
-    init() {
+    convenience init() {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.urlCache = nil
         configuration.httpCookieStorage = nil
-        session = URLSession(configuration: configuration)
+        self.init(session: URLSession(configuration: configuration))
+    }
+
+    init(session: URLSession) {
+        self.session = session
+    }
+
+    deinit {
+        session.invalidateAndCancel()
     }
 
     func streamAnswer(
@@ -39,6 +47,7 @@ final class AssistantClient: @unchecked Sendable {
         configuration: AssistantConfiguration,
         onDelta: @escaping @MainActor @Sendable (String) async -> Void
     ) async throws {
+        try Task.checkCancellation()
         var request = URLRequest(url: configuration.endpoint)
         request.httpMethod = "POST"
         request.timeoutInterval = 60
@@ -59,38 +68,58 @@ final class AssistantClient: @unchecked Sendable {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (bytes, response) = try await session.bytes(for: request)
+        defer { bytes.task.cancel() }
+        try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse else {
-            throw failure("The assistant provider returned an invalid response.")
+            throw Self.failure("The assistant provider returned an invalid response.")
         }
         guard (200..<300).contains(response.statusCode) else {
             var body = ""
             for try await line in bytes.lines {
+                try Task.checkCancellation()
                 body += line
             }
             if let data = body.data(using: .utf8),
                let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) {
-                throw failure(envelope.error.message)
+                throw Self.failure(envelope.error.message)
             }
-            throw failure(
+            throw Self.failure(
                 "\(configuration.provider.displayName) returned HTTP \(response.statusCode)."
             )
         }
 
-        for try await line in bytes.lines {
+        try await Self.consumeEvents(bytes.lines, onDelta: onDelta)
+    }
+
+    static func consumeEvents<Lines: AsyncSequence>(
+        _ lines: Lines,
+        onDelta: @escaping @MainActor @Sendable (String) async -> Void
+    ) async throws where Lines.Element == String {
+        try Task.checkCancellation()
+        var receivedText = false
+        for try await line in lines {
+            try Task.checkCancellation()
             guard line.hasPrefix("data:") else { continue }
             let value = line.dropFirst(5)
                 .trimmingCharacters(in: .whitespaces)
             if value == "[DONE]" {
+                guard receivedText else {
+                    throw Self.failure("The assistant provider returned an empty answer.")
+                }
                 return
             }
             if let message = Self.errorMessage(fromServerEvent: value) {
-                throw failure(message)
+                throw Self.failure(message)
             }
             guard let delta = Self.delta(fromServerEvent: value), !delta.isEmpty else {
                 continue
             }
+            receivedText = receivedText || !delta.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             await onDelta(delta)
+            try Task.checkCancellation()
         }
+        try Task.checkCancellation()
+        throw Self.failure("The assistant response ended before it finished. Try Ask again.")
     }
 
     /// Shape rules beat adjectives: answer first, one reason, and a ceiling
@@ -172,7 +201,7 @@ final class AssistantClient: @unchecked Sendable {
         return chunk.error?.message
     }
 
-    private func failure(_ message: String) -> NSError {
+    private static func failure(_ message: String) -> NSError {
         NSError(
             domain: "Koett",
             code: 1,

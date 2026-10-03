@@ -36,10 +36,11 @@ final class KoettController: NSObject {
     }
 
     let speechEngine: SpeechEngine
-    let transcriptStore = TranscriptStore()
+    var transcriptStore: TranscriptStore { transcriptPersistence.history }
     let mediaTranscriptStore = MediaTranscriptStore()
     let failedRecordingStore = FailedRecordingStore()
-    let failedTranscriptStore = FailedTranscriptStore()
+    var failedTranscriptStore: FailedTranscriptStore { transcriptPersistence.recovery }
+    let transcriptPersistence: TranscriptPersistence
     let recordingOverlay = RecordingOverlayController()
     let assistantPanel = AssistantPanelController()
     let assistantClient = AssistantClient()
@@ -64,12 +65,15 @@ final class KoettController: NSObject {
     private var dictationModifierState = ModifierShortcutState()
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()
-    var state = State.loading
+    var state = State.loading {
+        didSet {
+            if state != oldValue { rebuildMenu() }
+        }
+    }
     var microphoneSelection: MicrophoneSelection
     var recorder: MicrophoneRecorder?
     var recordingURL: URL?
-    var screenCaptureTask: Task<Data, Error>?
-    var assistantWorkTask: Task<Void, Never>?
+    let assistantWork = AssistantWorkLifecycle()
     var nemotronRecorder: NemotronLiveRecorder?
     private var modifierEventTap: CFMachPort?
     private var modifierEventSource: CFRunLoopSource?
@@ -85,7 +89,12 @@ final class KoettController: NSObject {
     var lastTranscript: String?
     var lastTranscriptMenuActions = LastTranscriptMenuActionQueue()
 
-    init(defaults: UserDefaults, speechEngine: SpeechEngine) throws {
+    init(
+        defaults: UserDefaults,
+        speechEngine: SpeechEngine,
+        transcriptPersistence: TranscriptPersistence = TranscriptPersistence()
+    ) throws {
+        self.transcriptPersistence = transcriptPersistence
         self.speechEngine = speechEngine
         microphoneSelection = MicrophoneSelection(defaults: defaults)
         nemotronAdapter = speechEngine == .nemotron
@@ -236,6 +245,7 @@ final class KoettController: NSObject {
             if let startupNoticeMessage {
                 recordingOverlay.showError(startupNoticeMessage)
             }
+            recoverTranscripts()
         } else {
             let message = SetupStatus.shortError(
                 code: startupErrorCode,
@@ -758,18 +768,21 @@ final class KoettController: NSObject {
     }
 
     private func setSpeechEngine(_ newEngine: SpeechEngine) {
+        guard beginRelaunch(to: newEngine) else { return }
+        relaunch(with: newEngine)
+    }
+
+    var canStartSession: Bool { state == .ready && !isRelaunching }
+
+    func beginRelaunch(to newEngine: SpeechEngine) -> Bool {
         guard newEngine != speechEngine,
               !isPreparing,
               !isRelaunching,
-              state != .recording,
-              state != .transcribing,
-              state != .media,
-              state != .assistantRecording,
-              state != .assistantWorking else { return }
+              prepareTermination() == .terminateNow else { return false }
 
         isRelaunching = true
         rebuildMenu()
-        relaunch(with: newEngine)
+        return true
     }
 
     private func relaunch(with engine: SpeechEngine) {

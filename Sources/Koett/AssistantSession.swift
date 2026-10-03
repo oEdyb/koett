@@ -18,7 +18,7 @@ extension KoettController {
     }
 
     private func startAssistantRecording() {
-        guard state == .ready else { return }
+        guard canStartSession else { return }
         assistantSpeech.stop()
 
         do {
@@ -48,7 +48,7 @@ extension KoettController {
             let displayID = ScreenContextCapture.activeDisplayID()
             recorder = newRecorder
             recordingURL = url
-            screenCaptureTask = Task {
+            assistantWork.captureTask = Task {
                 try await ScreenContextCapture.captureJPEG(displayID: displayID)
             }
             state = .assistantRecording
@@ -58,6 +58,7 @@ extension KoettController {
             rebuildMenu()
             print("KOETT ASK RECORDING")
         } catch {
+            assistantWork.finish(stopSpeech: assistantSpeech.stop)
             assistantPanel.showError(error.localizedDescription)
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
@@ -75,16 +76,14 @@ extension KoettController {
         recordingOverlay.stop()
         play(stopSound)
         if handleMicrophoneFailure(recorder, url: url) {
-            screenCaptureTask?.cancel()
-            screenCaptureTask = nil
+            assistantWork.finish(stopSpeech: assistantSpeech.stop)
             assistantPanel.showError(recorder.recordingError?.localizedDescription ?? "Microphone recording failed.")
             rebuildMenu()
             return
         }
 
         guard duration >= 0.25 else {
-            screenCaptureTask?.cancel()
-            screenCaptureTask = nil
+            assistantWork.finish(stopSpeech: assistantSpeech.stop)
             cleanup(url)
             state = .ready
             assistantPanel.showError("Speak for a little longer.")
@@ -95,7 +94,7 @@ extension KoettController {
         state = .assistantWorking
         assistantPanel.showTranscribing()
         rebuildMenu()
-        assistantWorkTask = Task { @MainActor [weak self] in
+        assistantWork.workTask = Task { @MainActor [weak self] in
             await self?.answerAssistantQuestion(from: url)
         }
     }
@@ -103,80 +102,89 @@ extension KoettController {
     private func interruptAssistantAndRestart() {
         guard state == .assistantWorking else { return }
         assistantSpeech.stop()
-        let currentTask = assistantWorkTask
-        currentTask?.cancel()
+        guard let currentTask = assistantWork.interrupt() else { return }
         Task { @MainActor [weak self] in
-            await currentTask?.value
+            await currentTask.value
             guard let self, self.state == .ready else { return }
             self.startAssistantRecording()
         }
     }
 
     private func answerAssistantQuestion(from url: URL) async {
+        var shouldCleanup = true
         defer {
-            cleanup(url)
-            screenCaptureTask = nil
-            assistantWorkTask = nil
+            if shouldCleanup {
+                cleanup(url)
+            }
+            assistantWork.finish()
             state = .ready
             rebuildMenu()
         }
 
         do {
-            let decoderLayers = await manager.decoderLayerCount
-            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let result = try await manager.transcribe(url, decoderState: &decoderState)
-            let question = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !question.isEmpty else {
-                throw Self.failure("Koett did not hear a question.")
-            }
-
-            do {
-                try transcriptStore.append(
-                    question,
-                    model: "Parakeet v2 (Koett Ask)"
-                )
-            } catch {
-                fputs(
-                    "Warning: assistant transcript was not saved: \(error.localizedDescription)\n",
-                    stderr
-                )
-            }
-
-            guard let captureTask = screenCaptureTask else {
-                throw Self.failure("The screen capture did not start.")
-            }
-            let screenshot = try await captureTask.value
-            let configuration = try AssistantConfiguration.load(
-                provider: assistantProvider
+            try await AssistantQuestionPipeline.run(
+                transcribe: {
+                    return try await DictationTranscriber.transcribe(url, using: self.manager).text
+                },
+                transcriptionFailed: {
+                    shouldCleanup = false
+                    self.preserveAssistantRecording(url)
+                },
+                preserveQuestion: { question in
+                    let outcome = self.persistTranscript(
+                        question,
+                        model: "Parakeet v2 (Koett Ask)"
+                    )
+                    self.assistantPanel.showStorageWarning(outcome.warning)
+                },
+                screenshot: {
+                    guard let captureTask = self.assistantWork.captureTask else {
+                        throw Self.failure("The screen capture did not start.")
+                    }
+                    return try await captureTask.value
+                },
+                beginAnswer: { self.assistantPanel.beginAnswer(question: $0) },
+                streamAnswer: { question, screenshot in
+                    let configuration = try AssistantConfiguration.load(provider: self.assistantProvider)
+                    guard let apiKey = try AssistantAPIKeyStore.load(for: self.assistantProvider) else {
+                        throw Self.failure(
+                            "Set a \(self.assistantProvider.displayName) API key from the Koett menu."
+                        )
+                    }
+                    try await self.assistantClient.streamAnswer(
+                        question: question,
+                        screenshotJPEG: screenshot,
+                        apiKey: apiKey,
+                        configuration: configuration
+                    ) { [weak self] delta in
+                        guard !Task.isCancelled else { return }
+                        self?.assistantPanel.appendAnswer(delta)
+                        await self?.assistantSpeech.appendResponseDelta(delta)
+                    }
+                },
+                finishSpeech: { await self.assistantSpeech.finishResponse() },
+                finishAnswer: { self.assistantPanel.finishAnswer() }
             )
-            guard let apiKey = try AssistantAPIKeyStore.load(
-                for: assistantProvider
-            ) else {
-                throw Self.failure(
-                    "Set a \(assistantProvider.displayName) API key from the Koett menu."
-                )
-            }
-
-            assistantPanel.beginAnswer(question: question)
-            try await assistantClient.streamAnswer(
-                question: question,
-                screenshotJPEG: screenshot,
-                apiKey: apiKey,
-                configuration: configuration
-            ) { [weak self] delta in
-                self?.assistantPanel.appendAnswer(delta)
-                await self?.assistantSpeech.appendResponseDelta(delta)
-            }
-            await assistantSpeech.finishResponse()
-            assistantPanel.finishAnswer()
         } catch {
+            assistantSpeech.stop()
             if Task.isCancelled {
                 return
             }
-            assistantSpeech.stop()
             let message = Self.shortAssistantError(error)
-            assistantPanel.showError(message)
+            assistantPanel.showResponseError(message)
             fputs("Error: \(error.localizedDescription)\n", stderr)
+        }
+    }
+
+    private func preserveAssistantRecording(_ url: URL) {
+        do {
+            let savedURL = try failedRecordingStore.preserve(url)
+            recordingOverlay.showError("Ask failed · Audio saved")
+            fputs("Failed Ask audio saved at \(savedURL.path)\n", stderr)
+        } catch {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+            recordingOverlay.showError("Ask failed · Audio shown in Finder")
+            fputs("Error: failed Ask audio remains at \(url.path): \(error.localizedDescription)\n", stderr)
         }
     }
 
@@ -291,7 +299,8 @@ extension KoettController {
             secure: false
         )?.trimmingCharacters(in: .whitespacesAndNewlines),
         let url = URL(string: endpoint),
-        url.scheme == "https" else { return }
+        url.scheme == "https",
+        url.host?.isEmpty == false else { return }
 
         AssistantConfiguration.saveEndpoint(endpoint, for: assistantProvider)
         rebuildMenu()

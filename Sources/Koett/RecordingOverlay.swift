@@ -78,6 +78,7 @@ final class RecordingOverlayController: NSObject {
     private var dismissWorkItem: DispatchWorkItem?
     private var smoothedLevel: CGFloat = 0
     private(set) var latestOutcome: RecordingOverlayOutcome?
+    var isTrackingRecording: Bool { recorder?.isRecording == true }
     private(set) var isShowingTranscribing = false
     var onLatestOutcomeChange: (() -> Void)?
 
@@ -193,9 +194,13 @@ final class RecordingOverlayController: NSObject {
 
     func showError(_ text: String) {
         showStatus(text)
+        recordFailure(text)
+        dismiss(after: 5)
+    }
+
+    func recordFailure(_ text: String) {
         latestOutcome = .failure(text)
         onLatestOutcomeChange?()
-        dismiss(after: 5)
     }
 
     private func dismiss(after delay: TimeInterval) {

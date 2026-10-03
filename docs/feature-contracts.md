@@ -34,20 +34,22 @@
   `~/Library/Application Support/Koett/Failed Recordings/`, shows a visible
   failure, and adds **Open Failed Recordings** to the menu. Successful ASR still
   deletes audio, including clipboard or paste failures.
-- If the main transcript history cannot be written, Koett saves the completed
-  text as a separate file under
-  `~/Library/Application Support/Koett/Failed Transcripts/`.
+- Completed dictation uses the shared transcript persistence and recovery path
+  below, including raw text when cleanup returns an empty result.
 - One final transcript is copied and pasted into the focused app with
   Command-V. Koett does not show live partial dictation text.
-- Every non-empty final transcript is appended exactly once to
-  `~/Library/Application Support/Koett/Transcripts.md` with its time, model,
-  and text. Storage must not delay the visible paste.
+- Successful paste is posted before transcript storage begins. Clipboard or
+  paste failure still saves the final result once and never starts ASR recovery.
 - Koett has no account or telemetry.
 
 ### Local speech engines
 
 - Parakeet v2 through FluidAudio `0.15.6` is the default. It downloads once,
   stays loaded, and is prewarmed at startup. Never reload it per recording.
+- Compatible 16 kHz mono PCM WAV recordings of at most fifteen minutes use
+  bounded chunk reads into Float32 samples outside the main actor. The reader
+  must collect every expected frame, including after a short read. Other formats
+  and longer files keep FluidAudio's URL transcription path.
 - Nemotron Streaming EN 0.6B at the 560 ms configuration is an experimental
   menu option. It processes microphone audio while the user speaks.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery
@@ -91,7 +93,8 @@
   fetch after 30 minutes. Task cancellation also terminates the child process.
 - Each result is saved as a dated Markdown file under
   `~/Library/Application Support/Koett/Media Transcripts/` with its source URL,
-  title, and transcript.
+  title, and transcript. If that save fails, shared transcript recovery retains
+  the text, title, and source URL; the pill reports the fallback or storage warning.
 - The existing pill shows fetch and transcription progress. The compact 250×48
   result uses Koett's coral waveform, one normalized transcript preview line
   with a native trailing ellipsis, and a labeled `doc.on.doc` **Copy** button.
@@ -114,8 +117,9 @@
 - The default shortcut is Control-Shift-Space and can be rebound.
 - The first press starts a local voice question and captures one JPEG from the
   active display. The second press stops recording and sends the request.
-- Ask uses the warmed local Parakeet model for the question. It appends that
-  question to the normal transcript history.
+- Ask uses the warmed local Parakeet model for the question. Its completed
+  question uses shared transcript persistence before later cancellation or cloud
+  work. A storage warning stays visible in the panel independently of its phase.
 - ScreenCaptureKit keeps one image in memory. Koett does not save it. The panel
   says **Screen included** so the cloud boundary is visible.
 - Ask streams the response into a right-side floating panel that stays above
@@ -215,14 +219,41 @@
   dictation pill. Koett therefore uses the smallest direct AppKit solution from
   those APIs. FluidAudio 0.15.6 is not part of this UI path and remains pinned.
 
+### Transcript persistence and recovery
+
+- Dictation, completed Ask questions, and failed media saves share one persistence
+  boundary. Records preserve a stable ID, timestamp, model, text, and optional
+  raw text.
+- Before attempting normal history, Koett stages each record as readable Markdown
+  with exact recovery metadata under
+  `~/Library/Application Support/Koett/Failed Transcripts/`. Successful dictation
+  still posts paste before these writes.
+- `Transcripts.md` uses atomic replacement under a stable sidecar advisory lock
+  for cooperating writers. Record IDs make replay idempotent: interrupted recovery
+  cleanup cannot append the same row again.
+- Pending records retry after successful startup, before the next completed
+  result, and before quitting with memory-only records. A recovery file is removed
+  only after synchronized history succeeds. Replay does not replace Last Transcript.
+- Older failed-transcript Markdown is imported intact. Unreadable history and
+  recovery files remain untouched; completed new text remains recoverable and
+  failures are visible.
+- If history and recovery both fail, Koett retains every pending record in memory.
+  **Copy Unsaved Transcripts** copies them in timestamp order, using raw text for an
+  empty cleaned result. It runs no ASR and creates no history rows.
+- Quit and model restart are rejected during recording or processing. Memory-only
+  records retry before exit; if they still lack durable history or recovery files,
+  Koett rejects exit with a visible warning. New sessions cannot start while a
+  model relaunch is pending.
+
 ### Last transcript recovery
 
-- Koett keeps the newest nonempty completed transcript in
-  `Last Transcript.txt`. It uses an atomic Foundation write, so an interrupted
-  replacement does not expose a partly written file.
-- Copy Last and Paste Last read this file-backed state. They never run ASR and
-  never append another Markdown history row. An empty cleaned result keeps the
-  prior last transcript.
+- Koett keeps the newest nonempty completed dictation in memory and attempts an
+  atomic write to `Last Transcript.txt`. A failed write leaves Copy Last and Paste
+  Last usable in the current process and shows a storage warning.
+- Copy Last and Paste Last use the latest in-memory text, restored from the file
+  on launch. Unsaved Ask or media text can also populate this memory fallback.
+  These actions run no ASR and create no history rows. An empty cleaned result
+  keeps the prior Last Transcript; its raw text stays in shared recovery.
 - Paste Last writes the clipboard first. If Command-V cannot be created, the
   text stays on the clipboard. Menu actions wait for AppKit menu tracking to
   end, then run on the next main-loop turn so the status menu does not own the

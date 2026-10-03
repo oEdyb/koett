@@ -1,0 +1,131 @@
+{
+  "hardware": "Apple M5 MacBook Air;10 cores;24GB",
+  "macOS": "26.6.2 (25G83)",
+  "swift": "6.4",
+  "fluidAudioVersion": "0.15.6",
+  "fluidAudioRevision": "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+  "model": "Parakeet v2",
+  "parallelChunkConcurrency": 4,
+  "before": "AsrManager.transcribe(URL, decoderState:)",
+  "after": "DictationTranscriber.transcribe(URL, using:)",
+  "productionHelperSHA256": "526f64d972e7522420360d7b861179f21bebc050334c7272205934325908216f",
+  "fixtureSHA256": {
+    "dictation-360s.wav": "3f9042a07876d1aebdf46e5e041018f54949dbc554fa3008d77af4a1e8ebc819",
+    "dictation-600s.wav": "301abe3face04e677a411605a664c62757716a798023e1ec22cc604b9b571f5b"
+  },
+  "scope": "Stopped WAV read to final ASR result; excludes initial model load, microphone stop, optional formatting, paste and storage",
+  "protocol": "One loaded/prewarmed manager;6 alternating pairs per fixture;all included;full transcript equality asserted per pair",
+  "limitations": [
+    "Repeated/truncated local speech, not new live microphone sessions",
+    "Severe changing contention from unrelated Mac work;6-minute mean worsened despite lower medians",
+    "Observed full-ASR improvements cannot be attributed entirely to removed preparation overhead",
+    "Physical stop-to-visible-paste latency not tested"
+  ],
+  "asrSummary": [
+    {
+      "fixture": "dictation-360s.wav",
+      "audioSeconds": 360,
+      "allPairsIncluded": true,
+      "timings": {
+        "before": {
+          "count": 6,
+          "medianMilliseconds": 84087.9985000065,
+          "meanMilliseconds": 74013.02725694647,
+          "minimumMilliseconds": 24135.171875008382,
+          "maximumMilliseconds": 116012.64837500639
+        },
+        "after": {
+          "count": 6,
+          "medianMilliseconds": 74359.94789583492,
+          "meanMilliseconds": 79301.83286805793,
+          "minimumMilliseconds": 22872.64708330622,
+          "maximumMilliseconds": 157841.54758334626
+        }
+      },
+      "afterFasterPairs": 4,
+      "medianPairedSavingMilliseconds": 2663.842937501613,
+      "medianPairedSavingPercent": 4.507690131405511,
+      "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb"
+    },
+    {
+      "fixture": "dictation-600s.wav",
+      "audioSeconds": 600,
+      "allPairsIncluded": true,
+      "timings": {
+        "before": {
+          "count": 6,
+          "medianMilliseconds": 67912.0929375058,
+          "meanMilliseconds": 97410.12558334235,
+          "minimumMilliseconds": 12847.665791690815,
+          "maximumMilliseconds": 224027.34387503006
+        },
+        "after": {
+          "count": 6,
+          "medianMilliseconds": 40248.06670830003,
+          "meanMilliseconds": 57543.66101386646,
+          "minimumMilliseconds": 26467.961249989457,
+          "maximumMilliseconds": 146462.41749997716
+        }
+      },
+      "afterFasterPairs": 4,
+      "medianPairedSavingMilliseconds": 27664.026229205774,
+      "medianPairedSavingPercent": 23.988953385291524,
+      "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec"
+    }
+  ],
+  "preparationProtocol": "30 alternating pairs per fixture;all included;AudioSourceFactory.makeDiskBackedSource vs production loadSamples;copying and SHA equality verification outside timer;full sample array and SHA equality asserted each pair",
+  "preparationSummary": [
+    {
+      "fixture": "dictation-360s.wav",
+      "audioSeconds": 360,
+      "timings": {
+        "before": {
+          "count": 30,
+          "medianMilliseconds": 21.926187473582104,
+          "meanMilliseconds": 23.506497221145157,
+          "minimumMilliseconds": 18.293666711542755,
+          "maximumMilliseconds": 48.586583347059786
+        },
+        "after": {
+          "count": 30,
+          "medianMilliseconds": 4.315562517149374,
+          "meanMilliseconds": 4.3973763919590665,
+          "minimumMilliseconds": 3.039041650481522,
+          "maximumMilliseconds": 7.747416675556451
+        }
+      },
+      "allPairsIncluded": true,
+      "afterFasterPairs": 30,
+      "medianPairedSavingMilliseconds": 17.570583295309916,
+      "medianPairedSavingPercent": 82.13240063420872,
+      "samples": 5760000,
+      "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6"
+    },
+    {
+      "fixture": "dictation-600s.wav",
+      "audioSeconds": 600,
+      "timings": {
+        "before": {
+          "count": 30,
+          "medianMilliseconds": 33.0213958513923,
+          "meanMilliseconds": 32.630568057841934,
+          "minimumMilliseconds": 21.2475000298582,
+          "maximumMilliseconds": 51.6452916781418
+        },
+        "after": {
+          "count": 30,
+          "medianMilliseconds": 6.117937504313886,
+          "meanMilliseconds": 6.497945836357151,
+          "minimumMilliseconds": 4.455374961253256,
+          "maximumMilliseconds": 9.007958346046507
+        }
+      },
+      "allPairsIncluded": true,
+      "afterFasterPairs": 30,
+      "medianPairedSavingMilliseconds": 26.423645846080035,
+      "medianPairedSavingPercent": 78.24941285309544,
+      "samples": 9600000,
+      "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0"
+    }
+  ]
+}

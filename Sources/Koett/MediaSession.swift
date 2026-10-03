@@ -4,7 +4,7 @@ import Foundation
 
 extension KoettController {
     func startMediaTranscription() {
-        guard state == .ready else { return }
+        guard canStartSession else { return }
         assistantSpeech.stop()
         guard let application = NSWorkspace.shared.frontmostApplication,
               let target = BrowserTabTarget.target(
@@ -50,31 +50,25 @@ extension KoettController {
                     throw Self.failure("No speech was found in the media.")
                 }
 
-                let fileURL: URL?
-                do {
-                    fileURL = try await mediaTranscriptStore.save(
-                        text,
-                        title: download.title,
-                        source: download.source,
-                        model: "Parakeet v2"
-                    )
-                } catch {
-                    fileURL = nil
-                    fputs(
-                        "Warning: media transcript was not saved: \(error.localizedDescription)\n",
-                        stderr
-                    )
+                let saved = await MediaTranscriptPersistence.save(
+                    text,
+                    title: download.title,
+                    source: download.source,
+                    mediaStore: mediaTranscriptStore,
+                    recovery: transcriptPersistence
+                )
+                if let record = saved.recoveryRecord,
+                   let outcome = saved.recoveryOutcome {
+                    presentTranscriptRecovery(record, outcome: outcome)
                 }
                 await BrowserMedia.removeTemporaryAudio(
                     at: download.temporaryDirectoryURL
                 )
                 recordingOverlay.showResult(
                     text,
-                    message: fileURL == nil
-                        ? "Save failed"
-                        : RecordingOverlayFormat.transcriptPreview(text)
+                    message: saved.message ?? RecordingOverlayFormat.transcriptPreview(text)
                 )
-                if let fileURL {
+                if let fileURL = saved.fileURL {
                     print("MEDIA TRANSCRIPT SAVED: \(fileURL.path)")
                 }
             } catch {

@@ -36,6 +36,36 @@ final class AssistantPanelModel: ObservableObject {
     @Published var question = ""
     @Published var answer = ""
     @Published var screenIncluded = false
+    @Published var storageWarning: String?
+    @Published var responseError: String?
+
+    var canCopyAnswer: Bool {
+        !answer.isEmpty && (phase != .error || responseError != nil)
+    }
+
+    func startListening() {
+        phase = .listening
+        question = ""
+        answer = ""
+        screenIncluded = true
+        storageWarning = nil
+        responseError = nil
+    }
+
+    func beginAnswer(question: String) {
+        phase = .answering
+        self.question = question
+        answer = ""
+        responseError = nil
+    }
+
+    func failAnswer(_ message: String) {
+        if phase != .answering {
+            screenIncluded = false
+        }
+        phase = .error
+        responseError = message
+    }
 }
 
 @MainActor
@@ -47,10 +77,7 @@ final class AssistantPanelController {
 
     func showListening(on displayID: CGDirectDisplayID) {
         self.displayID = displayID
-        model.phase = .listening
-        model.question = ""
-        model.answer = ""
-        model.screenIncluded = true
+        model.startListening()
         show()
     }
 
@@ -60,9 +87,7 @@ final class AssistantPanelController {
     }
 
     func beginAnswer(question: String) {
-        model.phase = .answering
-        model.question = question
-        model.answer = ""
+        model.beginAnswer(question: question)
         show()
     }
 
@@ -75,10 +100,20 @@ final class AssistantPanelController {
         model.phase = .complete
     }
 
+    func showStorageWarning(_ warning: String?) {
+        model.storageWarning = warning
+    }
+
     func showError(_ message: String, screenIncluded: Bool = false) {
         model.phase = .error
         model.answer = message
+        model.responseError = nil
         model.screenIncluded = screenIncluded
+        show()
+    }
+
+    func showResponseError(_ message: String) {
+        model.failAnswer(message)
         show()
     }
 
@@ -190,6 +225,18 @@ private struct AssistantPanelView: View {
         VStack(alignment: .leading, spacing: 18) {
             header
 
+            if let warning = model.storageWarning {
+                Label(warning, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
+            if let error = model.responseError {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
             if !model.question.isEmpty {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("YOU")
@@ -264,7 +311,7 @@ private struct AssistantPanelView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            if !model.answer.isEmpty, model.phase != .error {
+            if model.canCopyAnswer {
                 Button(action: onCopy) {
                     Label("Copy answer", systemImage: "doc.on.doc")
                 }

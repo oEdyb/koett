@@ -24,7 +24,7 @@ extension KoettController {
     }
 
     func startRecordingIfReady() {
-        guard state == .ready else { return }
+        guard canStartSession else { return }
         assistantSpeech.stop()
         do {
             try startRecording()
@@ -72,8 +72,14 @@ extension KoettController {
 
         let device = try selectedMicrophone()
         let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device)
-        self.nemotronRecorder = nemotronRecorder
-        let (recoveryRecorder, recoveryURL) = try startFileRecording(device: device)
+        try startNemotronRecording(live: nemotronRecorder) { try startFileRecording(device: device) }
+    }
+
+    func startNemotronRecording(
+        live nemotronRecorder: NemotronLiveRecorder,
+        startRecovery: () throws -> (MicrophoneRecorder, URL)
+    ) throws {
+        let (recoveryRecorder, recoveryURL) = try startRecovery()
         do {
             try nemotronRecorder.start()
         } catch {
@@ -82,6 +88,7 @@ extension KoettController {
             throw error
         }
 
+        self.nemotronRecorder = nemotronRecorder
         recorder = recoveryRecorder
         recordingURL = recoveryURL
     }
@@ -148,6 +155,7 @@ extension KoettController {
               let recoveryRecorder = recorder,
               let recoveryURL = recordingURL else { return }
 
+        self.nemotronRecorder = nil
         let duration = recoveryRecorder.currentTime
         recoveryRecorder.stop()
         recorder = nil
@@ -208,9 +216,7 @@ extension KoettController {
 
         do {
             let transcriptionStartedAt = ProcessInfo.processInfo.systemUptime
-            let decoderLayers = await manager.decoderLayerCount
-            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let result = try await manager.transcribe(url, decoderState: &decoderState)
+            let result = try await DictationTranscriber.transcribe(url, using: manager)
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -368,9 +374,7 @@ extension KoettController {
         var transcriptionCompleted = false
         do {
             let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
-            let decoderLayers = await manager.decoderLayerCount
-            var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
-            let result = try await manager.transcribe(url, decoderState: &decoderState)
+            let result = try await DictationTranscriber.transcribe(url, using: manager)
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -449,59 +453,32 @@ extension KoettController {
     }
 
     private func deliver(_ transcript: PreparedDictation) throws -> TimeInterval {
-        defer {
-            do {
-                try saveTranscript(transcript)
-            } catch {
-                fputs("Warning: transcript was not saved: \(error.localizedDescription)\n", stderr)
+        try DictationDelivery.deliver(
+            transcript.text,
+            writeToClipboard: { text in
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                return pasteboard.setString(text, forType: .string)
+            },
+            postPaste: pasteAtCursor,
+            persist: {
+                persistTranscript(
+                    transcript.text,
+                    model: transcript.model,
+                    rawText: transcript.rawText,
+                    keepAsLast: true
+                )
             }
-        }
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        guard pasteboard.setString(transcript.text, forType: .string) else {
-            throw Self.failure("The transcript could not be copied to the clipboard.")
-        }
-
-        guard pasteAtCursor() else {
-            throw Self.failure("The transcript is on the clipboard, but Command-V could not be sent.")
-        }
-        return ProcessInfo.processInfo.systemUptime
+        )
     }
 
     private func saveTranscript(_ transcript: PreparedDictation) throws {
-        do {
-            if try transcriptStore.saveLastTranscript(transcript.text) {
-                lastTranscript = transcript.text
-                rebuildMenu()
-            }
-        } catch {
-            recordingOverlay.showError("Transcript saved · Last action unavailable")
-            fputs(
-                "Warning: last transcript could not be saved: \(error.localizedDescription)\n",
-                stderr
-            )
-        }
-
-        do {
-            try transcriptStore.append(
-                transcript.text,
-                model: transcript.model,
-                rawText: transcript.rawText
-            )
-        } catch {
-            let savedURL = try failedTranscriptStore.preserve(
-                transcript.text,
-                model: transcript.model,
-                rawText: transcript.rawText
-            )
-            rebuildMenu()
-            fputs(
-                "Warning: transcript history failed; text recovered at "
-                    + "\(savedURL.path): \(error.localizedDescription)\n",
-                stderr
-            )
-        }
+        persistTranscript(
+            transcript.text,
+            model: transcript.model,
+            rawText: transcript.rawText,
+            keepAsLast: true
+        )
     }
 
     func play(_ player: AVAudioPlayer) {

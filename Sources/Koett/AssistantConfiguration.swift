@@ -54,7 +54,8 @@ struct AssistantConfiguration: Sendable {
         ) ?? provider.defaultModel
 
         guard let endpoint = URL(string: endpointText),
-              endpoint.scheme == "https" else {
+              endpoint.scheme == "https",
+              endpoint.host?.isEmpty == false else {
             throw failure("The assistant endpoint must be a valid HTTPS address.")
         }
         guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {

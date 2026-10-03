@@ -10,6 +10,9 @@ enum DictationFailurePresentation {
             return "Dictation failed · Audio saved"
         }
         let lowercased = error.lowercased()
+        if transcriptionCompleted, lowercased.contains("text in memory") {
+            return "Text in memory · Save failed · Copy Unsaved Transcripts"
+        }
         if transcriptionCompleted,
            lowercased.contains("on the clipboard"),
            lowercased.contains("could not be sent") {

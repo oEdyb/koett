@@ -16,10 +16,12 @@ enum ScreenContextCapture {
     }
 
     static func captureJPEG(displayID: CGDirectDisplayID) async throws -> Data {
+        try Task.checkCancellation()
         let content = try await SCShareableContent.excludingDesktopWindows(
             false,
             onScreenWindowsOnly: true
         )
+        try Task.checkCancellation()
         guard let display = content.displays.first(where: {
             $0.displayID == displayID
         }) ?? content.displays.first else {
@@ -47,6 +49,7 @@ enum ScreenContextCapture {
             contentFilter: filter,
             configuration: configuration
         )
+        try Task.checkCancellation()
         let representation = NSBitmapImageRep(cgImage: image)
         guard let data = representation.representation(
             using: .jpeg,

@@ -5,7 +5,7 @@ import Synchronization
 
 @MainActor
 final class MicrophoneRecorder {
-    private let input: MicrophoneInput
+    private let input: any MicrophoneCapturing
     private let sink: MicrophoneFileSink
     private(set) var isRecording = false
     let device: MicrophoneDevice
@@ -14,9 +14,13 @@ final class MicrophoneRecorder {
     var averagePower: Float { sink.averagePower }
     var recordingError: Error? { input.error ?? sink.error }
 
-    init(url: URL, device: MicrophoneDevice) throws {
+    convenience init(url: URL, device: MicrophoneDevice) throws {
+        try self.init(url: url, device: device, input: MicrophoneInput(device: device))
+    }
+
+    init(url: URL, device: MicrophoneDevice, input: any MicrophoneCapturing) throws {
         self.device = device
-        input = try MicrophoneInput(device: device)
+        self.input = input
         sink = try MicrophoneFileSink(url: url, inputFormat: input.format)
         let sink = sink
         do {

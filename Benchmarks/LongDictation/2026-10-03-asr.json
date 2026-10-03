@@ -1,0 +1,218 @@
+[
+  {
+    "audioSeconds": 360,
+    "milliseconds": 116012.64837500639,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 0
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 111622.35566665186,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 0
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 122094.23237497685,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 1
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 107406.51083330158,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 1
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 93113.6276666657,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 2
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 157841.54758334626,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 2
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 24282.674375048373,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 3
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 28347.835458349437,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 3
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 24135.171875008382,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 4
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 22872.64708330622,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 4
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 37097.540125017986,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "after",
+    "pair": 5
+  },
+  {
+    "audioSeconds": 360,
+    "milliseconds": 75062.3693333473,
+    "textSHA256": "4b8cbe4ef4f659c9cdae31a4f85dde133dc75ba82d3c068c217c0128e7f03dfb",
+    "confidence": 0.97328174,
+    "fixture": "dictation-360s.wav",
+    "path": "before",
+    "pair": 5
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 86551.35670833988,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 0
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 37803.65804163739,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 0
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 42692.47537496267,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 1
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 49272.82916667173,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 1
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 38024.4519583066,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 2
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 56252.1608749521,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 2
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 146462.41749997716,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 3
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 224027.34387503006,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 3
+  },
+  {
+    "audioSeconds": 600,
+    "milliseconds": 173737.10600001505,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "confidence": 0.97123164,
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 4
+  },
+  {
+    "milliseconds": 26467.961249989457,
+    "audioSeconds": 600,
+    "confidence": 0.97123164,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 4
+  },
+  {
+    "milliseconds": 35583.29304168001,
+    "audioSeconds": 600,
+    "confidence": 0.97123164,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "fixture": "dictation-600s.wav",
+    "path": "after",
+    "pair": 5
+  },
+  {
+    "milliseconds": 12847.665791690815,
+    "audioSeconds": 600,
+    "confidence": 0.97123164,
+    "textSHA256": "2eefe2713b7d9123581905366f8380a9dcbe257d7117c41fc6eb83802d5452ec",
+    "fixture": "dictation-600s.wav",
+    "path": "before",
+    "pair": 5
+  }
+]

@@ -160,4 +160,8 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         controller.stopS1Mini()
     }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        controller.prepareTermination()
+    }
 }

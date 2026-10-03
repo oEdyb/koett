@@ -185,6 +185,7 @@ final class CartesiaSpeechOutput {
     private let format: AVAudioFormat
     private var socket: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
+    private let connection = AssistantSpeechConnection()
     private var connectionID = UUID()
     private var contextID = UUID().uuidString
     private var voice = AssistantVoice.katie
@@ -215,7 +216,7 @@ final class CartesiaSpeechOutput {
         self.voice = voice
         spokenLead = SpokenLeadBuffer()
         contextID = UUID().uuidString
-        connectionID = UUID()
+        connectionID = connection.begin()
         sentInput = false
         firstSendNanoseconds = nil
         loggedFirstAudio = false
@@ -228,10 +229,15 @@ final class CartesiaSpeechOutput {
         socket = newSocket
         let currentConnectionID = connectionID
         receiveTask = Task { @MainActor [weak self] in
-            await self?.receive(
-                from: newSocket,
-                connectionID: currentConnectionID
-            )
+            do {
+                while self?.connection.accepts(currentConnectionID) == true {
+                    let message = try await newSocket.receive()
+                    try self?.receive(message, connectionID: currentConnectionID)
+                }
+            } catch {
+                guard self?.connection.accepts(currentConnectionID) == true else { return }
+                self?.fail(error)
+            }
         }
         newSocket.resume()
     }
@@ -247,6 +253,8 @@ final class CartesiaSpeechOutput {
         if remainder.isEmpty {
             if sentInput {
                 await send("", continueGeneration: false)
+            } else {
+                stop()
             }
             return
         }
@@ -258,6 +266,7 @@ final class CartesiaSpeechOutput {
     }
 
     func stop() {
+        connection.stop()
         receiveTask?.cancel()
         receiveTask = nil
         socket?.cancel(with: .goingAway, reason: nil)
@@ -269,8 +278,15 @@ final class CartesiaSpeechOutput {
         sentInput = false
     }
 
+    deinit {
+        receiveTask?.cancel()
+        socket?.cancel(with: .goingAway, reason: nil)
+        session.invalidateAndCancel()
+    }
+
     private func send(_ text: String, continueGeneration: Bool) async {
-        guard let socket else { return }
+        let currentConnectionID = connectionID
+        guard let socket, connection.accepts(currentConnectionID) else { return }
         let body: [String: Any] = [
             "model_id": Self.model,
             "transcript": text,
@@ -291,49 +307,55 @@ final class CartesiaSpeechOutput {
             if firstSendNanoseconds == nil {
                 firstSendNanoseconds = DispatchTime.now().uptimeNanoseconds
             }
-            try await socket.send(.string(message))
-            sentInput = true
+            await connection.send(
+                for: currentConnectionID,
+                operation: { try await socket.send(.string(message)) },
+                sent: { [weak self] in self?.sentInput = true },
+                failed: { [weak self] in self?.fail($0) }
+            )
         } catch {
-            fail(error)
+            if connection.accepts(currentConnectionID) {
+                fail(error)
+            }
         }
     }
 
     private func receive(
-        from socket: URLSessionWebSocketTask,
+        _ message: URLSessionWebSocketTask.Message,
         connectionID: UUID
-    ) async {
-        do {
-            while !Task.isCancelled, connectionID == self.connectionID {
-                let message = try await socket.receive()
-                let data: Data
-                switch message {
-                case let .data(value):
-                    data = value
-                case let .string(value):
-                    guard let value = value.data(using: .utf8) else { continue }
-                    data = value
-                @unknown default:
-                    continue
-                }
-
-                let event = try JSONDecoder().decode(ServerEvent.self, from: data)
-                guard event.contextID == nil || event.contextID == contextID else {
-                    continue
-                }
-                if event.type == "error" {
-                    throw failure(event.message ?? "Cartesia could not generate speech.")
-                }
-                if event.type == "chunk",
-                   let encodedAudio = event.data,
-                   let audio = Data(base64Encoded: encodedAudio) {
-                    try play(audio)
-                }
-            }
-        } catch is CancellationError {
+    ) throws {
+        guard connection.accepts(connectionID) else { return }
+        let data: Data
+        switch message {
+        case let .data(value):
+            data = value
+        case let .string(value):
+            guard let value = value.data(using: .utf8) else { return }
+            data = value
+        @unknown default:
             return
-        } catch {
-            guard connectionID == self.connectionID else { return }
-            fail(error)
+        }
+
+        let event = try JSONDecoder().decode(ServerEvent.self, from: data)
+        guard event.contextID == nil || event.contextID == contextID else { return }
+        if event.type == "error" {
+            throw failure(event.message ?? "Cartesia could not generate speech.")
+        }
+        if event.type == "done" {
+            let playbackFinished = connection.finishGeneration(for: connectionID)
+            receiveTask?.cancel()
+            receiveTask = nil
+            socket?.cancel(with: .normalClosure, reason: nil)
+            socket = nil
+            if playbackFinished {
+                stop()
+            }
+            return
+        }
+        if event.type == "chunk",
+           let encodedAudio = event.data,
+           let audio = Data(base64Encoded: encodedAudio) {
+            try play(audio)
         }
     }
 
@@ -358,7 +380,14 @@ final class CartesiaSpeechOutput {
         if !engine.isRunning {
             try engine.start()
         }
-        player.scheduleBuffer(buffer)
+        let currentConnectionID = connectionID
+        guard connection.bufferScheduled(for: currentConnectionID) else { return }
+        player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.connection.bufferPlayed(for: currentConnectionID) else { return }
+                self.stop()
+            }
+        }
         if !player.isPlaying {
             player.play()
         }

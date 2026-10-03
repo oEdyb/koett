@@ -5,11 +5,20 @@ import Foundation
 import Synchronization
 
 @MainActor
-final class MicrophoneInput {
+protocol MicrophoneCapturing: AnyObject {
+    var format: AVAudioFormat { get }
+    var error: Error? { get }
+    func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws
+    func stop()
+}
+
+@MainActor
+final class MicrophoneInput: MicrophoneCapturing {
     let format: AVAudioFormat
     private let unit: AudioUnit
     private let device: MicrophoneDevice
     private var callbackState: InputCallbackState?
+    private var callbackReservation = MicrophoneCallbackReservation()
     private var started = false
 
     var error: Error? {
@@ -57,6 +66,7 @@ final class MicrophoneInput {
     }
 
     func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
+        try callbackReservation.reserve()
         var maximumFrames: UInt32 = 0
         var size: UInt32 = 4
         try Self.check(AudioUnitGetProperty(unit, kAudioUnitProperty_MaximumFramesPerSlice, kAudioUnitScope_Global, 0, &maximumFrames, &size))
@@ -125,6 +135,17 @@ final class MicrophoneInput {
 
     private static func check(_ status: OSStatus) throws {
         guard status == noErr else { throw MicrophoneDevices.failure("The microphone could not start (\(status)).") }
+    }
+}
+
+struct MicrophoneCallbackReservation {
+    private(set) var isReserved = false
+
+    mutating func reserve() throws {
+        guard !isReserved else {
+            throw MicrophoneDevices.failure("The microphone capture has already started.")
+        }
+        isReserved = true
     }
 }
 

@@ -1,6 +1,6 @@
 import Foundation
 
-struct TranscriptStore {
+struct TranscriptStore: Sendable {
     let fileURL: URL
     let lastTranscriptURL: URL
 
@@ -19,6 +19,12 @@ struct TranscriptStore {
     }
 
     func prepare() throws {
+        try TranscriptFileLock.withLock(for: fileURL) {
+            try prepareUnlocked()
+        }
+    }
+
+    private func prepareUnlocked() throws {
         let directoryURL = fileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(
             at: directoryURL,
@@ -40,35 +46,29 @@ struct TranscriptStore {
         rawText: String? = nil,
         at date: Date = Date()
     ) throws {
-        try prepare()
-        let timestamp = ISO8601DateFormatter().string(from: date)
-        let transcript: String
-        if let rawText {
-            transcript = """
+        try append(TranscriptRecord(text: text, model: model, rawText: rawText, date: date))
+    }
 
-            Raw transcript:
-
-            \(rawText)
-
-            Cleaned transcript:
-
-            \(text.isEmpty ? "(empty)" : text)
-            """
-        } else {
-            transcript = "\n\n\(text)"
+    @discardableResult
+    func append(_ record: TranscriptRecord) throws -> Bool {
+        guard record.hasText else { return false }
+        return try TranscriptFileLock.withLock(for: fileURL) {
+            try prepareUnlocked()
+            var history = try Data(contentsOf: fileURL)
+            guard String(data: history, encoding: .utf8) != nil else {
+                throw CocoaError(.fileReadInapplicableStringEncoding)
+            }
+            let marker = Data("\n\(record.marker)\n".utf8)
+            let alreadySaved = history.range(of: marker) != nil
+            if !alreadySaved {
+                history.append(Data(record.markdown.utf8))
+                try history.write(to: fileURL, options: .atomic)
+            }
+            let handle = try FileHandle(forWritingTo: fileURL)
+            defer { try? handle.close() }
+            try handle.synchronize()
+            return !alreadySaved
         }
-        let entry = """
-
-        ## \(timestamp)
-
-        Model: \(model)
-        \(transcript)
-        """
-        let handle = try FileHandle(forWritingTo: fileURL)
-        defer { try? handle.close() }
-        try handle.seekToEnd()
-        try handle.write(contentsOf: Data("\(entry)\n".utf8))
-        try handle.synchronize()
     }
 
     @discardableResult

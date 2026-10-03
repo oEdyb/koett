@@ -207,19 +207,27 @@ final class NemotronLiveRecorder {
     }
 
     private let adapter: any StreamingTranscriptionAdapter
-    private let input: MicrophoneInput
+    private let input: any MicrophoneCapturing
     private let inputFormat: AVAudioFormat
     private let store: LiveAudioStore
     private var processingTask: Task<Void, Error>?
     private var isRecording = false
 
-    init(
+    convenience init(
         adapter: any StreamingTranscriptionAdapter,
         device: MicrophoneDevice,
         maximumDuration: TimeInterval = 600
     ) throws {
+        try self.init(adapter: adapter, input: MicrophoneInput(device: device), maximumDuration: maximumDuration)
+    }
+
+    init(
+        adapter: any StreamingTranscriptionAdapter,
+        input: any MicrophoneCapturing,
+        maximumDuration: TimeInterval = 600
+    ) throws {
         self.adapter = adapter
-        input = try MicrophoneInput(device: device)
+        self.input = input
         let format = input.format
         guard format.sampleRate > 0, format.channelCount > 0 else {
             throw NSError(
@@ -292,6 +300,12 @@ final class NemotronLiveRecorder {
         self.processingTask = nil
 
         return PendingCapture(store: store, processingTask: processingTask, error: input.error)
+    }
+
+    isolated deinit {
+        input.stop()
+        store.finish()
+        processingTask?.cancel()
     }
 
     nonisolated private static func consume(

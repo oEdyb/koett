@@ -41,6 +41,10 @@ let package = Package(
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ]
         ),
+        .executableTarget(
+            name: "LongDictationBenchmark",
+            dependencies: [.product(name: "FluidAudio", package: "FluidAudio")]
+        ),
         .executableTarget(name: "SentenceRecorder"),
         .executableTarget(
             name: "Koett",

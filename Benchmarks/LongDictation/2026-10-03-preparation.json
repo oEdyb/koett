@@ -1,0 +1,1082 @@
+[
+  {
+    "samples": 5760000,
+    "pair": 0,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 48.586583347059786,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 0,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.419999953825027,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 1,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.8255000254139304,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 1,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 21.463083336129785,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 2,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.052666659466922,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 2,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.039041650481522,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 3,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.4821249903179705,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 3,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 21.807208308018744,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 4,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 26.895791641436517,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 4,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.259250010363758,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 5,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.1937500461935997,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 5,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 27.499708288814873,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 6,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 21.985458326525986,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 6,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.2160833361558616,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 7,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.594166657421738,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 7,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 19.96245834743604,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 8,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.96429164521396,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 8,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.4607083653099835,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 9,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.527708351612091,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 9,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 23.060291656292975,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 10,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 23.5310000134632,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 10,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.419750010129064,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 11,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 7.747416675556451,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 11,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 28.00950000528246,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 12,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 23.84016668656841,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 12,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.5874166642315686,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 13,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 6.462708348408341,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 13,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 23.04041665047407,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 14,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 33.50995830260217,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 14,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 5.140458350069821,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 15,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 5.2965416689403355,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 15,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 19.137625000439584,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 16,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 18.77554168459028,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 16,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.9005833570845425,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 17,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.515666631050408,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 17,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 18.60933331772685,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 18,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 22.380499984137714,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 18,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.08137496560812,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 19,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.37187502393499,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 19,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.097000000532717,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 20,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 21.86691662063822,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 20,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.9167083450593054,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 21,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.4225000417791307,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 21,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.38475003791973,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 22,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 22.945208358578384,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 22,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 5.496875033713877,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 23,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 6.154041620902717,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 23,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 19.8542500147596,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 24,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 18.293666711542755,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 24,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.584583337418735,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 25,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.1049166466109455,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 25,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 25.167750020045787,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 26,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.65533335553482,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 26,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.237333381548524,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 27,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 3.396583313588053,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 27,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 20.302000048104674,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 28,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 27.853208302985877,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 28,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 4.493999993428588,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 29,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "after",
+    "milliseconds": 5.571624962612987,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 5760000,
+    "pair": 29,
+    "audioSeconds": 360,
+    "samplesSHA256": "bef7659a534afeaec7f94747206ecf9bada465efcbd1b3a4c32cb7f6715093a6",
+    "path": "before",
+    "milliseconds": 24.66324996203184,
+    "fixture": "dictation-360s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 0,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 41.37325001647696,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 0,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 7.0853750221431255,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 1,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.939833295997232,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 1,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 33.870208368171006,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 2,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 34.113208297640085,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 2,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 7.169541670009494,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 3,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 7.265458349138498,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 3,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 33.50037499330938,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 4,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 36.63345833774656,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 4,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 9.007958346046507,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 5,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 8.752375026233494,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 5,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 39.37733336351812,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 6,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 51.6452916781418,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 6,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.849708337336779,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 7,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.245333362836391,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 7,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 43.29187498660758,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 8,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 34.52825004933402,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 8,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.17766666598618,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 9,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.26420830283314,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 9,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 42.30337496846914,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 10,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 21.70304168248549,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 10,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 4.975208372343332,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 11,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.532999988645315,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 11,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 22.502875013742596,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 12,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 22.69433334004134,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 12,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.5802916758693755,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 13,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.7197916796430945,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 13,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 23.772791668307036,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 14,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 23.180833377409726,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 14,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 4.455374961253256,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 15,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.72029163595289,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 15,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 21.614000026602298,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 16,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 23.718833341263235,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 16,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.796541681978852,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 17,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.540749989449978,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 17,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 23.23687495663762,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 18,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 24.696749984286726,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 18,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.08650001231581,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 19,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.056000012904406,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 19,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 21.2475000298582,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 20,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 23.774500004947186,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 20,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.758499959483743,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 21,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.408208340872079,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 21,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 27.176916657481343,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 22,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 28.19070831174031,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 22,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.149374996311963,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 23,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.747083330992609,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 23,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 29.01429164921865,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 24,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 32.54241670947522,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 24,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 5.93004166148603,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 25,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 8.004333358258009,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 25,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 45.93804164323956,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 26,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 39.64595834258944,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 26,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 6.583083362784237,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 27,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 7.958333357237279,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 27,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 41.46487498655915,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 28,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 47.86499997135252,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 28,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 8.860291680321097,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 29,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "after",
+    "milliseconds": 8.31791665405035,
+    "fixture": "dictation-600s.wav"
+  },
+  {
+    "samples": 9600000,
+    "pair": 29,
+    "audioSeconds": 600,
+    "samplesSHA256": "6f8704b32137a8ff648f914d7be3fad429e71f932954b8a233662d4c0d4004c0",
+    "path": "before",
+    "milliseconds": 44.29987497860566,
+    "fixture": "dictation-600s.wav"
+  }
+]
