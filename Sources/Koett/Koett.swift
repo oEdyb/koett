@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import AVFoundation
+import CoreAudio
 import CoreGraphics
 import Darwin
 import FluidAudio
@@ -38,7 +39,7 @@ final class KoettController: NSObject {
     let speechEngine: SpeechEngine
     var transcriptStore: TranscriptStore { transcriptPersistence.history }
     let mediaTranscriptStore = MediaTranscriptStore()
-    let failedRecordingStore = FailedRecordingStore()
+    let failedRecordingStore: FailedRecordingStore
     var failedTranscriptStore: FailedTranscriptStore { transcriptPersistence.recovery }
     let transcriptPersistence: TranscriptPersistence
     let recordingOverlay = RecordingOverlayController()
@@ -67,10 +68,17 @@ final class KoettController: NSObject {
     private var assistantModifierState = ModifierShortcutState()
     var state = State.loading {
         didSet {
-            if state != oldValue { rebuildMenu() }
+            if state != oldValue {
+                rebuildMenu()
+                refreshMicrophoneMonitorTarget()
+            }
         }
     }
     var microphoneSelection: MicrophoneSelection
+    let microphoneDefaults: UserDefaults
+    let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
+    let defaultMicrophoneID: @MainActor () throws -> AudioDeviceID
+    var microphoneMonitor: MicrophoneAvailabilityMonitor?
     var recorder: MicrophoneRecorder?
     var recordingURL: URL?
     let assistantWork = AssistantWorkLifecycle()
@@ -92,9 +100,16 @@ final class KoettController: NSObject {
     init(
         defaults: UserDefaults,
         speechEngine: SpeechEngine,
-        transcriptPersistence: TranscriptPersistence = TranscriptPersistence()
+        transcriptPersistence: TranscriptPersistence = TranscriptPersistence(),
+        failedRecordingStore: FailedRecordingStore = FailedRecordingStore(),
+        availableMicrophones: @escaping @MainActor () throws -> [MicrophoneDevice] = MicrophoneDevices.available,
+        defaultMicrophoneID: @escaping @MainActor () throws -> AudioDeviceID = MicrophoneDevices.defaultInputID
     ) throws {
         self.transcriptPersistence = transcriptPersistence
+        self.failedRecordingStore = failedRecordingStore
+        self.microphoneDefaults = defaults
+        self.availableMicrophones = availableMicrophones
+        self.defaultMicrophoneID = defaultMicrophoneID
         self.speechEngine = speechEngine
         microphoneSelection = MicrophoneSelection(defaults: defaults)
         nemotronAdapter = speechEngine == .nemotron
@@ -220,6 +235,7 @@ final class KoettController: NSObject {
         startupErrorMessage = nil
         startupErrorCode = nil
         startupNoticeMessage = nil
+        startMicrophoneMonitoring()
         rebuildMenu()
 
         do {

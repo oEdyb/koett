@@ -3,7 +3,7 @@ import AVFoundation
 import XCTest
 
 final class MicrophoneTests: XCTestCase {
-    private let builtIn = MicrophoneDevice(id: 1, uid: "built-in", name: "MacBook Microphone")
+    private let builtIn = MicrophoneDevice(id: 1, uid: "built-in", name: "MacBook Microphone", isBuiltIn: true)
     private let airPods = MicrophoneDevice(id: 2, uid: "airpods", name: "AirPods")
 
     func testSelectionSurvivesRestartAndDefaultDeviceChanges() throws {
@@ -17,7 +17,7 @@ final class MicrophoneTests: XCTestCase {
         XCTAssertEqual(try restored.resolve(in: [builtIn, airPods], defaultID: airPods.id), builtIn)
         let reconnected = MicrophoneDevice(id: 99, uid: builtIn.uid, name: builtIn.name)
         XCTAssertEqual(try restored.resolve(in: [reconnected, airPods], defaultID: airPods.id), reconnected)
-        XCTAssertThrowsError(try restored.resolve(in: [airPods], defaultID: airPods.id))
+        XCTAssertEqual(try restored.resolve(in: [airPods], defaultID: airPods.id), airPods)
         selection.uid = nil
         selection.save(to: defaults)
         XCTAssertEqual(try MicrophoneSelection(defaults: defaults).resolve(in: [builtIn, airPods], defaultID: airPods.id), airPods)
@@ -31,12 +31,13 @@ final class MicrophoneTests: XCTestCase {
     }
 
     @MainActor
-    func testMissingMicrophoneShowsAnActionableErrorWithoutRecording() throws {
+    func testNoAvailableMicrophoneShowsAnActionableErrorWithoutRecording() throws {
         let name = "koett-microphone-test-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         defaults.set("missing-\(UUID().uuidString)", forKey: MicrophoneSelection.defaultsKey)
-        let controller = try KoettController(defaults: defaults, speechEngine: .parakeet)
+        let controller = try KoettController(defaults: defaults, speechEngine: .parakeet,
+                                             availableMicrophones: { [] }, defaultMicrophoneID: { 0 })
         controller.state = .ready
         controller.startRecordingIfReady()
         XCTAssertEqual(controller.state, .ready)

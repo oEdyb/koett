@@ -2,7 +2,7 @@
 
 Branch: `codex/overnight-2026-10-03`, created from `feat/microphone-selection`.
 The original uncommitted microphone work was committed unchanged first as `79adbfe`.
-All work is local. The installed app, signing/notarization, release ZIP, and Windows/Linux work were not changed. Nothing was pushed.
+The installed app, signing/notarization, release ZIP, and Windows/Linux work were not changed. The initial overnight work remained local; Olle subsequently authorized pushing this branch after the microphone follow-up passes verification.
 
 ## Long-dictation measurements
 
@@ -67,13 +67,27 @@ The preparation benchmark compares the pinned upstream conversion/write/synchron
 - `Sources/Koett/AssistantPanel.swift`: preserve partial answer and Copy after stream failure, show storage/response errors separately and avoid claiming a screen was included after capture failure; `AssistantPanelStateTests` covers state, copy availability and reset.
 - `Sources/LongDictationBenchmark/`, `Benchmarks/LongDictation/`, `Package.swift`: add reproducible alternating long-audio and preparation benchmarks using the same production loader source; they assert complete transcript and sample equality rather than relying on summary hashes alone.
 
+## Microphone availability follow-up
+
+- `Sources/Koett/MicrophoneSelection.swift`: exclude unusable Core Audio inputs, identify built-in devices, and replace a missing explicit UID with built-in/default/first available input; keep available choices and System Default stable, and preserve the preference while no input exists; `MicrophoneAvailabilityTests` covers every fallback and preference case.
+- `Sources/Koett/MicrophoneAvailability.swift`: reconcile and save available choices at startup and on changes, stop dictation/Ask after their capture device disappears, retain captured audio and cancel pending Ask work; disconnect tests check exact retained frame counts, stopped input and cancelled screenshot work.
+- `Sources/Koett/MicrophoneAvailabilityMonitor.swift`: monitor device list, default input, current-input alive state, wake and activation with rollback, matching removal and stale-callback guards; nine injected-registration tests cover setup, retargeting, queued callbacks, failure/retry, notifications and deallocation.
+- `Sources/Koett/Koett.swift`, `DictationSession.swift`: start monitoring before setup and keep the alive listener on the actual capture device, then retarget after recording stops; `testAliveListenerFollowsDefaultAfterRecordingStopsAndTheNextOneStarts` covers the old-listener regression.
+- `Sources/Koett/MicrophoneRecorder.swift`, `NemotronStreamingAdapter.swift`, `DictationSession.swift`: mark both live and backup capture unavailable after disconnect and retain even failed recordings shorter than 0.3 seconds; short/long Nemotron disconnect tests check every retained WAV frame and stopped ownership.
+- `Sources/Koett/MicrophoneMenu.swift`: display the repaired available input or **None available**, persist choices in the controller's defaults, and resolve again before capture; menu and no-input recording tests cover visible state and failure.
+- `Tests/KoettTests/MicrophoneAvailabilityTests.swift`, `MicrophoneAvailabilityMonitorTests.swift`, `MicrophoneTests.swift`: add 23 hardware-free regressions and update the prior missing-device expectation for automatic fallback; no live microphone or cloud service is used.
+- `docs/feature-contracts.md`, `docs/microphone-selection.md`, `docs/overnight-2026-10-03.md`: record fallback persistence, observer/capture behavior, historical versus current verification, and real-device limits.
+
+The fallback becomes the saved explicit choice; reconnecting an old microphone does not take it over. An interrupted session retains its old-source audio and uses the replacement on the next recording. Koett does not combine audio from different devices mid-session or change the macOS default microphone.
+
 ## Verification
 
-- `swift test`: **144 tests passed, zero failures**, final full run 2026-10-03 (3 s wall time).
-- `swift build -c release`: passed, final rerun 48 s wall time.
+- `swift test`: **167 tests passed, zero failures**, final full run after the microphone follow-up on 2026-10-03 (4.3 s suite time).
+- `swift build -c release`: passed, final microphone-follow-up rerun 43 s wall time.
 - `git diff --check`, `zsh -n install-macos.sh`, `plutil -lint Packaging/Info.plist`, `plutil -lint Packaging/Koett.entitlements`: all passed.
 - Full-real-model and preparation benchmarks: exit zero; twelve full-transcript pairs and sixty sample-array/hash pairs passed equality checks.
 - Independent fresh-context review: zero unresolved findings. Constructor-replay side effects, recording-feedback quit regression, partial-answer overwrite and duplicate-instance relaunch were found, fixed and rechecked.
+- Microphone follow-up review: zero unresolved findings after fixing a stale capture-device listener, short failed Nemotron audio deletion, and preference changes during a temporarily empty device list. All three fixes have regression coverage.
 - HTTP cleanup test checks `URLProtocol.stopLoading` directly and keeps the client alive through its assertion; its control proves the unfinished fixture stays open while the iterator is retained. Foundation iterator teardown also stopped the transfer without explicit cancellation, so the explicit cancel is defensive cleanup rather than a reproduced baseline leak.
 - Changed-file credential-pattern scan: no matches. No API keys, audio fixtures, private transcript text or model binaries were added to the tracked receipts.
 

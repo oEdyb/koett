@@ -1,9 +1,36 @@
 # Microphone selection
 
 The menu stores an explicit Core Audio device UID, or no UID for System Default.
-It resolves the current device ID for each recording. Missing explicit devices
-fail visibly. Dictation and Ask share the choice; Nemotron and its recovery WAV
+It resolves the current device ID for each recording. An available explicit choice
+stays selected. A missing choice is replaced by an available built-in microphone,
+then the macOS default or first available input; the replacement is saved. Reconnecting
+the old input does not take over the saved replacement. System Default remains a
+mode, following the available default with fallback while that default is missing.
+When no inputs exist, the menu says **None available** and recording fails visibly.
+The saved choice is retained until an available replacement can be selected.
+Dictation and Ask share the choice; Nemotron and its recovery WAV
 receive the same resolved device. Koett does not change the macOS default input.
+
+## Automatic availability — 2026-10-03
+
+Startup, device/default changes, current-input alive changes, wake and app activation
+refresh the selection. Core Audio devices marked not alive are excluded even if
+they remain in the device list. Listeners are installed once, rolled back after
+partial failures, and removed on teardown; queued callbacks from old registrations
+cannot refresh the current state.
+
+If the active capture device disappears, Koett stops it and preserves its WAV through
+the existing failure path. Ask also cancels its pending screenshot and prewarmed
+speech. The fallback is used for the next session; audio formats/devices are never
+combined inside the interrupted recording.
+
+Software tests cover saved fallback, available choice stability, System Default,
+temporarily missing default, no-input recovery, catalog errors, actual menu state,
+preserved recording frames, Ask interruption and observer lifetime. Physical USB/
+AirPods disconnect/reconnect and live Nemotron checks still need a device. No new
+build was installed; the September verification below describes the older install.
+
+Sources checked: [Apple listener registration](https://developer.apple.com/documentation/coreaudio/audioobjectaddpropertylistenerblock(_:_:_:_:)), [built-in transport](https://developer.apple.com/documentation/coreaudio/kaudiodevicetransporttypebuiltin), and the current SDK's `AudioHardwareBase.h` definition of `DeviceIsAlive` (1 ready/available, 0 unusable).
 
 Capture uses an input-only AUHAL unit. Koett selects the device before initializing
 or starting the unit. AVAudioEngine initially configured the default device when
@@ -31,7 +58,7 @@ and reports failure instead of transcribing incomplete audio as a successful res
 - Local macOS 27 SDK headers `AudioHardwareBase.h`, `AudioUnitProperties.h`, `AVAudioEngine.h`, `AVAudioNode.h`, `ExtendedAudioFile.h`, `AVAudioRecorder.h`: UID ownership, supported device-selection scope, input-only taps and unavailable macOS recorder channel assignments.
 - FluidAudio remains pinned to 0.15.6, revision `4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b`; the existing streaming adapter and model lifetime are preserved.
 
-## Verification
+## Verification — 2026-09-21
 
 On the Apple Silicon host, the final production recorder captured three successive
 three-second recordings from MacBook Air Microphone while AirPods remained the

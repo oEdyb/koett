@@ -99,6 +99,7 @@ extension KoettController {
             .appendingPathComponent("koett-\(UUID().uuidString).wav")
         do {
             let recorder = try MicrophoneRecorder(url: url, device: device)
+            watchMicrophone(deviceID: device.id)
             print("MICROPHONE \(device.name) [\(device.uid)]")
             return (recorder, url)
         } catch {
@@ -280,12 +281,18 @@ extension KoettController {
         }
 
         if duration < 0.3 {
+            var captureError = pendingCapture.error ?? recoveryError
             do {
                 try await pendingCapture.processingTask.value
             } catch {
+                captureError = captureError ?? error
                 fputs("Warning: Nemotron stopped with: \(error.localizedDescription)\n", stderr)
             }
             await nemotronAdapter.cancel()
+            if captureError != nil || pendingCapture.store.droppedFrames > 0 {
+                preserveFailedRecording(recoveryURL)
+                return
+            }
             cleanup(recoveryURL)
             print("Ignored: recording was too short.")
             return

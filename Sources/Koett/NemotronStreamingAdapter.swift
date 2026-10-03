@@ -212,6 +212,7 @@ final class NemotronLiveRecorder {
     private let store: LiveAudioStore
     private var processingTask: Task<Void, Error>?
     private var isRecording = false
+    private var captureError: Error?
 
     convenience init(
         adapter: any StreamingTranscriptionAdapter,
@@ -261,6 +262,7 @@ final class NemotronLiveRecorder {
         }
 
         store.reset()
+        captureError = nil
         let framesPerRead = max(1, Int(inputFormat.sampleRate / 10))
         let task = Task { @concurrent [adapter, store] in
             try await Self.consume(
@@ -299,7 +301,11 @@ final class NemotronLiveRecorder {
         store.finish()
         self.processingTask = nil
 
-        return PendingCapture(store: store, processingTask: processingTask, error: input.error)
+        return PendingCapture(store: store, processingTask: processingTask, error: captureError ?? input.error)
+    }
+
+    func markUnavailable() {
+        captureError = MicrophoneDevices.failure("Microphone disconnected · Recording stopped")
     }
 
     isolated deinit {

@@ -7,6 +7,14 @@ struct MicrophoneDevice: Equatable, Sendable {
     let id: AudioDeviceID
     let uid: String
     let name: String
+    let isBuiltIn: Bool
+
+    init(id: AudioDeviceID, uid: String, name: String, isBuiltIn: Bool = false) {
+        self.id = id
+        self.uid = uid
+        self.name = name
+        self.isBuiltIn = isBuiltIn
+    }
 }
 
 struct MicrophoneSelection {
@@ -22,14 +30,27 @@ struct MicrophoneSelection {
     }
 
     func resolve(in devices: [MicrophoneDevice], defaultID: AudioDeviceID) throws -> MicrophoneDevice {
-        if let uid {
-            guard let selected = devices.first(where: { $0.uid == uid }) else {
-                throw MicrophoneDevices.failure("Selected microphone is unavailable. Choose a microphone in the Koett menu.")
-            }
+        if let uid, let selected = devices.first(where: { $0.uid == uid }) {
             return selected
         }
-        guard let selected = devices.first(where: { $0.id == defaultID }) else {
+        if uid == nil, let selected = devices.first(where: { $0.id == defaultID }) {
+            return selected
+        }
+        guard let selected = devices.first(where: { $0.isBuiltIn })
+            ?? devices.first(where: { $0.id == defaultID })
+            ?? devices.first else {
             throw MicrophoneDevices.failure("No microphone is available. Choose a microphone in the Koett menu.")
+        }
+        return selected
+    }
+
+    mutating func reconcile(in devices: [MicrophoneDevice], defaultID: AudioDeviceID) throws -> MicrophoneDevice {
+        guard !devices.isEmpty else {
+            throw MicrophoneDevices.failure("No microphone is available. Choose a microphone in the Koett menu.")
+        }
+        let selected = try resolve(in: devices, defaultID: defaultID)
+        if let uid, !devices.contains(where: { $0.uid == uid }) {
+            self.uid = selected.uid
         }
         return selected
     }
@@ -43,10 +64,12 @@ enum MicrophoneDevices {
         var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
         try check(AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &ids))
         return ids.compactMap { id in
-            guard hasInput(id),
+            guard (try? integer(id, selector: kAudioDevicePropertyDeviceIsAlive)) == 1,
+                  hasInput(id),
                   let uid = try? string(id, selector: kAudioDevicePropertyDeviceUID),
                   let name = try? string(id, selector: kAudioObjectPropertyName) else { return nil }
-            return MicrophoneDevice(id: id, uid: uid, name: name)
+            return MicrophoneDevice(id: id, uid: uid, name: name,
+                                    isBuiltIn: (try? integer(id, selector: kAudioDevicePropertyTransportType)) == kAudioDeviceTransportTypeBuiltIn)
         }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
@@ -79,6 +102,14 @@ enum MicrophoneDevices {
         try check(AudioObjectGetPropertyData(id, &address, 0, nil, &size, &value))
         guard let value else { throw failure("The microphone name could not be read.") }
         return value.takeRetainedValue() as String
+    }
+
+    private static func integer(_ id: AudioDeviceID, selector: AudioObjectPropertySelector) throws -> UInt32 {
+        var address = address(selector)
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        try check(AudioObjectGetPropertyData(id, &address, 0, nil, &size, &value))
+        return value
     }
 
     private static func check(_ status: OSStatus) throws {

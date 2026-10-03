@@ -17,21 +17,14 @@ extension KoettController {
         menu.addItem(system)
         menu.addItem(.separator())
         do {
-            let devices = try MicrophoneDevices.available()
-            item.title = "Microphone: " + (microphoneSelection.uid.flatMap { uid in
-                devices.first { $0.uid == uid }?.name ?? "Unavailable"
-            } ?? "System Default")
+            let devices = try availableMicrophones()
+            let selected = try? reconcileMicrophoneSelection(in: devices)
+            item.title = "Microphone: " + (selected?.name ?? "None available")
             for device in devices {
                 let choice = menuItem(title: device.name, action: #selector(selectMicrophone(_:)), selected: microphoneSelection.uid == device.uid)
                 choice.representedObject = device.uid
                 choice.isEnabled = state == .ready
                 menu.addItem(choice)
-            }
-            if let uid = microphoneSelection.uid, !devices.contains(where: { $0.uid == uid }) {
-                let missing = NSMenuItem(title: "Selected microphone unavailable", action: nil, keyEquivalent: "")
-                missing.state = .on
-                missing.isEnabled = false
-                menu.addItem(missing)
             }
         } catch {
             let errorItem = NSMenuItem(title: "Microphones unavailable", action: nil, keyEquivalent: "")
@@ -50,14 +43,11 @@ extension KoettController {
     @objc func selectMicrophone(_ sender: NSMenuItem) {
         guard state == .ready else { return }
         microphoneSelection.uid = sender.representedObject as? String
-        microphoneSelection.save(to: .standard)
-        rebuildMenu()
+        microphoneSelection.save(to: microphoneDefaults)
+        refreshMicrophoneAvailability()
     }
 
     func selectedMicrophone() throws -> MicrophoneDevice {
-        try microphoneSelection.resolve(
-            in: MicrophoneDevices.available(),
-            defaultID: microphoneSelection.uid == nil ? MicrophoneDevices.defaultInputID() : 0
-        )
+        try reconcileMicrophoneSelection(in: availableMicrophones())
     }
 }

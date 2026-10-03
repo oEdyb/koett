@@ -25,7 +25,13 @@
   recording time. It stays above apps without taking keyboard focus.
 - The Microphone submenu selects a persistent Core Audio device UID for dictation
   and Ask. System Default resolves the current macOS input at recording start.
-  An unavailable explicit selection fails visibly; it never switches silently.
+  An unavailable explicit selection is replaced by an available built-in input,
+  then the system default or first available input, and the replacement is saved.
+  Startup, device/default/alive changes, wake and app activation refresh the choice;
+  recording start checks again. System Default remains a mode when selected.
+  No available input is shown explicitly and recording fails visibly.
+  A lost active input stops the current recording and retains its audio; fallback
+  applies to the next session and never mixes devices inside one recording.
   Device choice does not change the macOS default. Both Nemotron capture and its
   recovery WAV use the same resolved device and fresh hardware format.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after

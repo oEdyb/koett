@@ -39,6 +39,10 @@ final class MicrophoneRecorder {
         sink.close()
         isRecording = false
     }
+
+    func markUnavailable() {
+        sink.fail("Microphone disconnected · Recording stopped")
+    }
 }
 
 final class MicrophoneFileSink: Sendable {
