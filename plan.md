@@ -1,6 +1,6 @@
 # Koett: Linux port, native UI and searchable history
 
-Status: implementation approved and in progress. As of 2026-10-26.
+Status: native implementation and local Linux candidate verified; remaining release/platform gates are recorded below. As of 2026-10-26.
 Context and source receipts: [research.md](research.md).
 
 ## Outcome
@@ -185,5 +185,6 @@ destructive removal of original archives remain separate approvals.
 - [x] Native Rust port integrated with current Mac recovery; canonical SQLite schema and native history UIs implemented.
 - [x] Linux ASR-only source build, short model sample and 420-second long-input probes pass.
 - [x] Native niri search/copy/accessibility checks and real microphone capture/stop pass.
-- [ ] Finish native UI matrix, packaged-artifact checks and independent persistence review.
-- [ ] Mac runtime verification deferred explicitly by Olle; retain exact pending gates in the handoff.
+- [x] Private KWin/current GTK and Ubuntu22/GTK4.6 UI checks, private candidate install and independent persistence review pass.
+- [ ] Before broad release: complete GNOME/other wlroots, physical shortcut, terminal, ARM64 and native Windows gates; resolve notice/SBOM gaps.
+- [x] Mac runtime verification explicitly deferred by Olle; exact pending gates retained in [verification report](docs/linux-ui-verification-2026-10-26.md).

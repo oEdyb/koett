@@ -1,0 +1,9 @@
+{
+  "text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait",
+  "type": "insertFromPaste",
+  "trusted": true,
+  "database": "/tmp/koett-nested-proof/data/koett/History.sqlite3",
+  "audio_source": "public model WAV through virtual microphone and actual CPAL",
+  "layout": "Swedish",
+  "backend": "nested niri native Wayland Chrome"
+}

@@ -80,7 +80,9 @@ Run the Rust checks in root AGENTS.md plus the native model probes:
 ```fish
 cargo run --release --locked --bin koett-engine -- --self-test
 cargo run --release --locked --bin koett-engine -- --long-self-test 420
+agent-lab start koett
 /usr/bin/python3 scripts/test_linux_ui.py --binary target/debug/koett --model MODEL_DIRECTORY
+agent-lab stop koett
 ```
 
 The UI script uses real GTK/AT-SPI widgets and a synthetic archive. On this Linux
