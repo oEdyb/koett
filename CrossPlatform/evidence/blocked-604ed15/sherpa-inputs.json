@@ -1,0 +1,110 @@
+{
+  "crate": {
+    "build_rs_sha256": "4a39abcde016314654a82a332cd466f1d99d94ab241b0a695316207eaaf72274",
+    "bytes": 31477,
+    "sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493"
+  },
+  "native_archives": [
+    {
+      "asset_id": 509849908,
+      "bytes": 120217991,
+      "component_evidence": {
+        "espeak": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/espeak-ng.lib"
+          ],
+          "samples_truncated": false
+        },
+        "piper": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/piper_phonemize.lib"
+          ],
+          "samples_truncated": false
+        },
+        "tts": {
+          "match_count": 0,
+          "samples": [],
+          "samples_truncated": false
+        }
+      },
+      "name": "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib.tar.bz2",
+      "sha256": "b7080b6f470bac96ef0afe56b25ae9b2f9f0ca82d10dad19bf3a2fc5ffd6cffc"
+    },
+    {
+      "asset_id": 509858680,
+      "bytes": 22394054,
+      "component_evidence": {
+        "espeak": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libespeak-ng.a"
+          ],
+          "samples_truncated": false
+        },
+        "piper": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libpiper_phonemize.a"
+          ],
+          "samples_truncated": false
+        },
+        "tts": {
+          "match_count": 0,
+          "samples": [],
+          "samples_truncated": false
+        }
+      },
+      "name": "sherpa-onnx-v1.13.5-linux-x64-static-lib.tar.bz2",
+      "sha256": "2ade8b7c62de66b9cf2e32bd7dbe077addaa4b18f422b49dc1bf3a1a0b1f762e"
+    },
+    {
+      "asset_id": 509806377,
+      "bytes": 20775501,
+      "component_evidence": {
+        "espeak": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libespeak-ng.a"
+          ],
+          "samples_truncated": false
+        },
+        "piper": {
+          "match_count": 1,
+          "samples": [
+            "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libpiper_phonemize.a"
+          ],
+          "samples_truncated": false
+        },
+        "tts": {
+          "match_count": 0,
+          "samples": [],
+          "samples_truncated": false
+        }
+      },
+      "name": "sherpa-onnx-v1.13.5-linux-aarch64-static-lib.tar.bz2",
+      "sha256": "f78af8260892f3060c8c0aba9ae93e4e4c1b16fe509238b88e3688889235e1b2"
+    }
+  ],
+  "release_id": 368382218,
+  "schema_version": 1,
+  "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+  "source_tag": "v1.13.5",
+  "static_libraries_requested_by_build_script": [
+    "sherpa-onnx-c-api",
+    "sherpa-onnx-core",
+    "kaldi-decoder-core",
+    "sherpa-onnx-kaldifst-core",
+    "sherpa-onnx-fstfar",
+    "sherpa-onnx-fst",
+    "kaldi-native-fbank-core",
+    "kissfft-float",
+    "piper_phonemize",
+    "espeak-ng",
+    "ucd",
+    "onnxruntime",
+    "ssentencepiece_core"
+  ],
+  "verified": true
+}

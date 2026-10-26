@@ -1,0 +1,1509 @@
+{
+  "gaps": [
+    {
+      "component": "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:model:silero-vad@9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:native:fastcluster@FluidAudio-0.15.6",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/FluidInference/text-processing-rs@v0.3.0",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/k2-fsa/kaldifst@v1.8.0",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/microsoft/onnxruntime@v1.27.1",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/pkufool/simple-sentencepiece@v0.7",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/adler2@2.0.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/alsa-sys@0.4.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/alsa@0.11.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/arboard@3.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ashpd@0.13.13",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/async-broadcast@0.7.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/async-recursion@1.1.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/async-trait@0.1.92",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/autocfg@1.5.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/base64@0.22.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/base64@0.23.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/base64ct@1.8.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/bitflags@2.13.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/block-buffer@0.12.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/block2@0.6.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/bumpalo@3.20.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/bytes@1.12.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/bzip2-sys@0.1.13+1.0.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/bzip2@0.4.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/bzip2@0.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/cc@1.4.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/cfg-if@1.0.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/clipboard-win@5.4.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/combine@4.6.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/core-foundation-sys@0.8.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/core-foundation@0.10.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/coreaudio-rs@0.14.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/cpal@0.18.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/cpufeatures@0.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/crc32fast@1.5.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/crossbeam-channel@0.5.16",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/crossbeam-utils@0.8.22",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/crypto-common@0.2.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/dasp_sample@0.11.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/der@0.8.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/deranged@0.5.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/digest@0.11.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/directories@6.0.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/dirs-sys@0.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/dispatch2@0.3.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/displaydoc@0.2.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/endi@1.1.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/enumflags2@0.7.12",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/enumflags2_derive@0.7.12",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/equivalent@1.0.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/errno@0.3.14",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/error-code@3.4.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/event-listener-strategy@0.5.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/event-listener@5.4.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/fastrand@2.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/filetime@0.2.29",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/find-msvc-tools@0.1.11",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/flate2@1.1.9",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/foreign-types-shared@0.1.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/foreign-types@0.3.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/form_urlencoded@1.2.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-core@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-io@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-lite@2.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-macro@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-task@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures-util@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/gethostname@1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/getrandom@0.2.17",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/getrandom@0.4.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/global-hotkey@0.8.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/hashbrown@0.17.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/hex@0.4.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/http@1.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/httparse@1.10.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/hybrid-array@0.4.14",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_collections@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_locale_core@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_normalizer@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_normalizer_data@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_properties@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_properties_data@2.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/icu_provider@2.3.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/idna@1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/idna_adapter@1.2.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/indexmap@2.14.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/itoa@1.0.18",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/jni-macros@0.22.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/jni-sys-macros@0.4.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/jni-sys@0.3.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/jni-sys@0.4.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/jni@0.22.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/js-sys@0.3.104",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/keyboard-types@0.7.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ksni@0.3.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/libbz2-rs-sys@0.2.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/libc@0.2.189",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/libredox@0.1.20",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/linux-raw-sys@0.12.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/litemap@0.8.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/lock_api@0.4.14",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/log@0.4.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/mach2@0.6.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/memchr@2.8.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/memoffset@0.9.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/miniz_oxide@0.8.9",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/mio@1.2.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/native-tls@0.2.18",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ndk-context@0.1.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/ndk-sys@0.6.0+11769913",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/ndk@0.9.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/num-conv@0.2.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/num-derive@0.4.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/num-traits@0.2.19",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/num_enum@0.7.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/num_enum_derive@0.7.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/num_threads@0.1.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/objc2-app-kit@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-audio-toolbox@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-avf-audio@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-audio-types@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-audio@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-foundation@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-graphics@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-encode@4.1.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-foundation@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-io-surface@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2@0.6.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/once_cell@1.21.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/openssl-macros@0.1.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/openssl-probe@0.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/openssl-sys@0.9.117",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/openssl@0.10.81",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/option-ext@0.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ordered-stream@0.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/parking@2.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/parking_lot@0.12.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/parking_lot_core@0.9.12",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/pastey@0.2.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/pem-rfc7468@1.0.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/percent-encoding@2.3.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/pin-project-lite@0.2.17",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/pkg-config@0.3.34",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/portable-atomic-util@0.2.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/portable-atomic@1.15.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/potential_utf@0.1.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/powerfmt@0.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/proc-macro-crate@3.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/proc-macro2@1.0.107",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/quote@1.0.47",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/r-efi@6.0.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/redox_syscall@0.5.18",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/redox_users@0.5.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ring@0.17.14",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ringbuf@0.5.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustc_version@0.4.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustix@1.1.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustls-native-certs@0.8.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustls-pki-types@1.15.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustls-platform-verifier-android@0.1.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/rustls-platform-verifier@0.7.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustls-webpki@0.103.15",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustls@0.23.43",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/rustversion@1.0.23",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/same-file@1.0.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/schannel@0.1.29",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/scopeguard@1.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/security-framework-sys@2.17.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/security-framework@3.7.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/semver@1.0.28",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/serde@1.0.229",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/serde_core@1.0.229",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/serde_derive@1.0.229",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/serde_json@1.0.151",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/serde_repr@0.1.21",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/sha2@0.11.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/sherpa-onnx-sys@1.13.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/sherpa-onnx@1.13.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/shlex@2.0.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/signal-hook-registry@1.4.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/simd-adler32@0.3.10",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/simd_cesu8@1.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/simdutf8@0.1.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/slab@0.4.12",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/smallvec@1.15.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/socket2@0.6.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/stable_deref_trait@1.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/subtle@2.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/syn@2.0.119",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/syn@3.0.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/synstructure@0.13.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tar@0.4.46",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tempfile@3.27.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/thiserror-impl@1.0.69",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/thiserror-impl@2.0.20",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/thiserror@1.0.69",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/thiserror@2.0.20",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/time-core@0.1.9",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/time-macros@0.2.32",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/time@0.3.55",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tinystr@0.8.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tokio-macros@2.7.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tokio@1.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/toml_edit@0.25.13+spec-1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tracing-attributes@0.1.31",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tracing-core@0.1.36",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/tracing@0.1.44",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/typenum@1.20.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/uds_windows@1.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/unicode-ident@1.0.24",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/unicode-segmentation@1.13.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/untrusted@0.9.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ureq-proto@0.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ureq@2.12.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/ureq@3.4.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/url@2.5.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/utf8-zero@0.8.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/utf8_iter@1.0.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/uuid@1.25.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/vcpkg@0.2.15",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/walkdir@2.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/wasi@0.11.1+wasi-snapshot-preview1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/wasm-bindgen-macro-support@0.2.127",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/wasm-bindgen-macro@0.2.127",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/wasm-bindgen-shared@0.2.127",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/wasm-bindgen@0.2.127",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/web-sys@0.3.104",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/webpki-root-certs@1.0.9",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/webpki-roots@0.26.11",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/webpki-roots@1.0.9",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/winapi-util@0.1.11",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-collections@0.3.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-core@0.62.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-future@0.3.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-implement@0.60.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-interface@0.59.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-link@0.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-numerics@0.3.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-result@0.4.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-strings@0.5.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-sys@0.52.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-sys@0.59.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-sys@0.60.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-sys@0.61.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-targets@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-targets@0.53.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows-threading@0.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows@0.62.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_aarch64_gnullvm@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_aarch64_gnullvm@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_aarch64_msvc@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_aarch64_msvc@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_gnu@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_gnu@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_gnullvm@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_gnullvm@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_msvc@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_i686_msvc@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_gnu@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_gnu@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_gnullvm@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_gnullvm@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_msvc@0.52.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/windows_x86_64_msvc@0.53.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/winnow@1.0.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/writeable@0.6.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/x11rb-protocol@0.13.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/x11rb@0.13.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/xattr@1.6.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/xkeysym@0.2.1",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/yoke-derive@0.8.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/yoke@0.8.3",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zbus@5.19.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zbus_macros@5.19.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zbus_names@4.3.4",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zcheapstr@1.1.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zerofrom-derive@0.1.7",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zerofrom@0.1.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zeroize@1.9.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zerotrie@0.2.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zerovec-derive@0.11.6",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zerovec@0.11.8",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zmij@1.0.23",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zvariant@5.15.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zvariant_derive@5.15.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/zvariant_utils@4.2.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+      "group": "swift-package",
+      "reason": "license-or-attribution-not-bundled"
+    }
+  ],
+  "schema": 1,
+  "status": "known-gaps-block-release-compliance",
+  "summary": {
+    "gaps": 300
+  }
+}

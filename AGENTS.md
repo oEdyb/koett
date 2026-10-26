@@ -217,6 +217,15 @@ signature so macOS does not request Accessibility approval after each build.
 
 ## Project memory
 
+## Linux implementation checks
+
+Windows/Linux code lives under `CrossPlatform/`; macOS remains native Swift.
+For Rust changes run `cargo fmt --check`, `cargo test --locked`,
+`cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`,
+and `cargo check --locked --target x86_64-pc-windows-msvc` there.
+Read `plan.md` and `docs/ui-design.md` before changing the port or history UI.
+Preserve failed-transcript recovery and keep storage off the audio callback.
+
 On Olle's Mac, read the canonical project card before substantial work:
 
 `/Users/olle/Documents/Notes/Agent/04 - Business/Project Cards/Local Voice Input.md`

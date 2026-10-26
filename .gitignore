@@ -1,4 +1,5 @@
 .build/
+CrossPlatform/target/
 .swiftpm/
 .DS_Store
 .env
@@ -8,6 +9,7 @@ Benchmarks/Noise/
 Benchmarks/LibriSpeech/
 Benchmarks/Transcripts/
 Benchmarks/Private/
+Benchmarks/Swedish/Results/
 Benchmarks/__pycache__/
 *.pyc
 .tmp/
