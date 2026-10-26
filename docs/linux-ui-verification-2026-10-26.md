@@ -136,3 +136,11 @@ Installed follow-up executable SHA-256:
 (48,606,736 bytes). Prior executable and install receipt:
 `~/.local/state/koett/install-backups/20261026T161938Z/`.
 Exact installed-byte comparison passed; the user app was not launched or restarted.
+
+After a later keybinding failure report, read-only inspection found the old
+executable still running. With no active microphone stream, Koett was gracefully
+restarted using `--background`; its running executable hash matches the installed
+follow-up. No host key/input/capture test occurred. Exact Ctrl+Shift+Space with
+Swedish layout passed start/stop/ASR in private Niri with both old and new binaries:
+`/tmp/koett-keybind-check-physical-20261026/result.json`. The physical-session
+failure remains unproven pending user retry. The lab was stopped.
