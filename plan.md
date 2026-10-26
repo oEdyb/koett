@@ -1,6 +1,6 @@
 # Koett: Linux port, native UI and searchable history
 
-Status: researched proposal, awaiting implementation-goal approval. As of 2026-10-26.
+Status: implementation approved and in progress. As of 2026-10-26.
 Context and source receipts: [research.md](research.md).
 
 ## Outcome
@@ -181,4 +181,9 @@ destructive removal of original archives remain separate approvals.
 - [x] 2026-10-26: inspect repository branches, storage and local desktop capabilities.
 - [x] 2026-10-26: review Voxtype and official storage/desktop documentation.
 - [x] 2026-10-26: confirm broad Linux support, shared history scope and UI priority.
-- [ ] Approve implementation goal; then execute phases with current verification.
+- [x] 2026-10-26: implementation goal approved; online native UI research requested.
+- [x] Native Rust port integrated with current Mac recovery; canonical SQLite schema and native history UIs implemented.
+- [x] Linux ASR-only source build, short model sample and 420-second long-input probes pass.
+- [x] Native niri search/copy/accessibility checks and real microphone capture/stop pass.
+- [ ] Finish native UI matrix, packaged-artifact checks and independent persistence review.
+- [ ] Mac runtime verification deferred explicitly by Olle; retain exact pending gates in the handoff.

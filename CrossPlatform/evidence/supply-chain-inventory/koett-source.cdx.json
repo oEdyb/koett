@@ -863,6 +863,76 @@
       "version": "0.6.1"
     },
     {
+      "bom-ref": "pkg:cargo/cairo-rs@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "df683f1d30b457964673a5541a4603208ef95ab6873d2a55871895cf310f3b56"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "cairo-rs",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/cairo-rs@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/cairo-sys-rs@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ee548131103ad8f698c6725669647b9c757b3b66992dd6a026037596417bee21"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "cairo-sys-rs",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/cairo-sys-rs@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
       "bom-ref": "pkg:cargo/cc@1.4.4",
       "externalReferences": [
         {
@@ -900,6 +970,45 @@
       "purl": "pkg:cargo/cc@1.4.4",
       "type": "library",
       "version": "1.4.4"
+    },
+    {
+      "bom-ref": "pkg:cargo/cfg-expr@0.20.10",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/EmbarkStudios/cfg-expr"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9ba9e9ec16c447027685b1f897b720e18e9a8afd00bd7332c483537e38086c9f"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "cfg-expr",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/cfg-expr@0.20.10",
+      "type": "library",
+      "version": "0.20.10"
     },
     {
       "bom-ref": "pkg:cargo/cfg-if@1.0.4",
@@ -941,7 +1050,7 @@
       "version": "1.0.4"
     },
     {
-      "bom-ref": "pkg:cargo/clipboard-win@5.4.1",
+      "bom-ref": "pkg:cargo/clipboard-win@5.4.2",
       "externalReferences": [
         {
           "type": "vcs",
@@ -951,7 +1060,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "bde03770d3df201d4fb868f2c9c59e66a3e4e2bd06692a0fe701e7103c7e84d4"
+          "content": "39ed3668f121a65e4ce95efeba22ad1f8ad6c6628397a5dd773118514a5e1804"
         }
       ],
       "licenses": [
@@ -971,9 +1080,9 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/clipboard-win@5.4.1",
+      "purl": "pkg:cargo/clipboard-win@5.4.2",
       "type": "library",
-      "version": "5.4.1"
+      "version": "5.4.2"
     },
     {
       "bom-ref": "pkg:cargo/combine@4.6.7",
@@ -1974,6 +2083,84 @@
       "version": "5.4.2"
     },
     {
+      "bom-ref": "pkg:cargo/fallible-iterator@0.3.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sfackler/rust-fallible-iterator"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "fallible-iterator",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/fallible-iterator@0.3.0",
+      "type": "library",
+      "version": "0.3.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sfackler/fallible-streaming-iterator"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "fallible-streaming-iterator",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "type": "library",
+      "version": "0.1.9"
+    },
+    {
       "bom-ref": "pkg:cargo/fastrand@2.5.0",
       "externalReferences": [
         {
@@ -2011,6 +2198,45 @@
       "purl": "pkg:cargo/fastrand@2.5.0",
       "type": "library",
       "version": "2.5.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/field-offset@0.3.6",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Diggsey/rust-field-offset"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "field-offset",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/field-offset@0.3.6",
+      "type": "library",
+      "version": "0.3.6"
     },
     {
       "bom-ref": "pkg:cargo/filetime@0.2.29",
@@ -2130,6 +2356,41 @@
       "version": "1.1.9"
     },
     {
+      "bom-ref": "pkg:cargo/foldhash@0.2.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/orlp/foldhash"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Zlib"
+        }
+      ],
+      "name": "foldhash",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/foldhash@0.2.0",
+      "type": "library",
+      "version": "0.2.0"
+    },
+    {
       "bom-ref": "pkg:cargo/foreign-types-shared@0.1.1",
       "externalReferences": [
         {
@@ -2247,6 +2508,45 @@
       "version": "1.2.2"
     },
     {
+      "bom-ref": "pkg:cargo/futures-channel@0.3.34",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/futures-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "futures-channel",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/futures-channel@0.3.34",
+      "type": "library",
+      "version": "0.3.34"
+    },
+    {
       "bom-ref": "pkg:cargo/futures-core@0.3.34",
       "externalReferences": [
         {
@@ -2282,6 +2582,45 @@
         }
       ],
       "purl": "pkg:cargo/futures-core@0.3.34",
+      "type": "library",
+      "version": "0.3.34"
+    },
+    {
+      "bom-ref": "pkg:cargo/futures-executor@0.3.34",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/futures-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "futures-executor",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/futures-executor@0.3.34",
       "type": "library",
       "version": "0.3.34"
     },
@@ -2481,6 +2820,146 @@
       "version": "0.3.34"
     },
     {
+      "bom-ref": "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9d5209294ba3775f9b650bf78bfadeba4332089f2329b3e2f6ce0a4957a45bff"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk-pixbuf-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/gdk-pixbuf@0.22.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "25f420376dbee041b2db374ce4573892a36222bb3f6c0c43e24f0d67eae9b646"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk-pixbuf",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk-pixbuf@0.22.0",
+      "type": "library",
+      "version": "0.22.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/gdk4-sys@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3eff6238a30c1f198fb3c8d3d445fa7faf211d11d9075af0772e6e0ca32ae001"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk4-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk4-sys@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gdk4@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e77c579bac9eff8b84c0625d5f533da6d69988c063062fe92c2e955ede8f28eb"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk4",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk4@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
       "bom-ref": "pkg:cargo/gethostname@1.1.0",
       "externalReferences": [
         {
@@ -2594,6 +3073,181 @@
       "version": "0.4.3"
     },
     {
+      "bom-ref": "pkg:cargo/gio-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6c28739f914c15b87a9856000bed9cbd5b3a8afbca5e982d9a299e1601422cb5"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gio-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gio-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/gio@0.22.10",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4620fbafdf19dba814473e19f18e75290cb3338662f6ae35f0402affd3b2b699"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gio",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gio@0.22.10",
+      "type": "library",
+      "version": "0.22.10"
+    },
+    {
+      "bom-ref": "pkg:cargo/glib-macros@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c9597c68fa7bdf4154a3079642cd21c4dccac0b0bdd2897d82861523bf91e7b9"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "glib-macros",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/glib-macros@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/glib-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "99b38907e67e40dec9b60f858bcada952598719cb512a13eb13d6cdcd16f8295"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "glib-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/glib-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/glib@0.22.10",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e4cf9e5bd8713f1990a92c422998826e0fb34824277b46bc59757373483c6694"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "glib",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/glib@0.22.10",
+      "type": "library",
+      "version": "0.22.10"
+    },
+    {
       "bom-ref": "pkg:cargo/global-hotkey@0.8.0",
       "externalReferences": [
         {
@@ -2633,6 +3287,286 @@
       "version": "0.8.0"
     },
     {
+      "bom-ref": "pkg:cargo/gobject-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "07595c9ba696bd9819cb6a8df39f08078f3dd679508fe052dd558492c2053834"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gobject-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gobject-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/graphene-rs@0.22.8",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eb856b9c558971c3f13ab692358926da710b046932a4e087aedcc35b040d7dff"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "graphene-rs",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/graphene-rs@0.22.8",
+      "type": "library",
+      "version": "0.22.8"
+    },
+    {
+      "bom-ref": "pkg:cargo/graphene-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "97842c7543828f98aa5583aa54fcda28aa84fa2b0f8c556142177f7bbb638057"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "graphene-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/graphene-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/gsk4-sys@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "27900c92e47df410bbe43b51818104051e3409da43fb88547a41c0bafddfd39c"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gsk4-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gsk4-sys@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gsk4@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eee23d7425c5281ec5a2f40f7b69384aac66c15861d990d248e9d9c9368be464"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gsk4",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gsk4@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gtk4-macros@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "eb906c98f0b4cc9002594e337e83f40492aa6dca22c97242f13be5b046c5f338"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gtk4-macros",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gtk4-macros@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gtk4-sys@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bd14af0137f269bdecee73404157d2a852f9651af7d68bd1023d3b8b914a14c3"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gtk4-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gtk4-sys@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gtk4@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0f8226c94dd0b65ba2e8fcd8ff402d380e890f6e5a6488e652a0158e827b9bf"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gtk4",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gtk4@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
       "bom-ref": "pkg:cargo/hashbrown@0.17.1",
       "externalReferences": [
         {
@@ -2670,6 +3604,84 @@
       "purl": "pkg:cargo/hashbrown@0.17.1",
       "type": "library",
       "version": "0.17.1"
+    },
+    {
+      "bom-ref": "pkg:cargo/hashlink@0.12.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/djc/hashlink"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a596f1b20ed2cc5ecac41a164aaebc7258057060f06c0cf7a2ba3991ee7990fb"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "hashlink",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/hashlink@0.12.2",
+      "type": "library",
+      "version": "0.12.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/heck@0.5.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/withoutboats/heck"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "heck",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/heck@0.5.0",
+      "type": "library",
+      "version": "0.5.0"
     },
     {
       "bom-ref": "pkg:cargo/hex@0.4.3",
@@ -3644,6 +4656,41 @@
       "purl": "pkg:cargo/libredox@0.1.20",
       "type": "library",
       "version": "0.1.20"
+    },
+    {
+      "bom-ref": "pkg:cargo/libsqlite3-sys@0.39.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rusqlite/rusqlite"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "14a5f01b87b92705d07b433c06f96cbc764637d81a0bffb5734ce17cf0f9a2b3"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "libsqlite3-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/libsqlite3-sys@0.39.1",
+      "type": "library",
+      "version": "0.39.1"
     },
     {
       "bom-ref": "pkg:cargo/linux-raw-sys@0.12.1",
@@ -5047,6 +6094,76 @@
       "version": "0.2.0"
     },
     {
+      "bom-ref": "pkg:cargo/pango-sys@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ca02d64761b74d56cdd4b437db6d73dc95e6c0d40f27e1c707952c0f09052948"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "pango-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/pango-sys@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
+      "bom-ref": "pkg:cargo/pango@0.22.9",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk-rs-core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0b2022dbbd82e1c42bd950a6f1df9b98c796e725dce5ec275e03cbf9772e4efa"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "pango",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/pango@0.22.9",
+      "type": "library",
+      "version": "0.22.9"
+    },
+    {
       "bom-ref": "pkg:cargo/parking@2.2.1",
       "externalReferences": [
         {
@@ -5772,7 +6889,7 @@
       "version": "0.17.14"
     },
     {
-      "bom-ref": "pkg:cargo/ringbuf@0.5.1",
+      "bom-ref": "pkg:cargo/ringbuf@0.5.2",
       "externalReferences": [
         {
           "type": "vcs",
@@ -5782,7 +6899,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a158e09ede21a14b172ca6cdd6208386c6ae2cb6acef58d774368ef8c450dfa7"
+          "content": "0b123165531e325df9079f56c036f2da4103a5d5abfef9e2fda4b9c34d1ef7aa"
         }
       ],
       "licenses": [
@@ -5806,9 +6923,79 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/ringbuf@0.5.1",
+      "purl": "pkg:cargo/ringbuf@0.5.2",
       "type": "library",
-      "version": "0.5.1"
+      "version": "0.5.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/rsqlite-vfs@0.2.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Spxg/sqlite-wasm-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "353b74f9810d5b085b6c42c9d86a5f0fdb795553235cdd48753b32e3809d18a7"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "rsqlite-vfs",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/rsqlite-vfs@0.2.0",
+      "type": "library",
+      "version": "0.2.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/rusqlite@0.41.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rusqlite/rusqlite"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9c026b4444579e8d754556c6c75d040d69c4a44283cdb648ab8a8d5965c2cfa8"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "rusqlite",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/rusqlite@0.41.0",
+      "type": "library",
+      "version": "0.41.0"
     },
     {
       "bom-ref": "pkg:cargo/rustc_version@0.4.1",
@@ -6045,7 +7232,7 @@
       "version": "0.7.0"
     },
     {
-      "bom-ref": "pkg:cargo/rustls-webpki@0.103.15",
+      "bom-ref": "pkg:cargo/rustls-webpki@0.103.16",
       "externalReferences": [
         {
           "type": "vcs",
@@ -6055,7 +7242,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+          "content": "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
         }
       ],
       "licenses": [
@@ -6075,12 +7262,12 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/rustls-webpki@0.103.15",
+      "purl": "pkg:cargo/rustls-webpki@0.103.16",
       "type": "library",
-      "version": "0.103.15"
+      "version": "0.103.16"
     },
     {
-      "bom-ref": "pkg:cargo/rustls@0.23.43",
+      "bom-ref": "pkg:cargo/rustls@0.23.46",
       "externalReferences": [
         {
           "type": "vcs",
@@ -6090,7 +7277,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0283386ce02abc0151e1761d08802dfe86c173b0b494af5cbc086574e453da06"
+          "content": "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
         }
       ],
       "licenses": [
@@ -6114,9 +7301,9 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/rustls@0.23.43",
+      "purl": "pkg:cargo/rustls@0.23.46",
       "type": "library",
-      "version": "0.23.43"
+      "version": "0.23.46"
     },
     {
       "bom-ref": "pkg:cargo/rustversion@1.0.23",
@@ -6583,6 +7770,45 @@
       "version": "0.1.21"
     },
     {
+      "bom-ref": "pkg:cargo/serde_spanned@1.1.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "serde_spanned",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/serde_spanned@1.1.2",
+      "type": "library",
+      "version": "1.1.2"
+    },
+    {
       "bom-ref": "pkg:cargo/sha2@0.11.0",
       "externalReferences": [
         {
@@ -6627,12 +7853,6 @@
         {
           "type": "vcs",
           "url": "https://github.com/k2-fsa/sherpa-onnx"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493"
         }
       ],
       "licenses": [
@@ -6996,6 +8216,41 @@
       "version": "0.6.5"
     },
     {
+      "bom-ref": "pkg:cargo/sqlite-wasm-rs@0.6.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Spxg/sqlite-wasm-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "36bd8e29bf08189a005b2df1df99823aa0861cabe9044e5f31ed54ca292ee618"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "sqlite-wasm-rs",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/sqlite-wasm-rs@0.6.2",
+      "type": "library",
+      "version": "0.6.2"
+    },
+    {
       "bom-ref": "pkg:cargo/stable_deref_trait@1.2.1",
       "externalReferences": [
         {
@@ -7183,6 +8438,45 @@
       "version": "0.13.2"
     },
     {
+      "bom-ref": "pkg:cargo/system-deps@9.0.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gdesmott/system-deps"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "db551ad38aac61d5e0343e0eeeb0163be3115c4e23b6a025959570ee0c03c67d"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "system-deps",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/system-deps@9.0.1",
+      "type": "library",
+      "version": "9.0.1"
+    },
+    {
       "bom-ref": "pkg:cargo/tar@0.4.46",
       "externalReferences": [
         {
@@ -7220,6 +8514,41 @@
       "purl": "pkg:cargo/tar@0.4.46",
       "type": "library",
       "version": "0.4.46"
+    },
+    {
+      "bom-ref": "pkg:cargo/target-lexicon@0.13.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bytecodealliance/target-lexicon"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Apache-2.0 WITH LLVM-exception"
+        }
+      ],
+      "name": "target-lexicon",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/target-lexicon@0.13.5",
+      "type": "library",
+      "version": "0.13.5"
     },
     {
       "bom-ref": "pkg:cargo/tempfile@3.27.0",
@@ -7604,7 +8933,7 @@
       "version": "2.7.2"
     },
     {
-      "bom-ref": "pkg:cargo/tokio@1.53.1",
+      "bom-ref": "pkg:cargo/tokio@1.53.3",
       "externalReferences": [
         {
           "type": "vcs",
@@ -7614,7 +8943,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+          "content": "ce3335fa71841cda333a58d7615b03901380ecf09d59b3296d21f8bbac0dde4e"
         }
       ],
       "licenses": [
@@ -7634,12 +8963,12 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/tokio@1.53.1",
+      "purl": "pkg:cargo/tokio@1.53.3",
       "type": "library",
-      "version": "1.53.1"
+      "version": "1.53.3"
     },
     {
-      "bom-ref": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml@1.1.8+spec-1.1.0",
       "externalReferences": [
         {
           "type": "vcs",
@@ -7649,7 +8978,46 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7"
+          "content": "20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "toml",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/toml@1.1.8+spec-1.1.0",
+      "type": "library",
+      "version": "1.1.8+spec-1.1.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
         }
       ],
       "licenses": [
@@ -7673,9 +9041,9 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
+      "purl": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
       "type": "library",
-      "version": "1.1.1+spec-1.1.0"
+      "version": "1.1.2+spec-1.1.0"
     },
     {
       "bom-ref": "pkg:cargo/toml_edit@0.25.13+spec-1.1.0",
@@ -7717,7 +9085,7 @@
       "version": "0.25.13+spec-1.1.0"
     },
     {
-      "bom-ref": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
       "externalReferences": [
         {
           "type": "vcs",
@@ -7727,7 +9095,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56"
+          "content": "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
         }
       ],
       "licenses": [
@@ -7751,7 +9119,46 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+      "purl": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+      "type": "library",
+      "version": "1.1.5+spec-1.1.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "toml_writer",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
       "type": "library",
       "version": "1.1.3+spec-1.1.0"
     },
@@ -8360,6 +9767,41 @@
       "version": "0.2.15"
     },
     {
+      "bom-ref": "pkg:cargo/version-compare@0.2.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://gitlab.com/timvisee/version-compare"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "03c2856837ef78f57382f06b2b8563a2f512f7185d732608fd9176cb3b8edf0e"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "version-compare",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/version-compare@0.2.1",
+      "type": "library",
+      "version": "0.2.1"
+    },
+    {
       "bom-ref": "pkg:cargo/walkdir@2.5.0",
       "externalReferences": [
         {
@@ -8633,7 +10075,7 @@
       "version": "0.3.104"
     },
     {
-      "bom-ref": "pkg:cargo/webpki-root-certs@1.0.9",
+      "bom-ref": "pkg:cargo/webpki-root-certs@1.0.10",
       "externalReferences": [
         {
           "type": "vcs",
@@ -8643,7 +10085,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b"
+          "content": "58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb"
         }
       ],
       "licenses": [
@@ -8663,9 +10105,9 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/webpki-root-certs@1.0.9",
+      "purl": "pkg:cargo/webpki-root-certs@1.0.10",
       "type": "library",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "bom-ref": "pkg:cargo/webpki-roots@0.26.11",
@@ -8703,7 +10145,7 @@
       "version": "0.26.11"
     },
     {
-      "bom-ref": "pkg:cargo/webpki-roots@1.0.9",
+      "bom-ref": "pkg:cargo/webpki-roots@1.0.10",
       "externalReferences": [
         {
           "type": "vcs",
@@ -8713,7 +10155,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a"
+          "content": "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9"
         }
       ],
       "licenses": [
@@ -8733,9 +10175,9 @@
           "value": "missing"
         }
       ],
-      "purl": "pkg:cargo/webpki-roots@1.0.9",
+      "purl": "pkg:cargo/webpki-roots@1.0.10",
       "type": "library",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "bom-ref": "pkg:cargo/winapi-util@0.1.11",
@@ -10918,39 +12360,6 @@
       "version": "0.3.0"
     },
     {
-      "bom-ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "GPL-3.0-or-later AND BSD-2-Clause"
-        }
-      ],
-      "name": "eSpeak NG and ucd",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "native-library"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "missing"
-        },
-        {
-          "name": "koett:status",
-          "value": "blocked-control-only"
-        }
-      ],
-      "purl": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "type": "library",
-      "version": "ed530aa113046142eb5115cf2fc9157854d0ffe1"
-    },
-    {
       "bom-ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
       "externalReferences": [
         {
@@ -10976,45 +12385,12 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
       "type": "library",
       "version": "1.22.3"
-    },
-    {
-      "bom-ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://github.com/csukuangfj/piper-phonemize/tree/f3ff95afc03640bc1399e113e83361192a2fafb4"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT"
-        }
-      ],
-      "name": "piper-phonemize",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "native-library"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "missing"
-        },
-        {
-          "name": "koett:status",
-          "value": "blocked-control-only"
-        }
-      ],
-      "purl": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "type": "library",
-      "version": "f3ff95afc03640bc1399e113e83361192a2fafb4"
     },
     {
       "bom-ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
@@ -11042,7 +12418,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
@@ -11075,7 +12451,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/k2-fsa/kaldifst@v1.8.0",
@@ -11108,7 +12484,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -11141,7 +12517,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
@@ -11174,7 +12550,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/microsoft/onnxruntime@v1.27.1",
@@ -11207,7 +12583,7 @@
         },
         {
           "name": "koett:status",
-          "value": "blocked-control-only"
+          "value": "asr-only-source-build-candidate"
         }
       ],
       "purl": "pkg:github/pkufool/simple-sentencepiece@v0.7",
@@ -11489,7 +12865,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/clipboard-win@5.4.1",
+        "pkg:cargo/clipboard-win@5.4.2",
         "pkg:cargo/log@0.4.34",
         "pkg:cargo/objc2-app-kit@0.3.2",
         "pkg:cargo/objc2-foundation@0.3.2",
@@ -11508,7 +12884,7 @@
         "pkg:cargo/getrandom@0.4.3",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_repr@0.1.21",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/zbus@5.19.0"
       ],
       "ref": "pkg:cargo/ashpd@0.13.13"
@@ -11602,10 +12978,34 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/cairo-rs@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/cairo-sys-rs@0.22.9"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/find-msvc-tools@0.1.11",
         "pkg:cargo/shlex@2.0.1"
       ],
       "ref": "pkg:cargo/cc@1.4.4"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/target-lexicon@0.13.5"
+      ],
+      "ref": "pkg:cargo/cfg-expr@0.20.10"
     },
     {
       "dependsOn": [],
@@ -11615,7 +13015,7 @@
       "dependsOn": [
         "pkg:cargo/error-code@3.4.0"
       ],
-      "ref": "pkg:cargo/clipboard-win@5.4.1"
+      "ref": "pkg:cargo/clipboard-win@5.4.2"
     },
     {
       "dependsOn": [
@@ -11803,7 +13203,22 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/fallible-iterator@0.3.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/fallible-streaming-iterator@0.1.9"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/fastrand@2.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/memoffset@0.9.1",
+        "pkg:cargo/rustc_version@0.4.1"
+      ],
+      "ref": "pkg:cargo/field-offset@0.3.6"
     },
     {
       "dependsOn": [
@@ -11825,6 +13240,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/foldhash@0.2.0"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/foreign-types-shared@0.1.1"
     },
     {
@@ -11840,8 +13259,22 @@
       "ref": "pkg:cargo/form_urlencoded@1.2.2"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/futures-core@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures-channel@0.3.34"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/futures-core@0.3.34"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures-executor@0.3.34"
     },
     {
       "dependsOn": [],
@@ -11881,6 +13314,51 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk-pixbuf-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/gdk-pixbuf@0.22.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf@0.22.0",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gdk4@0.11.5"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/rustix@1.1.4",
         "pkg:cargo/windows-link@0.2.1"
       ],
@@ -11904,6 +13382,64 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1",
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/gio-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
+        "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pin-project-lite@0.2.17",
+        "pkg:cargo/smallvec@1.15.2"
+      ],
+      "ref": "pkg:cargo/gio@0.22.10"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.4"
+      ],
+      "ref": "pkg:cargo/glib-macros@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/glib-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-executor@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-macros@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/smallvec@1.15.2"
+      ],
+      "ref": "pkg:cargo/glib@0.22.10"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/crossbeam-channel@0.5.16",
         "pkg:cargo/keyboard-types@0.7.0",
         "pkg:cargo/objc2-app-kit@0.3.2",
@@ -11917,8 +13453,111 @@
       "ref": "pkg:cargo/global-hotkey@0.8.0"
     },
     {
-      "dependsOn": [],
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gobject-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-sys@0.22.9"
+      ],
+      "ref": "pkg:cargo/graphene-rs@0.22.8"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/graphene-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/graphene-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gsk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-rs@0.22.8",
+        "pkg:cargo/gsk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gsk4@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro-crate@3.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.4"
+      ],
+      "ref": "pkg:cargo/gtk4-macros@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/graphene-sys@0.22.9",
+        "pkg:cargo/gsk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gtk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/field-offset@0.3.6",
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/gdk-pixbuf@0.22.0",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-rs@0.22.8",
+        "pkg:cargo/gsk4@0.11.5",
+        "pkg:cargo/gtk4-macros@0.11.5",
+        "pkg:cargo/gtk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gtk4@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/foldhash@0.2.0"
+      ],
       "ref": "pkg:cargo/hashbrown@0.17.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/hashbrown@0.17.1"
+      ],
+      "ref": "pkg:cargo/hashlink@0.12.2"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/heck@0.5.0"
     },
     {
       "dependsOn": [],
@@ -12097,29 +13736,30 @@
         "koett:native:fastcluster@FluidAudio-0.15.6",
         "pkg:cargo/arboard@3.6.1",
         "pkg:cargo/ashpd@0.13.13",
+        "pkg:cargo/base64@0.23.1",
         "pkg:cargo/bzip2@0.6.1",
         "pkg:cargo/cpal@0.18.2",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/global-hotkey@0.8.0",
+        "pkg:cargo/gtk4@0.11.5",
         "pkg:cargo/ksni@0.3.6",
-        "pkg:cargo/ringbuf@0.5.1",
+        "pkg:cargo/ringbuf@0.5.2",
+        "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_json@1.0.151",
         "pkg:cargo/sha2@0.11.0",
         "pkg:cargo/sherpa-onnx@1.13.5",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/time@0.3.55",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/ureq@3.4.0",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",
         "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
-        "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
-        "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
         "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -12141,7 +13781,7 @@
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/pastey@0.2.3",
         "pkg:cargo/serde@1.0.229",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/zbus@5.19.0"
       ],
       "ref": "pkg:cargo/ksni@0.3.6"
@@ -12159,6 +13799,14 @@
         "pkg:cargo/libc@0.2.189"
       ],
       "ref": "pkg:cargo/libredox@0.1.20"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cc@1.4.4",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/vcpkg@0.2.15"
+      ],
+      "ref": "pkg:cargo/libsqlite3-sys@0.39.1"
     },
     {
       "dependsOn": [],
@@ -12424,6 +14072,23 @@
       "ref": "pkg:cargo/ordered-stream@0.2.0"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/pango-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/pango-sys@0.22.9"
+      ],
+      "ref": "pkg:cargo/pango@0.22.9"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/parking@2.2.1"
     },
@@ -12539,7 +14204,25 @@
         "pkg:cargo/portable-atomic-util@0.2.7",
         "pkg:cargo/portable-atomic@1.15.0"
       ],
-      "ref": "pkg:cargo/ringbuf@0.5.1"
+      "ref": "pkg:cargo/ringbuf@0.5.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/thiserror@2.0.20"
+      ],
+      "ref": "pkg:cargo/rsqlite-vfs@0.2.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/fallible-iterator@0.3.0",
+        "pkg:cargo/fallible-streaming-iterator@0.1.9",
+        "pkg:cargo/hashlink@0.12.2",
+        "pkg:cargo/libsqlite3-sys@0.39.1",
+        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/sqlite-wasm-rs@0.6.2"
+      ],
+      "ref": "pkg:cargo/rusqlite@0.41.0"
     },
     {
       "dependsOn": [
@@ -12585,11 +14268,11 @@
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/rustls-native-certs@0.8.4",
         "pkg:cargo/rustls-platform-verifier-android@0.1.1",
-        "pkg:cargo/rustls-webpki@0.103.15",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls-webpki@0.103.16",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/security-framework-sys@2.17.0",
         "pkg:cargo/security-framework@3.7.0",
-        "pkg:cargo/webpki-root-certs@1.0.9",
+        "pkg:cargo/webpki-root-certs@1.0.10",
         "pkg:cargo/windows-sys@0.61.2"
       ],
       "ref": "pkg:cargo/rustls-platform-verifier@0.7.0"
@@ -12600,7 +14283,7 @@
         "pkg:cargo/rustls-pki-types@1.15.1",
         "pkg:cargo/untrusted@0.9.0"
       ],
-      "ref": "pkg:cargo/rustls-webpki@0.103.15"
+      "ref": "pkg:cargo/rustls-webpki@0.103.16"
     },
     {
       "dependsOn": [
@@ -12608,11 +14291,11 @@
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/ring@0.17.14",
         "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls-webpki@0.103.15",
+        "pkg:cargo/rustls-webpki@0.103.16",
         "pkg:cargo/subtle@2.6.1",
         "pkg:cargo/zeroize@1.9.0"
       ],
-      "ref": "pkg:cargo/rustls@0.23.43"
+      "ref": "pkg:cargo/rustls@0.23.46"
     },
     {
       "dependsOn": [],
@@ -12696,6 +14379,12 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ],
+      "ref": "pkg:cargo/serde_spanned@1.1.2"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/cpufeatures@0.3.0",
         "pkg:cargo/digest@0.11.3"
@@ -12760,6 +14449,13 @@
       "ref": "pkg:cargo/socket2@0.6.5"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/cc@1.4.4",
+        "pkg:cargo/rsqlite-vfs@0.2.0"
+      ],
+      "ref": "pkg:cargo/sqlite-wasm-rs@0.6.2"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/stable_deref_trait@1.2.1"
     },
@@ -12793,11 +14489,25 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/cfg-expr@0.20.10",
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/toml@1.1.8+spec-1.1.0",
+        "pkg:cargo/version-compare@0.2.1"
+      ],
+      "ref": "pkg:cargo/system-deps@9.0.1"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/filetime@0.2.29",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/xattr@1.6.1"
       ],
       "ref": "pkg:cargo/tar@0.4.46"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/target-lexicon@0.13.5"
     },
     {
       "dependsOn": [
@@ -12888,19 +14598,31 @@
         "pkg:cargo/tracing@0.1.44",
         "pkg:cargo/windows-sys@0.61.2"
       ],
-      "ref": "pkg:cargo/tokio@1.53.1"
+      "ref": "pkg:cargo/tokio@1.53.3"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/indexmap@2.14.0",
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/serde_spanned@1.1.2",
+        "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+        "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
+        "pkg:cargo/winnow@1.0.4"
+      ],
+      "ref": "pkg:cargo/toml@1.1.8+spec-1.1.0"
     },
     {
       "dependsOn": [
         "pkg:cargo/serde_core@1.0.229"
       ],
-      "ref": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0"
+      "ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0"
     },
     {
       "dependsOn": [
         "pkg:cargo/indexmap@2.14.0",
-        "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
-        "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+        "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
         "pkg:cargo/winnow@1.0.4"
       ],
       "ref": "pkg:cargo/toml_edit@0.25.13+spec-1.1.0"
@@ -12909,7 +14631,11 @@
       "dependsOn": [
         "pkg:cargo/winnow@1.0.4"
       ],
-      "ref": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0"
+      "ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0"
     },
     {
       "dependsOn": [
@@ -12973,7 +14699,7 @@
         "pkg:cargo/log@0.4.34",
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/webpki-roots@0.26.11"
       ],
@@ -12988,11 +14714,11 @@
         "pkg:cargo/percent-encoding@2.3.2",
         "pkg:cargo/rustls-pki-types@1.15.1",
         "pkg:cargo/rustls-platform-verifier@0.7.0",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/ureq-proto@0.6.1",
         "pkg:cargo/utf8-zero@0.8.1",
-        "pkg:cargo/webpki-root-certs@1.0.9",
-        "pkg:cargo/webpki-roots@1.0.9"
+        "pkg:cargo/webpki-root-certs@1.0.10",
+        "pkg:cargo/webpki-roots@1.0.10"
       ],
       "ref": "pkg:cargo/ureq@3.4.0"
     },
@@ -13024,6 +14750,10 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/vcpkg@0.2.15"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/version-compare@0.2.1"
     },
     {
       "dependsOn": [
@@ -13080,11 +14810,11 @@
       "dependsOn": [
         "pkg:cargo/rustls-pki-types@1.15.1"
       ],
-      "ref": "pkg:cargo/webpki-root-certs@1.0.9"
+      "ref": "pkg:cargo/webpki-root-certs@1.0.10"
     },
     {
       "dependsOn": [
-        "pkg:cargo/webpki-roots@1.0.9"
+        "pkg:cargo/webpki-roots@1.0.10"
       ],
       "ref": "pkg:cargo/webpki-roots@0.26.11"
     },
@@ -13092,7 +14822,7 @@
       "dependsOn": [
         "pkg:cargo/rustls-pki-types@1.15.1"
       ],
-      "ref": "pkg:cargo/webpki-roots@1.0.9"
+      "ref": "pkg:cargo/webpki-roots@1.0.10"
     },
     {
       "dependsOn": [
@@ -13358,7 +15088,7 @@
         "pkg:cargo/rustix@1.1.4",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_repr@0.1.21",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/tracing@0.1.44",
         "pkg:cargo/uds_windows@1.2.1",
         "pkg:cargo/uuid@1.25.0",
@@ -13485,15 +15215,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1"
-    },
-    {
-      "dependsOn": [],
       "ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4"
     },
     {
       "dependsOn": [],

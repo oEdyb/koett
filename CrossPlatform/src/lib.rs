@@ -2,6 +2,7 @@ pub mod audio;
 pub mod history;
 pub mod model;
 pub mod paths;
+pub mod replacements;
 pub mod runtime;
 pub mod settings;
 pub mod shortcut;

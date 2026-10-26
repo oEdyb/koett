@@ -16,6 +16,10 @@ pub fn settings_file() -> Result<PathBuf, String> {
     Ok(project_directories()?.config_dir().join("settings.json"))
 }
 
+pub fn history_database() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("History.sqlite3"))
+}
+
 pub fn history_file() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Transcripts.md"))
 }

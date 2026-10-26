@@ -5,12 +5,14 @@ on:
   pull_request:
     paths:
       - "CrossPlatform/**"
+      - "Sources/Koett/Resources/History/**"
       - ".github/workflows/cross-platform.yml"
   push:
     branches:
       - main
     paths:
       - "CrossPlatform/**"
+      - "Sources/Koett/Resources/History/**"
       - ".github/workflows/cross-platform.yml"
 
 permissions:
@@ -73,11 +75,11 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-            libxkbcommon-dev pkg-config
+            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
       - name: Install minimum Rust
         run: rustup toolchain install 1.92.0 --profile minimal
       - name: Check minimum Rust
-        run: cargo +1.92.0 check --locked --all-targets
+        run: DOCS_RS=1 cargo +1.92.0 check --locked --all-targets
 
   windows:
     runs-on: windows-2025
@@ -94,6 +96,8 @@ jobs:
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
+      - name: Build ASR-only native libraries
+        run: python scripts/build_asr_native.py
       - name: Test
         run: cargo test --locked
       - name: Lint
@@ -152,11 +156,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-            libxkbcommon-dev pkg-config
+            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
       - name: Install Rust
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
+      - name: Build ASR-only native libraries
+        run: python scripts/build_asr_native.py
       - name: Test
         run: cargo test --locked
       - name: Lint

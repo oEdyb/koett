@@ -37,4 +37,18 @@ CREATE TABLE IF NOT EXISTS legacy_fragments (
     reason TEXT NOT NULL,
     PRIMARY KEY(source_key, byte_offset)
 );
-PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS history_sources (
+    source_key TEXT PRIMARY KEY NOT NULL,
+    version_key TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS history_import_records (
+    version_key TEXT NOT NULL,
+    transcript_id TEXT NOT NULL,
+    PRIMARY KEY(version_key, transcript_id)
+);
+CREATE INDEX IF NOT EXISTS history_import_records_transcript
+    ON history_import_records(transcript_id);
+CREATE TABLE IF NOT EXISTS history_native_records (
+    transcript_id TEXT PRIMARY KEY NOT NULL
+);
+PRAGMA user_version = 2;

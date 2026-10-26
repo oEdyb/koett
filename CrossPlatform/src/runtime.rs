@@ -13,13 +13,27 @@ use crate::transcription::{
     BackgroundSession, ParakeetTranscriber, Transcript, TranscriptionWorker,
 };
 
+#[derive(Clone, Copy)]
 pub enum EngineCommand {
     Toggle,
+    Start,
+    Stop,
     Quit,
+}
+
+impl From<crate::state::RecordingIntent> for EngineCommand {
+    fn from(intent: crate::state::RecordingIntent) -> Self {
+        match intent {
+            crate::state::RecordingIntent::Start => Self::Start,
+            crate::state::RecordingIntent::Stop => Self::Stop,
+            crate::state::RecordingIntent::Toggle => Self::Toggle,
+        }
+    }
 }
 
 pub enum EngineUpdate {
     Status(AppStatus),
+    Notice(String),
     RecordingStarted(AudioLevels),
     ModelProgress(ModelProgress),
     TranscriptReady {
@@ -62,7 +76,7 @@ pub fn start(settings: Settings) -> EngineHandle {
 }
 
 fn run(
-    settings: Settings,
+    mut settings: Settings,
     commands: Receiver<EngineCommand>,
     updates: Sender<EngineUpdate>,
     cancelled: Arc<AtomicBool>,
@@ -71,7 +85,7 @@ fn run(
     send_status(&updates, &status);
 
     let uses_default_model = settings.model_directory.is_none();
-    let model_directory = match settings.model_directory {
+    let model_directory = match settings.model_directory.clone() {
         Some(path) => Ok(path),
         None => model::ensure_default_model(&cancelled, |progress| {
             let _ = updates.send(EngineUpdate::ModelProgress(progress));
@@ -131,11 +145,28 @@ fn run(
     };
     send_status(&updates, &status);
 
+    #[cfg(target_os = "linux")]
+    let media = match crate::linux::media::MediaController::new() {
+        Ok(media) => Some(media),
+        Err(error) => {
+            let _ = updates.send(EngineUpdate::Notice(format!(
+                "Media control unavailable: {error}"
+            )));
+            None
+        }
+    };
+    let mut capture_started = None::<std::time::Instant>;
     let mut recorder = None;
     let mut background: Option<BackgroundSession> = None;
     loop {
         let command = if status == AppStatus::Recording {
-            match commands.recv_timeout(Duration::from_secs(10 * 60)) {
+            match commands.recv_timeout(
+                Duration::from_secs(10 * 60).saturating_sub(
+                    capture_started
+                        .map(|started| started.elapsed())
+                        .unwrap_or_default(),
+                ),
+            ) {
                 Ok(command) => command,
                 Err(RecvTimeoutError::Timeout) => EngineCommand::Toggle,
                 Err(RecvTimeoutError::Disconnected) => break,
@@ -148,12 +179,32 @@ fn run(
         };
         match command {
             EngineCommand::Quit => break,
-            EngineCommand::Toggle if status == AppStatus::Ready => {
-                match MicrophoneRecorder::start_streaming().and_then(|(started, audio_chunks)| {
-                    let session = transcription.record(started.sample_rate(), audio_chunks)?;
-                    Ok((started, session))
-                }) {
+            EngineCommand::Toggle | EngineCommand::Start if status == AppStatus::Ready => {
+                let current = match Settings::load() {
+                    Ok(current) => {
+                        settings = current.clone();
+                        current
+                    }
+                    Err(error) => {
+                        let _ = updates.send(EngineUpdate::Notice(format!(
+                            "Settings unavailable; using last valid input settings: {error}"
+                        )));
+                        settings.clone()
+                    }
+                };
+                #[cfg(target_os = "linux")]
+                if current.pause_media
+                    && let Some(media) = &media
+                {
+                    media_notice(&updates, media.pause());
+                }
+                match MicrophoneRecorder::start_streaming_with_device(current.microphone.as_deref())
+                    .and_then(|(started, audio_chunks)| {
+                        let session = transcription.record(started.sample_rate(), audio_chunks)?;
+                        Ok((started, session))
+                    }) {
                     Ok((started, session)) => {
+                        capture_started = Some(std::time::Instant::now());
                         let levels = started.levels();
                         recorder = Some(started);
                         background = Some(session);
@@ -163,24 +214,35 @@ fn run(
                         send_status(&updates, &status);
                         let _ = updates.send(EngineUpdate::RecordingStarted(levels));
                     }
-                    Err(error) => recover_from_error(&updates, &mut status, error),
+                    Err(error) => {
+                        #[cfg(target_os = "linux")]
+                        if let Some(media) = &media {
+                            media_notice(&updates, media.resume());
+                        }
+                        recover_from_error(&updates, &mut status, error);
+                    }
                 }
             }
-            EngineCommand::Toggle if status == AppStatus::Recording => {
+            EngineCommand::Toggle | EngineCommand::Stop if status == AppStatus::Recording => {
                 status = status
                     .next(AppEvent::Toggle, None)
                     .expect("recording can always stop");
                 send_status(&updates, &status);
 
+                capture_started = None;
+                let audio = recorder
+                    .take()
+                    .ok_or_else(|| "the microphone recorder is missing".to_string())
+                    .and_then(MicrophoneRecorder::finish);
+                #[cfg(target_os = "linux")]
+                if let Some(media) = &media {
+                    media_notice(&updates, media.resume());
+                }
                 let result = (|| {
                     let session = background
                         .take()
                         .ok_or_else(|| "background transcription is missing".to_string())?;
-                    let audio = recorder
-                        .take()
-                        .ok_or_else(|| "the microphone recorder is missing".to_string())?
-                        .finish()?;
-                    transcription.finish(session, audio)
+                    transcription.finish(session, audio?)
                 })();
                 match result {
                     Ok(transcript) => {
@@ -196,12 +258,23 @@ fn run(
                     Err(error) => recover_from_error(&updates, &mut status, error),
                 }
             }
-            EngineCommand::Toggle => {}
+            EngineCommand::Toggle | EngineCommand::Start | EngineCommand::Stop => {}
         }
     }
     drop(background.take());
     drop(recorder.take());
+    #[cfg(target_os = "linux")]
+    if let Some(media) = &media {
+        media_notice(&updates, media.resume());
+    }
     transcription.stop();
+}
+
+#[cfg(target_os = "linux")]
+fn media_notice(updates: &Sender<EngineUpdate>, result: Result<(), String>) {
+    if let Err(error) = result {
+        let _ = updates.send(EngineUpdate::Notice(format!("Media control: {error}")));
+    }
 }
 
 fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, error: String) {

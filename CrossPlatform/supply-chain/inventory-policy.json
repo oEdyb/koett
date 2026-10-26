@@ -48,7 +48,9 @@
       "group": "swift-package",
       "name": "FluidAudio",
       "version": "0.15.6",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/FluidInference/FluidAudio/tree/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
       "notice_state": "missing"
     },
@@ -58,9 +60,16 @@
       "group": "native-library",
       "name": "NemoTextProcessing.xcframework",
       "version": "0.3.0",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/FluidInference/text-processing-rs/releases/tag/v0.3.0",
-      "hashes": [{ "alg": "SHA-256", "content": "76d0ee9a32b1ee2193231299180ca9bc4fc7e98794e771b3d55d66498352d85f" }],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "76d0ee9a32b1ee2193231299180ca9bc4fc7e98794e771b3d55d66498352d85f"
+        }
+      ],
       "notice_state": "missing"
     },
     {
@@ -69,7 +78,9 @@
       "group": "native-library",
       "name": "fastcluster",
       "version": "FluidAudio-0.15.6",
-      "license": { "expression": "BSD-2-Clause" },
+      "license": {
+        "expression": "BSD-2-Clause"
+      },
       "source_url": "https://github.com/FluidInference/FluidAudio/tree/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/Sources/FastClusterWrapper",
       "notice_state": "missing"
     },
@@ -79,10 +90,18 @@
       "group": "bundled-javascript",
       "name": "marked",
       "version": "18.0.10",
-      "license": { "expression": "MIT" },
-      "asset_paths": ["Sources/Koett/Resources/AssistantRenderer/marked.js"],
-      "asset_markers": ["marked v18.0.10"],
-      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt"],
+      "license": {
+        "expression": "MIT"
+      },
+      "asset_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/marked.js"
+      ],
+      "asset_markers": [
+        "marked v18.0.10"
+      ],
+      "license_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt"
+      ],
       "source_url": "https://github.com/markedjs/marked/tree/v18.0.10",
       "notice_state": "bundled"
     },
@@ -92,7 +111,9 @@
       "group": "bundled-javascript",
       "name": "KaTeX",
       "version": "0.18.4",
-      "license": { "expression": "MIT" },
+      "license": {
+        "expression": "MIT"
+      },
       "asset_paths": [
         "Sources/Koett/Resources/AssistantRenderer/katex.js",
         "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
@@ -118,8 +139,12 @@
         "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
         "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2"
       ],
-      "asset_markers": ["version:\"0.18.4\""],
-      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt"],
+      "asset_markers": [
+        "version:\"0.18.4\""
+      ],
+      "license_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt"
+      ],
       "source_url": "https://github.com/KaTeX/KaTeX/tree/v0.18.4",
       "notice_state": "bundled"
     },
@@ -129,13 +154,19 @@
       "group": "bundled-javascript",
       "name": "highlight.js",
       "version": "11.12.0",
-      "license": { "expression": "BSD-3-Clause" },
+      "license": {
+        "expression": "BSD-3-Clause"
+      },
       "asset_paths": [
         "Sources/Koett/Resources/AssistantRenderer/highlight.js",
         "Sources/Koett/Resources/AssistantRenderer/highlight.css"
       ],
-      "asset_markers": ["Highlight.js v11.12.0"],
-      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt"],
+      "asset_markers": [
+        "Highlight.js v11.12.0"
+      ],
+      "license_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt"
+      ],
       "source_url": "https://github.com/highlightjs/highlight.js/tree/11.12.0",
       "notice_state": "bundled"
     },
@@ -149,9 +180,15 @@
         "declared_expression": "MPL-2.0 OR Apache-2.0",
         "selected_expression": "Apache-2.0"
       },
-      "asset_paths": ["Sources/Koett/Resources/AssistantRenderer/dompurify.js"],
-      "asset_markers": ["DOMPurify 3.4.14"],
-      "license_paths": ["Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt"],
+      "asset_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/dompurify.js"
+      ],
+      "asset_markers": [
+        "DOMPurify 3.4.14"
+      ],
+      "license_paths": [
+        "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt"
+      ],
       "source_url": "https://github.com/cure53/DOMPurify/tree/3.4.14",
       "notice_state": "bundled"
     },
@@ -161,7 +198,9 @@
       "group": "model",
       "name": "FluidInference/parakeet-tdt-0.6b-v2-coreml",
       "version": "ee09c569f73759e6d44c9bd16766f477b2b36d39",
-      "license": { "expression": "CC-BY-4.0" },
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
       "source_url": "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v2-coreml/tree/ee09c569f73759e6d44c9bd16766f477b2b36d39",
       "notice_state": "missing"
     },
@@ -189,7 +228,12 @@
         "url": "https://huggingface.co/superwhisper/s1-mini-GGUF/blob/ee2c0f56e56345f475749a44ff2893e21c3cb292/LICENSE"
       },
       "source_url": "https://huggingface.co/superwhisper/s1-mini-GGUF/tree/ee2c0f56e56345f475749a44ff2893e21c3cb292",
-      "hashes": [{ "alg": "SHA-256", "content": "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634" }],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634"
+        }
+      ],
       "notice_state": "missing"
     },
     {
@@ -198,10 +242,19 @@
       "group": "model",
       "name": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
       "version": "archive-sha256-17f945007b52",
-      "license": { "expression": "CC-BY-4.0" },
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
       "source_url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m",
-      "hashes": [{ "alg": "SHA-256", "content": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b" }],
-      "asset_paths": ["CrossPlatform/model-manifests/parakeet-tdt-ctc-110m-int8.json"],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b"
+        }
+      ],
+      "asset_paths": [
+        "CrossPlatform/model-manifests/parakeet-tdt-ctc-110m-int8.json"
+      ],
       "asset_markers": [
         "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
         "9177a9146cf32ee0cc8152276ef95116f312018d316be37ccf57f7efea81fc1a",
@@ -218,9 +271,16 @@
       "group": "model",
       "name": "Silero VAD",
       "version": "sha256-9e2449e10874",
-      "license": { "expression": "MIT" },
+      "license": {
+        "expression": "MIT"
+      },
       "source_url": "https://github.com/snakers4/silero-vad",
-      "hashes": [{ "alg": "SHA-256", "content": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6" }],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+        }
+      ],
       "notice_state": "missing"
     },
     {
@@ -229,10 +289,12 @@
       "group": "native-library",
       "name": "sherpa-onnx",
       "version": "1.13.5",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/k2-fsa/sherpa-onnx/tree/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/microsoft/onnxruntime@v1.27.1",
@@ -240,10 +302,12 @@
       "group": "native-library",
       "name": "ONNX Runtime",
       "version": "1.27.1",
-      "license": { "expression": "MIT" },
+      "license": {
+        "expression": "MIT"
+      },
       "source_url": "https://github.com/microsoft/onnxruntime/tree/v1.27.1",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
@@ -251,10 +315,12 @@
       "group": "native-library",
       "name": "kaldi-native-fbank",
       "version": "1.22.3",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/csukuangfj/kaldi-native-fbank/tree/v1.22.3",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
@@ -262,10 +328,12 @@
       "group": "native-library",
       "name": "KISS FFT",
       "version": "febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
-      "license": { "expression": "BSD-3-Clause" },
+      "license": {
+        "expression": "BSD-3-Clause"
+      },
       "source_url": "https://github.com/mborgerding/kissfft/tree/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
@@ -273,10 +341,12 @@
       "group": "native-library",
       "name": "kaldi-decoder",
       "version": "0.3.0",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/k2-fsa/kaldi-decoder/tree/v0.3.0",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/k2-fsa/kaldifst@v1.8.0",
@@ -284,10 +354,12 @@
       "group": "native-library",
       "name": "kaldifst and OpenFst",
       "version": "1.8.0",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/k2-fsa/kaldifst/tree/v1.8.0",
       "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     },
     {
       "bom_ref": "pkg:github/pkufool/simple-sentencepiece@v0.7",
@@ -295,32 +367,12 @@
       "group": "native-library",
       "name": "simple-sentencepiece",
       "version": "0.7",
-      "license": { "expression": "Apache-2.0" },
+      "license": {
+        "expression": "Apache-2.0"
+      },
       "source_url": "https://github.com/pkufool/simple-sentencepiece/tree/v0.7",
       "notice_state": "missing",
-      "status": "blocked-control-only"
-    },
-    {
-      "bom_ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "type": "library",
-      "group": "native-library",
-      "name": "piper-phonemize",
-      "version": "f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "license": { "expression": "MIT" },
-      "source_url": "https://github.com/csukuangfj/piper-phonemize/tree/f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "notice_state": "missing",
-      "status": "blocked-control-only"
-    },
-    {
-      "bom_ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "type": "library",
-      "group": "native-library",
-      "name": "eSpeak NG and ucd",
-      "version": "ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "license": { "expression": "GPL-3.0-or-later AND BSD-2-Clause" },
-      "source_url": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "notice_state": "missing",
-      "status": "blocked-control-only"
+      "status": "asr-only-source-build-candidate"
     }
   ]
 }

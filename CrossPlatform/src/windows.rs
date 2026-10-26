@@ -458,6 +458,9 @@ impl WindowsApp {
                 .and_then(|engine| engine.updates.try_recv().ok());
             let Some(update) = update else { break };
             match update {
+                EngineUpdate::Notice(message) => {
+                    eprintln!("Koett: {message}");
+                }
                 EngineUpdate::Status(status) => {
                     if let AppStatus::Error(error) = &status {
                         show_fatal_error(error);

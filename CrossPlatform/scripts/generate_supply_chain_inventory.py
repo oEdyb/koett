@@ -130,8 +130,11 @@ def _cargo_license_files(repo_root: Path, package: dict[str, Any]) -> list[dict[
             for child in repo_root.iterdir()
             if child.is_file() and child.name.lower().startswith(LICENSE_FILE_PREFIXES)
         )
-    unique = sorted({path.resolve() for path in candidates if path.is_file()}, key=lambda item: item.name.lower())
-    return [file_record(path) for path in unique]
+    unique = {path.resolve() for path in candidates if path.is_file()}
+    return sorted(
+        (file_record(path) for path in unique),
+        key=lambda item: (item["path"].lower(), item["sha256"]),
+    )
 
 
 def _cargo_ref(name: str, version: str) -> str:

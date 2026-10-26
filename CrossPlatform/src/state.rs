@@ -71,3 +71,86 @@ mod tests {
         );
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RecordingIntent {
+    Start,
+    Stop,
+    Toggle,
+}
+
+#[derive(Default)]
+pub struct ShortcutLatch {
+    pressed: bool,
+    holding: bool,
+}
+
+impl ShortcutLatch {
+    pub fn press(&mut self, mode: crate::settings::RecordingMode) -> Option<RecordingIntent> {
+        if self.pressed {
+            return None;
+        }
+        self.pressed = true;
+        self.holding = mode == crate::settings::RecordingMode::Hold;
+        Some(if self.holding {
+            RecordingIntent::Start
+        } else {
+            RecordingIntent::Toggle
+        })
+    }
+
+    pub fn release(&mut self) -> Option<RecordingIntent> {
+        self.pressed = false;
+        if std::mem::take(&mut self.holding) {
+            Some(RecordingIntent::Stop)
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod shortcut_tests {
+    use super::{RecordingIntent, ShortcutLatch};
+    use crate::settings::RecordingMode;
+
+    #[test]
+    fn repeated_hold_events_start_and_stop_once() {
+        let mut latch = ShortcutLatch::default();
+        assert_eq!(
+            latch.press(RecordingMode::Hold),
+            Some(RecordingIntent::Start)
+        );
+        assert_eq!(latch.press(RecordingMode::Hold), None);
+        assert_eq!(latch.release(), Some(RecordingIntent::Stop));
+        assert_eq!(latch.release(), None);
+    }
+
+    #[test]
+    fn changing_mode_while_held_still_stops_the_original_capture() {
+        let mut latch = ShortcutLatch::default();
+        latch.press(RecordingMode::Hold);
+        assert_eq!(latch.press(RecordingMode::Toggle), None);
+        assert_eq!(latch.release(), Some(RecordingIntent::Stop));
+        assert_eq!(
+            latch.press(RecordingMode::Toggle),
+            Some(RecordingIntent::Toggle)
+        );
+        assert_eq!(latch.release(), None);
+    }
+
+    #[test]
+    fn toggle_ignores_repeat_until_release() {
+        let mut latch = ShortcutLatch::default();
+        assert_eq!(
+            latch.press(RecordingMode::Toggle),
+            Some(RecordingIntent::Toggle)
+        );
+        assert_eq!(latch.press(RecordingMode::Toggle), None);
+        assert_eq!(latch.release(), None);
+        assert_eq!(
+            latch.press(RecordingMode::Toggle),
+            Some(RecordingIntent::Toggle)
+        );
+    }
+}

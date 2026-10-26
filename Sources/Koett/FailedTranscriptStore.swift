@@ -1,6 +1,6 @@
 import Foundation
 
-struct FailedTranscriptStore {
+struct FailedTranscriptStore: Sendable {
     let directoryURL: URL
 
     init(
@@ -42,6 +42,7 @@ struct FailedTranscriptStore {
         let metadata = try JSONEncoder().encode(record).base64EncodedString()
         let contents = "<!-- koett-recovery:\(metadata) -->\n# Koett Recovered Transcript\n\(record.markdown)"
         try Data(contents.utf8).write(to: fileURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
         let handle = try FileHandle(forWritingTo: fileURL)
         defer { try? handle.close() }
         try handle.synchronize()
@@ -87,7 +88,8 @@ struct FailedTranscriptStore {
     func prepare() throws {
         try FileManager.default.createDirectory(
             at: directoryURL,
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
         )
     }
 }

@@ -5,13 +5,11 @@ use std::process::Stdio;
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
-use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use ashpd::desktop::clipboard::{Clipboard, SetSelectionOptions};
 use ashpd::desktop::global_shortcuts::{
-    BindShortcutsOptions, ConfigureShortcutsOptions, GlobalShortcuts, ListShortcutsOptions,
-    NewShortcut,
+    BindShortcutsOptions, GlobalShortcuts, ListShortcutsOptions, NewShortcut,
 };
 use ashpd::desktop::remote_desktop::{
     DeviceType, KeyState, NotifyKeyboardKeysymOptions, RemoteDesktop, SelectDevicesOptions,
@@ -20,7 +18,7 @@ use ashpd::desktop::{CreateSessionOptions, PersistMode, Session};
 use futures_util::StreamExt;
 use global_hotkey::hotkey::HotKey;
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
-use ksni::blocking::{Handle as TrayHandle, TrayMethods as _};
+use ksni::blocking::TrayMethods as _;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{self, ConnectionExt as _};
 use x11rb::protocol::xtest::ConnectionExt as _;
@@ -31,7 +29,9 @@ use crate::model::ModelProgress;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
 use crate::settings::Settings;
 use crate::shortcut::Shortcut;
-use crate::state::AppStatus;
+use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
+
+static SHORTCUT_EDITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 const APP_ID: &str = "com.olledyberg.Koett";
 const SHORTCUT_ID: &str = "toggle-recording";
@@ -39,6 +39,8 @@ const SHORTCUT_ID: &str = "toggle-recording";
 #[derive(Clone, Copy, Debug)]
 enum TrayAction {
     Toggle,
+    Start,
+    Stop,
     OpenTranscripts,
     OpenSettings,
     ConfigureShortcut,
@@ -48,11 +50,12 @@ enum TrayAction {
 
 enum TrayUpdate {
     Status(String),
+    Completed(String),
+    Levels(crate::audio::AudioLevels),
     Settings {
         shortcut: String,
         start_at_login: bool,
     },
-    Shutdown,
 }
 
 #[derive(Clone)]
@@ -181,80 +184,88 @@ impl ksni::Tray for LinuxTray {
     }
 }
 
-pub fn run() -> Result<(), String> {
-    let _instance = single_instance()?;
-    let settings = Settings::load()?;
-    let startup_warning = settings
-        .start_at_login
-        .then(|| set_start_at_login(true).err())
-        .flatten();
-    let (action_sender, action_receiver) = mpsc::channel();
-    let tray = LinuxTray {
-        action_sender,
-        status: "Starting…".to_string(),
-        shortcut: settings.shortcut.clone(),
-        start_at_login: settings.start_at_login,
-    }
-    .spawn()
-    .map_err(|error| {
-        format!(
-            "could not create the tray icon: {error}. Install or enable StatusNotifier/AppIndicator support"
-        )
-    })?;
-    let (tray_updates, tray_update_worker) = start_tray_updates(tray.clone());
-    if let Some(error) = startup_warning {
-        update_tray_status(
-            Some(&tray_updates),
-            "Error: start at login could not be enabled",
-        );
-        let message = format!("Koett started, but start at login could not be enabled.\n\n{error}");
-        eprintln!("Koett: {message}");
-        show_desktop_message(&message);
-    }
-    let session_type = std::env::var("XDG_SESSION_TYPE")
-        .unwrap_or_default()
-        .to_ascii_lowercase();
-    let use_x11 = session_type == "x11"
-        || (session_type != "wayland"
-            && std::env::var_os("WAYLAND_DISPLAY").is_none()
-            && std::env::var_os("DISPLAY").is_some());
-    let result = if use_x11 {
-        run_x11(settings, action_receiver, Some(&tray_updates))
-    } else {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .map_err(|error| format!("could not start the Linux event loop: {error}"))?
-            .block_on(run_wayland(settings, action_receiver, Some(&tray_updates)))
-    };
-    let _ = tray_updates.sender.send(TrayUpdate::Shutdown);
-    let _ = tray_update_worker.join();
-    tray.shutdown().wait();
-    result
-}
+mod control;
+mod history_view;
+pub(crate) mod media;
+mod output;
+mod settings_view;
+mod window;
 
-fn start_tray_updates(tray: TrayHandle<LinuxTray>) -> (TrayUpdates, JoinHandle<()>) {
-    let (sender, receiver) = mpsc::channel();
-    let worker = std::thread::spawn(move || {
-        while let Ok(update) = receiver.recv() {
-            match update {
-                TrayUpdate::Status(status) => {
-                    let _ = tray.update(|tray| tray.status = status);
+pub fn run() -> Result<(), String> {
+    let command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
+    if control::send(&command).is_ok() {
+        return Ok(());
+    }
+    if !matches!(command.as_str(), "show" | "--background") {
+        return Err("Koett is not running. Launch Koett first".into());
+    }
+    let instance = single_instance()?;
+    let settings = Settings::load()?;
+    if let Err(error) = set_start_at_login(settings.start_at_login) {
+        eprintln!("Launch at login: {error}");
+    }
+    let (actions, receiver) = mpsc::channel();
+    let (ui, updates) = mpsc::channel();
+    control::listen(actions.clone())?;
+    let worker_ui = ui.clone();
+    let worker_actions = actions.clone();
+    std::thread::spawn(move || {
+        let _instance = instance;
+        let tray = LinuxTray {
+            action_sender: worker_actions,
+            status: "Starting…".into(),
+            shortcut: settings.shortcut.clone(),
+            start_at_login: settings.start_at_login,
+        }
+        .spawn()
+        .ok();
+        let (sender, messages) = mpsc::channel();
+        let tray_updates = TrayUpdates { sender };
+        std::thread::spawn(move || {
+            while let Ok(update) = messages.recv() {
+                match update {
+                    TrayUpdate::Levels(levels) => {
+                        let _ = worker_ui.send(window::Update::Levels(levels));
+                    }
+                    TrayUpdate::Completed(text) => {
+                        let _ = worker_ui.send(window::Update::Completed(text));
+                    }
+                    TrayUpdate::Status(status) => {
+                        let _ = worker_ui.send(window::Update::Status(status.clone()));
+                        if let Some(tray) = &tray {
+                            let _ = tray.update(|t| t.status = status);
+                        }
+                    }
+                    TrayUpdate::Settings {
+                        shortcut,
+                        start_at_login,
+                    } => {
+                        let _ = worker_ui.send(window::Update::Shortcut(shortcut.clone()));
+                        if let Some(tray) = &tray {
+                            let _ = tray.update(|t| {
+                                t.shortcut = shortcut;
+                                t.start_at_login = start_at_login;
+                            });
+                        }
+                    }
                 }
-                TrayUpdate::Settings {
-                    shortcut,
-                    start_at_login,
-                } => {
-                    let _ = tray.update(|tray| {
-                        tray.shortcut = shortcut;
-                        tray.start_at_login = start_at_login;
-                    });
-                }
-                TrayUpdate::Shutdown => break,
             }
+        });
+        let result = if std::env::var("XDG_SESSION_TYPE").as_deref() == Ok("x11") {
+            run_x11(settings, receiver, Some(&tray_updates))
+        } else {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| e.to_string())
+                .and_then(|rt| rt.block_on(run_wayland(settings, receiver, Some(&tray_updates))))
+        };
+        if let Err(error) = result {
+            let _ = ui.send(window::Update::Status(format!("Error: {error}")));
         }
     });
-    (TrayUpdates { sender }, worker)
+    window::run(actions, updates, command != "--background");
+    Ok(())
 }
 
 pub fn show_fatal_error(error: &str) {
@@ -323,15 +334,17 @@ fn run_x11(
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
     let mut last_settings_check = Instant::now();
+    let mut latch = ShortcutLatch::default();
 
     loop {
         while let Ok(action) = actions.try_recv() {
             match action {
                 TrayAction::Toggle => app.toggle(|| output.focused_window()),
-                TrayAction::OpenTranscripts => open_transcripts()?,
+                TrayAction::Start => app.command(EngineCommand::Start, || output.focused_window()),
+                TrayAction::Stop => app.command(EngineCommand::Stop, || output.focused_window()),
+                TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings | TrayAction::ConfigureShortcut => {
-                    settings.save()?;
-                    open_path(&crate::paths::settings_file()?)?;
+                    update_tray_status(tray, "@settings");
                 }
                 TrayAction::ToggleStartAtLogin => {
                     settings.start_at_login = !settings.start_at_login;
@@ -341,6 +354,7 @@ fn run_x11(
                 }
                 TrayAction::Quit => {
                     app.stop();
+                    update_tray_status(tray, "@quit");
                     return Ok(());
                 }
             }
@@ -348,34 +362,66 @@ fn run_x11(
         while let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
             if shortcut_registered
                 && event.id == shortcut.id()
-                && event.state == HotKeyState::Pressed
+                && !SHORTCUT_EDITING.load(std::sync::atomic::Ordering::Acquire)
             {
-                app.toggle(|| output.focused_window());
+                let intent = if event.state == HotKeyState::Pressed {
+                    latch.press(settings.recording_mode)
+                } else {
+                    latch.release()
+                };
+                if let Some(intent) = intent {
+                    app.command(intent.into(), || output.focused_window());
+                }
             }
         }
         app.poll(
             |model, text, target| {
-                let delivered = output.deliver(text, target);
-                let saved =
-                    history::append_transcript_resilient(model, text).and_then(|fallback| {
-                        fallback.map_or(Ok(()), |path| {
-                            Err(format!(
-                                "the transcript was saved to the fallback file {}",
-                                path.display()
-                            ))
-                        })
-                    });
-                delivered.and(saved)
+                let (final_text, warning) = completed_text(text, Settings::load(), &settings);
+                if let Some(warning) = warning {
+                    update_tray_status(tray, &format!("@notice:{warning}"));
+                }
+                cache_completed(tray, &final_text);
+                let delivered = output.deliver(&final_text, target);
+                let saved = history::append_transcript_with_raw_resilient(
+                    model,
+                    &final_text,
+                    (final_text != text).then_some(text),
+                )
+                .and_then(|fallback| {
+                    fallback.map_or(Ok(()), |path| {
+                        Err(format!(
+                            "the transcript was saved to the fallback file {}",
+                            path.display()
+                        ))
+                    })
+                });
+                update_tray_status(tray, "@refresh");
+                delivery_results(delivered, saved)
             },
             |status| update_tray_status(tray, status),
+            |levels| {
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::Levels(levels));
+                }
+            },
         );
         if last_settings_check.elapsed() >= Duration::from_millis(500) {
             last_settings_check = Instant::now();
+            if let Ok(updated) = Settings::load() {
+                settings.recording_mode = updated.recording_mode;
+                settings.microphone = updated.microphone;
+                settings.replacements = updated.replacements;
+                settings.start_at_login = updated.start_at_login;
+                settings.pause_media = updated.pause_media;
+            }
             if let Ok(updated) = Settings::load()
                 && updated.shortcut != settings.shortcut
             {
                 match HotKey::from_str(&updated.shortcut) {
                     Ok(next) if hotkeys.register(next).is_ok() => {
+                        if latch.release().is_some() {
+                            app.command(EngineCommand::Stop, || output.focused_window());
+                        }
                         if shortcut_registered {
                             let _ = hotkeys.unregister(shortcut);
                         }
@@ -399,10 +445,18 @@ fn run_x11(
     }
 }
 
-async fn run_wayland(
-    mut settings: Settings,
-    actions: Receiver<TrayAction>,
-    tray: Option<&TrayUpdates>,
+fn shortcut_action(intent: RecordingIntent) -> TrayAction {
+    match intent {
+        RecordingIntent::Start => TrayAction::Start,
+        RecordingIntent::Stop => TrayAction::Stop,
+        RecordingIntent::Toggle => TrayAction::Toggle,
+    }
+}
+
+async fn shortcut_events(
+    settings: Settings,
+    actions: Sender<TrayAction>,
+    updates: Option<TrayUpdates>,
 ) -> Result<(), String> {
     let shortcut = Shortcut::from_str(&settings.shortcut)?;
     let connection = ashpd::zbus::Connection::session()
@@ -455,124 +509,191 @@ async fn run_wayland(
         shortcut_label = bound
             .shortcuts()
             .iter()
-            .find(|existing| existing.id() == SHORTCUT_ID)
-            .map(|existing| existing.trigger_description().to_string());
+            .find(|shortcut| shortcut.id() == SHORTCUT_ID)
+            .map(|shortcut| shortcut.trigger_description().to_string());
     }
     update_tray_settings(
-        tray,
+        updates.as_ref(),
         shortcut_label.as_deref().unwrap_or(&settings.shortcut),
         settings.start_at_login,
     );
-
-    let output = WaylandOutput::new(connection).await?;
-    let engine = runtime::start(settings.clone());
-    let mut app = LinuxEngine::new(engine);
-    let mut activations = shortcuts
-        .receive_activated()
-        .await
-        .map_err(|error| format!("could not listen for Koett shortcuts: {error}"))?;
-    let mut shortcut_changes = shortcuts
+    let mut changes = shortcuts
         .receive_shortcuts_changed()
         .await
-        .map_err(|error| format!("could not watch Koett shortcut changes: {error}"))?;
-    let mut timer = tokio::time::interval(Duration::from_millis(10));
-
+        .map_err(|error| error.to_string())?;
+    let mut presses = shortcuts
+        .receive_activated()
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut releases = shortcuts
+        .receive_deactivated()
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut latch = ShortcutLatch::default();
     loop {
         tokio::select! {
-            activation = activations.next() => {
-                let Some(activation) = activation else {
-                    return Err("the desktop shortcut session closed".to_string());
-                };
-                if activation.shortcut_id() == SHORTCUT_ID {
-                    app.toggle(|| None);
+            event = presses.next() => {
+                let Some(event) = event else { break; };
+                if event.shortcut_id() == SHORTCUT_ID {
+                    let mode = Settings::load().unwrap_or_else(|_| settings.clone()).recording_mode;
+                    if let Some(intent) = latch.press(mode) { let _ = actions.send(shortcut_action(intent)); }
                 }
             }
-            change = shortcut_changes.next() => {
-                let Some(change) = change else {
-                    return Err("the desktop shortcut settings session closed".to_string());
-                };
-                if let Some(changed) = change
-                    .shortcuts()
-                    .iter()
-                    .find(|changed| changed.id() == SHORTCUT_ID)
-                {
-                    shortcut_label = Some(changed.trigger_description().to_string());
-                    update_tray_settings(
-                        tray,
-                        shortcut_label.as_deref().unwrap_or(&settings.shortcut),
-                        settings.start_at_login,
-                    );
+            change = changes.next() => {
+                let Some(change) = change else { break; };
+                if let Some(shortcut) = change.shortcuts().iter().find(|shortcut| shortcut.id() == SHORTCUT_ID) {
+                    if let Some(intent) = latch.release() { let _ = actions.send(shortcut_action(intent)); }
+                    update_tray_settings(updates.as_ref(), shortcut.trigger_description(), settings.start_at_login);
                 }
             }
-            _ = timer.tick() => {
-                while let Ok(action) = actions.try_recv() {
-                    match action {
-                        TrayAction::Toggle => app.toggle(|| None),
-                        TrayAction::OpenTranscripts => open_transcripts()?,
-                        TrayAction::OpenSettings => {
-                            settings.save()?;
-                            open_path(&crate::paths::settings_file()?)?;
-                        }
-                        TrayAction::ConfigureShortcut => {
-                            if shortcuts.version() < 2 {
-                                update_tray_status(
+            event = releases.next() => {
+                let Some(event) = event else { break; };
+                if event.shortcut_id() == SHORTCUT_ID && let Some(intent) = latch.release() {
+                    let _ = actions.send(shortcut_action(intent));
+                }
+            }
+        }
+    }
+    if let Some(intent) = latch.release() {
+        let _ = actions.send(shortcut_action(intent));
+    }
+    Err("Shortcut session closed; use Koett start/stop controls".into())
+}
+
+async fn run_wayland(
+    mut settings: Settings,
+    actions: Receiver<TrayAction>,
+    tray: Option<&TrayUpdates>,
+) -> Result<(), String> {
+    let (shortcut_sender, shortcut_receiver) = mpsc::channel();
+    let shortcut_settings = settings.clone();
+    let shortcut_updates = tray.cloned();
+    let mut shortcut_task = Some(tokio::spawn(async move {
+        shortcut_events(shortcut_settings, shortcut_sender, shortcut_updates).await
+    }));
+    let mut output_task = Some(tokio::spawn(async {
+        let connection = ashpd::zbus::Connection::session()
+            .await
+            .map_err(|e| e.to_string())?;
+        WaylandOutput::new(connection).await
+    }));
+    let mut output = None;
+    let mut app = LinuxEngine::new(runtime::start(settings.clone()));
+    let mut timer = tokio::time::interval(Duration::from_millis(30));
+    loop {
+        timer.tick().await;
+        if shortcut_task
+            .as_ref()
+            .is_some_and(|task| task.is_finished())
+            && let Some(task) = shortcut_task.take()
+        {
+            let error = match task.await {
+                Ok(Err(error)) => error,
+                Err(error) => error.to_string(),
+                Ok(Ok(())) => "Shortcut session closed".into(),
+            };
+            update_tray_settings(tray, "Compositor shortcut", settings.start_at_login);
+            update_tray_status(
+                tray,
+                "@notice:Global shortcut unavailable. Open Settings to set one up.",
+            );
+            eprintln!("Global shortcut unavailable: {error}");
+        }
+        if output_task.as_ref().is_some_and(|task| task.is_finished())
+            && let Some(task) = output_task.take()
+        {
+            match task.await {
+                Ok(Ok(ready)) => output = Some(ready),
+                Ok(Err(error)) => {
+                    eprintln!("Portal paste unavailable: {error}; using clipboard/virtual keyboard")
+                }
+                Err(error) => eprintln!("Portal task failed: {error}"),
+            }
+        }
+        for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
+            match action {
+                TrayAction::Toggle => app.toggle(output::capture_target),
+                TrayAction::Start => app.command(EngineCommand::Start, output::capture_target),
+                TrayAction::Stop => app.command(EngineCommand::Stop, output::capture_target),
+                TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
+                TrayAction::OpenSettings | TrayAction::ConfigureShortcut => {
+                    update_tray_status(tray, "@settings")
+                }
+                TrayAction::ToggleStartAtLogin => match Settings::load() {
+                    Ok(mut updated) => {
+                        updated.start_at_login = !updated.start_at_login;
+                        match set_start_at_login(updated.start_at_login)
+                            .and_then(|()| updated.save())
+                        {
+                            Ok(()) => {
+                                update_tray_settings(
                                     tray,
-                                    "Error: this desktop cannot edit portal shortcuts",
+                                    &updated.shortcut,
+                                    updated.start_at_login,
                                 );
-                            } else {
-                                shortcuts
-                                    .configure_shortcuts(
-                                        &shortcut_session,
-                                        None,
-                                        ConfigureShortcutsOptions::default(),
-                                    )
-                                    .await
-                                    .map_err(|error| format!("could not open shortcut settings: {error}"))?;
+                                settings = updated;
                             }
-                        }
-                        TrayAction::ToggleStartAtLogin => {
-                            settings.start_at_login = !settings.start_at_login;
-                            set_start_at_login(settings.start_at_login)?;
-                            settings.save()?;
-                            update_tray_settings(
+                            Err(error) => update_tray_status(
                                 tray,
-                                shortcut_label.as_deref().unwrap_or(&settings.shortcut),
-                                settings.start_at_login,
-                            );
-                        }
-                        TrayAction::Quit => {
-                            app.stop();
-                            return Ok(());
+                                &format!("@notice:Launch at login: {error}"),
+                            ),
                         }
                     }
+                    Err(error) => update_tray_status(tray, &format!("@notice:Settings: {error}")),
+                },
+                TrayAction::Quit => {
+                    if let Some(task) = &shortcut_task {
+                        task.abort();
+                    }
+                    app.stop();
+                    update_tray_status(tray, "@quit");
+                    return Ok(());
                 }
-                let mut completed = Vec::new();
-                app.poll(
-                    |model, text, _| {
-                        completed.push((model.to_string(), text.to_string()));
-                        Ok(())
-                    },
-                    |status| update_tray_status(tray, status),
-                );
-                for (model, text) in completed {
-                    let mut error = None;
-                    if let Err(delivery_error) = output.deliver(&text).await {
-                        error = Some(delivery_error);
-                    }
-                    match history::append_transcript_resilient(&model, &text) {
-                        Ok(Some(path)) => {
-                            error = Some(format!(
-                                "the transcript was saved to the fallback file {}",
-                                path.display()
-                            ));
-                        }
-                        Ok(None) => {}
-                        Err(save_error) => error = Some(save_error),
-                    }
-                    if let Some(error) = error {
-                        update_tray_status(tray, format!("Error: {error}").as_str());
-                    }
+            }
+        }
+        let mut completed = Vec::new();
+        app.poll(
+            |model, text, target| {
+                completed.push((model.to_owned(), text.to_owned(), target));
+                Ok(())
+            },
+            |status| update_tray_status(tray, status),
+            |levels| {
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::Levels(levels));
                 }
+            },
+        );
+        for (model, raw, target) in completed {
+            let loaded = Settings::load();
+            let (text, warning) = completed_text(&raw, loaded.clone(), &settings);
+            if let Ok(updated) = loaded {
+                settings = updated;
+            }
+            if let Some(warning) = warning {
+                update_tray_status(tray, &format!("@notice:{warning}"));
+            }
+            cache_completed(tray, &text);
+            let delivered = match &output {
+                Some(output) => output.deliver(&text, target).await,
+                None => output::deliver(&text, target),
+            };
+            let saved = history::append_transcript_with_raw_resilient(
+                &model,
+                &text,
+                (text != raw).then_some(raw.as_str()),
+            );
+            if let Err(error) = delivered {
+                update_tray_status(tray, &format!("@notice:{error}"));
+            }
+            match saved {
+                Err(error) => {
+                    update_tray_status(tray, &format!("@notice:{error}. Use Copy last transcript"))
+                }
+                Ok(Some(path)) => {
+                    update_tray_status(tray, &format!("@notice:Saved recovery: {}", path.display()))
+                }
+                Ok(None) => update_tray_status(tray, "@refresh"),
             }
         }
     }
@@ -600,10 +721,31 @@ impl LinuxEngine {
         {
             return;
         }
-        if self.status == AppStatus::Recording {
-            self.paste_target = focused_window();
+        self.command(EngineCommand::Toggle, focused_window);
+    }
+
+    fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
+        if self.status != AppStatus::Ready
+            && self.status != AppStatus::Recording
+            && !matches!(self.status, AppStatus::Error(_))
+        {
+            return;
         }
-        let _ = self.engine.commands.send(EngineCommand::Toggle);
+        if matches!(self.status, AppStatus::Error(_)) && matches!(command, EngineCommand::Stop) {
+            return;
+        }
+        if self.status == AppStatus::Ready {
+            self.paste_target = focus();
+        }
+        if self.engine.commands.send(command).is_err() {
+            match Settings::load() {
+                Ok(settings) => {
+                    self.engine = runtime::start(settings);
+                    self.status = AppStatus::Starting;
+                }
+                Err(error) => self.status = AppStatus::Error(error),
+            }
+        }
     }
 
     fn stop(self) {
@@ -614,6 +756,7 @@ impl LinuxEngine {
         &mut self,
         mut deliver: impl FnMut(&str, &str, Option<u32>) -> Result<(), String>,
         mut status_changed: impl FnMut(&str),
+        mut recording_started: impl FnMut(crate::audio::AudioLevels),
     ) {
         let mut interaction_error = None;
         while let Ok(update) = self.engine.updates.try_recv() {
@@ -642,12 +785,12 @@ impl LinuxEngine {
                 EngineUpdate::ModelProgress(ModelProgress::Ready) => {
                     status_changed("Loading model…");
                 }
-                EngineUpdate::RecordingStarted(_) => {}
+                EngineUpdate::RecordingStarted(levels) => recording_started(levels),
+                EngineUpdate::Notice(message) => status_changed(&format!("@notice:{message}")),
             }
         }
         if let Some(error) = interaction_error {
-            self.status = AppStatus::Error(error);
-            status_changed(status_text(&self.status).as_str());
+            status_changed(&format!("@notice:{error}. Use Copy last transcript"));
         }
     }
 }
@@ -677,36 +820,10 @@ fn update_tray_settings(tray: Option<&TrayUpdates>, shortcut: &str, start_at_log
     }
 }
 
-fn open_transcripts() -> Result<(), String> {
-    let path = crate::paths::history_file()?;
-    let parent = path
-        .parent()
-        .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
-    std::fs::create_dir_all(parent)
-        .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    let file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&path)
-        .map_err(|error| format!("could not create {}: {error}", path.display()))?;
-    use std::os::unix::fs::PermissionsExt as _;
-    file.set_permissions(std::fs::Permissions::from_mode(0o600))
-        .map_err(|error| format!("could not protect {}: {error}", path.display()))?;
-    open_path(&path)
-}
-
-fn open_path(path: &std::path::Path) -> Result<(), String> {
-    Command::new("xdg-open")
-        .arg(path)
-        .spawn()
-        .map(|_| ())
-        .map_err(|error| format!("could not open {}: {error}", path.display()))
-}
-
 struct X11Output {
     clipboard: arboard::Clipboard,
     connection: RustConnection,
-    control_keycode: u8,
+    shift_keycode: u8,
     v_keycode: u8,
 }
 
@@ -716,17 +833,20 @@ impl X11Output {
             .map_err(|error| format!("could not open the X11 clipboard: {error}"))?;
         let (connection, _) =
             x11rb::connect(None).map_err(|error| format!("could not connect to X11: {error}"))?;
-        let control_keycode = find_keycode(&connection, xkeysym::key::Control_L)?;
-        let v_keycode = find_keycode(&connection, xkeysym::key::v)?;
+        let shift_keycode = find_keycode(&connection, xkeysym::key::Shift_L)?;
+        let v_keycode = find_keycode(&connection, xkeysym::key::Insert)?;
         Ok(Self {
             clipboard,
             connection,
-            control_keycode,
+            shift_keycode,
             v_keycode,
         })
     }
 
     fn focused_window(&self) -> Option<u32> {
+        if output::WINDOW_ACTIVE.load(std::sync::atomic::Ordering::Acquire) {
+            return None;
+        }
         self.connection
             .get_input_focus()
             .ok()?
@@ -739,6 +859,12 @@ impl X11Output {
         self.clipboard
             .set_text(text)
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
+        use arboard::SetExtLinux;
+        self.clipboard
+            .set()
+            .clipboard(arboard::LinuxClipboardKind::Primary)
+            .text(text)
+            .map_err(|error| format!("Copied · primary selection unavailable: {error}"))?;
         let copied = self
             .clipboard
             .get_text()
@@ -754,11 +880,11 @@ impl X11Output {
 
     fn paste(&self) -> Result<(), String> {
         let result = (|| {
-            self.send_key(xproto::KEY_PRESS_EVENT, self.control_keycode)?;
+            self.send_key(xproto::KEY_PRESS_EVENT, self.shift_keycode)?;
             self.send_key(xproto::KEY_PRESS_EVENT, self.v_keycode)
         })();
         let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.v_keycode);
-        let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.control_keycode);
+        let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.shift_keycode);
         self.connection
             .flush()
             .map_err(|error| format!("could not flush the X11 paste: {error}"))?;
@@ -799,6 +925,12 @@ struct WaylandOutput {
 
 impl WaylandOutput {
     async fn new(connection: ashpd::zbus::Connection) -> Result<Self, String> {
+        let app_id = APP_ID
+            .parse()
+            .map_err(|error| format!("invalid Koett application ID: {error}"))?;
+        ashpd::register_host_app_with_connection(connection.clone(), app_id)
+            .await
+            .map_err(|error| format!("could not identify Koett to the paste portal: {error}"))?;
         let remote_desktop = RemoteDesktop::with_connection(connection.clone())
             .await
             .map_err(|error| format!("automatic paste is unavailable: {error}"))?;
@@ -890,7 +1022,7 @@ impl WaylandOutput {
         })
     }
 
-    async fn deliver(&self, text: &str) -> Result<(), String> {
+    async fn deliver(&self, text: &str, target: Option<u32>) -> Result<(), String> {
         *self
             .current_text
             .write()
@@ -903,6 +1035,11 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
+        if !output::target_unchanged(target) {
+            return Err("Copied · paste into your target application".into());
+        }
+        // The portal owns CLIPBOARD, so use the clipboard paste chord.
+        // Terminal applications may require Ctrl+Shift+V or manual paste.
         self.send_keysym(xkeysym::key::Control_L as i32, KeyState::Pressed)
             .await?;
         let result = self
@@ -948,7 +1085,7 @@ fn set_start_at_login(enabled: bool) -> Result<(), String> {
     let executable = std::env::current_exe()
         .map_err(|error| format!("could not find the Koett executable: {error}"))?;
     let desktop = format!(
-        "[Desktop Entry]\nType=Application\nName=Koett\nExec=\"{}\"\nTryExec={}\nTerminal=false\n",
+        "[Desktop Entry]\nType=Application\nName=Koett\nExec=\"{}\" --background\nTryExec={}\nTerminal=false\n",
         executable.display(),
         executable.display()
     );
@@ -1001,4 +1138,85 @@ fn save_restore_token(token: &str) -> Result<(), String> {
             path.display()
         )
     })
+}
+
+async fn configure_shortcut() -> Result<(), String> {
+    let shortcuts = GlobalShortcuts::new().await.map_err(|e| e.to_string())?;
+    if shortcuts.version() < 2 {
+        return Err("This desktop does not offer shortcut editing. Bind koett toggle or koett start/stop in compositor settings".into());
+    }
+    let session = shortcuts
+        .create_session(CreateSessionOptions::default())
+        .await
+        .map_err(|e| e.to_string())?;
+    shortcuts
+        .configure_shortcuts(&session, None, Default::default())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn completed_text(
+    raw: &str,
+    loaded: Result<Settings, String>,
+    last_known: &Settings,
+) -> (String, Option<String>) {
+    match loaded {
+        Ok(settings) => (
+            crate::replacements::apply(raw, &settings.replacements),
+            None,
+        ),
+        Err(error) => (
+            crate::replacements::apply(raw, &last_known.replacements),
+            Some(format!(
+                "Settings unavailable; using last valid replacements: {error}"
+            )),
+        ),
+    }
+}
+
+fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
+    if let Some(tray) = tray {
+        let _ = tray.sender.send(TrayUpdate::Completed(text.to_owned()));
+    }
+}
+
+fn delivery_results(
+    delivered: Result<(), String>,
+    saved: Result<(), String>,
+) -> Result<(), String> {
+    match (delivered, saved) {
+        (Err(delivery), Err(storage)) => Err(format!("{delivery}; {storage}")),
+        (Err(error), _) | (_, Err(error)) => Err(error),
+        _ => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod delivery_tests {
+    use super::*;
+    #[test]
+    fn corrupt_settings_preserve_raw_text_and_warn() {
+        let raw = "Keep Unicode: åäö 日本語";
+        let (text, warning) = completed_text(raw, Err("invalid JSON".into()), &Settings::default());
+        assert_eq!(text, raw);
+        assert!(warning.unwrap().contains("invalid JSON"));
+    }
+    #[test]
+    fn completed_text_remains_copyable_when_delivery_and_storage_fail() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        cache_completed(Some(&tray), "Recover this exact result");
+        let error = delivery_results(
+            Err("clipboard failed".into()),
+            Err("history and fallback failed".into()),
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("clipboard failed") && error.contains("history and fallback failed")
+        );
+        assert!(
+            matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
+        );
+    }
 }

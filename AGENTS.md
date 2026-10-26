@@ -90,7 +90,7 @@ Before changing dictation, speech engines, transcription, Ask, packaging, or fee
 | Ask model | `qwen/qwen3.6-27b` |
 | Spoken replies | Off for public installs |
 | Spoken voice | Katie |
-| Dictation history | `~/Library/Application Support/Koett/Transcripts.md` |
+| Dictation history | `~/Library/Application Support/Koett/History.sqlite3`; legacy `Transcripts.md` retained |
 | Last transcript | `~/Library/Application Support/Koett/Last Transcript.txt` |
 | Media history | `~/Library/Application Support/Koett/Media Transcripts/` |
 | Failed ASR audio | `~/Library/Application Support/Koett/Failed Recordings/` |
@@ -166,7 +166,8 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/AssistantMarkdown.swift`: local WebKit Markdown and math bridge.
 - `Sources/Koett/Resources/AssistantRenderer/`: pinned local renderer assets.
 - `Sources/Koett/ScreenContextCapture.swift`: one in-memory screen image.
-- `Sources/Koett/TranscriptStore.swift`: append-only local Markdown history.
+- `Sources/Koett/TranscriptStore.swift`: local SQLite history and legacy import.
+- `Sources/Koett/HistoryWindow.swift`: native searchable history, Copy and Export.
 - `Tests/KoettTests/`: shortcut, storage, media, renderer, client, TTS-buffer,
   live-audio, and S1-mini request tests.
 - `Benchmarks/S1Mini/`: isolated S1-mini corpus, harness, and measured decision.

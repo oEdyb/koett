@@ -67,11 +67,17 @@ and spacing on a consistent 4/8px rhythm. Avoid gradients and heavy shadows.
 ## Shared history contract
 
 Canonical SQL: `Sources/Koett/Resources/History/schema.sql`. Rust includes that
-file at compile time; Swift bundles it. Schema version 1 uses `transcripts.id`
+file at compile time; Swift bundles it. Schema version 2 uses `transcripts.id`
 (stable text ID), `created_at_ms` (UTC epoch milliseconds), `model`, `text`,
 optional `raw_text`, external-content FTS5 and chronological paging by
 `(created_at_ms, id)` descending. Identical text in different recordings remains
 distinct. An existing ID with different content is an error, never a silent drop.
+
+Source/version ownership reconciles older imported search rows only after a full
+verified import. Native dictations and raw legacy fragments remain protected.
+The SQLite-only v1 upgrade protects all existing rows because their ownership is
+unknown; duplicates from that development schema may remain. Legacy import runs
+once in the background at startup, never from page/get queries.
 
 Rust public storage surface for the Linux UI:
 `history::HistoryStore::open(path)`, `HistoryStore::open_default()`,

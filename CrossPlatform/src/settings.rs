@@ -5,11 +5,23 @@ use serde::{Deserialize, Serialize};
 
 use crate::paths;
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecordingMode {
+    #[default]
+    Toggle,
+    Hold,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
     pub shortcut: String,
     pub start_at_login: bool,
+    pub microphone: Option<String>,
+    pub recording_mode: RecordingMode,
+    pub replacements: Vec<crate::replacements::Replacement>,
+    pub pause_media: bool,
     pub model_directory: Option<PathBuf>,
 }
 
@@ -18,6 +30,10 @@ impl Default for Settings {
         Self {
             shortcut: "Ctrl+Shift+Space".to_string(),
             start_at_login: true,
+            microphone: None,
+            recording_mode: RecordingMode::Toggle,
+            replacements: Vec::new(),
+            pause_media: false,
             model_directory: None,
         }
     }
@@ -100,6 +116,7 @@ mod tests {
             shortcut: "Alt+Space".to_string(),
             start_at_login: false,
             model_directory: Some("custom-model".into()),
+            ..Settings::default()
         };
 
         settings.save_to(&path).unwrap();

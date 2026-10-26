@@ -327,7 +327,7 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
       "source_url": "https://github.com/mborgerding/kissfft/tree/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "febd4caeed32e33ad8b2e0bb5ea77542c40f18ec"
     },
@@ -362,24 +362,9 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/microsoft/onnxruntime@v1.27.1",
       "source_url": "https://github.com/microsoft/onnxruntime/tree/v1.27.1",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "1.27.1"
-    },
-    {
-      "assets": [],
-      "group": "native-library",
-      "license": {
-        "expression": "GPL-3.0-or-later AND BSD-2-Clause"
-      },
-      "license_files": [],
-      "name": "eSpeak NG and ucd",
-      "notice_state": "missing",
-      "sbom_ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "source_url": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1",
-      "status": "blocked-control-only",
-      "type": "library",
-      "version": "ed530aa113046142eb5115cf2fc9157854d0ffe1"
     },
     {
       "assets": [],
@@ -406,7 +391,7 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
       "source_url": "https://github.com/k2-fsa/kaldi-decoder/tree/v0.3.0",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "0.3.0"
     },
@@ -421,7 +406,7 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
       "source_url": "https://github.com/csukuangfj/kaldi-native-fbank/tree/v1.22.3",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "1.22.3"
     },
@@ -436,24 +421,9 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/k2-fsa/kaldifst@v1.8.0",
       "source_url": "https://github.com/k2-fsa/kaldifst/tree/v1.8.0",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "1.8.0"
-    },
-    {
-      "assets": [],
-      "group": "native-library",
-      "license": {
-        "expression": "MIT"
-      },
-      "license_files": [],
-      "name": "piper-phonemize",
-      "notice_state": "missing",
-      "sbom_ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "source_url": "https://github.com/csukuangfj/piper-phonemize/tree/f3ff95afc03640bc1399e113e83361192a2fafb4",
-      "status": "blocked-control-only",
-      "type": "library",
-      "version": "f3ff95afc03640bc1399e113e83361192a2fafb4"
     },
     {
       "assets": [],
@@ -466,7 +436,7 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
       "source_url": "https://github.com/k2-fsa/sherpa-onnx/tree/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "1.13.5"
     },
@@ -481,7 +451,7 @@
       "notice_state": "missing",
       "sbom_ref": "pkg:github/pkufool/simple-sentencepiece@v0.7",
       "source_url": "https://github.com/pkufool/simple-sentencepiece/tree/v0.7",
-      "status": "blocked-control-only",
+      "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "0.7"
     },
@@ -965,6 +935,51 @@
       "version": "0.1.13+1.0.8"
     },
     {
+      "cargo_checksum_sha256": "df683f1d30b457964673a5541a4603208ef95ab6873d2a55871895cf310f3b56",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "cairo-rs",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/cairo-rs@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "ee548131103ad8f698c6725669647b9c757b3b66992dd6a026037596417bee21",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "cairo-sys-rs",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/cairo-sys-rs@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
       "cargo_checksum_sha256": "0ad534f4357a5264cce5019c989cf66a4f0dc4e0d1b1d15f8aacec0ff7360273",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -988,6 +1003,31 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "1.4.4"
+    },
+    {
+      "cargo_checksum_sha256": "9ba9e9ec16c447027685b1f897b720e18e9a8afd00bd7332c483537e38086c9f",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10850,
+          "path": "LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "bytes": 1058,
+          "path": "LICENSE-MIT",
+          "sha256": "090a294a492ab2f41388252312a65cf2f0e423330b721a68c6665ac64766753b"
+        }
+      ],
+      "name": "cfg-expr",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/EmbarkStudios/cfg-expr",
+      "sbom_ref": "pkg:cargo/cfg-expr@0.20.10",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.20.10"
     },
     {
       "cargo_checksum_sha256": "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801",
@@ -1015,7 +1055,7 @@
       "version": "1.0.4"
     },
     {
-      "cargo_checksum_sha256": "bde03770d3df201d4fb868f2c9c59e66a3e4e2bd06692a0fe701e7103c7e84d4",
+      "cargo_checksum_sha256": "39ed3668f121a65e4ce95efeba22ad1f8ad6c6628397a5dd773118514a5e1804",
       "declared_license": "BSL-1.0",
       "group": "rust-package",
       "license_files": [],
@@ -1023,10 +1063,10 @@
       "normalized_declared_license": "BSL-1.0",
       "notice_state": "missing",
       "repository": "https://github.com/DoumanAsh/clipboard-win",
-      "sbom_ref": "pkg:cargo/clipboard-win@5.4.1",
+      "sbom_ref": "pkg:cargo/clipboard-win@5.4.2",
       "selected_license": "BSL-1.0",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "5.4.1"
+      "version": "5.4.2"
     },
     {
       "cargo_checksum_sha256": "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd",
@@ -1642,6 +1682,56 @@
       "version": "0.5.4"
     },
     {
+      "cargo_checksum_sha256": "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649",
+      "declared_license": "MIT/Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 11358,
+          "path": "LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "bytes": 1078,
+          "path": "LICENSE-MIT",
+          "sha256": "0816e154b159ba255c563f7c8c7df5bbb8cc5fc96f5ab8cf9f4743b4f41fe7eb"
+        }
+      ],
+      "name": "fallible-iterator",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/sfackler/rust-fallible-iterator",
+      "sbom_ref": "pkg:cargo/fallible-iterator@0.3.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.0"
+    },
+    {
+      "cargo_checksum_sha256": "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a",
+      "declared_license": "MIT/Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 11358,
+          "path": "LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "bytes": 1086,
+          "path": "LICENSE-MIT",
+          "sha256": "8dcec5569a9be5b0e086c80faed6f1aefa670af0ec29cecc2f714303096887e0"
+        }
+      ],
+      "name": "fallible-streaming-iterator",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/sfackler/fallible-streaming-iterator",
+      "sbom_ref": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.1.9"
+    },
+    {
       "cargo_checksum_sha256": "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223",
       "declared_license": "Apache-2.0 OR MIT",
       "group": "rust-package",
@@ -1665,6 +1755,31 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "2.5.0"
+    },
+    {
+      "cargo_checksum_sha256": "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10173,
+          "path": "LICENSE-APACHE",
+          "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+        },
+        {
+          "bytes": 1100,
+          "path": "LICENSE-MIT",
+          "sha256": "9dd44491b4cf95dcfa2963943b3ae91bff9a78d13049a9e0b53e0d0b0a9c8f4e"
+        }
+      ],
+      "name": "field-offset",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/Diggsey/rust-field-offset",
+      "sbom_ref": "pkg:cargo/field-offset@0.3.6",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.6"
     },
     {
       "cargo_checksum_sha256": "5c287a33c7f0a620c38e641e7f60827713987b3c0f26e8ddc9462cc69cf75759",
@@ -1742,6 +1857,26 @@
       "version": "1.1.9"
     },
     {
+      "cargo_checksum_sha256": "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb",
+      "declared_license": "Zlib",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 856,
+          "path": "LICENSE",
+          "sha256": "b1181a40b2a7b25cf66fd01481713bc1005df082c53ef73e851e55071b102744"
+        }
+      ],
+      "name": "foldhash",
+      "normalized_declared_license": "Zlib",
+      "notice_state": "missing",
+      "repository": "https://github.com/orlp/foldhash",
+      "sbom_ref": "pkg:cargo/foldhash@0.2.0",
+      "selected_license": "Zlib",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.2.0"
+    },
+    {
       "cargo_checksum_sha256": "f6f339eb8adc052cd2ca78910fda869aefa38d22d5cb648e6485e4d3fc06f3b1",
       "declared_license": "MIT/Apache-2.0",
       "group": "rust-package",
@@ -1817,6 +1952,31 @@
       "version": "1.2.2"
     },
     {
+      "cargo_checksum_sha256": "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10874,
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "bytes": 1094,
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "name": "futures-channel",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/rust-lang/futures-rs",
+      "sbom_ref": "pkg:cargo/futures-channel@0.3.34",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.34"
+    },
+    {
       "cargo_checksum_sha256": "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -1837,6 +1997,31 @@
       "notice_state": "missing",
       "repository": "https://github.com/rust-lang/futures-rs",
       "sbom_ref": "pkg:cargo/futures-core@0.3.34",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.34"
+    },
+    {
+      "cargo_checksum_sha256": "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10874,
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "bytes": 1094,
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "name": "futures-executor",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/rust-lang/futures-rs",
+      "sbom_ref": "pkg:cargo/futures-executor@0.3.34",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.3.34"
@@ -1972,6 +2157,96 @@
       "version": "0.3.34"
     },
     {
+      "cargo_checksum_sha256": "25f420376dbee041b2db374ce4573892a36222bb3f6c0c43e24f0d67eae9b646",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk-pixbuf",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/gdk-pixbuf@0.22.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.0"
+    },
+    {
+      "cargo_checksum_sha256": "9d5209294ba3775f9b650bf78bfadeba4332089f2329b3e2f6ce0a4957a45bff",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk-pixbuf-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "e77c579bac9eff8b84c0625d5f533da6d69988c063062fe92c2e955ede8f28eb",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk4",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gdk4@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "3eff6238a30c1f198fb3c8d3d445fa7faf211d11d9075af0772e6e0ca32ae001",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk4-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gdk4-sys@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
       "cargo_checksum_sha256": "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8",
       "declared_license": "Apache-2.0",
       "group": "rust-package",
@@ -2042,6 +2317,121 @@
       "version": "0.4.3"
     },
     {
+      "cargo_checksum_sha256": "4620fbafdf19dba814473e19f18e75290cb3338662f6ae35f0402affd3b2b699",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gio",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/gio@0.22.10",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.10"
+    },
+    {
+      "cargo_checksum_sha256": "6c28739f914c15b87a9856000bed9cbd5b3a8afbca5e982d9a299e1601422cb5",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gio-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/gio-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "e4cf9e5bd8713f1990a92c422998826e0fb34824277b46bc59757373483c6694",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "glib",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/glib@0.22.10",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.10"
+    },
+    {
+      "cargo_checksum_sha256": "c9597c68fa7bdf4154a3079642cd21c4dccac0b0bdd2897d82861523bf91e7b9",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "glib-macros",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/glib-macros@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "99b38907e67e40dec9b60f858bcada952598719cb512a13eb13d6cdcd16f8295",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "glib-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/glib-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
       "cargo_checksum_sha256": "8c386b0a4a70cb2d39fffd74480f985b6f0bfbcb934b6a6b6b7e630e448f242e",
       "declared_license": "Apache-2.0 OR MIT",
       "group": "rust-package",
@@ -2072,6 +2462,186 @@
       "version": "0.8.0"
     },
     {
+      "cargo_checksum_sha256": "07595c9ba696bd9819cb6a8df39f08078f3dd679508fe052dd558492c2053834",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gobject-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/gobject-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "eb856b9c558971c3f13ab692358926da710b046932a4e087aedcc35b040d7dff",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "graphene-rs",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/graphene-rs@0.22.8",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.8"
+    },
+    {
+      "cargo_checksum_sha256": "97842c7543828f98aa5583aa54fcda28aa84fa2b0f8c556142177f7bbb638057",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "graphene-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/graphene-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "eee23d7425c5281ec5a2f40f7b69384aac66c15861d990d248e9d9c9368be464",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gsk4",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gsk4@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "27900c92e47df410bbe43b51818104051e3409da43fb88547a41c0bafddfd39c",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gsk4-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gsk4-sys@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "e0f8226c94dd0b65ba2e8fcd8ff402d380e890f6e5a6488e652a0158e827b9bf",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gtk4",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gtk4@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "eb906c98f0b4cc9002594e337e83f40492aa6dca22c97242f13be5b046c5f338",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gtk4-macros",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gtk4-macros@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "bd14af0137f269bdecee73404157d2a852f9651af7d68bd1023d3b8b914a14c3",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gtk4-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gtk4-sys@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
       "cargo_checksum_sha256": "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -2095,6 +2665,56 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.17.1"
+    },
+    {
+      "cargo_checksum_sha256": "a596f1b20ed2cc5ecac41a164aaebc7258057060f06c0cf7a2ba3991ee7990fb",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10849,
+          "path": "LICENSE-APACHE",
+          "sha256": "c144680885b29e4719e2a51f0aab5439a1e02d980692b5aaf086cae12727f28b"
+        },
+        {
+          "bytes": 1133,
+          "path": "LICENSE-MIT",
+          "sha256": "e915669a595b11a200873df8286561881b0e04932f6412a585db6297ba0bc97c"
+        }
+      ],
+      "name": "hashlink",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/djc/hashlink",
+      "sbom_ref": "pkg:cargo/hashlink@0.12.2",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.12.2"
+    },
+    {
+      "cargo_checksum_sha256": "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10847,
+          "path": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "bytes": 1071,
+          "path": "LICENSE-MIT",
+          "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+        }
+      ],
+      "name": "heck",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/withoutboats/heck",
+      "sbom_ref": "pkg:cargo/heck@0.5.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.5.0"
     },
     {
       "cargo_checksum_sha256": "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70",
@@ -2682,6 +3302,26 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.1.20"
+    },
+    {
+      "cargo_checksum_sha256": "14a5f01b87b92705d07b433c06f96cbc764637d81a0bffb5734ce17cf0f9a2b3",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1067,
+          "path": "LICENSE",
+          "sha256": "c10c1f27337546471e5f7e4e97fdd398b35b9d4e126115dcd22de8d8e65abf6f"
+        }
+      ],
+      "name": "libsqlite3-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/rusqlite/rusqlite",
+      "sbom_ref": "pkg:cargo/libsqlite3-sys@0.39.1",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.39.1"
     },
     {
       "cargo_checksum_sha256": "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53",
@@ -3470,6 +4110,51 @@
       "version": "0.2.0"
     },
     {
+      "cargo_checksum_sha256": "0b2022dbbd82e1c42bd950a6f1df9b98c796e725dce5ec275e03cbf9772e4efa",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "pango",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/pango@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
+      "cargo_checksum_sha256": "ca02d64761b74d56cdd4b437db6d73dc95e6c0d40f27e1c707952c0f09052948",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "pango-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "sbom_ref": "pkg:cargo/pango-sys@0.22.9",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.22.9"
+    },
+    {
       "cargo_checksum_sha256": "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba",
       "declared_license": "Apache-2.0 OR MIT",
       "group": "rust-package",
@@ -3929,7 +4614,7 @@
       "version": "0.17.14"
     },
     {
-      "cargo_checksum_sha256": "a158e09ede21a14b172ca6cdd6208386c6ae2cb6acef58d774368ef8c450dfa7",
+      "cargo_checksum_sha256": "0b123165531e325df9079f56c036f2da4103a5d5abfef9e2fda4b9c34d1ef7aa",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
       "license_files": [
@@ -3948,10 +4633,44 @@
       "normalized_declared_license": "MIT OR Apache-2.0",
       "notice_state": "missing",
       "repository": "https://github.com/agerasev/ringbuf.git",
-      "sbom_ref": "pkg:cargo/ringbuf@0.5.1",
+      "sbom_ref": "pkg:cargo/ringbuf@0.5.2",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.5.1"
+      "version": "0.5.2"
+    },
+    {
+      "cargo_checksum_sha256": "353b74f9810d5b085b6c42c9d86a5f0fdb795553235cdd48753b32e3809d18a7",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [],
+      "name": "rsqlite-vfs",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
+      "sbom_ref": "pkg:cargo/rsqlite-vfs@0.2.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.2.0"
+    },
+    {
+      "cargo_checksum_sha256": "9c026b4444579e8d754556c6c75d040d69c4a44283cdb648ab8a8d5965c2cfa8",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1067,
+          "path": "LICENSE",
+          "sha256": "c10c1f27337546471e5f7e4e97fdd398b35b9d4e126115dcd22de8d8e65abf6f"
+        }
+      ],
+      "name": "rusqlite",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/rusqlite/rusqlite",
+      "sbom_ref": "pkg:cargo/rusqlite@0.41.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.41.0"
     },
     {
       "cargo_checksum_sha256": "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92",
@@ -4014,7 +4733,7 @@
       "version": "1.1.4"
     },
     {
-      "cargo_checksum_sha256": "0283386ce02abc0151e1761d08802dfe86c173b0b494af5cbc086574e453da06",
+      "cargo_checksum_sha256": "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf",
       "declared_license": "Apache-2.0 OR ISC OR MIT",
       "group": "rust-package",
       "license_files": [
@@ -4038,10 +4757,10 @@
       "normalized_declared_license": "Apache-2.0 OR ISC OR MIT",
       "notice_state": "missing",
       "repository": "https://github.com/rustls/rustls",
-      "sbom_ref": "pkg:cargo/rustls@0.23.43",
+      "sbom_ref": "pkg:cargo/rustls@0.23.46",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.23.43"
+      "version": "0.23.46"
     },
     {
       "cargo_checksum_sha256": "dab5152771c58876a2146916e53e35057e1a4dfa2b9df0f0305b07f611fdea4d",
@@ -4143,7 +4862,7 @@
       "version": "0.1.1"
     },
     {
-      "cargo_checksum_sha256": "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2",
+      "cargo_checksum_sha256": "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281",
       "declared_license": "ISC",
       "group": "rust-package",
       "license_files": [
@@ -4157,10 +4876,10 @@
       "normalized_declared_license": "ISC",
       "notice_state": "missing",
       "repository": "https://github.com/rustls/webpki",
-      "sbom_ref": "pkg:cargo/rustls-webpki@0.103.15",
+      "sbom_ref": "pkg:cargo/rustls-webpki@0.103.16",
       "selected_license": "ISC",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.103.15"
+      "version": "0.103.16"
     },
     {
       "cargo_checksum_sha256": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f",
@@ -4463,6 +5182,31 @@
       "version": "0.1.21"
     },
     {
+      "cargo_checksum_sha256": "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 11349,
+          "path": "LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "bytes": 1062,
+          "path": "LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "name": "serde_spanned",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/toml-rs/toml",
+      "sbom_ref": "pkg:cargo/serde_spanned@1.1.2",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "1.1.2"
+    },
+    {
       "cargo_checksum_sha256": "446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -4508,7 +5252,7 @@
       "version": "1.13.5"
     },
     {
-      "cargo_checksum_sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493",
+      "cargo_checksum_sha256": null,
       "declared_license": "Apache-2.0",
       "group": "rust-package",
       "license_files": [
@@ -4516,6 +5260,11 @@
           "bytes": 11358,
           "path": "LICENSE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "bytes": 11341,
+          "path": "LICENSE",
+          "sha256": "f028e12a0eeb0a1c79810acff539785849a8513c6c7c478eddbcb95401168fec"
         }
       ],
       "name": "sherpa-onnx-sys",
@@ -4524,7 +5273,7 @@
       "repository": "https://github.com/k2-fsa/sherpa-onnx",
       "sbom_ref": "pkg:cargo/sherpa-onnx-sys@1.13.5",
       "selected_license": "Apache-2.0",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "source": null,
       "version": "1.13.5"
     },
     {
@@ -4718,6 +5467,26 @@
       "version": "0.6.5"
     },
     {
+      "cargo_checksum_sha256": "36bd8e29bf08189a005b2df1df99823aa0861cabe9044e5f31ed54ca292ee618",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1061,
+          "path": "LICENSE",
+          "sha256": "e1c1975c3474cce31722836f101a40ffaf1cc784e4d2f38ce3e77b9712934e78"
+        }
+      ],
+      "name": "sqlite-wasm-rs",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
+      "sbom_ref": "pkg:cargo/sqlite-wasm-rs@0.6.2",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.6.2"
+    },
+    {
       "cargo_checksum_sha256": "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -4833,6 +5602,31 @@
       "version": "0.13.2"
     },
     {
+      "cargo_checksum_sha256": "db551ad38aac61d5e0343e0eeeb0163be3115c4e23b6a025959570ee0c03c67d",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10847,
+          "path": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "bytes": 1023,
+          "path": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "name": "system-deps",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/gdesmott/system-deps",
+      "sbom_ref": "pkg:cargo/system-deps@9.0.1",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "9.0.1"
+    },
+    {
       "cargo_checksum_sha256": "3f6221d9a6003c78398e3b239969f352578258df48c8eb051caadae0015bc840",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
@@ -4856,6 +5650,26 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.4.46"
+    },
+    {
+      "cargo_checksum_sha256": "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca",
+      "declared_license": "Apache-2.0 WITH LLVM-exception",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 12243,
+          "path": "LICENSE",
+          "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+        }
+      ],
+      "name": "target-lexicon",
+      "normalized_declared_license": "Apache-2.0 WITH LLVM-exception",
+      "notice_state": "missing",
+      "repository": "https://github.com/bytecodealliance/target-lexicon",
+      "sbom_ref": "pkg:cargo/target-lexicon@0.13.5",
+      "selected_license": "Apache-2.0 WITH LLVM-exception",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.13.5"
     },
     {
       "cargo_checksum_sha256": "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd",
@@ -5078,7 +5892,7 @@
       "version": "0.8.4"
     },
     {
-      "cargo_checksum_sha256": "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed",
+      "cargo_checksum_sha256": "ce3335fa71841cda333a58d7615b03901380ecf09d59b3296d21f8bbac0dde4e",
       "declared_license": "MIT",
       "group": "rust-package",
       "license_files": [
@@ -5092,10 +5906,10 @@
       "normalized_declared_license": "MIT",
       "notice_state": "missing",
       "repository": "https://github.com/tokio-rs/tokio",
-      "sbom_ref": "pkg:cargo/tokio@1.53.1",
+      "sbom_ref": "pkg:cargo/tokio@1.53.3",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "1.53.1"
+      "version": "1.53.3"
     },
     {
       "cargo_checksum_sha256": "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e",
@@ -5118,14 +5932,39 @@
       "version": "2.7.2"
     },
     {
-      "cargo_checksum_sha256": "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7",
+      "cargo_checksum_sha256": "20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
       "license_files": [
         {
-          "bytes": 11358,
+          "bytes": 11349,
           "path": "LICENSE-APACHE",
-          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "bytes": 1062,
+          "path": "LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "name": "toml",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/toml-rs/toml",
+      "sbom_ref": "pkg:cargo/toml@1.1.8+spec-1.1.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "1.1.8+spec-1.1.0"
+    },
+    {
+      "cargo_checksum_sha256": "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 11349,
+          "path": "LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
         },
         {
           "bytes": 1062,
@@ -5137,10 +5976,10 @@
       "normalized_declared_license": "MIT OR Apache-2.0",
       "notice_state": "missing",
       "repository": "https://github.com/toml-rs/toml",
-      "sbom_ref": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
+      "sbom_ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "1.1.1+spec-1.1.0"
+      "version": "1.1.2+spec-1.1.0"
     },
     {
       "cargo_checksum_sha256": "6975367e4d2ef766d86af01ffad14b622fecc8d4357a998fbc4deb6e9bacaf9b",
@@ -5168,14 +6007,14 @@
       "version": "0.25.13+spec-1.1.0"
     },
     {
-      "cargo_checksum_sha256": "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56",
+      "cargo_checksum_sha256": "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c",
       "declared_license": "MIT OR Apache-2.0",
       "group": "rust-package",
       "license_files": [
         {
-          "bytes": 11358,
+          "bytes": 11349,
           "path": "LICENSE-APACHE",
-          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
         },
         {
           "bytes": 1062,
@@ -5187,7 +6026,32 @@
       "normalized_declared_license": "MIT OR Apache-2.0",
       "notice_state": "missing",
       "repository": "https://github.com/toml-rs/toml",
-      "sbom_ref": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+      "sbom_ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "1.1.5+spec-1.1.0"
+    },
+    {
+      "cargo_checksum_sha256": "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 11349,
+          "path": "LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "bytes": 1062,
+          "path": "LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "name": "toml_writer",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/toml-rs/toml",
+      "sbom_ref": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "1.1.3+spec-1.1.0"
@@ -5588,6 +6452,26 @@
       "version": "0.2.15"
     },
     {
+      "cargo_checksum_sha256": "03c2856837ef78f57382f06b2b8563a2f512f7185d732608fd9176cb3b8edf0e",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1055,
+          "path": "LICENSE",
+          "sha256": "cedfcc7ace1639adb054bd4a19b6f8585ccb2429a60b4bf51bfeb0601058c22c"
+        }
+      ],
+      "name": "version-compare",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://gitlab.com/timvisee/version-compare",
+      "sbom_ref": "pkg:cargo/version-compare@0.2.1",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.2.1"
+    },
+    {
       "cargo_checksum_sha256": "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b",
       "declared_license": "Unlicense/MIT",
       "group": "rust-package",
@@ -5773,7 +6657,7 @@
       "version": "0.3.104"
     },
     {
-      "cargo_checksum_sha256": "b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b",
+      "cargo_checksum_sha256": "58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb",
       "declared_license": "CDLA-Permissive-2.0",
       "group": "rust-package",
       "license_files": [
@@ -5787,10 +6671,10 @@
       "normalized_declared_license": "CDLA-Permissive-2.0",
       "notice_state": "missing",
       "repository": "https://github.com/rustls/webpki-roots",
-      "sbom_ref": "pkg:cargo/webpki-root-certs@1.0.9",
+      "sbom_ref": "pkg:cargo/webpki-root-certs@1.0.10",
       "selected_license": "CDLA-Permissive-2.0",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "cargo_checksum_sha256": "521bc38abb08001b01866da9f51eb7c5d647a19260e00054a8c7fd5f9e57f7a9",
@@ -5813,7 +6697,7 @@
       "version": "0.26.11"
     },
     {
-      "cargo_checksum_sha256": "7dcd9d09a39985f5344844e66b0c530a33843579125f23e21e9f0f220850f22a",
+      "cargo_checksum_sha256": "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9",
       "declared_license": "CDLA-Permissive-2.0",
       "group": "rust-package",
       "license_files": [
@@ -5827,10 +6711,10 @@
       "normalized_declared_license": "CDLA-Permissive-2.0",
       "notice_state": "missing",
       "repository": "https://github.com/rustls/webpki-roots",
-      "sbom_ref": "pkg:cargo/webpki-roots@1.0.9",
+      "sbom_ref": "pkg:cargo/webpki-roots@1.0.10",
       "selected_license": "CDLA-Permissive-2.0",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "1.0.9"
+      "version": "1.0.10"
     },
     {
       "cargo_checksum_sha256": "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22",
@@ -7207,7 +8091,7 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/clipboard-win@5.4.1",
+        "pkg:cargo/clipboard-win@5.4.2",
         "pkg:cargo/log@0.4.34",
         "pkg:cargo/objc2-app-kit@0.3.2",
         "pkg:cargo/objc2-foundation@0.3.2",
@@ -7226,7 +8110,7 @@
         "pkg:cargo/getrandom@0.4.3",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_repr@0.1.21",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/zbus@5.19.0"
       ],
       "ref": "pkg:cargo/ashpd@0.13.13"
@@ -7320,10 +8204,34 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/cairo-rs@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/cairo-sys-rs@0.22.9"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/find-msvc-tools@0.1.11",
         "pkg:cargo/shlex@2.0.1"
       ],
       "ref": "pkg:cargo/cc@1.4.4"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/target-lexicon@0.13.5"
+      ],
+      "ref": "pkg:cargo/cfg-expr@0.20.10"
     },
     {
       "dependsOn": [],
@@ -7333,7 +8241,7 @@
       "dependsOn": [
         "pkg:cargo/error-code@3.4.0"
       ],
-      "ref": "pkg:cargo/clipboard-win@5.4.1"
+      "ref": "pkg:cargo/clipboard-win@5.4.2"
     },
     {
       "dependsOn": [
@@ -7521,7 +8429,22 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/fallible-iterator@0.3.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/fallible-streaming-iterator@0.1.9"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/fastrand@2.5.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/memoffset@0.9.1",
+        "pkg:cargo/rustc_version@0.4.1"
+      ],
+      "ref": "pkg:cargo/field-offset@0.3.6"
     },
     {
       "dependsOn": [
@@ -7543,6 +8466,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/foldhash@0.2.0"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/foreign-types-shared@0.1.1"
     },
     {
@@ -7558,8 +8485,22 @@
       "ref": "pkg:cargo/form_urlencoded@1.2.2"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/futures-core@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures-channel@0.3.34"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/futures-core@0.3.34"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures-executor@0.3.34"
     },
     {
       "dependsOn": [],
@@ -7599,6 +8540,51 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk-pixbuf-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/gdk-pixbuf@0.22.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf@0.22.0",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gdk4@0.11.5"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/rustix@1.1.4",
         "pkg:cargo/windows-link@0.2.1"
       ],
@@ -7622,6 +8608,64 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1",
+        "pkg:cargo/windows-sys@0.61.2"
+      ],
+      "ref": "pkg:cargo/gio-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
+        "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pin-project-lite@0.2.17",
+        "pkg:cargo/smallvec@1.15.2"
+      ],
+      "ref": "pkg:cargo/gio@0.22.10"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.4"
+      ],
+      "ref": "pkg:cargo/glib-macros@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/glib-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-executor@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-macros@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/smallvec@1.15.2"
+      ],
+      "ref": "pkg:cargo/glib@0.22.10"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/crossbeam-channel@0.5.16",
         "pkg:cargo/keyboard-types@0.7.0",
         "pkg:cargo/objc2-app-kit@0.3.2",
@@ -7635,8 +8679,111 @@
       "ref": "pkg:cargo/global-hotkey@0.8.0"
     },
     {
-      "dependsOn": [],
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gobject-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-sys@0.22.9"
+      ],
+      "ref": "pkg:cargo/graphene-rs@0.22.8"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/graphene-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/graphene-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gsk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-rs@0.22.8",
+        "pkg:cargo/gsk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gsk4@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro-crate@3.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.4"
+      ],
+      "ref": "pkg:cargo/gtk4-macros@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-sys-rs@0.22.9",
+        "pkg:cargo/gdk-pixbuf-sys@0.22.9",
+        "pkg:cargo/gdk4-sys@0.11.5",
+        "pkg:cargo/gio-sys@0.22.9",
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/graphene-sys@0.22.9",
+        "pkg:cargo/gsk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango-sys@0.22.9",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gtk4-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cairo-rs@0.22.9",
+        "pkg:cargo/field-offset@0.3.6",
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/gdk-pixbuf@0.22.0",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/graphene-rs@0.22.8",
+        "pkg:cargo/gsk4@0.11.5",
+        "pkg:cargo/gtk4-macros@0.11.5",
+        "pkg:cargo/gtk4-sys@0.11.5",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/pango@0.22.9"
+      ],
+      "ref": "pkg:cargo/gtk4@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/foldhash@0.2.0"
+      ],
       "ref": "pkg:cargo/hashbrown@0.17.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/hashbrown@0.17.1"
+      ],
+      "ref": "pkg:cargo/hashlink@0.12.2"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/heck@0.5.0"
     },
     {
       "dependsOn": [],
@@ -7815,29 +8962,30 @@
         "koett:native:fastcluster@FluidAudio-0.15.6",
         "pkg:cargo/arboard@3.6.1",
         "pkg:cargo/ashpd@0.13.13",
+        "pkg:cargo/base64@0.23.1",
         "pkg:cargo/bzip2@0.6.1",
         "pkg:cargo/cpal@0.18.2",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/global-hotkey@0.8.0",
+        "pkg:cargo/gtk4@0.11.5",
         "pkg:cargo/ksni@0.3.6",
-        "pkg:cargo/ringbuf@0.5.1",
+        "pkg:cargo/ringbuf@0.5.2",
+        "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_json@1.0.151",
         "pkg:cargo/sha2@0.11.0",
         "pkg:cargo/sherpa-onnx@1.13.5",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/time@0.3.55",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/ureq@3.4.0",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",
         "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
-        "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
-        "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
         "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -7859,7 +9007,7 @@
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/pastey@0.2.3",
         "pkg:cargo/serde@1.0.229",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/zbus@5.19.0"
       ],
       "ref": "pkg:cargo/ksni@0.3.6"
@@ -7877,6 +9025,14 @@
         "pkg:cargo/libc@0.2.189"
       ],
       "ref": "pkg:cargo/libredox@0.1.20"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cc@1.4.4",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/vcpkg@0.2.15"
+      ],
+      "ref": "pkg:cargo/libsqlite3-sys@0.39.1"
     },
     {
       "dependsOn": [],
@@ -8142,6 +9298,23 @@
       "ref": "pkg:cargo/ordered-stream@0.2.0"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/gobject-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/pango-sys@0.22.9"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/pango-sys@0.22.9"
+      ],
+      "ref": "pkg:cargo/pango@0.22.9"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/parking@2.2.1"
     },
@@ -8257,7 +9430,25 @@
         "pkg:cargo/portable-atomic-util@0.2.7",
         "pkg:cargo/portable-atomic@1.15.0"
       ],
-      "ref": "pkg:cargo/ringbuf@0.5.1"
+      "ref": "pkg:cargo/ringbuf@0.5.2"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/thiserror@2.0.20"
+      ],
+      "ref": "pkg:cargo/rsqlite-vfs@0.2.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/fallible-iterator@0.3.0",
+        "pkg:cargo/fallible-streaming-iterator@0.1.9",
+        "pkg:cargo/hashlink@0.12.2",
+        "pkg:cargo/libsqlite3-sys@0.39.1",
+        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/sqlite-wasm-rs@0.6.2"
+      ],
+      "ref": "pkg:cargo/rusqlite@0.41.0"
     },
     {
       "dependsOn": [
@@ -8303,11 +9494,11 @@
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/rustls-native-certs@0.8.4",
         "pkg:cargo/rustls-platform-verifier-android@0.1.1",
-        "pkg:cargo/rustls-webpki@0.103.15",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls-webpki@0.103.16",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/security-framework-sys@2.17.0",
         "pkg:cargo/security-framework@3.7.0",
-        "pkg:cargo/webpki-root-certs@1.0.9",
+        "pkg:cargo/webpki-root-certs@1.0.10",
         "pkg:cargo/windows-sys@0.61.2"
       ],
       "ref": "pkg:cargo/rustls-platform-verifier@0.7.0"
@@ -8318,7 +9509,7 @@
         "pkg:cargo/rustls-pki-types@1.15.1",
         "pkg:cargo/untrusted@0.9.0"
       ],
-      "ref": "pkg:cargo/rustls-webpki@0.103.15"
+      "ref": "pkg:cargo/rustls-webpki@0.103.16"
     },
     {
       "dependsOn": [
@@ -8326,11 +9517,11 @@
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/ring@0.17.14",
         "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls-webpki@0.103.15",
+        "pkg:cargo/rustls-webpki@0.103.16",
         "pkg:cargo/subtle@2.6.1",
         "pkg:cargo/zeroize@1.9.0"
       ],
-      "ref": "pkg:cargo/rustls@0.23.43"
+      "ref": "pkg:cargo/rustls@0.23.46"
     },
     {
       "dependsOn": [],
@@ -8414,6 +9605,12 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ],
+      "ref": "pkg:cargo/serde_spanned@1.1.2"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/cpufeatures@0.3.0",
         "pkg:cargo/digest@0.11.3"
@@ -8478,6 +9675,13 @@
       "ref": "pkg:cargo/socket2@0.6.5"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/cc@1.4.4",
+        "pkg:cargo/rsqlite-vfs@0.2.0"
+      ],
+      "ref": "pkg:cargo/sqlite-wasm-rs@0.6.2"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/stable_deref_trait@1.2.1"
     },
@@ -8511,11 +9715,25 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/cfg-expr@0.20.10",
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/toml@1.1.8+spec-1.1.0",
+        "pkg:cargo/version-compare@0.2.1"
+      ],
+      "ref": "pkg:cargo/system-deps@9.0.1"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/filetime@0.2.29",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/xattr@1.6.1"
       ],
       "ref": "pkg:cargo/tar@0.4.46"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/target-lexicon@0.13.5"
     },
     {
       "dependsOn": [
@@ -8606,19 +9824,31 @@
         "pkg:cargo/tracing@0.1.44",
         "pkg:cargo/windows-sys@0.61.2"
       ],
-      "ref": "pkg:cargo/tokio@1.53.1"
+      "ref": "pkg:cargo/tokio@1.53.3"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/indexmap@2.14.0",
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/serde_spanned@1.1.2",
+        "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+        "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
+        "pkg:cargo/winnow@1.0.4"
+      ],
+      "ref": "pkg:cargo/toml@1.1.8+spec-1.1.0"
     },
     {
       "dependsOn": [
         "pkg:cargo/serde_core@1.0.229"
       ],
-      "ref": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0"
+      "ref": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0"
     },
     {
       "dependsOn": [
         "pkg:cargo/indexmap@2.14.0",
-        "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
-        "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+        "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
         "pkg:cargo/winnow@1.0.4"
       ],
       "ref": "pkg:cargo/toml_edit@0.25.13+spec-1.1.0"
@@ -8627,7 +9857,11 @@
       "dependsOn": [
         "pkg:cargo/winnow@1.0.4"
       ],
-      "ref": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0"
+      "ref": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0"
     },
     {
       "dependsOn": [
@@ -8691,7 +9925,7 @@
         "pkg:cargo/log@0.4.34",
         "pkg:cargo/once_cell@1.21.4",
         "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/webpki-roots@0.26.11"
       ],
@@ -8706,11 +9940,11 @@
         "pkg:cargo/percent-encoding@2.3.2",
         "pkg:cargo/rustls-pki-types@1.15.1",
         "pkg:cargo/rustls-platform-verifier@0.7.0",
-        "pkg:cargo/rustls@0.23.43",
+        "pkg:cargo/rustls@0.23.46",
         "pkg:cargo/ureq-proto@0.6.1",
         "pkg:cargo/utf8-zero@0.8.1",
-        "pkg:cargo/webpki-root-certs@1.0.9",
-        "pkg:cargo/webpki-roots@1.0.9"
+        "pkg:cargo/webpki-root-certs@1.0.10",
+        "pkg:cargo/webpki-roots@1.0.10"
       ],
       "ref": "pkg:cargo/ureq@3.4.0"
     },
@@ -8742,6 +9976,10 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/vcpkg@0.2.15"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/version-compare@0.2.1"
     },
     {
       "dependsOn": [
@@ -8798,11 +10036,11 @@
       "dependsOn": [
         "pkg:cargo/rustls-pki-types@1.15.1"
       ],
-      "ref": "pkg:cargo/webpki-root-certs@1.0.9"
+      "ref": "pkg:cargo/webpki-root-certs@1.0.10"
     },
     {
       "dependsOn": [
-        "pkg:cargo/webpki-roots@1.0.9"
+        "pkg:cargo/webpki-roots@1.0.10"
       ],
       "ref": "pkg:cargo/webpki-roots@0.26.11"
     },
@@ -8810,7 +10048,7 @@
       "dependsOn": [
         "pkg:cargo/rustls-pki-types@1.15.1"
       ],
-      "ref": "pkg:cargo/webpki-roots@1.0.9"
+      "ref": "pkg:cargo/webpki-roots@1.0.10"
     },
     {
       "dependsOn": [
@@ -9076,7 +10314,7 @@
         "pkg:cargo/rustix@1.1.4",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/serde_repr@0.1.21",
-        "pkg:cargo/tokio@1.53.1",
+        "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/tracing@0.1.44",
         "pkg:cargo/uds_windows@1.2.1",
         "pkg:cargo/uuid@1.25.0",
@@ -9203,15 +10441,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:github/csukuangfj/espeak-ng@ed530aa113046142eb5115cf2fc9157854d0ffe1"
-    },
-    {
-      "dependsOn": [],
       "ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:github/csukuangfj/piper-phonemize@f3ff95afc03640bc1399e113e83361192a2fafb4"
     },
     {
       "dependsOn": [],
@@ -9268,14 +10498,14 @@
   ],
   "inputs": [
     {
-      "bytes": 69477,
+      "bytes": 80042,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "79f952d3221b69cc5421e9cca737ddecad2a428ad1d73ad312aaa05b28a383bd"
+      "sha256": "5fbf86e171a7af07a43c4fa2ba7840ca4dac44bc2927f3565789ff8cc1e0a1ac"
     },
     {
-      "bytes": 1915,
+      "bytes": 2094,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "24cf40c5fb5b70525ff46a12dc6a2f8b3ebbd0baad84645fbbf52d38c9f9244a"
+      "sha256": "da803b42e9219f216695571595cc1e2ca2ab056881ec4548d2a2a7bd19130dbf"
     },
     {
       "bytes": 852,
@@ -9288,9 +10518,9 @@
       "sha256": "2ca81f7052d8ad1020967cf49899cddb6f489f3fbab3911ae5b786e493495d54"
     },
     {
-      "bytes": 14901,
+      "bytes": 14548,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
-      "sha256": "d855221f019081eebe020c25d20b9fdf08a324d765dcd18e045578dd36527427"
+      "sha256": "bec67533d5b3f26ca81eba45bc20449804d3d7570a13d59c2937c17914ea8384"
     },
     {
       "bytes": 11341,
@@ -9303,9 +10533,9 @@
       "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416"
     },
     {
-      "bytes": 1996,
+      "bytes": 2292,
       "path": "Package.swift",
-      "sha256": "6185201d97c6f998b1d400bb8ab1d7a67068e0415d723bbb1a1a9c66ede35621"
+      "sha256": "8857e95c8834c2ac4f67d72c93232e8fc2fea1c678c4c65923230d128e42f411"
     },
     {
       "bytes": 458,
@@ -9412,6 +10642,12 @@
     },
     {
       "component": "pkg:cargo/cc@1.4.4",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/cfg-expr@0.20.10",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -9555,9 +10791,27 @@
       "selected": "MIT"
     },
     {
+      "component": "pkg:cargo/fallible-iterator@0.3.0",
+      "declared": "MIT/Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "declared": "MIT/Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
       "component": "pkg:cargo/fastrand@2.5.0",
       "declared": "Apache-2.0 OR MIT",
       "normalized_declared": "Apache-2.0 OR MIT",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/field-offset@0.3.6",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
     },
     {
@@ -9597,7 +10851,19 @@
       "selected": "MIT"
     },
     {
+      "component": "pkg:cargo/futures-channel@0.3.34",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
       "component": "pkg:cargo/futures-core@0.3.34",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/futures-executor@0.3.34",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -9652,6 +10918,18 @@
     },
     {
       "component": "pkg:cargo/hashbrown@0.17.1",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/hashlink@0.12.2",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/heck@0.5.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -10011,7 +11289,7 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/ringbuf@0.5.1",
+      "component": "pkg:cargo/ringbuf@0.5.2",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -10053,7 +11331,7 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/rustls@0.23.43",
+      "component": "pkg:cargo/rustls@0.23.46",
       "declared": "Apache-2.0 OR ISC OR MIT",
       "normalized_declared": "Apache-2.0 OR ISC OR MIT",
       "selected": "MIT"
@@ -10125,6 +11403,12 @@
       "selected": "MIT"
     },
     {
+      "component": "pkg:cargo/serde_spanned@1.1.2",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
       "component": "pkg:cargo/sha2@0.11.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
@@ -10185,6 +11469,12 @@
       "selected": "MIT"
     },
     {
+      "component": "pkg:cargo/system-deps@9.0.1",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
       "component": "pkg:cargo/tar@0.4.46",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
@@ -10239,7 +11529,13 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/toml_datetime@1.1.1+spec-1.1.0",
+      "component": "pkg:cargo/toml@1.1.8+spec-1.1.0",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -10251,7 +11547,13 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/toml_parser@1.1.3+spec-1.1.0",
+      "component": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -10608,13 +11910,13 @@
   "schema": 1,
   "status": "draft-source-inventory-not-release-compliance",
   "summary": {
-    "blocked_control_components": 9,
+    "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 305,
+    "components": 343,
     "models": 5,
-    "native_libraries": 11,
-    "notice_gaps": 300,
-    "rust_packages": 284,
+    "native_libraries": 9,
+    "notice_gaps": 338,
+    "rust_packages": 324,
     "swift_packages": 1
   }
 }

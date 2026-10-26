@@ -106,27 +106,45 @@ impl MicrophoneRecorder {
     }
 
     pub fn start_with_limit(maximum_duration: Duration) -> Result<Self, String> {
-        Self::start_inner(maximum_duration, None)
+        Self::start_inner(maximum_duration, None, None)
     }
 
     pub fn start_streaming() -> Result<(Self, Receiver<Vec<f32>>), String> {
+        Self::start_streaming_with_device(None)
+    }
+
+    pub fn start_streaming_with_device(
+        microphone: Option<&str>,
+    ) -> Result<(Self, Receiver<Vec<f32>>), String> {
         let (sender, receiver) = mpsc::channel();
-        let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender))?;
+        let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
         Ok((recorder, receiver))
     }
 
     fn start_inner(
         maximum_duration: Duration,
         audio_chunks: Option<Sender<Vec<f32>>>,
+        microphone: Option<&str>,
     ) -> Result<Self, String> {
         if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
             return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
         }
 
         let host = cpal::default_host();
-        let device = host
-            .default_input_device()
-            .ok_or_else(|| "no default microphone is available".to_string())?;
+        let device = match microphone {
+            None => host
+                .default_input_device()
+                .ok_or("No default microphone is available")?,
+            Some(name) => host
+                .device_by_id(
+                    &name
+                        .parse::<cpal::DeviceId>()
+                        .map_err(|e| format!("Invalid microphone ID: {e}"))?,
+                )
+                .ok_or_else(|| {
+                    format!("Microphone unavailable: {name}. Choose another input in Settings")
+                })?,
+        };
         let supported = device
             .default_input_config()
             .map_err(|error| format!("could not read the microphone format: {error}"))?;
@@ -433,6 +451,25 @@ fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
         kind,
         cpal::ErrorKind::DeviceChanged | cpal::ErrorKind::RealtimeDenied | cpal::ErrorKind::Xrun
     )
+}
+
+#[derive(Clone, Debug)]
+pub struct InputDevice {
+    pub id: String,
+    pub label: String,
+}
+
+pub fn input_devices() -> Result<Vec<InputDevice>, String> {
+    cpal::default_host()
+        .input_devices()
+        .map_err(|e| e.to_string())?
+        .map(|device| {
+            Ok(InputDevice {
+                id: device.id().map_err(|e| e.to_string())?.to_string(),
+                label: device.description().map_err(|e| e.to_string())?.to_string(),
+            })
+        })
+        .collect()
 }
 
 #[cfg(test)]
