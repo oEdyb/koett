@@ -441,6 +441,16 @@
       "reason": "license-text-not-bundled"
     },
     {
+      "component": "pkg:cargo/gdk4-wayland-sys@0.11.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/gdk4-wayland@0.11.5",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
       "component": "pkg:cargo/gdk4@0.11.5",
       "group": "rust-package",
       "reason": "license-text-not-bundled"
@@ -667,6 +677,11 @@
     },
     {
       "component": "pkg:cargo/libc@0.2.189",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/libloading@0.9.0",
       "group": "rust-package",
       "reason": "license-text-not-bundled"
     },
@@ -1694,6 +1709,6 @@
   "schema": 1,
   "status": "known-gaps-block-release-compliance",
   "summary": {
-    "gaps": 338
+    "gaps": 341
   }
 }

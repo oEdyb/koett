@@ -2247,6 +2247,51 @@
       "version": "0.11.5"
     },
     {
+      "cargo_checksum_sha256": "99cc5266dc4e8745a4c4683b26a0c54977a452809d572c940e39c6844663c0ec",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 651,
+          "path": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk4-wayland",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gdk4-wayland@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
+      "cargo_checksum_sha256": "bb55bc5225519d34fdf1412db3755af88d1388a1c2a053d92e6751db13d96e68",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1024,
+          "path": "LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        }
+      ],
+      "name": "gdk4-wayland-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/gtk-rs/gtk4-rs",
+      "sbom_ref": "pkg:cargo/gdk4-wayland-sys@0.11.5",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.11.5"
+    },
+    {
       "cargo_checksum_sha256": "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8",
       "declared_license": "Apache-2.0",
       "group": "rust-package",
@@ -3282,6 +3327,26 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.2.189"
+    },
+    {
+      "cargo_checksum_sha256": "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60",
+      "declared_license": "ISC",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 736,
+          "path": "LICENSE",
+          "sha256": "b29f8b01452350c20dd1af16ef83b598fea3053578ccc1c7a0ef40e57be2620f"
+        }
+      ],
+      "name": "libloading",
+      "normalized_declared_license": "ISC",
+      "notice_state": "missing",
+      "repository": "https://github.com/nagisa/rust_libloading/",
+      "sbom_ref": "pkg:cargo/libloading@0.9.0",
+      "selected_license": "ISC",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.9.0"
     },
     {
       "cargo_checksum_sha256": "28d0a00925a9f930d679b6789b721e3a7f9ed110f41b86d2497caa780c3a070a",
@@ -8573,6 +8638,24 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk4-wayland-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gdk4-wayland-sys@0.11.5",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/gdk4-wayland@0.11.5"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/cairo-rs@0.22.9",
         "pkg:cargo/gdk-pixbuf@0.22.0",
         "pkg:cargo/gdk4-sys@0.11.5",
@@ -8967,9 +9050,11 @@
         "pkg:cargo/cpal@0.18.2",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gdk4-wayland@0.11.5",
         "pkg:cargo/global-hotkey@0.8.0",
         "pkg:cargo/gtk4@0.11.5",
         "pkg:cargo/ksni@0.3.6",
+        "pkg:cargo/libloading@0.9.0",
         "pkg:cargo/ringbuf@0.5.2",
         "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
@@ -9019,6 +9104,13 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/libc@0.2.189"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/windows-link@0.2.1"
+      ],
+      "ref": "pkg:cargo/libloading@0.9.0"
     },
     {
       "dependsOn": [
@@ -10498,14 +10590,14 @@
   ],
   "inputs": [
     {
-      "bytes": 80042,
+      "bytes": 80845,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "5fbf86e171a7af07a43c4fa2ba7840ca4dac44bc2927f3565789ff8cc1e0a1ac"
+      "sha256": "086a719b9078d1bbeb258745869e10e3e04c9cb49e88054400f6b307d5864f31"
     },
     {
-      "bytes": 2094,
+      "bytes": 2141,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "da803b42e9219f216695571595cc1e2ca2ab056881ec4548d2a2a7bd19130dbf"
+      "sha256": "7500bd02aae08f1563c4f6201e3c2ebb43287b989be0309b9c4e3a0ee7b7bffa"
     },
     {
       "bytes": 852,
@@ -11912,11 +12004,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 343,
+    "components": 346,
     "models": 5,
     "native_libraries": 9,
-    "notice_gaps": 338,
-    "rust_packages": 324,
+    "notice_gaps": 341,
+    "rust_packages": 327,
     "swift_packages": 1
   }
 }

@@ -49,3 +49,31 @@ The vendored package and repository both have a file named LICENSE. Sorting a se
 by filename alone left ties dependent on Python's hash seed. Sorting emitted file
 records by name and content hash gives deterministic inventory output, verified
 with multiple hash seeds.
+
+## 2026-10-26: Linux recording feedback and Settings presentation
+
+The Linux candidate omitted the contracted nonactivating recording pill and could
+leave an existing Settings dialog behind another window. Optional GTK layer-shell
+feedback now shows live levels/elapsed time above applications without accepting
+keyboard or pointer input; Transcribing remains visible until completion. Missing
+layer-shell support retains in-window feedback rather than pretending to provide
+an always-on-top window.
+
+Settings reuses its dialog and forwards the user's Wayland activation token to
+that window. GTK can remove the token from the environment before Rust main;
+reading GDK's cached startup token fixes that case. Recording commands retain
+plain IPC bytes and never carry activation authority. Aggregate interactive-window
+focus protects paste while either History or Settings is active.
+
+Private KWin and exact Niri 26.04 proofs cover focus-preserving capture, typing,
+levels, transcription feedback and Settings activation. The existing Settings
+window foregrounds through an actual private Niri keybinding; merely spawning
+from IPC was insufficient activation evidence. GTK4.6 fallback, tests, lint and
+baseline release build pass. See the follow-up in the Linux verification report.
+
+Read-only inspection of recent user history confirms malformed words and uneven
+punctuation, not just a language mismatch (the user confirmed English). Successful
+recording audio was not retained, so intended words and root cause cannot be
+reconstructed. An isolated larger English v2 trial establishes compatibility and
+higher RAM/CPU cost, not improved personal accuracy. The selected model remains
+unchanged. No private transcript text belongs in repository evidence.

@@ -8,6 +8,8 @@ use std::time::{Duration, Instant};
 
 pub enum Update {
     Status(String),
+    Show(String),
+    Settings(String),
     Completed(String),
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
@@ -112,7 +114,8 @@ fn build_window(
     css.load_from_data(
         ".transcript { font-size: 16px; }\n\
          .koett-record { background: #ac3d31; color: #ffffff; }\n\
-         .koett-record:hover { background: #923126; }",
+         .koett-record:hover { background: #923126; }\n\
+         window.koett-pill { border-radius: 24px; background: #262626; color: #ffffff; }",
     );
     gtk::style_context_add_provider_for_display(
         &WidgetExt::display(&window),
@@ -128,11 +131,10 @@ fn build_window(
     settings_button.connect_clicked({
         let window = window.clone();
         let settings_saved = settings_saved.clone();
-        move |_| super::settings_view::show(&window, settings_saved.clone())
+        move |_| super::settings_view::show(&window, settings_saved.clone(), None)
     });
     window.connect_is_active_notify(|window| {
-        super::output::WINDOW_ACTIVE
-            .store(window.is_active(), std::sync::atomic::Ordering::Release);
+        update_active(window.upcast_ref());
     });
     let keys = gtk::EventControllerKey::new();
     keys.connect_key_pressed({
@@ -166,6 +168,7 @@ fn build_window(
     application.add_action(&quit);
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
+    let overlay = super::recording_overlay::RecordingOverlay::new(application);
     let mut recording_started = None::<Instant>;
     let mut state = String::from("Starting…");
     let mut notice = None::<String>;
@@ -180,6 +183,16 @@ fn build_window(
             });
             for update in updates.try_iter() {
                 match update {
+                    Update::Show(token) => {
+                        history.refresh();
+                        present(window.upcast_ref(), Some(&token));
+                    }
+                    Update::Settings(token) => {
+                        // Map the parent without requesting activation. The
+                        // one-use token belongs to Settings, not History.
+                        window.set_visible(true);
+                        super::settings_view::show(&window, settings_saved.clone(), Some(&token));
+                    }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
                     Update::Completed(text) => {
@@ -188,6 +201,9 @@ fn build_window(
                         recovery.set_label("Copy last transcript");
                     }
                     Update::Status(message) if message == "@quit" => {
+                        if let Some(overlay) = &overlay {
+                            overlay.close();
+                        }
                         hold.borrow_mut().take();
                         if let Some(app) = window.application() {
                             app.quit();
@@ -200,7 +216,11 @@ fn build_window(
                     }
                     Update::Status(message) if message == "@settings" => {
                         window.present();
-                        super::settings_view::show(&window, settings_saved.clone());
+                        let parent = window.clone();
+                        let saved = settings_saved.clone();
+                        gtk::glib::idle_add_local_once(move || {
+                            super::settings_view::show(&parent, saved, None);
+                        });
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
@@ -238,6 +258,9 @@ fn build_window(
             {
                 meter.set_value(f64::from((levels.current().0 * 10.0).clamp(0.0, 1.0)));
             }
+            if let Some(overlay) = &overlay {
+                overlay.update(&state, recording_started, audio_levels.as_ref());
+            }
             status.set_text(
                 &recording_started
                     .map(|started| {
@@ -258,4 +281,32 @@ fn build_window(
     if visible {
         window.present();
     }
+}
+
+// Count interactive windows together: deactivation of History must not clear
+// the paste guard while Settings is active. The layer surface never participates.
+pub(super) fn update_active(window: &gtk::Window) {
+    let active = window.application().is_some_and(|app| {
+        app.windows().iter().any(|window| {
+            window.title().as_deref() != Some("Koett recording") && window.is_active()
+        })
+    });
+    super::output::WINDOW_ACTIVE.store(active, std::sync::atomic::Ordering::Release);
+}
+
+// GTK 4.6's Wayland startup-id property is a no-op. Its supported display
+// API supplies the next focus request; GTK >=4.10 uses the per-window ID.
+// https://gitlab.gnome.org/GNOME/gtk/-/blob/4.6.9/gdk/wayland/gdksurface-wayland.c
+pub(super) fn present(window: &gtk::Window, token: Option<&str>) {
+    if let Some(token) = token {
+        let display = WidgetExt::display(window);
+        if gtk::minor_version() < 10
+            && let Some(display) = display.downcast_ref::<gdk4_wayland::WaylandDisplay>()
+        {
+            display.set_startup_notification_id(token);
+        } else {
+            window.set_startup_id(token);
+        }
+    }
+    window.present();
 }

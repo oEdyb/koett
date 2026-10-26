@@ -100,3 +100,39 @@ without deleting native records, other-source references or original bytes.
 The vault project card/log were updated and their YAML parses. The canonical
 vault routing checker is unavailable at both its documented Mac path and this
 Linux checkout; a complete vault check was not claimed.
+
+## Recording pill and Settings follow-up
+
+The user-installed candidate above lacked the existing recording-pill contract.
+The follow-up adds optional GTK layer-shell feedback and reuses/activates Settings
+with the user's Wayland token, including tokens cached by GDK before Rust main.
+An actual private Niri keybinding now foregrounds an existing Settings window.
+Private Niri/KWin proofs also show capture above a typing target without stealing
+focus, live microphone levels, transcribing feedback and cleanup. No host input,
+clipboard, microphone or foreground windows were used for these checks.
+
+Current checks: 78 Rust tests pass (3 intentional ignored probes), formatting and
+strict all-target Clippy pass; 29 Python tests and Ubuntu22/GTK4.6 release build
+pass. Parent reran Rust tests, formatting, Clippy and inventory verification.
+Windows source and Rust1.92 checks pass. The baseline executable still requires
+at most GLIBC2.34 and has no mandatory gtk4-layer-shell shared-library dependency.
+GNOME/X11 and missing-library sessions retain in-window feedback, without an
+always-on-top claim. Broader platform/release limits above remain in force.
+
+Native receipts: `/tmp/koett-pill-niri-keybinding-fixed2/result.json`,
+`/tmp/koett-pill-niri-keybinding-fixed2/settings.png` and
+`/tmp/koett-pill-ui-receipt/results.json`. Both owned labs were stopped afterward.
+User executable replacement is atomic and backed up; the running old process is
+left alone, so the new UI takes effect after the user quits and reopens Koett.
+
+English quality remains unresolved. A separate verified 600M v2 trial works with
+the current runtime, using about 1105MiB peak RSS versus 332MiB for 110M on two
+public short fixtures. These samples do not establish better personal accuracy.
+No selected/default model was changed. The private trial receipt remains outside
+the repository at `~/.cache/koett/model-evaluations/v2-trial-receipt.json`.
+
+Installed follow-up executable SHA-256:
+`c43bdb263c8f9c508f57db6adc7c1bcc844b76c73194bce556ac518af34ae63b`
+(48,606,736 bytes). Prior executable and install receipt:
+`~/.local/state/koett/install-backups/20261026T161938Z/`.
+Exact installed-byte comparison passed; the user app was not launched or restarted.

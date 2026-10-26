@@ -29,14 +29,75 @@ fn path() -> Result<std::path::PathBuf, String> {
     Ok(directory.join(format!("koett-{session}-control.sock")))
 }
 
-pub fn send(command: &str) -> Result<(), String> {
-    let mut stream = UnixStream::connect(path()?).map_err(|e| e.to_string())?;
-    stream
-        .write_all(command.as_bytes())
-        .map_err(|e| e.to_string())
+// Allow JSON escaping of the bounded 2 KiB token plus its small envelope.
+const MAX_REQUEST: usize = 8192;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
+enum ActivationRequest {
+    Show { token: String },
+    Settings { token: String },
 }
 
-pub fn listen(sender: Sender<TrayAction>) -> Result<(), String> {
+fn valid_token(token: &str) -> bool {
+    !token.is_empty() && token.len() <= 2048 && !token.chars().any(char::is_control)
+}
+
+fn encode(command: &str, token: Option<&str>) -> Result<Vec<u8>, String> {
+    let request = match (command, token.filter(|token| valid_token(token))) {
+        ("show", Some(token)) => Some(ActivationRequest::Show {
+            token: token.into(),
+        }),
+        ("settings", Some(token)) => Some(ActivationRequest::Settings {
+            token: token.into(),
+        }),
+        _ => None,
+    };
+    match request {
+        Some(request) => serde_json::to_vec(&request).map_err(|e| e.to_string()),
+        None => Ok(command.as_bytes().to_vec()),
+    }
+}
+
+// Only explicit window requests carry activation authority. Bare requests
+// remain best-effort: a Wayland compositor may refuse to focus an existing
+// window without a fresh token from a launcher or user interaction.
+pub fn send(command: &str) -> Result<(), String> {
+    let mut stream = UnixStream::connect(path()?).map_err(|e| e.to_string())?;
+    let token = if matches!(command, "show" | "settings") {
+        startup_token()
+    } else {
+        None
+    };
+    let bytes = encode(command, token.as_deref())?;
+    stream.write_all(&bytes).map_err(|e| e.to_string())
+}
+
+pub(super) fn startup_token() -> Option<String> {
+    use gtk4::prelude::DisplayExt;
+    if let Ok(token) = std::env::var("XDG_ACTIVATION_TOKEN") {
+        return Some(token);
+    }
+    // GTK >=4.10 caches and unsets startup environment in a constructor,
+    // before Rust main. Initialize GTK without creating a window, then read
+    // the public display property. No window or activation is needed to retrieve it.
+    // https://github.com/GNOME/gtk/blob/4.24.1/gdk/gdk.c
+    gtk4::init().ok()?;
+    gtk4::gdk::Display::default()?
+        .startup_notification_id()
+        .map(|id| id.to_string())
+}
+
+fn read_request(stream: &mut UnixStream) -> Option<Vec<u8>> {
+    let mut bytes = Vec::new();
+    Read::by_ref(stream)
+        .take(MAX_REQUEST as u64 + 1)
+        .read_to_end(&mut bytes)
+        .ok()?;
+    (bytes.len() <= MAX_REQUEST).then_some(bytes)
+}
+
+pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> Result<(), String> {
     let path = path()?;
     // The lifetime lock is already held. Only remove our stale socket, never arbitrary files.
     if let Ok(metadata) = std::fs::symlink_metadata(&path) {
@@ -56,11 +117,25 @@ pub fn listen(sender: Sender<TrayAction>) -> Result<(), String> {
             };
             // Filesystem mode and the private, per-user runtime directory authenticate peers.
             let _ = stream.set_read_timeout(Some(std::time::Duration::from_millis(200)));
-            let mut bytes = [0; 32];
-            let Ok(count) = stream.read(&mut bytes) else {
+            let Some(bytes) = read_request(&mut stream) else {
                 continue;
             };
-            let action = match std::str::from_utf8(&bytes[..count]).unwrap_or("").trim() {
+            if let Ok(request) = serde_json::from_slice::<ActivationRequest>(&bytes) {
+                let update = match request {
+                    ActivationRequest::Show { token } if valid_token(&token) => {
+                        super::window::Update::Show(token)
+                    }
+                    ActivationRequest::Settings { token } if valid_token(&token) => {
+                        super::window::Update::Settings(token)
+                    }
+                    _ => continue,
+                };
+                if ui.send(update).is_err() {
+                    break;
+                }
+                continue;
+            }
+            let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
                 "start" => TrayAction::Start,
                 "stop" => TrayAction::Stop,
                 "toggle" => TrayAction::Toggle,
@@ -75,4 +150,58 @@ pub fn listen(sender: Sender<TrayAction>) -> Result<(), String> {
         }
     });
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recording_commands_keep_legacy_wire_bytes_with_activation_environment() {
+        for command in ["start", "stop", "toggle", "quit"] {
+            assert_eq!(
+                encode(command, Some("fresh-token")).unwrap(),
+                command.as_bytes()
+            );
+        }
+        for command in ["show", "settings"] {
+            assert_eq!(encode(command, None).unwrap(), command.as_bytes());
+        }
+    }
+
+    #[test]
+    fn activation_is_forwarded_only_for_window_requests_and_validated() {
+        let token = "a-long-compositor-activation-token".repeat(8);
+        for command in ["show", "settings"] {
+            let bytes = encode(command, Some(&token)).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(value["command"], command);
+            assert_eq!(value["token"], token);
+            for invalid in ["", "bad\0token", "bad\ntoken", &"x".repeat(2049)] {
+                assert_eq!(encode(command, Some(invalid)).unwrap(), command.as_bytes());
+            }
+        }
+        assert!(
+            serde_json::from_slice::<ActivationRequest>(br#"{"command":"start","token":"token"}"#)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn socket_reads_complete_fragmented_tokens_and_bounds_input() {
+        let payload = encode("settings", Some(&"token".repeat(50))).unwrap();
+        let (mut reader, mut writer) = UnixStream::pair().unwrap();
+        let expected = payload.clone();
+        let write = std::thread::spawn(move || {
+            for fragment in payload.chunks(7) {
+                writer.write_all(fragment).unwrap();
+            }
+        });
+        assert_eq!(read_request(&mut reader).unwrap(), expected);
+        write.join().unwrap();
+        let (mut reader, mut writer) = UnixStream::pair().unwrap();
+        writer.write_all(&vec![b'x'; MAX_REQUEST + 1]).unwrap();
+        drop(writer);
+        assert!(read_request(&mut reader).is_none());
+    }
 }

@@ -2,7 +2,19 @@ use crate::replacements::Replacement;
 use crate::settings::{RecordingMode, Settings};
 use gtk4::{self as gtk, prelude::*};
 
-pub fn show(parent: &gtk::ApplicationWindow, on_saved: std::rc::Rc<dyn Fn(&Settings)>) {
+pub fn show(
+    parent: &gtk::ApplicationWindow,
+    on_saved: std::rc::Rc<dyn Fn(&Settings)>,
+    token: Option<&str>,
+) {
+    if let Some(window) = parent.application().and_then(|app| {
+        app.windows()
+            .into_iter()
+            .find(|window| window.title().as_deref() == Some("Settings"))
+    }) {
+        super::window::present(&window, token);
+        return;
+    }
     let settings = match Settings::load() {
         Ok(s) => s,
         Err(error) => {
@@ -18,9 +30,7 @@ pub fn show(parent: &gtk::ApplicationWindow, on_saved: std::rc::Rc<dyn Fn(&Setti
         .default_height(600)
         .build();
     window.set_application(parent.application().as_ref());
-    window.connect_is_active_notify(|window| {
-        super::output::WINDOW_ACTIVE.store(window.is_active(), std::sync::atomic::Ordering::Release)
-    });
+    window.connect_is_active_notify(super::window::update_active);
     let header = gtk::HeaderBar::new();
     header.set_title_widget(Some(&gtk::Label::new(Some("Settings"))));
     window.set_titlebar(Some(&header));
@@ -287,7 +297,7 @@ Hold release: koett stop",
             }
         }
     });
-    window.present();
+    super::window::present(&window, token);
 }
 fn group(layout: &gtk::Box, name: &str) {
     let title = gtk::Label::new(Some(name));

@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import sqlite3
 import subprocess
 import tempfile
@@ -44,6 +45,54 @@ def arguments():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--inside-session", action="store_true", help=argparse.SUPPRESS)
     return parser.parse_args()
+
+
+def verify_activation_forwarding(binary):
+    """Exercise real GTK constructor/token handling without creating a window.
+
+    Caller already validated the private lab/Xvfb environment. Never replace an
+    existing control socket: it could belong to another running test client.
+    """
+    child_env = os.environ.copy()
+    if "WAYLAND_DISPLAY" in child_env:
+        # Keep GDK on the real private compositor while giving this IPC-only
+        # fixture its own runtime/socket; existing app sockets stay untouched.
+        child_env["WAYLAND_DISPLAY"] = str(Path(child_env["XDG_RUNTIME_DIR"]) / child_env["WAYLAND_DISPLAY"])
+    display = child_env.get("WAYLAND_DISPLAY") or child_env["DISPLAY"]
+    session = "".join(char for char in display if char.isascii() and (char.isalnum() or char == "-"))[:32]
+    token = "koett-private-activation-fixture"
+    with tempfile.TemporaryDirectory(prefix="koett-activation-") as runtime, socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
+        child_env["XDG_RUNTIME_DIR"] = runtime
+        path = Path(runtime) / f"koett-{session}-control.sock"
+        listener.bind(str(path))
+        try:
+            listener.listen()
+            listener.settimeout(5)
+            for command in ["show", "settings", "toggle", "start", "stop"]:
+                child = subprocess.Popen([str(binary), command],
+                    env={**child_env, "XDG_ACTIVATION_TOKEN": token},
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                try:
+                    connection, _ = listener.accept()
+                    with connection:
+                        connection.settimeout(5)
+                        payload = bytearray()
+                        while block := connection.recv(4096):
+                            payload.extend(block)
+                            assert len(payload) <= 8192
+                    stdout, stderr = child.communicate(timeout=5)
+                    assert child.returncode == 0, (stdout, stderr)
+                    if command in ["show", "settings"]:
+                        assert json.loads(payload) == {"command": command, "token": token}
+                    else:
+                        assert payload == command.encode()
+                finally:
+                    if child.poll() is None:
+                        child.terminate()
+                        child.wait(timeout=5)
+        finally:
+            path.unlink()
+    return "real CLI forwards GTK-cached activation tokens; recording IPC stays plain"
 
 
 def main():
@@ -154,6 +203,19 @@ def main():
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi
 
+    if lab_runtime:
+        # ALSA's PipeWire default cannot select a sink monitor as a capture
+        # source. Use the Pulse bridge to the lab's sole virtual monitor.
+        import atexit
+        source_name = f"koett_test_mic_{os.getpid()}"
+        module = subprocess.check_output(["pactl", "load-module", "module-remap-source",
+            "master=agent_lab_audio.monitor", f"source_name={source_name}"], text=True).strip()
+        atexit.register(lambda: subprocess.run(["pactl", "unload-module", module], check=True))
+        alsa_config = output / "alsa-private.conf"
+        alsa_config.write_text('</usr/share/alsa/alsa.conf>\npcm.!default { type pulse device "agent_lab_audio.monitor" }\nctl.!default { type pulse }\npcm.agent_lab_input { type pulse device "agent_lab_audio.monitor" hint { show on description \"Private lab monitor\" ioid \"Input\" } }\n'.replace("agent_lab_audio.monitor", source_name))
+        os.environ["ALSA_CONFIG_PATH"] = str(alsa_config)
+        os.environ["PULSE_SOURCE"] = source_name
+
     config = output / "config/koett/settings.json"
     config.parent.mkdir(parents=True, exist_ok=True)
     settings = {"start_at_login": False, "model_directory": str(output / "missing-model")}
@@ -173,9 +235,12 @@ def main():
                 "INSERT INTO transcripts(id,created_at_ms,model,text,raw_text) VALUES(?,?,?,?,NULL)",
                 (f"fixture-{index:03}", 1_793_000_000_000 - index * 60_000, "Synthetic UI fixture", text),
             )
+    activation_check = verify_activation_forwarding(args.binary)
     logfile = (output / "app.log").open("w")
     process = subprocess.Popen([str(args.binary)], stdout=logfile, stderr=logfile)
-    results = []
+    results = [activation_check]
+    target_process = None
+    audio_process = None
     clipboard_original = None
     clipboard_owned = None
     if shutil.which("wl-copy") and shutil.which("wl-paste") and os.environ.get("WAYLAND_DISPLAY"):
@@ -257,8 +322,9 @@ def main():
         entry = wait(lambda: find("Search transcripts", "entry"), "named search entry")
         assert entry.get_editable_text_iface().set_text_contents(value)
 
-    def screenshot(name):
+    def screenshot(name, settle=0.4):
         nonlocal clipboard_owned
+        time.sleep(settle)  # Capture settled compositor frames, not opening/closing animations.
         if lab_runtime:
             subprocess.run(["/usr/bin/python3", str(Path.home() / ".local/share/agent-lab/screenshot.py"),
                             str(output / name)], check=True)
@@ -312,7 +378,7 @@ def main():
     def control(command):
         subprocess.run([str(args.binary), command], check=True)
 
-    def focus_lab_window(title):
+    def focus_lab_window(title, pid=None):
         if not lab_runtime:
             return
         import ast
@@ -326,7 +392,7 @@ def main():
         pid = int(re.search(r"uint32 ([0-9]+)", owner)[1])
         assert "/agent-lab-koett.service" in Path(f"/proc/{pid}/cgroup").read_text()
         script = output / "focus-owned-window.js"
-        script.write_text(f"const target = workspace.windowList().find(w => w.pid === {process.pid} && w.caption === {json.dumps(title)}); if (target) workspace.activeWindow = target;")
+        script.write_text(f"const target = workspace.windowList().find(w => w.pid === {pid or process.pid} && w.caption === {json.dumps(title)}); if (target) workspace.activeWindow = target;")
         plugin = f"koett-ui-{process.pid}"
         loaded = subprocess.check_output([*command, "--object-path", "/Scripting",
             "--method", "org.kde.kwin.Scripting.loadScript", str(script), plugin], text=True)
@@ -431,8 +497,15 @@ def main():
 
         button("Settings")
         settings_window = wait(lambda: find("Settings", "frame"), "native settings")
-        focus_lab_window("Settings")
-        wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "active Settings window")
+        wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "Settings activates without compositor assistance")
+        for _ in range(3):
+            control("settings")
+        time.sleep(0.4)
+        assert len([node for node in walk(application()) if node_role(node) == "frame"
+                    and node.get_name() == "Settings"
+                    and node.get_state_set().contains(Atspi.StateType.SHOWING)]) == 1
+        screenshot("settings-front.png")
+        results.append("Settings activates and repeated requests reuse one window")
         microphone = wait(lambda: find("Microphone", "combo box", settings_window), "labeled microphone")
         # Index 0 is System default; choose one enumerated device and verify stable ID persistence.
         choose_microphone(microphone, 1)
@@ -470,7 +543,7 @@ def main():
         wait(lambda: not settings_window.get_state_set().contains(Atspi.StateType.SHOWING), "saved Settings window closed")
         button("Settings")
         settings_window = wait(lambda: find("Settings", "frame"), "reopened settings")
-        focus_lab_window("Settings")
+        wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "reopened Settings activates")
         wait(lambda: (entry := find("Phrase", "text", settings_window)) and entry_text(entry) == "koet", "reopened replacement")
         microphone = find("Microphone", "combo box", settings_window)
         choose_microphone(microphone, 0)
@@ -498,13 +571,87 @@ def main():
             screenshot("empty.png")
             results.append("empty history has Record and no blank editor actions")
             if args.record:
-                button("Record")
-                wait(lambda: find("Stop", "button"), "real microphone Recording", timeout=20)
+                target_process = subprocess.Popen(["/usr/bin/python3", "-c", """
+import gi
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk
+app = Gtk.Application(application_id='com.koett.OwnedUITarget')
+def activate(app):
+    window = Gtk.ApplicationWindow(application=app, title='Owned typing target')
+    entry = Gtk.Entry(placeholder_text='Owned target input')
+    window.set_child(entry)
+    window.maximize()
+    window.present()
+    entry.grab_focus()
+app.connect('activate', activate)
+app.run([])
+"""])
+                def target_window():
+                    return find("Owned typing target", "frame", Atspi.get_desktop(0))
+                target = wait(target_window, "owned target window")
+                focus_lab_window("Owned typing target", target_process.pid)
+                wait(lambda: target.get_state_set().contains(Atspi.StateType.ACTIVE), "owned target focus")
+                input_tool = str(Path.home() / ".local/share/agent-lab/input")
+                subprocess.run([input_tool, "text", "before "], check=True)
+                control("start")
+                wait(lambda: find("Stop", "button"), "background Recording", timeout=20)
+                pill = wait(lambda: find("Koett recording", "frame"), "native layer-shell pill")
+                assert not pill.get_state_set().contains(Atspi.StateType.ACTIVE)
+                wait(lambda: any(label.startswith("Recording · 0:0") for label in labels()), "elapsed recording timer")
+                value_nodes = [node for node in walk(pill) if "Value" in node.get_interfaces()]
+                assert value_nodes, "pill exposes a real microphone meter"
+                assert all(node.get_value_iface().get_current_value() == 0 for node in value_nodes)
+                sample = args.model / "test_wavs/0.wav"
+                audio_process = subprocess.Popen(["pw-play", "--target", "agent_lab_audio", str(sample)])
+                wait(lambda: any(node.get_value_iface().get_current_value() > 0 for node in value_nodes), "live meter responds to private sample audio")
                 time.sleep(2)
-                screenshot("recording.png")
-                button("Stop")
+                subprocess.run([input_tool, "text", "during"], check=True)
+                assert any("before during" in entry_text(node) for node in walk(target) if "EditableText" in node.get_interfaces())
+                assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                screenshot("recording-above-target.png")
+                from PIL import Image
+                width, height = Image.open(output / "recording-above-target.png").size
+                subprocess.run([input_tool, "move", str(width // 2), str(height - 48)], check=True)
+                subprocess.run([input_tool, "click"], check=True)
+                subprocess.run([input_tool, "text", " through"], check=True)
+                assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                assert any("before during through" in entry_text(node) for node in walk(target) if "EditableText" in node.get_interfaces())
+                control("stop")
+                # Finalization can finish before GTK's next frame. Observe the
+                # busy pill when rendered, or immediate completion; do not add
+                # a product delay just to make a synthetic sample screenshotable.
+                outcome = wait(lambda: "transcribing" if find("Transcribing…", "label")
+                               else "completed" if find("Record", "button") else None,
+                               "transcribing or completed", timeout=60)
+                assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                if outcome == "transcribing":
+                    screenshot("transcribing-above-target.png", settle=0.05)
+                results.append(f"stop lifecycle observed: {outcome}")
                 wait(lambda: find("Record", "button"), "capture stop and ASR completion", timeout=60)
-                results.append("real default microphone start/2s capture/stop/local ASR completion")
+                assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                wait(lambda: find("Koett recording", "frame") is None, "pill hidden after completion")
+                control("start")
+                wait(lambda: find("Koett recording", "frame"), "second recording pill")
+                control("settings")
+                settings_window = wait(lambda: find("Settings", "frame"), "Settings from another app")
+                wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "Settings in front of owned target")
+                time.sleep(1)
+                screenshot("settings-during-capture.png")
+                control("stop")
+                wait(lambda: find("Record", "button"), "Settings capture completion", timeout=60)
+                assert settings_window.get_state_set().contains(Atspi.StateType.ACTIVE)
+                wait(lambda: find("Koett recording", "frame") is None, "second pill cleanup")
+                screenshot("settings-above-target.png")
+                settings = json.loads(config.read_text())
+                settings["microphone"] = "invalid-private-fixture-device"
+                config.write_text(json.dumps(settings))
+                control("start")
+                wait(lambda: find("Retry", "button"), "capture failure reported", timeout=20)
+                assert find("Koett recording", "frame") is None
+                screenshot("capture-error.png")
+                results.append("capture failure leaves no stale pill; pill pointer region passes clicks to target")
+                results.append("real meter responds to private audio; typing remains in target during capture; Settings capture preserves focus and avoids paste")
+                results.append("native layer pill above owned target, nonactivating start/stop, completion cleanup, Settings activation")
         else:
             results.append("SKIP real model and microphone: pass --model and --record")
         print(json.dumps({"checks": results, "artifacts": str(output)}, indent=2))
@@ -518,6 +665,12 @@ def main():
         (output / "accessibility.json").write_text(json.dumps(dump, indent=2))
         raise
     finally:
+        if audio_process is not None and audio_process.poll() is None:
+            audio_process.terminate()
+            audio_process.wait(timeout=5)
+        if target_process is not None and target_process.poll() is None:
+            target_process.terminate()
+            target_process.wait(timeout=5)
         if process.poll() is None:
             control("quit")
             try:

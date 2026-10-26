@@ -2925,6 +2925,76 @@
       "version": "0.11.5"
     },
     {
+      "bom-ref": "pkg:cargo/gdk4-wayland-sys@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "bb55bc5225519d34fdf1412db3755af88d1388a1c2a053d92e6751db13d96e68"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk4-wayland-sys",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk4-wayland-sys@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
+      "bom-ref": "pkg:cargo/gdk4-wayland@0.11.5",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/gtk-rs/gtk4-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "99cc5266dc4e8745a4c4683b26a0c54977a452809d572c940e39c6844663c0ec"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "gdk4-wayland",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/gdk4-wayland@0.11.5",
+      "type": "library",
+      "version": "0.11.5"
+    },
+    {
       "bom-ref": "pkg:cargo/gdk4@0.11.5",
       "externalReferences": [
         {
@@ -4621,6 +4691,41 @@
       "purl": "pkg:cargo/libc@0.2.189",
       "type": "library",
       "version": "0.2.189"
+    },
+    {
+      "bom-ref": "pkg:cargo/libloading@0.9.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nagisa/rust_libloading/"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "ISC"
+        }
+      ],
+      "name": "libloading",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/libloading@0.9.0",
+      "type": "library",
+      "version": "0.9.0"
     },
     {
       "bom-ref": "pkg:cargo/libredox@0.1.20",
@@ -13347,6 +13452,24 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/glib-sys@0.22.9",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/system-deps@9.0.1"
+      ],
+      "ref": "pkg:cargo/gdk4-wayland-sys@0.11.5"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/gdk4-wayland-sys@0.11.5",
+        "pkg:cargo/gdk4@0.11.5",
+        "pkg:cargo/gio@0.22.10",
+        "pkg:cargo/glib@0.22.10",
+        "pkg:cargo/libc@0.2.189"
+      ],
+      "ref": "pkg:cargo/gdk4-wayland@0.11.5"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/cairo-rs@0.22.9",
         "pkg:cargo/gdk-pixbuf@0.22.0",
         "pkg:cargo/gdk4-sys@0.11.5",
@@ -13741,9 +13864,11 @@
         "pkg:cargo/cpal@0.18.2",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/gdk4-wayland@0.11.5",
         "pkg:cargo/global-hotkey@0.8.0",
         "pkg:cargo/gtk4@0.11.5",
         "pkg:cargo/ksni@0.3.6",
+        "pkg:cargo/libloading@0.9.0",
         "pkg:cargo/ringbuf@0.5.2",
         "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
@@ -13793,6 +13918,13 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/libc@0.2.189"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/windows-link@0.2.1"
+      ],
+      "ref": "pkg:cargo/libloading@0.9.0"
     },
     {
       "dependsOn": [

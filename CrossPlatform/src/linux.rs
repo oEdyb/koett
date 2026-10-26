@@ -188,6 +188,7 @@ mod control;
 mod history_view;
 pub(crate) mod media;
 mod output;
+mod recording_overlay;
 mod settings_view;
 mod window;
 
@@ -199,6 +200,7 @@ pub fn run() -> Result<(), String> {
     if !matches!(command.as_str(), "show" | "--background") {
         return Err("Koett is not running. Launch Koett first".into());
     }
+    recording_overlay::prepare()?;
     let instance = single_instance()?;
     let settings = Settings::load()?;
     if let Err(error) = set_start_at_login(settings.start_at_login) {
@@ -206,7 +208,7 @@ pub fn run() -> Result<(), String> {
     }
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
-    control::listen(actions.clone())?;
+    control::listen(actions.clone(), ui.clone())?;
     let worker_ui = ui.clone();
     let worker_actions = actions.clone();
     std::thread::spawn(move || {
