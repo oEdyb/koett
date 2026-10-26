@@ -5,5 +5,5 @@ Comment=Fast local voice to text
 Exec=koett
 Icon=com.olledyberg.Koett
 Terminal=false
-Categories=Utility;Audio;
+Categories=AudioVideo;Audio;
 StartupNotify=false
