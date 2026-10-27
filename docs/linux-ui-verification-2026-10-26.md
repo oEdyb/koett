@@ -144,3 +144,39 @@ follow-up. No host key/input/capture test occurred. Exact Ctrl+Shift+Space with
 Swedish layout passed start/stop/ASR in private Niri with both old and new binaries:
 `/tmp/koett-keybind-check-physical-20261026/result.json`. The physical-session
 failure remains unproven pending user retry. The lab was stopped.
+
+## Selected microphone meter — 2026-10-27
+
+Settings now previews the selected microphone, including unsaved selections,
+with a labeled native Input level meter. Opening runs off the UI thread. Preview
+keeps only instantaneous levels, not a waveform or transcript; Save/close/switch
+releases its capture stream. Invalid inputs show an error without fallback.
+Generation checks reject stale levels/errors. Dictation reserves capture priority,
+waits up to 500ms for preview release and reports a retryable error if it stalls;
+preview pauses while recording and resumes afterward. The wider UI redesign is
+outside this change.
+
+81 Rust tests pass (3 existing intentional ignored probes), formatting, strict
+Clippy, Windows source check and Rust1.92 check pass. Ubuntu22/GTK4.6 release build
+passes with maximum GLIBC2.34. Two fresh independent code reviews found no
+high-confidence actionable issues. All input/audio/GUI proofs ran in private
+agent-lab with synthetic signals and isolated state, never physical devices.
+
+Implementer native proof: `/tmp/koett-preview-ui-final/results.json`; inspected
+screenshot: `/tmp/koett-preview-ui-final/settings-selected-input-signal.png`.
+Proof covers signal, silence, unsaved switching, zero/error without fallback,
+Save/close cleanup, one stream during real dictation and safe preview resume.
+Parent baseline native rerun: `/tmp/koett-preview-floor-native/`.
+
+Parent baseline executable native rerun passed all 19 checks and its real screenshot
+was inspected. The lab is stopped. Machine-readable receipt:
+`CrossPlatform/evidence/microphone-preview-20261027/native-checks.json`.
+Executable SHA-256:
+`84823738e620507deca13d344428dde91b2e25e6273baa94253f6229ac01b076`
+(48,842,136 bytes). No dependencies changed. Mac execution remains deferred.
+
+Installed atomically at `~/.local/bin/koett`, exact-byte hash verified. Backup:
+`~/.local/state/koett/install-backups/20261027T093802Z/koett`.
+The user began recording before reload, so PID3195381 was deliberately left
+untouched; this feature loads on the next quit/reopen. No host input/capture test
+was performed, and Klippt remained running.

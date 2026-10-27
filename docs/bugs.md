@@ -77,3 +77,13 @@ recording audio was not retained, so intended words and root cause cannot be
 reconstructed. An isolated larger English v2 trial establishes compatibility and
 higher RAM/CPU cost, not improved personal accuracy. The selected model remains
 unchanged. No private transcript text belongs in repository evidence.
+
+## 2026-10-27: selected ALSA input disappeared while microphone stayed present
+
+Koett reported `Microphone unavailable: alsa:usbstream:CARD=Xstrm` while the
+Xstrm device and EasyEffects source remained present and Klippt captured from
+EasyEffects. This proves a selected-input resolution failure, not exclusive
+microphone contention. Restored the prior system-default selection with a private
+settings backup; all other settings remain unchanged. Runtime reloads input
+settings before each capture. No physical capture test was performed; user retry
+is still needed to confirm recovery. Klippt was left running.

@@ -186,6 +186,7 @@ impl ksni::Tray for LinuxTray {
 
 mod control;
 mod history_view;
+mod input_preview;
 pub(crate) mod media;
 mod output;
 mod recording_overlay;

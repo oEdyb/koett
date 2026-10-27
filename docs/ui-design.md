@@ -45,7 +45,12 @@ must not paste into those windows by accident; guard target focus or offer copy.
 Settings: Input (microphone), Recording (mode and shortcut), Text (replacement
 pairs), General (launch at login, pause media). Use native groups and labeled
 controls; no JSON editor. Keep advanced model configuration out of the primary
-workflow. Changes show validation near the control and persist predictably.
+workflow. Changes show validation near the control and persist predictably. The microphone
+selection has one labeled live input-level meter for the selected option. Switching
+options clears the old reading and previews the new device; unavailable inputs
+show an error rather than silently substituting another microphone. Settings
+preview never saves or transcribes audio, stops when closed, and yields to actual
+dictation. A broader visual redesign remains deferred.
 
 ## State and interaction
 

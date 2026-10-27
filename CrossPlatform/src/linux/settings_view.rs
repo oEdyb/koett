@@ -100,6 +100,7 @@ pub fn show(
     });
     group(&layout, "Input");
     row(&layout, "Microphone", &input);
+    super::input_preview::attach(&window, &input, &layout);
     group(&layout, "Recording");
     let mode = gtk::ComboBoxText::new();
     mode.append(Some("toggle"), "Toggle");

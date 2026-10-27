@@ -409,7 +409,11 @@ def main():
         return next((value for node in walk(entry) if "Text" in node.get_interfaces()
                      and (value := Atspi.Text.get_text(node, 0, Atspi.Text.get_character_count(node)))), "")
 
+    microphone_choice_count = 0
+
     def choose_microphone(combo, index):
+        nonlocal microphone_choice_count
+        microphone_choice_count += 1
         toggle = next((node for node in walk(combo) if node_role(node) == "toggle button"), None)
         if toggle is None:
             assert combo.get_selection_iface().select_child(index)
@@ -418,7 +422,7 @@ def main():
              or toggle.get_component_iface().grab_focus(), "microphone keyboard focus")
         input_tool = str(Path.home() / ".local/share/agent-lab/input")
         subprocess.run([input_tool, "key", "57"], check=True)
-        screenshot(f"microphone-{index}.png")
+        screenshot(f"microphone-{index}-{microphone_choice_count}.png")
         subprocess.run([input_tool, "key", "102", *(["108"] * index), "28", "15"], check=True)
 
     try:
@@ -507,8 +511,49 @@ def main():
         screenshot("settings-front.png")
         results.append("Settings activates and repeated requests reuse one window")
         microphone = wait(lambda: find("Microphone", "combo box", settings_window), "labeled microphone")
-        # Index 0 is System default; choose one enumerated device and verify stable ID persistence.
-        choose_microphone(microphone, 1)
+        def preview_value():
+            meters = [node for node in walk(settings_window)
+                      if node.get_name() == "Input level" and "Value" in node.get_interfaces()]
+            assert len(meters) == 1, "Settings exposes one named native input meter"
+            return meters[0].get_value_iface().get_current_value()
+
+        def capture_streams():
+            streams = json.loads(subprocess.check_output(["pactl", "--format=json", "list", "source-outputs"], text=True))
+            clients = json.loads(subprocess.check_output(["pactl", "--format=json", "list", "clients"], text=True))
+            owned = {str(client["index"]) for client in clients
+                     if str(client.get("properties", {}).get("application.process.id")) == str(process.pid)}
+            return [stream for stream in streams if str(stream.get("client")) in owned]
+
+        if lab_runtime:
+            wait(lambda: len(capture_streams()) == 1, "Settings owns exactly one private preview stream")
+            wait(lambda: preview_value() == 0, "silent preview starts at zero")
+            import math
+            import struct
+            import wave
+            tone = output / "preview-tone.wav"
+            with wave.open(str(tone), "wb") as audio:
+                audio.setnchannels(1)
+                audio.setsampwidth(2)
+                audio.setframerate(48000)
+                audio.writeframes(b"".join(struct.pack("<h", round(1200 * math.sin(2 * math.pi * 440 * index / 48000))) for index in range(48000 * 12)))
+            audio_process = subprocess.Popen(["pw-play", "--target", "agent_lab_audio", str(tone)])
+            wait(lambda: preview_value() > 0.05, "Settings preview follows private signal")
+            screenshot("settings-input-signal.png")
+            choose_microphone(microphone, 1)
+            wait(lambda: preview_value() == 0 and not capture_streams(), "switch to null input clears level and releases old stream")
+            choose_microphone(microphone, 2)
+            wait(lambda: preview_value() > 0.05 and len(capture_streams()) == 1, "unsaved private monitor selection receives signal")
+            screenshot("settings-selected-input-signal.png")
+            audio_process.terminate()
+            audio_process.wait(timeout=5)
+            audio_process = None
+            wait(lambda: preview_value() == 0, "Settings preview returns to zero on silence")
+            screenshot("settings-input-silence.png")
+            assert json.loads(config.read_text()).get("microphone") is None
+            results.append("Settings level-only preview: private signal, silence, unsaved input switching and one owned stream; no settings write")
+        # The private monitor is selected above; Xvfb retains the existing enumerated-device check.
+        if not lab_runtime:
+            choose_microphone(microphone, 1)
         saved_shortcut = "Ctrl+Shift+Space"
         if os.environ.get("WAYLAND_DISPLAY"):
             wait(lambda: any(node_role(node) == "label" and "Text" in node.get_interfaces() and Atspi.Text.get_text(node, 0, -1) == "Managed by desktop" for node in walk(settings_window)), "desktop-managed shortcut label")
@@ -537,8 +582,12 @@ def main():
         saved = json.loads(config.read_text())
         assert saved["shortcut"] == saved_shortcut and saved["pause_media"]
         assert saved["microphone"] is not None
+        if lab_runtime:
+            assert saved["microphone"] == "alsa:agent_lab_input"
         if not os.environ.get("WAYLAND_DISPLAY"):
             wait(lambda: find(saved_shortcut, "label"), "updated shortcut footer")
+        if lab_runtime:
+            wait(lambda: not capture_streams(), "Save releases Settings preview stream")
         results.append("native settings persist microphone ID, shortcut, replacement and media choice")
         wait(lambda: not settings_window.get_state_set().contains(Atspi.StateType.SHOWING), "saved Settings window closed")
         button("Settings")
@@ -549,6 +598,27 @@ def main():
         choose_microphone(microphone, 0)
         button("Save", settings_window)
         wait(lambda: json.loads(config.read_text())["microphone"] is None, "default input saved")
+        if lab_runtime:
+            wait(lambda: not capture_streams(), "reopened Settings Save releases preview")
+            wait(lambda: not settings_window.get_state_set().contains(Atspi.StateType.SHOWING), "reopened Settings closes after Save")
+            saved_settings = config.read_text()
+            broken = json.loads(saved_settings)
+            broken["microphone"] = "invalid-private-preview-device"
+            config.write_text(json.dumps(broken))
+            control("settings")
+            settings_window = wait(lambda: find("Settings", "frame"), "invalid preview Settings")
+            wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "invalid preview Settings activates")
+            wait(lambda: any("Selected microphone unavailable" in label for label in labels()), "selected-device preview error")
+            assert preview_value() == 0 and not capture_streams(), "unavailable input must never fall back"
+            screenshot("settings-preview-unavailable.png")
+            choose_microphone(find("Microphone", "combo box", settings_window), 0)
+            wait(lambda: len(capture_streams()) == 1, "unsaved selection starts default preview")
+            assert json.loads(config.read_text())["microphone"] == broken["microphone"]
+            screenshot("settings-preview-recovered.png")
+            button("Close", settings_window)
+            wait(lambda: not capture_streams(), "window close releases preview")
+            config.write_text(saved_settings)
+            results.append("preview unavailable-device error has zero level and no fallback; unsaved selection recovers; close releases stream")
         results.append("settings reopen and system default microphone")
 
         if args.model:
@@ -630,18 +700,30 @@ app.run([])
                 wait(lambda: find("Record", "button"), "capture stop and ASR completion", timeout=60)
                 assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
                 wait(lambda: find("Koett recording", "frame") is None, "pill hidden after completion")
+                control("settings")
+                settings_window = wait(lambda: find("Settings", "frame"), "Settings before second recording")
+                wait(lambda: len(capture_streams()) == 1, "preview before real dictation")
                 control("start")
                 wait(lambda: find("Koett recording", "frame"), "second recording pill")
                 control("settings")
                 settings_window = wait(lambda: find("Settings", "frame"), "Settings from another app")
                 wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "Settings in front of owned target")
                 time.sleep(1)
+                wait(lambda: find("Preview paused while recording", "label", settings_window), "preview visibly suspended during dictation")
+                assert preview_value() == 0
+                assert len(capture_streams()) == 1, "dictation must own the only capture stream"
+                choose_microphone(find("Microphone", "combo box", settings_window), 2)
+                assert preview_value() == 0 and len(capture_streams()) == 1
+                assert json.loads(config.read_text())["microphone"] is None
                 screenshot("settings-during-capture.png")
                 control("stop")
                 wait(lambda: find("Record", "button"), "Settings capture completion", timeout=60)
                 assert settings_window.get_state_set().contains(Atspi.StateType.ACTIVE)
                 wait(lambda: find("Koett recording", "frame") is None, "second pill cleanup")
+                wait(lambda: len(capture_streams()) == 1, "preview resumes after real dictation")
+                wait(lambda: not find("Preview paused while recording", "label", settings_window), "resumed preview status")
                 screenshot("settings-above-target.png")
+                results.append("Settings preview yields its sole stream to dictation, accepts unsaved input changes while paused, and resumes afterward")
                 settings = json.loads(config.read_text())
                 settings["microphone"] = "invalid-private-fixture-device"
                 config.write_text(json.dumps(settings))
@@ -657,6 +739,7 @@ app.run([])
         print(json.dumps({"checks": results, "artifacts": str(output)}, indent=2))
         (output / "results.json").write_text(json.dumps(results, indent=2))
     except Exception:
+        screenshot("failure.png")
         dump = []
         root = application()
         if root:

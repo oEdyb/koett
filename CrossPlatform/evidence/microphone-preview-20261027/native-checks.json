@@ -1,0 +1,27 @@
+{
+  "environment": "Private agent-lab KWin; Ubuntu22/GTK4.6-built executable on current GTK runtime",
+  "checks": [
+    "real CLI forwards GTK-cached activation tokens; recording IPC stays plain",
+    "failed model exposes Retry",
+    "initial page has exactly 50 summaries and newest full text",
+    "bounded chronological paging",
+    "search, clear and explicit selection",
+    "native Copy preserves exact selected text",
+    "native Export chooser writes exact plain text",
+    "Settings activates and repeated requests reuse one window",
+    "Settings level-only preview: private signal, silence, unsaved input switching and one owned stream; no settings write",
+    "native settings persist microphone ID, shortcut, replacement and media choice",
+    "preview unavailable-device error has zero level and no fallback; unsaved selection recovers; close releases stream",
+    "settings reopen and system default microphone",
+    "failed-model Retry loads real model and reaches Ready",
+    "empty history has Record and no blank editor actions",
+    "stop lifecycle observed: transcribing",
+    "Settings preview yields its sole stream to dictation, accepts unsaved input changes while paused, and resumes afterward",
+    "capture failure leaves no stale pill; pill pointer region passes clicks to target",
+    "real meter responds to private audio; typing remains in target during capture; Settings capture preserves focus and avoids paste",
+    "native layer pill above owned target, nonactivating start/stop, completion cleanup, Settings activation"
+  ],
+  "physical_audio_tested": false,
+  "sha256": "84823738e620507deca13d344428dde91b2e25e6273baa94253f6229ac01b076",
+  "max_glibc": "2.34"
+}

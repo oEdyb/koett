@@ -11,6 +11,9 @@ use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use ringbuf::{HeapProd, HeapRb};
 use sherpa_onnx::Wave;
 
+#[cfg(target_os = "linux")]
+pub(crate) mod preview;
+
 const MAX_RECORDING_DURATION: Duration = Duration::from_secs(10 * 60);
 
 pub struct AudioRecording {
@@ -89,6 +92,8 @@ impl AudioLevels {
 }
 
 pub struct MicrophoneRecorder {
+    #[cfg(target_os = "linux")]
+    _capture_priority: preview::RecordingPriority,
     stream: Option<cpal::Stream>,
     collector: Option<thread::JoinHandle<Vec<f32>>>,
     stop_collector: Arc<AtomicBool>,
@@ -130,6 +135,8 @@ impl MicrophoneRecorder {
             return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
         }
 
+        #[cfg(target_os = "linux")]
+        let capture_priority = preview::RecordingPriority::acquire()?;
         let host = cpal::default_host();
         let device = match microphone {
             None => host
@@ -291,6 +298,8 @@ impl MicrophoneRecorder {
             .map_err(|error| format!("could not start the microphone collector: {error}"))?;
 
         Ok(Self {
+            #[cfg(target_os = "linux")]
+            _capture_priority: capture_priority,
             stream: Some(stream),
             collector: Some(collector),
             stop_collector,
@@ -406,22 +415,11 @@ where
         .build_input_stream(
             *config,
             move |data: &[T], _| {
-                let mut square_sum = 0.0_f32;
-                let mut peak = 0.0_f32;
-                let mut frame_count = 0_usize;
-                for frame in data.chunks_exact(channels) {
-                    let sample =
-                        frame.iter().copied().map(f32::from_sample).sum::<f32>() / channels as f32;
-                    square_sum += sample * sample;
-                    peak = peak.max(sample.abs());
-                    frame_count += 1;
+                measure_input(data, channels, &levels, |sample| {
                     if producer.try_push(sample).is_err() {
                         overflowed.store(true, Ordering::Relaxed);
                     }
-                }
-                if frame_count > 0 {
-                    levels.update((square_sum / frame_count as f32).sqrt(), peak);
-                }
+                });
             },
             move |error| {
                 if is_recoverable_stream_error(error.kind()) {
@@ -444,6 +442,26 @@ where
             None,
         )
         .map_err(|error| format!("could not create the microphone stream: {error}"))
+}
+
+fn measure_input<T>(data: &[T], channels: usize, levels: &AudioLevels, mut consume: impl FnMut(f32))
+where
+    T: Sample + SizedSample,
+    f32: FromSample<T>,
+{
+    let mut square_sum = 0.0_f32;
+    let mut peak = 0.0_f32;
+    let mut frame_count = 0_usize;
+    for frame in data.chunks_exact(channels) {
+        let sample = frame.iter().copied().map(f32::from_sample).sum::<f32>() / channels as f32;
+        square_sum += sample * sample;
+        peak = peak.max(sample.abs());
+        frame_count += 1;
+        consume(sample);
+    }
+    if frame_count > 0 {
+        levels.update((square_sum / frame_count as f32).sqrt(), peak);
+    }
 }
 
 fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
@@ -482,6 +500,21 @@ mod tests {
     use ringbuf::traits::{Producer, Split};
 
     use super::{AudioRecording, collect_samples, is_recoverable_stream_error};
+
+    #[test]
+    fn live_levels_convert_integer_stereo_and_reset_for_silence() {
+        let levels = super::AudioLevels::new();
+        let mut recorded = Vec::new();
+        super::measure_input(&[16384_i16, 16384, -16384, -16384], 2, &levels, |sample| {
+            recorded.push(sample)
+        });
+        assert_eq!(levels.current(), (0.5, 0.5));
+        assert_eq!(recorded, vec![0.5, -0.5]);
+        super::measure_input(&[0.0_f32; 4], 2, &levels, |_| {});
+        assert_eq!(levels.current(), (0.0, 0.0));
+        super::measure_input(&[128_u8; 4], 2, &levels, |_| {});
+        assert_eq!(levels.current(), (0.0, 0.0));
+    }
 
     #[test]
     fn duration_uses_sample_count_and_rate() {
