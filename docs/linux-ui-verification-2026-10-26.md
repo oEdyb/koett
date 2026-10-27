@@ -180,3 +180,19 @@ Installed atomically at `~/.local/bin/koett`, exact-byte hash verified. Backup:
 The user began recording before reload, so PID3195381 was deliberately left
 untouched; this feature loads on the next quit/reopen. No host input/capture test
 was performed, and Klippt remained running.
+
+## Pause shortcut transfer — 2026-10-27
+
+At Olle's request, the Niri shortcut is now `Pause repeat=false` ->
+`~/.local/bin/koett toggle`, replacing Ctrl+Shift+Space. The actual previous
+Voxtype handler was `voxtype-mouse.service`, a separate KEY_PAUSE listener;
+Voxtype's built-in listener was already disabled. After confirming Voxtype idle,
+the separate listener was disabled/stopped; daemon, binary and configuration stay
+available. Niri config was backed up before a validated atomic update:
+`~/.config/niri/config.kdl.before-koett-pause-20261027T100727Z`.
+
+The installed executable passed actual private Niri Pause key119 start/stop,
+private audio input and local ASR/store. No host input/audio test occurred. Lab
+stopped. Receipt: `CrossPlatform/evidence/pause-shortcut-20261027/checks.json`.
+Reversal: restore that saved Niri config, validate, then re-enable the separate
+listener with `systemctl --user enable --now voxtype-mouse.service` when idle.
