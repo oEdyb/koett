@@ -49,17 +49,18 @@ final class MicrophoneFileSink: Sendable {
     // The file handle stays inside the mutex, including writes and disposal.
     private struct State: @unchecked Sendable {
         var file: ExtAudioFileRef?
-        var frames: Int64 = 0
-        var power: Float = -160
         var error: Error?
     }
 
+    // Meter reads use atomics so the overlay never holds the lock the audio callback needs.
     private let state: Mutex<State>
     private let sampleRate: Double
+    private let frames = Atomic<Int>(0)
+    private let powerBits = Atomic<UInt32>(Float(-160).bitPattern)
     private let droppedFrames = Atomic<Int>(0)
 
-    var duration: TimeInterval { state.withLock { Double($0.frames) / sampleRate } }
-    var averagePower: Float { state.withLock { $0.power } }
+    var duration: TimeInterval { Double(frames.load(ordering: .relaxed)) / sampleRate }
+    var averagePower: Float { Float(bitPattern: powerBits.load(ordering: .relaxed)) }
     var error: Error? {
         if droppedFrames.load(ordering: .acquiring) > 0 {
             return MicrophoneDevices.failure("Microphone audio could not be saved fast enough.")
@@ -94,14 +95,15 @@ final class MicrophoneFileSink: Sendable {
             guard let file = state.file, state.error == nil else { return true }
             do {
                 try Self.check(ExtAudioFileWriteAsync(file, buffer.frameLength, buffer.audioBufferList))
-                state.frames += Int64(buffer.frameLength)
+                frames.wrappingAdd(Int(buffer.frameLength), ordering: .relaxed)
                 if let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 {
                     var sum: Float = 0
                     for frame in 0..<Int(buffer.frameLength) {
                         let sample = samples[frame * buffer.stride]
                         sum += sample * sample
                     }
-                    state.power = max(-160, 10 * log10(max(sum / Float(buffer.frameLength), 1e-16)))
+                    let power = max(-160, 10 * log10(max(sum / Float(buffer.frameLength), 1e-16)))
+                    powerBits.store(power.bitPattern, ordering: .relaxed)
                 }
             } catch {
                 state.error = error
