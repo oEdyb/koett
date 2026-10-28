@@ -1,5 +1,8 @@
 # Koett for Windows and Linux
 
+In testing. There is no public Windows or Linux download yet. These are source
+build instructions, not a released installer. [Public Mac download](https://github.com/oEdyb/koett/releases/latest).
+
 Koett records speech, transcribes locally, and pastes the result into your app.
 The Linux window provides recent transcripts, search, Copy, Export and Settings.
 The tray and desktop shortcut remain available while the window is closed.
@@ -28,9 +31,10 @@ does not require an input group or privileged keyboard daemon. KDE/GNOME use the
 permission-based portal path rather than assuming `wtype` works there. X11 uses
 native global shortcuts and XTest paste.
 
-The portal paste chord is Ctrl+V. Terminals requiring Ctrl+Shift+V need manual
-paste from the clipboard. Sending a shortcut cannot confirm that the destination
-consumed it; saved history and Copy last transcript remain available.
+Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for every output
+backend. Choose the shortcut your target app accepts. Sending a shortcut cannot
+confirm that the destination consumed it; saved history and Copy last transcript
+remain available.
 
 ## History
 
