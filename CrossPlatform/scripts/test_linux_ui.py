@@ -13,13 +13,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
 import shutil
 import socket
 import sqlite3
 import subprocess
 import tempfile
 import time
+from pathlib import Path
 
 
 def wait(check, description, timeout=15):
@@ -32,6 +32,8 @@ def wait(check, description, timeout=15):
                 return result
         except Exception as error:
             last_error = error
+            if time.monotonic() >= deadline:
+                raise AssertionError(f"Timed out: {description}; last error: {error}") from error
         time.sleep(0.08)
     raise AssertionError(f"Timed out: {description}; last error: {last_error}")
 
@@ -244,10 +246,10 @@ def main():
     clipboard_original = None
     clipboard_owned = None
     if shutil.which("wl-copy") and shutil.which("wl-paste") and os.environ.get("WAYLAND_DISPLAY"):
-        types = subprocess.run(["wl-paste", "--list-types"], capture_output=True, timeout=2).stdout.decode().splitlines()
+        types = subprocess.run(["wl-paste", "--list-types"], capture_output=True, timeout=2, check=False).stdout.decode().splitlines()
         kind = next((kind for kind in types if kind.startswith("text/plain")), types[0] if types else None)
         if kind:
-            original = subprocess.run(["wl-paste", "--no-newline", "--type", kind], capture_output=True, timeout=2)
+            original = subprocess.run(["wl-paste", "--no-newline", "--type", kind], capture_output=True, timeout=2, check=False)
             if original.returncode == 0: clipboard_original = (kind, original.stdout)
         else: clipboard_original = (None, b"")
 
@@ -306,6 +308,13 @@ def main():
         node = wait(lambda: find(name, "button", root), f"button {name}")
         wait(lambda: node.get_action_iface().do_action(0), f"enabled button {name}")
 
+    def section(name, root):
+        tab = wait(lambda: next((node for node in walk(root)
+            if node.get_name() == name and "Action" in node.get_interfaces()
+            and node_role(node) != "label"), None), f"Settings section {name}")
+        assert tab.get_action_iface().do_action(0)
+        time.sleep(0.4)
+
     def labels():
         return [node.get_name() for node in walk(application()) if node_role(node) == "label"]
 
@@ -339,7 +348,7 @@ def main():
                             "--path", str(output / name)], check=True)
             wait(lambda: (output / name).exists(), "native screenshot file")
             clipboard_owned = ("image/png", (output / name).read_bytes())
-            wait(lambda: subprocess.run(["wl-paste", "--no-newline", "--type", "image/png"], capture_output=True).stdout == clipboard_owned[1], "scoped screenshot clipboard transfer")
+            wait(lambda: subprocess.run(["wl-paste", "--no-newline", "--type", "image/png"], capture_output=True, check=False).stdout == clipboard_owned[1], "scoped screenshot clipboard transfer")
 
     def mnemonic(key):
         if lab_runtime:
@@ -409,20 +418,20 @@ def main():
         return next((value for node in walk(entry) if "Text" in node.get_interfaces()
                      and (value := Atspi.Text.get_text(node, 0, Atspi.Text.get_character_count(node)))), "")
 
-    microphone_choice_count = 0
+    option_choice_count = 0
 
-    def choose_microphone(combo, index):
-        nonlocal microphone_choice_count
-        microphone_choice_count += 1
+    def choose_option(combo, index):
+        nonlocal option_choice_count
+        option_choice_count += 1
         toggle = next((node for node in walk(combo) if node_role(node) == "toggle button"), None)
         if toggle is None:
             assert combo.get_selection_iface().select_child(index)
             return
-        wait(lambda: toggle.get_state_set().contains(Atspi.StateType.FOCUSED)
-             or toggle.get_component_iface().grab_focus(), "microphone keyboard focus")
         input_tool = str(Path.home() / ".local/share/agent-lab/input")
-        subprocess.run([input_tool, "key", "57"], check=True)
-        screenshot(f"microphone-{index}-{microphone_choice_count}.png")
+        actions = toggle.get_action_iface()
+        print("Native option actions:", combo.get_name(), [actions.get_action_name(index) for index in range(actions.get_n_actions())], flush=True)
+        assert actions.do_action(0), "open native option popup"
+        screenshot(f"option-{index}-{option_choice_count}.png")
         subprocess.run([input_tool, "key", "102", *(["108"] * index), "28", "15"], check=True)
 
     try:
@@ -461,7 +470,7 @@ def main():
         results.append("search, clear and explicit selection")
 
         if shutil.which("wl-copy") and shutil.which("wl-paste") and os.environ.get("WAYLAND_DISPLAY"):
-            copy_button = wait(lambda: find("Copy", "button"), "Copy button")
+            wait(lambda: find("Copy", "button"), "Copy button")
             if lab_runtime:
                 # Supply a real input serial on the private compositor for Copy.
                 subprocess.run([str(Path.home() / ".local/share/agent-lab/input"), "chord", "29", "33"], check=True)
@@ -539,9 +548,9 @@ def main():
             audio_process = subprocess.Popen(["pw-play", "--target", "agent_lab_audio", str(tone)])
             wait(lambda: preview_value() > 0.05, "Settings preview follows private signal")
             screenshot("settings-input-signal.png")
-            choose_microphone(microphone, 1)
+            choose_option(microphone, 1)
             wait(lambda: preview_value() == 0 and not capture_streams(), "switch to null input clears level and releases old stream")
-            choose_microphone(microphone, 2)
+            choose_option(microphone, 2)
             wait(lambda: preview_value() > 0.05 and len(capture_streams()) == 1, "unsaved private monitor selection receives signal")
             screenshot("settings-selected-input-signal.png")
             audio_process.terminate()
@@ -553,7 +562,8 @@ def main():
             results.append("Settings level-only preview: private signal, silence, unsaved input switching and one owned stream; no settings write")
         # The private monitor is selected above; Xvfb retains the existing enumerated-device check.
         if not lab_runtime:
-            choose_microphone(microphone, 1)
+            choose_option(microphone, 1)
+        section("Shortcuts", settings_window)
         saved_shortcut = "Ctrl+Shift+Space"
         if os.environ.get("WAYLAND_DISPLAY"):
             wait(lambda: any(node_role(node) == "label" and "Text" in node.get_interfaces() and Atspi.Text.get_text(node, 0, -1) == "Managed by desktop" for node in walk(settings_window)), "desktop-managed shortcut label")
@@ -565,22 +575,29 @@ def main():
             x11_chord([0xffe3, 0xffe9, 0x20])
             wait(lambda: find("Ctrl+Alt+Space", "button", settings_window), "captured native shortcut")
             saved_shortcut = "Ctrl+Alt+Space"
+        section("Text", settings_window)
         button("Add replacement", settings_window)
         phrase = wait(lambda: find("Phrase", "text", settings_window), "labeled replacement phrase")
         replacement = find("Replacement", "text", settings_window)
         assert phrase.get_editable_text_iface().set_text_contents("koet")
         assert replacement.get_editable_text_iface().set_text_contents("Koett")
+        section("General", settings_window)
         pause = find("Pause media while recording", "check box", settings_window)
         if pause.get_action_iface().get_n_actions():
             assert pause.get_action_iface().do_action(0)
         else:
             mnemonic("p")
         wait(lambda: pause.get_state_set().contains(Atspi.StateType.CHECKED), "pause checkbox checked")
+        section("Text", settings_window)
+        paste_choice = wait(lambda: find("Paste shortcut", "combo box", settings_window), "labeled paste shortcut")
+        choose_option(paste_choice, 1)
+        screenshot("settings-paste-shortcut.png")
         button("Save", settings_window)
         persisted = wait(lambda: json.loads(config.read_text()).get("replacements"), "saved settings")
         assert persisted == [{"phrase": "koet", "replacement": "Koett"}]
         saved = json.loads(config.read_text())
         assert saved["shortcut"] == saved_shortcut and saved["pause_media"]
+        assert saved["paste_shortcut"] == "ctrl_shift_v"
         assert saved["microphone"] is not None
         if lab_runtime:
             assert saved["microphone"] == "alsa:agent_lab_input"
@@ -593,11 +610,24 @@ def main():
         button("Settings")
         settings_window = wait(lambda: find("Settings", "frame"), "reopened settings")
         wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "reopened Settings activates")
+        section("Text", settings_window)
         wait(lambda: (entry := find("Phrase", "text", settings_window)) and entry_text(entry) == "koet", "reopened replacement")
+        paste_choice = wait(lambda: find("Paste shortcut", "combo box", settings_window), "reopened paste shortcut")
+        screenshot("settings-paste-reopened.png")
+        section("Audio", settings_window)
         microphone = find("Microphone", "combo box", settings_window)
-        choose_microphone(microphone, 0)
+        choose_option(microphone, 0)
         button("Save", settings_window)
         wait(lambda: json.loads(config.read_text())["microphone"] is None, "default input saved")
+        assert json.loads(config.read_text())["paste_shortcut"] == "ctrl_shift_v", "reopened control preserves its loaded choice on Save"
+        button("Settings")
+        settings_window = wait(lambda: find("Settings", "frame"), "paste shortcut reset settings")
+        wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "paste reset Settings activates")
+        section("Text", settings_window)
+        choose_option(find("Paste shortcut", "combo box", settings_window), 0)
+        button("Save", settings_window)
+        wait(lambda: json.loads(config.read_text())["paste_shortcut"] == "ctrl_v", "standard paste choice saved")
+        results.append("native Paste shortcut selection persists through Save/reopen and restores Ctrl+V")
         if lab_runtime:
             wait(lambda: not capture_streams(), "reopened Settings Save releases preview")
             wait(lambda: not settings_window.get_state_set().contains(Atspi.StateType.SHOWING), "reopened Settings closes after Save")
@@ -611,7 +641,7 @@ def main():
             wait(lambda: any("Selected microphone unavailable" in label for label in labels()), "selected-device preview error")
             assert preview_value() == 0 and not capture_streams(), "unavailable input must never fall back"
             screenshot("settings-preview-unavailable.png")
-            choose_microphone(find("Microphone", "combo box", settings_window), 0)
+            choose_option(find("Microphone", "combo box", settings_window), 0)
             wait(lambda: len(capture_streams()) == 1, "unsaved selection starts default preview")
             assert json.loads(config.read_text())["microphone"] == broken["microphone"]
             screenshot("settings-preview-recovered.png")
@@ -668,19 +698,22 @@ app.run([])
                 pill = wait(lambda: find("Koett recording", "frame"), "native layer-shell pill")
                 assert not pill.get_state_set().contains(Atspi.StateType.ACTIVE)
                 wait(lambda: any(label.startswith("Recording · 0:0") for label in labels()), "elapsed recording timer")
-                value_nodes = [node for node in walk(pill) if "Value" in node.get_interfaces()]
-                assert value_nodes, "pill exposes a real microphone meter"
-                assert all(node.get_value_iface().get_current_value() == 0 for node in value_nodes)
+                assert find("Recording", "label", pill), "pill exposes native recording state"
+                assert any(node_role(node) == "label" and ":" in node.get_name()
+                           for node in walk(pill)), "pill exposes a native elapsed timer"
                 sample = args.model / "test_wavs/0.wav"
                 audio_process = subprocess.Popen(["pw-play", "--target", "agent_lab_audio", str(sample)])
-                wait(lambda: any(node.get_value_iface().get_current_value() > 0 for node in value_nodes), "live meter responds to private sample audio")
                 time.sleep(2)
                 subprocess.run([input_tool, "text", "during"], check=True)
                 assert any("before during" in entry_text(node) for node in walk(target) if "EditableText" in node.get_interfaces())
                 assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
                 screenshot("recording-above-target.png")
                 from PIL import Image
-                width, height = Image.open(output / "recording-above-target.png").size
+                image = Image.open(output / "recording-above-target.png")
+                width, height = image.size
+                bar_x, bar_y = width // 2 - 118, height - 72
+                assert any(sum(max(image.getpixel((bar_x + 40 + i * 6, bar_y + y))[:3]) > 100
+                               for y in range(8, 40)) > 4 for i in range(17)), "real sample raises waveform bars"
                 subprocess.run([input_tool, "move", str(width // 2), str(height - 48)], check=True)
                 subprocess.run([input_tool, "click"], check=True)
                 subprocess.run([input_tool, "text", " through"], check=True)
@@ -712,7 +745,7 @@ app.run([])
                 wait(lambda: find("Preview paused while recording", "label", settings_window), "preview visibly suspended during dictation")
                 assert preview_value() == 0
                 assert len(capture_streams()) == 1, "dictation must own the only capture stream"
-                choose_microphone(find("Microphone", "combo box", settings_window), 2)
+                choose_option(find("Microphone", "combo box", settings_window), 2)
                 assert preview_value() == 0 and len(capture_streams()) == 1
                 assert json.loads(config.read_text())["microphone"] is None
                 screenshot("settings-during-capture.png")
@@ -765,7 +798,7 @@ app.run([])
         # Never overwrite a clipboard another application changed during these checks.
         if clipboard_original is not None and clipboard_owned is not None:
             kind, content = clipboard_owned
-            current = subprocess.run(["wl-paste", "--no-newline", "--type", kind], capture_output=True)
+            current = subprocess.run(["wl-paste", "--no-newline", "--type", kind], capture_output=True, check=False)
             if current.returncode == 0 and current.stdout == content:
                 original_type, original = clipboard_original
                 if original_type is None:

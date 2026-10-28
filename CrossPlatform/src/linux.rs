@@ -27,7 +27,7 @@ use x11rb::rust_connection::RustConnection;
 use crate::history;
 use crate::model::ModelProgress;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
-use crate::settings::Settings;
+use crate::settings::{PasteShortcut, Settings};
 use crate::shortcut::Shortcut;
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
@@ -51,6 +51,7 @@ enum TrayAction {
 enum TrayUpdate {
     Status(String),
     Completed(String),
+    DeliveryFailed,
     Levels(crate::audio::AudioLevels),
     Settings {
         shortcut: String,
@@ -185,6 +186,7 @@ impl ksni::Tray for LinuxTray {
 }
 
 mod control;
+mod feedback;
 mod history_view;
 mod input_preview;
 pub(crate) mod media;
@@ -229,6 +231,9 @@ pub fn run() -> Result<(), String> {
                 match update {
                     TrayUpdate::Levels(levels) => {
                         let _ = worker_ui.send(window::Update::Levels(levels));
+                    }
+                    TrayUpdate::DeliveryFailed => {
+                        let _ = worker_ui.send(window::Update::DeliveryFailed);
                     }
                     TrayUpdate::Completed(text) => {
                         let _ = worker_ui.send(window::Update::Completed(text));
@@ -379,12 +384,15 @@ fn run_x11(
         }
         app.poll(
             |model, text, target| {
-                let (final_text, warning) = completed_text(text, Settings::load(), &settings);
+                let loaded = Settings::load();
+                let paste_shortcut = loaded.as_ref().unwrap_or(&settings).paste_shortcut;
+                let (final_text, warning) = completed_text(text, loaded, &settings);
                 if let Some(warning) = warning {
                     update_tray_status(tray, &format!("@notice:{warning}"));
                 }
                 cache_completed(tray, &final_text);
-                let delivered = output.deliver(&final_text, target);
+                let delivered = output.deliver(&final_text, target, paste_shortcut);
+                report_delivery(tray, &delivered);
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
@@ -416,6 +424,7 @@ fn run_x11(
                 settings.replacements = updated.replacements;
                 settings.start_at_login = updated.start_at_login;
                 settings.pause_media = updated.pause_media;
+                settings.paste_shortcut = updated.paste_shortcut;
             }
             if let Ok(updated) = Settings::load()
                 && updated.shortcut != settings.shortcut
@@ -678,9 +687,10 @@ async fn run_wayland(
             }
             cache_completed(tray, &text);
             let delivered = match &output {
-                Some(output) => output.deliver(&text, target).await,
-                None => output::deliver(&text, target),
+                Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                None => output::deliver(&text, target, settings.paste_shortcut),
             };
+            report_delivery(tray, &delivered);
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
                 &text,
@@ -826,8 +836,6 @@ fn update_tray_settings(tray: Option<&TrayUpdates>, shortcut: &str, start_at_log
 struct X11Output {
     clipboard: arboard::Clipboard,
     connection: RustConnection,
-    shift_keycode: u8,
-    v_keycode: u8,
 }
 
 impl X11Output {
@@ -836,13 +844,9 @@ impl X11Output {
             .map_err(|error| format!("could not open the X11 clipboard: {error}"))?;
         let (connection, _) =
             x11rb::connect(None).map_err(|error| format!("could not connect to X11: {error}"))?;
-        let shift_keycode = find_keycode(&connection, xkeysym::key::Shift_L)?;
-        let v_keycode = find_keycode(&connection, xkeysym::key::Insert)?;
         Ok(Self {
             clipboard,
             connection,
-            shift_keycode,
-            v_keycode,
         })
     }
 
@@ -858,16 +862,15 @@ impl X11Output {
             .map(|reply| reply.focus)
     }
 
-    fn deliver(&mut self, text: &str, target: Option<u32>) -> Result<(), String> {
+    fn deliver(
+        &mut self,
+        text: &str,
+        target: Option<u32>,
+        shortcut: PasteShortcut,
+    ) -> Result<(), String> {
         self.clipboard
             .set_text(text)
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
-        use arboard::SetExtLinux;
-        self.clipboard
-            .set()
-            .clipboard(arboard::LinuxClipboardKind::Primary)
-            .text(text)
-            .map_err(|error| format!("Copied · primary selection unavailable: {error}"))?;
         let copied = self
             .clipboard
             .get_text()
@@ -875,23 +878,27 @@ impl X11Output {
         if copied != text {
             return Err("the X11 clipboard did not preserve the transcript".to_string());
         }
-        if target.is_some() && target == self.focused_window() {
-            self.paste()?;
-        }
-        Ok(())
+        require_x11_target(target, self.focused_window())?;
+        self.paste(shortcut)
     }
 
-    fn paste(&self) -> Result<(), String> {
-        let result = (|| {
-            self.send_key(xproto::KEY_PRESS_EVENT, self.shift_keycode)?;
-            self.send_key(xproto::KEY_PRESS_EVENT, self.v_keycode)
-        })();
-        let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.v_keycode);
-        let _ = self.send_key(xproto::KEY_RELEASE_EVENT, self.shift_keycode);
+    fn paste(&self, shortcut: PasteShortcut) -> Result<(), String> {
+        let keys = output::paste_keysyms(shortcut)
+            .iter()
+            .map(|keysym| find_keycode(&self.connection, *keysym))
+            .collect::<Result<Vec<_>, _>>()?;
+        let result = keys
+            .iter()
+            .try_for_each(|key| self.send_key(xproto::KEY_PRESS_EVENT, *key));
+        let mut released = Ok(());
+        for key in keys.iter().rev() {
+            let next = self.send_key(xproto::KEY_RELEASE_EVENT, *key);
+            released = released.and(next);
+        }
         self.connection
             .flush()
             .map_err(|error| format!("could not flush the X11 paste: {error}"))?;
-        result
+        result.and(released)
     }
 
     fn send_key(&self, event_type: u8, keycode: u8) -> Result<(), String> {
@@ -1025,7 +1032,12 @@ impl WaylandOutput {
         })
     }
 
-    async fn deliver(&self, text: &str, target: Option<u32>) -> Result<(), String> {
+    async fn deliver(
+        &self,
+        text: &str,
+        target: Option<u32>,
+        shortcut: PasteShortcut,
+    ) -> Result<(), String> {
         *self
             .current_text
             .write()
@@ -1041,19 +1053,18 @@ impl WaylandOutput {
         if !output::target_unchanged(target) {
             return Err("Copied · paste into your target application".into());
         }
-        // The portal owns CLIPBOARD, so use the clipboard paste chord.
-        // Terminal applications may require Ctrl+Shift+V or manual paste.
-        self.send_keysym(xkeysym::key::Control_L as i32, KeyState::Pressed)
-            .await?;
-        let result = self
-            .send_keysym(xkeysym::key::v as i32, KeyState::Pressed)
-            .await;
-        let _ = self
-            .send_keysym(xkeysym::key::v as i32, KeyState::Released)
-            .await;
-        let _ = self
-            .send_keysym(xkeysym::key::Control_L as i32, KeyState::Released)
-            .await;
+        let keys = output::paste_keysyms(shortcut);
+        let mut result = Ok(());
+        for key in keys {
+            if let Err(error) = self.send_keysym(*key as i32, KeyState::Pressed).await {
+                result = Err(error);
+                break;
+            }
+        }
+        for key in keys.iter().rev() {
+            let released = self.send_keysym(*key as i32, KeyState::Released).await;
+            result = result.and(released);
+        }
         result
     }
 
@@ -1184,6 +1195,24 @@ fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
     }
 }
 
+fn require_x11_target(target: Option<u32>, focused: Option<u32>) -> Result<(), String> {
+    if target.is_some() && target == focused {
+        return Ok(());
+    }
+    Err(
+        "Transcript copied; automatic paste skipped because the target changed or is unavailable"
+            .into(),
+    )
+}
+
+fn report_delivery(tray: Option<&TrayUpdates>, delivered: &Result<(), String>) {
+    if delivered.is_err()
+        && let Some(tray) = tray
+    {
+        let _ = tray.sender.send(TrayUpdate::DeliveryFailed);
+    }
+}
+
 fn delivery_results(
     delivered: Result<(), String>,
     saved: Result<(), String>,
@@ -1198,6 +1227,43 @@ fn delivery_results(
 #[cfg(test)]
 mod delivery_tests {
     use super::*;
+    #[test]
+    fn x11_focus_guard_preserves_clipboard_only_recovery() {
+        assert_eq!(require_x11_target(Some(42), Some(42)), Ok(()));
+        for (target, focused) in [
+            (Some(42), Some(99)),
+            (Some(42), None),
+            (None, Some(42)),
+            (None, None),
+        ] {
+            let (sender, receiver) = mpsc::channel();
+            let tray = TrayUpdates { sender };
+            let delivered = require_x11_target(target, focused);
+            assert!(delivered.is_err());
+            report_delivery(Some(&tray), &delivered);
+            assert!(matches!(
+                receiver.try_recv(),
+                Ok(TrayUpdate::DeliveryFailed)
+            ));
+        }
+    }
+
+    #[test]
+    fn delivery_recovery_is_typed_and_independent_of_storage() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        report_delivery(Some(&tray), &Ok(()));
+        assert!(receiver.try_recv().is_err());
+        report_delivery(Some(&tray), &Err("guarded clipboard-only result".into()));
+        assert!(matches!(
+            receiver.try_recv().unwrap(),
+            TrayUpdate::DeliveryFailed
+        ));
+        let failure = delivery_results(Ok(()), Err("storage failed".into()));
+        assert_eq!(failure, Err("storage failed".into()));
+        assert!(receiver.try_recv().is_err());
+    }
+
     #[test]
     fn corrupt_settings_preserve_raw_text_and_warn() {
         let raw = "Keep Unicode: åäö 日本語";

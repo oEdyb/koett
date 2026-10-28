@@ -196,3 +196,138 @@ private audio input and local ASR/store. No host input/audio test occurred. Lab
 stopped. Receipt: `CrossPlatform/evidence/pause-shortcut-20261027/checks.json`.
 Reversal: restore that saved Niri config, validate, then re-enable the separate
 listener with `systemctl --user enable --now voxtype-mouse.service` when idle.
+
+## Consistent paste selection — 2026-10-27
+
+One persisted Settings choice now selects Ctrl+V or Ctrl+Shift+V for all Linux
+output backends. The fallback no longer changes to Shift+Insert or overwrites
+PRIMARY. Existing settings default to Ctrl+V. This is an explicit choice, not
+automatic terminal detection: GUI and terminal defaults differ. Save/reopen
+preserves the control, and invalid stored shortcut values fail validation.
+History/cache recovery and original target guards remain in place.
+
+Real private CPAL->ASR->clipboard->GTK and kitty consumption passed on both
+RemoteDesktop/Clipboard portal and Niri/wtype paths, including Swedish/Japanese
+Unicode, ordinary typing and Enter. Changing focus to Settings prevents insertion,
+leaves the terminal unchanged and retains clipboard/final history text.
+Receipts are under `CrossPlatform/evidence/paste-consistency-20261027/`.
+
+82 Rust tests pass (3 existing intentional ignored probes), strict Clippy,
+formatting, Windows source check, 29 Python tests and Rust1.92 source check pass.
+Ubuntu22/GTK4.6 release build passes, with maximum required GLIBC2.34. Parent
+verified native Settings selection/Save/reopen on that executable and inspected
+`/tmp/koett-paste-floor-native8/settings-paste-reopened.png`. It uses actual native
+popup actions and scrollbar interaction; unsupported GTK AT-SPI focus/scroll
+methods and missing rendered-value label nodes were test harness assumptions,
+not reasons to weaken persistence checks. A reviewed frozen Niri window-list
+poll in the new test was corrected. Product review found no actionable findings.
+X11 uses the same shared keysyms; new native X11 terminal consumption was not tested.
+No physical desktop/input/audio/clipboard check was performed.
+
+The exact Ubuntu baseline executable also passed the Niri/wtype GUI, terminal,
+Unicode, typing/Enter and focus-change recovery journey:
+`/tmp/koett-paste-floor-niri/result.json`. All owned desktop labs are stopped.
+Installed SHA-256:
+`c1489eaf813d74baa4c78d13d825afddad8e47953f2a1d06edcede7dce57ef72`
+(48,828,544 bytes), backed up before atomic replacement. The prior app was idle
+and reloaded with `--background`; its running hash matches the installed update.
+No user model, microphone or paste preference was overwritten. Missing persisted
+paste preference resolves to Ctrl+V until the user chooses otherwise.
+
+The separately authorized controlled model comparison is recorded in
+`docs/model-comparison-2026-10-27.md`: v2 improves over 110M on the bounded public
+corpus; Whisper CPU ties v2 on its completed matched subset, while Vulkan model
+loading failed under shared VRAM pressure. These are not personal accuracy claims.
+The selected/default model remains unchanged. This work is local and uncommitted;
+no public release or push occurred.
+
+## Mac-style recording waveform — 2026-10-27
+
+The Linux recording surface now follows the Mac source geometry: 236x48 dark
+capsule, coral dot, 17 rounded rolling amplitude bars, separator and monospaced
+timer. Real RMS uses the Mac dB mapping and smoothing; there is no synthetic
+motion. Capture resets history; silence settles flat. GTK animation preference
+changes clear/freeze bars and resume fresh samples. Transcribing stays visible
+until delivery/cleanup; focus and pointer pass-through remain intact. No result
+pill, model change or wider Settings redesign is included.
+
+85 Rust tests pass (3 existing ignored probes), formatting, strict Clippy,
+release build and Rust1.92 check pass. Ubuntu22/GTK4.6 baseline build passes,
+maximum GLIBC2.34. Two independent source reviews found no actionable waveform
+correctness defects. Existing native history/settings/recording UI checks pass
+on that exact executable, including paste-choice persistence and preview handoff.
+Dedicated private amplitude-step, silence, dynamic reduced-motion, timer, typing,
+repeated capture, Transcribing, error and quit checks also pass. Native light/dark
+screenshots and multi-frame GIF evidence are retained. Existing layer-shell
+platform limits remain: no GNOME/X11 always-on-top claim.
+
+Parent receipts: `/tmp/koett-waveform-floor-ui/` and
+`/tmp/koett-waveform-floor-dynamic/`. Source evidence/summary is under
+`CrossPlatform/evidence/waveform-20261027/`. Parent inspected actual rendered
+frames; no visible desktop or physical microphone/input/clipboard test occurred.
+
+One earlier reused-session GTK/AT-SPI SIGSEGV remains unexplained, with a stack in
+GLib variant construction from GTK/GIO. The raw receipt is preserved as
+`reduced-first-crash.log`. Clean runs and source review do not explain or erase
+that failure; no causal waveform ownership defect has been established.
+
+Parent also reran reduced-motion capture in the reused private session successfully:
+`/tmp/koett-waveform-floor-reduced-reuse/results.json`. This does not establish
+the cause of the earlier failure. All owned labs are stopped.
+Installed executable SHA-256: `9457c230e71ca63b7f36443d5c841859ba7cc49ac1bd7c38d6b06c48400800eb` (48867720 bytes).
+Backup and receipt: `/home/olle/.local/state/koett/install-backups/20261027T113436Z`.
+The idle app was reloaded in the background and its running hash verified.
+No preferences, model choice, microphone or Pause shortcut were changed.
+Changes remain local and uncommitted.
+
+## Settings and recording recovery — 2026-10-27
+
+Settings now opens on Audio, with native Audio/Shortcuts/Text/General navigation
+and a persistent Save footer. Hidden Audio releases preview capture. Validation
+reveals Text and focuses the exact empty Phrase field. Sustained silence (five
+seconds) and excessive peak levels (600 ms) produce measured warnings; ordinary
+pauses/transients do not. Warnings do not stop recording or alter ASR text.
+
+Typed delivery failure opens a nonactivating temporary Copy transcript action.
+It accepts pointer input only during recovery, clears on capture/timeout, and
+retains exact last-copy text afterward. Recording/transcribing remain pointer
+transparent. Independent reviews found a guarded X11 skip reporting success and
+an overly broad focus assertion; both are fixed, with regression coverage.
+
+Final gates: 89 Rust tests pass, three existing intentional probes ignored;
+strict all-target Clippy, formatting, release, Rust 1.92, Windows source check,
+29 Python tests, harness Ruff/compilation and diff checks pass. Ubuntu 22/GTK4.6
+native Xvfb checks pass for history, exact native export, Settings persistence,
+paste choice and real-model Retry. Xvfb clipboard consumption is explicitly
+skipped. Private KWin/CPAL checks on the final baseline binary pass real capture,
+silence/loud signals, focus preservation, exact recovery Copy and timeout cleanup.
+Light/dark and narrow native views were inspected. No physical-session tests ran.
+Portal-injection failure and actual X11 guarded paste consumption were not rerun;
+the latter has deterministic guard/recovery coverage. Mac checks remain deferred.
+
+Parent receipts: `/tmp/koett-feedback-floor-ui2/`,
+`/tmp/koett-feedback-final-native2/`, and
+`/tmp/koett-feedback-floor-final-native/`. Renderer-specific screenshot limits
+and final hashes are retained in the feedback evidence receipt. All owned labs
+are stopped after verification. The installed baseline executable is 48881928
+bytes, SHA-256 `3491b63438b502e17a69a018cde687aa3276f1d026d56c62572a39af11cead95`,
+maximum GLIBC2.34. Its idle process was reloaded in the background; settings were
+hash-verified unchanged. Backup:
+`/home/olle/.local/state/koett/install-backups/20261027T121836Z/koett`.
+No model, Pause binding, transcript processing, public release or commit changed.
+
+## Thinking pauses are normal — 2026-10-27
+
+Removed the silence warning from both Settings preview and recording feedback
+after Olle reported it during thinking pauses. Quiet amplitude is not evidence
+of microphone failure. Actual stream/device errors remain visible; sustained
+excessive levels retain their existing debounced warning. Tests now assert no
+warning through ten minutes of silence and retain loud-input/reset coverage.
+The native regression also waits beyond the old five-second threshold in both
+preview and recording and checks the warning stays absent while capture continues.
+Final source, private native results and installation receipt are in
+`CrossPlatform/evidence/silence-20261027/`.
+
+89 tests, strict Clippy, formatting, locked release, baseline build and native
+private quiet/loud/recovery checks pass. The fix is installed; runtime reload was
+deferred because capture or Settings was active. Preferences are unchanged.

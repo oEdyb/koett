@@ -13,6 +13,14 @@ pub enum RecordingMode {
     Hold,
 }
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PasteShortcut {
+    #[default]
+    CtrlV,
+    CtrlShiftV,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -22,6 +30,7 @@ pub struct Settings {
     pub recording_mode: RecordingMode,
     pub replacements: Vec<crate::replacements::Replacement>,
     pub pause_media: bool,
+    pub paste_shortcut: PasteShortcut,
     pub model_directory: Option<PathBuf>,
 }
 
@@ -34,6 +43,7 @@ impl Default for Settings {
             recording_mode: RecordingMode::Toggle,
             replacements: Vec::new(),
             pause_media: false,
+            paste_shortcut: PasteShortcut::default(),
             model_directory: None,
         }
     }
@@ -89,7 +99,7 @@ mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::Settings;
+    use super::{PasteShortcut, Settings};
 
     fn temporary_file(name: &str) -> std::path::PathBuf {
         let nonce = SystemTime::now()
@@ -115,6 +125,7 @@ mod tests {
         let settings = Settings {
             shortcut: "Alt+Space".to_string(),
             start_at_login: false,
+            paste_shortcut: PasteShortcut::CtrlShiftV,
             model_directory: Some("custom-model".into()),
             ..Settings::default()
         };
@@ -125,6 +136,13 @@ mod tests {
         let text = fs::read_to_string(&path).unwrap();
         assert!(text.contains("\n  \"shortcut\""));
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn paste_shortcut_defaults_for_existing_settings_and_rejects_unknown_chords() {
+        let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
+        assert_eq!(settings.paste_shortcut, PasteShortcut::CtrlV);
+        assert!(serde_json::from_str::<Settings>(r#"{"paste_shortcut":"shift_insert"}"#).is_err());
     }
 
     #[test]

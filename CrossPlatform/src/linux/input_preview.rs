@@ -21,14 +21,13 @@ struct State {
     request: Option<Request>,
     reading: Option<Reading>,
     closed: bool,
+    generation: u64,
 }
 
 impl State {
     fn select(&mut self, microphone: Option<String>) {
-        let generation = self
-            .request
-            .as_ref()
-            .map_or(0, |request| request.generation + 1);
+        self.generation += 1;
+        let generation = self.generation;
         self.request = Some(Request {
             generation,
             microphone,
@@ -53,7 +52,12 @@ impl State {
     }
 }
 
-pub(super) fn attach(window: &gtk::Window, input: &gtk::ComboBoxText, layout: &gtk::Box) {
+pub(super) fn attach(
+    window: &gtk::Window,
+    input: &gtk::ComboBoxText,
+    layout: &gtk::Box,
+    stack: &gtk::Stack,
+) {
     let meter = gtk::LevelBar::for_interval(0.0, 1.0);
     meter.set_hexpand(true);
     let title = gtk::Label::new(Some("Input level"));
@@ -70,10 +74,19 @@ pub(super) fn attach(window: &gtk::Window, input: &gtk::ComboBoxText, layout: &g
         let state = state.clone();
         let meter = meter.clone();
         let message = message.clone();
+        let stack = stack.downgrade();
         move |input: &gtk::ComboBoxText| {
             meter.set_value(0.0);
             message.set_text("Opening microphone…");
             message.set_visible(true);
+            if stack
+                .upgrade()
+                .and_then(|stack| stack.visible_child_name())
+                .as_deref()
+                != Some("audio")
+            {
+                return;
+            }
             state.lock().expect("preview state poisoned").select(
                 input
                     .active_id()
@@ -83,7 +96,26 @@ pub(super) fn attach(window: &gtk::Window, input: &gtk::ComboBoxText, layout: &g
         }
     };
     select(input);
-    input.connect_changed(select);
+    let select = std::rc::Rc::new(select);
+    input.connect_changed({
+        let select = select.clone();
+        move |input| select(input)
+    });
+    stack.connect_visible_child_name_notify({
+        let state = state.clone();
+        let input = input.clone();
+        let meter = meter.clone();
+        move |stack| {
+            if stack.visible_child_name().as_deref() == Some("audio") {
+                select(&input);
+            } else {
+                let mut state = state.lock().expect("preview state poisoned");
+                state.request = None;
+                state.reading = None;
+                meter.set_value(0.0);
+            }
+        }
+    });
     window.connect_close_request({
         let state = state.clone();
         let meter = meter.clone();
@@ -148,6 +180,8 @@ fn run(state: Arc<Mutex<State>>) {
     let mut current = None;
     let mut capture = None;
     let mut failed = false;
+    let mut feedback = super::feedback::CaptureFeedback::default();
+    let mut started = std::time::Instant::now();
     loop {
         let request = {
             let state = state.lock().expect("preview state poisoned");
@@ -160,13 +194,18 @@ fn run(state: Arc<Mutex<State>>) {
             capture.take();
             current = request;
             failed = false;
+            feedback = super::feedback::CaptureFeedback::default();
+            started = std::time::Instant::now();
         }
         let Some(request) = &current else {
-            break;
+            std::thread::sleep(Duration::from_millis(20));
+            continue;
         };
         let (level, message) = if preview::recording() {
             capture.take();
             failed = false;
+            feedback = super::feedback::CaptureFeedback::default();
+            started = std::time::Instant::now();
             (0.0, "Preview paused while recording".to_string())
         } else if failed {
             std::thread::sleep(Duration::from_millis(20));
@@ -188,8 +227,14 @@ fn run(state: Arc<Mutex<State>>) {
                     }
                 }
             }
-            match capture.as_ref().map(Capture::level) {
-                Some(Ok(level)) => (level, String::new()),
+            match capture.as_ref().map(Capture::levels) {
+                Some(Ok((rms, peak))) => {
+                    let warning = feedback.update(started.elapsed(), rms, peak);
+                    (
+                        f64::from((rms * 10.0).clamp(0.0, 1.0)),
+                        warning.map_or(String::new(), |warning| warning.text().into()),
+                    )
+                }
                 Some(Err(error)) => {
                     capture.take();
                     failed = true;

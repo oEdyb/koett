@@ -128,7 +128,7 @@ impl Capture {
         }))
     }
 
-    pub(crate) fn level(&self) -> Result<f64, String> {
+    pub(crate) fn levels(&self) -> Result<(f32, f32), String> {
         if let Some(error) = self
             .error
             .lock()
@@ -144,9 +144,9 @@ impl Capture {
             .elapsed()
             > Duration::from_millis(500)
         {
-            return Ok(0.0);
+            return Ok((0.0, 0.0));
         }
-        Ok(f64::from((self.levels.current().0 * 10.0).clamp(0.0, 1.0)))
+        Ok(self.levels.current())
     }
 }
 

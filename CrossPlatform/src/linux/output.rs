@@ -1,3 +1,4 @@
+use crate::settings::PasteShortcut;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -22,7 +23,7 @@ pub fn focused_window() -> Option<u32> {
     u32::try_from(value["id"].as_u64()?).ok()
 }
 
-pub fn deliver(text: &str, target: Option<u32>) -> Result<(), String> {
+pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Result<(), String> {
     let mut copy = Command::new("wl-copy")
         .args(["--type", "text/plain;charset=utf-8"])
         .stdin(Stdio::piped())
@@ -36,13 +37,11 @@ pub fn deliver(text: &str, target: Option<u32>) -> Result<(), String> {
     if !copy.wait().map_err(|e| e.to_string())?.success() {
         return Err("Copy failed; recover from History".into());
     }
-    copy_primary(text)?;
     if !target_unchanged(target) {
         return Err("Copied · paste into your target application".into());
     }
-    // Shift+Insert is supported by terminals and GUI text widgets, and avoids Ctrl+V's terminal meaning.
     let status = Command::new("wtype")
-        .args(["-M", "shift", "-P", "Insert", "-p", "Insert", "-m", "shift"])
+        .args(wtype_arguments(shortcut))
         .status()
         .map_err(|e| format!("Copied · automatic paste unavailable: {e}"))?;
     if status.success() {
@@ -52,23 +51,23 @@ pub fn deliver(text: &str, target: Option<u32>) -> Result<(), String> {
     }
 }
 
-pub fn copy_primary(text: &str) -> Result<(), String> {
-    let mut copy = Command::new("wl-copy")
-        .args(["--primary", "--type", "text/plain;charset=utf-8"])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|error| format!("Copied · primary selection unavailable: {error}"))?;
-    copy.stdin
-        .take()
-        .ok_or("Primary clipboard input unavailable")?
-        .write_all(text.as_bytes())
-        .map_err(|error| error.to_string())?;
-    if copy.wait().map_err(|error| error.to_string())?.success() {
-        Ok(())
-    } else {
-        Err("Copied · paste manually (primary selection unavailable)".into())
+pub(super) fn paste_keysyms(shortcut: PasteShortcut) -> &'static [u32] {
+    match shortcut {
+        PasteShortcut::CtrlV => &[xkeysym::key::Control_L, xkeysym::key::v],
+        PasteShortcut::CtrlShiftV => &[
+            xkeysym::key::Control_L,
+            xkeysym::key::Shift_L,
+            xkeysym::key::v,
+        ],
+    }
+}
+
+fn wtype_arguments(shortcut: PasteShortcut) -> &'static [&'static str] {
+    match shortcut {
+        PasteShortcut::CtrlV => &["-M", "ctrl", "-P", "v", "-p", "v", "-m", "ctrl"],
+        PasteShortcut::CtrlShiftV => &[
+            "-M", "ctrl", "-M", "shift", "-P", "v", "-p", "v", "-m", "shift", "-m", "ctrl",
+        ],
     }
 }
 

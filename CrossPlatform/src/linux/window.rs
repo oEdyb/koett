@@ -11,6 +11,7 @@ pub enum Update {
     Show(String),
     Settings(String),
     Completed(String),
+    DeliveryFailed,
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
 }
@@ -100,14 +101,42 @@ fn build_window(
         let latest = latest_completed.clone();
         move |button| {
             if let Some(text) = latest.borrow().as_ref() {
-                button.clipboard().set_text(text);
-                button.set_label("Copied");
+                match super::feedback::copy_transcript(&button.clipboard(), text) {
+                    Ok(()) => button.set_label("Copied"),
+                    Err(error) => {
+                        button.set_label("Copy failed · retry");
+                        eprintln!("Copy transcript: {error}");
+                    }
+                }
             }
         }
     });
     status_row.append(&recovery);
     layout.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     layout.append(&status_row);
+    let delivery_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    delivery_row.set_margin_start(16);
+    delivery_row.set_margin_end(16);
+    delivery_row.set_margin_bottom(8);
+    delivery_row.append(&gtk::Label::new(Some("Automatic paste unavailable")));
+    let delivery_copy = gtk::Button::with_label("Copy transcript");
+    delivery_row.append(&delivery_copy);
+    delivery_row.set_visible(false);
+    layout.append(&delivery_row);
+    delivery_copy.connect_clicked({
+        let latest = latest_completed.clone();
+        move |button| {
+            if let Some(text) = latest.borrow().as_ref() {
+                match super::feedback::copy_transcript(&button.clipboard(), text) {
+                    Ok(()) => button.set_label("Copied"),
+                    Err(error) => {
+                        button.set_label("Copy failed · retry");
+                        eprintln!("Copy transcript: {error}");
+                    }
+                }
+            }
+        }
+    });
     window.set_child(Some(&layout));
 
     let css = gtk::CssProvider::new();
@@ -115,7 +144,11 @@ fn build_window(
         ".transcript { font-size: 16px; }\n\
          .koett-record { background: #ac3d31; color: #ffffff; }\n\
          .koett-record:hover { background: #923126; }\n\
-         window.koett-pill { border-radius: 24px; background: #262626; color: #ffffff; }",
+         window.koett-pill { background: transparent; }\n\
+         .koett-settings-nav button { min-width: 0; padding: 4px 8px; }\n\
+         .koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }\n\
+         .koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }\n\
+         .koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }",
     );
     gtk::style_context_add_provider_for_display(
         &WidgetExt::display(&window),
@@ -168,10 +201,14 @@ fn build_window(
     application.add_action(&quit);
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
-    let overlay = super::recording_overlay::RecordingOverlay::new(application);
+    let overlay =
+        super::recording_overlay::RecordingOverlay::new(application, latest_completed.clone());
     let mut recording_started = None::<Instant>;
     let mut state = String::from("Starting…");
     let mut notice = None::<String>;
+    let mut recovery_until = None::<Instant>;
+    let mut notice_until = None::<Instant>;
+    let mut feedback = super::feedback::CaptureFeedback::default();
     let mut audio_levels = None::<crate::audio::AudioLevels>;
     gtk::glib::timeout_add_local(Duration::from_millis(80), {
         let window = window.clone();
@@ -195,6 +232,13 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
+                    Update::DeliveryFailed => {
+                        if latest_completed.borrow().is_some() {
+                            recovery_until =
+                                Some(Instant::now() + super::feedback::RECOVERY_DURATION);
+                            delivery_copy.set_label("Copy transcript");
+                        }
+                    }
                     Update::Completed(text) => {
                         *latest_completed.borrow_mut() = Some(text);
                         recovery.set_visible(true);
@@ -225,11 +269,16 @@ fn build_window(
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
                         notice = Some(message.trim_start_matches("@notice:").to_string());
+                        notice_until = Some(Instant::now() + Duration::from_secs(8));
                     }
                     Update::Status(message) => {
                         let recording = message.starts_with("Recording");
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
+                            feedback = super::feedback::CaptureFeedback::default();
+                            recovery_until = None;
+                            notice = None;
+                            notice_until = None;
                         }
                         if !recording {
                             recording_started = None;
@@ -252,6 +301,21 @@ fn build_window(
                     }
                 }
             }
+            if notice_until.is_some_and(|until| Instant::now() >= until) {
+                notice = None;
+                notice_until = None;
+            }
+            if recovery_until.is_some_and(|until| Instant::now() >= until) {
+                recovery_until = None;
+            }
+            let recovering = recovery_until.is_some();
+            delivery_row.set_visible(recovering);
+            let warning = recording_started.and_then(|started| {
+                audio_levels.as_ref().and_then(|levels| {
+                    let (rms, peak) = levels.current();
+                    feedback.update(started.elapsed(), rms, peak)
+                })
+            });
             meter_group.set_visible(recording_started.is_some());
             if recording_started.is_some()
                 && let Some(levels) = &audio_levels
@@ -259,15 +323,23 @@ fn build_window(
                 meter.set_value(f64::from((levels.current().0 * 10.0).clamp(0.0, 1.0)));
             }
             if let Some(overlay) = &overlay {
-                overlay.update(&state, recording_started, audio_levels.as_ref());
+                overlay.update(
+                    &state,
+                    recording_started,
+                    audio_levels.as_ref(),
+                    warning,
+                    recovering,
+                );
             }
             status.set_text(
                 &recording_started
                     .map(|started| {
                         format!(
-                            "Recording · {}:{:02}",
+                            "Recording · {}:{:02}{}",
                             started.elapsed().as_secs() / 60,
-                            started.elapsed().as_secs() % 60
+                            started.elapsed().as_secs() % 60,
+                            warning
+                                .map_or(String::new(), |warning| format!(" · {}", warning.text()))
                         )
                     })
                     .unwrap_or_else(|| match &notice {

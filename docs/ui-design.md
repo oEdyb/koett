@@ -42,20 +42,31 @@ available recovery. A missing optional portal/tray cannot make the app unusable.
 Do not steal focus when a background dictation finishes. Opening history/settings
 must not paste into those windows by accident; guard target focus or offer copy.
 
-Settings: Input (microphone), Recording (mode and shortcut), Text (replacement
-pairs), General (launch at login, pause media). Use native groups and labeled
-controls; no JSON editor. Keep advanced model configuration out of the primary
+Settings: Audio (microphone and live meter), Shortcuts (mode and shortcut), Text
+(paste shortcut and replacement pairs), General (launch at login, pause media).
+Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
 workflow. Changes show validation near the control and persist predictably. The microphone
 selection has one labeled live input-level meter for the selected option. Switching
 options clears the old reading and previews the new device; unavailable inputs
 show an error rather than silently substituting another microphone. Settings
 preview never saves or transcribes audio, stops when closed, and yields to actual
-dictation. A broader visual redesign remains deferred.
+dictation and releases capture when Audio is hidden. Linux paste uses one explicit shortcut
+choice, shared across portal, compositor fallback and X11 delivery: Ctrl+V or
+Ctrl+Shift+V. Terminal and GUI shortcuts differ, so the control must not imply
+universal automatic target detection. Preserve focus guards and clipboard/history
+recovery; never send multiple paste chords to guess what the target accepts.
 
 ## State and interaction
 
 - Ready: Record is enabled and the active shortcut is visible.
-- Recording: Stop is primary; show elapsed time and actual audio level when available.
+- Recording: Stop is primary; show elapsed time and actual audio level when available. The Linux
+  recording pill follows the existing Mac source: compact dark 236x48 capsule,
+  coral recording dot, 17 rounded rolling amplitude bars (coral center/white edges),
+  divider and monospaced elapsed timer. Samples follow real microphone RMS using
+  the Mac dB mapping/smoothing, never decorative synthetic motion. Reset on each
+  capture; settle flat on silence. Toolkit reduced motion leaves a static
+  waveform and functioning timer/status. Transcribing retains the capsule until
+  delivery/cleanup; the surface never captures typing or pointer input.
 - Transcribing: clear busy state without blocking history or closing the window.
 - Saved result: refresh recent history without changing the user's current selection
   while they are reading an older entry. Copy confirms with Copied, then resets.
@@ -68,6 +79,35 @@ border, selection, accent, error. One restrained coral accent for primary record
 and selected state; verify 4.5:1 text/3:1 controls in both system themes. Keep body
 text at native readable size, transcript text around 16px, line length about 70ch,
 and spacing on a consistent 4/8px rhythm. Avoid gradients and heavy shadows.
+
+## Approved Settings and feedback pass — 2026-10-27
+
+Use native GTK navigation for Audio, Shortcuts, Text and General. Open on Audio
+with the selected input and its live meter visible. Keep Save outside the scrolling
+content. Switching sections must retain unsaved edits; validation must reveal the
+section containing the invalid control before focusing it. Audio preview must
+release its capture when hidden, closed or saved and continue yielding to dictation.
+
+Silence is normal, including long pauses to think, and must never produce a warning.
+Only sustained excessive input levels produce a short, debounced amplitude warning.
+Use measured input, reset between captures/devices, and avoid asserting that a
+microphone disconnected or hardware clipped solely from amplitude. These warnings
+must not stop recording or change transcription. Retain the existing Mac-style
+waveform, timer, transcribing state and reduced-motion behavior.
+
+An explicit delivery failure may show a temporary Copy transcript action near the
+recording surface. Keep the exact completed text in the existing recovery cache
+after the temporary action closes. Showing feedback must not request keyboard
+focus; recording/transcribing remain pointer-transparent. A recovery action can
+accept pointer input only while recovery is visible. A successful injected shortcut
+does not establish that the target consumed the paste. Unsupported overlay sessions
+must retain main-window recovery.
+
+Acceptance: native light/dark and narrow Settings, keyboard navigation, invalid
+replacement navigation, Save/reopen, preview release/resume, debounced warning
+signals, silent thinking pauses and recovery-copy cleanup in a private lab. Preserve model choice, settings
+values until explicit Save, history durability, and independent delivery/storage
+errors. No model picker or automatic personal-replacement learning in this pass.
 
 ## Shared history contract
 

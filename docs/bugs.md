@@ -87,3 +87,30 @@ microphone contention. Restored the prior system-default selection with a privat
 settings backup; all other settings remain unchanged. Runtime reloads input
 settings before each capture. No physical capture test was performed; user retry
 is still needed to confirm recovery. Klippt was left running.
+
+## 2026-10-27: paste chord changed with Linux output backend
+
+Portal output owned CLIPBOARD and sent Ctrl+V, while external/X11 output used
+Shift+Insert and PRIMARY. A backend change could therefore change terminal/GUI
+behavior. A validated explicit Ctrl+V/Ctrl+Shift+V preference now drives every
+Linux backend. PRIMARY is preserved, target guards and independent history remain.
+Private real GTK/kitty tests cover exact text, typing, Enter and clipboard-only
+recovery after focus changes. This does not infer which shortcut arbitrary apps
+accept; Settings exposes the choice. See the verification report for limits.
+
+## 2026-10-27: guarded X11 delivery hid clipboard-only recovery
+
+The focus guard correctly skipped automatic paste after the target disappeared
+or changed, but returned success. It now reports that clipboard-only outcome to
+the typed recovery path, preserving the guard and saved text while exposing Copy.
+Regression coverage checks matching, changed and missing targets and the emitted
+recovery update. Settings validation evidence now checks the exact empty Phrase
+entry receives focus rather than accepting any focused editable field.
+
+## 2026-10-27: thinking pauses incorrectly produced an input warning
+
+The new five-second silence warning treated normal dictation pauses as a problem.
+Removed silence from capture feedback for both Settings preview and the recording
+pill. Low amplitude does not establish microphone failure. Real device/stream
+errors remain visible, and sustained excessive input retains its separate warning.
+Regression coverage verifies even ten minutes of silence produces no warning.

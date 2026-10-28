@@ -6,6 +6,10 @@ use libloading::Library;
 use std::os::unix::process::CommandExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
+use std::{cell::RefCell, rc::Rc};
+
+#[path = "waveform.rs"]
+mod waveform;
 
 const LIBRARY: &str = "libgtk4-layer-shell.so.0";
 const PREPARED: &str = "KOETT_LAYER_SHELL_PREPARED";
@@ -97,14 +101,119 @@ impl LayerShell {
     }
 }
 
+struct MeterState {
+    waveform: waveform::Waveform,
+    started: Option<Instant>,
+    audio: Option<crate::audio::AudioLevels>,
+    last_frame: Option<i64>,
+}
+
 pub struct RecordingOverlay {
     window: gtk::Window,
     label: gtk::Label,
-    meter: gtk::LevelBar,
+    status: gtk::Label,
+    drawing: gtk::DrawingArea,
+    warning: gtk::Label,
+    recovery: gtk::Box,
+    copy: gtk::Button,
+    state: Rc<RefCell<MeterState>>,
+    tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
     _layer_shell: LayerShell,
 }
+
+// GTK ticks stop when unmapped. Install only during animated capture, and
+// remove on stop/reduced motion, so there is no hidden waveform polling loop.
+fn sync_animation(
+    drawing: &gtk::DrawingArea,
+    state: &Rc<RefCell<MeterState>>,
+    tick: &Rc<RefCell<Option<gtk::TickCallbackId>>>,
+) {
+    let reduced = !drawing.settings().is_gtk_enable_animations();
+    let mut meter = state.borrow_mut();
+    meter.waveform.set_reduced_motion(reduced);
+    let animate = meter.started.is_some() && !reduced;
+    drop(meter);
+    if !animate {
+        if let Some(id) = tick.borrow_mut().take() {
+            id.remove();
+        }
+        state.borrow_mut().last_frame = None;
+    } else if tick.borrow().is_none() {
+        let state = state.clone();
+        *tick.borrow_mut() = Some(drawing.add_tick_callback(move |drawing, clock| {
+            let mut meter = state.borrow_mut();
+            let now = clock.frame_time();
+            if meter.last_frame.is_none_or(|last| now - last >= 33_000) {
+                let rms = meter.audio.as_ref().map_or(0.0, |audio| audio.current().0);
+                meter.waveform.push(rms);
+                meter.last_frame = Some(now);
+                drawing.queue_draw();
+            }
+            gtk::glib::ControlFlow::Continue
+        }));
+    }
+    drawing.queue_draw();
+}
+
+fn capsule(context: &gtk::cairo::Context, x: f64, y: f64, width: f64, height: f64) {
+    let radius = width.min(height) / 2.0;
+    context.new_sub_path();
+    for (cx, cy, angle) in [
+        (x + width - radius, y + radius, -std::f64::consts::FRAC_PI_2),
+        (x + width - radius, y + height - radius, 0.0),
+        (x + radius, y + height - radius, std::f64::consts::FRAC_PI_2),
+        (x + radius, y + radius, std::f64::consts::PI),
+    ] {
+        context.arc(cx, cy, radius, angle, angle + std::f64::consts::FRAC_PI_2);
+    }
+    context.close_path();
+}
+
+fn paint(context: &gtk::cairo::Context, meter: &MeterState) -> Result<(), gtk::cairo::Error> {
+    capsule(context, 1.0, 1.0, 234.0, 46.0);
+    context.set_source_rgba(0.075, 0.075, 0.08, 0.97);
+    context.fill_preserve()?;
+    context.set_source_rgba(1.0, 1.0, 1.0, 0.10);
+    context.set_line_width(1.0);
+    context.stroke()?;
+    context.set_source_rgb(1.0, 0.31, 0.26);
+    context.arc(
+        if meter.started.is_some() { 20.0 } else { 21.0 },
+        24.0,
+        4.0,
+        0.0,
+        std::f64::consts::TAU,
+    );
+    context.fill()?;
+    if meter.started.is_some() {
+        for (index, level) in meter.waveform.levels.iter().enumerate() {
+            let height = 3.0 + level * 24.0;
+            capsule(
+                context,
+                39.0 + index as f64 * 6.0,
+                24.0 - height / 2.0,
+                3.0,
+                height,
+            );
+            if (6..=10).contains(&index) {
+                context.set_source_rgb(1.0, 0.31, 0.26);
+            } else {
+                context.set_source_rgba(1.0, 1.0, 1.0, 0.82);
+            }
+            context.fill()?;
+        }
+        context.set_source_rgba(1.0, 1.0, 1.0, 0.13);
+        context.rectangle(153.0, 12.0, 1.0, 24.0);
+        context.fill()?;
+    }
+    Ok(())
+}
+
 impl RecordingOverlay {
-    pub fn new(application: &gtk::Application) -> Option<Self> {
+    pub fn new(
+        application: &gtk::Application,
+        latest: Rc<RefCell<Option<String>>>,
+    ) -> Option<Self> {
         let layer_shell = match LayerShell::load() {
             Ok(shell) => shell,
             Err(error) => {
@@ -133,25 +242,91 @@ impl RecordingOverlay {
                 surface.set_input_region(Some(&gtk::cairo::Region::create()));
             }
         });
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        content.set_halign(gtk::Align::Center);
-        let label = gtk::Label::new(Some("Recording · 0:00"));
-        let meter = gtk::LevelBar::for_interval(0.0, 1.0);
-        meter.set_size_request(52, -1);
-        meter.set_valign(gtk::Align::Center);
-        meter.set_tooltip_text(Some("Microphone level"));
-        content.append(&label);
-        content.append(&meter);
-        window.set_child(Some(&content));
+        let state = Rc::new(RefCell::new(MeterState {
+            waveform: waveform::Waveform::default(),
+            started: None,
+            audio: None,
+            last_frame: None,
+        }));
+        let tick = Rc::new(RefCell::new(None));
+        let drawing = gtk::DrawingArea::new();
+        drawing.set_content_width(236);
+        drawing.set_content_height(48);
+        drawing.set_draw_func({
+            let state = state.clone();
+            move |_, context, _, _| {
+                if let Err(error) = paint(context, &state.borrow()) {
+                    eprintln!("Recording waveform drawing failed: {error}");
+                }
+            }
+        });
+        drawing.settings().connect_gtk_enable_animations_notify({
+            let drawing = drawing.downgrade();
+            let state = Rc::downgrade(&state);
+            let tick = Rc::downgrade(&tick);
+            move |_| {
+                if let (Some(drawing), Some(state), Some(tick)) =
+                    (drawing.upgrade(), state.upgrade(), tick.upgrade())
+                {
+                    sync_animation(&drawing, &state, &tick);
+                }
+            }
+        });
+        let content = gtk::Fixed::new();
+        content.put(&drawing, 0.0, 0.0);
+        let label = gtk::Label::new(Some("0:00"));
+        label.add_css_class("koett-pill-timer");
+        label.set_tooltip_text(Some("Recording elapsed time"));
+        label.set_size_request(84, 48);
+        content.put(&label, 152.0, 0.0);
+        let status = gtk::Label::new(Some("Transcribing…"));
+        status.add_css_class("koett-pill-status");
+        status.set_xalign(0.0);
+        status.set_size_request(184, 48);
+        content.put(&status, 36.0, 0.0);
+        let layout = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        layout.append(&content);
+        let warning = gtk::Label::new(None);
+        warning.add_css_class("koett-feedback");
+        warning.set_visible(false);
+        layout.append(&warning);
+        let recovery = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        recovery.add_css_class("koett-feedback");
+        let copy = gtk::Button::with_label("Copy transcript");
+        copy.set_focusable(false);
+        copy.connect_clicked(move |button| {
+            if let Some(text) = latest.borrow().as_ref() {
+                match super::feedback::copy_transcript(&button.clipboard(), text) {
+                    Ok(()) => button.set_label("Copied"),
+                    Err(error) => {
+                        button.set_label("Copy failed · retry");
+                        eprintln!("Copy transcript: {error}");
+                    }
+                }
+            }
+        });
+        recovery.append(&copy);
+        recovery.set_visible(false);
+        layout.append(&recovery);
+        window.set_child(Some(&layout));
         Some(Self {
             window,
             label,
-            meter,
+            status,
+            drawing,
+            warning,
+            recovery,
+            copy,
+            state,
+            tick,
             _layer_shell: layer_shell,
         })
     }
 
     pub fn close(&self) {
+        if let Some(id) = self.tick.borrow_mut().take() {
+            id.remove();
+        }
         self.window.destroy();
     }
 
@@ -160,21 +335,58 @@ impl RecordingOverlay {
         state: &str,
         started: Option<Instant>,
         levels: Option<&crate::audio::AudioLevels>,
+        warning: Option<super::feedback::CaptureWarning>,
+        recovering: bool,
     ) {
         let recording = started.is_some();
         let transcribing = state.starts_with("Transcribing");
+        let recovering = recovering && !recording && !transcribing;
+        if recovering != self.recovery.is_visible() {
+            self.copy.set_label("Copy transcript");
+        }
+        self.recovery.set_visible(recovering);
+        self.warning.set_visible(warning.is_some());
+        self.warning
+            .set_text(warning.map_or("", |warning| warning.text()));
+        self.window.set_can_target(recovering);
+        if let Some(surface) = self.window.surface() {
+            if recovering {
+                surface.set_input_region(None);
+            } else {
+                surface.set_input_region(Some(&gtk::cairo::Region::create()));
+            }
+        }
+        {
+            let mut meter = self.state.borrow_mut();
+            if meter.started != started {
+                meter.waveform.reset();
+                meter.last_frame = None;
+            }
+            meter.started = started;
+            meter.audio = levels.cloned();
+        }
         if let Some(started) = started {
             let seconds = started.elapsed().as_secs();
-            self.label
-                .set_text(&format!("Recording · {}:{:02}", seconds / 60, seconds % 60));
-            self.meter.set_value(levels.map_or(0.0, |levels| {
-                f64::from((levels.current().0 * 10.0).clamp(0.0, 1.0))
-            }));
-        } else if transcribing {
-            self.label.set_text("Transcribing…");
+            let elapsed = format!("{}:{:02}", seconds / 60, seconds % 60);
+            self.label.set_text(&elapsed);
         }
-        self.meter.set_visible(recording);
+        self.label.set_visible(recording);
+        self.status.set_text(if recording {
+            "Recording"
+        } else if recovering {
+            "Paste unavailable"
+        } else {
+            "Transcribing…"
+        });
+        self.status.set_opacity(if recording { 0.0 } else { 1.0 });
+        self.status
+            .set_visible(recording || transcribing || recovering);
+        sync_animation(&self.drawing, &self.state, &self.tick);
         // Mapping a keyboard-none layer surface never requests activation.
-        self.window.set_visible(recording || transcribing);
+        self.window
+            .set_visible(recording || transcribing || recovering);
+        if recovering && let Some(surface) = self.window.surface() {
+            surface.set_input_region(None);
+        }
     }
 }

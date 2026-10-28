@@ -1,5 +1,5 @@
 use crate::replacements::Replacement;
-use crate::settings::{RecordingMode, Settings};
+use crate::settings::{PasteShortcut, RecordingMode, Settings};
 use gtk4::{self as gtk, prelude::*};
 
 pub fn show(
@@ -35,17 +35,23 @@ pub fn show(
     header.set_title_widget(Some(&gtk::Label::new(Some("Settings"))));
     window.set_titlebar(Some(&header));
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    let layout = gtk::Box::new(gtk::Orientation::Vertical, 16);
-    layout.set_margin_top(20);
-    layout.set_margin_bottom(20);
-    layout.set_margin_start(24);
-    layout.set_margin_end(24);
-    let scroll = gtk::ScrolledWindow::builder()
-        .child(&layout)
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .build();
-    scroll.set_vexpand(true);
-    outer.append(&scroll);
+    let stack = gtk::Stack::new();
+    stack.set_vexpand(true);
+    let navigation = gtk::StackSwitcher::new();
+    navigation.set_stack(Some(&stack));
+    navigation.add_css_class("koett-settings-nav");
+    navigation.set_halign(gtk::Align::Center);
+    navigation.set_margin_top(8);
+    navigation.set_margin_bottom(8);
+    navigation.set_margin_start(8);
+    navigation.set_margin_end(8);
+    outer.append(&navigation);
+    outer.append(&stack);
+    let audio = section(&stack, "audio", "Audio");
+    let shortcuts = section(&stack, "shortcuts", "Shortcuts");
+    let text = section(&stack, "text", "Text");
+    let general = section(&stack, "general", "General");
+    stack.set_visible_child_name("audio");
     let footer = gtk::Box::new(gtk::Orientation::Vertical, 8);
     footer.set_margin_top(12);
     footer.set_margin_bottom(12);
@@ -55,6 +61,12 @@ pub fn show(
     outer.append(&footer);
     window.set_child(Some(&outer));
     let input = gtk::ComboBoxText::new();
+    for cell in input.cells() {
+        if let Ok(text) = cell.downcast::<gtk::CellRendererText>() {
+            text.set_ellipsize(gtk::pango::EllipsizeMode::End);
+            text.set_max_width_chars(32);
+        }
+    }
     input.append(Some(""), "System default microphone");
     input.set_active_id(Some(""));
     if let Some(name) = &settings.microphone {
@@ -98,10 +110,8 @@ pub fn show(
             gtk::glib::ControlFlow::Break
         }
     });
-    group(&layout, "Input");
-    row(&layout, "Microphone", &input);
-    super::input_preview::attach(&window, &input, &layout);
-    group(&layout, "Recording");
+    row(&audio, "Microphone", &input);
+    super::input_preview::attach(&window, &input, &audio, &stack);
     let mode = gtk::ComboBoxText::new();
     mode.append(Some("toggle"), "Toggle");
     mode.append(Some("hold"), "Hold to record");
@@ -110,17 +120,17 @@ pub fn show(
     } else {
         "toggle"
     }));
-    row(&layout, "Recording mode", &mode);
+    row(&shortcuts, "Recording mode", &mode);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     if wayland {
         row(
-            &layout,
+            &shortcuts,
             "Shortcut",
             &gtk::Label::new(Some("Managed by desktop")),
         );
         let portal = gtk::Button::with_label("Change desktop shortcut…");
-        layout.append(&portal);
+        shortcuts.append(&portal);
         portal.connect_clicked(|_| {
             std::thread::spawn(|| {
                 let result = tokio::runtime::Builder::new_current_thread()
@@ -145,13 +155,13 @@ Hold release: koett stop",
         instructions.set_xalign(0.0);
         instructions.set_selectable(true);
         setup.set_child(Some(&instructions));
-        layout.append(&setup);
+        shortcuts.append(&setup);
     } else {
         let button = gtk::Button::with_label(&shortcut.borrow());
-        row(&layout, "Shortcut", &button);
+        row(&shortcuts, "Shortcut", &button);
         let capture_error = gtk::Label::new(None);
         capture_error.set_wrap(true);
-        layout.append(&capture_error);
+        shortcuts.append(&capture_error);
         let capturing = std::rc::Rc::new(std::cell::Cell::new(false));
         button.connect_clicked({
             let capturing = capturing.clone();
@@ -208,20 +218,27 @@ Hold release: koett stop",
         super::SHORTCUT_EDITING.store(false, std::sync::atomic::Ordering::Release);
         gtk::glib::Propagation::Proceed
     });
-    group(&layout, "Text");
+    let paste = gtk::ComboBoxText::new();
+    paste.append(Some("ctrl_v"), "Ctrl+V");
+    paste.append(Some("ctrl_shift_v"), "Ctrl+Shift+V");
+    paste.set_active_id(Some(match settings.paste_shortcut {
+        PasteShortcut::CtrlV => "ctrl_v",
+        PasteShortcut::CtrlShiftV => "ctrl_shift_v",
+    }));
+    row(&text, "Paste shortcut", &paste);
     let replacements_title = gtk::Label::new(Some("Word replacements"));
     replacements_title.set_xalign(0.0);
     replacements_title.add_css_class("heading");
-    layout.append(&replacements_title);
+    text.append(&replacements_title);
     let explanation = gtk::Label::new(Some(
         "Case-sensitive phrases. Longest match wins; replacements run once.",
     ));
     explanation.set_wrap(true);
     explanation.set_xalign(0.0);
     explanation.add_css_class("dim-label");
-    layout.append(&explanation);
+    text.append(&explanation);
     let pairs = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    layout.append(&pairs);
+    text.append(&pairs);
     let entries = std::rc::Rc::new(std::cell::RefCell::new(Vec::<(
         gtk::Entry,
         gtk::Entry,
@@ -232,21 +249,20 @@ Hold release: koett stop",
     }
     let add = gtk::Button::with_label("Add replacement");
     add.set_halign(gtk::Align::Start);
-    layout.append(&add);
+    text.append(&add);
     add.connect_clicked({
         let entries = entries.clone();
         let pairs = pairs.clone();
         move |_| add_pair(&pairs, &entries, "", "")
     });
-    group(&layout, "General");
     let login = gtk::CheckButton::with_label("_Launch at login");
     login.set_use_underline(true);
     login.set_active(settings.start_at_login);
-    layout.append(&login);
+    general.append(&login);
     let pause_media = gtk::CheckButton::with_label("_Pause media while recording");
     pause_media.set_use_underline(true);
     pause_media.set_active(settings.pause_media);
-    layout.append(&pause_media);
+    general.append(&pause_media);
     let error = gtk::Label::new(None);
     error.set_wrap(true);
     error.add_css_class("error");
@@ -277,6 +293,7 @@ Hold release: koett stop",
                 }
                 if phrase.text().trim().is_empty() {
                     error.set_text("Enter a phrase or remove the empty replacement.");
+                    stack.set_visible_child_name("text");
                     phrase.grab_focus();
                     return;
                 }
@@ -286,6 +303,16 @@ Hold release: koett stop",
                 });
             }
             updated.replacements = rules;
+            updated.paste_shortcut = match paste.active_id().as_deref() {
+                Some("ctrl_v") => PasteShortcut::CtrlV,
+                Some("ctrl_shift_v") => PasteShortcut::CtrlShiftV,
+                _ => {
+                    error.set_text("Choose a paste shortcut.");
+                    stack.set_visible_child_name("text");
+                    paste.grab_focus();
+                    return;
+                }
+            };
             updated.pause_media = pause_media.is_active();
             let result =
                 super::set_start_at_login(updated.start_at_login).and_then(|()| updated.save());
@@ -300,11 +327,18 @@ Hold release: koett stop",
     });
     super::window::present(&window, token);
 }
-fn group(layout: &gtk::Box, name: &str) {
-    let title = gtk::Label::new(Some(name));
-    title.add_css_class("heading");
-    title.set_xalign(0.0);
-    layout.append(&title);
+fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
+    let layout = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    layout.set_margin_top(16);
+    layout.set_margin_bottom(16);
+    layout.set_margin_start(24);
+    layout.set_margin_end(24);
+    let scroll = gtk::ScrolledWindow::builder()
+        .child(&layout)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .build();
+    stack.add_titled(&scroll, Some(name), title);
+    layout
 }
 fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
     let title = gtk::Label::new(Some(label));
@@ -327,6 +361,8 @@ fn add_pair(pairs: &gtk::Box, entries: &Pairs, phrase: &str, replacement: &str) 
         .text(replacement)
         .hexpand(true)
         .build();
+    from.set_width_chars(8);
+    to.set_width_chars(8);
     let remove = gtk::Button::with_label("Remove");
     let from_group = gtk::Box::new(gtk::Orientation::Vertical, 4);
     let from_label = gtk::Label::new(Some("Phrase"));
