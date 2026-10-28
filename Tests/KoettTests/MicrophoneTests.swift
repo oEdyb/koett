@@ -1,5 +1,6 @@
 @testable import Koett
 import AVFoundation
+import Synchronization
 import XCTest
 
 final class MicrophoneTests: XCTestCase {
@@ -79,6 +80,29 @@ final class MicrophoneTests: XCTestCase {
             XCTAssertGreaterThan(peak, 0.45)
             XCTAssertLessThan(peak, 0.55)
         }
+    }
+
+    func testMeterReadsDuringCaptureNeverDropAudio() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-mic-test-\(UUID()).wav")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1))
+        let sink = try MicrophoneFileSink(url: url, inputFormat: format)
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
+        buffer.frameLength = 160
+        buffer.floatChannelData![0].initialize(repeating: 0.1, count: 160)
+        let done = Atomic<Bool>(false)
+        let reader = Thread {
+            while !done.load(ordering: .relaxed) {
+                _ = sink.duration
+                _ = sink.averagePower
+            }
+        }
+        reader.start()
+        for _ in 0..<20_000 { sink.append(buffer) }
+        done.store(true, ordering: .relaxed)
+        sink.close()
+        XCTAssertNil(sink.error)
+        XCTAssertEqual(sink.duration, 200, accuracy: 0.001)
     }
 
     func testCaptureFailureStopsWritingAndKeepsCompletedAudio() throws {
