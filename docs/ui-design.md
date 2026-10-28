@@ -109,6 +109,22 @@ signals, silent thinking pauses and recovery-copy cleanup in a private lab. Pres
 values until explicit Save, history durability, and independent delivery/storage
 errors. No model picker or automatic personal-replacement learning in this pass.
 
+## Native menus and navigation — 2026-10-28
+
+Tray activation opens History. Recording is an explicit Record/Stop action;
+Starting and Transcribing disable capture, while actual engine failures show
+Retry. Internal control messages and shortcut notices never replace the phase.
+Keep the tray focused on recording, Settings, History and Quit. Shortcut and
+login preferences remain in Settings.
+
+The visible Settings button remains in the header beside a compact native Menu.
+Group History/Copy last transcript, Settings, and Hide window/Quit. Copy last
+stays disabled until a completed result exists. Reuse the same Settings and Copy
+actions as the visible controls. Ctrl+, opens or reuses Settings, Ctrl+F focuses
+search and Ctrl+Q quits. Hiding the window leaves dictation available through the
+shortcut and tray. Menus use native theme/keyboard behavior and accessible labels
+on GTK4.6 as well as current GTK. No new settings values or model changes.
+
 ## Shared history contract
 
 Canonical SQL: `Sources/Koett/Resources/History/schema.sql`. Rust includes that

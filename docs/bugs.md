@@ -127,3 +127,13 @@ and a UI-local elapsed clock. Independent source inspection found no equivalent
 meter lock contention; no speculative Rust patch was added. This finding does
 not rule out unrelated capture failures. Swift execution remains unverified on
 this Linux workstation; run the upstream regression on macOS before release.
+
+## 2026-10-28: shortcut warnings replaced the recording phase
+
+X11 shortcut registration/validation failures used the same Error phase as an
+engine failure. During capture or transcription, a shortcut conflict could make
+the UI display an enabled Retry rather than Stop or disabled Transcribing.
+Shortcut failures now use a nonfatal notice, preserving the engine phase and
+the shared tray/window action mapping. Regression coverage exercises unavailable
+and invalid shortcuts during both capture and ASR. Internal UI control messages
+also no longer leak into the tray's displayed phase.

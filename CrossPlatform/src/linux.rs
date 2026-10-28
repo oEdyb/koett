@@ -36,15 +36,13 @@ static SHORTCUT_EDITING: std::sync::atomic::AtomicBool = std::sync::atomic::Atom
 const APP_ID: &str = "com.olledyberg.Koett";
 const SHORTCUT_ID: &str = "toggle-recording";
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum TrayAction {
     Toggle,
     Start,
     Stop,
     OpenTranscripts,
     OpenSettings,
-    ConfigureShortcut,
-    ToggleStartAtLogin,
     Quit,
 }
 
@@ -53,10 +51,7 @@ enum TrayUpdate {
     Completed(String),
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
-    Settings {
-        shortcut: String,
-        start_at_login: bool,
-    },
+    Shortcut(String),
 }
 
 #[derive(Clone)]
@@ -68,8 +63,14 @@ struct TrayUpdates {
 struct LinuxTray {
     action_sender: Sender<TrayAction>,
     status: String,
-    shortcut: String,
-    start_at_login: bool,
+}
+
+impl LinuxTray {
+    fn update_status(&mut self, status: String) {
+        if !menu::is_control_message(&status) {
+            self.status = status;
+        }
+    }
 }
 
 impl ksni::Tray for LinuxTray {
@@ -110,11 +111,13 @@ impl ksni::Tray for LinuxTray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        let _ = self.action_sender.send(TrayAction::Toggle);
+        let _ = self.action_sender.send(TrayAction::OpenTranscripts);
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
-        use ksni::menu::{CheckmarkItem, MenuItem, StandardItem};
+        use ksni::menu::{MenuItem, StandardItem};
+
+        let recording = menu::recording_action(&self.status);
 
         vec![
             StandardItem {
@@ -123,15 +126,10 @@ impl ksni::Tray for LinuxTray {
                 ..Default::default()
             }
             .into(),
-            StandardItem {
-                label: format!("Shortcut: {}", self.shortcut),
-                enabled: false,
-                ..Default::default()
-            }
-            .into(),
             MenuItem::Separator,
             StandardItem {
-                label: "Start or stop recording".to_string(),
+                label: recording.label.to_string(),
+                enabled: recording.enabled,
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::Toggle);
                 }),
@@ -139,15 +137,7 @@ impl ksni::Tray for LinuxTray {
             }
             .into(),
             StandardItem {
-                label: "Change shortcut…".to_string(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::ConfigureShortcut);
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Open Settings".to_string(),
+                label: "Settings".to_string(),
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::OpenSettings);
                 }),
@@ -155,18 +145,9 @@ impl ksni::Tray for LinuxTray {
             }
             .into(),
             StandardItem {
-                label: "Open Transcripts".to_string(),
+                label: "History".to_string(),
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::OpenTranscripts);
-                }),
-                ..Default::default()
-            }
-            .into(),
-            CheckmarkItem {
-                label: "Start at login".to_string(),
-                checked: self.start_at_login,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::ToggleStartAtLogin);
                 }),
                 ..Default::default()
             }
@@ -190,6 +171,7 @@ mod feedback;
 mod history_view;
 mod input_preview;
 pub(crate) mod media;
+mod menu;
 mod output;
 mod recording_overlay;
 mod settings_view;
@@ -219,8 +201,6 @@ pub fn run() -> Result<(), String> {
         let tray = LinuxTray {
             action_sender: worker_actions,
             status: "Starting…".into(),
-            shortcut: settings.shortcut.clone(),
-            start_at_login: settings.start_at_login,
         }
         .spawn()
         .ok();
@@ -241,20 +221,11 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::Status(status) => {
                         let _ = worker_ui.send(window::Update::Status(status.clone()));
                         if let Some(tray) = &tray {
-                            let _ = tray.update(|t| t.status = status);
+                            let _ = tray.update(|t| t.update_status(status));
                         }
                     }
-                    TrayUpdate::Settings {
-                        shortcut,
-                        start_at_login,
-                    } => {
+                    TrayUpdate::Shortcut(shortcut) => {
                         let _ = worker_ui.send(window::Update::Shortcut(shortcut.clone()));
-                        if let Some(tray) = &tray {
-                            let _ = tray.update(|t| {
-                                t.shortcut = shortcut;
-                                t.start_at_login = start_at_login;
-                            });
-                        }
                     }
                 }
             }
@@ -333,10 +304,7 @@ fn run_x11(
         .map_err(|error| format!("could not start X11 shortcuts: {error}"))?;
     let mut shortcut_registered = hotkeys.register(shortcut).is_ok();
     if !shortcut_registered {
-        update_tray_status(
-            tray,
-            "Error: shortcut unavailable — open settings to change it",
-        );
+        report_shortcut_failure(tray, "unavailable");
     }
     let mut output = X11Output::new()?;
     let engine = runtime::start(settings.clone());
@@ -351,14 +319,8 @@ fn run_x11(
                 TrayAction::Start => app.command(EngineCommand::Start, || output.focused_window()),
                 TrayAction::Stop => app.command(EngineCommand::Stop, || output.focused_window()),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
-                TrayAction::OpenSettings | TrayAction::ConfigureShortcut => {
+                TrayAction::OpenSettings => {
                     update_tray_status(tray, "@settings");
-                }
-                TrayAction::ToggleStartAtLogin => {
-                    settings.start_at_login = !settings.start_at_login;
-                    set_start_at_login(settings.start_at_login)?;
-                    settings.save()?;
-                    update_tray_settings(tray, &settings.shortcut, settings.start_at_login);
                 }
                 TrayAction::Quit => {
                     app.stop();
@@ -440,10 +402,10 @@ fn run_x11(
                         shortcut = next;
                         shortcut_registered = true;
                         settings.shortcut = updated.shortcut;
-                        update_tray_settings(tray, &settings.shortcut, settings.start_at_login);
+                        update_shortcut(tray, &settings.shortcut);
                     }
-                    Ok(_) => update_tray_status(tray, "Error: shortcut unavailable"),
-                    Err(_) => update_tray_status(tray, "Error: invalid shortcut"),
+                    Ok(_) => report_shortcut_failure(tray, "unavailable"),
+                    Err(_) => report_shortcut_failure(tray, "invalid"),
                 }
             }
         }
@@ -524,10 +486,9 @@ async fn shortcut_events(
             .find(|shortcut| shortcut.id() == SHORTCUT_ID)
             .map(|shortcut| shortcut.trigger_description().to_string());
     }
-    update_tray_settings(
+    update_shortcut(
         updates.as_ref(),
         shortcut_label.as_deref().unwrap_or(&settings.shortcut),
-        settings.start_at_login,
     );
     let mut changes = shortcuts
         .receive_shortcuts_changed()
@@ -555,7 +516,7 @@ async fn shortcut_events(
                 let Some(change) = change else { break; };
                 if let Some(shortcut) = change.shortcuts().iter().find(|shortcut| shortcut.id() == SHORTCUT_ID) {
                     if let Some(intent) = latch.release() { let _ = actions.send(shortcut_action(intent)); }
-                    update_tray_settings(updates.as_ref(), shortcut.trigger_description(), settings.start_at_login);
+                    update_shortcut(updates.as_ref(), shortcut.trigger_description());
                 }
             }
             event = releases.next() => {
@@ -604,7 +565,7 @@ async fn run_wayland(
                 Err(error) => error.to_string(),
                 Ok(Ok(())) => "Shortcut session closed".into(),
             };
-            update_tray_settings(tray, "Compositor shortcut", settings.start_at_login);
+            update_shortcut(tray, "Compositor shortcut");
             update_tray_status(
                 tray,
                 "@notice:Global shortcut unavailable. Open Settings to set one up.",
@@ -628,31 +589,7 @@ async fn run_wayland(
                 TrayAction::Start => app.command(EngineCommand::Start, output::capture_target),
                 TrayAction::Stop => app.command(EngineCommand::Stop, output::capture_target),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
-                TrayAction::OpenSettings | TrayAction::ConfigureShortcut => {
-                    update_tray_status(tray, "@settings")
-                }
-                TrayAction::ToggleStartAtLogin => match Settings::load() {
-                    Ok(mut updated) => {
-                        updated.start_at_login = !updated.start_at_login;
-                        match set_start_at_login(updated.start_at_login)
-                            .and_then(|()| updated.save())
-                        {
-                            Ok(()) => {
-                                update_tray_settings(
-                                    tray,
-                                    &updated.shortcut,
-                                    updated.start_at_login,
-                                );
-                                settings = updated;
-                            }
-                            Err(error) => update_tray_status(
-                                tray,
-                                &format!("@notice:Launch at login: {error}"),
-                            ),
-                        }
-                    }
-                    Err(error) => update_tray_status(tray, &format!("@notice:Settings: {error}")),
-                },
+                TrayAction::OpenSettings => update_tray_status(tray, "@settings"),
                 TrayAction::Quit => {
                     if let Some(task) = &shortcut_task {
                         task.abort();
@@ -818,18 +755,22 @@ fn status_text(status: &AppStatus) -> String {
     }
 }
 
+fn report_shortcut_failure(tray: Option<&TrayUpdates>, detail: &str) {
+    update_tray_status(
+        tray,
+        &format!("@notice:Global shortcut {detail}. Open Settings to change it"),
+    );
+}
+
 fn update_tray_status(tray: Option<&TrayUpdates>, status: &str) {
     if let Some(tray) = tray {
         let _ = tray.sender.send(TrayUpdate::Status(status.to_string()));
     }
 }
 
-fn update_tray_settings(tray: Option<&TrayUpdates>, shortcut: &str, start_at_login: bool) {
+fn update_shortcut(tray: Option<&TrayUpdates>, shortcut: &str) {
     if let Some(tray) = tray {
-        let _ = tray.sender.send(TrayUpdate::Settings {
-            shortcut: shortcut.to_string(),
-            start_at_login,
-        });
+        let _ = tray.sender.send(TrayUpdate::Shortcut(shortcut.to_string()));
     }
 }
 
@@ -1287,5 +1228,101 @@ mod delivery_tests {
         assert!(
             matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
         );
+    }
+}
+
+#[cfg(test)]
+mod menu_tests {
+    use super::*;
+    use ksni::Tray;
+
+    #[test]
+    fn shortcut_failures_preserve_capture_actions_on_both_surfaces() {
+        for (phase, label, enabled) in [
+            ("Recording…", "Stop", true),
+            ("Transcribing…", "Transcribing…", false),
+        ] {
+            for detail in ["unavailable", "invalid"] {
+                let (sender, receiver) = mpsc::channel();
+                let updates = TrayUpdates { sender };
+                report_shortcut_failure(Some(&updates), detail);
+                let TrayUpdate::Status(notice) = receiver.recv().unwrap() else {
+                    panic!("missing shortcut notice");
+                };
+                assert!(notice.starts_with("@notice:"));
+                let (action_sender, _) = mpsc::channel();
+                let mut tray = LinuxTray {
+                    action_sender,
+                    status: phase.into(),
+                };
+                tray.update_status(notice);
+                assert_eq!(tray.status, phase);
+                let ksni::MenuItem::Standard(primary) = tray.menu().remove(2) else {
+                    panic!("missing recording action");
+                };
+                assert_eq!((primary.label.as_str(), primary.enabled), (label, enabled));
+                let window_action = menu::recording_action(&tray.status);
+                assert_eq!(
+                    (window_action.label, window_action.enabled),
+                    (label, enabled)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn tray_navigation_and_capture_dispatch_are_distinct() {
+        let (action_sender, receiver) = mpsc::channel();
+        let mut tray = LinuxTray {
+            action_sender,
+            status: "Ready".into(),
+        };
+        tray.activate(0, 0);
+        assert_eq!(receiver.recv().unwrap(), TrayAction::OpenTranscripts);
+        for (label, expected) in [
+            ("Record", TrayAction::Toggle),
+            ("History", TrayAction::OpenTranscripts),
+            ("Settings", TrayAction::OpenSettings),
+            ("Quit Koett", TrayAction::Quit),
+        ] {
+            let item = tray
+                .menu()
+                .into_iter()
+                .find_map(|item| match item {
+                    ksni::MenuItem::Standard(item) if item.label == label => Some(item),
+                    _ => None,
+                })
+                .unwrap();
+            assert!(item.enabled);
+            (item.activate)(&mut tray);
+            assert_eq!(receiver.recv().unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn control_messages_preserve_tray_phase_and_busy_sensitivity() {
+        let (action_sender, _) = mpsc::channel();
+        let mut tray = LinuxTray {
+            action_sender,
+            status: "Transcribing…".into(),
+        };
+        for message in [
+            "@notice:copy unavailable",
+            "@refresh",
+            "@show",
+            "@settings",
+            "@quit",
+        ] {
+            tray.update_status(message.into());
+            assert_eq!(tray.status, "Transcribing…");
+            assert_eq!(tray.tool_tip().description, "Transcribing…");
+            let ksni::MenuItem::Standard(primary) = tray.menu().remove(2) else {
+                panic!("missing primary recording action");
+            };
+            assert_eq!(primary.label, "Transcribing…");
+            assert!(!primary.enabled);
+        }
+        tray.update_status("Ready".into());
+        assert_eq!(tray.status, "Ready");
     }
 }

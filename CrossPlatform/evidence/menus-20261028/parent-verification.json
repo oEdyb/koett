@@ -1,0 +1,45 @@
+{
+  "base": "cca664a",
+  "source_sha256": {
+    "CrossPlatform/src/linux.rs": "8be92a18214a50c0c6c1832bba971db6ae2c3e33916df4e877356d14c55a7d98",
+    "CrossPlatform/src/linux/window.rs": "ca7c297a8603d5c9bf74ddb9a957f9b8d13e05323382459174f4186f8ea9fbc4",
+    "CrossPlatform/src/linux/menu.rs": "e8b82a8dd88f7f709f7307919a56ac9878898b37c3105f6194282221bad25367",
+    "CrossPlatform/scripts/test_linux_menu.py": "3a99a6fc49051128d1e9625a711ba96edfd7a5ed9e47f1bf090dc582d0004e19"
+  },
+  "rust_tests": "93 passed; 3 preexisting ignored probes",
+  "gates": [
+    "cargo fmt --check",
+    "locked full Rust tests",
+    "strict all-target clippy",
+    "locked release",
+    "Rust1.92",
+    "Windows source check",
+    "29 Python tests",
+    "Ruff0.17.2 and py_compile",
+    "GTK4.6.9 native menu actions/accessibility",
+    "exact baseline binary KWin capture/copy/tray dispatch"
+  ],
+  "review": "Two independent reviews; shortcut-warning/phase finding fixed and regression-tested. No high-confidence FFI/lifecycle finding.",
+  "skills": {
+    "repository": "https://github.com/oEdyb/skills",
+    "fetched_origin_main": "3c3914e",
+    "development_upstream": "unchanged",
+    "local_work": "preserved; linked Linux playbook read"
+  },
+  "install": {
+    "sha256": "6889a603a28d91278c1b373f33e7099da1d7cd0218deec29332e07434de01214",
+    "bytes": 48859592,
+    "backup": "/home/olle/.local/state/koett/install-backups/20261028T221224Z/koett",
+    "restarted": true,
+    "restart_deferred": false,
+    "pid": 3284280,
+    "preferences_preserved": true
+  },
+  "limits": [
+    "No rendered tray-host proof",
+    "No physical Pause or portal paste retest",
+    "GTK4.6 legacy accessibility roles differ; native menu labels/actions verified in isolated Xvfb",
+    "Mac execution deferred"
+  ],
+  "lab": "koett-menu stopped"
+}

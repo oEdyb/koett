@@ -54,6 +54,7 @@ fn build_window(
     record.set_sensitive(false);
     header.pack_start(&record);
     let settings_button = gtk::Button::with_label("Settings");
+    header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
     window.set_titlebar(Some(&header));
 
@@ -161,11 +162,38 @@ fn build_window(
             let _ = actions.send(TrayAction::Toggle);
         }
     });
-    settings_button.connect_clicked({
+    let settings = gtk::gio::SimpleAction::new("settings", None);
+    settings.connect_activate({
         let window = window.clone();
         let settings_saved = settings_saved.clone();
-        move |_| super::settings_view::show(&window, settings_saved.clone(), None)
+        move |_, _| super::settings_view::show(&window, settings_saved.clone(), None)
     });
+    application.add_action(&settings);
+    application.set_accels_for_action("app.settings", &["<Control>comma"]);
+    settings_button.set_action_name(Some("app.settings"));
+    let show_history = gtk::gio::SimpleAction::new("history", None);
+    show_history.connect_activate({
+        let window = window.clone();
+        let history = history.clone();
+        move |_, _| {
+            history.refresh();
+            window.present();
+        }
+    });
+    application.add_action(&show_history);
+    let hide = gtk::gio::SimpleAction::new("hide", None);
+    hide.connect_activate({
+        let window = window.clone();
+        move |_, _| window.set_visible(false)
+    });
+    application.add_action(&hide);
+    let copy_last = gtk::gio::SimpleAction::new("copy-last", None);
+    copy_last.set_enabled(false);
+    copy_last.connect_activate({
+        let recovery = recovery.clone();
+        move |_, _| recovery.emit_clicked()
+    });
+    application.add_action(&copy_last);
     window.connect_is_active_notify(|window| {
         update_active(window.upcast_ref());
     });
@@ -242,6 +270,7 @@ fn build_window(
                     Update::Completed(text) => {
                         *latest_completed.borrow_mut() = Some(text);
                         recovery.set_visible(true);
+                        copy_last.set_enabled(true);
                         recovery.set_label("Copy last transcript");
                     }
                     Update::Status(message) if message == "@quit" => {
@@ -283,16 +312,9 @@ fn build_window(
                         if !recording {
                             recording_started = None;
                         }
-                        record.set_label(if recording {
-                            "Stop"
-                        } else if message.starts_with("Error:") {
-                            "Retry"
-                        } else {
-                            "Record"
-                        });
-                        record.set_sensitive(
-                            recording || message == "Ready" || message.starts_with("Error:"),
-                        );
+                        let action = super::menu::recording_action(&message);
+                        record.set_label(action.label);
+                        record.set_sensitive(action.enabled);
                         history
                             .record_button
                             .set_label(record.label().as_deref().unwrap_or("Record"));

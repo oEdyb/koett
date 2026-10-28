@@ -331,3 +331,27 @@ Final source, private native results and installation receipt are in
 89 tests, strict Clippy, formatting, locked release, baseline build and native
 private quiet/loud/recovery checks pass. The fix is installed; runtime reload was
 deferred because capture or Settings was active. Preferences are unchanged.
+
+## Native menu pass — 2026-10-28
+
+The tray now opens History on activation and exposes explicit Record, Stop or
+Retry, with capture disabled while starting/transcribing. Shortcut/login controls
+remain in Settings. The main header retains visible Settings and adds a grouped
+native Menu for History, Copy last transcript, Settings, Hide window and Quit.
+Copy is disabled before a result. Ctrl+, reuses Settings without discarding a
+draft; Ctrl+F and Ctrl+Q keep their expected behavior.
+
+Two fresh reviews covered action behavior, lifecycle and the GTK accessibility
+FFI. One found X11 shortcut warnings replacing the engine phase; the fix routes
+them as notices and has regression coverage. Final Rust tests: 93 passed, three
+existing probes ignored. Formatting, strict all-target Clippy, locked release,
+Rust1.92, Windows source checking, 29 Python tests, Ruff and Python compilation
+pass. The exact Ubuntu22-built executable passed private KWin capture/menu/copy,
+focus, Settings-draft, busy/Retry, hide/reopen and Quit checks. Actual tray actions
+were dispatched through a disposable D-Bus watcher. Light/dark and normal/narrow
+native screenshots were inspected. No physical desktop interaction occurred.
+
+Final receipts and exact source/artifact hashes are under
+`CrossPlatform/evidence/menus-20261028/`. Rendered tray visuals, physical Pause,
+portal paste and Mac runtime checks remain unverified for this pass. Existing
+platform/release gates are unchanged. All owned labs are stopped after testing.
