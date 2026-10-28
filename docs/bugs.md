@@ -114,3 +114,16 @@ Removed silence from capture feedback for both Settings preview and the recordin
 pill. Low amplitude does not establish microphone failure. Real device/stream
 errors remain visible, and sustained excessive input retains its separate warning.
 Regression coverage verifies even ten minutes of silence produces no warning.
+
+## 2026-10-28: upstream recording-meter audio fix integrated
+
+Upstream `1f04616` moved macOS duration and power reads out of the microphone
+file sink mutex into atomics. The former meter reader could collide with the
+real-time callback's nonblocking lock acquisition and drop audio. Its regression
+test and source fix are merged here together with `origin/main` at `10a2a76`.
+
+The Linux path already uses atomic RMS/peak reads, a ring-buffer capture callback
+and a UI-local elapsed clock. Independent source inspection found no equivalent
+meter lock contention; no speculative Rust patch was added. This finding does
+not rule out unrelated capture failures. Swift execution remains unverified on
+this Linux workstation; run the upstream regression on macOS before release.
