@@ -41,6 +41,7 @@ def wait(check, description, timeout=15):
 def arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=Path("target/debug/koett"))
+    parser.add_argument("--lab", default="koett")
     parser.add_argument("--model", type=Path)
     parser.add_argument("--record", action="store_true")
     parser.add_argument("--theme", choices=["light", "dark"], default="dark")
@@ -105,8 +106,8 @@ def main():
         lab = shutil.which("agent-lab") or str(Path.home() / ".local/bin/agent-lab")
         output = (args.output or Path(tempfile.mkdtemp(prefix="koett-ui-test-"))).resolve()
         output.mkdir(parents=True, exist_ok=True, mode=0o700)
-        command = [lab, "run", "koett", "--", "/usr/bin/python3", str(Path(__file__).resolve()),
-                   "--inside-session", "--binary", str(args.binary.resolve()),
+        command = [lab, "run", args.lab, "--", "/usr/bin/python3", str(Path(__file__).resolve()),
+                   "--inside-session", "--lab", args.lab, "--binary", str(args.binary.resolve()),
                    "--output", str(output), "--theme", args.theme]
         if args.model:
             command.extend(["--model", str(args.model.resolve())])
@@ -122,7 +123,7 @@ def main():
     lab_runtime = os.environ.get("AGENT_LAB_RUNTIME")
     os.environ.pop("NIRI_SOCKET", None)
     if os.environ.get("WAYLAND_DISPLAY"):
-        expected_runtime = f"/run/user/{os.getuid()}/agent-lab/koett"
+        expected_runtime = f"/run/user/{os.getuid()}/agent-lab/{args.lab}"
         if (lab_runtime != expected_runtime
                 or os.environ.get("XDG_RUNTIME_DIR") != expected_runtime
                 or os.environ.get("WAYLAND_DISPLAY") != "wayland-agent-lab"
@@ -167,7 +168,7 @@ def main():
         owner = session_call("org.freedesktop.DBus", "/org/freedesktop/DBus",
                              "org.freedesktop.DBus.GetConnectionUnixProcessID", "org.kde.KWin")
         compositor = int(re.search(r"uint32 ([0-9]+)", owner)[1])
-        assert "/agent-lab-koett.service" in Path(f"/proc/{compositor}/cgroup").read_text()
+        assert f"/agent-lab-{args.lab}.service" in Path(f"/proc/{compositor}/cgroup").read_text()
         address = ast.literal_eval(session_call("org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus.GetAddress").strip())[0]
         os.environ["AT_SPI_BUS_ADDRESS"] = address
 
@@ -196,7 +197,7 @@ def main():
         if session_call("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.NameHasOwner", gtk_portal).strip() == "(true,)":
             owner = session_call("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.GetConnectionUnixProcessID", gtk_portal)
             pid = int(re.search(r"uint32 ([0-9]+)", owner)[1])
-            assert "/agent-lab-koett.service" in Path(f"/proc/{pid}/cgroup").read_text()
+            assert f"/agent-lab-{args.lab}.service" in Path(f"/proc/{pid}/cgroup").read_text()
             if b"GTK_A11Y=atspi" not in Path(f"/proc/{pid}/environ").read_bytes().split(b"\0"):
                 os.kill(pid, signal.SIGTERM)
                 wait(lambda: session_call("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.NameHasOwner", gtk_portal).strip() == "(false,)", "private GTK portal restart")
@@ -325,7 +326,8 @@ def main():
         return None
 
     def listbox():
-        return next(node for node in walk(application()) if node_role(node) == "list")
+        return wait(lambda: next((node for node in walk(application())
+            if node_role(node) == "list"), None), "accessible history list")
 
     def search(value):
         entry = wait(lambda: find("Search transcripts", "entry"), "named search entry")
@@ -398,8 +400,8 @@ def main():
             "--object-path", "/org/freedesktop/DBus", "--method",
             "org.freedesktop.DBus.GetConnectionUnixProcessID", "org.kde.KWin",
         ], text=True)
-        pid = int(re.search(r"uint32 ([0-9]+)", owner)[1])
-        assert "/agent-lab-koett.service" in Path(f"/proc/{pid}/cgroup").read_text()
+        compositor_pid = int(re.search(r"uint32 ([0-9]+)", owner)[1])
+        assert f"/agent-lab-{args.lab}.service" in Path(f"/proc/{compositor_pid}/cgroup").read_text()
         script = output / "focus-owned-window.js"
         script.write_text(f"const target = workspace.windowList().find(w => w.pid === {pid or process.pid} && w.caption === {json.dumps(title)}); if (target) workspace.activeWindow = target;")
         plugin = f"koett-ui-{process.pid}"
@@ -452,6 +454,7 @@ def main():
         wait(lambda: transcript() == texts[0], "initial newest selection")
         assert len([node for node in walk(listbox()) if node_role(node) == "list item"]) == 50
         results.append("initial page has exactly 50 summaries and newest full text")
+        screenshot("history-populated.png")
         button("Older transcripts")
         wait(lambda: len([node for node in walk(listbox()) if node_role(node) == "list item"]) == 15, "older page")
         button("Newest transcripts")
@@ -707,6 +710,13 @@ app.run([])
                 subprocess.run([input_tool, "text", "during"], check=True)
                 assert any("before during" in entry_text(node) for node in walk(target) if "EditableText" in node.get_interfaces())
                 assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                search("background-search-synthetic")
+                wait(lambda: find("No matches", "label"), "background search during real capture")
+                assert find("Stop", "button") and target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                search("")
+                wait(lambda: find("No transcripts yet", "label"), "background clear during capture")
+                assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                results.append("background history search and clear remain responsive during real capture without focus theft")
                 screenshot("recording-above-target.png")
                 from PIL import Image
                 image = Image.open(output / "recording-above-target.png")
@@ -732,7 +742,14 @@ app.run([])
                 results.append(f"stop lifecycle observed: {outcome}")
                 wait(lambda: find("Record", "button"), "capture stop and ASR completion", timeout=60)
                 assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
-                wait(lambda: find("Koett recording", "frame") is None, "pill hidden after completion")
+                recovery_pill = find("Koett recording", "frame")
+                if recovery_pill and find("Copy transcript", "button", recovery_pill):
+                    button("Copy transcript", recovery_pill)
+                    with sqlite3.connect(database) as connection:
+                        exact = connection.execute("SELECT text FROM transcripts ORDER BY created_at_ms DESC LIMIT 1").fetchone()[0]
+                    wait(lambda: subprocess.check_output(["wl-paste", "--no-newline"]).decode() == exact, "guarded recording recovery copies exact stored text")
+                    assert target.get_state_set().contains(Atspi.StateType.ACTIVE)
+                wait(lambda: find("Koett recording", "frame") is None, "pill hidden after completion or existing recovery expiry", timeout=25)
                 control("settings")
                 settings_window = wait(lambda: find("Settings", "frame"), "Settings before second recording")
                 wait(lambda: len(capture_streams()) == 1, "preview before real dictation")
@@ -752,7 +769,7 @@ app.run([])
                 control("stop")
                 wait(lambda: find("Record", "button"), "Settings capture completion", timeout=60)
                 assert settings_window.get_state_set().contains(Atspi.StateType.ACTIVE)
-                wait(lambda: find("Koett recording", "frame") is None, "second pill cleanup")
+                wait(lambda: find("Koett recording", "frame") is None, "second pill cleanup", timeout=25)
                 wait(lambda: len(capture_streams()) == 1, "preview resumes after real dictation")
                 wait(lambda: not find("Preview paused while recording", "label", settings_window), "resumed preview status")
                 screenshot("settings-above-target.png")

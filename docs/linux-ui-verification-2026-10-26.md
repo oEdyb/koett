@@ -355,3 +355,30 @@ Final receipts and exact source/artifact hashes are under
 `CrossPlatform/evidence/menus-20261028/`. Rendered tray visuals, physical Pause,
 portal paste and Mac runtime checks remain unverified for this pass. Existing
 platform/release gates are unchanged. All owned labs are stopped after testing.
+
+## Native History and Settings visual redesign — 2026-10-29
+
+The actual GTK windows now share semantic light/dark styling, readable type,
+consistent spacing and coral primary actions. History separates timestamp and
+excerpt, adds a clear reading heading and moves Copy/Export beside the selection.
+Settings has grouped rows, compact geometry and persistent Save. The recording
+pill, model, capture, storage and paste contracts remain unchanged.
+
+93 Rust tests pass (three preexisting probes ignored), with formatting, strict
+all-target Clippy, locked release, Rust1.92, Windows source-only checking,
+29 Python tests, Ruff and Python compilation clean. Both fresh held-out reviews
+returned no high-confidence actionable findings. Private native Wayland evidence
+covers light/dark, high contrast, font scaling, normal/narrow states, exact
+Copy/Export, settings persistence, preview handoff, capture and recovery.
+The Ubuntu22/GTK4.6 build also passes native Xvfb history/search/paging, export,
+settings/paste persistence, Retry and empty-state checks; clipboard consumption
+is explicitly skipped there. No physical desktop tests ran.
+
+The exact baseline binary is installed and the idle app reloaded in the background;
+preferences are hash-verified unchanged. Installed SHA-256:
+`874cd0145ed5bfca8b0f3b1ecc1d58554a120397c6e949a10fa4777a85b28aa2`.
+Selected screenshots, builder and parent receipts are retained under
+`CrossPlatform/evidence/visual-20261028/`; full transient fixture state stays local.
+The lab is stopped. Live desktop theme switching, physical input, portal injection
+and X11 paste consumption were not rerun; Mac execution remains deferred.
+This is the existing test branch, not a public Linux release.

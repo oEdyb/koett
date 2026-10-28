@@ -18,13 +18,14 @@ from pathlib import Path
 from test_linux_ui import wait
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--lab', default='koett-menu')
 parser.add_argument('--binary', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--theme', choices=['light', 'dark'], required=True)
 parser.add_argument('--renderer', choices=['default', 'cairo', 'gl'], default='default')
 
 args = parser.parse_args()
-runtime = f'/run/user/{os.getuid()}/agent-lab/koett-menu'
+runtime = f'/run/user/{os.getuid()}/agent-lab/{args.lab}'
 assert os.environ.get('AGENT_LAB_RUNTIME') == runtime
 assert os.environ.get('XDG_RUNTIME_DIR') == runtime
 assert os.environ.get('WAYLAND_DISPLAY') == 'wayland-agent-lab'

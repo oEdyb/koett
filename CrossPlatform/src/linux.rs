@@ -175,6 +175,7 @@ mod menu;
 mod output;
 mod recording_overlay;
 mod settings_view;
+mod theme;
 mod window;
 
 pub fn run() -> Result<(), String> {

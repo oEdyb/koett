@@ -20,13 +20,14 @@ from pathlib import Path
 from test_linux_ui import wait
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--lab', default='koett-feedback')
 parser.add_argument('--binary', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--theme', choices=['light', 'dark'], required=True)
 parser.add_argument('--renderer', choices=['default', 'cairo', 'gl'], default='default')
 parser.add_argument('--settings-only', action='store_true')
 args = parser.parse_args()
-runtime = f'/run/user/{os.getuid()}/agent-lab/koett-feedback'
+runtime = f'/run/user/{os.getuid()}/agent-lab/{args.lab}'
 assert os.environ.get('AGENT_LAB_RUNTIME') == runtime
 assert os.environ.get('XDG_RUNTIME_DIR') == runtime
 assert os.environ.get('WAYLAND_DISPLAY') == 'wayland-agent-lab'
@@ -166,16 +167,21 @@ try:
         if section != 'Audio':
             wait(lambda: not streams(), 'hidden Audio releases microphone')
         capture('settings-' + section.lower())
-    checks.append('all four native sections and persistent Save at default 460px; hidden Audio releases capture')
+    checks.append('all four native sections and persistent Save at default geometry; hidden Audio releases capture')
     if args.settings_only:
         checks.append('Settings render only; renderer=' + args.renderer)
         (output / 'results.json').write_text(json.dumps(checks, indent=2))
         raise SystemExit(0)
     # Real keyboard navigation across the tablist.
     tab = find('Audio', settings)
-    rect = tab.get_component_iface().get_extents(Atspi.CoordType.SCREEN)
-    keys('move', rect.x + rect.width // 2, rect.y + rect.height // 2)
-    keys('click')
+    for _ in range(20):
+        tab.clear_cache()
+        if tab.get_state_set().contains(Atspi.StateType.FOCUSED):
+            break
+        keys('key', 15)
+        time.sleep(0.1)
+    tab.clear_cache()
+    assert tab.get_state_set().contains(Atspi.StateType.FOCUSED), 'Audio tab reachable with Tab'
     keys('key', 106, 57)
     wait(lambda: find('Recording mode', settings), 'keyboard selects Shortcuts')
     checks.append('native tab keyboard access')

@@ -26,31 +26,46 @@ impl HistoryView {
     }
     pub fn new(window: &gtk::ApplicationWindow, actions: mpsc::Sender<super::TrayAction>) -> Self {
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        root.add_css_class("koett-history");
         let search = gtk::SearchEntry::builder()
             .placeholder_text("Search transcripts")
             .hexpand(true)
             .build();
-        search.set_margin_top(12);
-        search.set_margin_bottom(12);
-        search.set_margin_start(16);
-        search.set_margin_end(16);
-        let search_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        search.add_css_class("koett-search");
+        search.set_width_chars(18);
+        search.set_max_width_chars(24);
+        search.set_hexpand(false);
+        let search_group = gtk::Box::new(gtk::Orientation::Vertical, 4);
         let search_label = gtk::Label::new(Some("_Search transcripts"));
         search_label.set_use_underline(true);
         search_label.set_mnemonic_widget(Some(&search));
-        search_label.set_margin_start(16);
+        search_label.set_xalign(0.0);
+        search_label.add_css_class("koett-metadata");
         search.set_placeholder_text(None);
-        search_row.append(&search_label);
-        search_row.append(&search);
+        search_group.append(&search_label);
+        search_group.append(&search);
+        let search_row = gtk::Box::new(gtk::Orientation::Horizontal, 24);
+        search_row.add_css_class("koett-history-heading");
+        let heading = gtk::Label::new(Some("History"));
+        heading.add_css_class("koett-title");
+        heading.set_hexpand(true);
+        heading.set_xalign(0.0);
+        search_row.append(&heading);
+        search_row.append(&search_group);
         root.append(&search_row);
         let stack = gtk::Stack::new();
         stack.set_vexpand(true);
         root.append(&stack);
         let empty = gtk::Box::new(gtk::Orientation::Vertical, 16);
+        empty.add_css_class("koett-empty");
         empty.set_halign(gtk::Align::Center);
+        let brand = gtk::Label::new(Some("Koett"));
+        brand.add_css_class("koett-empty-brand");
+        empty.append(&brand);
         empty.set_valign(gtk::Align::Center);
         let empty_title = gtk::Label::new(Some("Loading history…"));
-        empty_title.add_css_class("title-2");
+        empty_title.add_css_class("koett-empty-title");
+        empty_title.set_max_width_chars(42);
         empty_title.set_wrap(true);
         empty.append(&empty_title);
         let empty_record = gtk::Button::with_label("Record");
@@ -61,12 +76,14 @@ impl HistoryView {
         });
         empty.append(&empty_record);
         let clear = gtk::Button::with_label("Clear search");
+        clear.set_halign(gtk::Align::Center);
         empty.append(&clear);
         clear.connect_clicked({
             let search = search.clone();
             move |_| search.set_text("")
         });
         let retry = gtk::Button::with_label("Retry");
+        retry.set_halign(gtk::Align::Center);
         empty.append(&retry);
         stack.add_named(&empty, Some("empty"));
         let workspace = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -77,9 +94,10 @@ impl HistoryView {
         clear.set_visible(false);
         retry.set_visible(false);
         let navigation = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        navigation.set_size_request(280, -1);
+        navigation.set_size_request(300, -1);
+        navigation.add_css_class("koett-navigation");
         let list = gtk::ListBox::new();
-        list.add_css_class("navigation-sidebar");
+        list.add_css_class("koett-history-list");
         let scroll = gtk::ScrolledWindow::builder()
             .child(&list)
             .vexpand(true)
@@ -87,27 +105,38 @@ impl HistoryView {
             .build();
         navigation.append(&scroll);
         let newest = gtk::Button::with_label("Newest transcripts");
-        navigation.append(&newest);
+        let paging = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        paging.add_css_class("koett-paging");
+        paging.append(&newest);
         let older = gtk::Button::with_label("Older transcripts");
         older.set_sensitive(false);
-        navigation.append(&older);
+        paging.append(&older);
+        navigation.append(&paging);
         workspace.append(&navigation);
         let separator = gtk::Separator::new(gtk::Orientation::Vertical);
         workspace.append(&separator);
         let detail = gtk::Box::new(gtk::Orientation::Vertical, 12);
         detail.set_hexpand(true);
-        detail.set_margin_top(16);
-        detail.set_margin_bottom(16);
-        detail.set_margin_start(24);
-        detail.set_margin_end(24);
+        detail.add_css_class("koett-reading");
         let back = gtk::Button::with_label("Back to history");
         back.set_halign(gtk::Align::Start);
         back.set_visible(false);
         detail.append(&back);
-        let meta = gtk::Label::new(Some("Select a transcript"));
+        let toolbar = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let transcript_heading = gtk::Label::new(Some("Select a transcript"));
+        transcript_heading.add_css_class("koett-reading-heading");
+        transcript_heading.set_xalign(0.0);
+        transcript_heading.set_hexpand(true);
+        transcript_heading.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        toolbar.append(&transcript_heading);
+        detail.append(&toolbar);
+        let meta = gtk::Label::new(None);
         meta.set_xalign(0.0);
-        meta.add_css_class("dim-label");
+        meta.add_css_class("koett-metadata");
         meta.set_wrap(true);
+        meta.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+        meta.set_width_chars(1);
+        meta.set_max_width_chars(48);
         detail.append(&meta);
         let text = gtk::TextView::builder()
             .editable(false)
@@ -115,7 +144,10 @@ impl HistoryView {
             .wrap_mode(gtk::WrapMode::WordChar)
             .vexpand(true)
             .build();
-        text.add_css_class("transcript");
+        text.add_css_class("koett-transcript");
+        text.set_pixels_above_lines(4);
+        text.set_pixels_below_lines(8);
+        text.set_pixels_inside_wrap(3);
         let text_scroll = gtk::ScrolledWindow::builder()
             .child(&text)
             .vexpand(true)
@@ -129,10 +161,13 @@ impl HistoryView {
         export.set_sensitive(false);
         buttons.append(&copy);
         buttons.append(&export);
-        detail.append(&buttons);
+        toolbar.append(&buttons);
         workspace.append(&detail);
         let notice = gtk::Label::new(None);
+        notice.add_css_class("koett-notice");
         notice.set_wrap(true);
+        notice.set_visible(false);
+        notice.connect_label_notify(|notice| notice.set_visible(!notice.text().is_empty()));
         notice.set_margin_top(8);
         notice.set_margin_bottom(8);
         root.append(&notice);
@@ -254,6 +289,7 @@ impl HistoryView {
                 let Some(root) = root.upgrade() else {
                     return gtk::glib::ControlFlow::Break;
                 };
+                navigation.set_hexpand(root.width() < 650);
                 if root.width() >= 650 {
                     navigation.set_visible(true);
                     detail.set_visible(true);
@@ -421,15 +457,16 @@ impl HistoryView {
                                 }
                                 for row in &page {
                                     let content = gtk::Box::new(gtk::Orientation::Vertical, 6);
-                                    content.set_margin_top(10);
-                                    content.set_margin_bottom(10);
-                                    content.set_margin_start(12);
-                                    content.set_margin_end(12);
+                                    content.set_margin_top(14);
+                                    content.set_margin_bottom(14);
+                                    content.set_margin_start(16);
+                                    content.set_margin_end(16);
                                     let date = gtk::Label::new(Some(&timestamp(row.created_at_ms)));
                                     date.set_xalign(0.0);
-                                    date.add_css_class("dim-label");
+                                    date.add_css_class("koett-metadata");
                                     let preview =
                                         gtk::Label::new(Some(&row.preview.replace('\n', " ")));
+                                    preview.add_css_class("koett-excerpt");
                                     preview.set_wrap(true);
                                     preview.set_lines(2);
                                     preview.set_ellipsize(gtk::pango::EllipsizeMode::End);
@@ -463,11 +500,8 @@ impl HistoryView {
                         Reply::Record(Ok(Some(record)))
                             if selected_id.borrow().as_ref() == Some(&record.id) =>
                         {
-                            meta.set_text(&format!(
-                                "{} · {}",
-                                timestamp(record.created_at_ms),
-                                record.model
-                            ));
+                            transcript_heading.set_text(&timestamp(record.created_at_ms));
+                            meta.set_text(&record.model);
                             text.buffer().set_text(&record.text);
                             copy.set_sensitive(true);
                             export.set_sensitive(true);

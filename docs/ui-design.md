@@ -4,6 +4,52 @@ Approved scope: Linux port and UI first, searchable history on Linux and macOS.
 Olle explicitly found the previous interface unintuitive. This document governs
 the implementation; visual polish must support observable tasks.
 
+## Visual redesign brief — 2026-10-28
+
+Olle accepts the broad control set and list/detail layout, but explicitly rejects
+the current visual quality. Restyle the actual native History and Settings screens,
+including empty/error/narrow states. Another menu-only pass does not meet this brief.
+
+References inspected: the saved approved [shadcn/ui style](https://styles.refero.design/style/0fd67ec5-7e9c-4ca9-b368-5d9c7388477a)
+for restrained controls/type hierarchy, [Seline style](https://styles.refero.design/style/7967c6d9-e50c-42b5-b4d1-74003ba41781)
+for spacing and surface hierarchy, and [GNOME boxed lists](https://developer.gnome.org/hig/patterns/containers/boxed-lists.html)
+for grouped native preferences. These are composition references, not source code
+or image assets to copy. The local UI reference index is absent on this machine.
+
+Use a small GTK-compatible semantic theme, scoped to Koett's windows. Raw palette
+values feed roles for canvas, surface, selected surface, text, secondary text,
+border, primary action and focus. Light: canvas `#FAFAF9`, surface `#FFFFFF`, text
+`#1C1917`, secondary `#75706B`, border `#E7E5E4`. Dark: canvas `#181716`, surface
+`#242220`, text `#FAFAF9`, secondary `#A8A29E`, border `#403C38`. The existing coral
+identity remains: primary action `#B84236` with white text (5.43:1 contrast).
+Honor light/dark changes, native font scaling, visible focus and high contrast.
+No new fonts/dependencies, gradients, heavy shadows, decorative cards, invented
+statistics, AI titles or explanatory marketing copy.
+
+Keep native system type. Use a clear 20px-equivalent window/section title,
+14px-equivalent list excerpts and controls, 12px-equivalent metadata, and
+16px-equivalent transcript text, scaling with the system font. Follow a 4/8px
+spacing rhythm, 24px reading/settings padding, 8px control radii and roughly
+300px history navigation. Timestamp and excerpt are distinct row elements.
+The reading pane has its own heading/metadata and compact Copy/Export actions.
+Settings retains its four sections, with grouped rows and a persistent Save area,
+without the large unused gray body. Empty states carry Koett's identity quietly.
+The live coral waveform pill stays unchanged as the signature element.
+
+Acceptance: old/new actual native captures of populated History and Settings must
+show a clear visual improvement; light/dark normal/narrow layouts have no clipping;
+long/Unicode transcripts and model/input names stay readable; keyboard/menus and
+selection/search/copy/export work; preview still releases/yields; recording and
+recovery never steal focus or warn on silence. Private lab only. Keep model,
+storage, replacements, capture and platform support contracts unchanged.
+
+Implementation: scoped GTK semantic CSS now supplies both native windows. Real
+light/dark, high-contrast and enlarged-font captures are in
+`CrossPlatform/evidence/visual-20261028/`. The default 500px narrow layout passes;
+Sans 14 with full decorations has a roughly 553px natural minimum and was tested
+at 560px. Live system theme/contrast notifications are implemented but changing
+the desktop preference while a window is open remains manually unverified.
+
 ## Research and decisions
 
 - [GNOME Search](https://developer.gnome.org/hig/patterns/nav/search.html): provide

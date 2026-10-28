@@ -63,12 +63,17 @@ pub(super) fn attach(
     let title = gtk::Label::new(Some("Input level"));
     title.set_xalign(0.0);
     title.set_mnemonic_widget(Some(&meter));
-    layout.append(&title);
-    layout.append(&meter);
+    let group = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    group.add_css_class("koett-setting-row");
+    title.add_css_class("koett-setting-label");
+    group.append(&title);
+    group.append(&meter);
+    layout.append(&group);
     let message = gtk::Label::new(Some("Opening microphone…"));
     message.set_xalign(0.0);
     message.set_wrap(true);
-    layout.append(&message);
+    message.add_css_class("koett-setting-help");
+    group.append(&message);
     let state = Arc::new(Mutex::new(State::default()));
     let select = {
         let state = state.clone();

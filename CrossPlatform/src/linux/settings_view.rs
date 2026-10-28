@@ -26,13 +26,16 @@ pub fn show(
         .title("Settings")
         .transient_for(parent)
         .modal(true)
-        .default_width(460)
-        .default_height(600)
+        .default_width(540)
+        .default_height(460)
         .build();
+    window.add_css_class("koett-window");
     window.set_application(parent.application().as_ref());
     window.connect_is_active_notify(super::window::update_active);
     let header = gtk::HeaderBar::new();
-    header.set_title_widget(Some(&gtk::Label::new(Some("Settings"))));
+    let title = gtk::Label::new(Some("Settings"));
+    title.add_css_class("koett-title");
+    header.set_title_widget(Some(&title));
     window.set_titlebar(Some(&header));
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let stack = gtk::Stack::new();
@@ -41,10 +44,6 @@ pub fn show(
     navigation.set_stack(Some(&stack));
     navigation.add_css_class("koett-settings-nav");
     navigation.set_halign(gtk::Align::Center);
-    navigation.set_margin_top(8);
-    navigation.set_margin_bottom(8);
-    navigation.set_margin_start(8);
-    navigation.set_margin_end(8);
     outer.append(&navigation);
     outer.append(&stack);
     let audio = section(&stack, "audio", "Audio");
@@ -52,12 +51,8 @@ pub fn show(
     let text = section(&stack, "text", "Text");
     let general = section(&stack, "general", "General");
     stack.set_visible_child_name("audio");
-    let footer = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    footer.set_margin_top(12);
-    footer.set_margin_bottom(12);
-    footer.set_margin_start(24);
-    footer.set_margin_end(24);
-    outer.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+    let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    footer.add_css_class("koett-settings-footer");
     outer.append(&footer);
     window.set_child(Some(&outer));
     let input = gtk::ComboBoxText::new();
@@ -73,6 +68,8 @@ pub fn show(
         input.append(Some(name), name);
         input.set_active_id(Some(name));
     }
+    input.set_tooltip_text(input.active_text().as_deref());
+    input.connect_changed(|input| input.set_tooltip_text(input.active_text().as_deref()));
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         let _ = tx.send(crate::audio::input_devices());
@@ -130,6 +127,7 @@ pub fn show(
             &gtk::Label::new(Some("Managed by desktop")),
         );
         let portal = gtk::Button::with_label("Change desktop shortcut…");
+        portal.set_halign(gtk::Align::Start);
         shortcuts.append(&portal);
         portal.connect_clicked(|_| {
             std::thread::spawn(|| {
@@ -235,7 +233,7 @@ Hold release: koett stop",
     ));
     explanation.set_wrap(true);
     explanation.set_xalign(0.0);
-    explanation.add_css_class("dim-label");
+    explanation.add_css_class("koett-setting-help");
     text.append(&explanation);
     let pairs = gtk::Box::new(gtk::Orientation::Vertical, 8);
     text.append(&pairs);
@@ -258,17 +256,25 @@ Hold release: koett stop",
     let login = gtk::CheckButton::with_label("_Launch at login");
     login.set_use_underline(true);
     login.set_active(settings.start_at_login);
-    general.append(&login);
+    let behavior = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    behavior.add_css_class("koett-setting-row");
+    general.append(&behavior);
+    behavior.append(&login);
     let pause_media = gtk::CheckButton::with_label("_Pause media while recording");
     pause_media.set_use_underline(true);
     pause_media.set_active(settings.pause_media);
-    general.append(&pause_media);
+    behavior.append(&pause_media);
     let error = gtk::Label::new(None);
     error.set_wrap(true);
+    error.set_hexpand(true);
+    error.set_xalign(0.0);
+    error.set_visible(false);
+    error.connect_label_notify(|error| error.set_visible(!error.text().is_empty()));
     error.add_css_class("error");
     footer.append(&error);
     let save = gtk::Button::with_label("Save");
-    save.add_css_class("suggested-action");
+    save.add_css_class("koett-save");
+    save.set_hexpand(true);
     save.set_halign(gtk::Align::End);
     footer.append(&save);
     save.connect_clicked({
@@ -328,11 +334,13 @@ Hold release: koett stop",
     super::window::present(&window, token);
 }
 fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
-    let layout = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    layout.set_margin_top(16);
-    layout.set_margin_bottom(16);
-    layout.set_margin_start(24);
-    layout.set_margin_end(24);
+    let layout = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    layout.add_css_class("koett-settings-page");
+    layout.set_valign(gtk::Align::Start);
+    let heading = gtk::Label::new(Some(title));
+    heading.set_xalign(0.0);
+    heading.add_css_class("koett-settings-heading");
+    layout.append(&heading);
     let scroll = gtk::ScrolledWindow::builder()
         .child(&layout)
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -345,12 +353,18 @@ fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
     title.set_xalign(0.0);
     title.set_mnemonic_widget(Some(widget));
 
-    layout.append(&title);
-    layout.append(widget);
+    let group = gtk::Box::new(gtk::Orientation::Horizontal, 16);
+    group.add_css_class("koett-setting-row");
+    title.add_css_class("koett-setting-label");
+    widget.set_hexpand(true);
+    group.append(&title);
+    group.append(widget);
+    layout.append(&group);
 }
 type Pairs = std::rc::Rc<std::cell::RefCell<Vec<(gtk::Entry, gtk::Entry, gtk::Box)>>>;
 fn add_pair(pairs: &gtk::Box, entries: &Pairs, phrase: &str, replacement: &str) {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("koett-setting-row");
     let from = gtk::Entry::builder()
         .placeholder_text("Phrase")
         .text(phrase)
@@ -364,6 +378,7 @@ fn add_pair(pairs: &gtk::Box, entries: &Pairs, phrase: &str, replacement: &str) 
     from.set_width_chars(8);
     to.set_width_chars(8);
     let remove = gtk::Button::with_label("Remove");
+    remove.set_valign(gtk::Align::End);
     let from_group = gtk::Box::new(gtk::Orientation::Vertical, 4);
     let from_label = gtk::Label::new(Some("Phrase"));
     from_label.set_xalign(0.0);

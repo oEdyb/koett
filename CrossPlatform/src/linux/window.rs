@@ -45,9 +45,12 @@ fn build_window(
         .default_width(960)
         .default_height(680)
         .build();
+    window.add_css_class("koett-window");
+    super::theme::install(&window);
     let header = gtk::HeaderBar::new();
     let title = gtk::Label::new(Some("Koett"));
-    title.add_css_class("title");
+    title.add_css_class("koett-title");
+    title.set_ellipsize(gtk::pango::EllipsizeMode::End);
     header.set_title_widget(Some(&title));
     let record = gtk::Button::with_label("Record");
     record.add_css_class("koett-record");
@@ -63,16 +66,16 @@ fn build_window(
     history.record_button.set_sensitive(false);
     layout.append(&history.root);
     let status_row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    status_row.set_margin_top(8);
-    status_row.set_margin_bottom(8);
-    status_row.set_margin_start(16);
-    status_row.set_margin_end(16);
+    status_row.add_css_class("koett-status");
     let status = gtk::Label::new(Some("Starting…"));
     status.set_xalign(0.0);
     status.set_hexpand(true);
-    status.set_wrap(true);
+    status.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    status.set_tooltip_text(Some("Starting…"));
     let shortcut = gtk::Label::new(None);
-    shortcut.add_css_class("dim-label");
+    shortcut.add_css_class("koett-metadata");
+    shortcut.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    shortcut.set_max_width_chars(28);
     if let Ok(settings) = Settings::load() {
         shortcut.set_text(&settings.shortcut);
     }
@@ -113,12 +116,9 @@ fn build_window(
         }
     });
     status_row.append(&recovery);
-    layout.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
     layout.append(&status_row);
     let delivery_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    delivery_row.set_margin_start(16);
-    delivery_row.set_margin_end(16);
-    delivery_row.set_margin_bottom(8);
+    delivery_row.add_css_class("koett-delivery");
     delivery_row.append(&gtk::Label::new(Some("Automatic paste unavailable")));
     let delivery_copy = gtk::Button::with_label("Copy transcript");
     delivery_row.append(&delivery_copy);
@@ -140,22 +140,6 @@ fn build_window(
     });
     window.set_child(Some(&layout));
 
-    let css = gtk::CssProvider::new();
-    css.load_from_data(
-        ".transcript { font-size: 16px; }\n\
-         .koett-record { background: #ac3d31; color: #ffffff; }\n\
-         .koett-record:hover { background: #923126; }\n\
-         window.koett-pill { background: transparent; }\n\
-         .koett-settings-nav button { min-width: 0; padding: 4px 8px; }\n\
-         .koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }\n\
-         .koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }\n\
-         .koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }",
-    );
-    gtk::style_context_add_provider_for_display(
-        &WidgetExt::display(&window),
-        &css,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
     record.connect_clicked({
         let actions = actions.clone();
         move |_| {
@@ -241,11 +225,8 @@ fn build_window(
     gtk::glib::timeout_add_local(Duration::from_millis(80), {
         let window = window.clone();
         move || {
-            status_row.set_orientation(if window.width() < 650 {
-                gtk::Orientation::Vertical
-            } else {
-                gtk::Orientation::Horizontal
-            });
+            shortcut.set_visible(window.width() >= 650);
+            meter_label.set_visible(window.width() >= 650);
             for update in updates.try_iter() {
                 match update {
                     Update::Show(token) => {
@@ -332,6 +313,7 @@ fn build_window(
             }
             let recovering = recovery_until.is_some();
             delivery_row.set_visible(recovering);
+            recovery.set_visible(latest_completed.borrow().is_some() && !recovering);
             let warning = recording_started.and_then(|started| {
                 audio_levels.as_ref().and_then(|levels| {
                     let (rms, peak) = levels.current();
@@ -369,6 +351,7 @@ fn build_window(
                         None => state.clone(),
                     }),
             );
+            status.set_tooltip_text(Some(&status.text()));
             gtk::glib::ControlFlow::Continue
         }
     });

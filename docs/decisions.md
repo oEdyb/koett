@@ -26,3 +26,11 @@ never scan the legacy archive; startup imports run in the background.
 Linux GUI verification uses the private `agent-lab koett` compositor, input,
 audio and portals. Host desktop checks require explicit authorization. This is a
 test environment choice; the product still uses native GTK/Swift windows.
+
+## 2026-10-29: scope the native Linux visual theme
+
+History and Settings share a small GTK CSS provider with raw palette values mapped
+to semantic roles. Scope it to Koett windows, retain native controls/fonts and
+high-contrast colors, and keep the recording pill's established appearance. This
+provides coherent surfaces without adding a UI framework or changing dictation.
+The reference brief and inspected native captures live in docs/ui-design.md.

@@ -1,0 +1,15 @@
+[
+  "real CLI forwards GTK-cached activation tokens; recording IPC stays plain",
+  "failed model exposes Retry",
+  "initial page has exactly 50 summaries and newest full text",
+  "bounded chronological paging",
+  "search, clear and explicit selection",
+  "SKIP clipboard: wl-copy/wl-paste and Wayland required",
+  "native Export chooser writes exact plain text",
+  "Settings activates and repeated requests reuse one window",
+  "native settings persist microphone ID, shortcut, replacement and media choice",
+  "native Paste shortcut selection persists through Save/reopen and restores Ctrl+V",
+  "settings reopen and system default microphone",
+  "failed-model Retry loads real model and reaches Ready",
+  "empty history has Record and no blank editor actions"
+]
