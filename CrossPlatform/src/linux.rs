@@ -36,8 +36,17 @@ static SHORTCUT_EDITING: std::sync::atomic::AtomicBool = std::sync::atomic::Atom
 const APP_ID: &str = "com.olledyberg.Koett";
 const SHORTCUT_ID: &str = "toggle-recording";
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum TrayAction {
+    Ask,
+    CancelAsk,
+    AskStart,
+    AskStop,
+    OpenMedia,
+    Media(String),
+    CancelMedia,
+    SwitchModel(crate::model::LocalModel),
+    Formatting(crate::formatting::Formatting),
     Toggle,
     Start,
     Stop,
@@ -47,6 +56,7 @@ enum TrayAction {
 }
 
 enum TrayUpdate {
+    PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
     DeliveryFailed,
@@ -137,6 +147,14 @@ impl ksni::Tray for LinuxTray {
             }
             .into(),
             StandardItem {
+                label: "Transcribe media…".into(),
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray.action_sender.send(TrayAction::OpenMedia);
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
                 label: "Settings".to_string(),
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::OpenSettings);
@@ -166,12 +184,17 @@ impl ksni::Tray for LinuxTray {
     }
 }
 
+mod ask_settings;
+mod ask_view;
 mod control;
 mod feedback;
+mod formatting_view;
 mod history_view;
 mod input_preview;
 pub(crate) mod media;
+mod media_view;
 mod menu;
+mod models_view;
 mod output;
 mod recording_overlay;
 mod settings_view;
@@ -179,8 +202,89 @@ mod theme;
 mod window;
 
 pub fn run() -> Result<(), String> {
-    let command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
+    let mut command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
+    if command == "ask-status" {
+        println!("{}", control::ask_status()?);
+        return Ok(());
+    }
+    if command == "ask-help" {
+        println!(
+            "{}",
+            serde_json::json!({"commands": ["ask", "ask-start", "ask-stop", "ask-cancel", "ask-status", "ask-configure < configuration.json", "ask-key PROVIDER < secret", "ask-key cartesia < secret", "ask-speech-configure < configuration.json", "ask-speech-status"], "desktop_shortcut": "Map Control+Shift+Space to koett ask in desktop shortcut settings", "configuration": {"enabled": false, "provider": "groq|openRouter|custom", "model": "provider model identifier", "endpoint": "HTTPS chat completions URL"}})
+        );
+        return Ok(());
+    }
+    if command == "ask-speech-configure" {
+        use std::io::Read;
+        let mut input = String::new();
+        std::io::stdin()
+            .take(4097)
+            .read_to_string(&mut input)
+            .map_err(|_| "Cannot read speech configuration")?;
+        if input.len() > 4096 {
+            return Err("Speech configuration exceeds limit".into());
+        }
+        let config: crate::assistant::speech::Configuration =
+            serde_json::from_str(&input).map_err(|_| "Invalid speech configuration")?;
+        config.save()?;
+        println!("{{\"ok\":true}}");
+        return Ok(());
+    }
+    if command == "ask-speech-status" {
+        println!(
+            "{}",
+            serde_json::json!({"ok":true,"configuration":crate::assistant::speech::Configuration::load()?,"voices":crate::assistant::speech::VOICES.map(|v|v.0)})
+        );
+        return Ok(());
+    }
+    if command == "ask-configure" {
+        use std::io::Read;
+        let mut input = String::new();
+        std::io::stdin()
+            .take(16385)
+            .read_to_string(&mut input)
+            .map_err(|_| "Cannot read configuration")?;
+        if input.len() > 16384 {
+            return Err("Configuration exceeds limit".into());
+        }
+        let configuration: crate::assistant::Configuration =
+            serde_json::from_str(&input).map_err(|_| "Invalid Ask configuration")?;
+        configuration.save()?;
+        println!("{{\"ok\":true}}");
+        return Ok(());
+    }
+    if command == "ask-key" {
+        use std::io::Read;
+        let provider = std::env::args()
+            .nth(2)
+            .ok_or("Usage: koett ask-key PROVIDER < secret")?;
+        let mut key = String::new();
+        std::io::stdin()
+            .take(8193)
+            .read_to_string(&mut key)
+            .map_err(|_| "Cannot read key")?;
+        crate::assistant::secret(
+            &provider,
+            Some(key.trim()),
+            &std::sync::atomic::AtomicBool::new(false),
+        )?;
+        println!("{{\"ok\":true}}");
+        return Ok(());
+    }
+    if command == "media" {
+        let source = std::env::args()
+            .nth(2)
+            .ok_or("Usage: koett media HTTP(S)_URL")?;
+        if std::env::args().count() != 3 {
+            return Err("Usage: koett media HTTP(S)_URL".into());
+        }
+        crate::media_transcription::validate_url(&source)?;
+        command = format!("media {source}");
+    }
     if control::send(&command).is_ok() {
+        if command.starts_with("ask") {
+            println!("{{\"ok\":true,\"accepted\":true}}");
+        }
         return Ok(());
     }
     if !matches!(command.as_str(), "show" | "--background") {
@@ -218,6 +322,9 @@ pub fn run() -> Result<(), String> {
                     }
                     TrayUpdate::Completed(text) => {
                         let _ = worker_ui.send(window::Update::Completed(text));
+                    }
+                    TrayUpdate::PrepareAsk(ack) => {
+                        let _ = worker_ui.send(window::Update::PrepareAsk(ack));
                     }
                     TrayUpdate::Status(status) => {
                         let _ = worker_ui.send(window::Update::Status(status.clone()));
@@ -316,6 +423,21 @@ fn run_x11(
     loop {
         while let Ok(action) = actions.try_recv() {
             match action {
+                TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
+                TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
+                TrayAction::Ask => app.command(EngineCommand::Ask, || None),
+                TrayAction::CancelAsk => app.command(EngineCommand::CancelAsk, || None),
+                TrayAction::OpenMedia => update_tray_status(tray, "@media"),
+                TrayAction::Media(source) => app.command(EngineCommand::Media(source), || None),
+                TrayAction::CancelMedia => {
+                    let _ = app.engine.commands.send(EngineCommand::CancelMedia);
+                }
+                TrayAction::Formatting(value) => {
+                    app.command(EngineCommand::Formatting(value), || None)
+                }
+                TrayAction::SwitchModel(selection) => {
+                    app.command(EngineCommand::SwitchModel(selection), || None)
+                }
                 TrayAction::Toggle => app.toggle(|| output.focused_window()),
                 TrayAction::Start => app.command(EngineCommand::Start, || output.focused_window()),
                 TrayAction::Stop => app.command(EngineCommand::Stop, || output.focused_window()),
@@ -346,7 +468,7 @@ fn run_x11(
             }
         }
         app.poll(
-            |model, text, target| {
+            |model, text, raw, target| {
                 let loaded = Settings::load();
                 let paste_shortcut = loaded.as_ref().unwrap_or(&settings).paste_shortcut;
                 let (final_text, warning) = completed_text(text, loaded, &settings);
@@ -359,7 +481,7 @@ fn run_x11(
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
-                    (final_text != text).then_some(text),
+                    raw.or_else(|| (final_text != text).then_some(text)),
                 )
                 .and_then(|fallback| {
                     fallback.map_or(Ok(()), |path| {
@@ -376,6 +498,13 @@ fn run_x11(
             |levels| {
                 if let Some(tray) = tray {
                     let _ = tray.sender.send(TrayUpdate::Levels(levels));
+                }
+            },
+            |ack| {
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::PrepareAsk(ack));
+                } else {
+                    let _ = ack.send(());
                 }
             },
         );
@@ -586,6 +715,21 @@ async fn run_wayland(
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             match action {
+                TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
+                TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
+                TrayAction::Ask => app.command(EngineCommand::Ask, || None),
+                TrayAction::CancelAsk => app.command(EngineCommand::CancelAsk, || None),
+                TrayAction::OpenMedia => update_tray_status(tray, "@media"),
+                TrayAction::Media(source) => app.command(EngineCommand::Media(source), || None),
+                TrayAction::CancelMedia => {
+                    let _ = app.engine.commands.send(EngineCommand::CancelMedia);
+                }
+                TrayAction::Formatting(value) => {
+                    app.command(EngineCommand::Formatting(value), || None)
+                }
+                TrayAction::SwitchModel(selection) => {
+                    app.command(EngineCommand::SwitchModel(selection), || None)
+                }
                 TrayAction::Toggle => app.toggle(output::capture_target),
                 TrayAction::Start => app.command(EngineCommand::Start, output::capture_target),
                 TrayAction::Stop => app.command(EngineCommand::Stop, output::capture_target),
@@ -603,8 +747,13 @@ async fn run_wayland(
         }
         let mut completed = Vec::new();
         app.poll(
-            |model, text, target| {
-                completed.push((model.to_owned(), text.to_owned(), target));
+            |model, text, raw, target| {
+                completed.push((
+                    model.to_owned(),
+                    text.to_owned(),
+                    raw.map(str::to_owned),
+                    target,
+                ));
                 Ok(())
             },
             |status| update_tray_status(tray, status),
@@ -613,10 +762,18 @@ async fn run_wayland(
                     let _ = tray.sender.send(TrayUpdate::Levels(levels));
                 }
             },
+            |ack| {
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::PrepareAsk(ack));
+                } else {
+                    let _ = ack.send(());
+                }
+            },
         );
-        for (model, raw, target) in completed {
+        for (model, formatted, original, target) in completed {
+            let raw = original.as_deref().unwrap_or(&formatted);
             let loaded = Settings::load();
-            let (text, warning) = completed_text(&raw, loaded.clone(), &settings);
+            let (text, warning) = completed_text(&formatted, loaded.clone(), &settings);
             if let Ok(updated) = loaded {
                 settings = updated;
             }
@@ -632,7 +789,7 @@ async fn run_wayland(
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
                 &text,
-                (text != raw).then_some(raw.as_str()),
+                (text != raw).then_some(raw),
             );
             if let Err(error) = delivered {
                 update_tray_status(tray, &format!("@notice:{error}"));
@@ -676,6 +833,15 @@ impl LinuxEngine {
     }
 
     fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
+        if matches!(command, EngineCommand::CancelAsk) {
+            self.engine.cancel_ask();
+            let _ = self.engine.commands.send(command);
+            return;
+        }
+        if matches!(command, EngineCommand::SwitchModel(_)) && self.status != AppStatus::Ready {
+            return;
+        }
+
         if self.status != AppStatus::Ready
             && self.status != AppStatus::Recording
             && !matches!(self.status, AppStatus::Error(_))
@@ -705,20 +871,34 @@ impl LinuxEngine {
 
     fn poll(
         &mut self,
-        mut deliver: impl FnMut(&str, &str, Option<u32>) -> Result<(), String>,
+        mut deliver: impl FnMut(&str, &str, Option<&str>, Option<u32>) -> Result<(), String>,
         mut status_changed: impl FnMut(&str),
         mut recording_started: impl FnMut(crate::audio::AudioLevels),
+        mut prepare_ask: impl FnMut(Sender<()>),
     ) {
         let mut interaction_error = None;
         while let Ok(update) = self.engine.updates.try_recv() {
             match update {
+                EngineUpdate::PrepareAsk(ack) => prepare_ask(ack),
+                EngineUpdate::Ask(value) => {
+                    crate::assistant::update_status(&value);
+                    status_changed(&format!("@ask:{}", value));
+                }
+                EngineUpdate::FormattingBusy(busy) => {
+                    status_changed(if busy { "@format-busy" } else { "@format-idle" })
+                }
+                EngineUpdate::ActiveModel(model) => status_changed(&format!("@model:{model}")),
                 EngineUpdate::Status(status) => {
                     self.status = status;
                     status_changed(status_text(&self.status).as_str());
                 }
                 EngineUpdate::TranscriptReady { model, transcript } => {
-                    if let Err(error) = deliver(&model, &transcript.text, self.paste_target.take())
-                    {
+                    if let Err(error) = deliver(
+                        &model,
+                        &transcript.text,
+                        transcript.raw.as_deref(),
+                        self.paste_target.take(),
+                    ) {
                         eprintln!("Koett: {error}");
                         interaction_error = Some(error);
                     }

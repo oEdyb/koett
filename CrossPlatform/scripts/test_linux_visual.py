@@ -107,6 +107,19 @@ def find(name, root=None, role=None):
 
 
 def click(name, root=None):
+    if name in ['Audio', 'Shortcuts', 'Text', 'General']:
+        combo = wait(lambda: find('Settings section', root, 'combo box'), 'Settings selector')
+        kwin(f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === "Settings") {{ w.frameGeometry={{x:400,y:140,width:540,height:460}}; workspace.activeWindow=w; }}')
+        rect = combo.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
+        input_tool = str(Path.home() / '.local/share/agent-lab/input')
+        subprocess.run([input_tool, 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
+        subprocess.run([input_tool, 'click'], check=True)
+        keys('key', 102)
+        for _ in range(['Audio', 'Shortcuts', 'Text', 'General'].index(name)):
+            keys('key', 108)
+        keys('key', 28)
+        time.sleep(0.4)
+        return combo
     node = wait(lambda: find(name, root), name)
     assert node.get_action_iface().do_action(0)
     time.sleep(0.2)

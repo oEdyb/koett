@@ -310,10 +310,8 @@ def main():
         wait(lambda: node.get_action_iface().do_action(0), f"enabled button {name}")
 
     def section(name, root):
-        tab = wait(lambda: next((node for node in walk(root)
-            if node.get_name() == name and "Action" in node.get_interfaces()
-            and node_role(node) != "label"), None), f"Settings section {name}")
-        assert tab.get_action_iface().do_action(0)
+        combo = wait(lambda: find("Settings section", "combo box", root), "Settings section selector")
+        choose_option(combo, ["Audio", "Shortcuts", "Text", "General"].index(name))
         time.sleep(0.4)
 
     def labels():

@@ -86,6 +86,19 @@ def find(name, root=None, role=None):
 
 
 def click(name, root=None):
+    if name in ['Audio', 'Shortcuts', 'Text', 'General']:
+        combo = wait(lambda: find('Settings section', root, 'combo box'), 'Settings selector')
+        kwin(f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === "Settings") {{ w.frameGeometry={{x:400,y:140,width:540,height:460}}; workspace.activeWindow=w; }}')
+        rect = combo.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
+        input_tool = str(Path.home() / '.local/share/agent-lab/input')
+        subprocess.run([input_tool, 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
+        subprocess.run([input_tool, 'click'], check=True)
+        keys('key', 102)
+        for _ in range(['Audio', 'Shortcuts', 'Text', 'General'].index(name)):
+            keys('key', 108)
+        keys('key', 28)
+        time.sleep(0.4)
+        return combo
     node = wait(lambda: find(name, root), name)
     assert node.get_action_iface().do_action(0), name
     time.sleep(0.2)
@@ -221,9 +234,9 @@ try:
     normal_extents = main.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
     copy = menu_item('Copy last transcript')
     menu_names = [n.get_name() for n in walk(main) if n.get_role_name() == 'menu item']
-    assert menu_names == ['History', 'Copy last transcript', 'Settings', 'Hide window', 'Quit Koett'], menu_names
+    assert menu_names == ['History', 'Copy last transcript', 'Local models…', 'Settings…', 'Hide window', 'Quit Koett'], menu_names
     assert not copy.get_state_set().contains(Atspi.StateType.SENSITIVE)
-    assert all(menu_item(name).get_name() for name in ['History', 'Settings', 'Hide window', 'Quit Koett'])
+    assert all(menu_item(name).get_name() for name in ['History', 'Local models…', 'Settings…', 'Hide window', 'Quit Koett'])
     capture('menu-empty-normal')
     keys('key', 1)
     wait(lambda: not find('Hide window', main), 'Escape closes menu')
@@ -249,7 +262,7 @@ try:
     wait(lambda: not find('Settings', role='frame'), 'close private Settings')
     wait(lambda: not streams(), 'closing Settings releases microphone')
     menu_open()
-    click_menu('Settings')
+    click_menu('Settings…')
     settings = wait(lambda: find('Settings', role='frame'), 'native menu Settings')
     keys('chord', 56, 62)
     wait(lambda: not find('Settings', role='frame'), 'close menu Settings')

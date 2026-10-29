@@ -5,10 +5,11 @@
 @define-color koett_border @koett_stone_200;
 @define-color koett_selected @koett_selection;
 @define-color koett_focus @koett_focus_ring;
+@define-color koett_error @koett_focus_ring;
 
 window.koett-window { background-color: @koett_canvas; color: @koett_text; }
-.koett-window headerbar { background: @koett_surface; color: @koett_text; border-bottom: 1px solid @koett_border; box-shadow: none; padding: 8px 12px; }
-.koett-window .koett-title { font-size: 1.43em; font-weight: 700; }
+.koett-window headerbar { background: @koett_surface; color: @koett_text; border-bottom: 1px solid @koett_border; box-shadow: none; padding: 4px 8px; }
+.koett-window .koett-title { font-size: 1em; font-weight: 600; }
 .koett-window button { background: @koett_surface; color: @koett_text; border: 1px solid @koett_border; min-height: 24px; padding: 4px 12px; border-radius: 8px; box-shadow: none; }
 .koett-window button:hover { background: @koett_canvas; }
 .koett-window button:checked { background: @koett_selected; color: @koett_selected_text; }
@@ -44,10 +45,10 @@ window.koett-window { background-color: @koett_canvas; color: @koett_text; }
 .koett-window .koett-delivery { background: @koett_canvas; padding: 0 16px 8px; font-size: 0.86em; }
 .koett-window .koett-settings-nav { margin: 16px 24px 0; }
 .koett-window .koett-settings-nav button { min-width: 0; padding: 4px 16px; }
-.koett-window .koett-settings-page { padding: 20px 24px; }
+.koett-window .koett-settings-page { padding: 12px 16px; }
 .koett-window .koett-settings-heading { font-size: 1.14em; font-weight: 600; margin-bottom: 4px; }
-.koett-window .koett-setting-row { background: @koett_surface; border: 1px solid @koett_border; border-radius: 8px; padding: 12px 16px; }
-.koett-window .koett-setting-label { font-weight: 600; }
+.koett-window .koett-setting-row { background: transparent; border: 0; border-radius: 0; padding: 4px 0; }
+.koett-window .koett-setting-label { font-weight: 400; }
 .koett-window .koett-setting-row combobox { min-width: 0; }
 .koett-window .koett-setting-row combobox button { background: @koett_canvas; color: @koett_text; border: 1px solid @koett_border; }
 .koett-window .koett-setting-row checkbutton { padding: 4px 0; }
@@ -59,3 +60,13 @@ window.koett-pill { background: transparent; }
 .koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }
 .koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }
 .koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }
+
+.koett-window .error { color: @koett_error; }
+
+.koett-formatting > contents { padding: 0; }
+.koett-formatting { font-size: 13px; }
+.koett-formatting .heading { font-size: 15px; font-weight: 600; }
+.koett-window .koett-formatting button { min-height: 20px; padding: 0 8px; border-radius: 5px; }
+.koett-formatting combobox { margin: 0; padding: 0; }
+
+.koett-ask-answer, .koett-ask-answer text { background: transparent; }

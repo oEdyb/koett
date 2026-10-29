@@ -43,10 +43,16 @@ pub(super) fn button() -> gtk::MenuButton {
     let model = gtk::gio::Menu::new();
     for items in [
         &[
+            ("Transcribe media…", "app.media"),
             ("History", "app.history"),
             ("Copy last transcript", "app.copy-last"),
+            ("Failed recordings…", "app.failed-recordings"),
         ][..],
-        &[("Settings", "app.settings")][..],
+        &[
+            ("Local models…", "app.models"),
+            ("Formatting…", "app.formatting"),
+            ("Settings…", "app.settings"),
+        ][..],
         &[("Hide window", "app.hide"), ("Quit Koett", "app.quit")][..],
     ] {
         let section = gtk::gio::Menu::new();
@@ -76,25 +82,29 @@ fn name_menu_items(widget: &gtk::Widget) {
     if widget.property::<gtk::AccessibleRole>("accessible-role") == gtk::AccessibleRole::MenuItem
         && let Some(label) = menu_label(widget)
     {
-        let mut property = gtk::ffi::GTK_ACCESSIBLE_PROPERTY_LABEL;
-        let value = label.to_value();
-        unsafe {
-            gtk_accessible_reset_relation(
-                widget.as_ptr().cast(),
-                gtk::ffi::GTK_ACCESSIBLE_RELATION_LABELLED_BY,
-            );
-            gtk_accessible_update_property_value(
-                widget.as_ptr().cast(),
-                1,
-                &raw mut property,
-                value.to_glib_none().0,
-            );
-        }
+        set_accessible_label(widget, &label);
     }
     let mut child = widget.first_child();
     while let Some(widget) = child {
         name_menu_items(&widget);
         child = widget.next_sibling();
+    }
+}
+
+pub(super) fn set_accessible_label(widget: &gtk::Widget, label: &str) {
+    let mut property = gtk::ffi::GTK_ACCESSIBLE_PROPERTY_LABEL;
+    let value = label.to_value();
+    unsafe {
+        gtk_accessible_reset_relation(
+            widget.as_ptr().cast(),
+            gtk::ffi::GTK_ACCESSIBLE_RELATION_LABELLED_BY,
+        );
+        gtk_accessible_update_property_value(
+            widget.as_ptr().cast(),
+            1,
+            &raw mut property,
+            value.to_glib_none().0,
+        );
     }
 }
 

@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -121,14 +121,14 @@ impl MicrophoneRecorder {
     pub fn start_streaming_with_device(
         microphone: Option<&str>,
     ) -> Result<(Self, Receiver<Vec<f32>>), String> {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = mpsc::sync_channel(64);
         let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
         Ok((recorder, receiver))
     }
 
     fn start_inner(
         maximum_duration: Duration,
-        audio_chunks: Option<Sender<Vec<f32>>>,
+        audio_chunks: Option<SyncSender<Vec<f32>>>,
         microphone: Option<&str>,
     ) -> Result<Self, String> {
         if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
@@ -292,9 +292,12 @@ impl MicrophoneRecorder {
             .play()
             .map_err(|error| format!("could not start the microphone: {error}"))?;
         let collector_stop = stop_collector.clone();
+        let collector_overflow = overflowed.clone();
         let collector = thread::Builder::new()
             .name("koett-audio-collector".to_string())
-            .spawn(move || collect_samples(consumer, collector_stop, audio_chunks))
+            .spawn(move || {
+                collect_samples(consumer, collector_stop, audio_chunks, collector_overflow)
+            })
             .map_err(|error| format!("could not start the microphone collector: {error}"))?;
 
         Ok(Self {
@@ -320,7 +323,15 @@ impl MicrophoneRecorder {
         self.sample_rate
     }
 
-    pub fn finish(mut self) -> Result<AudioRecording, String> {
+    pub fn finish(self) -> Result<AudioRecording, String> {
+        let (audio, warning) = self.finish_with_warning()?;
+        match warning {
+            Some(error) => Err(error),
+            None => Ok(audio),
+        }
+    }
+
+    pub fn finish_with_warning(mut self) -> Result<(AudioRecording, Option<String>), String> {
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
         let samples = self
@@ -335,22 +346,22 @@ impl MicrophoneRecorder {
             .lock()
             .map_err(|_| "the microphone error state is unavailable".to_string())?
             .clone();
-        if let Some(error) = stream_error {
-            return Err(format!(
-                "the microphone stream failed; the recording is incomplete: {error}"
-            ));
-        }
-        if self.overflowed.load(Ordering::Relaxed) {
-            return Err("microphone buffer overflowed; the recording is incomplete".to_string());
-        }
-        if self.started.elapsed() > self.maximum_duration + Duration::from_millis(250) {
-            return Err("the recording exceeded the ten-minute limit".to_string());
-        }
+        let warning = if let Some(error) = stream_error {
+            Some(format!(
+                "Microphone disconnected; recording is incomplete: {error}"
+            ))
+        } else if self.overflowed.load(Ordering::Relaxed) {
+            Some("Audio buffer overflowed; recording may be incomplete".into())
+        } else if self.started.elapsed() > self.maximum_duration + Duration::from_millis(250) {
+            Some("Recording exceeded the ten-minute limit".into())
+        } else {
+            None
+        };
 
         let recording = AudioRecording::new(self.sample_rate, samples)?;
         let (rms, peak) = recording.levels();
         eprintln!("microphone_rms={rms:.6} microphone_peak={peak:.6}");
-        Ok(recording)
+        Ok((recording, warning))
     }
 }
 
@@ -376,7 +387,8 @@ pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, 
 fn collect_samples(
     mut consumer: ringbuf::HeapCons<f32>,
     stop: Arc<AtomicBool>,
-    mut audio_chunks: Option<Sender<Vec<f32>>>,
+    mut audio_chunks: Option<SyncSender<Vec<f32>>>,
+    overflowed: Arc<AtomicBool>,
 ) -> Vec<f32> {
     let mut samples = Vec::new();
     let mut chunk = [0.0_f32; 2_048];
@@ -385,8 +397,9 @@ fn collect_samples(
         samples.extend_from_slice(&chunk[..count]);
         if count > 0
             && let Some(sender) = &audio_chunks
-            && sender.send(chunk[..count].to_vec()).is_err()
+            && sender.try_send(chunk[..count].to_vec()).is_err()
         {
+            overflowed.store(true, Ordering::Release);
             audio_chunks = None;
         }
         if stop.load(Ordering::Acquire) && consumer.is_empty() {
@@ -544,13 +557,34 @@ mod tests {
     }
 
     #[test]
+    fn streaming_queue_overflow_preserves_captured_audio() {
+        let (mut producer, consumer) = HeapRb::<f32>::new(4).split();
+        producer.push_slice(&[0.1, 0.2, 0.3]);
+        let (sender, _receiver) = mpsc::sync_channel(0);
+        let overflow = Arc::new(AtomicBool::new(false));
+        let audio = collect_samples(
+            consumer,
+            Arc::new(AtomicBool::new(true)),
+            Some(sender),
+            overflow.clone(),
+        );
+        assert_eq!(audio, vec![0.1, 0.2, 0.3]);
+        assert!(overflow.load(std::sync::atomic::Ordering::Acquire));
+    }
+
+    #[test]
     fn collector_keeps_recovery_audio_and_forwards_the_same_samples() {
         let (mut producer, consumer) = HeapRb::<f32>::new(4).split();
         producer.push_slice(&[0.1, 0.2, 0.3]);
         let stop = Arc::new(AtomicBool::new(true));
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = mpsc::sync_channel(64);
 
-        let recorded = collect_samples(consumer, stop, Some(sender));
+        let recorded = collect_samples(
+            consumer,
+            stop,
+            Some(sender),
+            Arc::new(AtomicBool::new(false)),
+        );
         let forwarded = receiver.recv().unwrap();
 
         assert_eq!(

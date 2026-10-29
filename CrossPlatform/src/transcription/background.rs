@@ -26,32 +26,47 @@ impl Drop for BackgroundSession {
 pub struct TranscriptionWorker {
     commands: Sender<WorkerCommand>,
     worker: Option<JoinHandle<()>>,
+    active: std::sync::Mutex<Option<Arc<AtomicBool>>>,
 }
 
 enum WorkerCommand {
     Record {
+        offline: bool,
         sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
         cancelled: Arc<AtomicBool>,
         completed: Sender<Result<Option<String>, String>>,
     },
     Transcribe {
-        audio: AudioRecording,
+        audio: Arc<AudioRecording>,
         completed: Sender<Result<Transcript, String>>,
+    },
+    Media {
+        path: std::path::PathBuf,
+        cancelled: Arc<AtomicBool>,
+        completed: Sender<Result<String, String>>,
     },
     Quit,
 }
 
 impl TranscriptionWorker {
     pub fn start(transcriber: ParakeetTranscriber) -> Result<Self, String> {
+        Self::start_with_nemotron(transcriber, None)
+    }
+
+    pub fn start_with_nemotron(
+        transcriber: ParakeetTranscriber,
+        nemotron: Option<super::NemotronTranscriber>,
+    ) -> Result<Self, String> {
         let (commands, receiver) = mpsc::channel();
         let worker = thread::Builder::new()
             .name("koett-transcription".to_string())
-            .spawn(move || run_transcription_worker(transcriber, receiver))
+            .spawn(move || run_transcription_worker(transcriber, nemotron, receiver))
             .map_err(|error| format!("could not start transcription: {error}"))?;
         Ok(Self {
             commands,
             worker: Some(worker),
+            active: std::sync::Mutex::new(None),
         })
     }
 
@@ -60,13 +75,35 @@ impl TranscriptionWorker {
         sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
     ) -> Result<BackgroundSession, String> {
+        self.record_mode(sample_rate, audio_chunks, false)
+    }
+
+    pub fn record_offline(
+        &self,
+        sample_rate: i32,
+        audio_chunks: Receiver<Vec<f32>>,
+    ) -> Result<BackgroundSession, String> {
+        self.record_mode(sample_rate, audio_chunks, true)
+    }
+
+    fn record_mode(
+        &self,
+        sample_rate: i32,
+        audio_chunks: Receiver<Vec<f32>>,
+        offline: bool,
+    ) -> Result<BackgroundSession, String> {
         if sample_rate < 1 {
             return Err("audio sample rate must be positive".to_string());
         }
         let (completed, result) = mpsc::channel();
         let cancelled = Arc::new(AtomicBool::new(false));
+        *self
+            .active
+            .lock()
+            .map_err(|_| "transcription cancellation unavailable")? = Some(cancelled.clone());
         self.commands
             .send(WorkerCommand::Record {
+                offline,
                 sample_rate,
                 audio_chunks,
                 cancelled: cancelled.clone(),
@@ -88,9 +125,10 @@ impl TranscriptionWorker {
         match session
             .completed
             .recv()
-            .map_err(|_| "background transcription stopped unexpectedly".to_string())?
+            .unwrap_or_else(|_| Err("background transcription stopped unexpectedly".to_string()))
         {
             Ok(Some(text)) => Ok(Transcript {
+                raw: None,
                 text,
                 audio_duration: audio.duration(),
                 transcription: started.elapsed(),
@@ -103,14 +141,40 @@ impl TranscriptionWorker {
         }
     }
 
-    fn transcribe(&self, audio: AudioRecording) -> Result<Transcript, String> {
-        let (completed, result) = mpsc::channel();
+    pub fn transcribe(&self, audio: AudioRecording) -> Result<Transcript, String> {
+        let audio = Arc::new(audio);
+        let result = (|| {
+            let (completed, result) = mpsc::channel();
+            self.commands
+                .send(WorkerCommand::Transcribe {
+                    audio: audio.clone(),
+                    completed,
+                })
+                .map_err(|_| "the transcription worker stopped unexpectedly".to_string())?;
+            result
+                .recv()
+                .map_err(|_| "transcription stopped unexpectedly".to_string())?
+        })();
+        result.map_err(|error| match super::recovery::retain(&audio) {
+            Ok(path) => format!("{error}. Recording saved: {}", path.display()),
+            Err(retention) => format!("{error}. Audio recovery failed: {retention}"),
+        })
+    }
+
+    pub fn media_request(
+        &self,
+        path: std::path::PathBuf,
+        cancelled: Arc<AtomicBool>,
+    ) -> Result<Receiver<Result<String, String>>, String> {
+        let (completed, reply) = mpsc::channel();
         self.commands
-            .send(WorkerCommand::Transcribe { audio, completed })
-            .map_err(|_| "the transcription worker stopped unexpectedly".to_string())?;
-        result
-            .recv()
-            .map_err(|_| "transcription stopped unexpectedly".to_string())?
+            .send(WorkerCommand::Media {
+                path,
+                cancelled,
+                completed,
+            })
+            .map_err(|_| "transcription worker stopped".to_string())?;
+        Ok(reply)
     }
 
     pub fn stop(mut self) {
@@ -118,6 +182,11 @@ impl TranscriptionWorker {
     }
 
     fn shutdown(&mut self) {
+        if let Ok(active) = self.active.lock()
+            && let Some(active) = active.as_ref()
+        {
+            active.store(true, Ordering::Release);
+        }
         let _ = self.commands.send(WorkerCommand::Quit);
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
@@ -133,22 +202,38 @@ impl Drop for TranscriptionWorker {
 
 fn run_transcription_worker(
     mut transcriber: ParakeetTranscriber,
+    nemotron: Option<super::NemotronTranscriber>,
     commands: Receiver<WorkerCommand>,
 ) {
     while let Ok(command) = commands.recv() {
         match command {
             WorkerCommand::Record {
+                offline,
                 sample_rate,
                 audio_chunks,
                 cancelled,
                 completed,
             } => {
-                let result =
-                    transcriber.transcribe_while_recording(sample_rate, audio_chunks, &cancelled);
+                let result = match nemotron.as_ref().filter(|_| !offline) {
+                    Some(engine) => engine.record(sample_rate, audio_chunks, &cancelled),
+                    None => transcriber.transcribe_while_recording(
+                        sample_rate,
+                        audio_chunks,
+                        &cancelled,
+                    ),
+                };
                 let _ = completed.send(result);
             }
             WorkerCommand::Transcribe { audio, completed } => {
                 let result = transcriber.transcribe(&audio);
+                let _ = completed.send(result);
+            }
+            WorkerCommand::Media {
+                path,
+                cancelled,
+                completed,
+            } => {
+                let result = transcribe_media_pcm(&mut transcriber, &path, &cancelled);
                 let _ = completed.send(result);
             }
             WorkerCommand::Quit => break,
@@ -164,7 +249,12 @@ impl ParakeetTranscriber {
         cancelled: &AtomicBool,
     ) -> Result<Option<String>, String> {
         let Some(vad) = &self.vad else {
-            for _ in audio_chunks {}
+            while !cancelled.load(Ordering::Acquire) {
+                match audio_chunks.recv_timeout(std::time::Duration::from_millis(25)) {
+                    Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                }
+            }
             return Ok(None);
         };
 
@@ -176,7 +266,16 @@ impl ParakeetTranscriber {
         let mut parts = Vec::new();
         let mut is_long = false;
 
-        for chunk in audio_chunks {
+        loop {
+            let chunk = match audio_chunks.recv_timeout(std::time::Duration::from_millis(25)) {
+                Ok(chunk) => chunk,
+                Err(mpsc::RecvTimeoutError::Timeout) if !cancelled.load(Ordering::Acquire) => {
+                    continue;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout | mpsc::RecvTimeoutError::Disconnected) => {
+                    break;
+                }
+            };
             if cancelled.load(Ordering::Acquire) {
                 return Err("background transcription was cancelled".to_string());
             }
@@ -260,6 +359,56 @@ fn accept_vad_windows(vad: &VoiceActivityDetector, samples: &mut Vec<f32>, offse
     }
 }
 
+fn transcribe_media_pcm(
+    transcriber: &mut ParakeetTranscriber,
+    path: &std::path::Path,
+    cancelled: &AtomicBool,
+) -> Result<String, String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let size = file.metadata().map_err(|e| e.to_string())?.len();
+    if size == 0 || size > 16000 * 2 * 10800 || size % 2 != 0 {
+        return Err("invalid or oversized media audio".into());
+    }
+    let mut bytes = vec![0; 16000 * 2 * 30];
+    let mut parts = Vec::new();
+    loop {
+        if cancelled.load(Ordering::Acquire) {
+            return Err("Media cancelled".into());
+        }
+        let mut count = 0;
+        while count < bytes.len() {
+            let n = file.read(&mut bytes[count..]).map_err(|e| e.to_string())?;
+            if n == 0 {
+                break;
+            }
+            count += n;
+        }
+        if count == 0 {
+            break;
+        }
+        let samples = bytes[..count]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 32768.0)
+            .collect();
+        parts.push(
+            transcriber
+                .transcribe(&AudioRecording::new(16000, samples)?)?
+                .text,
+        );
+    }
+    if cancelled.load(Ordering::Acquire) {
+        return Err("Media cancelled".into());
+    }
+    let text = parts.join(" ");
+    if text.trim().is_empty() {
+        return Err("No speech found in media".into());
+    }
+    Ok(text)
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -280,5 +429,66 @@ mod tests {
         drop(session);
 
         assert!(cancelled.load(Ordering::Acquire));
+    }
+}
+
+#[cfg(test)]
+mod nemotron_recovery_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires public v2 model and isolated recovery directory"]
+    fn stopped_backup_preserves_failed_recording() {
+        let data = std::env::var("XDG_DATA_HOME").unwrap();
+        assert!(data.starts_with("/tmp/koett-nemotron-"));
+        let directory = std::path::PathBuf::from(std::env::var("KOETT_PARAKEET_EVAL").unwrap());
+        let mut worker =
+            TranscriptionWorker::start(ParakeetTranscriber::load(&directory, 2).unwrap()).unwrap();
+        worker.shutdown();
+        let (sender, completed) = mpsc::channel();
+        sender
+            .send(Err("injected finalization error".into()))
+            .unwrap();
+        let session = BackgroundSession {
+            completed,
+            cancelled: Arc::new(AtomicBool::new(false)),
+        };
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let error = worker.finish(session, audio).err().unwrap();
+        assert!(error.contains("Recording saved:"), "{error}");
+        let path = error.split("Recording saved: ").nth(1).unwrap();
+        assert!(
+            !AudioRecording::read_wav(std::path::Path::new(path))
+                .unwrap()
+                .samples
+                .is_empty()
+        );
+    }
+
+    #[test]
+    #[ignore = "requires public Parakeet v2 evaluation model"]
+    fn public_stream_failure_uses_warm_parakeet_once() {
+        let directory = std::path::PathBuf::from(std::env::var("KOETT_PARAKEET_EVAL").unwrap());
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let mut transcriber = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let expected = transcriber.transcribe(&audio).unwrap().text;
+        let worker = TranscriptionWorker::start(transcriber).unwrap();
+        for error in ["injected stream error", "injected finalization error"] {
+            let (sender, completed) = mpsc::channel();
+            sender.send(Err(error.to_string())).unwrap();
+            let session = BackgroundSession {
+                completed,
+                cancelled: Arc::new(AtomicBool::new(false)),
+            };
+            let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+            assert_eq!(worker.finish(session, audio).unwrap().text, expected);
+        }
+        let (sender, receiver) = mpsc::channel();
+        let session = worker.record(16000, receiver).unwrap();
+        let started = Instant::now();
+        worker.stop();
+        assert!(started.elapsed() < std::time::Duration::from_secs(2));
+        drop(session);
+        drop(sender);
     }
 }

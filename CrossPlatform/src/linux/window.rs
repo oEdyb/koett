@@ -7,6 +7,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
 pub enum Update {
+    PrepareAsk(Sender<()>),
     Status(String),
     Show(String),
     Settings(String),
@@ -56,11 +57,35 @@ fn build_window(
     record.add_css_class("koett-record");
     record.set_sensitive(false);
     header.pack_start(&record);
+    let ask_button = gtk::Button::with_label("Ask");
+    let ask_actions = actions.clone();
+    ask_button.connect_clicked(move |_| {
+        let _ = ask_actions.send(TrayAction::Ask);
+    });
+    header.pack_start(&ask_button);
     let settings_button = gtk::Button::with_label("Settings");
     header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
     window.set_titlebar(Some(&header));
 
+    let formatting = Rc::new(super::formatting_view::FormattingView::new(actions.clone()));
+    header.pack_end(&formatting.button);
+    let formatting_action = gtk::gio::SimpleAction::new("formatting", None);
+    formatting_action.connect_activate({
+        let formatting = formatting.clone();
+        move |_, _| formatting.button.popup()
+    });
+    application.add_action(&formatting_action);
+    let models = Rc::new(super::models_view::ModelsView::new(
+        &window,
+        actions.clone(),
+    ));
+    let model_action = gtk::gio::SimpleAction::new("models", None);
+    model_action.connect_activate({
+        let models = models.clone();
+        move |_, _| models.show()
+    });
+    application.add_action(&model_action);
     let layout = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let history = Rc::new(HistoryView::new(&window, actions.clone()));
     history.record_button.set_sensitive(false);
@@ -101,6 +126,7 @@ fn build_window(
     let recovery = gtk::Button::with_label("Copy last transcript");
     recovery.set_visible(false);
     let latest_completed = Rc::new(RefCell::new(None::<String>));
+    let latest_media = Rc::new(RefCell::new(None::<String>));
     recovery.connect_clicked({
         let latest = latest_completed.clone();
         move |button| {
@@ -119,7 +145,8 @@ fn build_window(
     layout.append(&status_row);
     let delivery_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     delivery_row.add_css_class("koett-delivery");
-    delivery_row.append(&gtk::Label::new(Some("Automatic paste unavailable")));
+    let delivery_label = gtk::Label::new(Some("Automatic paste unavailable"));
+    delivery_row.append(&delivery_label);
     let delivery_copy = gtk::Button::with_label("Copy transcript");
     delivery_row.append(&delivery_copy);
     delivery_row.set_visible(false);
@@ -165,6 +192,39 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    let media_action = gtk::gio::SimpleAction::new("media", None);
+    media_action.connect_activate({
+        let latest = latest_media.clone();
+        let status = status.clone();
+        let window = window.clone();
+        let actions = actions.clone();
+        move |_, _| {
+            super::media_view::show(
+                window.clone(),
+                actions.clone(),
+                latest.clone(),
+                status.clone(),
+            )
+        }
+    });
+    application.add_action(&media_action);
+    application.set_accels_for_action("app.media", &["<Control><Shift>t"]);
+    let failed_recordings_action = gtk::gio::SimpleAction::new("failed-recordings", None);
+    failed_recordings_action.connect_activate(|_, _| {
+        if let Ok(directory) = crate::paths::failed_transcripts_directory()
+            && let Some(parent) = directory.parent()
+        {
+            let directory = parent.join("Failed Recordings");
+            if std::fs::create_dir_all(&directory).is_ok() {
+                let uri = gtk::gio::File::for_path(directory).uri();
+                let _ = gtk::gio::AppInfo::launch_default_for_uri(
+                    &uri,
+                    None::<&gtk::gio::AppLaunchContext>,
+                );
+            }
+        }
+    });
+    application.add_action(&failed_recordings_action);
     let hide = gtk::gio::SimpleAction::new("hide", None);
     hide.connect_activate({
         let window = window.clone();
@@ -213,9 +273,11 @@ fn build_window(
     application.add_action(&quit);
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
+    let ask = super::ask_view::AskView::new(application, actions.clone());
     let overlay =
         super::recording_overlay::RecordingOverlay::new(application, latest_completed.clone());
     let mut recording_started = None::<Instant>;
+    let mut media_result = false;
     let mut state = String::from("Starting…");
     let mut notice = None::<String>;
     let mut recovery_until = None::<Instant>;
@@ -228,7 +290,32 @@ fn build_window(
             shortcut.set_visible(window.width() >= 650);
             meter_label.set_visible(window.width() >= 650);
             for update in updates.try_iter() {
+                if let Update::Status(message) = &update {
+                    if let Some(payload) = message.strip_prefix("@ask:") {
+                        if let Ok(value) = serde_json::from_str(payload) {
+                            ask.update(&value);
+                        }
+                        continue;
+                    }
+                    if let Some(name) = message.strip_prefix("@model:") {
+                        models.active(name);
+                        continue;
+                    }
+                    formatting.update(message);
+                    if message.starts_with("@format-") {
+                        continue;
+                    }
+                    if !message.starts_with('@') || message.starts_with("@notice:") {
+                        models.update(message);
+                    }
+                }
                 match update {
+                    Update::PrepareAsk(ack) => {
+                        ask.hide();
+                        gtk::glib::timeout_add_local_once(Duration::from_millis(100), move || {
+                            let _ = ack.send(());
+                        });
+                    }
                     Update::Show(token) => {
                         history.refresh();
                         present(window.upcast_ref(), Some(&token));
@@ -248,7 +335,20 @@ fn build_window(
                             delivery_copy.set_label("Copy transcript");
                         }
                     }
+                    Update::Status(message) if message.starts_with("@notice:@media-result:") => {
+                        let text = message
+                            .trim_start_matches("@notice:@media-result:")
+                            .to_string();
+                        *latest_media.borrow_mut() = Some(text.clone());
+                        *latest_completed.borrow_mut() = Some(text);
+                        recovery.set_visible(true);
+                        copy_last.set_enabled(true);
+                        recovery_until = Some(Instant::now() + super::feedback::RECOVERY_DURATION);
+                        media_result = true;
+                        state = "Media result".into();
+                    }
                     Update::Completed(text) => {
+                        media_result = false;
                         *latest_completed.borrow_mut() = Some(text);
                         recovery.set_visible(true);
                         copy_last.set_enabled(true);
@@ -268,6 +368,12 @@ fn build_window(
                         history.refresh();
                         window.present();
                     }
+                    Update::Status(message) if message == "@media" => {
+                        window.set_visible(true);
+                        if let Some(app) = window.application() {
+                            app.activate_action("media", None);
+                        }
+                    }
                     Update::Status(message) if message == "@settings" => {
                         window.present();
                         let parent = window.clone();
@@ -278,7 +384,16 @@ fn build_window(
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
-                        notice = Some(message.trim_start_matches("@notice:").to_string());
+                        let phase = message.trim_start_matches("@notice:");
+                        if matches!(
+                            phase,
+                            "Fetching audio…" | "Converting audio…" | "Transcribing locally…"
+                        ) {
+                            state = phase.into();
+                            notice = None;
+                        } else {
+                            notice = Some(phase.to_string());
+                        }
                         notice_until = Some(Instant::now() + Duration::from_secs(8));
                     }
                     Update::Status(message) => {
@@ -312,6 +427,11 @@ fn build_window(
                 recovery_until = None;
             }
             let recovering = recovery_until.is_some();
+            delivery_label.set_text(if media_result {
+                "Media transcript"
+            } else {
+                "Automatic paste unavailable"
+            });
             delivery_row.set_visible(recovering);
             recovery.set_visible(latest_completed.borrow().is_some() && !recovering);
             let warning = recording_started.and_then(|started| {
@@ -328,7 +448,11 @@ fn build_window(
             }
             if let Some(overlay) = &overlay {
                 overlay.update(
-                    &state,
+                    if media_result && recovering {
+                        "Media result"
+                    } else {
+                        &state
+                    },
                     recording_started,
                     audio_levels.as_ref(),
                     warning,

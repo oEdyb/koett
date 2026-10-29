@@ -135,7 +135,23 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
+            if bytes == b"ask-status" {
+                let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
+                continue;
+            }
             let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
+                value if value.starts_with("media ") => {
+                    let source = &value[6..];
+                    if crate::media_transcription::validate_url(source).is_err() {
+                        continue;
+                    }
+                    TrayAction::Media(source.into())
+                }
+                "ask" => TrayAction::Ask,
+                "ask-start" => TrayAction::AskStart,
+                "ask-stop" => TrayAction::AskStop,
+                "ask-cancel" => TrayAction::CancelAsk,
+                "cancel-media" => TrayAction::CancelMedia,
                 "start" => TrayAction::Start,
                 "stop" => TrayAction::Stop,
                 "toggle" => TrayAction::Toggle,
@@ -150,6 +166,25 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
         }
     });
     Ok(())
+}
+
+pub fn ask_status() -> Result<String, String> {
+    let mut stream = UnixStream::connect(path()?).map_err(|_| "Koett is not running")?;
+    stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(2)))
+        .map_err(|_| "Cannot set Ask status deadline")?;
+    stream
+        .write_all(b"ask-status")
+        .map_err(|_| "Cannot request Ask status")?;
+    stream
+        .shutdown(std::net::Shutdown::Write)
+        .map_err(|_| "Cannot finish Ask status request")?;
+    let mut value = String::new();
+    stream
+        .take(8192)
+        .read_to_string(&mut value)
+        .map_err(|_| "Cannot read Ask status")?;
+    Ok(value)
 }
 
 #[cfg(test)]

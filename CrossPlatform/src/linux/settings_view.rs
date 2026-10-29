@@ -26,8 +26,8 @@ pub fn show(
         .title("Settings")
         .transient_for(parent)
         .modal(true)
-        .default_width(540)
-        .default_height(460)
+        .default_width(420)
+        .default_height(380)
         .build();
     window.add_css_class("koett-window");
     window.set_application(parent.application().as_ref());
@@ -40,16 +40,37 @@ pub fn show(
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let stack = gtk::Stack::new();
     stack.set_vexpand(true);
-    let navigation = gtk::StackSwitcher::new();
-    navigation.set_stack(Some(&stack));
-    navigation.add_css_class("koett-settings-nav");
-    navigation.set_halign(gtk::Align::Center);
+    let navigation = gtk::ComboBoxText::new();
+    for (id, label) in [
+        ("audio", "Microphone"),
+        ("shortcuts", "Recording & shortcuts"),
+        ("text", "Text & replacements"),
+        ("general", "Koett"),
+        ("ask", "Ask"),
+    ] {
+        navigation.append(Some(id), label);
+    }
+    super::menu::set_accessible_label(navigation.upcast_ref(), "Settings section");
+    navigation.set_active_id(Some("audio"));
+    navigation.set_margin_start(16);
+    navigation.set_margin_end(16);
+    navigation.set_margin_top(12);
+    navigation.connect_changed({
+        let stack = stack.clone();
+        move |choice| {
+            if let Some(id) = choice.active_id() {
+                stack.set_visible_child_name(&id);
+            }
+        }
+    });
     outer.append(&navigation);
     outer.append(&stack);
     let audio = section(&stack, "audio", "Audio");
     let shortcuts = section(&stack, "shortcuts", "Shortcuts");
     let text = section(&stack, "text", "Text");
     let general = section(&stack, "general", "General");
+    let ask = section(&stack, "ask", "Ask");
+    super::ask_settings::build(&ask);
     stack.set_visible_child_name("audio");
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     footer.add_css_class("koett-settings-footer");
@@ -281,6 +302,17 @@ Hold release: koett stop",
         let window = window.clone();
         move |_| {
             let mut updated = settings.clone();
+            match Settings::load() {
+                Ok(current) => {
+                    updated.formatting = current.formatting;
+                    updated.selected_model = current.selected_model;
+                    updated.model_directory = current.model_directory;
+                }
+                Err(message) => {
+                    error.set_text(&message);
+                    return;
+                }
+            }
             updated.shortcut = shortcut.borrow().clone();
             updated.start_at_login = login.is_active();
             updated.microphone = input
@@ -337,10 +369,6 @@ fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
     let layout = gtk::Box::new(gtk::Orientation::Vertical, 12);
     layout.add_css_class("koett-settings-page");
     layout.set_valign(gtk::Align::Start);
-    let heading = gtk::Label::new(Some(title));
-    heading.set_xalign(0.0);
-    heading.add_css_class("koett-settings-heading");
-    layout.append(&heading);
     let scroll = gtk::ScrolledWindow::builder()
         .child(&layout)
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -350,7 +378,8 @@ fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
 }
 fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
     let title = gtk::Label::new(Some(label));
-    title.set_xalign(0.0);
+    title.set_xalign(1.0);
+    title.set_width_chars(12);
     title.set_mnemonic_widget(Some(widget));
 
     let group = gtk::Box::new(gtk::Orientation::Horizontal, 16);

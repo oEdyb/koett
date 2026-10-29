@@ -24,6 +24,7 @@ pub enum PasteShortcut {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
+    pub formatting: crate::formatting::Formatting,
     pub shortcut: String,
     pub start_at_login: bool,
     pub microphone: Option<String>,
@@ -31,12 +32,14 @@ pub struct Settings {
     pub replacements: Vec<crate::replacements::Replacement>,
     pub pause_media: bool,
     pub paste_shortcut: PasteShortcut,
+    pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            formatting: crate::formatting::Formatting::default(),
             shortcut: "Ctrl+Shift+Space".to_string(),
             start_at_login: true,
             microphone: None,
@@ -44,6 +47,7 @@ impl Default for Settings {
             replacements: Vec::new(),
             pause_media: false,
             paste_shortcut: PasteShortcut::default(),
+            selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
     }
@@ -75,21 +79,42 @@ impl Settings {
             .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
         let data = serde_json::to_vec_pretty(self)
             .map_err(|error| format!("could not encode settings: {error}"))?;
-        fs::write(path, data)
-            .map_err(|error| format!("could not write {}: {error}", path.display()))?;
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_nanos();
+        let temporary = parent.join(format!(".settings-{}-{nonce}.part", std::process::id()));
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
         #[cfg(unix)]
         {
-            use std::os::unix::fs::PermissionsExt as _;
-            fs::set_permissions(path, fs::Permissions::from_mode(0o600))
-                .map_err(|error| format!("could not protect {}: {error}", path.display()))?;
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
         }
+        let mut file = options
+            .open(&temporary)
+            .map_err(|error| format!("could not prepare settings: {error}"))?;
+        let result = (|| {
+            use std::io::Write as _;
+            file.write_all(&data)
+                .map_err(|error| format!("could not write settings: {error}"))?;
+            file.sync_all()
+                .map_err(|error| format!("could not sync settings: {error}"))?;
+            drop(file);
+            fs::rename(&temporary, path)
+                .map_err(|error| format!("could not save {}: {error}", path.display()))
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&temporary);
+        }
+        result?;
         Ok(())
     }
 
     pub fn model_directory(&self) -> Result<PathBuf, String> {
         match &self.model_directory {
             Some(path) => Ok(path.clone()),
-            None => paths::default_model_directory(),
+            None => self.selected_model.directory(),
         }
     }
 }
@@ -125,6 +150,7 @@ mod tests {
         let settings = Settings {
             shortcut: "Alt+Space".to_string(),
             start_at_login: false,
+            selected_model: crate::model::LocalModel::ParakeetV2,
             paste_shortcut: PasteShortcut::CtrlShiftV,
             model_directory: Some("custom-model".into()),
             ..Settings::default()
@@ -143,6 +169,27 @@ mod tests {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert_eq!(settings.paste_shortcut, PasteShortcut::CtrlV);
         assert!(serde_json::from_str::<Settings>(r#"{"paste_shortcut":"shift_insert"}"#).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_save_preserves_previous_preferences() {
+        use std::os::unix::fs::PermissionsExt as _;
+        let directory = temporary_file("read-only-settings");
+        fs::create_dir(&directory).unwrap();
+        let path = directory.join("settings.json");
+        let original = Settings::default();
+        original.save_to(&path).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o500)).unwrap();
+        let updated = Settings {
+            selected_model: crate::model::LocalModel::ParakeetV2,
+            ..original.clone()
+        };
+        let result = updated.save_to(&path);
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+        assert!(result.is_err());
+        assert_eq!(Settings::load_from(&path).unwrap(), original);
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]

@@ -11,6 +11,9 @@ use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
 mod background;
+mod nemotron;
+mod recovery;
+pub use nemotron::NemotronTranscriber;
 
 pub use background::{BackgroundSession, TranscriptionWorker};
 
@@ -22,6 +25,7 @@ const DECODE_OVERLAP_SAMPLES: usize = MODEL_SAMPLE_RATE as usize * 2;
 const MAX_OVERLAP_WORDS: usize = 20;
 
 pub struct Transcript {
+    pub raw: Option<String>,
     pub text: String,
     pub audio_duration: Duration,
     pub transcription: Duration,
@@ -136,6 +140,7 @@ impl ParakeetTranscriber {
             .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
 
         Ok(Transcript {
+            raw: None,
             text: result.text,
             audio_duration,
             transcription,
@@ -193,6 +198,7 @@ impl ParakeetTranscriber {
         );
 
         Ok(Transcript {
+            raw: None,
             text: parts.join(" "),
             audio_duration,
             transcription: started.elapsed(),
@@ -403,6 +409,7 @@ mod tests {
     #[test]
     fn realtime_factor_uses_transcription_over_audio() {
         let transcript = Transcript {
+            raw: None,
             text: String::new(),
             audio_duration: Duration::from_secs(10),
             transcription: Duration::from_secs(1),

@@ -6,6 +6,7 @@ rust-version = "1.92"
 license = "Apache-2.0"
 
 [dependencies]
+url = "=2.5.8"
 cpal = "=0.18.2"
 bzip2 = "=0.6.1"
 base64 = "=0.23.1"
@@ -38,6 +39,10 @@ windows = { version = "=0.62.2", features = [
 ureq = { version = "=3.4.0", default-features = false, features = ["native-tls", "platform-verifier"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+log = { version = "=0.4.34", features = ["max_level_warn", "release_max_level_warn"] }
+uuid = { version = "=1.29.0", features = ["v4"] }
+tokio-tungstenite = { version = "=0.30.0", features = ["rustls-tls-native-roots"] }
+libc = "=0.2.189"
 gtk4 = "=0.11.5"
 gdk4-wayland = "=0.11.5"
 libloading = "=0.9.0"

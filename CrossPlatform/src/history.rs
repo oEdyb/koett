@@ -81,6 +81,13 @@ fn append_record_with_fallback_to(
     }
 }
 
+pub fn save_media_recovery(model: &str, text: &str) -> Result<PathBuf, String> {
+    save_failed_transcript_to(
+        &paths::failed_transcripts_directory()?,
+        &new_record(OffsetDateTime::now_utc(), model, text, None)?,
+    )
+}
+
 fn save_failed_transcript_to(directory: &Path, record: &HistoryRecord) -> Result<PathBuf, String> {
     fs::create_dir_all(directory)
         .map_err(|error| format!("could not create {}: {error}", directory.display()))?;

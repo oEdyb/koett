@@ -22,6 +22,7 @@ const MODEL_MANIFEST_JSON: &str =
 const ASR_ARTIFACT: &str = "asr";
 const VAD_ARTIFACT: &str = "vad";
 pub const VAD_FILE: &str = "silero_vad.onnx";
+pub static SWITCH_CANCELLED: AtomicBool = AtomicBool::new(false);
 static TRANSACTION_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -32,13 +33,84 @@ pub enum ModelProgress {
     Ready,
 }
 
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalModel {
+    #[default]
+    Compact,
+    ParakeetV2,
+    Nemotron,
+}
+
+impl LocalModel {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Compact => "Parakeet 110M · English",
+            Self::ParakeetV2 => "Parakeet v2 600M · English",
+            Self::Nemotron => "Nemotron 0.6B · 560 ms · Experimental",
+        }
+    }
+
+    fn manifest(self) -> Result<ModelManifest, String> {
+        match self {
+            Self::Nemotron => serde_json::from_str(include_str!(
+                "../model-manifests/nemotron-streaming-en-560ms-int8.json"
+            ))
+            .map_err(|error| error.to_string()),
+            Self::Compact => default_model_manifest(),
+            Self::ParakeetV2 => serde_json::from_str(include_str!(
+                "../model-manifests/parakeet-tdt-600m-v2-int8.json"
+            ))
+            .map_err(|error| format!("invalid v2 manifest: {error}")),
+        }
+    }
+
+    pub fn directory(self) -> Result<PathBuf, String> {
+        let default = paths::default_model_directory()?;
+        match self {
+            Self::Compact => Ok(default),
+            Self::ParakeetV2 | Self::Nemotron => Ok(default
+                .parent()
+                .ok_or("model directory has no parent")?
+                .join(self.manifest()?.model_id)),
+        }
+    }
+}
+
+pub fn ensure_model(
+    selection: LocalModel,
+    cancelled: &AtomicBool,
+    progress: impl FnMut(ModelProgress),
+) -> Result<PathBuf, String> {
+    if selection == LocalModel::Nemotron && !cfg!(target_os = "linux") {
+        return Err("Nemotron streaming is currently supported on Linux only".into());
+    }
+    ensure_selected_model(selection, cancelled, progress)
+}
+
 pub fn ensure_default_model(
     cancelled: &AtomicBool,
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
-    let manifest = default_model_manifest()?;
-    let manifest_sha256 = manifest_sha256();
-    let destination = paths::default_model_directory()?;
+    ensure_selected_model(LocalModel::Compact, cancelled, &mut progress)
+}
+
+fn ensure_selected_model(
+    selection: LocalModel,
+    cancelled: &AtomicBool,
+    mut progress: impl FnMut(ModelProgress),
+) -> Result<PathBuf, String> {
+    let manifest = selection.manifest()?;
+    let manifest_sha256 = match selection {
+        LocalModel::Nemotron => digest_hex(&Sha256::digest(include_bytes!(
+            "../model-manifests/nemotron-streaming-en-560ms-int8.json"
+        ))),
+        LocalModel::Compact => manifest_sha256(),
+        LocalModel::ParakeetV2 => digest_hex(&Sha256::digest(include_bytes!(
+            "../model-manifests/parakeet-tdt-600m-v2-int8.json"
+        ))),
+    };
+    let destination = selection.directory()?;
     check_cancelled(cancelled)?;
     if prepare_destination(
         &destination,
@@ -188,6 +260,33 @@ fn download_file(
     cancelled: &AtomicBool,
     progress: &mut impl FnMut(ModelProgress),
 ) -> Result<(), String> {
+    let mut caches = Vec::new();
+    if label == "voice detector" {
+        caches.push(paths::default_model_directory()?.join(VAD_FILE));
+    }
+    if let Some(base) = directories::BaseDirs::new()
+        && let Some(name) = url.rsplit('/').next()
+    {
+        caches.push(base.cache_dir().join("koett/model-evaluations").join(name));
+    }
+    if restore_cached_release(caches, cancelled, |input| {
+        write_verified_download(
+            label,
+            input,
+            path,
+            expected_bytes,
+            expected_sha256,
+            cancelled,
+            |received| {
+                progress(ModelProgress::Downloading {
+                    received: progress_offset + received,
+                    total: progress_total,
+                })
+            },
+        )
+    })? {
+        return Ok(());
+    }
     let agent = ureq::Agent::config_builder()
         .https_only(true)
         .max_redirects(5)
@@ -224,6 +323,27 @@ fn download_file(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn restore_cached_release(
+    caches: Vec<PathBuf>,
+    cancelled: &AtomicBool,
+    mut restore: impl FnMut(File) -> Result<(), String>,
+) -> Result<bool, String> {
+    for cached in caches.into_iter().filter(|path| path.is_file()) {
+        check_cancelled(cancelled)?;
+        match File::open(cached)
+            .map_err(|error| format!("could not open cached release: {error}"))
+            .and_then(&mut restore)
+        {
+            Ok(()) => return Ok(true),
+            Err(error) => {
+                check_cancelled(cancelled)?;
+                eprintln!("Cached release unavailable; trying another source: {error}");
+            }
+        }
+    }
+    Ok(false)
+}
+
 fn write_verified_download(
     label: &str,
     mut input: impl Read,
@@ -324,7 +444,7 @@ fn install_archive(
         }
     }
 
-    let extracted = transaction.join(DEFAULT_MODEL_ID);
+    let extracted = transaction.join(&manifest.model_id);
     validate_model_files(
         &extracted,
         manifest

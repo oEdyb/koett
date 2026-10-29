@@ -339,7 +339,9 @@ impl RecordingOverlay {
         recovering: bool,
     ) {
         let recording = started.is_some();
-        let transcribing = state.starts_with("Transcribing");
+        let transcribing = state.starts_with("Transcribing")
+            || state.starts_with("Fetching")
+            || state.starts_with("Converting");
         let recovering = recovering && !recording && !transcribing;
         if recovering != self.recovery.is_visible() {
             self.copy.set_label("Copy transcript");
@@ -374,9 +376,13 @@ impl RecordingOverlay {
         self.status.set_text(if recording {
             "Recording"
         } else if recovering {
-            "Paste unavailable"
+            if state == "Media result" {
+                "Media transcript"
+            } else {
+                "Paste unavailable"
+            }
         } else {
-            "Transcribing…"
+            state
         });
         self.status.set_opacity(if recording { 0.0 } else { 1.0 });
         self.status

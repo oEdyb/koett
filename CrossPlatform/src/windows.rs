@@ -458,6 +458,7 @@ impl WindowsApp {
                 .and_then(|engine| engine.updates.try_recv().ok());
             let Some(update) = update else { break };
             match update {
+                EngineUpdate::ActiveModel(_) => {}
                 EngineUpdate::Notice(message) => {
                     eprintln!("Koett: {message}");
                 }
@@ -487,8 +488,9 @@ impl WindowsApp {
                     set_wide_array(&mut self.tray.szTip, &format!("Koett — {text}"));
                     let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
                 }
+                EngineUpdate::FormattingBusy(_) => {}
                 EngineUpdate::TranscriptReady { model, transcript } => {
-                    self.deliver(&model, &transcript.text);
+                    self.deliver(&model, &transcript.text, transcript.raw.as_deref());
                 }
             }
         }
@@ -581,7 +583,7 @@ impl WindowsApp {
         }
     }
 
-    fn deliver(&mut self, model: &str, text: &str) {
+    fn deliver(&mut self, model: &str, text: &str, raw: Option<&str>) {
         if text.trim().is_empty() {
             return;
         }
@@ -594,7 +596,7 @@ impl WindowsApp {
         } else {
             None
         };
-        let history_error = match history::append_transcript_resilient(model, text) {
+        let history_error = match history::append_transcript_with_raw_resilient(model, text, raw) {
             Ok(Some(path)) => Some(format!(
                 "The main transcript history failed. Koett saved this transcript to {}",
                 path.display()

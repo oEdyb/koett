@@ -49,6 +49,10 @@ pub fn default_model_directory() -> Result<PathBuf, String> {
         .join(DEFAULT_MODEL_ID))
 }
 
+pub fn formatting_model_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.cache_dir().join("S1-mini"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{history_file, settings_file};

@@ -575,3 +575,71 @@ fn pinned_model_name_matches_the_archive_root() {
         "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8"
     );
 }
+
+#[test]
+fn optional_v2_catalog_pins_distinct_official_artifacts() {
+    let compact = super::LocalModel::Compact.manifest().unwrap();
+    let v2 = super::LocalModel::ParakeetV2.manifest().unwrap();
+    assert_ne!(compact.model_id, v2.model_id);
+    let archive = super::manifest_artifact(&v2, ASR_ARTIFACT).unwrap();
+    assert_eq!(archive.bytes, 482_468_385);
+    assert!(archive.immutable_revision.contains(&archive.sha256));
+    assert!(
+        archive
+            .source_url
+            .starts_with("https://github.com/k2-fsa/sherpa-onnx/releases/")
+    );
+    assert!(v2.files.iter().any(|file| file.path == "encoder.int8.onnx"));
+    assert!(v2.files.iter().any(|file| file.path == VAD_FILE));
+    assert_eq!(super::LocalModel::default(), super::LocalModel::Compact);
+}
+
+#[test]
+fn optional_v2_verification_rejects_incomplete_cache_without_loading() {
+    let directory = temporary_directory("invalid-v2");
+    fs::create_dir_all(&directory).unwrap();
+    fs::write(directory.join("encoder.int8.onnx"), b"invalid").unwrap();
+    let manifest = super::LocalModel::ParakeetV2.manifest().unwrap();
+    assert!(validate_model_files(&directory, &manifest.files, &AtomicBool::new(false)).is_err());
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn corrupt_cache_falls_through_and_cancellation_stops_recovery() {
+    let directory = temporary_directory("cache-fallback");
+    fs::create_dir_all(&directory).unwrap();
+    let corrupt = directory.join("corrupt");
+    let valid = directory.join("valid");
+    fs::write(&corrupt, b"corrupt").unwrap();
+    fs::write(&valid, b"valid").unwrap();
+    let cancelled = AtomicBool::new(false);
+    let mut attempts = 0;
+    let recovered =
+        super::restore_cached_release(vec![corrupt.clone(), valid], &cancelled, |mut file| {
+            attempts += 1;
+            let mut bytes = Vec::new();
+            file.read_to_end(&mut bytes).unwrap();
+            if bytes == b"valid" {
+                Ok(())
+            } else {
+                Err("invalid digest".into())
+            }
+        })
+        .unwrap();
+    assert!(recovered);
+    assert_eq!(attempts, 2);
+    assert!(
+        !super::restore_cached_release(vec![corrupt.clone()], &cancelled, |_| Err(
+            "invalid digest".into()
+        ))
+        .unwrap()
+    );
+    cancelled.store(true, std::sync::atomic::Ordering::Release);
+    assert!(
+        super::restore_cached_release(vec![corrupt], &cancelled, |_| panic!(
+            "cancelled cache must not be read"
+        ))
+        .is_err()
+    );
+    fs::remove_dir_all(directory).unwrap();
+}
