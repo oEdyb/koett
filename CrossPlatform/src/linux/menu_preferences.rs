@@ -151,6 +151,18 @@ pub(super) fn attach(application: &gtk::Application, sender: mpsc::Sender<TrayAc
         let sender = sender.clone();
         action.connect_activate(move |_, value| {
             let sender = sender.clone();
+            if target == "models" {
+                let selection = value.and_then(|value| value.str()).map(str::to_owned);
+                std::thread::spawn(move || {
+                    let opened = request(&sender, "menu-open models".into());
+                    if opened["ok"] == true
+                        && let Some(selection) = selection
+                    {
+                        let _ = request(&sender, format!("menu-model {selection}"));
+                    }
+                });
+                return;
+            }
             let command = if target == "formatting" {
                 format!(
                     "menu-format {}",
@@ -400,10 +412,15 @@ pub(super) fn tray(sender: &mpsc::Sender<TrayAction>) -> Vec<ksni::MenuItem<supe
             ..Default::default()
         })
         .collect(),
-        select: Box::new(|tray: &mut super::LinuxTray, _| {
+        select: Box::new(|tray: &mut super::LinuxTray, index| {
             let sender = tray.action_sender.clone();
             std::thread::spawn(move || {
-                let _ = request(&sender, "menu-open models".into());
+                let opened = request(&sender, "menu-open models".into());
+                if opened["ok"] == true
+                    && let Some(selection) = ["compact", "parakeet_v2", "nemotron"].get(index)
+                {
+                    let _ = request(&sender, format!("menu-model {selection}"));
+                }
             });
         }),
     };

@@ -5,6 +5,7 @@ pub(super) struct ModelsView {
     window: gtk::Window,
     active: gtk::Label,
     status: gtk::Label,
+    progress: gtk::ProgressBar,
     notice: gtk::Label,
     choices: Vec<gtk::Button>,
     cancel: gtk::Button,
@@ -92,12 +93,14 @@ impl ModelsView {
         let status = gtk::Label::new(None);
         status.set_wrap(true);
         status.set_xalign(0.0);
-        content.append(&status);
+        let progress = gtk::ProgressBar::new();
+        progress.set_show_text(true);
+        progress.set_visible(false);
+        super::menu::set_accessible_label(progress.upcast_ref(), "Model download progress");
         let notice = gtk::Label::new(None);
         notice.set_wrap(true);
         notice.set_xalign(0.0);
         notice.add_css_class("error");
-        content.append(&notice);
         let cancel = gtk::Button::with_label("Cancel model setup");
         cancel.set_sensitive(false);
         cancel.connect_clicked(|_| {
@@ -111,6 +114,16 @@ impl ModelsView {
         scroll.set_vexpand(true);
         let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
         outer.append(&scroll);
+        for widget in [
+            status.upcast_ref::<gtk::Widget>(),
+            progress.upcast_ref(),
+            notice.upcast_ref(),
+        ] {
+            widget.set_margin_start(16);
+            widget.set_margin_end(16);
+            widget.set_margin_top(8);
+            outer.append(widget);
+        }
         cancel.set_margin_start(16);
         cancel.set_margin_end(16);
         cancel.set_margin_top(8);
@@ -134,6 +147,7 @@ impl ModelsView {
             window,
             active,
             status,
+            progress,
             notice,
             choices,
             cancel,
@@ -207,7 +221,19 @@ impl ModelsView {
         if message == "Starting…" {
             self.notice.set_text("");
         }
-        self.status.set_text(message);
+        let percent = message
+            .strip_prefix("Downloading model… ")
+            .and_then(|value| value.strip_suffix('%'))
+            .and_then(|value| value.parse::<u32>().ok());
+        self.progress.set_visible(percent.is_some());
+        if let Some(percent) = percent {
+            self.progress
+                .set_fraction(f64::from(percent.min(100)) / 100.0);
+            self.progress.set_text(Some(&format!("{percent}%")));
+            self.status.set_text("Downloading model…");
+        } else {
+            self.status.set_text(message);
+        }
         self.ready.set(message == "Ready");
         self.refresh_choices();
         self.cancel
