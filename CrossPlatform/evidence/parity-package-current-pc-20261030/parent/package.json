@@ -1,0 +1,18 @@
+{
+  "archive": "/home/olle/.cache/koett/private-tests/koett-package-parent/final-verified/Koett-Linux-x86_64-37705a44.tar.gz",
+  "archive_sha256": "455142057735a6aeb8131bbb07b6ace39d0b4554a3aebb887baa4846ac547024",
+  "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa",
+  "private_launcher": "/home/olle/.cache/koett/private-tests/koett-package-parent/clean $ install/bin/koett",
+  "version_identity": "47b21465bed7c1e2abaf8c41",
+  "private_lab": "koett-package-parent stopped",
+  "review": "Both independent reviews found desktop-value escaping; fixed with two escaping layers and actual gio launch outcomes for six special-path cases.",
+  "test_cases": [
+    "spaces",
+    "dollar",
+    "backslash",
+    "quote",
+    "backtick",
+    "percent"
+  ],
+  "product_formatting": "Real private CPAL to S1-mini to history; killed formatter yields exact raw fallback; Copy Last exact; zero streams."
+}

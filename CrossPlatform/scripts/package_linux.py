@@ -4,11 +4,11 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import platform
 import shutil
 import subprocess
 import tarfile
+from pathlib import Path
 
 
 def digest(path):
@@ -23,6 +23,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=Path("target/release/koett"))
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--gtk-runtime", type=Path, required=True)
+    parser.add_argument("--asr-runtime", type=Path, required=True)
+    parser.add_argument("--llama-runtime", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     binary = args.binary.resolve()
@@ -34,8 +37,28 @@ def main():
     output = args.output.resolve()
     destination = output / name
     destination.mkdir(parents=True, exist_ok=False)
-    shutil.copy2(binary, destination / "koett")
-    for filename in ["install.sh", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
+    (destination / "libexec").mkdir()
+    shutil.copy2(binary, destination / "libexec/koett")
+    shutil.copy2(root / "packaging/linux/koett-launcher", destination / "koett")
+    (destination / "koett").chmod(0o755)
+    for kind, runtime in [("gtk", args.gtk_runtime), ("asr", args.asr_runtime)]:
+        shutil.copytree(runtime.resolve(), destination / "runtime" / kind, symlinks=False)
+    shutil.copy2(root / "packaging/linux/install.py", destination / "install.py")
+    shutil.copy2(root / "packaging/linux/preflight.py", destination / "preflight.py")
+    shutil.copytree(args.llama_runtime.resolve(), destination / "runtime/llama", symlinks=False)
+    (destination / "runtime/bin").mkdir()
+    wrapper = destination / "runtime/bin/llama-server"
+    wrapper.write_text('#!/bin/sh\nROOT=$(dirname -- "$(readlink -f -- "$0")")/../llama\nexport LD_LIBRARY_PATH="$ROOT${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\nexec "$ROOT/llama-server" "$@"\n')
+    wrapper.chmod(0o755)
+    sources = destination / "sources"
+    sources.mkdir()
+    shutil.copy2(args.llama_runtime.resolve().parent / "provenance.json", sources / "llama-provenance.json")
+    gtk_build = args.gtk_runtime.resolve().parent
+    for source_name in ["gtk-4.24.1.tar.xz", "21d3eb76b68d6758122eddaf00b5823f9b2d7f34.patch", "runtime-receipt.json"]:
+        shutil.copy2(gtk_build / source_name, sources / source_name)
+    shutil.copy2(root / "scripts/build_linux_gtk_runtime.py", sources / "build_linux_gtk_runtime.py")
+    shutil.copy2(args.asr_runtime.resolve() / "build-receipt.json", sources / "asr-build-receipt.json")
+    for filename in ["install.sh", "CURRENT-PC.md", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
         shutil.copy2(root / "packaging/linux" / filename, destination / filename)
     for filename in ["README.md", "THIRD_PARTY_NOTICES.md"]:
         shutil.copy2(root / filename, destination / filename)
@@ -47,6 +70,9 @@ def main():
     if native.exists():
         shutil.copy2(native, destination / "native-build-receipt.json")
     (destination / "candidate.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    files = {str(path.relative_to(destination)): digest(path)
+             for path in sorted(destination.rglob("*")) if path.is_file()}
+    (destination / "files.json").write_text(json.dumps(files, indent=2) + "\n")
     archive = output / f"{name}.tar.gz"
     with tarfile.open(archive, "w:gz") as package:
         package.add(destination, arcname=name)

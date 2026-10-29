@@ -1,8 +1,9 @@
 # Linux parity inventory — current implementation
 
 Scope: native Linux feature parity and compact controls on `feat/linux-ui-history`.
-This is **not** a completed Mac port or a public Linux release. The installed app
-and live preferences remain unchanged by these increments.
+This is **not** a public Linux release or complete platform acceptance. A verified
+current-PC package is installed and running in the background; live preferences
+and the default model were preserved. Mac execution remains deferred.
 
 Optional spoken Ask source and private protocol/playback evidence are described
 in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility remains unverified.
@@ -433,3 +434,27 @@ See `CrossPlatform/evidence/parity-browser-media-20261030/REPORT.md` and
 source and runtime identities, inspected captures and unsupported-platform limits.
 The private lab is stopped. Installation, main, public release and live settings
 remain unchanged.
+
+
+## Current-PC packaging and installation
+
+A versioned app-scoped GTK/ASR/CPU llama.cpp package is installed at
+`~/.local/bin/koett`, with rollback binary retained. GTK includes the verified
+upstream accessibility fix; system GTK is untouched. Two package reviews found
+one desktop-entry escaping defect, fixed with actual special-path launch tests.
+The installed app reached Ready in the background with the exact tested binary
+and packaged GTK hashes. Preferences were unchanged, and the existing Niri Pause
+binding still targets `koett toggle`; physical key activation was not driven.
+No host audio capture, clipboard changes or foreground tests were performed.
+
+Private clean-install light/dark UI, recording/recovery, restart persistence,
+20-cycle GTK root regression, real packaged S1-mini preparation/capture/history
+and forced-formatter raw recovery pass. Rust146 passed/10 existing ignores;
+Python38 passed, strict Clippy/release/MSRV/Windows source/affected Python gates
+pass. Evidence: `CrossPlatform/evidence/parity-package-current-pc-20261030/`.
+
+This bundle targets this CachyOS PC, not broad Linux binary portability. Rich Ask
+uses the plain fallback until complete host WebKitGTK6 is installed; provider
+configuration and live paid services remain user-controlled and unverified.
+Physical input/audio, suspend/hotplug, wider compositor/distro acceptance, exact
+appearance approval, Mac execution and public-release native notices remain open.

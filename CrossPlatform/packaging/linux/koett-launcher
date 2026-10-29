@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+ROOT=$(dirname -- "$(readlink -f -- "$0")")
+export LD_LIBRARY_PATH="$ROOT/runtime/gtk/lib:$ROOT/runtime/asr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export XDG_DATA_DIRS="$ROOT/runtime/gtk/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+export GTK_DATA_PREFIX="$ROOT/runtime/gtk"
+export PATH="$ROOT/runtime/bin:$PATH"
+exec "$ROOT/libexec/koett" "$@"

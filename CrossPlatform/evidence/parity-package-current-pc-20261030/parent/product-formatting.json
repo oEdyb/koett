@@ -1,0 +1,20 @@
+{
+  "packaged_launcher": "/home/olle/.cache/koett/private-tests/koett-package-parent/clean $ install/bin/koett",
+  "product_s1_capture": true,
+  "raw_final_retained": true,
+  "formatter_failure_exact_raw": true,
+  "history_rows": 2,
+  "raw_preference_saved": true,
+  "copy_last_exact": true,
+  "zero_capture_streams": true,
+  "rows": [
+    [
+      "well, I don't wish to see it any more, observed Phoebe, turning away her eyes. it is certainly very like the old portrait",
+      "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait"
+    ],
+    [
+      "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait",
+      null
+    ]
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "installed": {
+    "launcher": "/home/olle/.local/bin/koett",
+    "version": "/home/olle/.local/lib/koett/versions/47b21465bed7c1e2abaf8c41",
+    "scope": "current-PC private candidate"
+  },
+  "pid": 2870979,
+  "previous_binary": "/home/olle/.local/bin/koett.previous-874cd0145ed5bfca",
+  "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa",
+  "gtk_library": "/home/olle/.local/lib/koett/versions/47b21465bed7c1e2abaf8c41/runtime/gtk/lib/libgtk-4.so.1",
+  "gtk_sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+  "preferences_unchanged": true,
+  "ready": true,
+  "active_engine": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+  "background": true,
+  "host_audio_captured": false,
+  "host_input_or_windows_driven": false
+}
