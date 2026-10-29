@@ -116,6 +116,7 @@ pub struct RecordingOverlay {
     warning: gtk::Label,
     recovery: gtk::Box,
     copy: gtk::Button,
+    media_copy: gtk::Button,
     state: Rc<RefCell<MeterState>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
     _layer_shell: LayerShell,
@@ -169,8 +170,12 @@ fn capsule(context: &gtk::cairo::Context, x: f64, y: f64, width: f64, height: f6
     context.close_path();
 }
 
-fn paint(context: &gtk::cairo::Context, meter: &MeterState) -> Result<(), gtk::cairo::Error> {
-    capsule(context, 1.0, 1.0, 234.0, 46.0);
+fn paint(
+    context: &gtk::cairo::Context,
+    meter: &MeterState,
+    width: f64,
+) -> Result<(), gtk::cairo::Error> {
+    capsule(context, 1.0, 1.0, width - 2.0, 46.0);
     context.set_source_rgba(0.075, 0.075, 0.08, 0.97);
     context.fill_preserve()?;
     context.set_source_rgba(1.0, 1.0, 1.0, 0.10);
@@ -254,8 +259,8 @@ impl RecordingOverlay {
         drawing.set_content_height(48);
         drawing.set_draw_func({
             let state = state.clone();
-            move |_, context, _, _| {
-                if let Err(error) = paint(context, &state.borrow()) {
+            move |_, context, width, _| {
+                if let Err(error) = paint(context, &state.borrow(), f64::from(width)) {
                     eprintln!("Recording waveform drawing failed: {error}");
                 }
             }
@@ -305,6 +310,22 @@ impl RecordingOverlay {
                 }
             }
         });
+        let media_copy = gtk::Button::with_label("Copy");
+        media_copy.set_focusable(false);
+        media_copy.add_css_class("koett-media-copy");
+        let css = gtk::CssProvider::new();
+        css.load_from_data(".koett-media-copy { min-width: 0; padding: 4px 10px; }");
+        gtk::style_context_add_provider_for_display(
+            &media_copy.display(),
+            &css,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
+        media_copy.connect_clicked({
+            let copy = copy.clone();
+            move |_| copy.emit_clicked()
+        });
+        content.put(&media_copy, 186.0, 8.0);
+        media_copy.set_visible(false);
         recovery.append(&copy);
         recovery.set_visible(false);
         layout.append(&recovery);
@@ -317,6 +338,7 @@ impl RecordingOverlay {
             warning,
             recovery,
             copy,
+            media_copy,
             state,
             tick,
             _layer_shell: layer_shell,
@@ -337,6 +359,7 @@ impl RecordingOverlay {
         levels: Option<&crate::audio::AudioLevels>,
         warning: Option<super::feedback::CaptureWarning>,
         recovering: bool,
+        media_preview: Option<&str>,
     ) {
         let recording = started.is_some();
         let transcribing = state.starts_with("Transcribing")
@@ -346,14 +369,27 @@ impl RecordingOverlay {
         if recovering != self.recovery.is_visible() {
             self.copy.set_label("Copy transcript");
         }
-        self.recovery.set_visible(recovering);
+        let media = media_preview.is_some() && recovering;
+        self.recovery.set_visible(recovering && !media);
+        self.media_copy.set_visible(media);
+        self.window
+            .set_default_size(if media { 250 } else { 236 }, 48);
+        self.drawing
+            .set_content_width(if media { 250 } else { 236 });
+        self.status
+            .set_size_request(if media { 144 } else { 184 }, 48);
+        self.status.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        self.status.set_max_width_chars(if media { 20 } else { 26 });
         self.warning.set_visible(warning.is_some());
         self.warning
             .set_text(warning.map_or("", |warning| warning.text()));
         self.window.set_can_target(recovering);
         if let Some(surface) = self.window.surface() {
             if recovering {
-                surface.set_input_region(None);
+                let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
+                    186, 8, 64, 40,
+                ));
+                surface.set_input_region(if media { Some(&region) } else { None });
             } else {
                 surface.set_input_region(Some(&gtk::cairo::Region::create()));
             }
@@ -373,7 +409,9 @@ impl RecordingOverlay {
             self.label.set_text(&elapsed);
         }
         self.label.set_visible(recording);
-        self.status.set_text(if recording {
+        self.status.set_text(if media {
+            media_preview.unwrap_or("")
+        } else if recording {
             "Recording"
         } else if recovering {
             if state == "Media result" {
@@ -392,7 +430,10 @@ impl RecordingOverlay {
         self.window
             .set_visible(recording || transcribing || recovering);
         if recovering && let Some(surface) = self.window.surface() {
-            surface.set_input_region(None);
+            let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
+                186, 8, 64, 40,
+            ));
+            surface.set_input_region(if media { Some(&region) } else { None });
         }
     }
 }

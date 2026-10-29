@@ -112,9 +112,7 @@ pub(super) fn show(
         let actions = actions.clone();
         let entry = entry.clone();
         let start = start.clone();
-        let latest = latest_completed.clone();
         move || {
-            *latest.borrow_mut() = None;
             let _ = actions.send(TrayAction::Media(entry.text().to_string()));
             start.set_sensitive(false);
         }

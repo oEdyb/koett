@@ -26,7 +26,8 @@ in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility rema
   Native GTK now uses linked, mutually exclusive Raw/S1-mini toggle buttons.
 - `RecordingOverlay.swift`: 236×48 capture pill, 250×48 result pill, waveform,
   phase/progress, timer, cancel and outcome/recovery. Existing Linux pill stays;
-  full Ask/media phases and comprehensive exact geometry parity remain pending.
+  media now has a 250×48 preview/Copy capsule with ten-second expiry.
+  Full Ask phases and comprehensive exact geometry parity remain pending.
 - `AssistantPanel.swift`: 480px floating side panel, bounded 440–660px height,
   question, screen-included marker, streaming rich answer, listening/transcribing/
   answering/completed/error states, Copy and close. Linux now has voice-question
@@ -46,8 +47,8 @@ in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility rema
   responsive split remain. Header and settings density reduced this increment.
 - `feature-contracts.md`: media shortcut, one focused public media item, bounded
   subprocess download/conversion, cancellation and dated result/source storage
-  are implemented for manual HTTP(S) sources; manifest-only sources and focused
-  browser detection remain pending. Optional spoken replies, voices, Secret Service
+  are implemented for manual HTTP(S), finite HLS/DASH and focused Chromium
+  documents. Private global activation and midlookup focus rejection are verified. Optional spoken replies, voices, Secret Service
   credentials and interrupted output have private protocol/playback proof; live
   Cartesia compatibility remains unverified. Experimental Nemotron streaming is implemented and has real native Linux
   inference/capture evidence; see the Nemotron increment below. Apple-only
@@ -221,18 +222,14 @@ Evidence: `CrossPlatform/evidence/parity-media-operation-20261030/`; see its
 receipt for selected captures and exact limits. The lab and owned processes
 were stopped. No installation, live preferences, commits or pushes.
 
-REMAINING: automatic focused-browser URL detection; configurable global media
-shortcut (Ctrl-Shift-T currently works inside the GTK application); Open Media
-Transcripts folder action; compact Mac-style integrated preview/Copy pill and
-appearance approval. The current result uses the existing recovery pill/button
-plus a native result window. ASR cancellation waits for the current bounded
-30-second audio decode; it does not terminate the warm recognizer. Three-hour
-recognition accuracy and full 2 GiB network stress are not experimentally proven.
-Only direct HTTP(S) media formats are selected: manifest-only HLS/DASH and
-login/DRM/cookie-dependent sources fail explicitly. No arbitrary public-site
-compatibility promise or live protected-site test. Recording after cancellation
-used isolated silent input; no physical microphone or host clipboard was used.
-Parent owns independent reviews, remaining parity, installation and publication.
+CURRENT: manual URL and focused Chromium paths share the finite HTTP(S), HLS and
+DASH pipeline. Native media shortcut, folder action and compact preview/Copy are
+implemented; the final integration below supersedes the initial direct-only scope.
+ASR cancellation waits for the current bounded 30-second decode. Three-hour
+recognition accuracy and full 2 GiB network stress remain unproven. Live, DRM,
+login/cookie-dependent sources and arbitrary-site compatibility are not supported
+claims. Physical input, other browsers/compositors, packaging and appearance
+approval remain open.
 
 ### Media parent review follow-up
 
@@ -245,9 +242,9 @@ harness to assert Recording, Ready and a public-fixture transcript. 108 tests
 pass and strict Clippy is clean; updated native journeys still need a rerun.
 The original receipt predates these fixes. No installation has occurred.
 
-Page URL support depends on yt-dlp extracting a direct HTTP(S) media stream;
-this is broader than only URLs naming media files. Manifest-only HLS/DASH remains
-excluded by the protocol selector, and automatic focused-tab discovery is pending.
+Page URL support depends on yt-dlp extracting a supported finite stream, including
+native HLS/DASH. Focused-document discovery is user-triggered and accessibility
+based; inaccessible or ambiguous documents use manual URL entry.
 
 Ask implementation research: the official ScreenCast portal returns a restricted
 PipeWire FD and supports source restore tokens; use a one-frame in-memory capture,
@@ -412,6 +409,27 @@ System GTK and installed Koett remain unchanged. Evidence:
 `CrossPlatform/evidence/gtk-accessibility-fix-20261030/REPORT.md` and
 `CrossPlatform/evidence/parity-stateful-menus-20261030/REPORT.md`.
 
-Remaining full-port gates: media manifests/focused-browser workflow/compact result,
-final UI integration, packaged optional runtimes and clean-install/platform checks.
+Remaining full-port gates: final UI integration, packaged optional runtimes and
+clean-install/platform checks.
 No public Linux release or Mac execution approval is implied.
+
+
+## Integrated browser media and finite manifests
+
+The private Chromium workflow now resolves the focused document without reading
+clipboard/profile data, downloads finite HLS/DASH locally, and presents a
+nonactivating 250×48 preview/Copy capsule for ten seconds. Full exact text remains
+in the separate media cache/store. Global Ctrl+Shift+T, typing retention,
+cancel/retry, exact Copy, timeout/manual fallback, window changes and same-window
+tab switches during lookup passed on the frozen integrated build. AT-SPI event
+monitoring closes the review's midlookup focus race. Final-file validation also
+accepts symlinked temporary roots while retaining the private-directory boundary.
+
+Final integrated suite:146 Rust tests passed/10 existing ignores;35 Python unit
+checks passed. Clippy/release/MSRV/Windows source/affected Python gates pass.
+GTK4.6 Ubuntu22 release compilation passed; its native GUI was not rerun here.
+See `CrossPlatform/evidence/parity-browser-media-20261030/REPORT.md` and
+`CrossPlatform/evidence/parity-media-manifests-20261030/README.md` for exact binary,
+source and runtime identities, inspected captures and unsupported-platform limits.
+The private lab is stopped. Installation, main, public release and live settings
+remain unchanged.

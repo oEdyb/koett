@@ -1,0 +1,13 @@
+{
+  "exact_copy": true,
+  "manifest": "dash",
+  "source_title_exact": true,
+  "direct_http": true,
+  "missing_segment_rejected": true,
+  "live_rejected": true,
+  "playlist_rejected": true,
+  "retry": true,
+  "save_recovery_exact": true,
+  "real_asr": true,
+  "cancel_then_media_then_capture": true
+}

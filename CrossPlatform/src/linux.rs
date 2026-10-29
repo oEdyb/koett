@@ -328,6 +328,7 @@ impl ksni::Tray for LinuxTray {
 
 mod ask_settings;
 mod ask_view;
+mod browser_media;
 mod control;
 mod feedback;
 mod formatting_view;
@@ -379,6 +380,20 @@ pub fn run() -> Result<(), String> {
         .filter(|c| matches!(c.as_str(), "shortcuts-status" | "shortcuts-edit"))
     {
         println!("{}", control::request(&command)?);
+        return Ok(());
+    }
+    if let Some(command) = std::env::args()
+        .nth(1)
+        .filter(|c| matches!(c.as_str(), "media-current" | "media-status" | "media-copy"))
+    {
+        println!("{}", control::request(&command)?);
+        return Ok(());
+    }
+    if std::env::args().nth(1).as_deref() == Some("media-help") {
+        println!(
+            "{}",
+            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
+        );
         return Ok(());
     }
     if std::env::args().nth(1).as_deref() == Some("recovery-help") {
@@ -676,14 +691,18 @@ fn run_x11(
         while let Ok(action) = actions.try_recv() {
             match action {
                 TrayAction::Menu(command, reply) => {
-                    let value = app.menu_command(&command, tray);
+                    let value = if command == "media-current" {
+                        app.current_media(tray)
+                    } else {
+                        app.menu_command(&command, tray)
+                    };
                     let _ = reply.0.send(value);
                 }
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
                 TrayAction::CancelAsk => app.command(EngineCommand::CancelAsk, || None),
-                TrayAction::OpenMedia => update_tray_status(tray, "@media"),
+                TrayAction::OpenMedia => app.open_media(tray),
                 TrayAction::Media(source) => app.command(EngineCommand::Media(source), || None),
                 TrayAction::CancelMedia => {
                     let _ = app.engine.commands.send(EngineCommand::CancelMedia);
@@ -769,9 +788,7 @@ fn run_x11(
                     match index {
                         0 => app.command(intent.into(), || output.focused_window()),
                         1 => app.command(ask_shortcut_command(intent), || None),
-                        _ if event.state == HotKeyState::Pressed => {
-                            update_tray_status(tray, "@media")
-                        }
+                        _ if event.state == HotKeyState::Pressed => app.open_media(tray),
                         _ => {}
                     }
                 }
@@ -1258,14 +1275,18 @@ async fn run_wayland(
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             match action {
                 TrayAction::Menu(command, reply) => {
-                    let value = app.menu_command(&command, tray);
+                    let value = if command == "media-current" {
+                        app.current_media(tray)
+                    } else {
+                        app.menu_command(&command, tray)
+                    };
                     let _ = reply.0.send(value);
                 }
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
                 TrayAction::CancelAsk => app.command(EngineCommand::CancelAsk, || None),
-                TrayAction::OpenMedia => update_tray_status(tray, "@media"),
+                TrayAction::OpenMedia => app.open_media(tray),
                 TrayAction::Media(source) => app.command(EngineCommand::Media(source), || None),
                 TrayAction::CancelMedia => {
                     let _ = app.engine.commands.send(EngineCommand::CancelMedia);
@@ -1505,6 +1526,27 @@ impl LinuxEngine {
             );
         }
         value
+    }
+
+    fn open_media(&mut self, tray: Option<&TrayUpdates>) {
+        let _ = self.current_media(tray);
+    }
+
+    fn current_media(&mut self, tray: Option<&TrayUpdates>) -> serde_json::Value {
+        if self.quit_busy() {
+            return serde_json::json!({"ok":false,"error":{"code":"busy","message":"Finish or cancel the current operation"}});
+        }
+        match browser_media::current_url() {
+            Ok(source) => {
+                self.command(EngineCommand::Media(source), || None);
+                serde_json::json!({"ok":true,"status":"started"})
+            }
+            Err(error) => {
+                update_tray_status(tray, &format!("@notice:{error}"));
+                update_tray_status(tray, "@media");
+                serde_json::json!({"ok":false,"error":{"code":"manual_url_required","message":error,"fix":"Enter an HTTP(S) URL in Transcribe media"}})
+            }
+        }
     }
 
     fn quit_busy(&self) -> bool {

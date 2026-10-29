@@ -166,7 +166,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 continue;
             }
             if let Ok(command) = std::str::from_utf8(&bytes)
-                && command.starts_with("menu-")
+                && (command.starts_with("menu-") || command == "media-current")
             {
                 let value = super::menu_preferences::request(&sender, command.into());
                 let _ = stream.write_all(value.to_string().as_bytes());
@@ -213,6 +213,16 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
+            if bytes == b"media-status" || bytes == b"media-copy" {
+                let (tx, rx) = std::sync::mpsc::channel();
+                let _ = ui.send(super::window::Update::MediaCommand(
+                    bytes == b"media-copy",
+                    tx,
+                ));
+                let value = rx.recv_timeout(std::time::Duration::from_secs(2)).unwrap_or_else(|_| serde_json::json!({"ok":false,"error":{"code":"ui_unavailable","message":"Retry when Koett is ready"}}));
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if bytes == b"ask-status" {
                 let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
                 continue;
@@ -230,6 +240,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 "ask-stop" => TrayAction::AskStop,
                 "ask-cancel" => TrayAction::CancelAsk,
                 "cancel-media" => TrayAction::CancelMedia,
+                "media-current" => TrayAction::OpenMedia,
                 "start" => TrayAction::Start,
                 "stop" => TrayAction::Stop,
                 "toggle" => TrayAction::Toggle,

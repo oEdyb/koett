@@ -7,6 +7,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
 pub enum Update {
+    MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
     Show(String),
@@ -227,7 +228,7 @@ fn build_window(
         });
         application.add_action(&action);
     }
-    let media_action = gtk::gio::SimpleAction::new("media", None);
+    let media_action = gtk::gio::SimpleAction::new("media-manual", None);
     media_action.connect_activate({
         let latest = latest_media.clone();
         let status = status.clone();
@@ -243,6 +244,14 @@ fn build_window(
         }
     });
     application.add_action(&media_action);
+    let current_media = gtk::gio::SimpleAction::new("media", None);
+    current_media.connect_activate({
+        let actions = actions.clone();
+        move |_, _| {
+            let _ = actions.send(TrayAction::OpenMedia);
+        }
+    });
+    application.add_action(&current_media);
     application.set_accels_for_action("app.media", &["<Control><Shift>t"]);
     for name in [
         "paste-last",
@@ -347,6 +356,14 @@ fn build_window(
             meter_label.set_visible(window.width() >= 650);
             for update in updates.try_iter() {
                 if let Update::Status(message) = &update {
+                    if media_result
+                        && (message.starts_with("@ask:")
+                            || (message.starts_with("@notice:")
+                                && !message.starts_with("@notice:@media-result:")))
+                    {
+                        media_result = false;
+                        recovery_until = None;
+                    }
                     if let Some(payload) = message.strip_prefix("@ask:") {
                         if let Ok(value) = serde_json::from_str(payload) {
                             ask.update(&value);
@@ -367,6 +384,8 @@ fn build_window(
                 }
                 match update {
                     Update::PrepareAsk(ack) => {
+                        media_result = false;
+                        recovery_until = None;
                         ask.hide();
                         gtk::glib::timeout_add_local_once(Duration::from_millis(100), move || {
                             let _ = ack.send(());
@@ -381,6 +400,27 @@ fn build_window(
                         // one-use token belongs to Settings, not History.
                         window.set_visible(true);
                         super::settings_view::show(&window, settings_saved.clone(), Some(&token));
+                    }
+                    Update::MediaCommand(copy, reply) => {
+                        let value = match latest_media.borrow().as_ref() {
+                            Some(text) if copy => {
+                                match super::feedback::copy_transcript(&window.clipboard(), text) {
+                                    Ok(()) => {
+                                        serde_json::json!({"ok":true,"status":"copied","characters":text.chars().count()})
+                                    }
+                                    Err(error) => {
+                                        serde_json::json!({"ok":false,"error":{"code":"clipboard_failed","message":error.to_string()}})
+                                    }
+                                }
+                            }
+                            Some(text) => {
+                                serde_json::json!({"ok":true,"status":"available","characters":text.chars().count()})
+                            }
+                            None => {
+                                serde_json::json!({"ok":false,"error":{"code":"no_media_result","message":"Complete a media transcription first"}})
+                            }
+                        };
+                        let _ = reply.send(value);
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
@@ -398,7 +438,7 @@ fn build_window(
                         *latest_media.borrow_mut() = Some(text.clone());
                         *latest_delivery.borrow_mut() = Some(text);
                         recovery.set_visible(true);
-                        recovery_until = Some(Instant::now() + super::feedback::RECOVERY_DURATION);
+                        recovery_until = Some(Instant::now() + Duration::from_secs(10));
                         media_result = true;
                         state = "Media result".into();
                     }
@@ -454,7 +494,7 @@ fn build_window(
                     Update::Status(message) if message == "@media" => {
                         window.set_visible(true);
                         if let Some(app) = window.application() {
-                            app.activate_action("media", None);
+                            app.activate_action("media-manual", None);
                         }
                     }
                     Update::Status(message)
@@ -498,6 +538,10 @@ fn build_window(
                         notice_until = Some(Instant::now() + Duration::from_secs(8));
                     }
                     Update::Status(message) => {
+                        if media_result && !message.starts_with("Ready") {
+                            media_result = false;
+                            recovery_until = None;
+                        }
                         let recording = message.starts_with("Recording");
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
@@ -565,6 +609,12 @@ fn build_window(
                     audio_levels.as_ref(),
                     warning,
                     recovering,
+                    if media_result {
+                        latest_media.borrow().clone()
+                    } else {
+                        None
+                    }
+                    .as_deref(),
                 );
             }
             status.set_text(

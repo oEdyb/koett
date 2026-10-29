@@ -1,0 +1,16 @@
+{
+  "rust": {
+    "passed": 146,
+    "ignored": 10,
+    "test_threads": 1
+  },
+  "python_units": 35,
+  "clippy": "pass, all targets, warnings denied",
+  "release": "pass",
+  "msrv": "1.92 source pass",
+  "windows": "1.98 source including tests pass; no Windows execution",
+  "gtk46_floor_release": "pass, Ubuntu22 container",
+  "physical_audio": "not used",
+  "lab": "koett-media-integrated stopped; no capture streams before stop",
+  "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa"
+}

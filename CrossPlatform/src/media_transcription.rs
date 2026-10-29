@@ -91,7 +91,7 @@ fn fetch(
         title: String::new(),
         source,
     };
-    let input = download.directory.join("source");
+    let input = download.directory.join("source.%(ext)s");
     let metadata = download.directory.join("metadata");
     let tool = std::env::var_os("HOME")
         .map(PathBuf::from)
@@ -101,7 +101,12 @@ fn fetch(
     progress("Fetching audio…");
     let mut command = Command::new(tool);
     bound_file_size(&mut command, 2 * 1024 * 1024 * 1024);
-    command.args(["--ignore-config", "--no-cookies", "--no-cookies-from-browser", "--no-playlist", "--playlist-items", "1", "--socket-timeout", "30", "--retries", "2", "--max-filesize", "2G", "--match-filters", "!is_live & !playlist_id & duration<=?10800", "--format", "bestaudio[protocol=https]/bestaudio[protocol=http]/best[protocol=https]/best[protocol=http]", "--no-progress", "--no-simulate", "--print", "after_move:%(title)j", "--output"]).arg(&input).arg("--").arg(&download.source);
+    command.args(["--ignore-config", "--no-cookies", "--no-cookies-from-browser", "--no-playlist", "--playlist-items", "1", "--socket-timeout", "30", "--retries", "2", "--max-filesize", "2G", "--match-filters", "!is_live & !playlist_id & duration<=?10800", "--format", "bestaudio[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]/best[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]", "--downloader", "native", "--fixup", "never", "--abort-on-unavailable-fragments", "--fragment-retries", "2", "--no-progress", "--no-simulate", "--print", "after_move:{\"title\":%(title)j,\"path\":%(filepath)j}", "--output"]).arg(&input);
+    command
+        .arg("--ffmpeg-location")
+        .arg(download.directory.join("disabled-ffmpeg"))
+        .arg("--")
+        .arg(&download.source);
     run(
         &mut command,
         &metadata,
@@ -113,9 +118,8 @@ fn fetch(
     if fs::metadata(&metadata).map_err(|e| e.to_string())?.len() > 65536 {
         return Err("Media metadata exceeds limit".into());
     }
-    download.title =
-        serde_json::from_str::<String>(&fs::read_to_string(metadata).map_err(|e| e.to_string())?)
-            .map_err(|_| "No single supported media item was downloaded")?;
+    let (title, input) = downloaded_item(&metadata, &download.directory)?;
+    download.title = title;
     progress("Converting audio…");
     let mut command = Command::new("/usr/bin/ffmpeg");
     bound_file_size(&mut command, 16000 * 2 * 10800);
@@ -127,7 +131,7 @@ fn fetch(
             "-protocol_whitelist",
             "file",
             "-format_whitelist",
-            "mov,matroska,webm,mp3,wav,ogg,flac,aac",
+            "mov,matroska,webm,mp3,wav,ogg,flac,aac,mpegts",
             "-i",
         ])
         .arg(input)
@@ -151,6 +155,32 @@ fn fetch(
         return Err("Media exceeds three hours".into());
     }
     Ok(download)
+}
+
+fn downloaded_item(metadata: &Path, directory: &Path) -> Result<(String, PathBuf), String> {
+    let directory = directory.canonicalize().map_err(|e| e.to_string())?;
+    #[derive(serde::Deserialize)]
+    struct Item {
+        title: String,
+        path: PathBuf,
+    }
+    let item: Item =
+        serde_json::from_str(&fs::read_to_string(metadata).map_err(|e| e.to_string())?)
+            .map_err(|_| "No single supported media item was downloaded")?;
+    let path = item.path.canonicalize().map_err(|e| e.to_string())?;
+    if path.parent() != Some(directory.as_path())
+        || !path.is_file()
+        || fs::symlink_metadata(&item.path)
+            .map_err(|e| e.to_string())?
+            .file_type()
+            .is_symlink()
+        || !path
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().starts_with("source."))
+    {
+        return Err("Media downloader returned an invalid local file".into());
+    }
+    Ok((item.title, path))
 }
 
 fn bound_file_size(command: &mut Command, bytes: u64) {
@@ -344,6 +374,78 @@ mod tests {
         );
         assert!(fs::metadata(path).unwrap().len() <= 1024);
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn final_filename_is_local_single_item_and_preserves_title() {
+        use super::*;
+        let directory = scratch().canonicalize().unwrap();
+        let metadata = directory.join("metadata");
+        let input = directory.join("source.mp4");
+        fs::write(&input, b"fixture").unwrap();
+        let title = "Title åäö 🦀\nexact";
+        let item = serde_json::json!({"title":title,"path":input}).to_string();
+        fs::write(&metadata, &item).unwrap();
+        assert_eq!(
+            downloaded_item(&metadata, &directory).unwrap(),
+            (title.into(), input)
+        );
+        let alias = directory.with_extension("alias");
+        std::os::unix::fs::symlink(&directory, &alias).unwrap();
+        fs::write(
+            &metadata,
+            serde_json::json!({"title":title,"path":alias.join("source.mp4")}).to_string(),
+        )
+        .unwrap();
+        assert_eq!(
+            downloaded_item(&alias.join("metadata"), &alias).unwrap(),
+            (title.into(), directory.join("source.mp4"))
+        );
+        fs::remove_file(alias).unwrap();
+        fs::write(&metadata, format!("{item}\n{item}")).unwrap();
+        assert!(downloaded_item(&metadata, &directory).is_err());
+        let link = directory.join("source.link");
+        std::os::unix::fs::symlink("/etc/hosts", &link).unwrap();
+        fs::write(
+            &metadata,
+            serde_json::json!({"title":title,"path":link}).to_string(),
+        )
+        .unwrap();
+        assert!(downloaded_item(&metadata, &directory).is_err());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn aggregate_fragments_exceed_limit_and_are_cleaned_up() {
+        use super::*;
+        let directory = scratch();
+        let flag = AtomicBool::new(false);
+        let mut command = Command::new("/bin/sh");
+        command.args([
+            "-c",
+            "head -c 700 /dev/zero > a; head -c 700 /dev/zero > b; sleep 30",
+        ]);
+        command.current_dir(&directory);
+        let started = Instant::now();
+        assert!(
+            run(
+                &mut command,
+                &directory.join("log"),
+                &directory,
+                &flag,
+                Duration::from_secs(5),
+                1024
+            )
+            .is_err()
+        );
+        assert!(started.elapsed() < Duration::from_secs(2));
+        drop(Download {
+            pcm: directory.join("audio.pcm"),
+            directory: directory.clone(),
+            title: String::new(),
+            source: String::new(),
+        });
+        assert!(!directory.exists());
     }
 
     #[test]
