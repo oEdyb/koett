@@ -1,0 +1,11 @@
+{
+  "native_model_selection_started_setup": true,
+  "download_progress_visible": true,
+  "fraction_observed": 0.01,
+  "cancel_enabled": true,
+  "cancel_retains_compact_engine": true,
+  "preference_unchanged_after_cancel": true,
+  "v3_loaded_and_restart_persisted": true,
+  "failed_setup_retained_v3": true,
+  "binary_sha256": "734dfcab8f56370da717665d8e1374583dbe64cbcbf0d66e90bba6ef11308859"
+}

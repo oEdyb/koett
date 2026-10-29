@@ -351,7 +351,7 @@ pub fn run() -> Result<(), String> {
         if command == "menu-help" {
             println!(
                 "{}",
-                serde_json::json!({"ok":true,"commands":["menu-status","menu-model compact|parakeet_v2|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
+                serde_json::json!({"ok":true,"commands":["menu-status","menu-model compact|parakeet_v2|parakeet_v3|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
             );
         } else {
             let command = std::iter::once(command)
@@ -1484,7 +1484,9 @@ impl LinuxEngine {
                         self.command(EngineCommand::SwitchModel(selection), || None);
                         serde_json::json!({"ok":true,"status":"change_requested","fix":"Use menu-status to confirm completion"})
                     }
-                    Err(_) => menu_preferences::error("Choose compact, parakeet_v2 or nemotron"),
+                    Err(_) => menu_preferences::error(
+                        "Choose compact, parakeet_v2, parakeet_v3 or nemotron",
+                    ),
                 }
             }
         } else if let Some(output) = command.strip_prefix("menu-format ") {

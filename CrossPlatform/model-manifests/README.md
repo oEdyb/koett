@@ -41,3 +41,12 @@ Primary references:
 There is no upstream sherpa-onnx cache manifest or recovery implementation that
 covers Koett's app-owned model directory. This is the smallest direct solution
 using Koett's existing `sha2`, `serde`, and `serde_json` dependencies.
+
+Parakeet v3 (`parakeet-tdt-600m-v3-int8.json`) is NVIDIA's CC BY 4.0
+Parakeet TDT 0.6B v3, converted and quantized to ONNX int8 by k2-fsa.
+NVIDIA model: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3.
+Conversion: https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-transducer/nemo-transducer-models.html.
+It automatically detects 25 European languages, including English and Swedish;
+there is no manual language prompt. The separate Silero VAD is MIT licensed.
+Archive metadata and independently measured full/per-file digests are recorded
+in `evidence/parakeet-v3-20261030`. Model support is not an accuracy comparison.

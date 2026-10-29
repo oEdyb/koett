@@ -40,11 +40,7 @@ impl ModelsView {
         active.set_xalign(0.0);
         content.append(&active);
         let mut choices = Vec::new();
-        for model in [
-            crate::model::LocalModel::Compact,
-            crate::model::LocalModel::ParakeetV2,
-            crate::model::LocalModel::Nemotron,
-        ] {
+        for model in crate::model::LocalModel::ALL {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
             row.add_css_class("koett-setting-row");
             let label = gtk::Label::new(Some(model.label()));
@@ -85,7 +81,7 @@ impl ModelsView {
         }
         content.append(&nemotron_license);
         let sizes = gtk::Label::new(Some(
-            "Downloads: 110M 105 MB · v2 483 MB · Nemotron 464 MB + v2 backup",
+            "Downloads: 110M 105 MB · v2 483 MB · v3 488 MB · Nemotron 464 MB + v2 backup",
         ));
         sizes.set_wrap(true);
         sizes.set_xalign(0.0);
@@ -163,6 +159,8 @@ impl ModelsView {
             "Nemotron 0.6B · 560 ms · Experimental"
         } else if name == "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8" {
             "Parakeet v2 600M · TDT int8"
+        } else if name == "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" {
+            crate::model::LocalModel::ParakeetV3.label()
         } else if name == crate::paths::DEFAULT_MODEL_ID {
             "Parakeet 110M · CTC int8"
         } else {
@@ -170,14 +168,8 @@ impl ModelsView {
         };
         self.active.set_text(&format!("Active: {label}"));
         self.active.set_tooltip_text(Some(name));
-        self.selected.set(
-            [
-                crate::model::LocalModel::Compact,
-                crate::model::LocalModel::ParakeetV2,
-                crate::model::LocalModel::Nemotron,
-            ]
-            .into_iter()
-            .find(|model| {
+        self.selected
+            .set(crate::model::LocalModel::ALL.into_iter().find(|model| {
                 model
                     .directory()
                     .ok()
@@ -187,16 +179,11 @@ impl ModelsView {
                     })
                     .as_deref()
                     == Some(name)
-            }),
-        );
+            }));
         self.refresh_choices();
     }
     fn refresh_choices(&self) {
-        for (button, model) in self.choices.iter().zip([
-            crate::model::LocalModel::Compact,
-            crate::model::LocalModel::ParakeetV2,
-            crate::model::LocalModel::Nemotron,
-        ]) {
+        for (button, model) in self.choices.iter().zip(crate::model::LocalModel::ALL) {
             let selected = self.selected.get() == Some(model);
             let label = if selected {
                 "Selected"

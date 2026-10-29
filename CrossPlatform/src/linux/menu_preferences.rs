@@ -398,28 +398,25 @@ pub(super) fn tray(sender: &mpsc::Sender<TrayAction>) -> Vec<ksni::MenuItem<supe
         selected: match settings.selected_model {
             crate::model::LocalModel::Compact => 0,
             crate::model::LocalModel::ParakeetV2 => 1,
-            crate::model::LocalModel::Nemotron => 2,
+            crate::model::LocalModel::ParakeetV3 => 2,
+            crate::model::LocalModel::Nemotron => 3,
         },
-        options: [
-            crate::model::LocalModel::Compact,
-            crate::model::LocalModel::ParakeetV2,
-            crate::model::LocalModel::Nemotron,
-        ]
-        .into_iter()
-        .map(|m| RadioItem {
-            label: m.label().into(),
-            enabled,
-            ..Default::default()
-        })
-        .collect(),
+        options: crate::model::LocalModel::ALL
+            .into_iter()
+            .map(|m| RadioItem {
+                label: m.label().into(),
+                enabled,
+                ..Default::default()
+            })
+            .collect(),
         select: Box::new(|tray: &mut super::LinuxTray, index| {
             let sender = tray.action_sender.clone();
             std::thread::spawn(move || {
                 let opened = request(&sender, "menu-open models".into());
                 if opened["ok"] == true
-                    && let Some(selection) = ["compact", "parakeet_v2", "nemotron"].get(index)
+                    && let Some(selection) = crate::model::LocalModel::ALL.get(index)
                 {
-                    let _ = request(&sender, format!("menu-model {selection}"));
+                    let _ = request(&sender, format!("menu-model {}", selection.id()));
                 }
             });
         }),
@@ -598,6 +595,22 @@ mod tests {
         assert_eq!(patched.enabled, current.enabled);
         assert!(formatting_patch(current, "style invented").is_err());
         assert!(formatting_patch(current, "unknown value").is_err());
+    }
+
+    #[test]
+    fn every_catalog_model_is_selectable_through_the_agent_command() {
+        for model in crate::model::LocalModel::ALL {
+            let (engine, received, _) = crate::runtime::EngineHandle::controlled();
+            let mut app = super::super::LinuxEngine::new(engine);
+            app.status = crate::state::AppStatus::Ready;
+            assert_eq!(
+                app.menu_command(&format!("menu-model {}", model.id()), None)["status"],
+                "change_requested"
+            );
+            assert!(
+                matches!(received.try_recv().unwrap(), crate::runtime::EngineCommand::SwitchModel(selected) if selected == model)
+            );
+        }
     }
 
     #[test]

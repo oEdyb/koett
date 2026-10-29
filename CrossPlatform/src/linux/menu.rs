@@ -92,12 +92,11 @@ pub(super) fn button() -> gtk::MenuButton {
     }
     let preferences = gtk::gio::Menu::new();
     let models = gtk::gio::Menu::new();
-    for (label, id) in [
-        ("Parakeet 110M", "compact"),
-        ("Parakeet v2", "parakeet_v2"),
-        ("Nemotron 560 ms (Test)", "nemotron"),
-    ] {
-        models.append(Some(label), Some(&format!("app.menu-model::{id}")));
+    for model in crate::model::LocalModel::ALL {
+        models.append(
+            Some(model.label()),
+            Some(&format!("app.menu-model::{}", model.id())),
+        );
     }
     preferences.append_submenu(Some("Model…"), &models);
     gtk::glib::timeout_add_local(std::time::Duration::from_millis(500), {

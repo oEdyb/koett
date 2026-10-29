@@ -39,14 +39,32 @@ pub enum LocalModel {
     #[default]
     Compact,
     ParakeetV2,
+    ParakeetV3,
     Nemotron,
 }
 
 impl LocalModel {
+    pub const ALL: [Self; 4] = [
+        Self::Compact,
+        Self::ParakeetV2,
+        Self::ParakeetV3,
+        Self::Nemotron,
+    ];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Compact => "compact",
+            Self::ParakeetV2 => "parakeet_v2",
+            Self::ParakeetV3 => "parakeet_v3",
+            Self::Nemotron => "nemotron",
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::Compact => "Parakeet 110M · English",
             Self::ParakeetV2 => "Parakeet v2 600M · English",
+            Self::ParakeetV3 => "Parakeet v3 600M · Multilingual incl. Swedish",
             Self::Nemotron => "Nemotron 0.6B · 560 ms · Experimental",
         }
     }
@@ -57,6 +75,10 @@ impl LocalModel {
                 "../model-manifests/nemotron-streaming-en-560ms-int8.json"
             ))
             .map_err(|error| error.to_string()),
+            Self::ParakeetV3 => serde_json::from_str(include_str!(
+                "../model-manifests/parakeet-tdt-600m-v3-int8.json"
+            ))
+            .map_err(|error| format!("invalid v3 manifest: {error}")),
             Self::Compact => default_model_manifest(),
             Self::ParakeetV2 => serde_json::from_str(include_str!(
                 "../model-manifests/parakeet-tdt-600m-v2-int8.json"
@@ -69,7 +91,7 @@ impl LocalModel {
         let default = paths::default_model_directory()?;
         match self {
             Self::Compact => Ok(default),
-            Self::ParakeetV2 | Self::Nemotron => Ok(default
+            Self::ParakeetV2 | Self::ParakeetV3 | Self::Nemotron => Ok(default
                 .parent()
                 .ok_or("model directory has no parent")?
                 .join(self.manifest()?.model_id)),
@@ -101,11 +123,15 @@ fn ensure_selected_model(
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
     let manifest = selection.manifest()?;
+    manifest::validate_manifest(&manifest)?;
     let manifest_sha256 = match selection {
         LocalModel::Nemotron => digest_hex(&Sha256::digest(include_bytes!(
             "../model-manifests/nemotron-streaming-en-560ms-int8.json"
         ))),
         LocalModel::Compact => manifest_sha256(),
+        LocalModel::ParakeetV3 => digest_hex(&Sha256::digest(include_bytes!(
+            "../model-manifests/parakeet-tdt-600m-v3-int8.json"
+        ))),
         LocalModel::ParakeetV2 => digest_hex(&Sha256::digest(include_bytes!(
             "../model-manifests/parakeet-tdt-600m-v2-int8.json"
         ))),

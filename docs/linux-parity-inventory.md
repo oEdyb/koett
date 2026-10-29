@@ -59,7 +59,12 @@ in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility rema
 
 110M remains default. `selected_model` is explicit and backward compatible with
 existing preferences; custom model-directory behavior remains available internally.
-Local models is reachable through the real GTK menu. Both choices verify pinned
+Local models is reachable through GTK, tray and agent commands. The catalog includes
+110M, English v2, multilingual v3 (including Swedish) and experimental Nemotron.
+Parakeet v3 uses NVIDIA TDT 0.6B v3 with automatic language detection and the
+k2-fsa ONNX int8 conversion; its separate canonical manifest pins release asset
+283097583 and every required file. See `CrossPlatform/evidence/parakeet-v3-20261030`.
+All choices verify pinned
 archive and extracted-file SHA-256 before loading. The v2 manifest records the
 official sherpa release asset 283097678, NVIDIA attribution and CC BY 4.0 license.
 VAD uses the existing separately pinned Silero artifact. A cached trial archive

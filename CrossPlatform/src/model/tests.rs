@@ -643,3 +643,24 @@ fn corrupt_cache_falls_through_and_cancellation_stops_recovery() {
     );
     fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn v3_catalog_is_distinct_valid_and_serializable_without_changing_default() {
+    for model in super::LocalModel::ALL {
+        let manifest = model.manifest().unwrap();
+        super::manifest::validate_manifest(&manifest).unwrap();
+        assert_eq!(serde_json::to_value(model).unwrap(), model.id());
+    }
+    let v3 = super::LocalModel::ParakeetV3.manifest().unwrap();
+    assert!(v3.model_id.ends_with("v3-int8"));
+    assert_eq!(
+        super::manifest_artifact(&v3, ASR_ARTIFACT).unwrap().bytes,
+        487170055
+    );
+    assert!(super::LocalModel::ParakeetV3.label().contains("Swedish"));
+    assert_eq!(super::LocalModel::default(), super::LocalModel::Compact);
+    let directory = temporary_directory("invalid-v3");
+    fs::create_dir_all(&directory).unwrap();
+    assert!(super::validate_model_files(&directory, &v3.files, &AtomicBool::new(false)).is_err());
+    fs::remove_dir_all(directory).unwrap();
+}

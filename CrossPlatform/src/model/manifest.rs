@@ -64,16 +64,38 @@ pub(super) fn default_model_manifest() -> Result<ModelManifest, String> {
     Ok(manifest)
 }
 
-fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
+pub(super) fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
     if manifest.schema_version != 1 || manifest.app_model_schema_version != 1 {
         return Err("the embedded model manifest uses an unsupported schema".to_string());
     }
-    if manifest.model_id != DEFAULT_MODEL_ID || manifest.purpose.trim().is_empty() {
+    let required: &[&str] = match manifest.model_id.as_str() {
+        DEFAULT_MODEL_ID => &[
+            "model.int8.onnx",
+            "tokens.txt",
+            "test_wavs/0.wav",
+            "test_wavs/1.wav",
+        ],
+        "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"
+        | "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" => &[
+            "encoder.int8.onnx",
+            "decoder.int8.onnx",
+            "joiner.int8.onnx",
+            "tokens.txt",
+        ],
+        "sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25" => &[
+            "encoder.int8.onnx",
+            "decoder.int8.onnx",
+            "joiner.int8.onnx",
+            "tokens.txt",
+        ],
+        _ => return Err("unknown embedded model identity".into()),
+    };
+    if manifest.purpose.trim().is_empty() {
         return Err(
             "the embedded model manifest does not describe Koett's default model".to_string(),
         );
     }
-    if manifest.artifacts.len() != 2 || manifest.files.len() != 5 {
+    if manifest.artifacts.len() != 2 || manifest.files.len() < required.len() + 1 {
         return Err("the embedded model manifest has an unexpected component count".to_string());
     }
     for (index, artifact) in manifest.artifacts.iter().enumerate() {
@@ -124,13 +146,11 @@ fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
             ));
         }
     }
-    for (artifact, path) in [
-        (ASR_ARTIFACT, "model.int8.onnx"),
-        (ASR_ARTIFACT, "tokens.txt"),
-        (ASR_ARTIFACT, "test_wavs/0.wav"),
-        (ASR_ARTIFACT, "test_wavs/1.wav"),
-        (VAD_ARTIFACT, VAD_FILE),
-    ] {
+    for (artifact, path) in required
+        .iter()
+        .map(|path| (ASR_ARTIFACT, *path))
+        .chain([(VAD_ARTIFACT, VAD_FILE)])
+    {
         if !manifest
             .files
             .iter()
