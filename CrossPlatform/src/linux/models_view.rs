@@ -8,6 +8,8 @@ pub(super) struct ModelsView {
     notice: gtk::Label,
     choices: Vec<gtk::Button>,
     cancel: gtk::Button,
+    selected: std::cell::Cell<Option<crate::model::LocalModel>>,
+    ready: std::cell::Cell<bool>,
 }
 
 impl ModelsView {
@@ -42,22 +44,25 @@ impl ModelsView {
             crate::model::LocalModel::ParakeetV2,
             crate::model::LocalModel::Nemotron,
         ] {
-            let installed = model.directory().is_ok_and(|path| path.is_dir());
-            let verb = if installed {
-                "Use / reload"
-            } else {
-                "Download & use"
-            };
-            let button = gtk::Button::with_label(&format!("{verb} {}", model.label()));
-            if let Some(label) = button.child().and_downcast::<gtk::Label>() {
-                label.set_wrap(true);
-            }
-            button.set_tooltip_text(Some("Verify or download, load, then save selection. Existing engine stays available if setup fails."));
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+            row.add_css_class("koett-setting-row");
+            let label = gtk::Label::new(Some(model.label()));
+            label.set_xalign(0.0);
+            label.set_wrap(true);
+            label.set_hexpand(true);
+            let button = gtk::Button::with_label("Use");
+            button.set_valign(gtk::Align::Center);
+            super::menu::set_accessible_label(
+                button.upcast_ref(),
+                &format!("Use {}", model.label()),
+            );
+            row.append(&label);
+            row.append(&button);
             let sender = actions.clone();
             button.connect_clicked(move |_| {
                 let _ = sender.send(super::TrayAction::SwitchModel(model));
             });
-            content.append(&button);
+            content.append(&row);
             choices.push(button);
         }
         let provenance = gtk::LinkButton::with_label(
@@ -132,6 +137,8 @@ impl ModelsView {
             notice,
             choices,
             cancel,
+            selected: Default::default(),
+            ready: Default::default(),
         }
     }
     pub fn show(&self) {
@@ -149,17 +156,47 @@ impl ModelsView {
         };
         self.active.set_text(&format!("Active: {label}"));
         self.active.set_tooltip_text(Some(name));
+        self.selected.set(
+            [
+                crate::model::LocalModel::Compact,
+                crate::model::LocalModel::ParakeetV2,
+                crate::model::LocalModel::Nemotron,
+            ]
+            .into_iter()
+            .find(|model| {
+                model
+                    .directory()
+                    .ok()
+                    .and_then(|path| {
+                        path.file_name()
+                            .map(|value| value.to_string_lossy().into_owned())
+                    })
+                    .as_deref()
+                    == Some(name)
+            }),
+        );
+        self.refresh_choices();
+    }
+    fn refresh_choices(&self) {
         for (button, model) in self.choices.iter().zip([
             crate::model::LocalModel::Compact,
             crate::model::LocalModel::ParakeetV2,
             crate::model::LocalModel::Nemotron,
         ]) {
-            let verb = if model.directory().is_ok_and(|path| path.is_dir()) {
-                "Use / reload"
+            let selected = self.selected.get() == Some(model);
+            let label = if selected {
+                "Selected"
+            } else if model.directory().is_ok_and(|path| path.is_dir()) {
+                "Use"
             } else {
-                "Download & use"
+                "Download"
             };
-            button.set_label(&format!("{verb} {}", model.label()));
+            button.set_label(label);
+            super::menu::set_accessible_label(
+                button.upcast_ref(),
+                &format!("{label} {}", model.label()),
+            );
+            button.set_sensitive(self.ready.get() && !selected);
         }
     }
     pub fn update(&self, message: &str) {
@@ -171,9 +208,8 @@ impl ModelsView {
             self.notice.set_text("");
         }
         self.status.set_text(message);
-        for button in &self.choices {
-            button.set_sensitive(message == "Ready");
-        }
+        self.ready.set(message == "Ready");
+        self.refresh_choices();
         self.cancel
             .set_sensitive(message.contains("model") || message.starts_with("Starting"));
     }

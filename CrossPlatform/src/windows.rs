@@ -22,8 +22,8 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalUnlock};
 use windows::Win32::System::Ole::CF_UNICODETEXT;
 use windows::Win32::System::Registry::{
-    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_OPTION_NON_VOLATILE, REG_SZ, RegCloseKey,
-    RegCreateKeyExW, RegDeleteValueW, RegSetValueExW,
+    HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_OPTION_NON_VOLATILE, REG_SZ, RRF_RT_REG_SZ,
+    RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegGetValueW, RegSetValueExW,
 };
 use windows::Win32::System::Threading::CreateMutexW;
 use windows::Win32::UI::HiDpi::{
@@ -555,7 +555,9 @@ impl WindowsApp {
 
         let old_text = self.settings.shortcut.clone();
         self.settings.shortcut = shortcut.to_string();
-        if let Err(error) = self.settings.save() {
+        if let Err(error) = Settings::update(|current| {
+            current.shortcut = self.settings.shortcut.clone();
+        }) {
             unsafe {
                 let _ = UnregisterHotKey(Some(self.hwnd), HOTKEY_ID);
             }
@@ -730,15 +732,21 @@ impl WindowsApp {
                 }
             }
             MENU_START_AT_LOGIN => {
-                let enabled = !self.settings.start_at_login;
-                match set_start_at_login(enabled) {
-                    Ok(()) => {
-                        self.settings.start_at_login = enabled;
-                        if let Err(error) = self.settings.save() {
-                            show_fatal_error(&error);
-                        }
+                let result = (|| {
+                    let mut edit = Settings::edit()?;
+                    let previous = start_at_login_registered()?;
+                    let enabled = !edit.settings.start_at_login;
+                    set_start_at_login(enabled)?;
+                    edit.settings.start_at_login = enabled;
+                    if let Err(error) = edit.commit() {
+                        let _ = set_start_at_login(previous);
+                        return Err(error);
                     }
-                    Err(error) => show_fatal_error(&error),
+                    self.settings.start_at_login = enabled;
+                    Ok(())
+                })();
+                if let Err(error) = result {
+                    show_fatal_error(&error);
                 }
             }
             MENU_QUIT => unsafe { PostQuitMessage(0) },
@@ -935,6 +943,27 @@ fn open_history() -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+fn start_at_login_registered() -> Result<bool, String> {
+    let result = unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run"),
+            w!("Koett"),
+            RRF_RT_REG_SZ,
+            None,
+            None,
+            None,
+        )
+    };
+    match result {
+        ERROR_SUCCESS => Ok(true),
+        ERROR_FILE_NOT_FOUND => Ok(false),
+        _ => Err(format!(
+            "could not read the Windows startup setting: {result:?}"
+        )),
+    }
 }
 
 fn set_start_at_login(enabled: bool) -> Result<(), String> {

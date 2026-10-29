@@ -63,12 +63,20 @@ fn build_window(
         let _ = ask_actions.send(TrayAction::Ask);
     });
     header.pack_start(&ask_button);
-    let settings_button = gtk::Button::with_label("Settings");
+    let settings_button = gtk::Button::from_icon_name("preferences-system-symbolic");
+    settings_button.set_tooltip_text(Some("Settings"));
+    super::menu::set_accessible_label(settings_button.upcast_ref(), "Settings");
+    super::menu_preferences::attach(application, actions.clone());
     header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
     window.set_titlebar(Some(&header));
 
     let formatting = Rc::new(super::formatting_view::FormattingView::new(actions.clone()));
+    formatting
+        .button
+        .set_icon_name("format-text-italic-symbolic");
+    formatting.button.set_tooltip_text(Some("Formatting"));
+    super::menu::set_accessible_label(formatting.button.upcast_ref(), "Formatting");
     header.pack_end(&formatting.button);
     let formatting_action = gtk::gio::SimpleAction::new("formatting", None);
     formatting_action.connect_activate({
@@ -127,18 +135,11 @@ fn build_window(
     recovery.set_visible(false);
     let latest_completed = Rc::new(RefCell::new(None::<String>));
     let latest_media = Rc::new(RefCell::new(None::<String>));
+    let latest_delivery = Rc::new(RefCell::new(None::<String>));
     recovery.connect_clicked({
-        let latest = latest_completed.clone();
-        move |button| {
-            if let Some(text) = latest.borrow().as_ref() {
-                match super::feedback::copy_transcript(&button.clipboard(), text) {
-                    Ok(()) => button.set_label("Copied"),
-                    Err(error) => {
-                        button.set_label("Copy failed · retry");
-                        eprintln!("Copy transcript: {error}");
-                    }
-                }
-            }
+        let actions = actions.clone();
+        move |_| {
+            let _ = actions.send(TrayAction::Recovery("copy-last".into()));
         }
     });
     status_row.append(&recovery);
@@ -152,7 +153,7 @@ fn build_window(
     delivery_row.set_visible(false);
     layout.append(&delivery_row);
     delivery_copy.connect_clicked({
-        let latest = latest_completed.clone();
+        let latest = latest_delivery.clone();
         move |button| {
             if let Some(text) = latest.borrow().as_ref() {
                 match super::feedback::copy_transcript(&button.clipboard(), text) {
@@ -165,6 +166,29 @@ fn build_window(
             }
         }
     });
+    let unsaved_row = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    unsaved_row.add_css_class("koett-delivery");
+    let unsaved_label = gtk::Label::new(Some("Save failed · Unsaved transcripts in memory"));
+    unsaved_label.set_wrap(true);
+    unsaved_label.set_xalign(0.0);
+    unsaved_row.append(&unsaved_label);
+    let unsaved_actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    for (label, command) in [
+        ("Copy Unsaved", "copy-unsaved"),
+        ("Retry Save", "retry-unsaved"),
+    ] {
+        let button = gtk::Button::with_label(label);
+        button.connect_clicked({
+            let actions = actions.clone();
+            move |_| {
+                let _ = actions.send(TrayAction::Recovery(command.into()));
+            }
+        });
+        unsaved_actions.append(&button);
+    }
+    unsaved_row.append(&unsaved_actions);
+    unsaved_row.set_visible(false);
+    layout.append(&unsaved_row);
     window.set_child(Some(&layout));
 
     record.connect_clicked({
@@ -192,6 +216,17 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    for (name, command) in [
+        ("ask", TrayAction::Ask),
+        ("cancel-ask", TrayAction::CancelAsk),
+    ] {
+        let action = gtk::gio::SimpleAction::new(name, None);
+        let actions = actions.clone();
+        action.connect_activate(move |_, _| {
+            let _ = actions.send(command.clone());
+        });
+        application.add_action(&action);
+    }
     let media_action = gtk::gio::SimpleAction::new("media", None);
     media_action.connect_activate({
         let latest = latest_media.clone();
@@ -209,22 +244,34 @@ fn build_window(
     });
     application.add_action(&media_action);
     application.set_accels_for_action("app.media", &["<Control><Shift>t"]);
-    let failed_recordings_action = gtk::gio::SimpleAction::new("failed-recordings", None);
-    failed_recordings_action.connect_activate(|_, _| {
-        if let Ok(directory) = crate::paths::failed_transcripts_directory()
-            && let Some(parent) = directory.parent()
-        {
-            let directory = parent.join("Failed Recordings");
-            if std::fs::create_dir_all(&directory).is_ok() {
-                let uri = gtk::gio::File::for_path(directory).uri();
-                let _ = gtk::gio::AppInfo::launch_default_for_uri(
-                    &uri,
-                    None::<&gtk::gio::AppLaunchContext>,
-                );
+    for name in [
+        "paste-last",
+        "copy-unsaved",
+        "retry-unsaved",
+        "recovery-status",
+        "media-transcripts",
+        "failed-transcripts",
+        "failed-recordings",
+    ] {
+        let action = gtk::gio::SimpleAction::new(name, None);
+        action.connect_activate({
+            let actions = actions.clone();
+            move |_, _| {
+                let _ = actions.send(TrayAction::Recovery(name.into()));
             }
+        });
+        if name == "paste-last" {
+            action.set_enabled(false);
+            gtk::glib::timeout_add_local(Duration::from_millis(100), {
+                let action = action.clone();
+                move || {
+                    action.set_enabled(crate::history::recovery::last_available());
+                    gtk::glib::ControlFlow::Continue
+                }
+            });
         }
-    });
-    application.add_action(&failed_recordings_action);
+        application.add_action(&action);
+    }
     let hide = gtk::gio::SimpleAction::new("hide", None);
     hide.connect_activate({
         let window = window.clone();
@@ -234,10 +281,19 @@ fn build_window(
     let copy_last = gtk::gio::SimpleAction::new("copy-last", None);
     copy_last.set_enabled(false);
     copy_last.connect_activate({
-        let recovery = recovery.clone();
-        move |_, _| recovery.emit_clicked()
+        let actions = actions.clone();
+        move |_, _| {
+            let _ = actions.send(TrayAction::Recovery("copy-last".into()));
+        }
     });
     application.add_action(&copy_last);
+    gtk::glib::timeout_add_local(Duration::from_millis(100), {
+        let copy_last = copy_last.clone();
+        move || {
+            copy_last.set_enabled(crate::history::recovery::last_available());
+            gtk::glib::ControlFlow::Continue
+        }
+    });
     window.connect_is_active_notify(|window| {
         update_active(window.upcast_ref());
     });
@@ -275,7 +331,7 @@ fn build_window(
 
     let ask = super::ask_view::AskView::new(application, actions.clone());
     let overlay =
-        super::recording_overlay::RecordingOverlay::new(application, latest_completed.clone());
+        super::recording_overlay::RecordingOverlay::new(application, latest_delivery.clone());
     let mut recording_started = None::<Instant>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
@@ -340,19 +396,46 @@ fn build_window(
                             .trim_start_matches("@notice:@media-result:")
                             .to_string();
                         *latest_media.borrow_mut() = Some(text.clone());
-                        *latest_completed.borrow_mut() = Some(text);
+                        *latest_delivery.borrow_mut() = Some(text);
                         recovery.set_visible(true);
-                        copy_last.set_enabled(true);
                         recovery_until = Some(Instant::now() + super::feedback::RECOVERY_DURATION);
                         media_result = true;
                         state = "Media result".into();
                     }
                     Update::Completed(text) => {
+                        *latest_delivery.borrow_mut() = Some(text.clone());
                         media_result = false;
                         *latest_completed.borrow_mut() = Some(text);
                         recovery.set_visible(true);
                         copy_last.set_enabled(true);
                         recovery.set_label("Copy last transcript");
+                    }
+                    Update::Status(message) if message == "@quit-protected" => {
+                        let dialog = gtk::MessageDialog::builder().transient_for(&window).modal(true).text("Unsaved transcripts remain in memory").secondary_text("Saving failed. Retry Save or Copy Unsaved before quitting. Quit Anyway discards these records.").build();
+                        dialog.add_button("Keep open", gtk::ResponseType::Cancel);
+                        dialog.add_button("Copy Unsaved", gtk::ResponseType::Other(1));
+                        dialog.add_button("Retry Save", gtk::ResponseType::Other(2));
+                        dialog.add_button("Quit Anyway", gtk::ResponseType::Other(3));
+                        dialog.connect_response({
+                            let actions = actions.clone();
+                            move |dialog, response| {
+                                let action = match response {
+                                    gtk::ResponseType::Other(1) => {
+                                        Some(TrayAction::Recovery("copy-unsaved".into()))
+                                    }
+                                    gtk::ResponseType::Other(2) => {
+                                        Some(TrayAction::Recovery("retry-unsaved".into()))
+                                    }
+                                    gtk::ResponseType::Other(3) => Some(TrayAction::QuitAnyway),
+                                    _ => None,
+                                };
+                                if let Some(action) = action {
+                                    let _ = actions.send(action);
+                                }
+                                dialog.close();
+                            }
+                        });
+                        dialog.present();
                     }
                     Update::Status(message) if message == "@quit" => {
                         if let Some(overlay) = &overlay {
@@ -372,6 +455,24 @@ fn build_window(
                         window.set_visible(true);
                         if let Some(app) = window.application() {
                             app.activate_action("media", None);
+                        }
+                    }
+                    Update::Status(message)
+                        if matches!(message.as_str(), "@models" | "@formatting" | "@about") =>
+                    {
+                        if message == "@models" {
+                            models.show();
+                        } else if message == "@formatting" {
+                            formatting.button.popup();
+                        } else {
+                            gtk::AboutDialog::builder()
+                                .transient_for(&window)
+                                .modal(true)
+                                .program_name("Koett")
+                                .version(env!("CARGO_PKG_VERSION"))
+                                .license_type(gtk::License::Apache20)
+                                .build()
+                                .present();
                         }
                     }
                     Update::Status(message) if message == "@settings" => {
@@ -426,6 +527,13 @@ fn build_window(
             if recovery_until.is_some_and(|until| Instant::now() >= until) {
                 recovery_until = None;
             }
+            let unsaved_count = crate::history::recovery::pending_count();
+            unsaved_row.set_visible(unsaved_count > 0);
+            if unsaved_count > 0 {
+                unsaved_label.set_text(&format!(
+                    "Save failed · {unsaved_count} unsaved transcript(s) in memory"
+                ));
+            }
             let recovering = recovery_until.is_some();
             delivery_label.set_text(if media_result {
                 "Media transcript"
@@ -462,12 +570,10 @@ fn build_window(
             status.set_text(
                 &recording_started
                     .map(|started| {
-                        format!(
-                            "Recording · {}:{:02}{}",
-                            started.elapsed().as_secs() / 60,
-                            started.elapsed().as_secs() % 60,
-                            warning
-                                .map_or(String::new(), |warning| format!(" · {}", warning.text()))
+                        super::feedback::recording_status(
+                            started.elapsed(),
+                            warning,
+                            notice.as_deref(),
                         )
                     })
                     .unwrap_or_else(|| match &notice {

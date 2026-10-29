@@ -1,7 +1,8 @@
-# Linux parity inventory — model and formatting increments, 2026-10-29
+# Linux parity inventory — current implementation
 
-Scope: local model management and compact native controls. This is **not** a
-completed Mac port. No installation, live preference change, commit or push.
+Scope: native Linux feature parity and compact controls on `feat/linux-ui-history`.
+This is **not** a completed Mac port or a public Linux release. The installed app
+and live preferences remain unchanged by these increments.
 
 Optional spoken Ask source and private protocol/playback evidence are described
 in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility remains unverified.
@@ -12,15 +13,17 @@ in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility rema
   engine choices, microphone, Formatting, toggle/hold, shortcut binding/reset,
   Ask submenu, media action, latest outcome, Copy/Paste Last, unsaved text,
   failed recordings/transcripts, version and Quit. Linux retains History,
-  recording, settings, recovery Copy and Quit; adds Local models. Direct
-  microphone/mode/shortcut menu actions, Paste Last, setup/permission routing,
-  version and complete recovery-folder menu parity remain pending.
+  recording, settings, recovery Copy and Quit; adds Local models. Checked
+  microphone/mode/formatting/login controls, active-model identity, shortcut
+  access and About/version are implemented. Remaining permission/platform
+  acceptance is explicit in the focused receipts. Copy/Paste Last, unsaved Copy/Retry, guarded Quit and all
+  three transcript/recovery folder actions now share native menu/tray/CLI operations.
 - `FormattingPopover.swift`: 300×190 transient popover, 16px inset, 15pt title,
   8px grid row spacing, 12px columns, trailing labels, 160px controls. Output
   Raw/S1-mini, four styles, Prose/Lists and General/Email are implemented in the
   GTK persistent popover and menu action. Source-derived inset/grid/control widths
   guide the compact surface; exact Mac screenshot fidelity remains unverified.
-  Native GTK currently uses an Output chooser rather than AppKit segmented control.
+  Native GTK now uses linked, mutually exclusive Raw/S1-mini toggle buttons.
 - `RecordingOverlay.swift`: 236×48 capture pill, 250×48 result pill, waveform,
   phase/progress, timer, cancel and outcome/recovery. Existing Linux pill stays;
   full Ask/media phases and comprehensive exact geometry parity remain pending.
@@ -43,8 +46,10 @@ in [the speech increment](linux-spoken-ask.md). Cartesia live compatibility rema
   responsive split remain. Header and settings density reduced this increment.
 - `feature-contracts.md`: media shortcut, one focused public media item, bounded
   subprocess download/conversion, cancellation and dated result/source storage
-  remain pending. Speak Replies, voices, Cartesia key and interrupted output
-  remain pending. Experimental Nemotron streaming is implemented and has real native Linux
+  are implemented for manual HTTP(S) sources; manifest-only sources and focused
+  browser detection remain pending. Optional spoken replies, voices, Secret Service
+  credentials and interrupted output have private protocol/playback proof; live
+  Cartesia compatibility remains unverified. Experimental Nemotron streaming is implemented and has real native Linux
   inference/capture evidence; see the Nemotron increment below. Apple-only
   support and complete recovery fault-injection acceptance remain open.
 
@@ -292,3 +297,121 @@ local ASR failure. Nemotron has two attempts; standalone Parakeet has one. A
 capture-overflow result is incomplete even if its decoder returns text, so warm
 Parakeet recovery remains required before trusting it. Successful ASR still never
 retains audio merely because formatting, delivery or transcript storage fails.
+
+## Desktop controls work in progress
+
+Uncommitted desktop increment: linked native Raw/S1-mini selection; model names
+in labeled rows with compact Selected/Use/Download actions; compact accessible
+Formatting and Settings header controls; left-aligned Ask header with Copy/Close.
+Settings performs a three-way merge of opened, edited and current preferences so
+untouched live changes (including microphone replacement) survive Save.
+Capture start resolves genuinely missing selected CPAL inputs from enumerated
+inputs, preferring built-in/internal, then default, then first. The replacement
+is saved without replacing other settings; save failures produce a notice.
+Preview retains its independent strict selection path. No runtime microphone
+replacement occurs during an active recording.
+
+Evidence and exact remaining scope: `CrossPlatform/evidence/parity-desktop-20261030/README.md`.
+This desktop-controls increment leaves full tray parity, three global shortcuts,
+unplug handling and final integrated acceptance to the owning increments.
+Durable Last and volatile transcript quit protection are implemented below.
+
+### Desktop controls parent review
+
+Two fresh reviews found the microphone fallback/save warning was emitted before
+Recording, then cleared before display. Parent now publishes that notice after
+the capture-start status and includes active notices in the recording footer.
+A focused status regression preserves both replacement/save warnings and genuine
+loud-input feedback. This does not restore the rejected silence warning.
+Native missing-device replacement visibility is verified by the private Last/recovery
+fixture below: real CPAL capture, visible warning and persisted replacement ID.
+
+
+## Durable Last and volatile recovery increment
+
+Implemented: exact UTF-8 `Last Transcript.txt`, atomic replacement and Unix 0600;
+background startup restore; SQLite stable-ID retry of every memory-only record,
+including raw/final/model/timestamp/ID; visible persistent Copy Unsaved/Retry Save;
+ordinary Quit protection and explicit native Quit Anyway. A history success with
+Last failure reports “Transcript saved · Last action in memory”. Delivery remains
+before storage and successful ASR never retains WAV for a delivery/storage error.
+
+Native menu, tray and structured CLI expose `copy-last`, `paste-last`,
+`copy-unsaved`, `retry-unsaved`, `recovery-status`, `media-transcripts`,
+`failed-transcripts`, `failed-recordings` and guarded `quit`; `recovery-help`
+describes the surface. Status exposes counts, availability and Last source only.
+Paste Last conservatively copies with a manual-paste notice when external focus
+cannot be proven; it never activates a user application. Media's latest-result
+cache stays separate. Completed Ask updates in-memory Last; durable Last remains
+the newest nonempty dictation, matching the shared Mac enqueue/completion path.
+
+Verified: real isolated SQLite tests for raw/final retry, two distinct failed
+records, stable-ID collision and repeated replay; exact private Last bytes and
+failed replacement preserving the prior file. Native private capture exercises
+restart Copy, focus-safe clipboard fallback, two unsaved completions, Copy/Retry,
+Quit refusal, keyboard/narrow protection and actual private folder windows.
+Preview's missing selected device remains a strict error, verified in agent-lab.
+Evidence: `CrossPlatform/evidence/parity-last-recovery-20261030/README.md`.
+
+Remaining: all three global shortcuts, full menus (including microphone/mode/
+shortcut/setup/version), media HLS and focused-browser detection, final UI and
+packaging acceptance. No appearance approval, install, live preference change,
+commit or push is claimed. Parent owns full-suite/final integrated review.
+
+## Shortcuts/menu partial increment — 2026-10-29
+
+Three separate backward-compatible binding preferences and collision validation,
+X11 capture controls, initial three-action X11/portal dispatch and compact GTK
+submenus are implemented in the shared working tree. Native private tray Settings,
+keyboard/narrow menu, light/dark inspection and Start → tray Quit busy protection
+passed. Disabled Ask → ordinary Quit passed. The initial handoff lacked global
+activation/rebind proof; subsequent native portal/X11 acceptance is described below. The final shortcut follow-up implements transactional X11
+key-set rebinds with retained old bindings on registration failure, persisted chord
+normalization, capture editing cleanup, exact portal session signal filtering,
+held Ask/dictation cleanup, and live session editing through the owning runtime.
+`shortcuts-help`, `shortcuts-status`, and `shortcuts-edit` expose the command surface.
+A private desktop entry repaired RegisterHostApp. Parent diagnosed the activation
+failure: returned KDE IDs had empty assigned keys. Counting actual trigger descriptions
+fixed truthful status. Real private portal key presses now prove toggle, hold/release,
+live rebinding and Ask/media dispatch; native Settings reflects assigned keys live.
+Independent review fixes also preserve legacy custom bindings, held releases during
+editing, and truthful X11 registration errors. Bounded grabbed-key forwarding and
+capture ownership allow native swaps without accidental recording. See
+[parent evidence](../CrossPlatform/evidence/parity-shortcuts-parent-20261030/README.md)
+and the focused X11 evidence. The final full integration still owns protocol fault
+coverage. The retained GTK crash was subsequently reproduced without Koett and
+verified against the upstream patch; see the GTK integration section. Media
+compatibility, packaging and final appearance acceptance remain open. No installed app or live preferences changed.
+
+### Stateful menus increment — 2026-10-30
+
+GTK/GIO and ksni now expose native checked mode, microphone, formatting and login preferences, desired model versus active identity, grouped recovery, About/version and shared JSON controller actions. Model choices open existing Models UI without silent downloads. See [focused receipt](../CrossPlatform/evidence/parity-stateful-menus-20261030/REPORT.md) for exact commands, native evidence and open limits. Private pointer/keyboard, persistence/save failure, private CPAL next capture, busy rejection and real tray D-Bus actions were exercised. This is not visual approval or whole-port parity.
+
+The linked build and newest formatting tests were initially blocked by a missing
+native library cache. Verified ASR-only ABI0 artifacts have been recovered; final
+linked release and native tests pass. Direct model CLI, shared settings transactions
+and GTK runtime integration are complete in the following receipt. Provider/
+formatting-preparation menu acceptance, external-editor roundtrip and full platform
+checks remain final-integration limits.
+
+## Stateful menu and GTK integration
+
+Checked native GTK/tray preferences, active-engine identity, microphone/mode/login,
+formatting, About and recovery navigation are implemented. Shared menu CLI actions
+include direct model selection and all formatting fields. Native private dark/light,
+tray dispatch, cached-model switch, capture-device identity, persistence/failure and
+busy rejection passed. A shared Settings edit guard fixes cross-thread lost updates;
+slow validation stays outside the guard and rollback remains serialized. Full Rust
+suite:144 passed/10 existing ignores; Python unit gates:35 passed. Source Windows
+checks include test code, but Windows execution remains unverified.
+
+The GTK accessibility crash reproduces without Koett and is fixed by upstream
+commit21d3eb76b68d6758122eddaf00b5823f9b2d7f34. The private4.24.1 backport passes
+20 visible/retired-child cycles and actual Koett journeys with loaded-library hashes.
+System GTK and installed Koett remain unchanged. Evidence:
+`CrossPlatform/evidence/gtk-accessibility-fix-20261030/REPORT.md` and
+`CrossPlatform/evidence/parity-stateful-menus-20261030/REPORT.md`.
+
+Remaining full-port gates: media manifests/focused-browser workflow/compact result,
+final UI integration, packaged optional runtimes and clean-install/platform checks.
+No public Linux release or Mac execution approval is implied.

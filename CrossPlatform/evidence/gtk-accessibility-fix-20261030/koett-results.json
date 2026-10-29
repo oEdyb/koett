@@ -1,0 +1,47 @@
+{
+  "unassigned": {
+    "active": [],
+    "backend": "portal",
+    "editing_supported": true,
+    "missing": [
+      "toggle-recording",
+      "ask",
+      "media"
+    ],
+    "ok": false,
+    "triggers": {
+      "ask": "",
+      "media": "",
+      "toggle-recording": ""
+    }
+  },
+  "status": {
+    "active": [
+      "toggle-recording",
+      "media",
+      "ask"
+    ],
+    "backend": "portal",
+    "editing_supported": true,
+    "missing": [],
+    "ok": true,
+    "triggers": {
+      "ask": "Ctrl+Alt+Space",
+      "media": "Ctrl+Shift+T",
+      "toggle-recording": "Ctrl+Alt+D"
+    }
+  },
+  "edit": {
+    "ok": true,
+    "status": "editing_requested"
+  },
+  "checks": [
+    "unassigned IDs reported unavailable",
+    "private desktop key assignment reflected live",
+    "actual portal Recording activation and stop",
+    "actual Ask and media shortcut dispatch",
+    "hold press starts and release stops",
+    "live rebind disables old key and enables new key",
+    "live ConfigureShortcuts call"
+  ]
+}

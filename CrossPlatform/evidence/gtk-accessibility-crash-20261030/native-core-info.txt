@@ -1,0 +1,170 @@
+           PID: 2337841 (python)
+           TID: 2337841 (python)
+           UID: 1000 (olle)
+           GID: 1000 (olle)
+        Signal: 11 (SEGV) si_code: SEGV_MAPERR
+     Timestamp: Thu 2026-10-29 17:00:45 CET (13s ago)
+  Command Line: /usr/bin/python /home/olle/dev/koett/CrossPlatform/evidence/gtk-accessibility-crash-20261030/reproduce.py --child
+    Executable: /usr/bin/python3.14
+ Control Group: /user.slice/user-1000.slice/user@1000.service/agents.slice/agents-lab.slice/agent-lab-koett-gtk-a11y-diagnosis-client-1c62f2cc.scope
+          Unit: user@1000.service
+     User Unit: agent-lab-koett-gtk-a11y-diagnosis-client-1c62f2cc.scope
+         Slice: user-1000.slice
+     Owner UID: 1000 (olle)
+       Boot ID: de6dfd85461a4974b5511682f69e0cdc
+    Machine ID: 0f2ba4eed56843c8a6bb238444577502
+      Hostname: PC
+       Storage: /var/lib/systemd/coredump/core.python.1000.de6dfd85461a4974b5511682f69e0cdc.2337841.1793289645000000.zst (present)
+  Size on Disk: 7.1M
+       Message: Process 2337841 (python) of user 1000 dumped core.
+
+                Module libLLVM.so.23.1 without build-id.
+                Stack trace of thread 2337841:
+                #0  0x00007f535678ddd6 g_variant_builder_add_value (libglib-2.0.so.0 + 0xd4dd6)
+                #1  0x00007f535678e15a n/a (libglib-2.0.so.0 + 0xd515a)
+                #2  0x00007f535678e14e n/a (libglib-2.0.so.0 + 0xd514e)
+                #3  0x00007f535678e96a g_variant_new_va (libglib-2.0.so.0 + 0xd596a)
+                #4  0x00007f535678eb65 g_variant_new (libglib-2.0.so.0 + 0xd5b65)
+                #5  0x00007f5353440c5f n/a (libgtk-4.so.1 + 0x440c5f)
+                #6  0x00007f5354b2e79a n/a (libgio-2.0.so.0 + 0x12e79a)
+                #7  0x00007f5356727c35 n/a (libglib-2.0.so.0 + 0x6ec35)
+                #8  0x00007f5356729068 n/a (libglib-2.0.so.0 + 0x70068)
+                #9  0x00007f535672938f g_main_loop_run (libglib-2.0.so.0 + 0x7038f)
+                #10 0x00007f5356efaab6 n/a (libffi.so.8 + 0x9ab6)
+                #11 0x00007f5356ef5f09 n/a (libffi.so.8 + 0x4f09)
+                #12 0x00007f5356ef97e6 ffi_call (libffi.so.8 + 0x87e6)
+                #13 0x00007f535686f839 n/a (_gi.cpython-314-x86_64-linux-gnu.so + 0x2c839)
+                #14 0x00007f535686683a n/a (_gi.cpython-314-x86_64-linux-gnu.so + 0x2383a)
+                #15 0x00007f53575bce0a n/a (libpython3.14.so.1.0 + 0x1bce0a)
+                #16 0x00007f5357458249 n/a (libpython3.14.so.1.0 + 0x58249)
+                #17 0x00007f53575a5310 n/a (libpython3.14.so.1.0 + 0x1a5310)
+                #18 0x00007f53576da625 PyEval_EvalCode (libpython3.14.so.1.0 + 0x2da625)
+                #19 0x00007f5357726891 n/a (libpython3.14.so.1.0 + 0x326891)
+                #20 0x00007f53577212fd n/a (libpython3.14.so.1.0 + 0x3212fd)
+                #21 0x00007f5357720b35 n/a (libpython3.14.so.1.0 + 0x320b35)
+                #22 0x00007f53577205b0 n/a (libpython3.14.so.1.0 + 0x3205b0)
+                #23 0x00007f53576cd6ac Py_RunMain (libpython3.14.so.1.0 + 0x2cd6ac)
+                #24 0x00007f53576c7bfa Py_BytesMain (libpython3.14.so.1.0 + 0x2c7bfa)
+                #25 0x00007f5357027c8e n/a (libc.so.6 + 0x27c8e)
+                #26 0x00007f5357027dcb __libc_start_main (libc.so.6 + 0x27dcb)
+                #27 0x000055b5b7b1c045 _start (python3.14 + 0x1045)
+
+                Stack trace of thread 2337850:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac1e0 pthread_cond_wait (libc.so.6 + 0xac1e0)
+                #3  0x00007f531be7d8fe n/a (libvulkan_radeon.so + 0x47d8fe)
+                #4  0x00007f531be2d43d n/a (libvulkan_radeon.so + 0x42d43d)
+                #5  0x00007f531be7d86c n/a (libvulkan_radeon.so + 0x47d86c)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337849:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac1e0 pthread_cond_wait (libc.so.6 + 0xac1e0)
+                #3  0x00007f531be7d8fe n/a (libvulkan_radeon.so + 0x47d8fe)
+                #4  0x00007f531be2d43d n/a (libvulkan_radeon.so + 0x42d43d)
+                #5  0x00007f531be7d86c n/a (libvulkan_radeon.so + 0x47d86c)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337847:
+                #0  0x00007f535714932d syscall (libc.so.6 + 0x14932d)
+                #1  0x00007f53567645c4 g_cond_wait_until (libglib-2.0.so.0 + 0xab5c4)
+                #2  0x00007f53566e18c0 g_async_queue_timeout_pop_unlocked (libglib-2.0.so.0 + 0x288c0)
+                #3  0x00007f535676ce7b n/a (libglib-2.0.so.0 + 0xb3e7b)
+                #4  0x00007f535676c4a3 n/a (libglib-2.0.so.0 + 0xb34a3)
+                #5  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #6  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337845:
+                #0  0x00007f535714932d syscall (libc.so.6 + 0x14932d)
+                #1  0x00007f5356763995 g_cond_wait (libglib-2.0.so.0 + 0xaa995)
+                #2  0x00007f53566e15cd g_async_queue_pop (libglib-2.0.so.0 + 0x285cd)
+                #3  0x00007f5352b54991 n/a (libpangoft2-1.0.so.0 + 0xc991)
+                #4  0x00007f535676c4a3 n/a (libglib-2.0.so.0 + 0xb34a3)
+                #5  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #6  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337853:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac1e0 pthread_cond_wait (libc.so.6 + 0xac1e0)
+                #3  0x00007f532ad7b44f n/a (libnvidia-eglcore.so.615.78.08 + 0x97b44f)
+                #4  0x00007f532b10a128 n/a (libnvidia-eglcore.so.615.78.08 + 0xd0a128)
+                #5  0x00007f532ad7edca n/a (libnvidia-eglcore.so.615.78.08 + 0x97edca)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337843:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f535713c8f2 ppoll (libc.so.6 + 0x13c8f2)
+                #2  0x00007f53567290b9 n/a (libglib-2.0.so.0 + 0x700b9)
+                #3  0x00007f53567291c2 g_main_context_iteration (libglib-2.0.so.0 + 0x701c2)
+                #4  0x00007f5356729212 n/a (libglib-2.0.so.0 + 0x70212)
+                #5  0x00007f535676c4a3 n/a (libglib-2.0.so.0 + 0xb34a3)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337852:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac4ad pthread_cond_timedwait (libc.so.6 + 0xac4ad)
+                #3  0x00007f532ad7b4b0 n/a (libnvidia-eglcore.so.615.78.08 + 0x97b4b0)
+                #4  0x00007f532b0f699a n/a (libnvidia-eglcore.so.615.78.08 + 0xcf699a)
+                #5  0x00007f532ad7edca n/a (libnvidia-eglcore.so.615.78.08 + 0x97edca)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337844:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f535713c8f2 ppoll (libc.so.6 + 0x13c8f2)
+                #2  0x00007f53567290b9 n/a (libglib-2.0.so.0 + 0x700b9)
+                #3  0x00007f535672938f g_main_loop_run (libglib-2.0.so.0 + 0x7038f)
+                #4  0x00007f5354b3bc5c n/a (libgio-2.0.so.0 + 0x13bc5c)
+                #5  0x00007f535676c4a3 n/a (libglib-2.0.so.0 + 0xb34a3)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337858:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac4ad pthread_cond_timedwait (libc.so.6 + 0xac4ad)
+                #3  0x00007f532ad7b4b0 n/a (libnvidia-eglcore.so.615.78.08 + 0x97b4b0)
+                #4  0x00007f532b26be41 n/a (libnvidia-eglcore.so.615.78.08 + 0xe6be41)
+                #5  0x00007f532b25e56e n/a (libnvidia-eglcore.so.615.78.08 + 0xe5e56e)
+                #6  0x00007f532ad7edca n/a (libnvidia-eglcore.so.615.78.08 + 0x97edca)
+                #7  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #8  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337856:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac4ad pthread_cond_timedwait (libc.so.6 + 0xac4ad)
+                #3  0x00007f532ad7b4b0 n/a (libnvidia-eglcore.so.615.78.08 + 0x97b4b0)
+                #4  0x00007f532b0f3574 n/a (libnvidia-eglcore.so.615.78.08 + 0xcf3574)
+                #5  0x00007f532ad7edca n/a (libnvidia-eglcore.so.615.78.08 + 0x97edca)
+                #6  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #7  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337855:
+                #0  0x00007f53570b6132 n/a (libc.so.6 + 0xb6132)
+                #1  0x00007f53570a94e8 n/a (libc.so.6 + 0xa94e8)
+                #2  0x00007f53570ac1e0 pthread_cond_wait (libc.so.6 + 0xac1e0)
+                #3  0x00007f532ad7b44f n/a (libnvidia-eglcore.so.615.78.08 + 0x97b44f)
+                #4  0x00007f532b1222f8 n/a (libnvidia-eglcore.so.615.78.08 + 0xd222f8)
+                #5  0x00007f532b12691b n/a (libnvidia-eglcore.so.615.78.08 + 0xd2691b)
+                #6  0x00007f532ad7edca n/a (libnvidia-eglcore.so.615.78.08 + 0x97edca)
+                #7  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #8  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+
+                Stack trace of thread 2337842:
+                #0  0x00007f535714932d syscall (libc.so.6 + 0x14932d)
+                #1  0x00007f5356763995 g_cond_wait (libglib-2.0.so.0 + 0xaa995)
+                #2  0x00007f53566e16bd g_async_queue_pop_unlocked (libglib-2.0.so.0 + 0x286bd)
+                #3  0x00007f535676c999 n/a (libglib-2.0.so.0 + 0xb3999)
+                #4  0x00007f535676c4a3 n/a (libglib-2.0.so.0 + 0xb34a3)
+                #5  0x00007f53570acef1 n/a (libc.so.6 + 0xacef1)
+                #6  0x00007f535714c05c n/a (libc.so.6 + 0x14c05c)
+                ELF object binary architecture: AMD x86-64

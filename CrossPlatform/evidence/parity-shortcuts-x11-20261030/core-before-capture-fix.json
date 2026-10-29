@@ -1,0 +1,54 @@
+{
+  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "sha256": "fe19ea3bb54dcd1f5145aa404c059d32fba6f4dfaa81dccf33b5423c3e77eb1e",
+  "display": ":1",
+  "checks": [
+    "Actual default X11 Dictation shortcut starts and stops recording",
+    "Toggle autorepeat and release preserve recording until next press",
+    "Actual Ask shortcut dispatches disabled-provider Error; cancel returns Cancelled",
+    "Native capture Escape restores label and releases SHORTCUT_EDITING: shortcut records",
+    "Native capture Save/reopen new binding activates; staged duplicate Save rejects without persistence",
+    "Atomic settings swap Dictation and Ask; both new actions activate correctly",
+    "Hold starts on press, survives autorepeat, stops on release",
+    "Occupied XGrabKey fails; old binding still activates; unrelated pause_media persists",
+    "Public cached WAV through real shortcut capture produces exact matching Last and History"
+  ],
+  "initial": {
+    "active": [
+      "shift+control+Space",
+      "control+alt+Space",
+      "shift+control+KeyT"
+    ],
+    "backend": "x11",
+    "desired": [
+      "Ctrl+Shift+Space",
+      "Ctrl+Alt+Space",
+      "Ctrl+Shift+T"
+    ],
+    "error": null,
+    "missing": [],
+    "ok": true
+  },
+  "occupied_failure": {
+    "active": [
+      "Ctrl+Alt+Space",
+      "Ctrl+Shift+F8",
+      "Ctrl+Shift+T"
+    ],
+    "backend": "x11",
+    "desired": [
+      "Ctrl+Shift+F9",
+      "Ctrl+Shift+F8",
+      "Ctrl+Shift+T"
+    ],
+    "error": {
+      "code": "shortcut_rebind_failed",
+      "fix": "Choose an available shortcut in Settings.",
+      "message": "Rebind failed: HotKey already registered: HotKey { mods: Modifiers(CONTROL | SHIFT), key: F9, id: 34078888 }; previous bindings retained"
+    },
+    "ok": false
+  },
+  "last_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait",
+  "last_sha256": "6e3189068b97528de45905862f965baef391befc72aef41b5665f6fe7986b677",
+  "pass": false
+}

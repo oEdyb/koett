@@ -53,6 +53,18 @@ pub fn formatting_model_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.cache_dir().join("S1-mini"))
 }
 
+pub fn last_transcript() -> Result<PathBuf, String> {
+    Ok(project_directories()?
+        .data_dir()
+        .join("Last Transcript.txt"))
+}
+pub fn media_transcripts_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("Media Transcripts"))
+}
+pub fn failed_recordings_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("Failed Recordings"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{history_file, settings_file};

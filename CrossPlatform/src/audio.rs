@@ -490,6 +490,43 @@ pub struct InputDevice {
     pub label: String,
 }
 
+fn replacement_input<'a>(devices: &'a [InputDevice], default: Option<&str>) -> Option<&'a str> {
+    devices
+        .iter()
+        .find(|device| {
+            let name = device.label.to_lowercase();
+            name.contains("built-in") || name.contains("builtin") || name.contains("internal")
+        })
+        .or_else(|| {
+            devices
+                .iter()
+                .find(|device| Some(device.id.as_str()) == default)
+        })
+        .or_else(|| devices.first())
+        .map(|device| device.id.as_str())
+}
+
+pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>, String> {
+    let Some(selected) = selected else {
+        return Ok(None);
+    };
+    let host = cpal::default_host();
+    let id = selected
+        .parse::<cpal::DeviceId>()
+        .map_err(|e| format!("Invalid microphone ID: {e}"))?;
+    let devices = input_devices()?;
+    if devices.iter().any(|device| device.id == id.to_string()) {
+        return Ok(Some(selected.into()));
+    }
+    let default = host
+        .default_input_device()
+        .and_then(|device| device.id().ok())
+        .map(|id| id.to_string());
+    replacement_input(&devices, default.as_deref())
+        .map(|id| Some(id.into()))
+        .ok_or_else(|| "No microphone is available. Connect an input and retry".into())
+}
+
 pub fn input_devices() -> Result<Vec<InputDevice>, String> {
     cpal::default_host()
         .input_devices()
@@ -527,6 +564,33 @@ mod tests {
         assert_eq!(levels.current(), (0.0, 0.0));
         super::measure_input(&[128_u8; 4], 2, &levels, |_| {});
         assert_eq!(levels.current(), (0.0, 0.0));
+    }
+
+    #[test]
+    fn missing_input_chooses_builtin_then_default_then_first() {
+        let devices = vec![
+            super::InputDevice {
+                id: "usb".into(),
+                label: "USB microphone".into(),
+            },
+            super::InputDevice {
+                id: "internal".into(),
+                label: "Built-in microphone".into(),
+            },
+        ];
+        assert_eq!(
+            super::replacement_input(&devices, Some("usb")),
+            Some("internal")
+        );
+        assert_eq!(
+            super::replacement_input(&devices[..1], Some("usb")),
+            Some("usb")
+        );
+        assert_eq!(
+            super::replacement_input(&devices[..1], Some("gone")),
+            Some("usb")
+        );
+        assert_eq!(super::replacement_input(&[], Some("gone")), None);
     }
 
     #[test]

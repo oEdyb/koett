@@ -67,6 +67,27 @@ pub fn show(
     outer.append(&stack);
     let audio = section(&stack, "audio", "Audio");
     let shortcuts = section(&stack, "shortcuts", "Shortcuts");
+    let shortcut_error = gtk::Label::new(None);
+    shortcut_error.set_wrap(true);
+    shortcut_error.set_selectable(true);
+    shortcuts.append(&shortcut_error);
+    gtk::glib::timeout_add_local(std::time::Duration::from_millis(250), {
+        let label = shortcut_error.downgrade();
+        move || {
+            let Some(label) = label.upgrade() else {
+                return gtk::glib::ControlFlow::Break;
+            };
+            if let Ok(status) = super::SHORTCUT_STATUS.read() {
+                label.set_visible(status["ok"] == false);
+                label.set_text(
+                    status["error"]["message"]
+                        .as_str()
+                        .unwrap_or("Assign missing shortcuts in desktop settings."),
+                );
+            }
+            gtk::glib::ControlFlow::Continue
+        }
+    });
     let text = section(&stack, "text", "Text");
     let general = section(&stack, "general", "General");
     let ask = section(&stack, "ask", "Ask");
@@ -140,13 +161,190 @@ pub fn show(
     }));
     row(&shortcuts, "Recording mode", &mode);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
+    let ask_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.ask_shortcut.clone()));
+    let media_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.media_shortcut.clone()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
+    for (label, shortcut, default) in [
+        ("Dictation", shortcut.clone(), "Ctrl+Shift+Space"),
+        ("Ask", ask_shortcut.clone(), "Ctrl+Alt+Space"),
+        ("Media", media_shortcut.clone(), "Ctrl+Shift+T"),
+    ] {
+        if wayland {
+            let trigger = gtk::Label::new(None);
+            row(&shortcuts, label, &trigger);
+            let id = match label {
+                "Dictation" => super::SHORTCUT_ID,
+                "Ask" => "ask",
+                _ => "media",
+            };
+            let enabled = !shortcut.borrow().is_empty();
+            gtk::glib::timeout_add_local(std::time::Duration::from_millis(250), {
+                let trigger = trigger.downgrade();
+                move || {
+                    let Some(trigger) = trigger.upgrade() else {
+                        return gtk::glib::ControlFlow::Break;
+                    };
+                    if let Ok(status) = super::SHORTCUT_STATUS.read() {
+                        let assigned = status["triggers"][id]
+                            .as_str()
+                            .filter(|s| !s.trim().is_empty());
+                        trigger.set_text(if !enabled {
+                            "Disabled"
+                        } else {
+                            assigned.unwrap_or("Not assigned")
+                        });
+                    }
+                    gtk::glib::ControlFlow::Continue
+                }
+            });
+        } else {
+            let button = gtk::Button::with_label(&shortcut.borrow());
+            row(&shortcuts, label, &button);
+            let capture_error = gtk::Label::new(None);
+            capture_error.set_wrap(true);
+            shortcuts.append(&capture_error);
+            let capturing = std::rc::Rc::new(std::cell::Cell::new(false));
+            let capture_generation = std::rc::Rc::new(std::cell::Cell::new(0));
+            button.connect_clicked({
+                let capturing = capturing.clone();
+                let capture_generation = capture_generation.clone();
+                let shortcut = shortcut.clone();
+                let capture_error = capture_error.clone();
+                move |button| {
+                    let (generation, receiver) = match super::begin_shortcut_capture() {
+                        Ok(receiver) => receiver,
+                        Err(error) => {
+                            capture_error.set_text(&error);
+                            return;
+                        }
+                    };
+                    capturing.set(true);
+                    capture_generation.set(generation);
+                    button.set_label("Press your shortcut…");
+                    button.grab_focus();
+                    gtk::glib::timeout_add_local(std::time::Duration::from_millis(16), {
+                        let button = button.downgrade();
+                        let capturing = capturing.clone();
+                        let capture_generation = capture_generation.clone();
+                        let shortcut = shortcut.clone();
+                        let capture_error = capture_error.downgrade();
+                        move || {
+                            let Some(button) = button.upgrade() else {
+                                return gtk::glib::ControlFlow::Break;
+                            };
+                            if super::SHORTCUT_CAPTURE_GENERATION
+                                .load(std::sync::atomic::Ordering::Acquire)
+                                != generation
+                            {
+                                if capture_generation.get() == generation {
+                                    capturing.set(false);
+                                    button.set_label(&shortcut.borrow());
+                                }
+                                return gtk::glib::ControlFlow::Break;
+                            }
+                            if !capturing.get() {
+                                return gtk::glib::ControlFlow::Break;
+                            }
+                            match receiver.try_recv() {
+                                Ok(value) => {
+                                    *shortcut.borrow_mut() = value.clone();
+                                    button.set_label(&value);
+                                    capturing.set(false);
+                                    super::end_shortcut_capture();
+                                    if let Some(error) = capture_error.upgrade() {
+                                        error.set_text("");
+                                    }
+                                    gtk::glib::ControlFlow::Break
+                                }
+                                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                                    capturing.set(false);
+                                    button.set_label(&shortcut.borrow());
+                                    gtk::glib::ControlFlow::Break
+                                }
+                                Err(std::sync::mpsc::TryRecvError::Empty) => {
+                                    gtk::glib::ControlFlow::Continue
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            let keys = gtk::EventControllerKey::new();
+            keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+            keys.connect_key_pressed({
+                let button = button.downgrade();
+                let capturing = capturing.clone();
+                let capture_generation = capture_generation.clone();
+                let shortcut = shortcut.clone();
+                move |_, key, _, modifiers| {
+                    let Some(button) = button.upgrade() else {
+                        return gtk::glib::Propagation::Proceed;
+                    };
+                    if !capturing.get()
+                        || capture_generation.get()
+                            != super::SHORTCUT_CAPTURE_GENERATION
+                                .load(std::sync::atomic::Ordering::Acquire)
+                    {
+                        return gtk::glib::Propagation::Proceed;
+                    }
+                    if key == gtk::gdk::Key::Escape {
+                        capturing.set(false);
+                        super::end_shortcut_capture();
+                        button.set_label(&shortcut.borrow());
+                        return gtk::glib::Propagation::Stop;
+                    }
+                    if matches!(
+                        key,
+                        gtk::gdk::Key::Control_L
+                            | gtk::gdk::Key::Control_R
+                            | gtk::gdk::Key::Alt_L
+                            | gtk::gdk::Key::Alt_R
+                            | gtk::gdk::Key::Shift_L
+                            | gtk::gdk::Key::Shift_R
+                            | gtk::gdk::Key::Super_L
+                            | gtk::gdk::Key::Super_R
+                    ) {
+                        return gtk::glib::Propagation::Stop;
+                    }
+                    match captured_shortcut(key, modifiers) {
+                        Ok(value) => {
+                            *shortcut.borrow_mut() = value.to_string();
+                            capturing.set(false);
+                            super::end_shortcut_capture();
+                            button.set_label(&value.to_string());
+                            capture_error.set_text("");
+                        }
+                        Err(error) => {
+                            capturing.set(false);
+                            super::end_shortcut_capture();
+                            button.set_label(&shortcut.borrow());
+                            capture_error.set_text(&error);
+                        }
+                    }
+                    gtk::glib::Propagation::Stop
+                }
+            });
+            button.add_controller(keys);
+            {
+                let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+                for (title, value) in [("Clear", ""), ("Reset", default)] {
+                    let reset = gtk::Button::with_label(title);
+                    let shortcut = shortcut.clone();
+                    let button = button.clone();
+                    let capturing = capturing.clone();
+                    reset.connect_clicked(move |_| {
+                        capturing.set(false);
+                        super::end_shortcut_capture();
+                        *shortcut.borrow_mut() = value.to_string();
+                        button.set_label(if value.is_empty() { "Disabled" } else { value });
+                    });
+                    actions.append(&reset);
+                }
+                shortcuts.append(&actions);
+            }
+        }
+    }
     if wayland {
-        row(
-            &shortcuts,
-            "Shortcut",
-            &gtk::Label::new(Some("Managed by desktop")),
-        );
         let portal = gtk::Button::with_label("Change desktop shortcut…");
         portal.set_halign(gtk::Align::Start);
         shortcuts.append(&portal);
@@ -168,73 +366,20 @@ pub fn show(
 
 Toggle: koett toggle
 Hold press: koett start
-Hold release: koett stop",
+Hold release: koett stop
+Ask toggle: koett ask
+Ask press: koett ask-start
+Ask release: koett ask-stop
+Media: open Koett → Transcribe media",
         ));
         instructions.set_wrap(true);
         instructions.set_xalign(0.0);
         instructions.set_selectable(true);
         setup.set_child(Some(&instructions));
         shortcuts.append(&setup);
-    } else {
-        let button = gtk::Button::with_label(&shortcut.borrow());
-        row(&shortcuts, "Shortcut", &button);
-        let capture_error = gtk::Label::new(None);
-        capture_error.set_wrap(true);
-        shortcuts.append(&capture_error);
-        let capturing = std::rc::Rc::new(std::cell::Cell::new(false));
-        button.connect_clicked({
-            let capturing = capturing.clone();
-            move |button| {
-                capturing.set(true);
-                super::SHORTCUT_EDITING.store(true, std::sync::atomic::Ordering::Release);
-                button.set_label("Press your shortcut…");
-                button.grab_focus();
-            }
-        });
-        let keys = gtk::EventControllerKey::new();
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
-        keys.connect_key_pressed({
-            let button = button.clone();
-            let capturing = capturing.clone();
-            let shortcut = shortcut.clone();
-            move |_, key, _, modifiers| {
-                if !capturing.get() {
-                    return gtk::glib::Propagation::Proceed;
-                }
-                if key == gtk::gdk::Key::Escape {
-                    capturing.set(false);
-                    button.set_label(&shortcut.borrow());
-                    return gtk::glib::Propagation::Stop;
-                }
-                if matches!(
-                    key,
-                    gtk::gdk::Key::Control_L
-                        | gtk::gdk::Key::Control_R
-                        | gtk::gdk::Key::Alt_L
-                        | gtk::gdk::Key::Alt_R
-                        | gtk::gdk::Key::Shift_L
-                        | gtk::gdk::Key::Shift_R
-                        | gtk::gdk::Key::Super_L
-                        | gtk::gdk::Key::Super_R
-                ) {
-                    return gtk::glib::Propagation::Stop;
-                }
-                match captured_shortcut(key, modifiers) {
-                    Ok(value) => {
-                        *shortcut.borrow_mut() = value.to_string();
-                        capturing.set(false);
-                        button.set_label(&value.to_string());
-                        capture_error.set_text("");
-                    }
-                    Err(error) => capture_error.set_text(&error),
-                }
-                gtk::glib::Propagation::Stop
-            }
-        });
-        button.add_controller(keys);
     }
     window.connect_close_request(|_| {
-        super::SHORTCUT_EDITING.store(false, std::sync::atomic::Ordering::Release);
+        super::end_shortcut_capture();
         gtk::glib::Propagation::Proceed
     });
     let paste = gtk::ComboBoxText::new();
@@ -302,18 +447,9 @@ Hold release: koett stop",
         let window = window.clone();
         move |_| {
             let mut updated = settings.clone();
-            match Settings::load() {
-                Ok(current) => {
-                    updated.formatting = current.formatting;
-                    updated.selected_model = current.selected_model;
-                    updated.model_directory = current.model_directory;
-                }
-                Err(message) => {
-                    error.set_text(&message);
-                    return;
-                }
-            }
             updated.shortcut = shortcut.borrow().clone();
+            updated.ask_shortcut = ask_shortcut.borrow().clone();
+            updated.media_shortcut = media_shortcut.borrow().clone();
             updated.start_at_login = login.is_active();
             updated.microphone = input
                 .active_id()
@@ -352,8 +488,26 @@ Hold release: koett stop",
                 }
             };
             updated.pause_media = pause_media.is_active();
-            let result =
-                super::set_start_at_login(updated.start_at_login).and_then(|()| updated.save());
+            let mut edit = match Settings::edit() {
+                Ok(edit) => edit,
+                Err(message) => {
+                    error.set_text(&message);
+                    return;
+                }
+            };
+            let updated = updated.merge_editor(&settings, edit.settings.clone());
+            if let Err(message) = updated.validate_shortcuts() {
+                error.set_text(&message);
+                return;
+            }
+            let previous = super::menu_preferences::login_registered();
+            edit.settings = updated.clone();
+            let result = super::set_start_at_login(updated.start_at_login).and_then(|()| {
+                edit.commit().inspect_err(|_| {
+                    let _ = super::set_start_at_login(previous);
+                })
+            });
+            drop(edit);
             match result {
                 Ok(()) => {
                     on_saved(&updated);
@@ -380,7 +534,9 @@ fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
     let title = gtk::Label::new(Some(label));
     title.set_xalign(1.0);
     title.set_width_chars(12);
-    title.set_mnemonic_widget(Some(widget));
+    if !widget.as_ref().is::<gtk::Label>() {
+        title.set_mnemonic_widget(Some(widget));
+    }
 
     let group = gtk::Box::new(gtk::Orientation::Horizontal, 16);
     group.add_css_class("koett-setting-row");

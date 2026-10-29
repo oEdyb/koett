@@ -36,6 +36,8 @@ impl AskView {
             .default_width(480)
             .default_height(height)
             .build();
+        window.add_css_class("koett-window");
+        window.add_css_class("koett-ask");
         if let Err(message) = ask_position::configure(&window) {
             eprintln!("{message}");
         }
@@ -54,8 +56,12 @@ impl AskView {
             }
         }
         let title = gtk::Label::new(Some("Koett Ask"));
-        title.add_css_class("title-3");
-        column.append(&title);
+        title.add_css_class("heading");
+        title.set_xalign(0.0);
+        title.set_hexpand(true);
+        let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        header.append(&title);
+        column.append(&header);
         let label = || {
             let value = gtk::Label::new(None);
             value.set_wrap(true);
@@ -69,7 +75,7 @@ impl AskView {
         screen.set_selectable(false);
         let question_caption = gtk::Label::new(Some("Question"));
         question_caption.set_xalign(0.0);
-        column.append(&question_caption);
+        question_caption.set_visible(false);
         let question = label();
         let capability = label();
         let warning = label();
@@ -99,7 +105,7 @@ impl AskView {
         copy.connect_clicked(move |button| {
             button.clipboard().set_text(&copied.borrow());
         });
-        buttons.append(&copy);
+        header.append(&copy);
         let cancel = gtk::Button::with_label("Cancel");
         cancel.connect_clicked(move |_| {
             let _ = actions.send(super::TrayAction::CancelAsk);
@@ -112,7 +118,7 @@ impl AskView {
                 window.set_visible(false);
             }
         });
-        buttons.append(&close);
+        header.append(&close);
         column.append(&buttons);
         window.set_child(Some(&column));
         window.set_hide_on_close(true);

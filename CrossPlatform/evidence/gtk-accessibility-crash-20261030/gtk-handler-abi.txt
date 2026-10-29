@@ -1,0 +1,86 @@
+
+/usr/lib/libgtk-4.so.1:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000440bb0 <handle_accessible_method.part.0+0x390>:
+  440bb0:	48 8d 54 24 1c       	lea    0x1c(%rsp),%rdx
+  440bb5:	4c 89 f7             	mov    %r14,%rdi
+  440bb8:	48 8d 35 f5 ec 3e 00 	lea    0x3eecf5(%rip),%rsi        # 82f8b4 <__func__.3.lto_priv.383+0xa254>
+  440bbf:	ff 15 23 29 9a 00    	call   *0x9a2923(%rip)        # de34e8 <g_variant_get>
+  440bc5:	49 8b 7c 24 78       	mov    0x78(%r12),%rdi
+  440bca:	ff 15 60 5d 9a 00    	call   *0x9a5d60(%rip)        # de6930 <g_list_model_get_n_items>
+  440bd0:	31 d2                	xor    %edx,%edx
+  440bd2:	41 89 c6             	mov    %eax,%r14d
+  440bd5:	85 c0                	test   %eax,%eax
+  440bd7:	0f 84 f3 00 00 00    	je     440cd0 <handle_accessible_method.part.0+0x4b0>
+  440bdd:	0f 1f 00             	nopl   (%rax)
+  440be0:	49 8b 7c 24 78       	mov    0x78(%r12),%rdi
+  440be5:	89 54 24 08          	mov    %edx,0x8(%rsp)
+  440be9:	89 d6                	mov    %edx,%esi
+  440beb:	ff 15 6f 76 9a 00    	call   *0x9a766f(%rip)        # de8260 <g_list_model_get_item>
+  440bf1:	49 89 c5             	mov    %rax,%r13
+  440bf4:	48 89 c7             	mov    %rax,%rdi
+  440bf7:	ff 15 13 71 9a 00    	call   *0x9a7113(%rip)        # de7d10 <g_object_unref>
+  440bfd:	4c 89 ef             	mov    %r13,%rdi
+  440c00:	67 e8 ea f3 eb ff    	addr32 call 2ffff0 <gtk_widget_get_visible>
+  440c06:	8b 54 24 08          	mov    0x8(%rsp),%edx
+  440c0a:	85 c0                	test   %eax,%eax
+  440c0c:	74 0a                	je     440c18 <handle_accessible_method.part.0+0x3f8>
+  440c0e:	44 39 7c 24 1c       	cmp    %r15d,0x1c(%rsp)
+  440c13:	74 0a                	je     440c1f <handle_accessible_method.part.0+0x3ff>
+  440c15:	41 ff c7             	inc    %r15d
+  440c18:	ff c2                	inc    %edx
+  440c1a:	41 39 d6             	cmp    %edx,%r14d
+  440c1d:	75 c1                	jne    440be0 <handle_accessible_method.part.0+0x3c0>
+  440c1f:	4d 85 ed             	test   %r13,%r13
+  440c22:	0f 84 a8 00 00 00    	je     440cd0 <handle_accessible_method.part.0+0x4b0>
+  440c28:	4c 89 ef             	mov    %r13,%rdi
+  440c2b:	67 e8 af ed c5 ff    	addr32 call 9f9e0 <gtk_accessible_get_at_context>
+  440c31:	49 8b 7c 24 20       	mov    0x20(%r12),%rdi
+  440c36:	49 89 c5             	mov    %rax,%r13
+  440c39:	ff 15 31 2f 9a 00    	call   *0x9a2f31(%rip)        # de3b70 <g_dbus_connection_get_unique_name>
+  440c3f:	4c 89 ef             	mov    %r13,%rdi
+  440c42:	49 89 c4             	mov    %rax,%r12
+  440c45:	e8 e6 ce ff ff       	call   43db30 <gtk_at_spi_context_get_context_path>
+  440c4a:	4c 89 e6             	mov    %r12,%rsi
+  440c4d:	48 8d 3d 41 13 40 00 	lea    0x401341(%rip),%rdi        # 841f95 <__func__.3.lto_priv.383+0x1c935>
+  440c54:	48 89 c2             	mov    %rax,%rdx
+  440c57:	31 c0                	xor    %eax,%eax
+  440c59:	ff 15 a9 4c 9a 00    	call   *0x9a4ca9(%rip)        # de5908 <g_variant_new>
+  440c5f:	48 89 df             	mov    %rbx,%rdi
+  440c62:	48 89 c6             	mov    %rax,%rsi
+  440c65:	ff 15 15 3e 9a 00    	call   *0x9a3e15(%rip)        # de4a80 <g_dbus_method_invocation_return_value>
+  440c6b:	4c 89 ef             	mov    %r13,%rdi
+  440c6e:	ff 15 9c 70 9a 00    	call   *0x9a709c(%rip)        # de7d10 <g_object_unref>
+  440c74:	4c 8b 7d f8          	mov    -0x8(%rbp),%r15
+  440c78:	e9                   	.byte 0xe9
+
+/usr/lib/libgtk-4.so.1:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+000000000043db30 <gtk_at_spi_context_get_context_path>:
+  43db30:	f3 0f 1e fa          	endbr64
+  43db34:	53                   	push   %rbx
+  43db35:	48 89 fb             	mov    %rdi,%rbx
+  43db38:	48 8b 05 19 db 9b 00 	mov    0x9bdb19(%rip),%rax        # dfb658 <static_g_define_type_id.12.lto_priv.4>
+  43db3f:	48 85 c0             	test   %rax,%rax
+  43db42:	74 2c                	je     43db70 <gtk_at_spi_context_get_context_path+0x40>
+  43db44:	48 85 db             	test   %rbx,%rbx
+  43db47:	74 52                	je     43db9b <gtk_at_spi_context_get_context_path+0x6b>
+  43db49:	48 8b 03             	mov    (%rbx),%rax
+  43db4c:	48 8b 35 05 db 9b 00 	mov    0x9bdb05(%rip),%rsi        # dfb658 <static_g_define_type_id.12.lto_priv.4>
+  43db53:	48 85 c0             	test   %rax,%rax
+  43db56:	74 05                	je     43db5d <gtk_at_spi_context_get_context_path+0x2d>
+  43db58:	48 39 30             	cmp    %rsi,(%rax)
+  43db5b:	74 0d                	je     43db6a <gtk_at_spi_context_get_context_path+0x3a>
+  43db5d:	48 89 df             	mov    %rbx,%rdi
+  43db60:	ff 15 02 a2 9a 00    	call   *0x9aa202(%rip)        # de7d68 <g_type_check_instance_is_a>
+  43db66:	85 c0                	test   %eax,%eax
+  43db68:	74 31                	je     43db9b <gtk_at_spi_context_get_context_path+0x6b>
+  43db6a:	48 8b 43 78          	mov    0x78(%rbx),%rax
+  43db6e:	5b                   	pop    %rbx
+  43db6f:	c3                   	ret

@@ -71,6 +71,23 @@ pub struct EngineHandle {
 }
 
 impl EngineHandle {
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn controlled() -> (Self, Receiver<EngineCommand>, Sender<EngineUpdate>) {
+        let (commands, received) = mpsc::channel();
+        let (updates, incoming) = mpsc::channel();
+        (
+            Self {
+                commands,
+                updates: incoming,
+                cancelled: Arc::new(AtomicBool::new(false)),
+                ask_cancelled: Arc::new(AtomicBool::new(false)),
+                worker: None,
+            },
+            received,
+            updates,
+        )
+    }
+
     pub fn cancel_ask(&self) {
         self.ask_cancelled.store(true, Ordering::Release);
     }
@@ -314,9 +331,8 @@ fn run(
                     let saved = if crate::formatting::CANCELLED.load(Ordering::Acquire) {
                         Err("S1-mini setup cancelled".into())
                     } else {
-                        Settings::load().and_then(|mut current| {
+                        Settings::update(|current| {
                             current.formatting = formatting;
-                            current.save()
                         })
                     };
                     match saved {
@@ -564,9 +580,8 @@ fn run(
                 if formatting.enabled && cleaner.is_none() {
                     preparation = Some(start_formatting(formatting, updates.clone()));
                 } else {
-                    let saved = Settings::load().and_then(|mut current| {
+                    let saved = Settings::update(|current| {
                         current.formatting = formatting;
-                        current.save()
                     });
                     match saved {
                         Ok(()) => {
@@ -608,10 +623,9 @@ fn run(
                     });
                 match candidate {
                     Ok((directory, worker)) if !model::SWITCH_CANCELLED.load(Ordering::Acquire) => {
-                        let saved = Settings::load().and_then(|mut current| {
+                        let saved = Settings::update(|current| {
                             current.selected_model = selection;
                             current.model_directory = None;
-                            current.save()
                         });
                         match saved {
                             Ok(()) => {
@@ -640,7 +654,7 @@ fn run(
                 ));
             }
             EngineCommand::Toggle | EngineCommand::Start if status == AppStatus::Ready => {
-                let current = match Settings::load() {
+                let mut current = match Settings::load() {
                     Ok(current) => {
                         settings = current.clone();
                         current
@@ -652,13 +666,45 @@ fn run(
                         settings.clone()
                     }
                 };
+                let input_resolution =
+                    crate::audio::resolve_recording_input(current.microphone.as_deref());
+                let mut input_notice = None;
+                match input_resolution.as_ref() {
+                    Ok(replacement) if replacement != &current.microphone => {
+                        let previous = current.microphone.clone();
+                        current.microphone = replacement.clone();
+                        let saved = Settings::update(|latest| {
+                            if latest.microphone == previous {
+                                latest.microphone = current.microphone.clone();
+                            }
+                        });
+                        settings.microphone = current.microphone.clone();
+                        let notice = match saved {
+                            Ok(()) => {
+                                "Selected microphone unavailable; replacement input saved".into()
+                            }
+                            Err(error) => format!(
+                                "Selected microphone unavailable; using replacement input for this recording. Could not save: {error}"
+                            ),
+                        };
+                        input_notice = Some(notice);
+                    }
+                    Ok(_) => {}
+                    Err(_) => {}
+                }
                 #[cfg(target_os = "linux")]
-                if current.pause_media
+                if input_resolution.is_ok()
+                    && current.pause_media
                     && let Some(media) = &media
                 {
                     media_notice(&updates, media.pause());
                 }
-                match MicrophoneRecorder::start_streaming_with_device(current.microphone.as_deref())
+                match input_resolution
+                    .and_then(|_| {
+                        MicrophoneRecorder::start_streaming_with_device(
+                            current.microphone.as_deref(),
+                        )
+                    })
                     .and_then(|(started, audio_chunks)| {
                         #[cfg(target_os = "linux")]
                         let offline = ask_image.is_some();
@@ -697,6 +743,9 @@ fn run(
                         }
                         recover_from_error(&updates, &mut status, error);
                     }
+                }
+                if let Some(notice) = input_notice {
+                    let _ = updates.send(EngineUpdate::Notice(notice));
                 }
             }
             EngineCommand::Toggle | EngineCommand::Stop if status == AppStatus::Recording => {
@@ -737,16 +786,12 @@ fn run(
                     Ok(mut transcript) => {
                         #[cfg(target_os = "linux")]
                         if let Some(image) = ask_image.take() {
-                            let storage = crate::history::append_transcript_resilient(
-                                &model,
-                                &transcript.text,
-                            );
+                            let storage =
+                                crate::history::append_question_resilient(&model, &transcript.text);
                             let warning = match storage {
                                 Ok(None) => None,
                                 Ok(Some(_)) => Some("Question saved in recovery".to_string()),
-                                Err(_) => Some(
-                                    "Question storage failed; copy it before closing".to_string(),
-                                ),
+                                Err(error) => Some(error),
                             };
                             if ask_cancelled.load(Ordering::Acquire) {
                                 let _ = updates.send(EngineUpdate::Ask(serde_json::json!({"question": transcript.text, "warning": warning, "phase": "Cancelled"})));

@@ -1,0 +1,5 @@
+{
+  "path": "/tmp/koett-shortcuts-parent-release",
+  "sha256": "26f178545ddd5c1044cbfbe75297fe52d7f49ab41ad3a9c1e4f9c6f96e099921",
+  "note": "Portal proof binary. Subsequent source edits affect X11 capture ownership only; separate X11 receipts identify their frozen binary."
+}

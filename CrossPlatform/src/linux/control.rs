@@ -135,6 +135,84 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
+            if let Ok(command) = std::str::from_utf8(&bytes)
+                && matches!(
+                    command,
+                    "copy-last"
+                        | "paste-last"
+                        | "copy-unsaved"
+                        | "retry-unsaved"
+                        | "recovery-status"
+                        | "media-transcripts"
+                        | "failed-transcripts"
+                        | "failed-recordings"
+                )
+            {
+                let value = match super::recovery::operation(command) {
+                    Ok(value) => {
+                        if command == "retry-unsaved" {
+                            let _ = ui.send(super::window::Update::Status("@refresh".into()));
+                            let _ = ui.send(super::window::Update::Status(
+                                "@notice:Unsaved transcripts saved".into(),
+                            ));
+                        }
+                        value
+                    }
+                    Err(error) => {
+                        serde_json::json!({"ok":false,"error":{"code":"recovery_operation_failed","message":error,"retryable":true}})
+                    }
+                };
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
+            if let Ok(command) = std::str::from_utf8(&bytes)
+                && command.starts_with("menu-")
+            {
+                let value = super::menu_preferences::request(&sender, command.into());
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
+            if bytes == b"shortcuts-status" {
+                let value = super::SHORTCUT_STATUS
+                    .read()
+                    .map(|v| v.clone())
+                    .unwrap_or(serde_json::Value::Null);
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
+            if bytes == b"shortcuts-edit" {
+                let result = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .map_err(|e| e.to_string())
+                    .and_then(|runtime| runtime.block_on(super::configure_shortcut()));
+                let value = match result {
+                    Ok(()) => serde_json::json!({"ok":true,"status":"editing_requested"}),
+                    Err(error) => {
+                        serde_json::json!({"ok":false,"error":{"code":"shortcut_edit_unavailable","message":error,"fix":"Open Settings > Shortcuts, or configure shortcuts in desktop settings."}})
+                    }
+                };
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
+            if bytes == b"quit" {
+                let result = if super::QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire) {
+                    Err("Finish recording or processing before quitting".into())
+                } else {
+                    crate::history::recovery::retry()
+                };
+                let _ = sender.send(TrayAction::Quit);
+                let value = match result {
+                    Ok(()) => {
+                        serde_json::json!({"ok":true,"status":"quit_requested","processing_guard":"controller checks before exit"})
+                    }
+                    Err(error) => {
+                        serde_json::json!({"ok":false,"error":{"code":"unsaved_transcripts","message":error,"retryable":true}})
+                    }
+                };
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if bytes == b"ask-status" {
                 let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
                 continue;
@@ -185,6 +263,25 @@ pub fn ask_status() -> Result<String, String> {
         .read_to_string(&mut value)
         .map_err(|_| "Cannot read Ask status")?;
     Ok(value)
+}
+
+pub fn request(command: &str) -> Result<String, String> {
+    let mut stream = UnixStream::connect(path()?).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+        .map_err(|e| e.to_string())?;
+    stream
+        .write_all(command.as_bytes())
+        .map_err(|e| e.to_string())?;
+    stream
+        .shutdown(std::net::Shutdown::Write)
+        .map_err(|e| e.to_string())?;
+    let mut response = String::new();
+    stream
+        .take(65536)
+        .read_to_string(&mut response)
+        .map_err(|e| e.to_string())?;
+    Ok(response)
 }
 
 #[cfg(test)]

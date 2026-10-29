@@ -31,13 +31,52 @@ use crate::settings::{PasteShortcut, Settings};
 use crate::shortcut::Shortcut;
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
+static QUIT_BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
 static SHORTCUT_EDITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static SHORTCUT_CAPTURE_GENERATION: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+static SHORTCUT_CAPTURE: std::sync::Mutex<Option<mpsc::SyncSender<String>>> =
+    std::sync::Mutex::new(None);
+
+fn begin_shortcut_capture() -> Result<(u64, Receiver<String>), String> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    *SHORTCUT_CAPTURE.lock().map_err(|e| e.to_string())? = Some(sender);
+    let generation =
+        SHORTCUT_CAPTURE_GENERATION.fetch_add(1, std::sync::atomic::Ordering::AcqRel) + 1;
+    SHORTCUT_EDITING.store(true, std::sync::atomic::Ordering::Release);
+    Ok((generation, receiver))
+}
+
+fn end_shortcut_capture() {
+    SHORTCUT_CAPTURE_GENERATION.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+    SHORTCUT_EDITING.store(false, std::sync::atomic::Ordering::Release);
+    if let Ok(mut capture) = SHORTCUT_CAPTURE.lock() {
+        capture.take();
+    }
+}
+
+type ShortcutEdit = tokio::sync::oneshot::Sender<Result<(), String>>;
+static SHORTCUT_COMMANDS: std::sync::Mutex<
+    Option<tokio::sync::mpsc::UnboundedSender<ShortcutEdit>>,
+> = std::sync::Mutex::new(None);
+
+static SHORTCUT_STATUS: std::sync::LazyLock<RwLock<serde_json::Value>> =
+    std::sync::LazyLock::new(|| {
+        RwLock::new(serde_json::json!({"ok":true,"status":"starting","active":[]}))
+    });
+fn shortcut_status(value: serde_json::Value) {
+    if let Ok(mut status) = SHORTCUT_STATUS.write() {
+        *status = value;
+    }
+}
 
 const APP_ID: &str = "com.olledyberg.Koett";
 const SHORTCUT_ID: &str = "toggle-recording";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum TrayAction {
+    Menu(String, menu_preferences::Reply),
     Ask,
     CancelAsk,
     AskStart,
@@ -53,6 +92,8 @@ enum TrayAction {
     OpenTranscripts,
     OpenSettings,
     Quit,
+    QuitAnyway,
+    Recovery(String),
 }
 
 enum TrayUpdate {
@@ -129,7 +170,7 @@ impl ksni::Tray for LinuxTray {
 
         let recording = menu::recording_action(&self.status);
 
-        vec![
+        let mut items = vec![
             StandardItem {
                 label: self.status.clone(),
                 enabled: false,
@@ -139,7 +180,9 @@ impl ksni::Tray for LinuxTray {
             MenuItem::Separator,
             StandardItem {
                 label: recording.label.to_string(),
-                enabled: recording.enabled,
+                enabled: recording.enabled
+                    && !(self.status == "Ready"
+                        && QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)),
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::Toggle);
                 }),
@@ -170,6 +213,93 @@ impl ksni::Tray for LinuxTray {
                 ..Default::default()
             }
             .into(),
+            StandardItem {
+                label: "Copy last transcript".into(),
+                enabled: history::recovery::last_available(),
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("copy-last".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Paste last transcript".into(),
+                enabled: history::recovery::last_available(),
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("paste-last".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Copy unsaved transcripts".into(),
+                enabled: true,
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("copy-unsaved".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Retry Save".into(),
+                enabled: true,
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("retry-unsaved".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Media transcripts…".into(),
+                enabled: true,
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("media-transcripts".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Failed transcripts…".into(),
+                enabled: true,
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("failed-transcripts".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Failed recordings…".into(),
+                enabled: true,
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("failed-recordings".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
+            StandardItem {
+                label: "Recovery status".into(),
+                activate: Box::new(|tray: &mut Self| {
+                    let _ = tray
+                        .action_sender
+                        .send(TrayAction::Recovery("recovery-status".into()));
+                }),
+                ..Default::default()
+            }
+            .into(),
             MenuItem::Separator,
             StandardItem {
                 label: "Quit Koett".to_string(),
@@ -180,7 +310,19 @@ impl ksni::Tray for LinuxTray {
                 ..Default::default()
             }
             .into(),
-        ]
+        ];
+        let recovery = items.drain(8..14).collect();
+        items.insert(
+            7,
+            ksni::menu::SubMenu {
+                label: "Recovery".into(),
+                submenu: recovery,
+                ..Default::default()
+            }
+            .into(),
+        );
+        items.splice(3..3, menu_preferences::tray(&self.action_sender));
+        items
     }
 }
 
@@ -194,14 +336,81 @@ mod input_preview;
 pub(crate) mod media;
 mod media_view;
 mod menu;
+mod menu_preferences;
 mod models_view;
 mod output;
 mod recording_overlay;
+mod recovery;
 mod settings_view;
 mod theme;
 mod window;
 
 pub fn run() -> Result<(), String> {
+    if let Some(command) = std::env::args().nth(1).filter(|c| c.starts_with("menu-")) {
+        if command == "menu-help" {
+            println!(
+                "{}",
+                serde_json::json!({"ok":true,"commands":["menu-status","menu-model compact|parakeet_v2|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
+            );
+        } else {
+            let command = std::iter::once(command)
+                .chain(std::env::args().skip(2))
+                .collect::<Vec<_>>()
+                .join(" ");
+            let response = control::request(&command)?;
+            println!("{response}");
+            if serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+                == false
+            {
+                std::process::exit(1);
+            }
+        }
+        return Ok(());
+    }
+    if std::env::args().nth(1).as_deref() == Some("shortcuts-help") {
+        println!(
+            "{}",
+            serde_json::json!({"ok":true,"commands":["shortcuts-status","shortcuts-edit","settings"],"editing":"X11: Settings > Shortcuts. Wayland: shortcuts-edit opens the live desktop session."})
+        );
+        return Ok(());
+    }
+    if let Some(command) = std::env::args()
+        .nth(1)
+        .filter(|c| matches!(c.as_str(), "shortcuts-status" | "shortcuts-edit"))
+    {
+        println!("{}", control::request(&command)?);
+        return Ok(());
+    }
+    if std::env::args().nth(1).as_deref() == Some("recovery-help") {
+        println!(
+            "{}",
+            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Copies to clipboard when external focus cannot be proven"})
+        );
+        return Ok(());
+    }
+    if std::env::args().nth(1).is_some_and(|c| {
+        matches!(
+            c.as_str(),
+            "copy-last"
+                | "paste-last"
+                | "copy-unsaved"
+                | "retry-unsaved"
+                | "recovery-status"
+                | "media-transcripts"
+                | "failed-transcripts"
+                | "failed-recordings"
+                | "quit"
+        )
+    }) {
+        let response = control::request(&std::env::args().nth(1).unwrap())?;
+        println!("{response}");
+        let value: serde_json::Value =
+            serde_json::from_str(&response).map_err(|e| e.to_string())?;
+        if value["ok"] == false {
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
     let mut command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
     if command == "ask-status" {
         println!("{}", control::ask_status()?);
@@ -210,7 +419,7 @@ pub fn run() -> Result<(), String> {
     if command == "ask-help" {
         println!(
             "{}",
-            serde_json::json!({"commands": ["ask", "ask-start", "ask-stop", "ask-cancel", "ask-status", "ask-configure < configuration.json", "ask-key PROVIDER < secret", "ask-key cartesia < secret", "ask-speech-configure < configuration.json", "ask-speech-status"], "desktop_shortcut": "Map Control+Shift+Space to koett ask in desktop shortcut settings", "configuration": {"enabled": false, "provider": "groq|openRouter|custom", "model": "provider model identifier", "endpoint": "HTTPS chat completions URL"}})
+            serde_json::json!({"commands": ["ask", "ask-start", "ask-stop", "ask-cancel", "ask-status", "ask-configure < configuration.json", "ask-key PROVIDER < secret", "ask-key cartesia < secret", "ask-speech-configure < configuration.json", "ask-speech-status"], "desktop_shortcut": "Ctrl+Alt+Space; portal-managed on Wayland", "configuration": {"enabled": false, "provider": "groq|openRouter|custom", "model": "provider model identifier", "endpoint": "HTTPS chat completions URL"}})
         );
         return Ok(());
     }
@@ -299,6 +508,18 @@ pub fn run() -> Result<(), String> {
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
     control::listen(actions.clone(), ui.clone())?;
+    menu_preferences::start_inputs();
+    let startup_ui = ui.clone();
+    std::thread::spawn(move || match history::recovery::initialize_last() {
+        Ok(()) => {
+            if let Some(text) = history::recovery::last() {
+                let _ = startup_ui.send(window::Update::Completed(text));
+            }
+        }
+        Err(error) => {
+            let _ = startup_ui.send(window::Update::Status(format!("@notice:{error}")));
+        }
+    });
     let worker_ui = ui.clone();
     let worker_actions = actions.clone();
     std::thread::spawn(move || {
@@ -312,7 +533,17 @@ pub fn run() -> Result<(), String> {
         let (sender, messages) = mpsc::channel();
         let tray_updates = TrayUpdates { sender };
         std::thread::spawn(move || {
-            while let Ok(update) = messages.recv() {
+            loop {
+                let update = match messages.recv_timeout(Duration::from_millis(500)) {
+                    Ok(update) => update,
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        if let Some(tray) = &tray {
+                            let _ = tray.update(|_| {});
+                        }
+                        continue;
+                    }
+                    Err(_) => break,
+                };
                 match update {
                     TrayUpdate::Levels(levels) => {
                         let _ = worker_ui.send(window::Update::Levels(levels));
@@ -406,23 +637,48 @@ fn run_x11(
     actions: Receiver<TrayAction>,
     tray: Option<&TrayUpdates>,
 ) -> Result<(), String> {
-    let mut shortcut = HotKey::from_str(&settings.shortcut)
-        .map_err(|error| format!("invalid shortcut {}: {error}", settings.shortcut))?;
+    settings.validate_shortcuts()?;
     let hotkeys = GlobalHotKeyManager::new()
         .map_err(|error| format!("could not start X11 shortcuts: {error}"))?;
-    let mut shortcut_registered = hotkeys.register(shortcut).is_ok();
-    if !shortcut_registered {
-        report_shortcut_failure(tray, "unavailable");
+    let mut held_keys = std::collections::HashSet::new();
+    let mut blocked_keys = std::collections::HashSet::new();
+    let mut bindings = Vec::new();
+    for value in [
+        &settings.shortcut,
+        &settings.ask_shortcut,
+        &settings.media_shortcut,
+    ] {
+        let key = if value.is_empty() {
+            None
+        } else {
+            Some(HotKey::from_str(value).map_err(|error| error.to_string())?)
+        };
+        let registered = key.is_some_and(|key| hotkeys.register(key).is_ok());
+        if key.is_some() && !registered {
+            report_shortcut_failure(tray, "unavailable");
+        }
+        bindings.push((key, registered, ShortcutLatch::default()));
     }
+    let missing: Vec<_> = ["dictation", "ask", "media"]
+        .into_iter()
+        .zip(&bindings)
+        .filter(|(_, (key, registered, _))| key.is_some() && !registered)
+        .map(|(name, _)| name)
+        .collect();
+    shortcut_status(
+        serde_json::json!({"ok":missing.is_empty(),"backend":"x11","active":bindings.iter().map(|(key, registered, _)| if *registered { key.map(|k| k.to_string()) } else { None }).collect::<Vec<_>>(),"desired":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut],"missing":missing,"error":if missing.is_empty() { serde_json::Value::Null } else { serde_json::json!({"code":"shortcut_registration_failed","message":"Some shortcuts are unavailable. Choose another key in Settings."}) }}),
+    );
     let mut output = X11Output::new()?;
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
     let mut last_settings_check = Instant::now();
-    let mut latch = ShortcutLatch::default();
-
     loop {
         while let Ok(action) = actions.try_recv() {
             match action {
+                TrayAction::Menu(command, reply) => {
+                    let value = app.menu_command(&command, tray);
+                    let _ = reply.0.send(value);
+                }
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
@@ -445,7 +701,33 @@ fn run_x11(
                 TrayAction::OpenSettings => {
                     update_tray_status(tray, "@settings");
                 }
-                TrayAction::Quit => {
+                TrayAction::Recovery(command) => match recovery::operation(&command) {
+                    Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
+                    Ok(value) if command == "recovery-status" => update_tray_status(
+                        tray,
+                        &format!(
+                            "@notice:Unsaved: {} · Last available: {}",
+                            value["unsaved_count"], value["last_available"]
+                        ),
+                    ),
+                    Ok(_) if command == "retry-unsaved" => {
+                        update_tray_status(tray, "@refresh");
+                        update_tray_status(tray, "@notice:Unsaved transcripts saved");
+                    }
+                    Ok(_) => {}
+                },
+                TrayAction::Quit | TrayAction::QuitAnyway => {
+                    if app.quit_busy() {
+                        update_tray_status(
+                            tray,
+                            "@notice:Finish recording or processing before quitting",
+                        );
+                        continue;
+                    }
+                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                        update_tray_status(tray, "@quit-protected");
+                        continue;
+                    }
                     app.stop();
                     update_tray_status(tray, "@quit");
                     return Ok(());
@@ -453,17 +735,45 @@ fn run_x11(
             }
         }
         while let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
-            if shortcut_registered
-                && event.id == shortcut.id()
-                && !SHORTCUT_EDITING.load(std::sync::atomic::Ordering::Acquire)
-            {
-                let intent = if event.state == HotKeyState::Pressed {
-                    latch.press(settings.recording_mode)
-                } else {
-                    latch.release()
-                };
+            let editing = SHORTCUT_EDITING.load(std::sync::atomic::Ordering::Acquire);
+            if event.state == HotKeyState::Pressed {
+                held_keys.insert(event.id);
+            } else {
+                held_keys.remove(&event.id);
+            }
+            if blocked_keys.contains(&event.id) {
+                if event.state == HotKeyState::Released {
+                    blocked_keys.remove(&event.id);
+                }
+                continue;
+            }
+            for (index, (key, registered, latch)) in bindings.iter_mut().enumerate() {
+                if !*registered || !key.is_some_and(|key| key.id() == event.id) {
+                    continue;
+                }
+                if event.state == HotKeyState::Pressed
+                    && editing
+                    && let Ok(capture) = SHORTCUT_CAPTURE.lock()
+                    && let Some(capture) = capture.as_ref()
+                {
+                    let chord = match index {
+                        0 => &settings.shortcut,
+                        1 => &settings.ask_shortcut,
+                        _ => &settings.media_shortcut,
+                    };
+                    let _ = capture.try_send(chord.clone());
+                }
+                let intent =
+                    x11_shortcut_intent(latch, settings.recording_mode, event.state, editing);
                 if let Some(intent) = intent {
-                    app.command(intent.into(), || output.focused_window());
+                    match index {
+                        0 => app.command(intent.into(), || output.focused_window()),
+                        1 => app.command(ask_shortcut_command(intent), || None),
+                        _ if event.state == HotKeyState::Pressed => {
+                            update_tray_status(tray, "@media")
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
@@ -519,23 +829,95 @@ fn run_x11(
                 settings.paste_shortcut = updated.paste_shortcut;
             }
             if let Ok(updated) = Settings::load()
-                && updated.shortcut != settings.shortcut
+                && updated.validate_shortcuts().is_ok()
             {
-                match HotKey::from_str(&updated.shortcut) {
-                    Ok(next) if hotkeys.register(next).is_ok() => {
-                        if latch.release().is_some() {
-                            app.command(EngineCommand::Stop, || output.focused_window());
+                let next_values = [
+                    &updated.shortcut,
+                    &updated.ask_shortcut,
+                    &updated.media_shortcut,
+                ];
+                let old_values = [
+                    settings.shortcut.clone(),
+                    settings.ask_shortcut.clone(),
+                    settings.media_shortcut.clone(),
+                ];
+                if next_values
+                    .iter()
+                    .zip(&old_values)
+                    .any(|(next, old)| *next != old)
+                {
+                    let desired: Vec<Option<HotKey>> = next_values
+                        .iter()
+                        .map(|value| {
+                            if value.is_empty() {
+                                None
+                            } else {
+                                HotKey::from_str(value).ok()
+                            }
+                        })
+                        .collect();
+                    let old: Vec<HotKey> = bindings
+                        .iter()
+                        .filter_map(|(key, registered, _)| if *registered { *key } else { None })
+                        .collect();
+                    let mut added = Vec::new();
+                    let mut failure = None;
+                    for key in desired.iter().flatten().filter(|key| !old.contains(key)) {
+                        match hotkeys.register(*key) {
+                            Ok(()) => added.push(*key),
+                            Err(error) => {
+                                failure = Some(error.to_string());
+                                break;
+                            }
                         }
-                        if shortcut_registered {
-                            let _ = hotkeys.unregister(shortcut);
-                        }
-                        shortcut = next;
-                        shortcut_registered = true;
-                        settings.shortcut = updated.shortcut;
-                        update_shortcut(tray, &settings.shortcut);
                     }
-                    Ok(_) => report_shortcut_failure(tray, "unavailable"),
-                    Err(_) => report_shortcut_failure(tray, "invalid"),
+                    if let Some(error) = failure {
+                        for key in added {
+                            let _ = hotkeys.unregister(key);
+                        }
+                        if let Err(error) = Settings::update(|current| {
+                            if current.shortcut == updated.shortcut
+                                && current.ask_shortcut == updated.ask_shortcut
+                                && current.media_shortcut == updated.media_shortcut
+                            {
+                                current.shortcut = old_values[0].clone();
+                                current.ask_shortcut = old_values[1].clone();
+                                current.media_shortcut = old_values[2].clone();
+                            }
+                        }) {
+                            eprintln!("Shortcut rollback failed: {error}");
+                        }
+                        report_shortcut_failure(
+                            tray,
+                            &format!("rebind failed: {error}; previous bindings retained"),
+                        );
+                        shortcut_status(serde_json::json!({"ok":false,"backend":"x11",
+                            "active":old_values,"desired":next_values,
+                            "error":{"code":"shortcut_rebind_failed","message":format!("Rebind failed: {error}; previous bindings retained"),"fix":"Choose an available shortcut in Settings."}}));
+                    } else {
+                        blocked_keys.extend(held_keys.iter().copied());
+                        for (index, (_, _, latch)) in bindings.iter_mut().enumerate() {
+                            if let Some(intent) = latch.release() {
+                                match index {
+                                    0 => app.command(intent.into(), || output.focused_window()),
+                                    1 => app.command(ask_shortcut_command(intent), || None),
+                                    _ => (),
+                                }
+                            }
+                        }
+                        for key in old.iter().filter(|key| !desired.contains(&Some(**key))) {
+                            let _ = hotkeys.unregister(*key);
+                        }
+                        for (index, key) in desired.into_iter().enumerate() {
+                            bindings[index] = (key, key.is_some(), ShortcutLatch::default());
+                        }
+                        settings.shortcut = updated.shortcut;
+                        settings.ask_shortcut = updated.ask_shortcut;
+                        settings.media_shortcut = updated.media_shortcut;
+                        shortcut_status(
+                            serde_json::json!({"ok":true,"backend":"x11","active":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut],"desired":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut]}),
+                        );
+                    }
                 }
             }
         }
@@ -549,6 +931,49 @@ fn run_x11(
     }
 }
 
+fn x11_shortcut_intent(
+    latch: &mut ShortcutLatch,
+    mode: crate::settings::RecordingMode,
+    state: HotKeyState,
+    editing: bool,
+) -> Option<RecordingIntent> {
+    match state {
+        HotKeyState::Pressed if !editing => latch.press(mode),
+        HotKeyState::Released => latch.release(),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod x11_editing_tests {
+    use super::*;
+    #[test]
+    fn editing_blocks_new_presses_but_releases_existing_hold() {
+        let mut latch = ShortcutLatch::default();
+        let mode = crate::settings::RecordingMode::Hold;
+        assert_eq!(
+            x11_shortcut_intent(&mut latch, mode, HotKeyState::Pressed, false),
+            Some(RecordingIntent::Start)
+        );
+        assert_eq!(
+            x11_shortcut_intent(&mut latch, mode, HotKeyState::Released, true),
+            Some(RecordingIntent::Stop)
+        );
+        assert_eq!(
+            x11_shortcut_intent(&mut latch, mode, HotKeyState::Pressed, true),
+            None
+        );
+        assert_eq!(
+            x11_shortcut_intent(&mut latch, mode, HotKeyState::Released, true),
+            None
+        );
+        assert_eq!(
+            x11_shortcut_intent(&mut latch, mode, HotKeyState::Pressed, false),
+            Some(RecordingIntent::Start)
+        );
+    }
+}
+
 fn shortcut_action(intent: RecordingIntent) -> TrayAction {
     match intent {
         RecordingIntent::Start => TrayAction::Start,
@@ -557,12 +982,62 @@ fn shortcut_action(intent: RecordingIntent) -> TrayAction {
     }
 }
 
+fn ask_shortcut_command(intent: RecordingIntent) -> EngineCommand {
+    match intent {
+        RecordingIntent::Start => EngineCommand::AskStart,
+        RecordingIntent::Stop => EngineCommand::AskStop,
+        RecordingIntent::Toggle => EngineCommand::Ask,
+    }
+}
+
+fn assigned_portal_bindings(
+    triggers: &std::collections::BTreeMap<String, String>,
+    enabled: &std::collections::HashSet<String>,
+) -> std::collections::HashSet<String> {
+    triggers
+        .iter()
+        .filter(|(id, trigger)| enabled.contains(*id) && !trigger.trim().is_empty())
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+#[cfg(test)]
+mod portal_binding_tests {
+    use super::*;
+
+    #[test]
+    fn returned_ids_without_assigned_keys_are_not_active() {
+        let enabled = ["dictation", "ask", "media"].map(String::from).into();
+        let mut triggers = [
+            ("dictation".into(), "Ctrl+Shift+Space".into()),
+            ("ask".into(), String::new()),
+            ("media".into(), "  ".into()),
+            ("disabled".into(), "Ctrl+Alt+X".into()),
+        ]
+        .into();
+        assert_eq!(
+            assigned_portal_bindings(&triggers, &enabled),
+            ["dictation".into()].into()
+        );
+        triggers.insert("ask".into(), "Ctrl+Alt+Space".into());
+        assert_eq!(
+            assigned_portal_bindings(&triggers, &enabled),
+            ["dictation".into(), "ask".into()].into()
+        );
+        triggers.insert("dictation".into(), String::new());
+        assert_eq!(
+            assigned_portal_bindings(&triggers, &enabled),
+            ["ask".into()].into()
+        );
+    }
+}
+
 async fn shortcut_events(
     settings: Settings,
     actions: Sender<TrayAction>,
     updates: Option<TrayUpdates>,
 ) -> Result<(), String> {
-    let shortcut = Shortcut::from_str(&settings.shortcut)?;
+    settings.validate_shortcuts()?;
     let connection = ashpd::zbus::Connection::session()
         .await
         .map_err(|error| format!("could not connect to the desktop portal: {error}"))?;
@@ -585,41 +1060,69 @@ async fn shortcut_events(
         .await
         .and_then(|request| request.response())
         .map_err(|error| format!("could not read the desktop shortcuts: {error}"))?;
-    let mut shortcut_label = listed
+    let mut triggers: std::collections::BTreeMap<String, String> = listed
         .shortcuts()
         .iter()
-        .find(|existing| existing.id() == SHORTCUT_ID)
-        .map(|existing| existing.trigger_description().to_string());
-    if shortcut_label.is_none() {
-        let requested = NewShortcut::new(SHORTCUT_ID, "Start or stop Koett dictation")
-            .preferred_trigger(shortcut.portal_trigger().as_str());
+        .map(|s| (s.id().to_string(), s.trigger_description().to_string()))
+        .collect();
+    let mut requested = Vec::new();
+    for (id, label, value) in [
+        (SHORTCUT_ID, "Dictation", &settings.shortcut),
+        ("ask", "Ask", &settings.ask_shortcut),
+        ("media", "Transcribe media", &settings.media_shortcut),
+    ] {
+        if !value.is_empty() {
+            requested.push(
+                NewShortcut::new(id, label)
+                    .preferred_trigger(Shortcut::from_str(value)?.portal_trigger().as_str()),
+            );
+        }
+    }
+    if !requested.is_empty() {
         let bound = shortcuts
             .bind_shortcuts(
                 &shortcut_session,
-                &[requested],
+                &requested,
                 None,
                 BindShortcutsOptions::default(),
             )
             .await
             .and_then(|request| request.response())
-            .map_err(|error| format!("could not bind the Koett shortcut: {error}"))?;
-        if !bound
-            .shortcuts()
-            .iter()
-            .any(|existing| existing.id() == SHORTCUT_ID)
-        {
-            return Err("the desktop did not bind the Koett shortcut".to_string());
-        }
-        shortcut_label = bound
-            .shortcuts()
-            .iter()
-            .find(|shortcut| shortcut.id() == SHORTCUT_ID)
-            .map(|shortcut| shortcut.trigger_description().to_string());
+            .map_err(|error| format!("could not bind shortcuts: {error}"))?;
+        triggers.extend(
+            bound
+                .shortcuts()
+                .iter()
+                .map(|s| (s.id().to_string(), s.trigger_description().to_string())),
+        );
     }
-    update_shortcut(
-        updates.as_ref(),
-        shortcut_label.as_deref().unwrap_or(&settings.shortcut),
+    let enabled: std::collections::HashSet<String> = [
+        (SHORTCUT_ID, &settings.shortcut),
+        ("ask", &settings.ask_shortcut),
+        ("media", &settings.media_shortcut),
+    ]
+    .into_iter()
+    .filter(|(_, value)| !value.is_empty())
+    .map(|(id, _)| id.to_string())
+    .collect();
+    let mut active = assigned_portal_bindings(&triggers, &enabled);
+    let missing: Vec<_> = enabled.difference(&active).cloned().collect();
+    if !missing.is_empty() {
+        report_shortcut_failure(
+            updates.as_ref(),
+            &format!("missing bindings: {}", missing.join(", ")),
+        );
+    }
+    shortcut_status(
+        serde_json::json!({"ok":missing.is_empty(),"backend":"portal","active":active,"triggers":triggers,"missing":missing,"editing_supported":shortcuts.version() >= 2}),
     );
+    let session_path = serde_json::to_value(&shortcut_session).map_err(|e| e.to_string())?;
+    let mut closed = shortcut_session
+        .receive_closed()
+        .await
+        .map_err(|e| e.to_string())?;
+    let (commands, mut edits) = tokio::sync::mpsc::unbounded_channel::<ShortcutEdit>();
+    *SHORTCUT_COMMANDS.lock().map_err(|e| e.to_string())? = Some(commands);
     let mut changes = shortcuts
         .receive_shortcuts_changed()
         .await
@@ -633,10 +1136,30 @@ async fn shortcut_events(
         .await
         .map_err(|e| e.to_string())?;
     let mut latch = ShortcutLatch::default();
+    let mut ask_latch = ShortcutLatch::default();
+    let mut media_pressed = false;
     loop {
         tokio::select! {
+            _ = closed.next() => break,
+            Some(reply) = edits.recv() => {
+                let result = if shortcuts.version() < 2 {
+                    Err("Desktop portal version 1 has no ConfigureShortcuts. Use desktop shortcut settings.".to_string())
+                } else {
+                    shortcuts.configure_shortcuts(&shortcut_session, None, Default::default()).await.map_err(|e| e.to_string())
+                };
+                let _ = reply.send(result);
+            }
             event = presses.next() => {
                 let Some(event) = event else { break; };
+                if serde_json::to_value(event.session_handle()).ok().as_ref() != Some(&session_path) || !active.contains(event.shortcut_id()) { continue; }
+                if event.shortcut_id() == "media" && !media_pressed { media_pressed = true; let _ = actions.send(TrayAction::OpenMedia); }
+                if event.shortcut_id() == "ask" {
+                    let mode = Settings::load().unwrap_or_else(|_| settings.clone()).recording_mode;
+                    if let Some(intent) = ask_latch.press(mode) {
+                        let action = match intent { RecordingIntent::Start => TrayAction::AskStart, RecordingIntent::Stop => TrayAction::AskStop, RecordingIntent::Toggle => TrayAction::Ask };
+                        let _ = actions.send(action);
+                    }
+                }
                 if event.shortcut_id() == SHORTCUT_ID {
                     let mode = Settings::load().unwrap_or_else(|_| settings.clone()).recording_mode;
                     if let Some(intent) = latch.press(mode) { let _ = actions.send(shortcut_action(intent)); }
@@ -644,6 +1167,15 @@ async fn shortcut_events(
             }
             change = changes.next() => {
                 let Some(change) = change else { break; };
+                if serde_json::to_value(change.session_handle()).ok().as_ref() != Some(&session_path) { continue; }
+                if ask_latch.release().is_some() { let _ = actions.send(TrayAction::AskStop); }
+                if let Some(intent) = latch.release() { let _ = actions.send(shortcut_action(intent)); }
+                media_pressed = false;
+                triggers = change.shortcuts().iter().map(|s| (s.id().to_string(), s.trigger_description().to_string())).collect();
+                active = assigned_portal_bindings(&triggers, &enabled);
+                let missing: Vec<_> = enabled.difference(&active).cloned().collect();
+                shortcut_status(serde_json::json!({"ok":missing.is_empty(),"backend":"portal","active":active,"triggers":triggers,"missing":missing,"editing_supported":shortcuts.version() >= 2}));
+                if !missing.is_empty() { report_shortcut_failure(updates.as_ref(), &format!("missing bindings: {}", missing.join(", "))); }
                 if let Some(shortcut) = change.shortcuts().iter().find(|shortcut| shortcut.id() == SHORTCUT_ID) {
                     if let Some(intent) = latch.release() { let _ = actions.send(shortcut_action(intent)); }
                     update_shortcut(updates.as_ref(), shortcut.trigger_description());
@@ -651,6 +1183,9 @@ async fn shortcut_events(
             }
             event = releases.next() => {
                 let Some(event) = event else { break; };
+                if serde_json::to_value(event.session_handle()).ok().as_ref() != Some(&session_path) { continue; }
+                if event.shortcut_id() == "media" { media_pressed = false; }
+                if event.shortcut_id() == "ask" && ask_latch.release().is_some() { let _ = actions.send(TrayAction::AskStop); }
                 if event.shortcut_id() == SHORTCUT_ID && let Some(intent) = latch.release() {
                     let _ = actions.send(shortcut_action(intent));
                 }
@@ -659,6 +1194,10 @@ async fn shortcut_events(
     }
     if let Some(intent) = latch.release() {
         let _ = actions.send(shortcut_action(intent));
+    }
+    *SHORTCUT_COMMANDS.lock().map_err(|e| e.to_string())? = None;
+    if ask_latch.release().is_some() {
+        let _ = actions.send(TrayAction::AskStop);
     }
     Err("Shortcut session closed; use Koett start/stop controls".into())
 }
@@ -700,6 +1239,9 @@ async fn run_wayland(
                 tray,
                 "@notice:Global shortcut unavailable. Open Settings to set one up.",
             );
+            shortcut_status(
+                serde_json::json!({"ok":false,"backend":"portal","active":[],"error":{"code":"shortcut_session_failed","message":error,"fix":"Check desktop portal registration and permission, then restart Koett."}}),
+            );
             eprintln!("Global shortcut unavailable: {error}");
         }
         if output_task.as_ref().is_some_and(|task| task.is_finished())
@@ -715,6 +1257,10 @@ async fn run_wayland(
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             match action {
+                TrayAction::Menu(command, reply) => {
+                    let value = app.menu_command(&command, tray);
+                    let _ = reply.0.send(value);
+                }
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
@@ -735,7 +1281,33 @@ async fn run_wayland(
                 TrayAction::Stop => app.command(EngineCommand::Stop, output::capture_target),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => update_tray_status(tray, "@settings"),
-                TrayAction::Quit => {
+                TrayAction::Recovery(command) => match recovery::operation(&command) {
+                    Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
+                    Ok(value) if command == "recovery-status" => update_tray_status(
+                        tray,
+                        &format!(
+                            "@notice:Unsaved: {} · Last available: {}",
+                            value["unsaved_count"], value["last_available"]
+                        ),
+                    ),
+                    Ok(_) if command == "retry-unsaved" => {
+                        update_tray_status(tray, "@refresh");
+                        update_tray_status(tray, "@notice:Unsaved transcripts saved");
+                    }
+                    Ok(_) => {}
+                },
+                TrayAction::Quit | TrayAction::QuitAnyway => {
+                    if app.quit_busy() {
+                        update_tray_status(
+                            tray,
+                            "@notice:Finish recording or processing before quitting",
+                        );
+                        continue;
+                    }
+                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                        update_tray_status(tray, "@quit-protected");
+                        continue;
+                    }
                     if let Some(task) = &shortcut_task {
                         task.abort();
                     }
@@ -807,10 +1379,66 @@ async fn run_wayland(
     }
 }
 
+fn capture_requested(status: &AppStatus, command: &EngineCommand) -> bool {
+    *status == AppStatus::Ready
+        && matches!(
+            command,
+            EngineCommand::Start
+                | EngineCommand::Toggle
+                | EngineCommand::Ask
+                | EngineCommand::AskStart
+        )
+}
+
+#[cfg(test)]
+mod queued_capture_tests {
+    use super::*;
+
+    #[test]
+    fn queued_capture_refuses_quit_before_any_worker_status() {
+        for command in [EngineCommand::Start, EngineCommand::AskStart] {
+            let is_ask = matches!(command, EngineCommand::AskStart);
+            let (engine, received, updates) = EngineHandle::controlled();
+            let mut app = LinuxEngine::new(engine);
+            app.status = AppStatus::Ready;
+            app.command(command, || None);
+            assert!(app.quit_busy());
+            assert!(received.try_recv().is_ok());
+            assert!(app.engine.updates.try_recv().is_err());
+            updates
+                .send(if is_ask {
+                    EngineUpdate::Ask(serde_json::json!({"phase":"Cancelled"}))
+                } else {
+                    EngineUpdate::Status(AppStatus::Ready)
+                })
+                .unwrap();
+            app.poll(|_, _, _, _| Ok(()), |_| {}, |_| {}, |_| {});
+            assert!(!app.quit_busy());
+        }
+    }
+
+    #[test]
+    fn capture_is_guarded_before_worker_status_arrives() {
+        for command in [
+            EngineCommand::Start,
+            EngineCommand::Toggle,
+            EngineCommand::Ask,
+            EngineCommand::AskStart,
+        ] {
+            assert!(capture_requested(&AppStatus::Ready, &command));
+            assert!(!capture_requested(&AppStatus::Recording, &command));
+        }
+        assert!(!capture_requested(&AppStatus::Ready, &EngineCommand::Stop));
+    }
+}
+
 struct LinuxEngine {
     engine: EngineHandle,
     status: AppStatus,
     paste_target: Option<u32>,
+    configuration_pending: bool,
+    capture_pending: bool,
+    capture_is_ask: bool,
 }
 
 impl LinuxEngine {
@@ -819,7 +1447,73 @@ impl LinuxEngine {
             engine,
             status: AppStatus::Starting,
             paste_target: None,
+            configuration_pending: false,
+            capture_pending: false,
+            capture_is_ask: false,
         }
+    }
+
+    fn menu_command(&mut self, command: &str, tray: Option<&TrayUpdates>) -> serde_json::Value {
+        let value = if let Some(selection) = command.strip_prefix("menu-model ") {
+            if self.quit_busy() || self.status != AppStatus::Ready {
+                menu_preferences::error("Finish recording or processing before changing models")
+            } else {
+                match serde_json::from_value::<crate::model::LocalModel>(selection.into()) {
+                    Ok(selection) => {
+                        self.command(EngineCommand::SwitchModel(selection), || None);
+                        serde_json::json!({"ok":true,"status":"change_requested","fix":"Use menu-status to confirm completion"})
+                    }
+                    Err(_) => menu_preferences::error("Choose compact, parakeet_v2 or nemotron"),
+                }
+            }
+        } else if let Some(output) = command.strip_prefix("menu-format ") {
+            if self.quit_busy() || self.status != AppStatus::Ready {
+                menu_preferences::error("Finish recording or processing before changing formatting")
+            } else {
+                match Settings::load() {
+                    Ok(settings) => {
+                        match menu_preferences::formatting_patch(settings.formatting, output) {
+                            Ok(formatting) => {
+                                self.command(EngineCommand::Formatting(formatting), || None);
+                                serde_json::json!({"ok":true,"status":"change_requested","fix":"Use menu-status to confirm completion"})
+                            }
+                            Err(error) => menu_preferences::error(&error),
+                        }
+                    }
+                    Err(error) => menu_preferences::error(&error),
+                }
+            }
+        } else if let Some(target) = command.strip_prefix("menu-open ") {
+            if matches!(target, "models" | "formatting" | "about" | "settings") {
+                update_tray_status(tray, &format!("@{target}"));
+                serde_json::json!({"ok":true,"status":"window_requested"})
+            } else {
+                menu_preferences::error("Choose models, formatting, about or settings")
+            }
+        } else {
+            menu_preferences::operation(command, self.quit_busy())
+        };
+        if value["ok"] == false {
+            update_tray_status(
+                tray,
+                &format!(
+                    "@notice:{}",
+                    value["error"]["message"]
+                        .as_str()
+                        .unwrap_or("Preferences unavailable")
+                ),
+            );
+        }
+        value
+    }
+
+    fn quit_busy(&self) -> bool {
+        self.configuration_pending
+            || self.capture_pending
+            || matches!(
+                self.status,
+                AppStatus::Starting | AppStatus::Recording | AppStatus::Transcribing
+            )
     }
 
     fn toggle(&mut self, focused_window: impl FnOnce() -> Option<u32>) {
@@ -838,7 +1532,25 @@ impl LinuxEngine {
             let _ = self.engine.commands.send(command);
             return;
         }
-        if matches!(command, EngineCommand::SwitchModel(_)) && self.status != AppStatus::Ready {
+        let is_ask = matches!(
+            command,
+            EngineCommand::Ask | EngineCommand::AskStart | EngineCommand::AskStop
+        );
+        let is_dictation = matches!(
+            command,
+            EngineCommand::Toggle | EngineCommand::Start | EngineCommand::Stop
+        );
+        if (self.capture_pending || self.status == AppStatus::Recording)
+            && (is_ask || is_dictation)
+            && is_ask != self.capture_is_ask
+        {
+            return;
+        }
+        if matches!(
+            command,
+            EngineCommand::SwitchModel(_) | EngineCommand::Formatting(_)
+        ) && (self.quit_busy() || self.status != AppStatus::Ready)
+        {
             return;
         }
 
@@ -853,6 +1565,18 @@ impl LinuxEngine {
         }
         if self.status == AppStatus::Ready {
             self.paste_target = focus();
+        }
+        if matches!(
+            command,
+            EngineCommand::SwitchModel(_) | EngineCommand::Formatting(_) | EngineCommand::Media(_)
+        ) {
+            self.configuration_pending = true;
+            QUIT_BUSY.store(true, std::sync::atomic::Ordering::Release);
+        }
+        if capture_requested(&self.status, &command) {
+            self.capture_is_ask = is_ask;
+            self.capture_pending = true;
+            QUIT_BUSY.store(true, std::sync::atomic::Ordering::Release);
         }
         if self.engine.commands.send(command).is_err() {
             match Settings::load() {
@@ -881,15 +1605,38 @@ impl LinuxEngine {
             match update {
                 EngineUpdate::PrepareAsk(ack) => prepare_ask(ack),
                 EngineUpdate::Ask(value) => {
+                    if value.get("error").is_some()
+                        || value.get("phase").and_then(serde_json::Value::as_str)
+                            == Some("Cancelled")
+                    {
+                        self.capture_pending = false;
+                        QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
+                    }
                     crate::assistant::update_status(&value);
                     status_changed(&format!("@ask:{}", value));
                 }
                 EngineUpdate::FormattingBusy(busy) => {
+                    self.configuration_pending = busy;
+                    QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
                     status_changed(if busy { "@format-busy" } else { "@format-idle" })
                 }
-                EngineUpdate::ActiveModel(model) => status_changed(&format!("@model:{model}")),
+                EngineUpdate::ActiveModel(model) => {
+                    if let Ok(mut active) = menu_preferences::ACTIVE.write() {
+                        *active = model.clone();
+                    }
+                    status_changed(&format!("@model:{model}"));
+                }
                 EngineUpdate::Status(status) => {
+                    self.configuration_pending = false;
                     self.status = status;
+                    self.capture_pending = false;
+                    QUIT_BUSY.store(
+                        matches!(
+                            self.status,
+                            AppStatus::Starting | AppStatus::Recording | AppStatus::Transcribing
+                        ),
+                        std::sync::atomic::Ordering::Release,
+                    );
                     status_changed(status_text(&self.status).as_str());
                 }
                 EngineUpdate::TranscriptReady { model, transcript } => {
@@ -1277,19 +2024,17 @@ fn save_restore_token(token: &str) -> Result<(), String> {
 }
 
 async fn configure_shortcut() -> Result<(), String> {
-    let shortcuts = GlobalShortcuts::new().await.map_err(|e| e.to_string())?;
-    if shortcuts.version() < 2 {
-        return Err("This desktop does not offer shortcut editing. Bind koett toggle or koett start/stop in compositor settings".into());
-    }
-    let session = shortcuts
-        .create_session(CreateSessionOptions::default())
+    let (reply, response) = tokio::sync::oneshot::channel();
+    SHORTCUT_COMMANDS
+        .lock()
+        .map_err(|e| e.to_string())?
+        .as_ref()
+        .ok_or("No active desktop shortcut session. Restart Koett and retry.")?
+        .send(reply)
+        .map_err(|_| "Desktop shortcut session closed. Restart Koett.".to_string())?;
+    response
         .await
-        .map_err(|e| e.to_string())?;
-    shortcuts
-        .configure_shortcuts(&session, None, Default::default())
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
+        .map_err(|_| "Desktop shortcut session closed during editing".to_string())?
 }
 
 fn completed_text(
@@ -1312,6 +2057,9 @@ fn completed_text(
 }
 
 fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
+    if text.trim().is_empty() {
+        return;
+    }
     if let Some(tray) = tray {
         let _ = tray.sender.send(TrayUpdate::Completed(text.to_owned()));
     }
@@ -1474,9 +2222,56 @@ mod menu_tests {
                     _ => None,
                 })
                 .unwrap();
-            assert!(item.enabled);
+            if label == "Record" {
+                assert_eq!(
+                    item.enabled,
+                    !QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)
+                );
+            } else {
+                assert!(item.enabled);
+            }
             (item.activate)(&mut tray);
             assert_eq!(receiver.recv().unwrap(), expected);
+        }
+    }
+
+    fn find_menu_action(
+        items: Vec<ksni::MenuItem<LinuxTray>>,
+        label: &str,
+    ) -> Option<ksni::menu::StandardItem<LinuxTray>> {
+        items.into_iter().find_map(|item| match item {
+            ksni::MenuItem::Standard(item) if item.label == label => Some(item),
+            ksni::MenuItem::SubMenu(item) => find_menu_action(item.submenu, label),
+            _ => None,
+        })
+    }
+
+    #[test]
+    fn tray_recovery_and_folder_actions_dispatch_shared_operations() {
+        let (action_sender, receiver) = mpsc::channel();
+        let mut tray = LinuxTray {
+            action_sender,
+            status: "Ready".into(),
+        };
+        for (label, command) in [
+            ("Copy last transcript", "copy-last"),
+            ("Paste last transcript", "paste-last"),
+            ("Copy unsaved transcripts", "copy-unsaved"),
+            ("Retry Save", "retry-unsaved"),
+            ("Media transcripts…", "media-transcripts"),
+            ("Failed transcripts…", "failed-transcripts"),
+            ("Failed recordings…", "failed-recordings"),
+            ("Recovery status", "recovery-status"),
+        ] {
+            let item = find_menu_action(tray.menu(), label).unwrap();
+            if matches!(command, "copy-last" | "paste-last") {
+                assert_eq!(item.enabled, history::recovery::last_available());
+            }
+            (item.activate)(&mut tray);
+            assert_eq!(
+                receiver.recv().unwrap(),
+                TrayAction::Recovery(command.into())
+            );
         }
     }
 

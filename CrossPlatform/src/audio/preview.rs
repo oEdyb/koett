@@ -185,6 +185,19 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "requires the private koett-last-recovery agent-lab"]
+    fn missing_selected_preview_never_uses_recording_fallback() {
+        assert!(
+            std::env::var("AGENT_LAB_RUNTIME")
+                .unwrap()
+                .ends_with("/koett-last-recovery")
+        );
+        let result = Capture::start(Some("alsa:nonexistent-private-fixture-device"), || true);
+        assert!(matches!(result, Err(error) if error == "Selected microphone unavailable"));
+        assert!(!recording());
+    }
+
+    #[test]
     fn recording_waits_for_preview_release_and_blocks_preview_until_dropped() {
         let ownership = PREVIEW.lock().unwrap();
         let worker = std::thread::spawn(RecordingPriority::acquire);

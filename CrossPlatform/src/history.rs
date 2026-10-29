@@ -10,6 +10,7 @@ use crate::paths;
 
 #[path = "history/import.rs"]
 mod import;
+pub mod recovery;
 #[path = "history/store.rs"]
 mod store;
 pub use store::{HistoryCursor, HistoryRecord, HistoryStore, HistorySummary};
@@ -41,10 +42,9 @@ pub fn append_transcript_with_raw_resilient(
     if text.trim().is_empty() && raw_text.unwrap_or("").trim().is_empty() {
         return Ok(None);
     }
-    append_record_with_fallback_to(
-        &paths::history_database()?,
-        &paths::failed_transcripts_directory()?,
-        &new_record(OffsetDateTime::now_utc(), model, text, raw_text)?,
+    recovery::persist(
+        new_record(OffsetDateTime::now_utc(), model, text, raw_text)?,
+        true,
     )
 }
 
@@ -81,11 +81,28 @@ fn append_record_with_fallback_to(
     }
 }
 
-pub fn save_media_recovery(model: &str, text: &str) -> Result<PathBuf, String> {
-    save_failed_transcript_to(
-        &paths::failed_transcripts_directory()?,
-        &new_record(OffsetDateTime::now_utc(), model, text, None)?,
+pub fn append_question_resilient(model: &str, text: &str) -> Result<Option<PathBuf>, String> {
+    if text.trim().is_empty() {
+        return Ok(None);
+    }
+    recovery::question_last(text)?;
+    recovery::persist(
+        new_record(OffsetDateTime::now_utc(), model, text, None)?,
+        false,
     )
+}
+
+pub fn save_media_recovery(model: &str, text: &str) -> Result<PathBuf, String> {
+    let record = new_record(OffsetDateTime::now_utc(), model, text, None)?;
+    match paths::failed_transcripts_directory()
+        .and_then(|path| save_failed_transcript_to(&path, &record))
+    {
+        Ok(path) => Ok(path),
+        Err(_) => {
+            recovery::persist(record, false)?;
+            Err("Media transcript saved to History · Media file unavailable".into())
+        }
+    }
 }
 
 fn save_failed_transcript_to(directory: &Path, record: &HistoryRecord) -> Result<PathBuf, String> {

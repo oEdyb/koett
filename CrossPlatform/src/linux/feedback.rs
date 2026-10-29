@@ -88,3 +88,41 @@ mod tests {
         assert_eq!(fresh.update(Duration::from_secs(21), 0.7, 1.0), None);
     }
 }
+
+pub(super) fn recording_status(
+    elapsed: Duration,
+    warning: Option<CaptureWarning>,
+    notice: Option<&str>,
+) -> String {
+    let mut value = format!(
+        "Recording · {}:{:02}",
+        elapsed.as_secs() / 60,
+        elapsed.as_secs() % 60
+    );
+    if let Some(warning) = warning {
+        value.push_str(" · ");
+        value.push_str(warning.text());
+    }
+    if let Some(notice) = notice {
+        value.push_str(" · ");
+        value.push_str(notice);
+    }
+    value
+}
+
+#[cfg(test)]
+mod recording_status_tests {
+    #[test]
+    fn capture_keeps_input_replacement_and_save_failure_notices_visible() {
+        let notice = "Selected microphone unavailable; using replacement. Could not save";
+        let text = super::recording_status(std::time::Duration::from_secs(65), None, Some(notice));
+        assert_eq!(text, format!("Recording · 1:05 · {notice}"));
+        let loud = super::recording_status(
+            std::time::Duration::ZERO,
+            Some(super::CaptureWarning::Clipping),
+            Some(notice),
+        );
+        assert!(loud.contains("Input too loud"));
+        assert!(loud.ends_with(notice));
+    }
+}

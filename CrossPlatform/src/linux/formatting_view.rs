@@ -5,7 +5,8 @@ use std::sync::mpsc::Sender;
 pub(super) struct FormattingView {
     pub button: gtk::MenuButton,
     controls: gtk::Grid,
-    output: gtk::ComboBoxText,
+    output: gtk::ToggleButton,
+    raw: gtk::ToggleButton,
     style: gtk::ComboBoxText,
     structure: gtk::ComboBoxText,
     context: gtk::ComboBoxText,
@@ -38,9 +39,21 @@ impl FormattingView {
             .row_spacing(8)
             .column_spacing(12)
             .build();
+        let output = gtk::ToggleButton::with_label("S1-mini");
+        let raw = gtk::ToggleButton::with_label("Raw");
+        output.set_group(Some(&raw));
+        let segments = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        segments.add_css_class("linked");
+        segments.set_homogeneous(true);
+        segments.set_size_request(160, -1);
+        segments.append(&raw);
+        segments.append(&output);
+        let label = gtk::Label::new(Some("Output"));
+        label.set_halign(gtk::Align::End);
+        grid.attach(&label, 0, 0, 1, 1);
+        grid.attach(&segments, 1, 0, 1, 1);
         let mut controls = Vec::new();
         for (row, (name, choices)) in [
-            ("Output", &["Raw", "S1-mini"][..]),
             (
                 "Styling",
                 &["Casual", "Semi-casual", "Semi-formal", "Formal"][..],
@@ -59,8 +72,8 @@ impl FormattingView {
                 control.append_text(choice);
             }
             super::menu::set_accessible_label(control.upcast_ref(), name);
-            grid.attach(&label, 0, row as i32, 1, 1);
-            grid.attach(&control, 1, row as i32, 1, 1);
+            grid.attach(&label, 0, row as i32 + 1, 1, 1);
+            grid.attach(&control, 1, row as i32 + 1, 1, 1);
             controls.push(control);
         }
         body.append(&grid);
@@ -81,10 +94,11 @@ impl FormattingView {
         let view = Self {
             button,
             controls: grid,
-            output: controls[0].clone(),
-            style: controls[1].clone(),
-            structure: controls[2].clone(),
-            context: controls[3].clone(),
+            output: output.clone(),
+            raw,
+            style: controls[0].clone(),
+            structure: controls[1].clone(),
+            context: controls[2].clone(),
             status,
             cancel,
             refreshing: Default::default(),
@@ -92,36 +106,42 @@ impl FormattingView {
             idle: Default::default(),
         };
         view.refresh();
-        for control in &controls {
+        let dispatch: std::rc::Rc<dyn Fn()> = {
             let controls = controls.clone();
             let actions = actions.clone();
             let refreshing = view.refreshing.clone();
-            control.connect_changed(move |_| {
+            let output = output.downgrade();
+            std::rc::Rc::new(move || {
                 if refreshing.get() {
                     return;
                 }
                 let value = Formatting {
-                    enabled: controls[0].active() == Some(1),
-                    style: match controls[1].active() {
+                    enabled: output.upgrade().is_some_and(|output| output.is_active()),
+                    style: match controls[0].active() {
                         Some(0) => Style::Casual,
                         Some(2) => Style::SemiFormal,
                         Some(3) => Style::Formal,
                         _ => Style::SemiCasual,
                     },
-                    structure: if controls[2].active() == Some(1) {
+                    structure: if controls[1].active() == Some(1) {
                         Structure::Lists
                     } else {
                         Structure::Prose
                     },
-                    context: if controls[3].active() == Some(1) {
+                    context: if controls[2].active() == Some(1) {
                         Context::Email
                     } else {
                         Context::General
                     },
                 };
                 let _ = actions.send(super::TrayAction::Formatting(value));
-            });
+            })
+        };
+        for control in &controls {
+            let dispatch = dispatch.clone();
+            control.connect_changed(move |_| dispatch());
         }
+        view.output.connect_toggled(move |_| dispatch());
         view
     }
     fn refresh(&self) {
@@ -129,7 +149,8 @@ impl FormattingView {
         let value = crate::settings::Settings::load()
             .unwrap_or_default()
             .formatting;
-        self.output.set_active(Some(u32::from(value.enabled)));
+        self.raw.set_active(!value.enabled);
+        self.output.set_active(value.enabled);
         self.style.set_active(Some(match value.style {
             Style::Casual => 0,
             Style::SemiCasual => 1,
@@ -158,7 +179,9 @@ impl FormattingView {
         }
         let editable = self.idle.get() && !self.setup.get();
         self.controls.set_sensitive(editable);
-        for control in [&self.output, &self.style, &self.structure, &self.context] {
+        self.raw.set_sensitive(editable);
+        self.output.set_sensitive(editable);
+        for control in [&self.style, &self.structure, &self.context] {
             if !editable {
                 control.popdown();
             }
