@@ -3,6 +3,74 @@
   "bomFormat": "CycloneDX",
   "components": [
     {
+      "bom-ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8@157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "CC-BY-4.0"
+        }
+      ],
+      "name": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "type": "machine-learning-model",
+      "version": "sha256-157c157bc511"
+    },
+    {
+      "bom-ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8@5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "CC-BY-4.0"
+        }
+      ],
+      "name": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "type": "machine-learning-model",
+      "version": "sha256-5793d0fd397c"
+    },
+    {
       "bom-ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
       "externalReferences": [
         {
@@ -37,6 +105,42 @@
       "version": "archive-sha256-17f945007b52"
     },
     {
+      "bom-ref": "koett:model:sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25@78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "acknowledgement": "declared",
+            "name": "NVIDIA Open Model License; release conversion attribution requires upstream clarification"
+          }
+        }
+      ],
+      "name": "sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "type": "machine-learning-model",
+      "version": "sha256-78e2b79fcf72"
+    },
+    {
       "bom-ref": "koett:model:silero-vad@9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
       "externalReferences": [
         {
@@ -64,7 +168,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "type": "machine-learning-model",
@@ -130,7 +234,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/adler2@2.0.1",
@@ -165,7 +269,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/alsa-sys@0.4.0",
@@ -204,7 +308,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/alsa@0.11.0",
@@ -243,7 +347,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/arboard@3.6.1",
@@ -278,7 +382,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ashpd@0.13.13",
@@ -317,7 +421,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/async-broadcast@0.7.2",
@@ -356,7 +460,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/async-recursion@1.1.1",
@@ -395,7 +499,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/async-trait@0.1.92",
@@ -434,7 +538,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/autocfg@1.5.1",
@@ -473,7 +577,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/base64@0.22.1",
@@ -512,7 +616,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/base64@0.23.1",
@@ -551,7 +655,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/base64ct@1.8.3",
@@ -590,7 +694,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bitflags@2.13.1",
@@ -629,7 +733,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/block-buffer@0.12.1",
@@ -703,7 +807,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bumpalo@3.20.3",
@@ -738,7 +842,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bytes@1.12.1",
@@ -777,7 +881,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bzip2-sys@0.1.13+1.0.8",
@@ -816,7 +920,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bzip2@0.4.4",
@@ -855,7 +959,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/bzip2@0.6.1",
@@ -890,7 +994,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cairo-rs@0.22.9",
@@ -925,7 +1029,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cairo-sys-rs@0.22.9",
@@ -964,7 +1068,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cc@1.4.4",
@@ -1003,7 +1107,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cfg-expr@0.20.10",
@@ -1042,12 +1146,51 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cfg-if@1.0.4",
       "type": "library",
       "version": "1.0.4"
+    },
+    {
+      "bom-ref": "pkg:cargo/chacha20@0.10.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/stream-ciphers"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "chacha20",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/chacha20@0.10.2",
+      "type": "library",
+      "version": "0.10.2"
     },
     {
       "bom-ref": "pkg:cargo/clipboard-win@5.4.2",
@@ -1112,12 +1255,51 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/combine@4.6.7",
       "type": "library",
       "version": "4.6.7"
+    },
+    {
+      "bom-ref": "pkg:cargo/const-oid@0.10.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/formats"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Apache-2.0 OR MIT"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "const-oid",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/const-oid@0.10.2",
+      "type": "library",
+      "version": "0.10.2"
     },
     {
       "bom-ref": "pkg:cargo/core-foundation-sys@0.8.7",
@@ -1151,7 +1333,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/core-foundation-sys@0.8.7",
@@ -1190,7 +1372,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/core-foundation@0.10.1",
@@ -1229,7 +1411,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/coreaudio-rs@0.14.2",
@@ -1264,7 +1446,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cpal@0.18.2",
@@ -1303,7 +1485,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/cpufeatures@0.3.0",
@@ -1342,7 +1524,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/crc32fast@1.5.1",
@@ -1381,7 +1563,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/crossbeam-channel@0.5.16",
@@ -1420,7 +1602,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/crossbeam-utils@0.8.22",
@@ -1459,7 +1641,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/crypto-common@0.2.2",
@@ -1498,12 +1680,47 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/dasp_sample@0.11.0",
       "type": "library",
       "version": "0.11.0"
+    },
+    {
+      "bom-ref": "pkg:cargo/data-encoding@2.11.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/ia0/data-encoding"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "data-encoding",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/data-encoding@2.11.1",
+      "type": "library",
+      "version": "2.11.1"
     },
     {
       "bom-ref": "pkg:cargo/der@0.8.1",
@@ -1537,7 +1754,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/der@0.8.1",
@@ -1576,7 +1793,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/deranged@0.5.8",
@@ -1615,7 +1832,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/digest@0.11.3",
@@ -1654,7 +1871,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/directories@6.0.0",
@@ -1693,7 +1910,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/dirs-sys@0.5.0",
@@ -1771,7 +1988,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/displaydoc@0.2.7",
@@ -1806,7 +2023,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/endi@1.1.1",
@@ -1845,7 +2062,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/enumflags2@0.7.12",
@@ -1884,7 +2101,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/enumflags2_derive@0.7.12",
@@ -1923,7 +2140,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/equivalent@1.0.2",
@@ -1962,7 +2179,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/errno@0.3.14",
@@ -1997,7 +2214,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/error-code@3.4.0",
@@ -2036,7 +2253,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/event-listener-strategy@0.5.4",
@@ -2075,7 +2292,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/event-listener@5.4.2",
@@ -2114,7 +2331,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/fallible-iterator@0.3.0",
@@ -2153,7 +2370,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/fallible-streaming-iterator@0.1.9",
@@ -2192,7 +2409,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/fastrand@2.5.0",
@@ -2231,7 +2448,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/field-offset@0.3.6",
@@ -2270,7 +2487,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/filetime@0.2.29",
@@ -2309,7 +2526,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/find-msvc-tools@0.1.11",
@@ -2348,7 +2565,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/flate2@1.1.9",
@@ -2383,7 +2600,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/foldhash@0.2.0",
@@ -2422,7 +2639,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/foreign-types-shared@0.1.1",
@@ -2461,7 +2678,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/foreign-types@0.3.2",
@@ -2500,7 +2717,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/form_urlencoded@1.2.2",
@@ -2539,7 +2756,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-channel@0.3.34",
@@ -2578,7 +2795,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-core@0.3.34",
@@ -2617,7 +2834,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-executor@0.3.34",
@@ -2656,7 +2873,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-io@0.3.34",
@@ -2695,7 +2912,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-lite@2.6.1",
@@ -2734,10 +2951,49 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-macro@0.3.34",
+      "type": "library",
+      "version": "0.3.34"
+    },
+    {
+      "bom-ref": "pkg:cargo/futures-sink@0.3.34",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/futures-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "futures-sink",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/futures-sink@0.3.34",
       "type": "library",
       "version": "0.3.34"
     },
@@ -2773,7 +3029,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-task@0.3.34",
@@ -2812,7 +3068,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/futures-util@0.3.34",
@@ -2847,7 +3103,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk-pixbuf-sys@0.22.9",
@@ -2882,7 +3138,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk-pixbuf@0.22.0",
@@ -2917,7 +3173,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk4-sys@0.11.5",
@@ -2952,7 +3208,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk4-wayland-sys@0.11.5",
@@ -2987,7 +3243,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk4-wayland@0.11.5",
@@ -3022,7 +3278,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gdk4@0.11.5",
@@ -3057,7 +3313,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gethostname@1.1.0",
@@ -3096,7 +3352,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/getrandom@0.2.17",
@@ -3135,7 +3391,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/getrandom@0.4.3",
@@ -3170,7 +3426,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gio-sys@0.22.9",
@@ -3205,7 +3461,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gio@0.22.10",
@@ -3240,7 +3496,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/glib-macros@0.22.9",
@@ -3275,7 +3531,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/glib-sys@0.22.9",
@@ -3310,7 +3566,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/glib@0.22.10",
@@ -3349,7 +3605,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/global-hotkey@0.8.0",
@@ -3384,7 +3640,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gobject-sys@0.22.9",
@@ -3419,7 +3675,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/graphene-rs@0.22.8",
@@ -3454,7 +3710,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/graphene-sys@0.22.9",
@@ -3489,7 +3745,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gsk4-sys@0.11.5",
@@ -3524,7 +3780,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gsk4@0.11.5",
@@ -3559,7 +3815,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gtk4-macros@0.11.5",
@@ -3594,7 +3850,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gtk4-sys@0.11.5",
@@ -3629,7 +3885,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/gtk4@0.11.5",
@@ -3668,7 +3924,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/hashbrown@0.17.1",
@@ -3707,7 +3963,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/hashlink@0.12.2",
@@ -3746,7 +4002,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/heck@0.5.0",
@@ -3785,7 +4041,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/hex@0.4.3",
@@ -3824,7 +4080,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/http@1.5.0",
@@ -3863,7 +4119,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/httparse@1.10.1",
@@ -3902,7 +4158,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/hybrid-array@0.4.14",
@@ -3937,7 +4193,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_collections@2.3.0",
@@ -3972,7 +4228,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_locale_core@2.3.0",
@@ -4007,7 +4263,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_normalizer@2.3.0",
@@ -4042,7 +4298,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_normalizer_data@2.3.0",
@@ -4077,7 +4333,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_properties@2.3.0",
@@ -4112,7 +4368,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_properties_data@2.3.0",
@@ -4147,7 +4403,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/icu_provider@2.3.1",
@@ -4186,7 +4442,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/idna@1.1.0",
@@ -4225,7 +4481,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/idna_adapter@1.2.2",
@@ -4264,7 +4520,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/indexmap@2.14.0",
@@ -4303,7 +4559,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/itoa@1.0.18",
@@ -4420,7 +4676,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/jni-sys@0.3.1",
@@ -4459,7 +4715,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/jni-sys@0.4.1",
@@ -4537,7 +4793,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/js-sys@0.3.104",
@@ -4576,7 +4832,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/keyboard-types@0.7.0",
@@ -4611,7 +4867,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ksni@0.3.6",
@@ -4646,7 +4902,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/libbz2-rs-sys@0.2.5",
@@ -4685,7 +4941,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/libc@0.2.189",
@@ -4720,7 +4976,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/libloading@0.9.0",
@@ -4755,7 +5011,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/libredox@0.1.20",
@@ -4790,7 +5046,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/libsqlite3-sys@0.39.1",
@@ -4829,7 +5085,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/linux-raw-sys@0.12.1",
@@ -4864,7 +5120,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/litemap@0.8.3",
@@ -4903,7 +5159,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/lock_api@0.4.14",
@@ -4942,7 +5198,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/log@0.4.34",
@@ -4981,7 +5237,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/mach2@0.6.0",
@@ -5020,7 +5276,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/memchr@2.8.3",
@@ -5055,7 +5311,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/memoffset@0.9.1",
@@ -5094,7 +5350,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/miniz_oxide@0.8.9",
@@ -5129,7 +5385,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/mio@1.2.2",
@@ -5168,7 +5424,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/native-tls@0.2.18",
@@ -5324,7 +5580,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num-conv@0.2.2",
@@ -5363,7 +5619,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num-derive@0.4.2",
@@ -5402,7 +5658,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num-traits@0.2.19",
@@ -5441,7 +5697,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num_enum@0.7.6",
@@ -5480,7 +5736,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num_enum_derive@0.7.6",
@@ -5519,7 +5775,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/num_threads@0.1.7",
@@ -5862,7 +6118,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/objc2-foundation@0.3.2",
@@ -5975,7 +6231,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/once_cell@1.21.4",
@@ -6008,7 +6264,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/openssl-macros@0.1.1",
@@ -6047,7 +6303,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/openssl-probe@0.2.1",
@@ -6082,7 +6338,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/openssl-sys@0.9.117",
@@ -6117,7 +6373,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/openssl@0.10.81",
@@ -6152,7 +6408,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/option-ext@0.2.0",
@@ -6191,7 +6447,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ordered-stream@0.2.0",
@@ -6226,7 +6482,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pango-sys@0.22.9",
@@ -6261,7 +6517,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pango@0.22.9",
@@ -6300,7 +6556,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/parking@2.2.1",
@@ -6339,7 +6595,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/parking_lot@0.12.5",
@@ -6378,7 +6634,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/parking_lot_core@0.9.12",
@@ -6417,7 +6673,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pastey@0.2.3",
@@ -6456,7 +6712,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pem-rfc7468@1.0.0",
@@ -6495,7 +6751,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/percent-encoding@2.3.2",
@@ -6534,7 +6790,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pin-project-lite@0.2.17",
@@ -6573,7 +6829,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/pkg-config@0.3.34",
@@ -6612,7 +6868,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/portable-atomic-util@0.2.7",
@@ -6651,7 +6907,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/portable-atomic@1.15.0",
@@ -6686,7 +6942,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/potential_utf@0.1.6",
@@ -6725,7 +6981,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/powerfmt@0.2.0",
@@ -6764,7 +7020,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/proc-macro-crate@3.5.0",
@@ -6803,7 +7059,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/proc-macro2@1.0.107",
@@ -6842,7 +7098,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/quote@1.0.47",
@@ -6889,6 +7145,84 @@
       "version": "6.0.0"
     },
     {
+      "bom-ref": "pkg:cargo/rand@0.10.3",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-random/rand"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "rand",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/rand@0.10.3",
+      "type": "library",
+      "version": "0.10.3"
+    },
+    {
+      "bom-ref": "pkg:cargo/rand_core@0.10.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-random/rand_core"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "rand_core",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/rand_core@0.10.1",
+      "type": "library",
+      "version": "0.10.1"
+    },
+    {
       "bom-ref": "pkg:cargo/redox_syscall@0.5.18",
       "externalReferences": [
         {
@@ -6916,7 +7250,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/redox_syscall@0.5.18",
@@ -6951,7 +7285,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/redox_users@0.5.2",
@@ -6986,7 +7320,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ring@0.17.14",
@@ -7025,7 +7359,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ringbuf@0.5.2",
@@ -7095,7 +7429,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rusqlite@0.41.0",
@@ -7134,7 +7468,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustc_version@0.4.1",
@@ -7173,7 +7507,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustix@1.1.4",
@@ -7212,7 +7546,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustls-native-certs@0.8.4",
@@ -7251,7 +7585,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustls-pki-types@1.15.1",
@@ -7329,7 +7663,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustls-platform-verifier@0.7.0",
@@ -7364,7 +7698,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustls-webpki@0.103.16",
@@ -7403,7 +7737,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustls@0.23.46",
@@ -7442,7 +7776,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/rustversion@1.0.23",
@@ -7481,7 +7815,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/same-file@1.0.6",
@@ -7516,7 +7850,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/schannel@0.1.29",
@@ -7555,7 +7889,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/scopeguard@1.2.0",
@@ -7594,7 +7928,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/security-framework-sys@2.17.0",
@@ -7633,7 +7967,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/security-framework@3.7.0",
@@ -7672,7 +8006,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/semver@1.0.28",
@@ -7711,7 +8045,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde@1.0.229",
@@ -7750,7 +8084,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde_core@1.0.229",
@@ -7789,7 +8123,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde_derive@1.0.229",
@@ -7828,7 +8162,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde_json@1.0.151",
@@ -7867,7 +8201,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde_repr@0.1.21",
@@ -7906,12 +8240,51 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/serde_spanned@1.1.2",
       "type": "library",
       "version": "1.1.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/sha1@0.11.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/hashes"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "sha1",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/sha1@0.11.0",
+      "type": "library",
+      "version": "0.11.0"
     },
     {
       "bom-ref": "pkg:cargo/sha2@0.11.0",
@@ -7945,7 +8318,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/sha2@0.11.0",
@@ -8009,7 +8382,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/sherpa-onnx@1.13.5",
@@ -8048,7 +8421,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/shlex@2.0.1",
@@ -8087,7 +8460,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/signal-hook-registry@1.4.8",
@@ -8122,7 +8495,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/simd-adler32@0.3.10",
@@ -8161,7 +8534,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/simd_cesu8@1.2.0",
@@ -8200,7 +8573,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/simdutf8@0.1.5",
@@ -8235,7 +8608,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/slab@0.4.12",
@@ -8274,7 +8647,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/smallvec@1.15.2",
@@ -8313,7 +8686,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/socket2@0.6.5",
@@ -8348,7 +8721,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/sqlite-wasm-rs@0.6.2",
@@ -8387,7 +8760,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/stable_deref_trait@1.2.1",
@@ -8422,7 +8795,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/subtle@2.6.1",
@@ -8461,7 +8834,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/syn@2.0.119",
@@ -8500,7 +8873,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/syn@3.0.4",
@@ -8535,7 +8908,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/synstructure@0.13.2",
@@ -8574,7 +8947,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/system-deps@9.0.1",
@@ -8613,7 +8986,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tar@0.4.46",
@@ -8648,7 +9021,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/target-lexicon@0.13.5",
@@ -8687,7 +9060,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tempfile@3.27.0",
@@ -8726,7 +9099,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/thiserror-impl@1.0.69",
@@ -8765,7 +9138,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/thiserror-impl@2.0.20",
@@ -8804,7 +9177,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/thiserror@1.0.69",
@@ -8843,7 +9216,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/thiserror@2.0.20",
@@ -8882,7 +9255,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/time-core@0.1.9",
@@ -8921,7 +9294,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/time-macros@0.2.32",
@@ -8960,7 +9333,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/time@0.3.55",
@@ -8995,7 +9368,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tinystr@0.8.4",
@@ -9030,12 +9403,86 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tokio-macros@2.7.2",
       "type": "library",
       "version": "2.7.2"
+    },
+    {
+      "bom-ref": "pkg:cargo/tokio-rustls@0.26.6",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rustls/tokio-rustls"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "tokio-rustls",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/tokio-rustls@0.26.6",
+      "type": "library",
+      "version": "0.26.6"
+    },
+    {
+      "bom-ref": "pkg:cargo/tokio-tungstenite@0.30.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/snapview/tokio-tungstenite"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "17a073bfed563fa236697a068031408a93cd9522e08abf9933ead3e73411bd71"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "tokio-tungstenite",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/tokio-tungstenite@0.30.0",
+      "type": "library",
+      "version": "0.30.0"
     },
     {
       "bom-ref": "pkg:cargo/tokio@1.53.3",
@@ -9065,7 +9512,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tokio@1.53.3",
@@ -9104,7 +9551,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/toml@1.1.8+spec-1.1.0",
@@ -9143,7 +9590,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/toml_datetime@1.1.2+spec-1.1.0",
@@ -9182,7 +9629,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/toml_edit@0.25.13+spec-1.1.0",
@@ -9221,7 +9668,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/toml_parser@1.1.5+spec-1.1.0",
@@ -9260,7 +9707,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
@@ -9295,7 +9742,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tracing-attributes@0.1.31",
@@ -9330,7 +9777,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tracing-core@0.1.36",
@@ -9365,12 +9812,51 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/tracing@0.1.44",
       "type": "library",
       "version": "0.1.44"
+    },
+    {
+      "bom-ref": "pkg:cargo/tungstenite@0.30.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/snapview/tungstenite-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e48ac77174b19c110a50ab2128b24215ac9cb40e0e12e093fb602d175c569d22"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "tungstenite",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/tungstenite@0.30.0",
+      "type": "library",
+      "version": "0.30.0"
     },
     {
       "bom-ref": "pkg:cargo/typenum@1.20.1",
@@ -9404,7 +9890,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/typenum@1.20.1",
@@ -9439,7 +9925,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/uds_windows@1.2.1",
@@ -9478,7 +9964,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/unicode-ident@1.0.24",
@@ -9517,7 +10003,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/unicode-segmentation@1.13.3",
@@ -9552,7 +10038,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/untrusted@0.9.0",
@@ -9591,7 +10077,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ureq-proto@0.6.1",
@@ -9630,7 +10116,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ureq@2.12.1",
@@ -9669,7 +10155,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/ureq@3.4.0",
@@ -9708,7 +10194,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/url@2.5.8",
@@ -9747,7 +10233,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/utf8-zero@0.8.1",
@@ -9786,7 +10272,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/utf8_iter@1.0.4",
@@ -9794,7 +10280,7 @@
       "version": "1.0.4"
     },
     {
-      "bom-ref": "pkg:cargo/uuid@1.25.0",
+      "bom-ref": "pkg:cargo/uuid@1.29.0",
       "externalReferences": [
         {
           "type": "vcs",
@@ -9804,7 +10290,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "f053576934f05a761a402421fbbe3d425d9366f75f978806a037b3ca481abecc"
+          "content": "4a0e2d11620c50695fe12bbbfde96b3477fe606e7284c22d505c12ce51214514"
         }
       ],
       "licenses": [
@@ -9825,12 +10311,12 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
-      "purl": "pkg:cargo/uuid@1.25.0",
+      "purl": "pkg:cargo/uuid@1.29.0",
       "type": "library",
-      "version": "1.25.0"
+      "version": "1.29.0"
     },
     {
       "bom-ref": "pkg:cargo/vcpkg@0.2.15",
@@ -9864,7 +10350,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/vcpkg@0.2.15",
@@ -9899,7 +10385,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/version-compare@0.2.1",
@@ -9938,7 +10424,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/walkdir@2.5.0",
@@ -9977,7 +10463,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/wasi@0.11.1+wasi-snapshot-preview1",
@@ -10016,7 +10502,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/wasm-bindgen-macro-support@0.2.127",
@@ -10055,7 +10541,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/wasm-bindgen-macro@0.2.127",
@@ -10094,7 +10580,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/wasm-bindgen-shared@0.2.127",
@@ -10133,7 +10619,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/wasm-bindgen@0.2.127",
@@ -10172,7 +10658,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/web-sys@0.3.104",
@@ -10207,7 +10693,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/webpki-root-certs@1.0.10",
@@ -10242,7 +10728,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/webpki-roots@0.26.11",
@@ -10277,7 +10763,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/webpki-roots@1.0.10",
@@ -10316,7 +10802,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/winapi-util@0.1.11",
@@ -10355,7 +10841,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-collections@0.3.2",
@@ -10394,7 +10880,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-core@0.62.2",
@@ -10433,7 +10919,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-future@0.3.2",
@@ -10472,7 +10958,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-implement@0.60.2",
@@ -10511,7 +10997,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-interface@0.59.3",
@@ -10550,7 +11036,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-link@0.2.1",
@@ -10589,7 +11075,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-numerics@0.3.1",
@@ -10628,7 +11114,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-result@0.4.1",
@@ -10667,7 +11153,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-strings@0.5.1",
@@ -10706,7 +11192,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-sys@0.52.0",
@@ -10745,7 +11231,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-sys@0.59.0",
@@ -10784,7 +11270,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-sys@0.60.2",
@@ -10823,7 +11309,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-sys@0.61.2",
@@ -10862,7 +11348,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-targets@0.52.6",
@@ -10901,7 +11387,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-targets@0.53.5",
@@ -10940,7 +11426,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows-threading@0.2.1",
@@ -10979,7 +11465,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows@0.62.2",
@@ -11018,7 +11504,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_aarch64_gnullvm@0.52.6",
@@ -11057,7 +11543,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_aarch64_gnullvm@0.53.1",
@@ -11096,7 +11582,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_aarch64_msvc@0.52.6",
@@ -11135,7 +11621,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_aarch64_msvc@0.53.1",
@@ -11174,7 +11660,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_gnu@0.52.6",
@@ -11213,7 +11699,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_gnu@0.53.1",
@@ -11252,7 +11738,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_gnullvm@0.52.6",
@@ -11291,7 +11777,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_gnullvm@0.53.1",
@@ -11330,7 +11816,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_msvc@0.52.6",
@@ -11369,7 +11855,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_i686_msvc@0.53.1",
@@ -11408,7 +11894,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_gnu@0.52.6",
@@ -11447,7 +11933,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_gnu@0.53.1",
@@ -11486,7 +11972,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_gnullvm@0.52.6",
@@ -11525,7 +12011,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_gnullvm@0.53.1",
@@ -11564,7 +12050,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_msvc@0.52.6",
@@ -11603,7 +12089,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/windows_x86_64_msvc@0.53.1",
@@ -11638,7 +12124,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/winnow@1.0.4",
@@ -11673,7 +12159,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/writeable@0.6.4",
@@ -11712,7 +12198,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/x11rb-protocol@0.13.2",
@@ -11751,7 +12237,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/x11rb@0.13.2",
@@ -11790,7 +12276,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/xattr@1.6.1",
@@ -11829,7 +12315,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/xkeysym@0.2.1",
@@ -11864,7 +12350,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/yoke-derive@0.8.2",
@@ -11899,7 +12385,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/yoke@0.8.3",
@@ -11934,7 +12420,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zbus@5.19.0",
@@ -11969,7 +12455,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zbus_macros@5.19.0",
@@ -12004,7 +12490,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zbus_names@4.3.4",
@@ -12039,7 +12525,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zcheapstr@1.1.0",
@@ -12074,7 +12560,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zerofrom-derive@0.1.7",
@@ -12109,7 +12595,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zerofrom@0.1.8",
@@ -12148,7 +12634,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zeroize@1.9.0",
@@ -12183,7 +12669,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zerotrie@0.2.5",
@@ -12218,7 +12704,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zerovec-derive@0.11.6",
@@ -12253,7 +12739,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zerovec@0.11.8",
@@ -12288,7 +12774,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zmij@1.0.23",
@@ -12323,7 +12809,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zvariant@5.15.0",
@@ -12358,7 +12844,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zvariant_derive@5.15.0",
@@ -12393,7 +12879,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/zvariant_utils@4.2.0",
@@ -12486,7 +12972,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12519,7 +13005,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12552,7 +13038,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12585,7 +13071,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12618,7 +13104,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12651,7 +13137,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12684,7 +13170,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         },
         {
           "name": "koett:status",
@@ -12931,14 +13417,26 @@
     {
       "aggregate": "incomplete",
       "assemblies": [
-        "pkg:cargo/koett-engine@0.1.0"
+        "pkg:cargo/koett-engine@0.2.0-linux.1"
       ]
     }
   ],
   "dependencies": [
     {
       "dependsOn": [],
+      "ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8@157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad"
+    },
+    {
+      "dependsOn": [],
+      "ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8@5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf"
+    },
+    {
+      "dependsOn": [],
       "ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b"
+    },
+    {
+      "dependsOn": [],
+      "ref": "koett:model:sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25@78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358"
     },
     {
       "dependsOn": [],
@@ -13118,6 +13616,14 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/cpufeatures@0.3.0",
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/chacha20@0.10.2"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/error-code@3.4.0"
       ],
       "ref": "pkg:cargo/clipboard-win@5.4.2"
@@ -13128,6 +13634,10 @@
         "pkg:cargo/memchr@2.8.3"
       ],
       "ref": "pkg:cargo/combine@4.6.7"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/const-oid@0.10.2"
     },
     {
       "dependsOn": [],
@@ -13211,6 +13721,10 @@
       "ref": "pkg:cargo/dasp_sample@0.11.0"
     },
     {
+      "dependsOn": [],
+      "ref": "pkg:cargo/data-encoding@2.11.1"
+    },
+    {
       "dependsOn": [
         "pkg:cargo/pem-rfc7468@1.0.0",
         "pkg:cargo/zeroize@1.9.0"
@@ -13224,6 +13738,7 @@
     {
       "dependsOn": [
         "pkg:cargo/block-buffer@0.12.1",
+        "pkg:cargo/const-oid@0.10.2",
         "pkg:cargo/crypto-common@0.2.2"
       ],
       "ref": "pkg:cargo/digest@0.11.3"
@@ -13405,12 +13920,17 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/futures-sink@0.3.34"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/futures-task@0.3.34"
     },
     {
       "dependsOn": [
         "pkg:cargo/futures-core@0.3.34",
         "pkg:cargo/futures-macro@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34",
         "pkg:cargo/futures-task@0.3.34",
         "pkg:cargo/pin-project-lite@0.2.17",
         "pkg:cargo/slab@0.4.12"
@@ -13499,7 +14019,8 @@
       "dependsOn": [
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/libc@0.2.189",
-        "pkg:cargo/r-efi@6.0.0"
+        "pkg:cargo/r-efi@6.0.0",
+        "pkg:cargo/rand_core@0.10.1"
       ],
       "ref": "pkg:cargo/getrandom@0.4.3"
     },
@@ -13854,7 +14375,10 @@
     },
     {
       "dependsOn": [
+        "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8@157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+        "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8@5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
         "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+        "koett:model:sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25@78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
         "koett:model:silero-vad@9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
         "koett:native:fastcluster@FluidAudio-0.15.6",
         "pkg:cargo/arboard@3.6.1",
@@ -13868,7 +14392,9 @@
         "pkg:cargo/global-hotkey@0.8.0",
         "pkg:cargo/gtk4@0.11.5",
         "pkg:cargo/ksni@0.3.6",
+        "pkg:cargo/libc@0.2.189",
         "pkg:cargo/libloading@0.9.0",
+        "pkg:cargo/log@0.4.34",
         "pkg:cargo/ringbuf@0.5.2",
         "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
@@ -13877,8 +14403,11 @@
         "pkg:cargo/sherpa-onnx@1.13.5",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/time@0.3.55",
+        "pkg:cargo/tokio-tungstenite@0.30.0",
         "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/ureq@3.4.0",
+        "pkg:cargo/url@2.5.8",
+        "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",
@@ -13899,7 +14428,7 @@
         "pkg:npm/katex@0.18.4",
         "pkg:npm/marked@18.0.10"
       ],
-      "ref": "pkg:cargo/koett-engine@0.1.0"
+      "ref": "pkg:cargo/koett-engine@0.2.0-linux.1"
     },
     {
       "dependsOn": [
@@ -14307,6 +14836,18 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/chacha20@0.10.2",
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/rand_core@0.10.1"
+      ],
+      "ref": "pkg:cargo/rand@0.10.3"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:cargo/rand_core@0.10.1"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/bitflags@2.13.1"
       ],
       "ref": "pkg:cargo/redox_syscall@0.5.18"
@@ -14521,6 +15062,14 @@
         "pkg:cargo/cpufeatures@0.3.0",
         "pkg:cargo/digest@0.11.3"
       ],
+      "ref": "pkg:cargo/sha1@0.11.0"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/cpufeatures@0.3.0",
+        "pkg:cargo/digest@0.11.3"
+      ],
       "ref": "pkg:cargo/sha2@0.11.0"
     },
     {
@@ -14720,6 +15269,26 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/rustls@0.23.46",
+        "pkg:cargo/tokio@1.53.3"
+      ],
+      "ref": "pkg:cargo/tokio-rustls@0.26.6"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-util@0.3.34",
+        "pkg:cargo/log@0.4.34",
+        "pkg:cargo/rustls-native-certs@0.8.4",
+        "pkg:cargo/rustls-pki-types@1.15.1",
+        "pkg:cargo/rustls@0.23.46",
+        "pkg:cargo/tokio-rustls@0.26.6",
+        "pkg:cargo/tokio@1.53.3",
+        "pkg:cargo/tungstenite@0.30.0"
+      ],
+      "ref": "pkg:cargo/tokio-tungstenite@0.30.0"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/bytes@1.12.1",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/mio@1.2.2",
@@ -14790,6 +15359,21 @@
         "pkg:cargo/tracing-core@0.1.36"
       ],
       "ref": "pkg:cargo/tracing@0.1.44"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bytes@1.12.1",
+        "pkg:cargo/data-encoding@2.11.1",
+        "pkg:cargo/http@1.5.0",
+        "pkg:cargo/httparse@1.10.1",
+        "pkg:cargo/log@0.4.34",
+        "pkg:cargo/rand@0.10.3",
+        "pkg:cargo/rustls-pki-types@1.15.1",
+        "pkg:cargo/rustls@0.23.46",
+        "pkg:cargo/sha1@0.11.0",
+        "pkg:cargo/thiserror@2.0.20"
+      ],
+      "ref": "pkg:cargo/tungstenite@0.30.0"
     },
     {
       "dependsOn": [],
@@ -14873,11 +15457,12 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/getrandom@0.4.3",
         "pkg:cargo/js-sys@0.3.104",
         "pkg:cargo/serde_core@1.0.229",
         "pkg:cargo/wasm-bindgen@0.2.127"
       ],
-      "ref": "pkg:cargo/uuid@1.25.0"
+      "ref": "pkg:cargo/uuid@1.29.0"
     },
     {
       "dependsOn": [],
@@ -15223,7 +15808,7 @@
         "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/tracing@0.1.44",
         "pkg:cargo/uds_windows@1.2.1",
-        "pkg:cargo/uuid@1.25.0",
+        "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/windows-sys@0.61.2",
         "pkg:cargo/winnow@1.0.4",
         "pkg:cargo/zbus_macros@5.19.0",
@@ -15404,7 +15989,7 @@
   ],
   "metadata": {
     "component": {
-      "bom-ref": "pkg:cargo/koett-engine@0.1.0",
+      "bom-ref": "pkg:cargo/koett-engine@0.2.0-linux.1",
       "licenses": [
         {
           "acknowledgement": "declared",
@@ -15426,9 +16011,9 @@
           "value": "draft-source-inventory-not-release-compliance"
         }
       ],
-      "purl": "pkg:cargo/koett-engine@0.1.0",
+      "purl": "pkg:cargo/koett-engine@0.2.0-linux.1",
       "type": "application",
-      "version": "0.1.0"
+      "version": "0.2.0-linux.1"
     },
     "lifecycles": [
       {

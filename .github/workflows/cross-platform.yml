@@ -6,6 +6,7 @@ on:
     paths:
       - "CrossPlatform/**"
       - "Sources/Koett/Resources/History/**"
+      - "Sources/Koett/Resources/AssistantRenderer/**"
       - ".github/workflows/cross-platform.yml"
   push:
     branches:
@@ -13,6 +14,7 @@ on:
     paths:
       - "CrossPlatform/**"
       - "Sources/Koett/Resources/History/**"
+      - "Sources/Koett/Resources/AssistantRenderer/**"
       - ".github/workflows/cross-platform.yml"
 
 permissions:
@@ -52,6 +54,8 @@ jobs:
         run: python3 scripts/test_supply_chain_inventory.py
       - name: Check supply-chain inventory
         run: python3 scripts/generate_supply_chain_inventory.py --check
+      - name: Check distributable notices
+        run: python3 scripts/check_linux_notices.py
       - name: Format
         run: cargo fmt --all -- --check
       - name: Install cargo-audit
@@ -142,10 +146,13 @@ jobs:
             architecture: arm64
             target: aarch64-unknown-linux-gnu
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: CrossPlatform
+    env:
+      CARGO_BUILD_JOBS: 2
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -162,7 +169,7 @@ jobs:
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
       - name: Build ASR-only native libraries
-        run: python scripts/build_asr_native.py
+        run: python3 scripts/build_asr_native.py --jobs 2
       - name: Test
         run: cargo test --locked
       - name: Lint
@@ -171,30 +178,26 @@ jobs:
         run: cargo build --release --locked --bin koett
       - name: Runtime self-test
         run: cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Test Linux packaging
+        run: python3 -m unittest discover -s scripts -p 'test_package_linux*.py'
       - name: Package
         run: |
           strip target/release/koett
-          install -Dm755 target/release/koett dist/Koett-Linux-${{ matrix.architecture }}/koett
-          install -Dm755 packaging/linux/install.sh dist/Koett-Linux-${{ matrix.architecture }}/install.sh
-          install -Dm644 packaging/linux/com.olledyberg.Koett.desktop \
-            dist/Koett-Linux-${{ matrix.architecture }}/com.olledyberg.Koett.desktop
-          install -Dm644 packaging/linux/com.olledyberg.Koett.svg \
-            dist/Koett-Linux-${{ matrix.architecture }}/com.olledyberg.Koett.svg
-          install -Dm644 README.md THIRD_PARTY_NOTICES.md ../LICENSE \
-            -t dist/Koett-Linux-${{ matrix.architecture }}
-          tar -C dist -czf dist/Koett-Linux-${{ matrix.architecture }}.tar.gz \
-            Koett-Linux-${{ matrix.architecture }}
+          python3 scripts/package_linux.py --flavor system-runtime --output dist
+      - name: Verify extracted release candidate
+        run: |
+          python3 scripts/test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz
       - name: Write checksum and build receipt
         run: >-
           python3 scripts/write_build_receipt.py
-          --artifact dist/Koett-Linux-${{ matrix.architecture }}.tar.gz
+          --artifact dist/Koett-Linux-*.tar.gz
           --target ${{ matrix.target }}
           --output-directory dist
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Koett-Linux-${{ matrix.architecture }}
+          name: Koett-Linux-${{ matrix.architecture }}-system-runtime
           path: |
-            CrossPlatform/dist/Koett-Linux-${{ matrix.architecture }}.tar.gz
-            CrossPlatform/dist/Koett-Linux-${{ matrix.architecture }}.tar.gz.sha256
-            CrossPlatform/dist/Koett-Linux-${{ matrix.architecture }}.tar.gz.build-receipt.json
+            CrossPlatform/dist/Koett-Linux-*.tar.gz
+            CrossPlatform/dist/Koett-Linux-*.tar.gz.sha256
+            CrossPlatform/dist/Koett-Linux-*.tar.gz.build-receipt.json
           if-no-files-found: error

@@ -4,13 +4,18 @@ import argparse
 import hashlib
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 
 def sha(path):
     with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+        value = hashlib.sha256()
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            value.update(block)
+        return value.hexdigest()
 
 
 def atomic_text(path, content):
@@ -36,13 +41,18 @@ def main():
     if '=' in str(prefix):
         parser.error('Choose an installation prefix without an equals sign')
     source = Path(__file__).resolve().parent
+    versions = (prefix / 'lib/koett/versions').resolve()
+    if versions.is_relative_to(source):
+        parser.error('Choose an installation prefix outside the extracted package')
     manifest = json.loads((source / 'files.json').read_text())
     for name, expected in manifest.items():
         path = source / name
         if not path.resolve().is_relative_to(source) or sha(path) != expected:
             raise ValueError(f'Package integrity failure: {name}')
+    receipt = json.loads((source / 'candidate.json').read_text()) if (source / 'candidate.json').exists() else {}
+    if receipt.get('flavor') == 'system-runtime':
+        subprocess.run([sys.executable, str(source / 'preflight.py')], check=True, stdout=sys.stderr)
     identity = sha(source / 'files.json')[:24]
-    versions = prefix / 'lib/koett/versions'
     versions.mkdir(parents=True, exist_ok=True)
     version = versions / identity
     if not version.exists():
@@ -73,7 +83,7 @@ def main():
     atomic_text(prefix / 'share/applications/com.olledyberg.Koett.desktop', desktop)
     icon = prefix / 'share/icons/hicolor/scalable/apps/com.olledyberg.Koett.svg'
     atomic_text(icon, (source / icon.name).read_text())
-    print(json.dumps({'launcher': str(binary), 'version': str(version), 'scope': 'current-PC private candidate'}))
+    print(json.dumps({'launcher': str(binary), 'version': str(version), 'scope': receipt.get('flavor', 'current-PC private candidate')}))
 
 
 if __name__ == '__main__':

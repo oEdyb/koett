@@ -252,6 +252,12 @@ impl HistoryView {
             let sender = sender.clone();
             let rows = rows.clone();
             let selected_id = selected_id.clone();
+            let selected = selected.clone();
+            let copy = copy.clone();
+            let export = export.clone();
+            let text = text.clone();
+            let meta = meta.clone();
+            let transcript_heading = transcript_heading.clone();
             let navigation = navigation.clone();
             let detail = detail.clone();
             let back = back.clone();
@@ -261,6 +267,12 @@ impl HistoryView {
                     && let Some(summary) = rows.borrow().get(row.index() as usize)
                 {
                     *selected_id.borrow_mut() = Some(summary.id.clone());
+                    selected.borrow_mut().take();
+                    copy.set_sensitive(false);
+                    export.set_sensitive(false);
+                    text.buffer().set_text("");
+                    meta.set_text("");
+                    transcript_heading.set_text(&timestamp(summary.created_at_ms));
                     let _ = sender.send(Query::Get(summary.id.clone()));
                     if workspace.width() < 650 {
                         navigation.set_visible(false);

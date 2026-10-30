@@ -569,6 +569,7 @@ mod tests {
     use super::*;
     #[test]
     fn pending_capture_rejects_model_and_formatting_changes() {
+        let _guard = super::super::runtime_test_guard();
         let (engine, received, _) = crate::runtime::EngineHandle::controlled();
         let mut app = super::super::LinuxEngine::new(engine);
         app.status = crate::state::AppStatus::Ready;
@@ -599,6 +600,7 @@ mod tests {
 
     #[test]
     fn every_catalog_model_is_selectable_through_the_agent_command() {
+        let _guard = super::super::runtime_test_guard();
         for model in crate::model::LocalModel::ALL {
             let (engine, received, _) = crate::runtime::EngineHandle::controlled();
             let mut app = super::super::LinuxEngine::new(engine);
@@ -615,6 +617,7 @@ mod tests {
 
     #[test]
     fn model_command_dispatches_valid_choice_and_rejects_busy_or_invalid_requests() {
+        let _guard = super::super::runtime_test_guard();
         let (engine, received, _) = crate::runtime::EngineHandle::controlled();
         let mut app = super::super::LinuxEngine::new(engine);
         app.status = crate::state::AppStatus::Ready;
@@ -635,6 +638,7 @@ mod tests {
 
     #[test]
     fn formatting_request_blocks_a_stale_second_patch_before_worker_completion() {
+        let _guard = super::super::runtime_test_guard();
         let (engine, received, _) = crate::runtime::EngineHandle::controlled();
         let mut app = super::super::LinuxEngine::new(engine);
         app.status = crate::state::AppStatus::Ready;

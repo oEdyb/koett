@@ -1,0 +1,10 @@
+{
+  "retrieved": "2026-10-30",
+  "model_primary_sources": {
+    "models/CC-BY-4.0.html": "https://creativecommons.org/licenses/by/4.0/legalcode.en",
+    "models/NVIDIA-Open-Model-License.html": "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+  },
+  "rust_toolchain": "Installed official rustup toolchain 1.98.0-x86_64-unknown-linux-gnu share/doc/rust; license texts and COPYRIGHT.html preserved",
+  "sqlite_dedication": "libsqlite3-sys 0.39.1 sqlite3/sqlite3.c original copyright disclaimer extracted verbatim",
+  "other_notice_sources": "See components.json source_url for exact crate archive or upstream revision; GTK provenance.json and model manifests/models.json identify separate distribution artifacts."
+}

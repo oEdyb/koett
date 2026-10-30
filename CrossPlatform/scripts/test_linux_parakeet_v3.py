@@ -8,6 +8,8 @@ import sqlite3
 import subprocess
 from pathlib import Path
 
+from linux_native_copy import native_copy, stop_clipboard_owners
+
 source = Path(__file__).with_name('test_linux_models.py')
 bootstrap = source.read_text().split('process = None\nchecks = []\ntry:')[0]
 namespace = {'__file__': str(source), '__name__': '__main__'}
@@ -107,17 +109,16 @@ try:
     namespace['control']('show')
     namespace['main'] = main
     wait(lambda: namespace['transcript']() == transcript[1], 'selected v3 detail')
-    namespace['keys']('chord', 29, 33)
-    subprocess.run(['wl-copy'], input='private clipboard sentinel', text=True, check=True)
-    response = json.loads(subprocess.check_output([str(binary), 'copy-last'], text=True))
-    assert response['ok'], response
-    wait(lambda: subprocess.check_output(['wl-paste', '--no-newline'], text=True) == transcript[1], 'agent Copy last replaces sentinel')
+    namespace['process'] = process
+    native_copy(namespace, transcript[1], method='action')
+    native_copy(namespace, transcript[1], method='keyboard')
     assert not streams()
     assert not list((output / 'data').rglob('*.wav'))
     capture('v3-history-copy')
-    (output / 'transcript.json').write_text(json.dumps({'model':transcript[0], 'text':transcript[1], 'copy_exact':True, 'copy_surface':'agent copy-last', 'native_copy_button_verified':False, 'history_rows':1}))
+    (output / 'transcript.json').write_text(json.dumps({'model':transcript[0], 'text':transcript[1], 'copy_exact':True, 'copy_surface':'native History action and keyboard', 'native_copy_button_verified':True, 'history_rows':1}))
     (output / 'results.json').write_text(json.dumps({'native_model_selection_started_setup':True, 'download_progress_visible':True, 'fraction_observed':fraction, 'cancel_enabled':True, 'cancel_retains_compact_engine':True, 'preference_unchanged_after_cancel':True, 'v3_loaded_and_restart_persisted':True, 'failed_setup_retained_v3':True, 'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest()}, indent=2))
 finally:
+    stop_clipboard_owners()
     if process is not None:
         subprocess.run([str(binary), 'quit'], check=False, capture_output=True)
         process.wait(timeout=15)

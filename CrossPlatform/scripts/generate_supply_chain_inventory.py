@@ -137,6 +137,28 @@ def _cargo_license_files(repo_root: Path, package: dict[str, Any]) -> list[dict[
     )
 
 
+def _bundled_cargo_licenses(repo_root, package, source_files):
+    root = repo_root / "CrossPlatform/packaging/notices/rust" / f"{package['name']}-{package['version']}"
+    records = []
+    if not source_files:
+        index = repo_root / "CrossPlatform/packaging/notices/components.json"
+        if index.is_file():
+            components = json.loads(index.read_text())["components"]
+            match = next((c for c in components if c["name"] == package["name"] and c["version"] == package["version"]), None)
+            for item in (match or {}).get("files", []):
+                path = repo_root / "CrossPlatform" / item["path"]
+                if not path.is_file() or sha256_file(path) != item["sha256"]:
+                    raise ValueError(f"bundled license mismatch: {path}")
+                records.append(file_record(path, str(path.relative_to(repo_root))))
+        return records
+    for source in source_files:
+        path = root / source["path"]
+        if not path.is_file() or sha256_file(path) != source["sha256"]:
+            return []
+        records.append(file_record(path, str(path.relative_to(repo_root))))
+    return records
+
+
 def _cargo_ref(name: str, version: str) -> str:
     return f"pkg:cargo/{quote(name, safe='')}@{quote(version, safe='.+-_')}"
 
@@ -266,8 +288,9 @@ def build_documents(
         if (package.get("source") or "").startswith("registry+") and checksum is None:
             raise ValueError(f"registry package has no Cargo.lock checksum: {package['name']} {package['version']}")
         license_files = _cargo_license_files(repo_root, package)
-        notice_state = "project-license" if package["id"] == root_id else "missing"
-        if package["id"] != root_id:
+        bundled = _bundled_cargo_licenses(repo_root, package, license_files)
+        notice_state = "project-license" if package["id"] == root_id else ("bundled" if bundled else "missing")
+        if package["id"] != root_id and not bundled:
             reason = "license-text-not-bundled" if license_files else "source-license-text-not-found"
             gaps.append({
                 "component": _cargo_ref(package["name"], package["version"]),
@@ -285,6 +308,7 @@ def build_documents(
             "selected_license": selected,
             "cargo_checksum_sha256": checksum,
             "license_files": license_files,
+            "bundled_license_files": bundled,
             "notice_state": notice_state,
             "sbom_ref": _cargo_ref(package["name"], package["version"]),
         }
@@ -349,9 +373,9 @@ def build_documents(
     ]
 
     all_components = rust_components + manual_inventory
-    groups = {group: sum(item["group"] == group for item in all_components) for group in {
+    groups = {group: sum(item["group"] == group for item in all_components) for group in (
         "rust-package", "swift-package", "bundled-javascript", "native-library", "model"
-    }}
+    )}
     gaps.sort(key=lambda item: (item["group"], item["component"], item["reason"]))
     choices_used.sort(key=lambda item: item["component"])
     policy_path = repo_root / "CrossPlatform" / "supply-chain" / "inventory-policy.json"
@@ -417,6 +441,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="fail if checked-in output is stale")
     args = parser.parse_args()
+    from check_linux_notices import validate
+    validate(CROSS_PLATFORM)
     policy = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
     _validate_policy_inputs(REPOSITORY_ROOT, policy)
     lock_packages = parse_cargo_lock((CROSS_PLATFORM / "Cargo.lock").read_text(encoding="utf-8"))

@@ -1,8 +1,11 @@
 # Supply-chain inventory
 
 This directory defines Koett's draft source inventory. It is not a release
-compliance claim. The current Windows and Linux control binaries still contain
-the blocked Piper and eSpeak path.
+compliance claim. Historical Windows/Linux control binaries contained the blocked Piper and
+eSpeak path. Current Linux ASR-only evidence and separate remaining gaps are
+in `../evidence/linux-release-notices-20261030/`; do not apply historical
+control findings to that binary. Canonical distributable notices live in
+`../packaging/notices/`.
 
 Run:
 

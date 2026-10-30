@@ -281,7 +281,10 @@
           "content": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
         }
       ],
-      "notice_state": "missing"
+      "notice_state": "bundled",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/silero-vad/LICENSE"
+      ]
     },
     {
       "bom_ref": "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -293,8 +296,11 @@
         "expression": "Apache-2.0"
       },
       "source_url": "https://github.com/k2-fsa/sherpa-onnx/tree/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/sherpa-onnx/LICENSE"
+      ]
     },
     {
       "bom_ref": "pkg:github/microsoft/onnxruntime@v1.27.1",
@@ -306,8 +312,18 @@
         "expression": "MIT"
       },
       "source_url": "https://github.com/microsoft/onnxruntime/tree/v1.27.1",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/onnxruntime/LICENSE",
+        "CrossPlatform/packaging/notices/native/onnxruntime/ThirdPartyNotices.txt",
+        "CrossPlatform/packaging/notices/native/onnxruntime/dockerfiles/LICENSE-IMAGE.txt",
+        "CrossPlatform/packaging/notices/native/onnxruntime/rust/LICENSE-APACHE",
+        "CrossPlatform/packaging/notices/native/onnxruntime/rust/LICENSE-MIT",
+        "CrossPlatform/packaging/notices/native/onnxruntime/winml/test/collateral/images/LICENSE.md",
+        "CrossPlatform/packaging/notices/native/onnxruntime/winml/test/collateral/models/LICENSE.md",
+        "CrossPlatform/packaging/notices/native/onnxruntime/winml/test/scenario/models/LICENSE.md"
+      ]
     },
     {
       "bom_ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
@@ -319,8 +335,11 @@
         "expression": "Apache-2.0"
       },
       "source_url": "https://github.com/csukuangfj/kaldi-native-fbank/tree/v1.22.3",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/kaldi-native-fbank/LICENSE"
+      ]
     },
     {
       "bom_ref": "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
@@ -332,8 +351,11 @@
         "expression": "BSD-3-Clause"
       },
       "source_url": "https://github.com/mborgerding/kissfft/tree/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/kissfft/COPYING"
+      ]
     },
     {
       "bom_ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
@@ -345,8 +367,11 @@
         "expression": "Apache-2.0"
       },
       "source_url": "https://github.com/k2-fsa/kaldi-decoder/tree/v0.3.0",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/kaldi-decoder/LICENSE"
+      ]
     },
     {
       "bom_ref": "pkg:github/k2-fsa/kaldifst@v1.8.0",
@@ -358,8 +383,11 @@
         "expression": "Apache-2.0"
       },
       "source_url": "https://github.com/k2-fsa/kaldifst/tree/v1.8.0",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/kaldifst/LICENSE"
+      ]
     },
     {
       "bom_ref": "pkg:github/pkufool/simple-sentencepiece@v0.7",
@@ -371,8 +399,83 @@
         "expression": "Apache-2.0"
       },
       "source_url": "https://github.com/pkufool/simple-sentencepiece/tree/v0.7",
-      "notice_state": "missing",
-      "status": "asr-only-source-build-candidate"
+      "notice_state": "bundled",
+      "status": "asr-only-source-build-candidate",
+      "license_paths": [
+        "CrossPlatform/packaging/notices/native/simple-sentencepiece/LICENSE"
+      ]
+    },
+    {
+      "bom_ref": "koett:model:sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25@78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25",
+      "version": "sha256-78e2b79fcf72",
+      "license": {
+        "name": "NVIDIA Open Model License; release conversion attribution requires upstream clarification"
+      },
+      "source_url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b",
+      "asset_paths": [
+        "CrossPlatform/model-manifests/nemotron-streaming-en-560ms-int8.json"
+      ],
+      "asset_markers": [
+        "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358"
+        }
+      ],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8@157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
+      "version": "sha256-157c157bc511",
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
+      "source_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2",
+      "asset_paths": [
+        "CrossPlatform/model-manifests/parakeet-tdt-600m-v2-int8.json"
+      ],
+      "asset_markers": [
+        "157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad"
+        }
+      ],
+      "notice_state": "missing"
+    },
+    {
+      "bom_ref": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8@5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+      "version": "sha256-5793d0fd397c",
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
+      "source_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3",
+      "asset_paths": [
+        "CrossPlatform/model-manifests/parakeet-tdt-600m-v3-int8.json"
+      ],
+      "asset_markers": [
+        "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf"
+        }
+      ],
+      "notice_state": "missing"
     }
   ]
 }

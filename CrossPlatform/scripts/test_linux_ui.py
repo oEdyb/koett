@@ -573,9 +573,9 @@ def main():
             wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "active Settings window")
             button(saved_shortcut, settings_window)
             wait(lambda: find("Press your shortcut…", "button", settings_window), "shortcut recorder active")
-            x11_chord([0xffe3, 0xffe9, 0x20])
-            wait(lambda: find("Ctrl+Alt+Space", "button", settings_window), "captured native shortcut")
-            saved_shortcut = "Ctrl+Alt+Space"
+            x11_chord([0xffe3, 0xffe9, 0x64])
+            wait(lambda: find("Ctrl+Alt+D", "button", settings_window), "captured native shortcut")
+            saved_shortcut = "Ctrl+Alt+D"
         section("Text", settings_window)
         button("Add replacement", settings_window)
         phrase = wait(lambda: find("Phrase", "text", settings_window), "labeled replacement phrase")

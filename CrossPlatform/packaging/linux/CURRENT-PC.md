@@ -1,7 +1,7 @@
 # Current-PC private candidate
 
 This is a CachyOS x86-64 candidate, not a public Linux release or Ubuntu 22
-portable runtime. The app includes patched GTK, local ASR libraries and the
+portable runtime. The app includes patched GTK, statically linked local ASR and the
 verified CPU llama.cpp b11981 runtime. Models are not included or downloaded
 by this installer. Ordinary dictation stays local; Raw remains the default.
 

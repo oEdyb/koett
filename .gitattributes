@@ -1,0 +1,3 @@
+# Preserve exact upstream license and provenance bytes, including original line endings.
+CrossPlatform/packaging/notices/** -text -whitespace
+CrossPlatform/evidence/linux-release-notices-20261030/RUSTSEC-*.html -text -whitespace

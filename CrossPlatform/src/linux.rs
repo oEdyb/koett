@@ -33,6 +33,14 @@ use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 static QUIT_BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
 
+#[cfg(test)]
+pub(super) fn runtime_test_guard() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let guard = LOCK.lock().unwrap();
+    QUIT_BUSY.store(false, std::sync::atomic::Ordering::Release);
+    guard
+}
+
 static SHORTCUT_EDITING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static SHORTCUT_CAPTURE_GENERATION: std::sync::atomic::AtomicU64 =
     std::sync::atomic::AtomicU64::new(0);
@@ -1417,6 +1425,7 @@ mod queued_capture_tests {
 
     #[test]
     fn queued_capture_refuses_quit_before_any_worker_status() {
+        let _guard = runtime_test_guard();
         for command in [EngineCommand::Start, EngineCommand::AskStart] {
             let is_ask = matches!(command, EngineCommand::AskStart);
             let (engine, received, updates) = EngineHandle::controlled();
@@ -2211,6 +2220,7 @@ mod menu_tests {
 
     #[test]
     fn shortcut_failures_preserve_capture_actions_on_both_surfaces() {
+        let _guard = runtime_test_guard();
         for (phase, label, enabled) in [
             ("Recording…", "Stop", true),
             ("Transcribing…", "Transcribing…", false),
@@ -2245,6 +2255,7 @@ mod menu_tests {
 
     #[test]
     fn tray_navigation_and_capture_dispatch_are_distinct() {
+        let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
         let mut tray = LinuxTray {
             action_sender,
@@ -2292,6 +2303,7 @@ mod menu_tests {
 
     #[test]
     fn tray_recovery_and_folder_actions_dispatch_shared_operations() {
+        let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
         let mut tray = LinuxTray {
             action_sender,
@@ -2321,6 +2333,7 @@ mod menu_tests {
 
     #[test]
     fn control_messages_preserve_tray_phase_and_busy_sensitivity() {
+        let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
         let mut tray = LinuxTray {
             action_sender,

@@ -2,11 +2,14 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import time
 import unittest
 from pathlib import Path
+
+from test_package_linux_archive import CANONICAL_NOTICES, verify_notices
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('installer', ROOT / 'packaging/linux/install.py')
@@ -14,7 +17,63 @@ installer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(installer)
 
 
+class PackageTests(unittest.TestCase):
+    def test_archived_notices_reject_omission_and_tampering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory)
+            folder = package / 'notices'
+            shutil.copytree(CANONICAL_NOTICES, folder)
+            verify_notices(package)
+            target = folder / 'renderer/katex-font-OFL-1.1.txt'
+            original = target.read_bytes()
+            target.unlink()
+            with self.assertRaisesRegex(ValueError, 'file set differs'):
+                verify_notices(package)
+            target.write_text('Missing original license terms')
+            with self.assertRaisesRegex(ValueError, 'content mismatch'):
+                verify_notices(package)
+            target.write_bytes(original)
+            (folder / 'files.json').write_text('{}')
+            with self.assertRaisesRegex(ValueError, 'index differs'):
+                verify_notices(package)
+
+    def test_system_archive_has_complete_installer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(['python3', str(ROOT / 'scripts/package_linux.py'), '--flavor', 'system-runtime', '--binary', '/bin/true', '--output', directory], check=True, capture_output=True, text=True)
+            import tarfile
+            with tarfile.open(json.loads(result.stdout)['archive']) as archive:
+                members = list(archive)
+                candidate, = [item for item in members if Path(item.name).name == 'candidate.json']
+                self.assertEqual(json.load(archive.extractfile(candidate))['kind'], 'linux-preview-candidate')
+                names = {Path(item.name).name for item in members}
+                for item in members:
+                    if Path(item.name).name in ['install.sh', 'koett'] and item.isfile():
+                        self.assertTrue(item.mode & 0o111, item.name)
+            self.assertTrue({'install.py', 'install.sh', 'preflight.py', 'files.json', 'SYSTEM-RUNTIME.md', 'koett'}.issubset(names))
+            self.assertFalse(any(name.endswith('.a') for name in names))
+
+    def test_current_pc_still_requires_all_runtime_inputs(self):
+        result = subprocess.run(['python3', str(ROOT / 'scripts/package_linux.py'), '--output', '/unused'], check=False, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('requires --gtk-runtime, --asr-runtime and --llama-runtime', result.stderr)
+
+
 class InstallTests(unittest.TestCase):
+    def test_prefix_inside_package_is_rejected_before_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / 'package'
+            package.mkdir()
+            script = package / 'install.py'
+            script.write_bytes((ROOT / 'packaging/linux/install.py').read_bytes())
+            alias = Path(directory) / 'package-link'
+            alias.symlink_to(package, target_is_directory=True)
+            for prefix in [package, package / 'local', alias / 'local']:
+                with self.subTest(prefix=prefix):
+                    result = subprocess.run(['python3', str(script), '--prefix', str(prefix)], check=False, capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('outside the extracted package', result.stderr)
+                    self.assertEqual({p.name for p in package.iterdir()}, {'install.py'})
+
     def test_invalid_prefix_is_rejected_before_deployment(self):
         with tempfile.TemporaryDirectory() as directory:
             prefix = Path(directory) / 'invalid=prefix'

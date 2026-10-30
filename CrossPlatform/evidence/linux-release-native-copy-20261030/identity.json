@@ -1,0 +1,10 @@
+{
+  "binary": "/home/olle/.cache/koett/private-tests/release-copy-bin/koett-final-selection",
+  "binary_sha256": "b142eed9c4236344b2ddc60c421caa69d1a711d9aeca4a0f931013416085e0d6",
+  "kind": "source-built local Linux preview candidate; uncommitted source",
+  "source_files": {
+    "CrossPlatform/src/linux/history_view.rs": "e6a39782d098b27f5c7ac59982086e58503286231f380442055e8f7e5a771e70",
+    "CrossPlatform/src/linux.rs": "7d606b168cf761b3b2ce6e7ed2227dc145b3fa2e748bdf68d30a3820e08cf3cb",
+    "CrossPlatform/src/linux/menu_preferences.rs": "7839629ef4700f2b46bddad81f72086b701e9cf298d2c75c4779deadb06310bd"
+  }
+}

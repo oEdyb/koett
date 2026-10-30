@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import sys
 import tempfile
 import unittest
@@ -172,6 +171,23 @@ version = "0.1.0"
             [asset["path"] for asset in demo["assets"]],
             ["demo.css", "demo.js"],
         )
+
+    def test_bundled_cargo_license_must_match_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "CrossPlatform/packaging/notices/rust/demo-1/LICENSE"
+            path.parent.mkdir(parents=True)
+            path.write_text("original")
+            package = {"name": "demo", "version": "1"}
+            source = [{"path": "LICENSE", "sha256": inventory.sha256_file(path)}]
+            self.assertEqual(len(inventory._bundled_cargo_licenses(root, package, source)), 1)
+            path.write_text("changed")
+            self.assertEqual(inventory._bundled_cargo_licenses(root, package, source), [])
+
+    def test_missing_source_license_stays_a_gap_without_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.assertEqual(inventory._bundled_cargo_licenses(
+                Path(temporary), {"name": "demo", "version": "1"}, []), [])
 
     def test_check_outputs_rejects_stale_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

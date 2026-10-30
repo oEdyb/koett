@@ -7,7 +7,6 @@ import re
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/cross-platform.yml"
 TOOLCHAIN = ROOT / "CrossPlatform/rust-toolchain.toml"
@@ -45,7 +44,7 @@ class WorkflowPinTests(unittest.TestCase):
         self.assertTrue(uses)
         for action, commit in uses:
             self.assertEqual(commit, ACTION_PINS[action])
-        self.assertEqual(set(action for action, _ in uses), set(ACTION_PINS))
+        self.assertEqual({action for action, _ in uses}, set(ACTION_PINS))
 
     def test_action_pin_check_rejects_a_branch_reference(self) -> None:
         workflow = (
@@ -74,6 +73,19 @@ class WorkflowPinTests(unittest.TestCase):
         self.assertIn("rustup default 1.98.0", self.workflow)
         self.assertEqual(self.workflow.count("--component clippy,rustfmt"), 3)
         self.assertIn("cargo +1.92.0 check --locked --all-targets", self.workflow)
+
+    def test_linux_artifacts_are_installed_before_upload(self) -> None:
+        self.assertIn('run: python3 scripts/check_linux_notices.py', self.workflow)
+        self.assertEqual(self.workflow.count('"Sources/Koett/Resources/AssistantRenderer/**"'), 2)
+        linux = self.workflow.split('  linux:\n', 1)[1]
+        self.assertIn('package_linux.py --flavor system-runtime --output dist', linux)
+        self.assertIn("python3 -m unittest discover -s scripts -p 'test_package_linux*.py'", linux)
+        self.assertIn('test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz', linux)
+        self.assertLess(linux.index('test_package_linux_archive.py'), linux.index('actions/upload-artifact@'))
+        self.assertIn('build_asr_native.py --jobs 2', linux)
+        self.assertIn('CARGO_BUILD_JOBS: 2', linux)
+        self.assertIn('--bin koett-engine -- --self-test', linux)
+        self.assertNotIn('continue-on-error', linux)
 
     def test_advisory_tools_are_exact_and_read_only(self) -> None:
         self.assertIn("cargo install cargo-audit --version 0.22.2 --locked", self.workflow)

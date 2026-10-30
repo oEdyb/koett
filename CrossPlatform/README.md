@@ -1,101 +1,128 @@
-# Koett for Windows and Linux
+# Koett for Linux and Windows
 
-In testing. There is no public Windows or Linux download yet. These are source
-build instructions, not a released installer. [Public Mac download](https://github.com/oEdyb/koett/releases/latest).
+Local voice-to-text with configurable shortcuts, models and microphones. Linux has
+native GTK controls, a recording waveform, searchable history, Copy and Export.
+Windows remains a source-build preview. [Mac download](https://github.com/oEdyb/koett/releases/latest).
 
-Koett records speech, transcribes locally, and pastes the result into your app.
-The Linux window provides recent transcripts, search, Copy, Export and Settings.
-The tray and desktop shortcut remain available while the window is closed.
+## Install
 
-The default shortcut is `Ctrl+Shift+Space`. The 110M English model downloads
-once on first use and stays loaded while Koett runs. Long recordings process in
-the background while you speak.
+Choose the matching **Linux system-runtime** archive from
+[Releases](https://github.com/oEdyb/koett/releases). Extract it, then run these
+commands from the extracted folder:
 
-Linux requires glibc 2.35+, GTK 4.6+ and ALSA. PipeWire's ALSA bridge and PulseAudio's
-ALSA plugin work with the existing capture path. GNOME does not need a tray
-extension to use the window. Windows keeps its notification-area menu and pill.
+```sh
+./koett --check-runtime
+./install.sh
+```
+
+Open Koett from your app launcher. The first launch downloads the default English
+model. It stays loaded while Koett runs. The installer uses `~/.local`, retains
+your settings/history and previous app version, and never stops a running Koett.
+Restart after an update to load the new version.
+
+Linux preview builds use the distribution's GTK and audio libraries. They are built
+on Ubuntu 22.04 with GTK 4.6 as the API floor. Run the runtime check even if your
+packages are installed. It reports missing libraries and optional tools without
+changing your system. See the archive's `SYSTEM-RUNTIME.md` for dependencies and
+known toolkit limits. The separate `current-pc` bundle is specific to its build
+machine and should not be used as a portable Linux download.
+
+For an isolated install, use `./install.sh --prefix '/a private folder'`.
+Python 3.10+ is required. Verify the archive against its published SHA-256 file.
 
 ## Use
 
-- Open Koett from the app launcher. Record starts capture; Stop transcribes it.
-- Settings selects the microphone, recording mode, shortcut and personal word
-  replacements. Pause media while recording is optional and off by default.
-- Search filters the full local archive. Select an entry to read, copy or export.
-- If automatic paste fails, use Copy last transcript or the saved history entry.
+- **Record:** press `Ctrl+Shift+Space`, speak, then press it again. Hold mode is
+  available. Your desktop may manage the shortcut itself.
+- **Models:** Menu → Preferences → Model. Choose compact English, Parakeet v2,
+  multilingual v3 or experimental Nemotron. Missing models download with visible
+  progress and Cancel. The default remains 110M English.
+- **Settings:** choose your microphone, check its input meter, set shortcuts and
+  add word replacements. Optional media pausing is off by default.
+- **History:** search recent and older dictations, select an entry, Copy or Export.
+  Copy Last and unsaved-text recovery remain available after failed delivery.
+- **Formatting:** Raw is the default. Optional S1-mini cleanup runs locally and
+  falls back to raw text if cleanup fails. System-runtime builds need
+  `llama-server` on PATH before enabling it.
 
-Wayland desktops use their shortcut and remote-desktop portals where available.
-Compositors without these portals can bind `koett toggle`, or `koett start` and
-`koett stop` for hold mode, using their native shortcut settings. On niri/wlroots,
-install `wl-clipboard` and `wtype` for clipboard/virtual-keyboard delivery. Koett
-does not require an input group or privileged keyboard daemon. KDE/GNOME use the
-permission-based portal path rather than assuming `wtype` works there. X11 uses
-native global shortcuts and XTest paste.
+Wayland uses the desktop's GlobalShortcuts and RemoteDesktop portals when
+available. Otherwise bind `koett toggle` in your compositor; hold mode uses
+`koett start` and `koett stop` with press/release bindings. Koett does not require
+an input group or privileged keyboard daemon. On niri/wlroots, install
+`wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported. X11
+uses native global shortcuts and XTest.
 
-Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for every output
-backend. Choose the shortcut your target app accepts. Sending a shortcut cannot
-confirm that the destination consumed it; saved history and Copy last transcript
-remain available.
+Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
+backends. Choose the chord your app accepts. Sending it cannot prove the app
+consumed the paste; history and Copy Last preserve the result.
 
-## History
+Optional **media transcription** uses the focused accessible browser document or
+a manual HTTP(S) URL. Finite direct media, HLS and DASH are supported through
+`~/.local/bin/yt-dlp` and `/usr/bin/ffmpeg`. Live, protected and login-required
+sources are outside the supported scope. A separate result has preview and Copy.
 
-New results live in private `History.sqlite3` in Koett's platform data directory.
-SQLite indexes text and loads at most 50 snippets per page. Koett imports the old
-`Transcripts.md` in the background and leaves it unchanged. Older text whose entry
-boundaries cannot be established remains searchable as Imported archive with an
-unknown date; original bytes remain preserved. Identical separate recordings
-remain separate. Save failures retain the existing recovery-file path, with a
-copyable in-memory result if storage also fails.
+Optional **Ask** sends your question and one screen image to your configured
+provider. It needs `secret-tool` and a session Secret Service. Spoken replies use
+Cartesia when enabled. Rich answers need complete WebKitGTK 6 with its helpers;
+plain text remains available without it. Dictation needs no account or provider.
+
+## Local data
+
+Private `History.sqlite3` lives in Koett's XDG data directory. Search loads at most
+50 snippets per page, then selected text separately. Legacy `Transcripts.md` imports
+in the background and stays unchanged. Unclear archive boundaries remain searchable
+as Imported archive with an unknown date; original bytes are preserved.
+
+Completed text survives failed paste through history, Copy Last and recovery.
+Failed history writes use private fallback files. Audio is retained only if local
+recognition fails. Provider keys stay in Secret Service, not the settings file.
 
 ## Build
 
-Use the pinned Rust 1.98.0 toolchain and Python 3.10+ with tarfile's data filter.
-Install CMake, Ninja, a C++ compiler, GTK4/ALSA development headers and the X11/
-Wayland development dependencies. Build ASR-only native libraries first:
+Use the pinned Rust 1.98.0 toolchain, Python 3.10+ with tarfile's data filter,
+CMake, Ninja and a C++ compiler. Install GTK4/ALSA development headers plus the
+X11/Wayland development dependencies. From `CrossPlatform`:
 
-```fish
-python3 scripts/build_asr_native.py
+```sh
+python3 scripts/build_asr_native.py --jobs 2
 cargo build --release --locked --bin koett
+python3 scripts/package_linux.py --flavor system-runtime --binary target/release/koett --output dist
 ```
 
-The builder verifies the pinned source archive, disables TTS, and stages only the
-ASR link inputs. Its Linux C++ ABI setting matches the pinned ONNX Runtime archive.
-The vendored Rust FFI source is unchanged; only the native-link build boundary is
-patched. A normal Rust build refuses mismatched/missing native receipts.
+The native builder verifies pinned sherpa-onnx source, disables TTS, and records
+its ASR-only link inputs. The Rust build rejects missing or mismatched receipts.
+`packaging/linux/Dockerfile` defines the Ubuntu 22.04 build floor. A build from a
+newer distribution alone is not a portability check.
 
-`packaging/linux/Dockerfile` defines an x86-64 Ubuntu 22.04 build environment with
-pinned base image, Rust and rustup. Build against that floor when producing a
-candidate for other distributions; a current-distro build is not a portability
-check. Keep separate Cargo target/native directories when using another toolchain.
+For a machine-specific bundle, preserve the three explicit runtime inputs:
 
-Package a completed binary without installing or publishing it:
-
-```fish
-python3 scripts/package_linux.py --binary target/release/koett --output /tmp/koett-package
+```sh
+python3 scripts/package_linux.py --binary target/release/koett --output dist \
+  --gtk-runtime GTK_PREFIX --asr-runtime ASR_PREFIX --llama-runtime LLAMA_PREFIX
 ```
 
-The package contains an installer, desktop entry, source/binary receipt and SHA-256
-checksum. The installer defaults to the user's local bin/application directories;
-`KOETT_BIN_DIR` and `XDG_DATA_HOME` support isolated install checks.
+Use `--native-build-receipt PATH` when the native libraries linked into the
+supplied binary were built outside the default `native-build` directory.
 
-## Verification
+## Verify
 
-Run the Rust checks in root AGENTS.md plus the native model probes:
+Run the Rust checks from root `AGENTS.md`, then the model and archive probes:
 
-```fish
+```sh
 cargo run --release --locked --bin koett-engine -- --self-test
-cargo run --release --locked --bin koett-engine -- --long-self-test 420
+python3 -m unittest discover -s scripts -p 'test_package_linux*.py'
+python3 scripts/test_package_linux_archive.py --archive YOUR_ARCHIVE.tar.gz
+```
+
+On this workstation, native tests run only in an invisible private desktop:
+
+```sh
 agent-lab start koett
-/usr/bin/python3 scripts/test_linux_ui.py --binary target/debug/koett --model MODEL_DIRECTORY
+/usr/bin/python3 scripts/test_linux_ui.py --binary target/release/koett --model MODEL_DIRECTORY
 agent-lab stop koett
 ```
 
-The UI script uses real GTK/AT-SPI widgets and a synthetic archive. On this Linux
-workstation, GUI tests run in the private, invisible `agent-lab koett` desktop;
-input, audio, clipboard and portals must stay inside the lab. Stop it after testing.
-`--record` adds a two-second capture using that session's selected input. Native desktop
-permissions, focus/paste behavior and runtime support still require their actual
-desktop tests; successful compilation is not evidence for those paths. Mac runtime
-verification is separately deferred; no public release is implied by a local build.
-
-The separate `koett-engine` binary remains available for WAV and microphone
-benchmarks.
+The caller owns lab cleanup. `--record` uses the private session's audio source.
+Tests must not connect to the visible desktop, host clipboard or physical audio.
+A loader check or model self-test does not establish compositor/permission support.
+Mac execution and native Windows acceptance are separate from Linux verification.

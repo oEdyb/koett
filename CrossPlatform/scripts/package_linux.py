@@ -10,6 +10,8 @@ import subprocess
 import tarfile
 from pathlib import Path
 
+from check_linux_notices import validate
+
 
 def digest(path):
     value = hashlib.sha256()
@@ -23,17 +25,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=Path("target/release/koett"))
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--gtk-runtime", type=Path, required=True)
-    parser.add_argument("--asr-runtime", type=Path, required=True)
-    parser.add_argument("--llama-runtime", type=Path, required=True)
+    parser.add_argument("--flavor", choices=["current-pc", "system-runtime"], default="current-pc")
+    parser.add_argument("--gtk-runtime", type=Path)
+    parser.add_argument("--asr-runtime", type=Path)
+    parser.add_argument("--llama-runtime", type=Path)
+    parser.add_argument("--native-build-receipt", type=Path, help="Receipt for the native libraries linked into --binary (system flavor defaults to native-build/build-receipt.json)")
     args = parser.parse_args()
+    if args.flavor == "current-pc" and not all([args.gtk_runtime, args.asr_runtime, args.llama_runtime]):
+        parser.error("current-pc requires --gtk-runtime, --asr-runtime and --llama-runtime")
+    if args.flavor == "system-runtime" and any([args.gtk_runtime, args.asr_runtime, args.llama_runtime]):
+        parser.error("system-runtime uses host libraries; runtime inputs are not accepted")
     root = Path(__file__).resolve().parents[1]
     binary = args.binary.resolve()
     if not binary.is_file():
         parser.error(f"binary not found: {binary}")
+    validate(root)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True))
-    name = f"Koett-Linux-{platform.machine()}-{revision[:8]}"
+    suffix = "-system-runtime" if args.flavor == "system-runtime" else ""
+    name = f"Koett-Linux-{platform.machine()}{suffix}-{revision[:8]}"
     output = args.output.resolve()
     destination = output / name
     destination.mkdir(parents=True, exist_ok=False)
@@ -41,32 +51,42 @@ def main():
     shutil.copy2(binary, destination / "libexec/koett")
     shutil.copy2(root / "packaging/linux/koett-launcher", destination / "koett")
     (destination / "koett").chmod(0o755)
-    for kind, runtime in [("gtk", args.gtk_runtime), ("asr", args.asr_runtime)]:
-        shutil.copytree(runtime.resolve(), destination / "runtime" / kind, symlinks=False)
     shutil.copy2(root / "packaging/linux/install.py", destination / "install.py")
     shutil.copy2(root / "packaging/linux/preflight.py", destination / "preflight.py")
-    shutil.copytree(args.llama_runtime.resolve(), destination / "runtime/llama", symlinks=False)
-    (destination / "runtime/bin").mkdir()
-    wrapper = destination / "runtime/bin/llama-server"
-    wrapper.write_text('#!/bin/sh\nROOT=$(dirname -- "$(readlink -f -- "$0")")/../llama\nexport LD_LIBRARY_PATH="$ROOT${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\nexec "$ROOT/llama-server" "$@"\n')
-    wrapper.chmod(0o755)
-    sources = destination / "sources"
-    sources.mkdir()
-    shutil.copy2(args.llama_runtime.resolve().parent / "provenance.json", sources / "llama-provenance.json")
-    gtk_build = args.gtk_runtime.resolve().parent
-    for source_name in ["gtk-4.24.1.tar.xz", "21d3eb76b68d6758122eddaf00b5823f9b2d7f34.patch", "runtime-receipt.json"]:
-        shutil.copy2(gtk_build / source_name, sources / source_name)
-    shutil.copy2(root / "scripts/build_linux_gtk_runtime.py", sources / "build_linux_gtk_runtime.py")
-    shutil.copy2(args.asr_runtime.resolve() / "build-receipt.json", sources / "asr-build-receipt.json")
-    for filename in ["install.sh", "CURRENT-PC.md", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
+    if args.flavor == "current-pc":
+        for kind, runtime in [("gtk", args.gtk_runtime)]:
+            shutil.copytree(runtime.resolve(), destination / "runtime" / kind, symlinks=False)
+        shutil.copytree(args.llama_runtime.resolve(), destination / "runtime/llama", symlinks=False)
+        (destination / "runtime/bin").mkdir()
+        wrapper = destination / "runtime/bin/llama-server"
+        wrapper.write_text('#!/bin/sh\nROOT=$(dirname -- "$(readlink -f -- "$0")")/../llama\nexport LD_LIBRARY_PATH="$ROOT${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\nexec "$ROOT/llama-server" "$@"\n')
+        wrapper.chmod(0o755)
+        sources = destination / "sources"
+        sources.mkdir()
+        shutil.copy2(args.llama_runtime.resolve().parent / "provenance.json", sources / "llama-provenance.json")
+        gtk_build = args.gtk_runtime.resolve().parent
+        for source_name in ["gtk-4.24.1.tar.xz", "21d3eb76b68d6758122eddaf00b5823f9b2d7f34.patch", "runtime-receipt.json"]:
+            shutil.copy2(gtk_build / source_name, sources / source_name)
+        shutil.copy2(root / "scripts/build_linux_gtk_runtime.py", sources / "build_linux_gtk_runtime.py")
+        shutil.copy2(args.asr_runtime.resolve() / "build-receipt.json", sources / "asr-build-receipt.json")
+    for filename in ["install.sh", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
         shutil.copy2(root / "packaging/linux" / filename, destination / filename)
+    (destination / "install.sh").chmod(0o755)
+    (destination / "libexec/koett").chmod(0o755)
     for filename in ["README.md", "THIRD_PARTY_NOTICES.md"]:
         shutil.copy2(root / filename, destination / filename)
     shutil.copy2(root.parent / "LICENSE", destination / "LICENSE")
-    receipt = {"kind": "local-candidate-not-public-release", "source_revision": revision,
+    receipt = {"kind": "linux-preview-candidate" if args.flavor == "system-runtime" else "local-candidate-not-public-release", "flavor": args.flavor,
+               "runtime": "app-scoped CachyOS GTK and llama; ASR statically linked" if args.flavor == "current-pc" else "host GTK >= 4.6, ALSA and ELF dependencies; ASR statically linked; llama optional", "source_revision": revision,
                "source_dirty": dirty, "binary_sha256": digest(binary),
                "binary_bytes": binary.stat().st_size}
-    native = root / "native-build/build-receipt.json"
+    if args.flavor == "current-pc":
+        shutil.copy2(root / "packaging/linux/CURRENT-PC.md", destination / "CURRENT-PC.md")
+    if args.flavor == "system-runtime":
+        shutil.copy2(root / "packaging/linux/SYSTEM-RUNTIME.md", destination / "SYSTEM-RUNTIME.md")
+    notices = root / "packaging/notices"
+    shutil.copytree(notices, destination / "notices")
+    native = args.native_build_receipt or ((args.asr_runtime / "build-receipt.json") if args.flavor == "current-pc" else root / "native-build/build-receipt.json")
     if native.exists():
         shutil.copy2(native, destination / "native-build-receipt.json")
     (destination / "candidate.json").write_text(json.dumps(receipt, indent=2) + "\n")
