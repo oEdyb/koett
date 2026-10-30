@@ -5,11 +5,11 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tarfile
 import urllib.request
+from pathlib import Path
 
 SOURCE_COMMIT = "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5"
 SOURCE_SHA256 = "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c"
@@ -49,6 +49,19 @@ def native_options(target):
     return options
 
 
+def configure_command(source, build, target, generator=None):
+    command = ["cmake", "-S", str(source), "-B", str(build)]
+    if "windows-msvc" in target:
+        if not target.startswith("x86_64-"):
+            raise ValueError(f"unsupported Windows native target: {target}")
+        if generator:
+            command.extend(["-G", generator])
+        command.extend(["-A", "x64"])
+    else:
+        command.extend(["-G", generator or "Ninja"])
+    return command + [f"-D{key}={value}" for key, value in native_options(target).items()]
+
+
 def remove_disabled_tts_stubs(contents):
     """Keep the enabled implementation guarded; remove only the disabled else."""
     start = contents.index("#if SHERPA_ONNX_ENABLE_TTS == 1\nstruct SherpaOnnxOfflineTts")
@@ -76,9 +89,8 @@ def prepare_source(root):
     archive = root / "source.tar.gz"
     if not archive.exists():
         temporary = archive.with_suffix(".download")
-        with urllib.request.urlopen(SOURCE_URL, timeout=60) as response:
-            with temporary.open("wb") as output:
-                shutil.copyfileobj(response, output)
+        with urllib.request.urlopen(SOURCE_URL, timeout=60) as response, temporary.open("wb") as output:
+            shutil.copyfileobj(response, output)
         if sha256(temporary) != SOURCE_SHA256:
             raise ValueError("sherpa source checksum mismatch")
         temporary.replace(archive)
@@ -130,6 +142,7 @@ def main():
     parser.add_argument("--root", type=Path,
                         default=Path(__file__).resolve().parents[1] / "native-build")
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 2, 8))
+    parser.add_argument("--generator", help="CMake generator; Windows defaults to installed Visual Studio")
     args = parser.parse_args()
     host = subprocess.check_output(["rustc", "-vV"], text=True)
     target = next(line.removeprefix("host: ") for line in host.splitlines()
@@ -138,10 +151,9 @@ def main():
     root.mkdir(parents=True, exist_ok=True)
     source = prepare_source(root)
     build = root / "build"
-    subprocess.run(["cmake", "-S", str(source), "-B", str(build), "-G", "Ninja",
-                    *[f"-D{key}={value}" for key, value in native_options(target).items()]], check=True)
+    subprocess.run(configure_command(source, build, target, args.generator), check=True)
     subprocess.run(["cmake", "--build", str(build), "--target", "sherpa-onnx-c-api",
-                    "--parallel", str(args.jobs)], check=True)
+                    "--config", "Release", "--parallel", str(args.jobs)], check=True)
     stage_libraries(build, root, target)
 
 

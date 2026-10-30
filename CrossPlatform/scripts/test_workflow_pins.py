@@ -87,7 +87,15 @@ class WorkflowPinTests(unittest.TestCase):
         self.assertIn('--bin koett-engine -- --self-test', linux)
         self.assertNotIn('continue-on-error', linux)
 
+    def test_windows_native_build_uses_the_microsoft_generator(self) -> None:
+        windows = self.workflow.split('  windows:\n', 1)[1].split('  linux:\n', 1)[0]
+        self.assertIn('build_asr_native.py --generator "Visual Studio 18 2026"', windows)
+        self.assertIn('runs-on: windows-2025', windows)
+
     def test_advisory_tools_are_exact_and_read_only(self) -> None:
+        self.assertIn('retry-on-snapshot-warnings: true', self.workflow)
+        self.assertIn('retry-on-snapshot-warnings-timeout: 120', self.workflow)
+        self.assertNotIn('warn-only: true', self.workflow)
         self.assertIn("cargo install cargo-audit --version 0.22.2 --locked", self.workflow)
         self.assertIn("run: cargo audit", self.workflow)
         self.assertIn("permissions:\n  contents: read", self.workflow)

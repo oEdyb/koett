@@ -31,6 +31,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 120
 
   supply-chain:
     runs-on: ubuntu-22.04
@@ -48,6 +51,8 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
+      - name: Test native build configuration
+        run: python3 scripts/test_build_asr_native.py
       - name: Test build receipts
         run: python3 scripts/test_build_receipt.py
       - name: Test supply-chain inventory
@@ -101,7 +106,7 @@ jobs:
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
       - name: Build ASR-only native libraries
-        run: python scripts/build_asr_native.py
+        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026"
       - name: Test
         run: cargo test --locked
       - name: Lint
