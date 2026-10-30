@@ -1,0 +1,9 @@
+{
+  "sha256": "0cc791b7559401b711624b0236da7949d11fcfc86eb8de37ca0cf7e9c1ad63e3",
+  "bytes": 48881984,
+  "backup": "/home/olle/.local/state/koett/install-backups/20261027T130123Z/koett",
+  "restarted": false,
+  "restart_deferred": true,
+  "pid": null,
+  "preferences_preserved": true
+}

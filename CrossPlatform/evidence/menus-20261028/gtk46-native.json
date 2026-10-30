@@ -1,0 +1,16 @@
+{
+  "GTK": "4.6.9",
+  "menu_accessible_names": [
+    "History",
+    "Copy last transcript",
+    "Settings",
+    "Hide window",
+    "Quit Koett"
+  ],
+  "checks": [
+    "native menu named rows and disabled Copy",
+    "Settings and Save",
+    "Hide and show",
+    "native menu Quit"
+  ]
+}

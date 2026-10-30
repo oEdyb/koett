@@ -1,9 +1,11 @@
 import Foundation
 
-struct MediaTranscriptStore {
+struct MediaTranscriptStore: Sendable {
     let directoryURL: URL
+    let history: TranscriptStore
 
     init() {
+        history = TranscriptStore()
         directoryURL = URL.applicationSupportDirectory
             .appendingPathComponent("Koett", isDirectory: true)
             .appendingPathComponent("Media Transcripts", isDirectory: true)
@@ -11,6 +13,7 @@ struct MediaTranscriptStore {
 
     init(directoryURL: URL) {
         self.directoryURL = directoryURL
+        history = TranscriptStore(fileURL: directoryURL.appendingPathComponent("History.sqlite3"))
     }
 
     func prepare() throws {
@@ -29,39 +32,16 @@ struct MediaTranscriptStore {
         at date: Date = Date()
     ) async throws -> URL {
         try prepare()
-        let cleanTitle = Self.cleanTitle(title)
-        let timestamp = Self.fileTimestamp(date)
-        let recordedAt = ISO8601DateFormatter().string(from: date)
-        let document = """
-        # \(cleanTitle)
-
-        Source: [\(source.platformName)](\(source.url.absoluteString))
-
-        Transcribed: \(recordedAt)
-
-        Model: \(model)
-
-        \(text)
-        """
-        let data = Data("\(document)\n".utf8)
-        let temporaryURL = directoryURL.appendingPathComponent(
-            ".koett-transcript-\(UUID().uuidString).tmp"
+        let record = TranscriptRecord(
+            text: text,
+            model: "\(model) (Media: \(source.platformName); \(Self.cleanTitle(title)); \(source.url.absoluteString))",
+            date: date
         )
-        try data.write(to: temporaryURL, options: .atomic)
-        defer { try? FileManager.default.removeItem(at: temporaryURL) }
-
-        let baseName = "\(timestamp) \(source.platformName)"
-        var suffix = 1
-        while true {
-            let name = suffix == 1 ? baseName : "\(baseName) \(suffix)"
-            let fileURL = directoryURL.appendingPathComponent("\(name).md")
-            do {
-                try FileManager.default.linkItem(at: temporaryURL, to: fileURL)
-                return fileURL
-            } catch let error as CocoaError where error.code == .fileWriteFileExists {
-                suffix += 1
-            }
+        try history.append(record)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .transcriptHistoryChanged, object: nil)
         }
+        return history.databaseURL
     }
 
     static func cleanTitle(_ title: String) -> String {
@@ -70,14 +50,6 @@ struct MediaTranscriptStore {
             .filter { !$0.isEmpty }
             .joined(separator: " ")
         return flattened.isEmpty ? "Media Transcript" : flattened
-    }
-
-    private static func fileTimestamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd HHmmss.SSS"
-        return formatter.string(from: date)
     }
 
 }

@@ -1,0 +1,53 @@
+{
+  "base": "cca664a",
+  "branch": "feat/linux-ui-history",
+  "source_sha256": {
+    "CrossPlatform/src/linux.rs": "00b1e79b95dfe293d8bcc3b4599a6eb9615b9015189803b59bd154a22465f10a",
+    "CrossPlatform/src/linux/window.rs": "ca7c297a8603d5c9bf74ddb9a957f9b8d13e05323382459174f4186f8ea9fbc4",
+    "CrossPlatform/src/linux/menu.rs": "e8b82a8dd88f7f709f7307919a56ac9878898b37c3105f6194282221bad25367",
+    "CrossPlatform/scripts/test_linux_menu.py": "3a99a6fc49051128d1e9625a711ba96edfd7a5ed9e47f1bf090dc582d0004e19"
+  },
+  "binary": {
+    "path": "CrossPlatform/target/release/koett",
+    "sha256": "15754318112aaa25ce853167a80d5d338bb1a633cf93081fde43ab44ab80cccf"
+  },
+  "gates": {
+    "cargo fmt --check": "pass",
+    "cargo test --locked": "92 passed; 3 preexisting ignored",
+    "cargo clippy --locked --all-targets -- -D warnings": "pass",
+    "cargo build --release --locked": "pass",
+    "Ruff 0.17.2 test_linux_menu.py test_linux_ui.py": "pass",
+    "python3 -m py_compile test_linux_menu.py test_linux_ui.py": "pass",
+    "git diff --check": "pass"
+  },
+  "runtime": {
+    "lab": "koett-menu",
+    "GTK": "4.24.1",
+    "renderer": "Cairo",
+    "app_affinity": "one allowed CPU",
+    "normal_size": [
+      960,
+      680
+    ],
+    "narrow_size": [
+      500,
+      600
+    ],
+    "audio": "cached public model test_wavs/0.wav; repeated sample and CPAL private monitor input",
+    "results": [
+      "dark/results.json",
+      "light/results.json"
+    ],
+    "transient_runs": [
+      "/tmp/koett-menu-dark-final",
+      "/tmp/koett-menu-light-final-02"
+    ]
+  },
+  "limitations": [
+    "Tray rendering unverified: real SNI/dbusmenu integration used a disposable private watcher without a rendered tray host.",
+    "Private portal registration lacked the installed desktop identity; actual global Pause shortcut and portal paste were not exercised.",
+    "GTK 4.6 baseline build, independent review, installation and push are parent-owned; no Mac/Windows gates run here.",
+    "These are private KWin/GTK4.24.1 Cairo checks, not universal desktop or physical-device evidence."
+  ],
+  "lab_cleanup": "agent-lab stop koett-menu and status both report stopped; app Quit exited 0; owned targets, watcher and AT-SPI registry terminated; remap source unloaded; lab stop removed remaining bound services"
+}

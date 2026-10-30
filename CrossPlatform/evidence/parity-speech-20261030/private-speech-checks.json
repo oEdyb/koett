@@ -1,0 +1,83 @@
+{
+  "provider_requests": 0,
+  "live_cartesia_verified": false,
+  "cases": {
+    "playback": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.15000000596046448,
+      "silent_tail": true,
+      "live_cartesia": false
+    },
+    "native_replacement": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.15834492444992065,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": true,
+      "provider_error": false,
+      "timeout_mode": null
+    },
+    "native_provider_error": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.0,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": true,
+      "provider_error": true,
+      "timeout_mode": null
+    },
+    "handshake_timeout": {
+      "mock_wss": true,
+      "prewarm_before_text": null,
+      "pcm_peak": 0.0,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": false,
+      "provider_error": false,
+      "timeout_mode": "handshake"
+    },
+    "first_audio_timeout": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.0,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": false,
+      "provider_error": false,
+      "timeout_mode": "first_audio"
+    },
+    "stalled_read_timeout": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.14999999105930328,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": false,
+      "provider_error": false,
+      "timeout_mode": "stalled_read"
+    },
+    "cancel_handshake": {
+      "mock_wss": true,
+      "prewarm_before_text": null,
+      "pcm_peak": 0.0,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": false,
+      "provider_error": false,
+      "timeout_mode": "handshake"
+    },
+    "cancel_first_audio": {
+      "mock_wss": true,
+      "prewarm_before_text": true,
+      "pcm_peak": 0.0,
+      "silent_tail": true,
+      "live_cartesia": false,
+      "native_panel_copy": false,
+      "provider_error": false,
+      "timeout_mode": "first_audio"
+    }
+  }
+}

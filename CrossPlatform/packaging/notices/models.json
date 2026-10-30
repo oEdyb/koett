@@ -1,0 +1,106 @@
+[
+  {
+    "manifest": "model-manifests/nemotron-streaming-en-560ms-int8.json",
+    "manifest_sha256": "7bed87b561d2d18c8cc08fdf2258e0e1e2c289140154519b78927ccb9901b60d",
+    "model_id": "sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25",
+    "artifacts": [
+      {
+        "id": "asr",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25.tar.bz2",
+        "immutable_revision": "sha256:78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+        "bytes": 463945051,
+        "sha256": "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+        "license": "NVIDIA Open Model License; release conversion attribution requires upstream clarification",
+        "upstream_reference_url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b"
+      },
+      {
+        "id": "vad",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "bytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "license": "MIT",
+        "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+      }
+    ],
+    "distributed": false
+  },
+  {
+    "manifest": "model-manifests/parakeet-tdt-600m-v2-int8.json",
+    "manifest_sha256": "b6cf2d507f81479466253d88603fa985a6582cf9b55ca8b81fb5692a23c4336d",
+    "model_id": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
+    "artifacts": [
+      {
+        "id": "asr",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2",
+        "immutable_revision": "github-release:130628817/asset:283097678/sha256:157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+        "bytes": 482468385,
+        "sha256": "157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+        "license": "CC-BY-4.0",
+        "upstream_reference_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2"
+      },
+      {
+        "id": "vad",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "bytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "license": "MIT",
+        "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+      }
+    ],
+    "distributed": false
+  },
+  {
+    "manifest": "model-manifests/parakeet-tdt-600m-v3-int8.json",
+    "manifest_sha256": "888f4d679b68ae531846bc80c0e6091ccf4f4795bb9a34525cc21e1cb784b498",
+    "model_id": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+    "artifacts": [
+      {
+        "id": "asr",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+        "immutable_revision": "github-release:130628817/asset:283097583/sha256:5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+        "bytes": 487170055,
+        "sha256": "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+        "license": "CC-BY-4.0",
+        "upstream_reference_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3"
+      },
+      {
+        "id": "vad",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "bytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "license": "MIT",
+        "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+      }
+    ],
+    "distributed": false
+  },
+  {
+    "manifest": "model-manifests/parakeet-tdt-ctc-110m-int8.json",
+    "manifest_sha256": "8b93117489766aeee2ced4ad4d39d8beef018109b7840d4aee95f4fec9724d91",
+    "model_id": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+    "artifacts": [
+      {
+        "id": "asr",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8.tar.bz2",
+        "immutable_revision": "github-release:130628817/asset:271022191/sha256:17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+        "bytes": 104337827,
+        "sha256": "17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+        "license": "CC-BY-4.0",
+        "upstream_reference_url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m/tree/431a349f3051ab85c22b9b7a2741b5fe77065665"
+      },
+      {
+        "id": "vad",
+        "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+        "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "bytes": 643854,
+        "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+        "license": "MIT",
+        "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+      }
+    ],
+    "distributed": false
+  }
+]

@@ -1,0 +1,4 @@
+No blocked TTS/espeak/piper/UCD defined-symbol matches across 10 archives.
+ASR C boundary includes SherpaOnnxCreateOfflineRecognizer.
+version=1.13.5
+embedded_git_sha1=17ab05b7

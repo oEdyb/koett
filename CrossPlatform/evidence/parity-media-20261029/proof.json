@@ -1,0 +1,10 @@
+{
+  "stale_settings_preserves_enabled_warm_server": true,
+  "readonly_restores_selection_and_cleans": [
+    [
+      "well, I don't wish to see it any more, observed Phoebe, turning away her eyes. it is certainly very like the old portrait",
+      "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait"
+    ]
+  ],
+  "writable_raw_disables": true
+}

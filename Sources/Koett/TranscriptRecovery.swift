@@ -12,7 +12,10 @@ extension KoettController {
         if keepAsLast && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lastTranscript = text
         }
-        let outcome = transcriptPersistence.persist(record, keepAsLast: keepAsLast)
+        let outcome = transcriptPersistence.enqueue(record, keepAsLast: keepAsLast) { [weak self] outcome in
+            self?.presentTranscriptSaveOutcome(outcome)
+            self?.assistantPanel.showStorageWarning(outcome.warning)
+        }
         presentTranscriptRecovery(record, outcome: outcome)
         return outcome
     }
@@ -24,6 +27,10 @@ extension KoettController {
         if !outcome.hasDurableCopy && !record.text.isEmpty {
             lastTranscript = record.text
         }
+        presentTranscriptSaveOutcome(outcome)
+    }
+
+    private func presentTranscriptSaveOutcome(_ outcome: TranscriptPersistence.Outcome) {
         if let warning = outcome.warning {
             recordingOverlay.showError(warning)
         }
@@ -31,10 +38,14 @@ extension KoettController {
     }
 
     func recoverTranscripts() {
-        let outcome = transcriptPersistence.recover()
-        if let warning = outcome.warning {
-            recordingOverlay.showError(warning)
-            fputs("Warning: \(warning)\n", stderr)
+        transcriptPersistence.importHistoryInBackground()
+        transcriptPersistence.recoverInBackground { [weak self] outcome in
+            guard let self else { return }
+            if let warning = outcome.warning {
+                recordingOverlay.showError(warning)
+                fputs("Warning: \(warning)\n", stderr)
+            }
+            rebuildMenu()
         }
     }
 

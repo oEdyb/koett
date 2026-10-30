@@ -1,0 +1,234 @@
+name: Windows and Linux
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "CrossPlatform/**"
+      - "Sources/Koett/Resources/History/**"
+      - "Sources/Koett/Resources/AssistantRenderer/**"
+      - ".github/workflows/cross-platform.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "CrossPlatform/**"
+      - "Sources/Koett/Resources/History/**"
+      - "Sources/Koett/Resources/AssistantRenderer/**"
+      - ".github/workflows/cross-platform.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 120
+
+  supply-chain:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
+      - name: Check workflow pins
+        run: python3 scripts/test_workflow_pins.py
+      - name: Test native build configuration
+        run: python3 scripts/test_build_asr_native.py
+      - name: Test ASR wrapper provenance
+        run: python3 scripts/test_sherpa_wrapper.py
+      - name: Test build receipts
+        run: python3 scripts/test_build_receipt.py
+      - name: Test supply-chain inventory
+        run: python3 scripts/test_supply_chain_inventory.py
+      - name: Check supply-chain inventory
+        run: python3 scripts/generate_supply_chain_inventory.py --check
+      - name: Check distributable notices
+        run: python3 scripts/check_linux_notices.py
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Audit locked dependencies
+        run: cargo audit
+
+  msrv:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
+            libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
+      - name: Install minimum Rust
+        run: rustup toolchain install 1.92.0 --profile minimal
+      - name: Check minimum Rust
+        run: DOCS_RS=1 cargo +1.92.0 check --locked --all-targets
+
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
+      - name: Build ASR-only native libraries
+        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026"
+      - name: Test
+        run: cargo test --locked
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --release --locked --bin koett
+      - name: Runtime self-test
+        run: cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Runtime long-input probe
+        timeout-minutes: 5
+        run: cargo run --release --locked --bin koett-engine -- --long-self-test 420
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
+          Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
+          Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
+          Copy-Item -Recurse packaging/notices dist/Koett-Windows-x86_64/notices
+          Copy-Item native-build/build-receipt.json dist/Koett-Windows-x86_64/native-build-receipt.json
+          Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
+      - name: Verify Windows archive notices
+        run: python scripts/check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip
+      - name: Write checksum and build receipt
+        run: >-
+          python scripts/write_build_receipt.py
+          --artifact dist/Koett-Windows-x86_64.zip
+          --target x86_64-pc-windows-msvc
+          --output-directory dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Koett-Windows-x86_64
+          path: |
+            CrossPlatform/dist/Koett-Windows-x86_64.zip
+            CrossPlatform/dist/Koett-Windows-x86_64.zip.sha256
+            CrossPlatform/dist/Koett-Windows-x86_64.zip.build-receipt.json
+          if-no-files-found: error
+
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            architecture: x86_64
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-22.04-arm
+            architecture: arm64
+            target: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    env:
+      CARGO_BUILD_JOBS: 2
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
+            libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
+          rustup default 1.98.0
+      - name: Build ASR-only native libraries
+        run: python3 scripts/build_asr_native.py --jobs 2
+      - name: Test
+        run: cargo test --locked
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --release --locked --bin koett
+      - name: Runtime self-test
+        id: asr_self_test
+        run: cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Capture native inference failure
+        if: failure() && steps.asr_self_test.outcome == 'failure'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdb
+          mkdir -p diagnostics
+          gdb --batch --return-child-result -ex run -ex 'thread apply all bt' \
+            --args target/release/koett-engine --self-test \
+            > diagnostics/native-asr-backtrace.log 2>&1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure() && steps.asr_self_test.outcome == 'failure'
+        with:
+          name: native-asr-failure-${{ matrix.architecture }}
+          path: |
+            CrossPlatform/diagnostics/native-asr-backtrace.log
+            CrossPlatform/native-build/build-receipt.json
+          if-no-files-found: warn
+      - name: Test Linux packaging
+        run: python3 -m unittest discover -s scripts -p 'test_package_linux*.py'
+      - name: Package
+        run: |
+          strip target/release/koett
+          python3 scripts/package_linux.py --flavor system-runtime --output dist
+      - name: Verify extracted release candidate
+        run: |
+          python3 scripts/test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz
+      - name: Write checksum and build receipt
+        run: >-
+          python3 scripts/write_build_receipt.py
+          --artifact dist/Koett-Linux-*.tar.gz
+          --target ${{ matrix.target }}
+          --output-directory dist
+      - name: Upload Linux release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Koett-Linux-${{ matrix.architecture }}-system-runtime
+          path: |
+            CrossPlatform/dist/Koett-Linux-*.tar.gz
+            CrossPlatform/dist/Koett-Linux-*.tar.gz.sha256
+            CrossPlatform/dist/Koett-Linux-*.tar.gz.build-receipt.json
+          if-no-files-found: error

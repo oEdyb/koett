@@ -1,0 +1,12 @@
+{
+  "src/model.rs": "8b7102dba068555dd1f6d40794fd51206b591972c9ebbc5c854b0b4229028816",
+  "src/model/manifest.rs": "52f70e8f8e5a40a4296a9a12ddb1e7df6f774768c5716f40792bc8c7ad5ef783",
+  "src/model/tests.rs": "e56e49471506474fc04a24794bb705f68a06a9ff3bc6f00a93022d8cad83252b",
+  "src/linux.rs": "89af2cf5bd7476e4282e9c45a399b5aa82d7930cfdfac4cb62e90c20d66f134b",
+  "src/linux/menu.rs": "66a55d260eec78b5f69e9d342addb5c1c6025cac642ebbdd2d6e7786e5987838",
+  "src/linux/menu_preferences.rs": "9cd051ccafdc3cc273edd8dcce8c2cfc31063795101df2a6e70dfbbfa37872dd",
+  "src/linux/models_view.rs": "c98742f8c5abae27667d5698c3eeb56f66f3620adffe7b6c8a71b9a53c66e6c0",
+  "model-manifests/parakeet-tdt-600m-v3-int8.json": "888f4d679b68ae531846bc80c0e6091ccf4f4795bb9a34525cc21e1cb784b498",
+  "scripts/test_linux_parakeet_v3.py": "83420d80b396b72e8dcc2246cd094c3797a8358d181dbd731b21b0c9708c7649",
+  "examples/parakeet_v3_probe.rs": "f934f490026ab1eb17e7c97948ff0a4be9a19baa59efee5b89bdd82178807c61"
+}

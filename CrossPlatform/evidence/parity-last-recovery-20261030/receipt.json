@@ -1,0 +1,14 @@
+{
+  "binary_sha256": "b3ad77aaab3cd52a2d7e9490cb747917ff539c7660d762a93f12ada3de506b3c",
+  "history_tests": 22,
+  "linux_tests": 22,
+  "audio_tests": 9,
+  "media_tests": 4,
+  "private_preview_strict_tests": 1,
+  "full_suite": "parent-owned",
+  "raw_fixtures": "/tmp/koett-last-*",
+  "native_lab": "koett-last-recovery",
+  "owned_streams_before_stop": 0,
+  "lab_stopped": true,
+  "owned_processes_after_stop": 0
+}

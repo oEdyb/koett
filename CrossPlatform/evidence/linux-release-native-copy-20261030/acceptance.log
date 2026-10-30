@@ -1,0 +1,15 @@
+Captured before-copy
+Captured pointer-target-350258646651755
+Native Copy pointer: 2831 bytes sha256=1b1dc4483b8dd6e677f12b9cc1f6939a469fe201bbc6223861a392beb00632b2
+Native Copy action: 2831 bytes sha256=1b1dc4483b8dd6e677f12b9cc1f6939a469fe201bbc6223861a392beb00632b2
+Native Copy keyboard: 2831 bytes sha256=1b1dc4483b8dd6e677f12b9cc1f6939a469fe201bbc6223861a392beb00632b2
+Native Copy keyboard: 88 bytes sha256=40f399b294f563f76696b31d83ea96cdcfd9ea647539fd9b0be93e2de93488fc
+Captured pointer-target-350281784908268
+Native Copy pointer: 88 bytes sha256=40f399b294f563f76696b31d83ea96cdcfd9ea647539fd9b0be93e2de93488fc
+Native Copy action: 2831 bytes sha256=1b1dc4483b8dd6e677f12b9cc1f6939a469fe201bbc6223861a392beb00632b2
+Native Copy transcript action: 79 bytes sha256=e2563ab52138c3118473233ef1b48fd8c0cc143ddc9dab69a40a28f60a6e8b44
+Native Copy last transcript keyboard: 79 bytes sha256=e2563ab52138c3118473233ef1b48fd8c0cc143ddc9dab69a40a28f60a6e8b44
+Native Copy action: 79 bytes sha256=e2563ab52138c3118473233ef1b48fd8c0cc143ddc9dab69a40a28f60a6e8b44
+Captured native-copy
+PASS
+exit 0

@@ -1,0 +1,5 @@
+7ff26fc00000-7ff26fcdf000 r--p 00000000 00:23 33021159                   /home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1
+7ff26fcdf000-7ff270362000 r-xp 000df000 00:23 33021159                   /home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1
+7ff270362000-7ff27097b000 r--p 00762000 00:23 33021159                   /home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1
+7ff27097b000-7ff2709b1000 r--p 00d7a000 00:23 33021159                   /home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1
+7ff2709b1000-7ff2709be000 rw-p 00db0000 00:23 33021159                   /home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1

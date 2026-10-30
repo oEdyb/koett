@@ -1,0 +1,37 @@
+{
+  "scope": "CURRENT-PC CachyOS private candidate; not a public release or portable GTK bundle",
+  "source_revision": "37705a4452739a511d62a1bfd9c237bb8ea6b5a4",
+  "archive": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/final/Koett-Linux-x86_64-37705a44.tar.gz",
+  "archive_sha256": "405e8f19bf8b68f81afae003b9fde221d153822a0f312fdd4b5560f1f3119bdf",
+  "launcher": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/bin/koett",
+  "version_tree": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689",
+  "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa",
+  "gtk_sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+  "file_manifest_sha256": "8f77d9d5b285f6be0a76668910a323138b812888c2d5b03a420aa0577d009ed7",
+  "source_hashes": {
+    "packaging/linux/com.olledyberg.Koett.desktop": "d27f1030124261b3ff38cf9679dce339c208d8b999045447197b644a56c5ad15",
+    "packaging/linux/com.olledyberg.Koett.svg": "c55bcc6d9ab1d210fa89e22437df0a854f9c866f44f8e63e605fd3777a440c98",
+    "packaging/linux/install.sh": "11ef70ed821544c5961f05cca142881656899e69ec717bbb1f04dba378032a46",
+    "packaging/linux/Dockerfile": "682b958a8b9563c1bee7afb810f37f5c5042a38f06e5a1f3882d19dd228efb43",
+    "packaging/linux/koett-launcher": "d3ff49c6d28eee5eca08ca20d312b81bd8a27dcf2f73d33b0a012b45a703420b",
+    "packaging/linux/install.py": "a74b5eff139184ee82e998f0bcffe0a13de28b7709d70c8bb6ebf5557ca7729b",
+    "packaging/linux/preflight.py": "8af9f76d389a2ea9ddbda2c532fbee8ecfbd25b3bb4e13f799c885c510114b1b",
+    "packaging/linux/CURRENT-PC.md": "8e941209d666813e0539ccac436106ee08852b78677fd5a05d1a39657eed7cc7",
+    "scripts/package_linux.py": "5c271775a4e7909f100d945bc6ee4eb008458735414dd012ebb9a10e43359fa5",
+    "scripts/test_package_linux.py": "7f6463db1588b95a4d822372f5670f888dda1bacc9bf348fe56baf7da3ba3c9a",
+    "scripts/test_linux_package_ui.py": "3259b941bf8cda2ec6c179102068504a8a48a89461d8b7cc31247d931ece126a",
+    "scripts/test_linux_package_formatting.py": "9618cedcae0923690ebdf7d6bddac9fd2341703d140bbf33906898295339310b",
+    "scripts/test_linux_package_restart.py": "1fc32259d764073d367e3f747372e54635770a302bfbe69a3736bde3b05c954b"
+  },
+  "unverified": [
+    "Rich WebKit renderer and sandbox helpers in this candidate (host WebKitGTK 6 absent; explicit plain fallback/setup documented)",
+    "Product S1-mini cleanup quality/settings path (packaged runtime version and bounded inference only)",
+    "Physical seat, hardware audio, suspend, distro portability, final host install and full Rust suite are parent-owned"
+  ],
+  "cleanup": {
+    "source_outputs": [],
+    "lab": "stopped",
+    "host_install": "untouched",
+    "system_gtk": "untouched"
+  }
+}

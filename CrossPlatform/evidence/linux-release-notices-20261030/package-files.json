@@ -1,0 +1,697 @@
+[
+  {
+    "path": "CURRENT-PC.md",
+    "sha256": "45b2d1194ccee122382dfeedbb9494171f53a97700026695507c23a4b60b0e29",
+    "bytes": 2607
+  },
+  {
+    "path": "LICENSE",
+    "sha256": "f028e12a0eeb0a1c79810acff539785849a8513c6c7c478eddbcb95401168fec",
+    "bytes": 11341
+  },
+  {
+    "path": "README.md",
+    "sha256": "ebdeb92a88b102a8bc5a22a6da09439ff7aa6c56f86ad8a5c272fbb50d856493",
+    "bytes": 5076
+  },
+  {
+    "path": "THIRD_PARTY_NOTICES.md",
+    "sha256": "e49c154ea77b4be0602a15c7aa670299ec2ebcdecfaa90af41a21a74a9120f70",
+    "bytes": 852
+  },
+  {
+    "path": "candidate.json",
+    "sha256": "85876ef603b897648d9e68f1b11ea86193f08b90339b15cd105ef93be39fd457",
+    "bytes": 255
+  },
+  {
+    "path": "com.olledyberg.Koett.desktop",
+    "sha256": "d27f1030124261b3ff38cf9679dce339c208d8b999045447197b644a56c5ad15",
+    "bytes": 178
+  },
+  {
+    "path": "com.olledyberg.Koett.svg",
+    "sha256": "c55bcc6d9ab1d210fa89e22437df0a854f9c866f44f8e63e605fd3777a440c98",
+    "bytes": 431
+  },
+  {
+    "path": "files.json",
+    "sha256": "1d851123a24bbc537724c0506f5889388f6ffc7650f4a24c44bb45dcd6a53058",
+    "bytes": 15072
+  },
+  {
+    "path": "install.py",
+    "sha256": "39da7c5653dc0aa816852d9204076757443b2d0576352555768fcebc0f671c93",
+    "bytes": 3330
+  },
+  {
+    "path": "install.sh",
+    "sha256": "11ef70ed821544c5961f05cca142881656899e69ec717bbb1f04dba378032a46",
+    "bytes": 119
+  },
+  {
+    "path": "koett",
+    "sha256": "d3ff49c6d28eee5eca08ca20d312b81bd8a27dcf2f73d33b0a012b45a703420b",
+    "bytes": 374
+  },
+  {
+    "path": "libexec/koett",
+    "sha256": "8d0bfd67711c9d4999191edc6c8e2d885823dae58e13e616e09953906deae36e",
+    "bytes": 51684800
+  },
+  {
+    "path": "native-build-receipt.json",
+    "sha256": "a519579e1be5796af454fad74bd04379e44eb12e4f4410ab7550b316b392b1b2",
+    "bytes": 1751
+  },
+  {
+    "path": "preflight.py",
+    "sha256": "dfcb2581e3a1553f9594d5dbb894973b4e8fdfa67a080aa2274c87e69180c104",
+    "bytes": 2258
+  },
+  {
+    "path": "runtime/asr/build-receipt.json",
+    "sha256": "a519579e1be5796af454fad74bd04379e44eb12e4f4410ab7550b316b392b1b2",
+    "bytes": 1751
+  },
+  {
+    "path": "runtime/asr/lib/koett-asr-only.txt",
+    "sha256": "dbbcb569545848ce56d1c8d093b421595aeb3ed0b30f3ee8ae3a5842a237816b",
+    "bytes": 98
+  },
+  {
+    "path": "runtime/asr/lib/libkaldi-decoder-core.a",
+    "sha256": "522e6132af038e778500b9e3f7c4fd70c7d1a2ca042f8b324517913dde77df1e",
+    "bytes": 1258894
+  },
+  {
+    "path": "runtime/asr/lib/libkaldi-native-fbank-core.a",
+    "sha256": "68dd8935628773347a25fe82dc5f54667f309e0421a356098bcb351b8f9b2a59",
+    "bytes": 228176
+  },
+  {
+    "path": "runtime/asr/lib/libkissfft-float.a",
+    "sha256": "a1e25a2d13e47799b8fdbed5ab75cd1e01c28ec1c595f7b4b750c07f69593a16",
+    "bytes": 28294
+  },
+  {
+    "path": "runtime/asr/lib/libonnxruntime.a",
+    "sha256": "9dbbd7bff1db5698d04ae6710a28e995a33d0409adc362f8ff2bb0bf7e8fc2ea",
+    "bytes": 109507520
+  },
+  {
+    "path": "runtime/asr/lib/libsherpa-onnx-c-api.a",
+    "sha256": "bd0af5bbb21df6a70ddd6db09b4a56dd96160ca832c6221be643b23fc623d871",
+    "bytes": 241488
+  },
+  {
+    "path": "runtime/asr/lib/libsherpa-onnx-core.a",
+    "sha256": "3a76dbb07bd3d7dfff7c06ef30c78576c76a918b21e8716e610d1e775a436288",
+    "bytes": 13097870
+  },
+  {
+    "path": "runtime/asr/lib/libsherpa-onnx-fst.a",
+    "sha256": "6a65593a932096ad7bf11549e405dfd9f3e1158658f104248008f20f176466ec",
+    "bytes": 4077234
+  },
+  {
+    "path": "runtime/asr/lib/libsherpa-onnx-fstfar.a",
+    "sha256": "6bb221cc4bd1cba90b9efca387eba078be5246ff9df908379204b61959f74cbe",
+    "bytes": 37950
+  },
+  {
+    "path": "runtime/asr/lib/libsherpa-onnx-kaldifst-core.a",
+    "sha256": "5f95998ad26c359d31dd8e8e1ee10aaec69ca645012785aa2d91b5e820a144ff",
+    "bytes": 2520432
+  },
+  {
+    "path": "runtime/asr/lib/libssentencepiece_core.a",
+    "sha256": "1e282efb1cd7a9570743676bd14cca5a252abbf4dee9fc09d831d9315dc8bc69",
+    "bytes": 215884
+  },
+  {
+    "path": "runtime/asr/native-version-smoke",
+    "sha256": "404588f46510bed5f6954986999cc4bdc015ad97a4969e9630b5750fde31c45d",
+    "bytes": 36425800
+  },
+  {
+    "path": "runtime/asr/native-version-smoke-command.json",
+    "sha256": "f3c362b4370b427ae4312860bf1b8d6151666d1551da2a8c16ee78132a821156",
+    "bytes": 1294
+  },
+  {
+    "path": "runtime/asr/native-version-smoke.c",
+    "sha256": "0b42099e66b9dbc1b4d0243b7231805e4bbec8740ea11710541e6860176cf43c",
+    "bytes": 296
+  },
+  {
+    "path": "runtime/asr/native-version-smoke.log",
+    "sha256": "6c20a078341312a31f81f9b0ff5c8084c6801bf2b7ac362627bc884610952152",
+    "bytes": 42
+  },
+  {
+    "path": "runtime/bin/llama-server",
+    "sha256": "e885515a9a85c707f140359842a1d10bd42bdded814258c449e8977111d6f94b",
+    "bytes": 162
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-builder-tool",
+    "sha256": "49b22a7962a9bc292ba1d8a69b574f72b660108d5f3fbf1ffca2f0724f73a54c",
+    "bytes": 97424
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-image-tool",
+    "sha256": "3fff3c7a60850bf557b016a5bce1655118124f1c08fd97d687de2f4cc16733c6",
+    "bytes": 67760
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-launch",
+    "sha256": "7ba8c00198806fa2c9ac5896f3fc1a085e18c36c16dc42af47052e1b1bdffbb3",
+    "bytes": 21824
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-path-tool",
+    "sha256": "a0d6d9e2a830dc952a023cafed6eb63f0244f1647caef5cf4c5b392aac542edb",
+    "bytes": 62008
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-query-settings",
+    "sha256": "de3a41c79ae155349a1dff23f9d05037c98e8ceb6968520573cb97f3113ef419",
+    "bytes": 16568
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-rendernode-tool",
+    "sha256": "5ceb9d36c1fd5b968cec38839da34643cb26923bc34ba08f1a9d416a30ef2258",
+    "bytes": 16049024
+  },
+  {
+    "path": "runtime/gtk/bin/gtk4-update-icon-cache",
+    "sha256": "bfb8cf613f2ac57f691975daf4d7651b430b83d601110103301ceb45439945d0",
+    "bytes": 46336
+  },
+  {
+    "path": "runtime/gtk/lib/libgtk-4.so.1",
+    "sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+    "bytes": 16185952
+  },
+  {
+    "path": "runtime/gtk/lib/libgtk-4.so.1.2400.1",
+    "sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+    "bytes": 16185952
+  },
+  {
+    "path": "runtime/gtk/share/glib-2.0/schemas/org.gtk.gtk4.Inspector.gschema.xml",
+    "sha256": "0a716456c56ff6a4f3ad1d72b2205b2e982a231a9586cba32bc7d1bcc93cf45a",
+    "bytes": 1239
+  },
+  {
+    "path": "runtime/gtk/share/glib-2.0/schemas/org.gtk.gtk4.Settings.ColorChooser.gschema.xml",
+    "sha256": "3c60a020ac823ad9c02394c8579296711a148fb6e15dac1c4dffa3470303af32",
+    "bytes": 941
+  },
+  {
+    "path": "runtime/gtk/share/glib-2.0/schemas/org.gtk.gtk4.Settings.Debug.gschema.xml",
+    "sha256": "f3093b00e9184a19289f0755345e3414921aafe15433342b36b327ade2048998",
+    "bytes": 840
+  },
+  {
+    "path": "runtime/gtk/share/glib-2.0/schemas/org.gtk.gtk4.Settings.EmojiChooser.gschema.xml",
+    "sha256": "893b260569e832bb96bfa5ff95893f85d81543069799f22bf66dd419ad50a702",
+    "bytes": 678
+  },
+  {
+    "path": "runtime/gtk/share/glib-2.0/schemas/org.gtk.gtk4.Settings.FileChooser.gschema.xml",
+    "sha256": "e7a7482f7937a0588961613df2b14e509b08c1281bdb0b12ab279856d7d8fcea",
+    "bytes": 6537
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/bn.gresource",
+    "sha256": "555133ce50bb819903a4e3b0a36f110dc5fe569be7706670037823172b45e957",
+    "bytes": 412480
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/da.gresource",
+    "sha256": "61f4dae91e06e04f43e9442b9bb9e7e35b68a5c39c39b5e1079e2cc43736b325",
+    "bytes": 239069
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/de.gresource",
+    "sha256": "e281185c92157f4ee04fde967d548406e247e42456668ca8032eb4e56dfe93d1",
+    "bytes": 284941
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/es.gresource",
+    "sha256": "e9b285ce005fe7f13aa12314a98471ba8c48ce0765faf4d20d10e5d0b342ce01",
+    "bytes": 240100
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/et.gresource",
+    "sha256": "9748e5d7e417870cacd168d045c7b7a4901d73cea9ef2a9fcc687b5ee5112348",
+    "bytes": 242532
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/fi.gresource",
+    "sha256": "9c278a806f76610dbd5077b8ce84c294290e98680594e62d42c0d6bfda08f5bc",
+    "bytes": 244808
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/fr.gresource",
+    "sha256": "47052ea17f2879f1b5bb7682ef492dc3462e010ddb94ec28465c7646d9474817",
+    "bytes": 279292
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/hi.gresource",
+    "sha256": "199b4f34215418e74616314f33bdcb32fa47c0662d0f2084016348fdd18bc0e4",
+    "bytes": 401044
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/hu.gresource",
+    "sha256": "508d67b5b7f396b4828cd7067fdf7be71d7047b63825d65b7fd739e17af06830",
+    "bytes": 269528
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/it.gresource",
+    "sha256": "76e4ddfb7ace9404167ea50ff5a1683cabc7287c6ac9bbe957f55956b66205e2",
+    "bytes": 302580
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/ja.gresource",
+    "sha256": "a136c64e9229ba1d7ca886fc8231faeb1b8967a137133ffca83527a134e226f9",
+    "bytes": 261752
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/ko.gresource",
+    "sha256": "87de528df3ae08fa26127e809ecb45acbb7cedd87e82a5982d16643d1e877594",
+    "bytes": 283900
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/lt.gresource",
+    "sha256": "f7d6284f2ed00f1d4971eb0c349d566292dea658c5ad705c2df01e4307378cb7",
+    "bytes": 261112
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/ms.gresource",
+    "sha256": "d3cf21b8d52ce4c9f08e36a059dece1a0cdf4478fed891668175014c0d9bc925",
+    "bytes": 253912
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/nb.gresource",
+    "sha256": "448a56434639a6044495784b8e9a5f843923f9241ae86b365d8f26b9f6a2226e",
+    "bytes": 240620
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/nl.gresource",
+    "sha256": "f9cd098552137069542af8f209082107a7023e536765ee1290b4b659cc45c29a",
+    "bytes": 262884
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/pl.gresource",
+    "sha256": "4966d5f9490c34bd088084dbf37bc8f060324b40bec72d06c061d26235668238",
+    "bytes": 280556
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/pt.gresource",
+    "sha256": "60628e0bdf966c22aaeed301e140ce237e446b1b2300129fbe34b9e6629bdbbf",
+    "bytes": 272616
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/ru.gresource",
+    "sha256": "a5666ae68529b8029bd89d6af6c3c1ebffac1c058a2a1272a51e03cfcc09d74a",
+    "bytes": 356312
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/sv.gresource",
+    "sha256": "eace0ae0036cd5ba28d75eb9c1a2002badb53ffb9df9a9331946be97a4b3714b",
+    "bytes": 233780
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/th.gresource",
+    "sha256": "491b10983420d5a94a3dbfbb182f4a3e054a12c052107a3ea9247d2646a039a4",
+    "bytes": 353077
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/uk.gresource",
+    "sha256": "82f3712662401569e9e286bc3fa6b7912b6c3bdf0361520e134894721cc868d1",
+    "bytes": 368128
+  },
+  {
+    "path": "runtime/gtk/share/gtk-4.0/emoji/zh.gresource",
+    "sha256": "00c8cce4891b178d2db51270a619f10c71ed5f343e6ba936a646b5933549a4ce",
+    "bytes": 246852
+  },
+  {
+    "path": "runtime/gtk/share/licenses/gtk4/21d3eb76b68d6758122eddaf00b5823f9b2d7f34.patch",
+    "sha256": "f2d4b12c7dcd5bd98cf20df429fac67ba764fb0dac42271f4d58eafb06840535",
+    "bytes": 2122
+  },
+  {
+    "path": "runtime/gtk/share/licenses/gtk4/COPYING",
+    "sha256": "b7993225104d90ddd8024fd838faf300bea5e83d91203eab98e29512acebd69c",
+    "bytes": 25383
+  },
+  {
+    "path": "runtime/gtk/share/licenses/gtk4/provenance.json",
+    "sha256": "6778501aee585e5ff88bd6c23a62bbf2eb2dd7032d881058a8f9253e9ff7dade",
+    "bytes": 10037
+  },
+  {
+    "path": "runtime/gtk/share/mime/packages/gtk-mime.xml",
+    "sha256": "88ece890ff677e079dcd3ce861934b66a858f713a9b9a7fb6652ed858cd47ced",
+    "bytes": 342
+  },
+  {
+    "path": "runtime/llama/LICENSE",
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+    "bytes": 1078
+  },
+  {
+    "path": "runtime/llama/ggml-rpc-server",
+    "sha256": "14c986a62dd4d37672bc5789b01717db590a0dbe6c58219a67c722624621128d",
+    "bytes": 195504
+  },
+  {
+    "path": "runtime/llama/libggml-base.so",
+    "sha256": "9e771710976860fee35dde6fd4022af0dad50fb69ceb094fc1a6608e5077894c",
+    "bytes": 914264
+  },
+  {
+    "path": "runtime/llama/libggml-base.so.0",
+    "sha256": "9e771710976860fee35dde6fd4022af0dad50fb69ceb094fc1a6608e5077894c",
+    "bytes": 914264
+  },
+  {
+    "path": "runtime/llama/libggml-base.so.0.28.0",
+    "sha256": "9e771710976860fee35dde6fd4022af0dad50fb69ceb094fc1a6608e5077894c",
+    "bytes": 914264
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-alderlake.so",
+    "sha256": "322d5d3a295e259dcd25bc7cce07e0e6eb52e8c65882ecc097ee1ca53e7269ba",
+    "bytes": 1416592
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-cannonlake.so",
+    "sha256": "00dc5daaea3a75211d65bc25c3ab5b990d31227a23aa4ddedbe4ed23fbd79952",
+    "bytes": 1565976
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-cascadelake.so",
+    "sha256": "b056d58c92acab00e8f925c7b1e8a6c0ed1c2ce6f410d15467fa2303522c5a07",
+    "bytes": 1577968
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-cooperlake.so",
+    "sha256": "61d466ec6f46c0f3c11a15b10825bb0cd3571c9b7d20fcd00bb7ef95ab0a472f",
+    "bytes": 1578040
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-haswell.so",
+    "sha256": "5bd145bd299d66c80a766252659b20d25b5300090089aa542862388a3c219aa6",
+    "bytes": 1420688
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-icelake.so",
+    "sha256": "0cc65ea3db0ec6f3e49c5ff2715d7bfe962b276a1d1296ea9e65cab88f113ab3",
+    "bytes": 1577968
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-ivybridge.so",
+    "sha256": "d117b3b1f88a3ba443c944e80693e24a88bc22437b33d0e8fe122c78d1f8b3be",
+    "bytes": 1356344
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-piledriver.so",
+    "sha256": "730f462003fc45d090897843384eb5c3c1005c0714bac6fbc3b2a5472185b149",
+    "bytes": 1348152
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-sandybridge.so",
+    "sha256": "0b3082bdecaa69de547a2f74f80eeccd47a68808e4838edc55eaee3df71d7e95",
+    "bytes": 1351200
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-sapphirerapids.so",
+    "sha256": "c1749be8eee6bd1e472e37a6b0d2ec150e32599219e822af6ad4f5311a4fdb4f",
+    "bytes": 1848464
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-skylakex.so",
+    "sha256": "86bb3c113b59f2a7eb03961172c31812d58b9fe00545469734df01fd97da7cc1",
+    "bytes": 1565976
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-sse42.so",
+    "sha256": "ec4f4fd7498698a5d7aadcecc847e3b51333e75115a2d0462c0d3f8909aec106",
+    "bytes": 954744
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-x64.so",
+    "sha256": "855030d578b9c5a3ed44e5638b5e7c2215d9cc29f95b483648019f2089f39876",
+    "bytes": 954832
+  },
+  {
+    "path": "runtime/llama/libggml-cpu-zen4.so",
+    "sha256": "7d917cf14a8203308a9f6c768c1f30fdd5d9d44a7e1f0d43e20abba98b028a82",
+    "bytes": 1578040
+  },
+  {
+    "path": "runtime/llama/libggml-rpc.so",
+    "sha256": "7e26494b63a389f019da35748822dbc8eb63348cd0ee7cc205641e5513d2da54",
+    "bytes": 319896
+  },
+  {
+    "path": "runtime/llama/libggml.so",
+    "sha256": "8643a58bb37af6fb153e2ea98b48efa227855725ee51c05f4ca76b9867956463",
+    "bytes": 51040
+  },
+  {
+    "path": "runtime/llama/libggml.so.0",
+    "sha256": "8643a58bb37af6fb153e2ea98b48efa227855725ee51c05f4ca76b9867956463",
+    "bytes": 51040
+  },
+  {
+    "path": "runtime/llama/libggml.so.0.28.0",
+    "sha256": "8643a58bb37af6fb153e2ea98b48efa227855725ee51c05f4ca76b9867956463",
+    "bytes": 51040
+  },
+  {
+    "path": "runtime/llama/libllama-batched-bench-impl.so",
+    "sha256": "5d46f2b7f9c63e6e23c47ee606dcbffb25a851cef9b785f9d35337a2fcf5cc8b",
+    "bytes": 48904
+  },
+  {
+    "path": "runtime/llama/libllama-bench-impl.so",
+    "sha256": "3c6febc24d2987ebb99a3b2e5adbbbdb45f0ca2b510e0f4e5acfad7b38161494",
+    "bytes": 490560
+  },
+  {
+    "path": "runtime/llama/libllama-cli-impl.so",
+    "sha256": "3edb1ebbbfb38c77bb30c2bfeee3af879ff95961fa28a02742156c6927b9cc71",
+    "bytes": 276960
+  },
+  {
+    "path": "runtime/llama/libllama-common.so",
+    "sha256": "a824a7deae4bd16e1500941947a594b878525fc5dbcea290ceb86e0e5d8fffd8",
+    "bytes": 6738720
+  },
+  {
+    "path": "runtime/llama/libllama-common.so.0",
+    "sha256": "a824a7deae4bd16e1500941947a594b878525fc5dbcea290ceb86e0e5d8fffd8",
+    "bytes": 6738720
+  },
+  {
+    "path": "runtime/llama/libllama-common.so.0.8.0",
+    "sha256": "a824a7deae4bd16e1500941947a594b878525fc5dbcea290ceb86e0e5d8fffd8",
+    "bytes": 6738720
+  },
+  {
+    "path": "runtime/llama/libllama-completion-impl.so",
+    "sha256": "117ad8cb0be526532f545c7c12623b49c4c38d6365188dbdcdb4989ec3fd9173",
+    "bytes": 144864
+  },
+  {
+    "path": "runtime/llama/libllama-fit-params-impl.so",
+    "sha256": "60ff3c3a7c6e98eada0a78495a6ee2f06c953e018ac3b3bee22b681ba70511fd",
+    "bytes": 39760
+  },
+  {
+    "path": "runtime/llama/libllama-perplexity-impl.so",
+    "sha256": "87ac1151e1e459916de71c8a8f02c7824ed42b67b8be29094ddf83558ae5d6d3",
+    "bytes": 171912
+  },
+  {
+    "path": "runtime/llama/libllama-quantize-impl.so",
+    "sha256": "8dd43c1fb15f2e6096237a5cc3aa52694b04978c176f10db28c27d15d6c1adcc",
+    "bytes": 81840
+  },
+  {
+    "path": "runtime/llama/libllama-server-impl.so",
+    "sha256": "cc9c457b6cb04fa00c23622b0ad0c2b1bec7d6bd5663d4f527ccf6d84d8ea603",
+    "bytes": 8265432
+  },
+  {
+    "path": "runtime/llama/libllama.so",
+    "sha256": "65781c4434e6560610f6dddc730defeac1359bed10535a1c9b6f811e5f60429d",
+    "bytes": 5294368
+  },
+  {
+    "path": "runtime/llama/libllama.so.0",
+    "sha256": "65781c4434e6560610f6dddc730defeac1359bed10535a1c9b6f811e5f60429d",
+    "bytes": 5294368
+  },
+  {
+    "path": "runtime/llama/libllama.so.0.8.0",
+    "sha256": "65781c4434e6560610f6dddc730defeac1359bed10535a1c9b6f811e5f60429d",
+    "bytes": 5294368
+  },
+  {
+    "path": "runtime/llama/libmtmd.so",
+    "sha256": "285a3848388e4da4eaedba4fb179aa9e65202ce6754ff49f6bceeda21358a75a",
+    "bytes": 2211264
+  },
+  {
+    "path": "runtime/llama/libmtmd.so.0",
+    "sha256": "285a3848388e4da4eaedba4fb179aa9e65202ce6754ff49f6bceeda21358a75a",
+    "bytes": 2211264
+  },
+  {
+    "path": "runtime/llama/libmtmd.so.0.8.0",
+    "sha256": "285a3848388e4da4eaedba4fb179aa9e65202ce6754ff49f6bceeda21358a75a",
+    "bytes": 2211264
+  },
+  {
+    "path": "runtime/llama/llama",
+    "sha256": "e6b491dda0ea7d85a93a1102c58b4a70b860afcab172a46ff050d5c62ed76aaf",
+    "bytes": 62376
+  },
+  {
+    "path": "runtime/llama/llama-batched-bench",
+    "sha256": "3b70e62c5c5cf43c8c436622a845ad4b80c01837d6ba3a10c90e39b219bbd2ab",
+    "bytes": 15976
+  },
+  {
+    "path": "runtime/llama/llama-bench",
+    "sha256": "be2158a2604860728c3349b2e0d480789fdfe14f5e9616f52f8693c141bb26e1",
+    "bytes": 17864
+  },
+  {
+    "path": "runtime/llama/llama-cli",
+    "sha256": "fc4930ab9cefe2efef9a488a54b8d1558094e54187f36248301644bb407ee785",
+    "bytes": 1499240
+  },
+  {
+    "path": "runtime/llama/llama-completion",
+    "sha256": "7119bef261611b26f326f7c4da4dc3fdeb7bb28e2faf1ec392bda7b21215ef52",
+    "bytes": 15968
+  },
+  {
+    "path": "runtime/llama/llama-connect",
+    "sha256": "0f57652dee1df5a5d69dfb11a8775f864345cfb881b2bd34c6ca6c409ce73d25",
+    "bytes": 9729072
+  },
+  {
+    "path": "runtime/llama/llama-fit-params",
+    "sha256": "b2ad073a0c093706e5dfdfe2c9864d199ed921e49ea0383a7d0013e2ad8a81c8",
+    "bytes": 15968
+  },
+  {
+    "path": "runtime/llama/llama-gemma3-cli",
+    "sha256": "053ff1b820407b8a1836b0b05d1ffcc91e56b6531f08d9b00b8dfb97a41de294",
+    "bytes": 16952
+  },
+  {
+    "path": "runtime/llama/llama-gguf-split",
+    "sha256": "ccdee1d8de5c04274d3802b27502f518904b93a3579a2dfa8a3d178c63389839",
+    "bytes": 48224
+  },
+  {
+    "path": "runtime/llama/llama-imatrix",
+    "sha256": "a7b79f50ffb67e44d5785eb7b5989b4d078ccb385f04e96bf41c6ed7a507d2e6",
+    "bytes": 221232
+  },
+  {
+    "path": "runtime/llama/llama-llava-cli",
+    "sha256": "053ff1b820407b8a1836b0b05d1ffcc91e56b6531f08d9b00b8dfb97a41de294",
+    "bytes": 16952
+  },
+  {
+    "path": "runtime/llama/llama-minicpmv-cli",
+    "sha256": "053ff1b820407b8a1836b0b05d1ffcc91e56b6531f08d9b00b8dfb97a41de294",
+    "bytes": 16952
+  },
+  {
+    "path": "runtime/llama/llama-mtmd-cli",
+    "sha256": "d838e90c56b3acfc4a14d9615010546eaba61394aca3e8a861cffc0971274502",
+    "bytes": 101376
+  },
+  {
+    "path": "runtime/llama/llama-mtmd-debug",
+    "sha256": "35408d2c6cafdddfe61d48cb85a4a7f411cb8ceb29119d38e34854513c815c9d",
+    "bytes": 54376
+  },
+  {
+    "path": "runtime/llama/llama-perplexity",
+    "sha256": "1c06240ed8594fd377d655aef2dab0865431e3e779c06638474c96b38e6d74a0",
+    "bytes": 15968
+  },
+  {
+    "path": "runtime/llama/llama-quantize",
+    "sha256": "b2c5627aea10c8e726cf1b139e49eda788de79bcfe49bae3545717712351095a",
+    "bytes": 17864
+  },
+  {
+    "path": "runtime/llama/llama-qwen2vl-cli",
+    "sha256": "053ff1b820407b8a1836b0b05d1ffcc91e56b6531f08d9b00b8dfb97a41de294",
+    "bytes": 16952
+  },
+  {
+    "path": "runtime/llama/llama-results",
+    "sha256": "1e9a44fe50533d0b8cbf634dc77a73b1996eaa68b4246d5a52f3e83e0671cade",
+    "bytes": 50264
+  },
+  {
+    "path": "runtime/llama/llama-server",
+    "sha256": "b4096598e1a6de5e08c7080a1bce978d305b06cf58b38792a31040b23ef952d7",
+    "bytes": 17864
+  },
+  {
+    "path": "runtime/llama/llama-tokenize",
+    "sha256": "712076edf65a35a84188df933912d9e735758fa7bdffb9796287adfadf4263a3",
+    "bytes": 45168
+  },
+  {
+    "path": "runtime/llama/llama-tts",
+    "sha256": "106ccf8da2a83deb1de31162e73ea148a2c576014f43497030b8eba9afaab85f",
+    "bytes": 49720
+  },
+  {
+    "path": "sources/21d3eb76b68d6758122eddaf00b5823f9b2d7f34.patch",
+    "sha256": "f2d4b12c7dcd5bd98cf20df429fac67ba764fb0dac42271f4d58eafb06840535",
+    "bytes": 2122
+  },
+  {
+    "path": "sources/asr-build-receipt.json",
+    "sha256": "a519579e1be5796af454fad74bd04379e44eb12e4f4410ab7550b316b392b1b2",
+    "bytes": 1751
+  },
+  {
+    "path": "sources/build_linux_gtk_runtime.py",
+    "sha256": "ffefc2923a032fa63dea8a3e299bdcc90cd4e8eb51a23427e7fbac96a46d3502",
+    "bytes": 8255
+  },
+  {
+    "path": "sources/gtk-4.24.1.tar.xz",
+    "sha256": "e98abe720e16129c8c0f50761dee0a2e9ae2478055e31018f6cf977fcf6513e9",
+    "bytes": 17655236
+  },
+  {
+    "path": "sources/llama-provenance.json",
+    "sha256": "72269144d55fd7b5344796c63deff291f969dcc753ab47360d4ea2165843dca6",
+    "bytes": 526
+  },
+  {
+    "path": "sources/runtime-receipt.json",
+    "sha256": "6778501aee585e5ff88bd6c23a62bbf2eb2dd7032d881058a8f9253e9ff7dade",
+    "bytes": 10037
+  }
+]

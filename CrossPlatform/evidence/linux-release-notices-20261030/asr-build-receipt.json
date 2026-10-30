@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+  "source_sha256": "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c",
+  "target": "x86_64-unknown-linux-gnu",
+  "cmake_options": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "BUILD_SHARED_LIBS": "OFF",
+    "SHERPA_ONNX_ENABLE_TTS": "OFF",
+    "SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION": "OFF",
+    "SHERPA_ONNX_ENABLE_PORTAUDIO": "OFF",
+    "SHERPA_ONNX_ENABLE_WEBSOCKET": "OFF",
+    "SHERPA_ONNX_ENABLE_BINARY": "OFF",
+    "SHERPA_ONNX_BUILD_C_API_EXAMPLES": "OFF",
+    "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE": "OFF",
+    "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY": "OFF",
+    "CMAKE_CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0"
+  },
+  "libraries": {
+    "libsherpa-onnx-c-api.a": "bd0af5bbb21df6a70ddd6db09b4a56dd96160ca832c6221be643b23fc623d871",
+    "libsherpa-onnx-core.a": "3a76dbb07bd3d7dfff7c06ef30c78576c76a918b21e8716e610d1e775a436288",
+    "libkaldi-decoder-core.a": "522e6132af038e778500b9e3f7c4fd70c7d1a2ca042f8b324517913dde77df1e",
+    "libsherpa-onnx-kaldifst-core.a": "5f95998ad26c359d31dd8e8e1ee10aaec69ca645012785aa2d91b5e820a144ff",
+    "libsherpa-onnx-fstfar.a": "6bb221cc4bd1cba90b9efca387eba078be5246ff9df908379204b61959f74cbe",
+    "libsherpa-onnx-fst.a": "6a65593a932096ad7bf11549e405dfd9f3e1158658f104248008f20f176466ec",
+    "libkaldi-native-fbank-core.a": "68dd8935628773347a25fe82dc5f54667f309e0421a356098bcb351b8f9b2a59",
+    "libkissfft-float.a": "a1e25a2d13e47799b8fdbed5ab75cd1e01c28ec1c595f7b4b750c07f69593a16",
+    "libonnxruntime.a": "9dbbd7bff1db5698d04ae6710a28e995a33d0409adc362f8ff2bb0bf7e8fc2ea",
+    "libssentencepiece_core.a": "1e282efb1cd7a9570743676bd14cca5a252abbf4dee9fc09d831d9315dc8bc69"
+  }
+}

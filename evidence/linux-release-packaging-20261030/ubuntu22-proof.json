@@ -1,0 +1,17 @@
+{
+  "missing_loader_install_rejection": true,
+  "archive": "/proof/system-runtime-final/Koett-Linux-x86_64-system-runtime-0d519a04.tar.gz",
+  "binary_sha256": "75074fffebcb91ed4e9b52baf9c354279f60948ba9994836805b26e3ff675aae",
+  "checks": [
+    "extraction",
+    "required loader",
+    "isolated install",
+    "spaces and dollar",
+    "launcher JSON menu-help",
+    "reinstall",
+    "backup",
+    "old process preserved",
+    "integrity rejection"
+  ],
+  "scope": "system-runtime"
+}

@@ -5,6 +5,11 @@ extension KoettController {
     func rebuildMenu() {
         let menu = NSMenu()
         menu.delegate = self
+        let historyItem = menuItem(title: "History…", action: #selector(openTranscripts), selected: false)
+        historyItem.keyEquivalent = "h"
+        historyItem.keyEquivalentModifierMask = [.command, .shift]
+        menu.addItem(historyItem)
+        menu.addItem(.separator())
         if isPreparing {
             let item = NSMenuItem(
                 title: setupStatus.menuTitle,
@@ -245,11 +250,6 @@ extension KoettController {
         transcribeItem.isEnabled = state == .ready
         transcribeItem.toolTip = "Works with one public media item that yt-dlp can access without login."
         menu.addItem(transcribeItem)
-        menu.addItem(menuItem(
-            title: "Open Media Transcripts",
-            action: #selector(openMediaTranscripts),
-            selected: false
-        ))
         menu.addItem(.separator())
         if let latestOutcome = recordingOverlay.latestOutcome {
             let latestItem = NSMenuItem(
@@ -284,11 +284,6 @@ extension KoettController {
             unsavedItem.isEnabled = state == .ready
             menu.addItem(unsavedItem)
         }
-        menu.addItem(menuItem(
-            title: "Open Transcripts",
-            action: #selector(openTranscripts),
-            selected: false
-        ))
         if failedRecordingStore.hasRecordings {
             menu.addItem(menuItem(
                 title: "Open Failed Recordings",

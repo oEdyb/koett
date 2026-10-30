@@ -1,0 +1,5 @@
+registry owner:
+visible control: 0 ((':1.34', objectpath '/org/gtk/application/unknown/a11y/5a5f0883_bffc_4247_8be7_baa3ed3618a6'),)
+after retirement: 1  Error: GDBus.Error:org.freedesktop.DBus.Error.NoReply: Remote peer disconnected
+native PID: 2339968 exit: -11
+registry still alive: True

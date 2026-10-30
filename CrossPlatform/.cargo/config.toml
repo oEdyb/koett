@@ -1,0 +1,2 @@
+[env]
+SHERPA_ONNX_LIB_DIR = { value = "native-build/lib", relative = true }

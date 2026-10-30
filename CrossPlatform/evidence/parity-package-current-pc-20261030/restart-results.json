@@ -1,0 +1,355 @@
+{
+  "checks": [
+    {
+      "attempt": 0,
+      "menu": {
+        "active_engine": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+        "busy": false,
+        "desired_model": "compact",
+        "formatting": {
+          "context": "general",
+          "enabled": false,
+          "structure": "prose",
+          "style": "semi-casual"
+        },
+        "login_registered": false,
+        "microphone": "invalid-private-fixture-device",
+        "microphones": {
+          "devices": [
+            {
+              "id": "alsa:null",
+              "label": "Discard all samples (playback) or generate zero samples (capture)"
+            },
+            {
+              "id": "alsa:lavrate",
+              "label": "Rate Converter Plugin Using Libav/FFmpeg Library"
+            },
+            {
+              "id": "alsa:samplerate",
+              "label": "Rate Converter Plugin Using Samplerate Library"
+            },
+            {
+              "id": "alsa:speexrate",
+              "label": "Rate Converter Plugin Using Speex Resampler"
+            },
+            {
+              "id": "alsa:jack",
+              "label": "JACK Audio Connection Kit"
+            },
+            {
+              "id": "alsa:oss",
+              "label": "Open Sound System"
+            },
+            {
+              "id": "alsa:pipewire",
+              "label": "PipeWire Sound Server"
+            },
+            {
+              "id": "alsa:pulse",
+              "label": "PulseAudio Sound Server"
+            },
+            {
+              "id": "alsa:speex",
+              "label": "Plugin using Speex DSP (resample, agc, denoise, echo, dereverb)"
+            },
+            {
+              "id": "alsa:upmix",
+              "label": "Plugin for channel upmix (4,6,8)"
+            },
+            {
+              "id": "alsa:vdownmix",
+              "label": "Plugin for channel downmix (stereo) with a simple spacialization"
+            },
+            {
+              "id": "alsa:default",
+              "label": "Default ALSA Output (currently PipeWire Media Server)"
+            },
+            {
+              "id": "alsa:usbstream:CARD=NVidia",
+              "label": "HDA NVidia"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Generic",
+              "label": "HD-Audio Generic"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Generic_1",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:front:CARD=Generic_1,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Generic_1",
+              "label": "HD-Audio Generic"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=O2",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=O2,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=O2",
+              "label": "OBSBOT Meet 2"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Xstrm",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=Xstrm,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Xstrm",
+              "label": "Endgame Gear Xstrm"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Dongle",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=Dongle,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Dongle",
+              "label": "Audeze Maxwell Dongle"
+            },
+            {
+              "id": "alsa:hw:CARD=2,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:plughw:CARD=2,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:hw:CARD=2,DEV=2",
+              "label": "HD-Audio Generic, ALC1220 Alt Analog"
+            },
+            {
+              "id": "alsa:plughw:CARD=2,DEV=2",
+              "label": "HD-Audio Generic, ALC1220 Alt Analog"
+            },
+            {
+              "id": "alsa:hw:CARD=3,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=3,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:hw:CARD=4,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=4,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:hw:CARD=5,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=5,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            }
+          ],
+          "ok": true
+        },
+        "ok": true,
+        "recording_mode": "toggle",
+        "start_at_login": false,
+        "version": "0.1.0"
+      },
+      "recovery": {
+        "last_available": true,
+        "last_source": "restored",
+        "ok": true,
+        "unsaved_count": 0
+      }
+    },
+    {
+      "attempt": 1,
+      "menu": {
+        "active_engine": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+        "busy": false,
+        "desired_model": "compact",
+        "formatting": {
+          "context": "general",
+          "enabled": false,
+          "structure": "prose",
+          "style": "semi-casual"
+        },
+        "login_registered": false,
+        "microphone": "invalid-private-fixture-device",
+        "microphones": {
+          "devices": [
+            {
+              "id": "alsa:null",
+              "label": "Discard all samples (playback) or generate zero samples (capture)"
+            },
+            {
+              "id": "alsa:lavrate",
+              "label": "Rate Converter Plugin Using Libav/FFmpeg Library"
+            },
+            {
+              "id": "alsa:samplerate",
+              "label": "Rate Converter Plugin Using Samplerate Library"
+            },
+            {
+              "id": "alsa:speexrate",
+              "label": "Rate Converter Plugin Using Speex Resampler"
+            },
+            {
+              "id": "alsa:jack",
+              "label": "JACK Audio Connection Kit"
+            },
+            {
+              "id": "alsa:oss",
+              "label": "Open Sound System"
+            },
+            {
+              "id": "alsa:pipewire",
+              "label": "PipeWire Sound Server"
+            },
+            {
+              "id": "alsa:pulse",
+              "label": "PulseAudio Sound Server"
+            },
+            {
+              "id": "alsa:speex",
+              "label": "Plugin using Speex DSP (resample, agc, denoise, echo, dereverb)"
+            },
+            {
+              "id": "alsa:upmix",
+              "label": "Plugin for channel upmix (4,6,8)"
+            },
+            {
+              "id": "alsa:vdownmix",
+              "label": "Plugin for channel downmix (stereo) with a simple spacialization"
+            },
+            {
+              "id": "alsa:default",
+              "label": "Default ALSA Output (currently PipeWire Media Server)"
+            },
+            {
+              "id": "alsa:usbstream:CARD=NVidia",
+              "label": "HDA NVidia"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Generic",
+              "label": "HD-Audio Generic"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Generic_1",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:front:CARD=Generic_1,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Generic_1",
+              "label": "HD-Audio Generic"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=O2",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=O2,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=O2",
+              "label": "OBSBOT Meet 2"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Xstrm",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=Xstrm,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Xstrm",
+              "label": "Endgame Gear Xstrm"
+            },
+            {
+              "id": "alsa:sysdefault:CARD=Dongle",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:front:CARD=Dongle,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:usbstream:CARD=Dongle",
+              "label": "Audeze Maxwell Dongle"
+            },
+            {
+              "id": "alsa:hw:CARD=2,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:plughw:CARD=2,DEV=0",
+              "label": "HD-Audio Generic, ALC1220 Analog"
+            },
+            {
+              "id": "alsa:hw:CARD=2,DEV=2",
+              "label": "HD-Audio Generic, ALC1220 Alt Analog"
+            },
+            {
+              "id": "alsa:plughw:CARD=2,DEV=2",
+              "label": "HD-Audio Generic, ALC1220 Alt Analog"
+            },
+            {
+              "id": "alsa:hw:CARD=3,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=3,DEV=0",
+              "label": "OBSBOT Meet 2, USB Audio"
+            },
+            {
+              "id": "alsa:hw:CARD=4,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=4,DEV=0",
+              "label": "Endgame Gear Xstrm, USB Audio"
+            },
+            {
+              "id": "alsa:hw:CARD=5,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            },
+            {
+              "id": "alsa:plughw:CARD=5,DEV=0",
+              "label": "Audeze Maxwell Dongle, USB Audio"
+            }
+          ],
+          "ok": true
+        },
+        "ok": true,
+        "recording_mode": "hold",
+        "start_at_login": false,
+        "version": "0.1.0"
+      },
+      "recovery": {
+        "last_available": true,
+        "last_source": "restored",
+        "ok": true,
+        "unsaved_count": 0
+      }
+    }
+  ],
+  "history_rows_unchanged": 1
+}

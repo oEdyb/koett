@@ -1,41 +1,19 @@
 # Koett
 
-**Koe** (`声` / `こえ`, “voice”) → **TT** (“to text”)
+Fast, lightweight voice-to-text that runs on your computer. Press a shortcut, talk, and Koett pastes what you said into your app.
 
-Koett turns speech into text on your Mac. It runs on your device and pastes the text into the focused app.
+Choose your microphone, set your shortcut, and use hold or toggle recording. Dictation stays local. No account or telemetry.
 
-English · Apple silicon · macOS 15+
+**Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models. **Windows:** source builds in testing.
 
-## Install
+## Get started
 
-1. [Download the latest release](https://github.com/oEdyb/koett/releases/latest).
-2. Open the ZIP and move Koett to Applications.
-3. Open Koett and allow Microphone and Accessibility.
+1. [Download for Mac](https://github.com/oEdyb/koett/releases/latest), unzip, and move Koett to Applications.
+2. Open it, allow Microphone and Accessibility, and let the model download.
+3. Press either Option key, speak, then press it again. Koett pastes and saves your text.
 
-Koett shows the model download on its first run.
+Change your setup from the menu bar.
 
-## Use
+For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in the app menu.
 
-1. Press either Option key.
-2. Speak after the sound.
-3. Press Option again.
-
-Koett pastes and saves the transcript.
-
-The waveform menu contains shortcuts, formatting, saved transcripts, and optional tools.
-
-Choose **Microphone** in that menu to select the built-in microphone or another input. Koett remembers the choice for dictation and Ask, even when headphones connect. **System Default** follows macOS. If a selected microphone is disconnected, Koett asks you to choose an available input.
-
-Media transcription needs `brew install yt-dlp ffmpeg`.
-
-Koett has no account or telemetry. Dictation stays local.
-Optional Ask sends one question and one screen image to the provider you configure.
-Optional spoken replies send a short part of the answer to Cartesia.
-
-## License
-
-[Apache License 2.0](LICENSE)
-
-## Agent transcription CLI
-
-Run `koett-transcribe "VIDEO_URL"` to fetch audio and return a local transcript as JSON. Use `--text` for plain text. See [installation and agent usage](docs/transcribe-cli.md).
+[Source setup](CrossPlatform/README.md#build) · [CLI](docs/transcribe-cli.md) · [Issues](https://github.com/oEdyb/koett/issues) · [Contributing](CONTRIBUTING.md) · [Apache 2.0](LICENSE)

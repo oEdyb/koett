@@ -1,0 +1,66 @@
+{
+  "scope": "current-PC only; Python 3 and host GTK dependencies required",
+  "required": {
+    "libexec/koett": {
+      "available": false,
+      "loader": ""
+    },
+    "runtime/gtk/lib/libgtk-4.so.1": {
+      "available": false,
+      "loader": ""
+    }
+  },
+  "optional": {
+    "media": {
+      "commands": [
+        "yt-dlp",
+        "ffmpeg"
+      ],
+      "setup": "Install yt-dlp and FFmpeg on PATH; dictation works without media.",
+      "resolved": {
+        "yt-dlp": "/home/olle/.local/bin/yt-dlp",
+        "ffmpeg": "/usr/bin/ffmpeg"
+      }
+    },
+    "formatting": {
+      "commands": [
+        "llama-server"
+      ],
+      "setup": "Install llama.cpp llama-server on PATH, then select/download the verified S1-mini model in Settings. Raw remains the default.",
+      "resolved": {
+        "llama-server": null
+      }
+    },
+    "clipboard_wayland": {
+      "commands": [
+        "wl-copy"
+      ],
+      "setup": "Install wl-clipboard for Wayland clipboard delivery.",
+      "resolved": {
+        "wl-copy": "/usr/bin/wl-copy"
+      }
+    },
+    "typing_wayland": {
+      "commands": [
+        "wtype"
+      ],
+      "setup": "Install wtype if supported by the compositor; Copy Last remains available.",
+      "resolved": {
+        "wtype": "/usr/bin/wtype"
+      }
+    },
+    "ask_keys": {
+      "commands": [
+        "secret-tool"
+      ],
+      "setup": "Install libsecret tools and enable a session Secret Service, then configure an optional Ask provider key in Settings.",
+      "resolved": {
+        "secret-tool": "/usr/bin/secret-tool"
+      }
+    },
+    "rich_ask": {
+      "available": false,
+      "setup": "Install the complete WebKitGTK 6 package for this distribution, including subprocess helpers and resources. Restart Koett. Plain Ask remains available without it; sandbox stays enabled."
+    }
+  }
+}

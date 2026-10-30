@@ -1,0 +1,158 @@
+{
+  "created_at": "2026-10-29T00:01:39.876102+01:00",
+  "branch": "feat/linux-ui-history",
+  "base_commit": "c8ac235fc34f53e6a840f7e86668ef6781c9716c",
+  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "binary_sha256": "f490b1a2b7e63250856f7ff251602bf94a94a312b75ea97ee853539f46fecb04",
+  "installed_binary_unchanged_sha256": "6889a603a28d91278c1b373f33e7099da1d7cd0218deec29332e07434de01214",
+  "source_sha256": {
+    "CrossPlatform/src/linux.rs": "869f1bc4b11783e08d1710d3b8ad4c291f6a8a96a297f5c3a4856d81dde8ec4a",
+    "CrossPlatform/src/linux/window.rs": "c72e7c843bc9d56f79cc6cde9935c39fa76c7f4f7b2323a1f38b7dbc99e8c55c",
+    "CrossPlatform/src/linux/history_view.rs": "fdb9d12e6eca1051c2afc9dd6c40eeba93192d2357b2711be4eacc21664fa0cb",
+    "CrossPlatform/src/linux/settings_view.rs": "a1b29bda65476636aa7c1196ab3a05e908669c3c5b73f14a34e60136a2d40d38",
+    "CrossPlatform/src/linux/input_preview.rs": "285a61f49c7730a17fb0c35adc7cd2505f3af851e509e904e9e97edd7b7da5d3",
+    "CrossPlatform/src/linux/theme.rs": "9205754e4c9de4a465f964d5aadd3530e2aa73bbeefe29d67da226a39d4d1ba7",
+    "CrossPlatform/src/linux/theme.css": "127bb11b3b56bfa60f5fbc9b5e4ef4ca23adf641f68b5b72bea9b48b503c647e",
+    "CrossPlatform/scripts/test_linux_ui.py": "455dbde0f5ed61696f83f3f672d0d1d97bccd5671a0bf2db9ab2e587a6e8d59f",
+    "CrossPlatform/scripts/test_linux_menu.py": "f5cedfbd0fd953b840a8466bcf172f91a9de7151e843406f4ff9e8f948f7acdb",
+    "CrossPlatform/scripts/test_linux_feedback.py": "3729dc8060710ec1587855f6712c27096bcac0e59cad0e712825a1dfa9252d1a",
+    "CrossPlatform/scripts/test_linux_visual.py": "8779a77f610da4dc60f51cf991fb42d3109b0cd34f132f755ca756018f0359d0"
+  },
+  "verification": {
+    "cargo_test_locked": {
+      "passed": 93,
+      "ignored": 3,
+      "failed": 0
+    },
+    "cargo_fmt_check": "pass",
+    "cargo_clippy_locked_all_targets_D_warnings": "pass",
+    "cargo_build_release_locked": "pass",
+    "ruff_0.17.2": "pass",
+    "py_compile_affected_harnesses": "pass",
+    "git_diff_check": "pass",
+    "native": {
+      "ui": {
+        "passed": true,
+        "source": "/tmp/koett-visual-ui-latest-2",
+        "checks": [
+          "real CLI forwards GTK-cached activation tokens; recording IPC stays plain",
+          "failed model exposes Retry",
+          "initial page has exactly 50 summaries and newest full text",
+          "bounded chronological paging",
+          "search, clear and explicit selection",
+          "native Copy preserves exact selected text",
+          "native Export chooser writes exact plain text",
+          "Settings activates and repeated requests reuse one window",
+          "Settings level-only preview: private signal, silence, unsaved input switching and one owned stream; no settings write",
+          "native settings persist microphone ID, shortcut, replacement and media choice",
+          "native Paste shortcut selection persists through Save/reopen and restores Ctrl+V",
+          "preview unavailable-device error has zero level and no fallback; unsaved selection recovers; close releases stream",
+          "settings reopen and system default microphone",
+          "failed-model Retry loads real model and reaches Ready",
+          "empty history has Record and no blank editor actions",
+          "background history search and clear remain responsive during real capture without focus theft",
+          "stop lifecycle observed: completed",
+          "Settings preview yields its sole stream to dictation, accepts unsaved input changes while paused, and resumes afterward",
+          "capture failure leaves no stale pill; pill pointer region passes clicks to target",
+          "real meter responds to private audio; typing remains in target during capture; Settings capture preserves focus and avoids paste",
+          "native layer pill above owned target, nonactivating start/stop, completion cleanup, Settings activation"
+        ],
+        "binary_sha256": "f490b1a2b7e63250856f7ff251602bf94a94a312b75ea97ee853539f46fecb04"
+      },
+      "menu": {
+        "passed": true,
+        "source": "/tmp/koett-visual-menu-latest",
+        "checks": [
+          "native keyboard menu has named items; Copy last disabled before a result; Escape closes",
+          "Ctrl+F focuses search; Ctrl+, and real tray Settings reuse drafts; native menu and visible header open Settings",
+          "native History and Hide route correctly; actual tray activation reopens without recording",
+          "native menu fits normal and narrow widths (requested 960/500; native minimum); actual private pointer opens and Escape closes",
+          "real tray Record/Stop; native menu remains usable with disabled Transcribing; extra Start rejected",
+          "second complete dictation and ASR cycle leave target active and typed contents unchanged",
+          "Copy last becomes enabled after real private dictation; clipboard exactly matches persisted ASR result",
+          "real unavailable-input failure exposes Retry in tray and History",
+          "native menu Quit quits only owned test app"
+        ],
+        "binary_sha256": "f490b1a2b7e63250856f7ff251602bf94a94a312b75ea97ee853539f46fecb04"
+      },
+      "feedback": {
+        "passed": true,
+        "source": "/tmp/koett-visual-feedback-final-4",
+        "checks": [
+          "all four native sections and persistent Save at default geometry; hidden Audio releases capture",
+          "native tab keyboard access",
+          "paste shortcut and exact replacement persist; invalid Save selects Text and focuses phrase",
+          "real private CPAL preview accepts silence and warns only on sustained loud input",
+          "recording uses one real stream, preview yields; real pill warnings clear across capture lifecycle",
+          "guarded clipboard-only and controlled external clipboard failure retain exact ASR text; recovery Copy matches SQLite bytes without focus change",
+          "next capture clears recovery; 20-second timeout hides pill, retains Copy last, and restores Ready"
+        ],
+        "binary_sha256": "57c954c358ea72875f0516f9229a153d855512dd480c18b3dd248b6353717512"
+      }
+    }
+  },
+  "matrix": {
+    "light": "light/results.json",
+    "dark": "dark/results.json",
+    "highcontrast": "highcontrast/results.json",
+    "native_Sans_14_animations_disabled": "scaled/results.json"
+  },
+  "environment": {
+    "desktop": "private agent-lab koett-visual / KWin Wayland",
+    "gtk": "4.24.1",
+    "model": "existing cached public Parakeet 110M sample; no download",
+    "audio": "private Pulse/CPAL virtual monitor; no physical microphone or speakers",
+    "normal_window": [
+      960,
+      680
+    ],
+    "narrow_default_font_width": 500,
+    "settings_default": [
+      540,
+      460
+    ],
+    "enlarged_font_narrow_width": 560
+  },
+  "inspection": {
+    "raw_native_pngs_preserved": true,
+    "rgb_copies": "inspection/ contains the same captured RGB pixels without the unused desktop alpha channel; used to avoid partial display in the image viewer",
+    "inspected": [
+      "baseline populated History and Audio Settings",
+      "light and dark populated History, narrow list/detail, long metadata, empty/no-results/error",
+      "light and dark Audio/Shortcuts/Text/General, long input, keyboard scroll to last rule",
+      "HighContrast History and Settings",
+      "Sans 14 native text scaling and disabled animations"
+    ]
+  },
+  "harness_adjustments": [
+    "parameterized private lab name; original defaults retained",
+    "wait for lazy native accessibility list creation",
+    "fixed compositor PID shadowing the requested owned target PID",
+    "native Tab traversal replaces unreliable Wayland screen coordinates for Settings keyboard check",
+    "preserved pill cleanup assertion with the existing 20-second recovery duration, and added exact stored-text recovery Copy assertion",
+    "added background search/clear during actual capture with target-focus assertions"
+  ],
+  "limitations": [
+    "Current GTK/private KWin only; GTK 4.6 floor build, independent reviews and other desktop/hardware checks belong to parent",
+    "Live desktop theme/contrast notifications are implemented; changing the desktop setting during an open session was not manually exercised",
+    "Sans 14 with three native decoration buttons and long metadata has a roughly 553px natural minimum; enlarged-font matrix uses 560px; default-font matrix uses 500px",
+    "Feedback suite preceded final header ellipsis and metadata width-hint refinements; final UI, menu and visual matrices cover the final binary"
+  ],
+  "references": [
+    "https://docs.gtk.org/gtk4/css-properties.html",
+    "https://docs.gtk.org/gtk4/css-overview.html",
+    "https://gtk-rs.org/gtk4-rs/stable/latest/docs/gtk4/struct.Settings.html",
+    "https://docs.gtk.org/gtk4/running.html",
+    "https://developer.gnome.org/hig/patterns/containers/boxed-lists.html",
+    "https://styles.refero.design/style/0fd67ec5-7e9c-4ca9-b368-5d9c7388477a",
+    "https://styles.refero.design/style/7967c6d9-e50c-42b5-b4d1-74003ba41781"
+  ],
+  "cleanup": {
+    "lab": "stopped",
+    "owned_capture_streams_before_stop": 0,
+    "host_desktop_clipboard_audio_settings": "untouched",
+    "installed_binary": "untouched",
+    "commits_pushes_installs": 0,
+    "transient_runs": "/tmp/koett-visual-*; earlier raw runs preserved"
+  }
+}

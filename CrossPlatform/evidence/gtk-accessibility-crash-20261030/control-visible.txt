@@ -1,0 +1,5 @@
+registry owner:
+visible control: 0 ((':1.14', objectpath '/org/gtk/application/unknown/a11y/a32563f5_0df8_4109_90bc_6f548551aecc'),)
+after retirement: 0 ((':1.14', objectpath '/org/gtk/application/unknown/a11y/a32563f5_0df8_4109_90bc_6f548551aecc'),)
+native PID: 2339569 exit: None
+registry still alive: True

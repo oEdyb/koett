@@ -1,0 +1,13 @@
+{
+  "rust_passed": 146,
+  "rust_ignored": 10,
+  "python_passed": 38,
+  "clippy": "all-target warnings denied pass",
+  "release": "pass; hash matches packaged executable",
+  "msrv": "1.92 source pass",
+  "windows": "1.98 source including tests pass",
+  "shell_syntax": "pass",
+  "affected_python_lint": "Ruff0.17.2 pass",
+  "desktop_launch": "six isolated special-path launches pass",
+  "installation": "host background Ready; preferences unchanged; old binary retained; no host capture or input test"
+}

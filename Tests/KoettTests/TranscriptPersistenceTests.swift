@@ -7,7 +7,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testFailedHistoryPreservesExactRecordForRecovery() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let historyURL = root.appendingPathComponent("Transcripts.md")
+        let historyURL = root.appendingPathComponent("History.sqlite3")
         try FileManager.default.createDirectory(at: historyURL, withIntermediateDirectories: true)
         let history = TranscriptStore(fileURL: historyURL)
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
@@ -35,7 +35,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testFailedHistoryRecoversAfterRestartExactlyOnce() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let historyURL = root.appendingPathComponent("Transcripts.md")
+        let historyURL = root.appendingPathComponent("History.sqlite3")
         try FileManager.default.createDirectory(at: historyURL, withIntermediateDirectories: true)
         let history = TranscriptStore(fileURL: historyURL)
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
@@ -46,7 +46,7 @@ final class TranscriptPersistenceTests: XCTestCase {
         let restarted = TranscriptPersistence(history: history, recovery: recovery)
         XCTAssertEqual(restarted.recover().recoveredCount, 1)
         XCTAssertEqual(restarted.recover().recoveredCount, 0)
-        XCTAssertEqual(try count(record.marker, in: historyURL), 1)
+        XCTAssertNotNil(try TranscriptStore(fileURL: historyURL).get(record.id))
         XCTAssertEqual(try count(record.text, in: historyURL), 1)
         XCTAssertFalse(recovery.hasTranscripts)
     }
@@ -54,7 +54,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testCrashAfterHistoryWriteDoesNotDuplicateRecovery() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
         let record = TranscriptRecord(text: "Already safely saved.", model: "Parakeet v2")
         _ = try recovery.preserve(record)
@@ -71,7 +71,7 @@ final class TranscriptPersistenceTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let blocked = root.appendingPathComponent("blocked")
         try Data("blocks directories".utf8).write(to: blocked)
-        let history = TranscriptStore(fileURL: blocked.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: blocked.appendingPathComponent("History.sqlite3"))
         let recovery = FailedTranscriptStore(directoryURL: blocked.appendingPathComponent("Failed"))
         let persistence = TranscriptPersistence(history: history, recovery: recovery)
         let record = TranscriptRecord(text: "Still recoverable in memory.", model: "Parakeet v2")
@@ -91,7 +91,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testVolatileTranscriptBecomesDurableEvenWhileHistoryStillFails() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let historyURL = root.appendingPathComponent("Transcripts.md")
+        let historyURL = root.appendingPathComponent("History.sqlite3")
         try FileManager.default.createDirectory(at: historyURL, withIntermediateDirectories: true)
         let blocked = root.appendingPathComponent("blocked")
         try Data("blocks recovery".utf8).write(to: blocked)
@@ -114,7 +114,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testRecoveryDoesNotReplaceANewerLastTranscript() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
         _ = try recovery.preserve(TranscriptRecord(text: "Older failed result.", model: "Parakeet v2"))
         try history.saveLastTranscript("Newest result.")
@@ -130,7 +130,7 @@ final class TranscriptPersistenceTests: XCTestCase {
         let lastURL = root.appendingPathComponent("Last Transcript.txt")
         try FileManager.default.createDirectory(at: lastURL, withIntermediateDirectories: true)
         let history = TranscriptStore(
-            fileURL: root.appendingPathComponent("Transcripts.md"),
+            fileURL: root.appendingPathComponent("History.sqlite3"),
             lastTranscriptURL: lastURL
         )
         let persistence = TranscriptPersistence(
@@ -151,7 +151,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testCorruptRecoveryFileDoesNotBlockOtherRecordsOrGetDeleted() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
         let record = TranscriptRecord(text: "Valid recovery.", model: "Parakeet v2")
         _ = try recovery.preserve(record)
@@ -170,7 +170,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testLegacyFailedMarkdownRecoversIntactOnce() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
         try recovery.prepare()
         let oldFile = recovery.directoryURL.appendingPathComponent("older.md")
@@ -180,14 +180,14 @@ final class TranscriptPersistenceTests: XCTestCase {
 
         XCTAssertEqual(persistence.recover().recoveredCount, 1)
         XCTAssertEqual(persistence.recover().recoveredCount, 0)
-        XCTAssertTrue(try String(contentsOf: history.fileURL, encoding: .utf8).contains(legacy))
+        XCTAssertEqual(try history.get(XCTUnwrap(history.page().first).id)?.text, legacy)
         XCTAssertFalse(FileManager.default.fileExists(atPath: oldFile.path))
     }
 
     func testRepeatedPersistenceIDIsIdempotentButIdenticalNewResultIsSaved() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         let persistence = TranscriptPersistence(
             history: history,
             recovery: FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
@@ -198,13 +198,13 @@ final class TranscriptPersistenceTests: XCTestCase {
         XCTAssertTrue(persistence.persist(record).historySaved)
         XCTAssertTrue(persistence.persist(TranscriptRecord(text: record.text, model: record.model)).historySaved)
         XCTAssertEqual(try count(record.text, in: history.fileURL), 2)
-        XCTAssertEqual(try count(record.marker, in: history.fileURL), 1)
+        XCTAssertNotNil(try history.get(record.id))
     }
 
     func testConcurrentIndependentStoresPreserveEveryTranscriptExactlyOnce() async throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let historyURL = root.appendingPathComponent("Transcripts.md")
+        let historyURL = root.appendingPathComponent("History.sqlite3")
         let records = (0..<24).map {
             TranscriptRecord(text: "Concurrent result \($0).", model: "Parakeet v2")
         }
@@ -228,7 +228,7 @@ final class TranscriptPersistenceTests: XCTestCase {
 
         XCTAssertEqual(successes, records.count)
         for record in records {
-            XCTAssertEqual(try count(record.marker, in: historyURL), 1)
+            XCTAssertNotNil(try TranscriptStore(fileURL: historyURL).get(record.id))
             XCTAssertEqual(try count(record.text, in: historyURL), 1)
         }
     }
@@ -236,7 +236,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testInvalidHistoryBytesArePreservedAndNewTextRecoversSeparately() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         try Data([0xFF]).write(to: history.fileURL)
         let recovery = FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
         let record = TranscriptRecord(text: "Readable final text.", model: "Parakeet v2")
@@ -251,7 +251,7 @@ final class TranscriptPersistenceTests: XCTestCase {
     func testEmptyCleanedTextPreservesRawTextAndDoesNotReplaceLastTranscript() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
-        let history = TranscriptStore(fileURL: root.appendingPathComponent("Transcripts.md"))
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
         try history.saveLastTranscript("Keep previous result.")
         let persistence = TranscriptPersistence(
             history: history,
@@ -263,8 +263,30 @@ final class TranscriptPersistenceTests: XCTestCase {
 
         XCTAssertTrue(outcome.historySaved)
         XCTAssertNil(outcome.warning)
-        XCTAssertEqual(try count("Raw transcript:\n\num uh", in: history.fileURL), 1)
+        XCTAssertEqual(try history.get(record.id)?.rawText, "um uh")
         XCTAssertEqual(try history.loadLastTranscript(), "Keep previous result.")
+    }
+
+    func testQueuedSaveIsProtectedUntilDurableAndPreservesLast() async throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
+        let persistence = TranscriptPersistence(
+            history: history,
+            recovery: FailedTranscriptStore(directoryURL: root.appendingPathComponent("Failed"))
+        )
+        let record = TranscriptRecord(text: "Queued, never lost.", model: "test")
+        let saved = expectation(description: "Durable queued transcript")
+        persistence.enqueue(record, keepAsLast: true) { outcome in
+            XCTAssertTrue(outcome.historySaved)
+            saved.fulfill()
+        }
+        XCTAssertTrue(persistence.hasVolatileTranscripts)
+        XCTAssertEqual(persistence.unsavedTranscriptText, record.text)
+        await fulfillment(of: [saved], timeout: 10)
+        XCTAssertFalse(persistence.hasVolatileTranscripts)
+        XCTAssertEqual(try history.get(record.id)?.text, record.text)
+        XCTAssertEqual(try history.loadLastTranscript(), record.text)
     }
 
     private func temporaryDirectory() throws -> URL {
@@ -274,6 +296,11 @@ final class TranscriptPersistenceTests: XCTestCase {
     }
 
     private func count(_ text: String, in fileURL: URL) throws -> Int {
-        try String(contentsOf: fileURL, encoding: .utf8).components(separatedBy: text).count - 1
+        let database = try HistoryDatabase(url: fileURL)
+        return try database.statement("SELECT count(*) FROM transcripts WHERE text = ?") { statement in
+            try database.bind(text, to: 1, in: statement)
+            try database.step(statement)
+            return Int(database.integer(statement, 0))
+        }
     }
 }

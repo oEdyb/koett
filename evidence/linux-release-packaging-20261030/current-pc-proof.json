@@ -1,0 +1,17 @@
+{
+  "missing_loader_install_rejection": "system flavor only",
+  "archive": "/home/olle/.cache/koett/private-tests/linux-release-packaging-20261030/current-pc-verified/Koett-Linux-x86_64-0d519a04.tar.gz",
+  "binary_sha256": "8d0bfd67711c9d4999191edc6c8e2d885823dae58e13e616e09953906deae36e",
+  "checks": [
+    "extraction",
+    "required loader",
+    "isolated install",
+    "spaces and dollar",
+    "launcher JSON menu-help",
+    "reinstall",
+    "backup",
+    "old process preserved",
+    "integrity rejection"
+  ],
+  "scope": "current-pc"
+}

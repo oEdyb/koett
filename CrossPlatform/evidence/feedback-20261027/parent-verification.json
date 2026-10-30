@@ -1,0 +1,44 @@
+{
+  "source_sha256": {
+    "src/linux.rs": "7b88a0177f3fd83dbeadc20628fffdaf3f00fb55c0721529693fbd0bd2af4e1b",
+    "src/linux/settings_view.rs": "a9697ea321aa95fb5b755d5fcf26d8b2dfb403941b320a00c11e5500fdc0fd35",
+    "src/linux/input_preview.rs": "98097f6946b9f395379e2182f7adc6e2290120c5b4fee0927e7d25638396b4e0",
+    "src/linux/window.rs": "e9e92aa7eaed7abdee35b35c4b5cca7b6b2b333ce4414461cbdcbc1491f8bf93",
+    "src/linux/recording_overlay.rs": "3e40ef4da9a54ede0bdb2f44a4b9971e83e1c84667d32f335c6733251f6724b0",
+    "src/linux/feedback.rs": "17208371d98dedc406dc9ff3cb6ab23ffb4a532b74f5678b3d0cfcaf3304aadc",
+    "src/audio/preview.rs": "b5648d10137d93625c28b73349f0006e1a36ccbd72b3eca287ccb8c8199d878a",
+    "scripts/test_linux_ui.py": "946bf60fb75659710a3335e22ecddc391699a66800503fff36b95fd1eea2848a",
+    "scripts/test_linux_feedback.py": "91217d7e7cc0f5bb978d7ae24b8b84e3e623e546f40fb0128b61cacb6db93b2b"
+  },
+  "install": {
+    "sha256": "3491b63438b502e17a69a018cde687aa3276f1d026d56c62572a39af11cead95",
+    "bytes": 48881928,
+    "backup": "/home/olle/.local/state/koett/install-backups/20261027T121836Z/koett",
+    "restarted": true,
+    "restart_deferred": false,
+    "pid": 2005281,
+    "preferences_preserved": true
+  },
+  "rust_tests": "89 passed; 3 existing intentional ignores",
+  "checks": [
+    "fmt",
+    "strict all-target Clippy",
+    "release",
+    "Rust1.92",
+    "Windows source check",
+    "29 Python tests",
+    "Ruff and Python compilation",
+    "GTK4.6 native Xvfb Settings/history/export",
+    "private CPAL warnings and exact recovery Copy",
+    "final baseline binary private native checks"
+  ],
+  "reviews": "Two independent source reviews; guarded X11 success result and focus assertion findings fixed",
+  "limits": [
+    "No physical-session or Mac verification",
+    "X11 guard logic tested; native X11 clipboard consumption not rerun",
+    "Portal injection failure not rerun",
+    "Some private GPU screenshots omit previously painted regions; separate Cairo baseline Settings and host-native full-frame captures inspected",
+    "Earlier unrelated GTK/accessibility crash remains unresolved as recorded in waveform evidence"
+  ],
+  "lab": "koett-feedback stopped"
+}

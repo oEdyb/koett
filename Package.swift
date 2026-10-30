@@ -21,6 +21,7 @@ let package = Package(
         ),
     ],
     targets: [
+        .systemLibrary(name: "CSQLite", pkgConfig: "sqlite3"),
         .executableTarget(
             name: "AudioMicroscope",
             dependencies: [
@@ -49,10 +50,12 @@ let package = Package(
         .executableTarget(
             name: "Koett",
             dependencies: [
+                "CSQLite",
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ],
             resources: [
                 .copy("Resources/AssistantRenderer"),
+                .copy("Resources/History"),
             ]
         ),
         .testTarget(

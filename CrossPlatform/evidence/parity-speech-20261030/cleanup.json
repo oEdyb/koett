@@ -1,0 +1,10 @@
+{
+  "lab": "koett-speech",
+  "lab_stopped": true,
+  "owned_fixture_processes": 0,
+  "owned_audio_streams": 0,
+  "owned_socket_workers": 0,
+  "installed": false,
+  "committed": false,
+  "pushed": false
+}

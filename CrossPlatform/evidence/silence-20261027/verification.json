@@ -1,0 +1,30 @@
+{
+  "tests": "89 passed, 3 existing ignored probes",
+  "checks": [
+    "cargo fmt --check",
+    "cargo test --locked",
+    "cargo clippy --locked --all-targets -- -D warnings",
+    "cargo build --release --locked",
+    "Ubuntu22 baseline build",
+    "Ruff and Python compilation",
+    "native private preview and capture silence regression plus loud warning/recovery checks"
+  ],
+  "source_sha256": {
+    "src/linux/feedback.rs": "ebece308362305fab463163c9765c70ac743d8877790e930cfa2c6325b4930e8",
+    "scripts/test_linux_feedback.py": "be4aec76b427e2a33dc706c89f4e324ba54f662f167303f0a5bd3a80d39c16f7"
+  },
+  "install": {
+    "sha256": "0cc791b7559401b711624b0236da7949d11fcfc86eb8de37ca0cf7e9c1ad63e3",
+    "bytes": 48881984,
+    "backup": "/home/olle/.local/state/koett/install-backups/20261027T130123Z/koett",
+    "restarted": false,
+    "restart_deferred": true,
+    "pid": null,
+    "preferences_preserved": true
+  },
+  "lab_stopped": true,
+  "limits": [
+    "No physical microphone test",
+    "Installed running app reload deferred to avoid interrupting active capture or open Settings"
+  ]
+}

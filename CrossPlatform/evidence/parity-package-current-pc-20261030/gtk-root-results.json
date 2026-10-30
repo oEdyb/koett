@@ -1,0 +1,109 @@
+{
+  "library": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689/runtime/gtk/lib/libgtk-4.so.1",
+  "sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+  "registry_pid": 2824789,
+  "rounds": [
+    {
+      "round": 0,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 1,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 2,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 3,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 4,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 5,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 6,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 7,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 8,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 9,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 10,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 11,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 12,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 13,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 14,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 15,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 16,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 17,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 18,
+      "valid_child": true,
+      "retired_child_errors": true
+    },
+    {
+      "round": 19,
+      "valid_child": true,
+      "retired_child_errors": true
+    }
+  ],
+  "empty_root_error": true,
+  "clean_exit": true
+}

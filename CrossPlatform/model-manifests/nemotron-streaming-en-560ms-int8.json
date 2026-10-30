@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "app_model_schema_version": 1,
+  "model_id": "sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25",
+  "purpose": "Experimental English stateful streaming dictation, 560 ms configuration",
+  "artifacts": [
+    {
+      "id": "asr",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25.tar.bz2",
+      "immutable_revision": "sha256:78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+      "bytes": 463945051,
+      "sha256": "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+      "license": "NVIDIA Open Model License; release conversion attribution requires upstream clarification",
+      "upstream_reference_url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b"
+    },
+    {
+      "id": "vad",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+      "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "license": "MIT",
+      "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+    }
+  ],
+  "files": [
+    {
+      "artifact": "asr",
+      "path": "decoder.int8.onnx",
+      "bytes": 7257753,
+      "sha256": "0be9702c2f427a2b6bb241d298e0d3836a558de1f5b9fd3018f1cce6e2b3fa98"
+    },
+    {
+      "artifact": "asr",
+      "path": "encoder.int8.onnx",
+      "bytes": 652916849,
+      "sha256": "7d932213491ad355c6e5576705dc3494731a52af87d7a1b954559340147909d8"
+    },
+    {
+      "artifact": "asr",
+      "path": "joiner.int8.onnx",
+      "bytes": 1735862,
+      "sha256": "a35eac38a22ebceb04d230ed7afe0d68f446ba6914a036b97f14fece95967e23"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/0.wav",
+      "bytes": 212044,
+      "sha256": "6bc58a4efdf20daac252b6b1502632601a71efe0308f6757dc1eda34891a7e4f"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/1.wav",
+      "bytes": 534924,
+      "sha256": "5143a6ba93c4b274e2c4ac22deb75c2c48936c853f0519add1de828b6c79cc5a"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/8k.wav",
+      "bytes": 77244,
+      "sha256": "9988c305f0d1915c4d593fbf73d035ee4608a401f61e1dc9c820d808211bb60c"
+    },
+    {
+      "artifact": "asr",
+      "path": "tokens.txt",
+      "bytes": 8952,
+      "sha256": "dc0b4584ab2e4ddbf888425c076c61b736e7356a015250db7d307e6f1a8188ff"
+    },
+    {
+      "artifact": "vad",
+      "path": "silero_vad.onnx",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    }
+  ]
+}

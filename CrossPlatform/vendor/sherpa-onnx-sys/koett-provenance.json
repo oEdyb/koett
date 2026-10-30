@@ -1,0 +1,30 @@
+{
+  "upstream_crate_sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493",
+  "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+  "modified_files": [
+    "build.rs"
+  ],
+  "upstream_files": {
+    ".cargo_vcs_info.json": "c88e20df7cbba88518cb1aa7e1ca9d9226da79b2052369da1940ca90c434d844",
+    "Cargo.toml": "e48c1a410ba0db8532fbb6de15f256b63ff2b108ed27c7f140e6fab6fdc8fb7b",
+    "Cargo.toml.orig": "ba4bbf094f3f3ae5b8586adab21749b8a1d195687bfad9ed88191c0b0051ac70",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "f37c9bb94bac15e309c8805345df8d79f2749404a7e7bc675cdd6f5cd302f9ed",
+    "build.rs": "4a39abcde016314654a82a332cd466f1d99d94ab241b0a695316207eaaf72274",
+    "src/audio_tagging.rs": "139301b3753b080476c1ce17f42ef83103a90957db99f71eeffc71c76f701d28",
+    "src/kws.rs": "51681240a4c7158467d77a1a792c143a79fa5fc6d3754d40d15ac41948790462",
+    "src/lib.rs": "87300aca9e7e501a2770b3547930fa16cc4ecb0444284c8e34333b8b5a97d76c",
+    "src/offline_asr.rs": "d408f95bdf53f1e46f07ef5d9de700b736736c0b6ae956df99ca316bd991f7c8",
+    "src/offline_punctuation.rs": "c380194c1fda8a1ab3aef59a6065b4b8735b6f62ebd8f47fa93897f7e339df85",
+    "src/offline_speaker_diarization.rs": "2752142ab7a580e78e7d40932fdea44cde21807e3b56b4ddd421cf1efba019df",
+    "src/online_asr.rs": "19f15ac580c4b1c2024b9b70ac9d348a4dd86e95e0118585b54b3c940e19825c",
+    "src/online_punctuation.rs": "caf9ca6e116a747d983fc109eb6664dcb52bf7611021b0f9ab7981f57c12078f",
+    "src/resampler.rs": "c4017b0e121577c166665cb7295cedfc66179a6c30c45a20e529ef148ea75358",
+    "src/speaker_embedding.rs": "6f89e62a709c33024e2ab209aee7c123e43f3b04b231b810958f2ee8a18e58cf",
+    "src/speech_denoiser.rs": "1922c1536c5902590320e0380df526290f93d423a14838cdef6e7a478148aa9b",
+    "src/spoken_language_identification.rs": "20ec96af0fbcccfb3e8a381643d1d90e3e6434936f6040897e130f1abbec95dd",
+    "src/tts.rs": "d1a949a60edc3f670ece52246b5083869f81fefcc9ea9b9ea7c1a4280df094f7",
+    "src/vad.rs": "d1e93356889a7dcd524172ccff22acdf7b87c8e0f1a4f77f1e35fa5e5768a13d",
+    "src/wave.rs": "3610968cfb6511db142449f391850e96d02253f607eb940a90d285cf60b5440d"
+  }
+}
