@@ -1,0 +1,37 @@
+{
+  "failed_run": 40986951595,
+  "source": "a1453d6",
+  "verified_ci_progress": [
+    "dependency-review passed",
+    "supply-chain and audit passed",
+    "Rust MSRV passed",
+    "native ASR source builds passed on Windows and both Linux architectures"
+  ],
+  "windows": {
+    "failure": "strict receipt mismatch after successful MSVC build",
+    "cause": "Path.write_text translates LF to CRLF on Windows",
+    "fix": "write UTF-8 marker bytes; keep Rust source/target/full-text validation unchanged",
+    "regression": "Windows newline simulation fails with previous writer, passes with fixed writer"
+  },
+  "arm64": {
+    "failure": "WebKit C string bindings hard-coded signed i8 pointers",
+    "fix": "use std::ffi::c_char consistently for C char parameters and return types",
+    "local_limit": "native ARM execution and full ARM compilation await CI"
+  },
+  "x86_64": {
+    "failure": "matrix sibling cancelled after ARM failure",
+    "fix": "fail-fast false; both Linux jobs remain required"
+  },
+  "local_checks": {
+    "rust_tests_passed": 148,
+    "rust_tests_ignored": 10,
+    "targeted_python_tests": 15,
+    "strict_clippy": "passed",
+    "windows_source_check": "passed",
+    "rustfmt": "passed",
+    "ruff": "passed",
+    "inventory_check": "passed",
+    "independent_review": "no actionable findings"
+  },
+  "runtime_scope": "no desktop launches, installations, user preferences or model-default changes"
+}

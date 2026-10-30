@@ -5,15 +5,15 @@ use gtk4::{
 };
 use libloading::Library;
 use std::{
-    ffi::{CString, c_void},
+    ffi::{CString, c_char, c_void},
     sync::OnceLock,
 };
 type Evaluate = unsafe extern "C" fn(
     *mut c_void,
-    *const i8,
+    *const c_char,
     isize,
-    *const i8,
-    *const i8,
+    *const c_char,
+    *const c_char,
     *mut c_void,
     Option<unsafe extern "C" fn(*mut c_void, *mut c_void, *mut c_void)>,
     *mut c_void,
@@ -48,7 +48,7 @@ impl Renderer {
                 .get::<unsafe extern "C" fn() -> glib::ffi::GType>(b"webkit_web_view_get_type\0")
                 .map_err(|e| e.to_string())?;
             let load = library
-                .get::<unsafe extern "C" fn(*mut c_void, *const i8, *const i8)>(
+                .get::<unsafe extern "C" fn(*mut c_void, *const c_char, *const c_char)>(
                     b"webkit_web_view_load_html\0",
                 )
                 .map_err(|e| e.to_string())?;
@@ -91,7 +91,7 @@ impl Renderer {
                 )
                 .map_err(|e| e.to_string())?;
             let uri = *library
-                .get::<unsafe extern "C" fn(*mut c_void) -> *const i8>(
+                .get::<unsafe extern "C" fn(*mut c_void) -> *const c_char>(
                     b"webkit_uri_request_get_uri\0",
                 )
                 .map_err(|e| e.to_string())?;

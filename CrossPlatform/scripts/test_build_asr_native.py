@@ -1,14 +1,42 @@
+import contextlib
+import io
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from build_asr_native import (
+    LIBRARIES,
     OPTIONS,
+    SOURCE_COMMIT,
     configure_command,
     native_options,
     remove_disabled_tts_stubs,
+    stage_libraries,
 )
 
 
 class AsrBuildTests(unittest.TestCase):
+    def test_windows_text_newlines_do_not_change_the_native_receipt_contract(self):
+        def windows_write_text(path, data):
+            with path.open('w', encoding='utf-8', newline='\r\n') as output:
+                return output.write(data)
+
+        target = 'x86_64-pc-windows-msvc'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / 'build'
+            build.mkdir()
+            for name in LIBRARIES:
+                (build / f'{name}.lib').write_bytes(b'private static archive fixture')
+            with patch.object(Path, 'write_text', windows_write_text), contextlib.redirect_stdout(io.StringIO()):
+                stage_libraries(build, root, target)
+            marker = (root / 'lib/koett-asr-only.txt').read_bytes()
+            self.assertEqual(marker, f'koett-asr-only-v1\nsource={SOURCE_COMMIT}\ntarget={target}\n'.encode())
+            self.assertNotIn(b'\r', marker)
+            self.assertEqual(json.loads((root / 'build-receipt.json').read_text())['target'], target)
+
     def test_windows_selects_msvc_platform_for_the_static_onnx_archive(self):
         command = configure_command('source', 'build', 'x86_64-pc-windows-msvc',
                                     'Visual Studio 18 2026')

@@ -132,8 +132,8 @@ def stage_libraries(build, root, target):
                "source_sha256": SOURCE_SHA256, "target": target,
                "cmake_options": native_options(target), "libraries": files}
     (root / "build-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    (destination / "koett-asr-only.txt").write_text(
-        f"koett-asr-only-v1\nsource={SOURCE_COMMIT}\ntarget={target}\n")
+    (destination / "koett-asr-only.txt").write_bytes(
+        f"koett-asr-only-v1\nsource={SOURCE_COMMIT}\ntarget={target}\n".encode())
     print(json.dumps(receipt, indent=2))
 
 
