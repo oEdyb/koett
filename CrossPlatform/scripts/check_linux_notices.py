@@ -28,7 +28,7 @@ def validate(root=ROOT):
     folder = root / 'packaging/notices'
     index = json.loads((folder / 'files.json').read_text())
     expected = {item['path']: item for item in index['files']}
-    actual = {str(p.relative_to(folder)): p for p in folder.rglob('*') if p.is_file() and p != folder / 'files.json'}
+    actual = {p.relative_to(folder).as_posix(): p for p in folder.rglob('*') if p.is_file() and p != folder / 'files.json'}
     if expected.keys() != actual.keys():
         raise ValueError('notice file set differs from provenance index')
     for name, path in actual.items():

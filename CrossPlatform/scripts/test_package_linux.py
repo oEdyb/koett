@@ -7,7 +7,8 @@ import subprocess
 import tempfile
 import time
 import unittest
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from unittest.mock import MagicMock, Mock
 
 from test_package_linux_archive import CANONICAL_NOTICES, verify_notices
 
@@ -18,6 +19,20 @@ spec.loader.exec_module(installer)
 
 
 class PackageTests(unittest.TestCase):
+    def test_archived_notices_accept_windows_path_separators(self):
+        package = MagicMock()
+        folder = package.__truediv__.return_value
+        folder.__truediv__.side_effect = lambda name: CANONICAL_NOTICES / name
+        files = []
+        for path in CANONICAL_NOTICES.rglob('*'):
+            if path.is_file() and path != CANONICAL_NOTICES / 'files.json':
+                wrapped = Mock(wraps=path)
+                wrapped.relative_to.return_value = PureWindowsPath(
+                    path.relative_to(CANONICAL_NOTICES).as_posix())
+                files.append(wrapped)
+        folder.rglob.return_value = files
+        verify_notices(package)
+
     def test_archived_notices_reject_omission_and_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             package = Path(directory)

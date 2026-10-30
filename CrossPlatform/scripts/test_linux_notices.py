@@ -20,7 +20,7 @@ class LinuxNoticeTests(unittest.TestCase):
 
     def reindex(self):
         files = [
-            {'path': str(path.relative_to(self.folder)),
+            {'path': path.relative_to(self.folder).as_posix(),
              'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
              'bytes': path.stat().st_size}
             for path in sorted(self.folder.rglob('*'))

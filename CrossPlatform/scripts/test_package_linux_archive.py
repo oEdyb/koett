@@ -17,10 +17,12 @@ def verify_notices(source):
     if (folder / 'files.json').read_bytes() != canonical:
         raise ValueError('Archived notice index differs from canonical notices')
     expected = {item['path']: item['sha256'] for item in json.loads(canonical)['files']}
-    actual = {str(path.relative_to(folder)): path for path in folder.rglob('*')
+    actual = {path.relative_to(folder).as_posix(): path for path in folder.rglob('*')
               if path.is_file() and path != folder / 'files.json'}
     if actual.keys() != expected.keys():
-        raise ValueError('Archived notice file set differs from canonical notices')
+        missing = sorted(expected.keys() - actual.keys())[:5]
+        unexpected = sorted(actual.keys() - expected.keys())[:5]
+        raise ValueError(f'Archived notice file set differs from canonical notices: {missing=}, {unexpected=}')
     for name, path in actual.items():
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected[name]:
             raise ValueError(f'Archived notice content mismatch: {name}')
