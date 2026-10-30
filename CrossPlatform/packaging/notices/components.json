@@ -3803,6 +3803,11 @@
           "path": "packaging/notices/rust/sherpa-onnx-1.13.5/LICENSE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
           "source_url": "https://static.crates.io/crates/sherpa-onnx/sherpa-onnx-1.13.5.crate"
+        },
+        {
+          "path": "packaging/notices/rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt",
+          "sha256": "8d2ab98db4fa43c881be937ef6325563786a487df8f3dbd110a83a7282ee9cdb",
+          "kind": "reviewed-local-patch-notice"
         }
       ],
       "gaps": []
@@ -6423,6 +6428,25 @@
       ],
       "gaps": [],
       "license": "OFL-1.1"
+    },
+    {
+      "name": "sherpa-onnx-sys",
+      "version": "1.13.5",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "packaging/notices/rust/sherpa-onnx-sys-1.13.5/KOETT-MODIFICATIONS.txt",
+          "sha256": "02804b61b7409369d1ca8be6370c3bf7381916ae42171045e266ee094cb97968",
+          "kind": "reviewed-local-patch-notice"
+        },
+        {
+          "path": "packaging/notices/rust/sherpa-onnx-sys-1.13.5/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "source_url": "https://static.crates.io/crates/sherpa-onnx-sys/sherpa-onnx-sys-1.13.5.crate"
+        }
+      ],
+      "gaps": []
     }
   ]
 }

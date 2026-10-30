@@ -13,6 +13,9 @@ copyright texts are in `notices/rust/`; Rust 1.98.0 toolchain notices are in
 `notices/rust-toolchain-1.98.0/`. SQLite's public-domain dedication is retained
 in the libsqlite3-sys source notices. License branch choices are recorded in
 the source inventory policy; multiple original license texts are retained.
+Koett locally patches sherpa-onnx 1.13.5 to omit its unused Rust TTS module,
+matching the ASR-only native runtime. Original implementations remain unchanged;
+the modification notice is in `notices/rust/sherpa-onnx-1.13.5/`.
 
 The current native sherpa-onnx 1.13.5 build pins source commit
 `3dc7c569f31ca2cd4a20ed6f7db780327e6714c5`, with TTS disabled. It links

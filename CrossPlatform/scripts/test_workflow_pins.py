@@ -91,6 +91,8 @@ class WorkflowPinTests(unittest.TestCase):
         windows = self.workflow.split('  windows:\n', 1)[1].split('  linux:\n', 1)[0]
         self.assertIn('build_asr_native.py --generator "Visual Studio 18 2026"', windows)
         self.assertIn('runs-on: windows-2025', windows)
+        self.assertIn('check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip', windows)
+        self.assertLess(windows.index('check_windows_archive.py'), windows.index('actions/upload-artifact@'))
 
     def test_advisory_tools_are_exact_and_read_only(self) -> None:
         self.assertIn('retry-on-snapshot-warnings: true', self.workflow)

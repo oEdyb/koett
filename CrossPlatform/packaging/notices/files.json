@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "components.json",
-      "sha256": "8d80b4eeaa4241cec3d48a24b3485b445ef0ec30d0318f0ed0b503789dec619d",
-      "bytes": 250252
+      "sha256": "2d9e321d1d77e5b8dae5acaaa63005ead3ee605c8ff341e605182d538117c6de",
+      "bytes": 251229
     },
     {
       "path": "models/CC-BY-4.0.html",
@@ -2277,7 +2277,22 @@
       "bytes": 1196
     },
     {
+      "path": "rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt",
+      "sha256": "8d2ab98db4fa43c881be937ef6325563786a487df8f3dbd110a83a7282ee9cdb",
+      "bytes": 1103
+    },
+    {
       "path": "rust/sherpa-onnx-1.13.5/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "rust/sherpa-onnx-sys-1.13.5/KOETT-MODIFICATIONS.txt",
+      "sha256": "02804b61b7409369d1ca8be6370c3bf7381916ae42171045e266ee094cb97968",
+      "bytes": 495
+    },
+    {
+      "path": "rust/sherpa-onnx-sys-1.13.5/LICENSE",
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "bytes": 11358
     },

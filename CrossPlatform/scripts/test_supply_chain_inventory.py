@@ -19,6 +19,30 @@ SPEC.loader.exec_module(inventory)
 
 
 class SupplyChainInventoryTests(unittest.TestCase):
+    def test_vendored_license_does_not_inherit_the_project_license(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'LICENSE').write_text('Project license')
+            vendor = root / 'CrossPlatform/vendor/demo'
+            vendor.mkdir(parents=True)
+            (vendor / 'LICENSE').write_text('Original dependency license')
+            package = {'name': 'demo', 'version': '1.0', 'source': None,
+                       'manifest_path': str(vendor / 'Cargo.toml')}
+            source_files = inventory._cargo_license_files(root, package)
+            self.assertEqual(len(source_files), 1)
+            bundled = root / 'CrossPlatform/packaging/notices/rust/demo-1.0'
+            bundled.mkdir(parents=True)
+            (bundled / 'LICENSE').write_bytes((vendor / 'LICENSE').read_bytes())
+            self.assertEqual(len(inventory._bundled_cargo_licenses(root, package, source_files)), 1)
+
+    def test_only_root_package_inherits_the_repository_license(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'LICENSE').write_text('Project license')
+            package = {'source': None, 'manifest_path': str(root / 'CrossPlatform/Cargo.toml')}
+            self.assertEqual(inventory._cargo_license_files(root, package), [])
+            self.assertEqual(len(inventory._cargo_license_files(root, package, is_root=True)), 1)
+
     def test_cargo_lock_parser_keeps_registry_checksums(self) -> None:
         packages = inventory.parse_cargo_lock(
             """

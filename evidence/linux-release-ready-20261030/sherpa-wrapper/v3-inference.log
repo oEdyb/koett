@@ -1,0 +1,7 @@
+model_load_ms=897.1
+/work/CrossPlatform/native-build/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 24000
+   output_sample_rate: 16000
+
+/home/olle/.cache/koett/private-tests/release-copy-final-complete/models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav	Ask not what your country can do for you, ask what you can do for your country.
+source=/home/olle/.cache/koett/private-tests/release-copy-final-complete/models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav audio_seconds=3.845 transcribe_ms=116.3 realtime_factor=0.03025

@@ -156,11 +156,6 @@
       "reason": "source-license-text-not-found"
     },
     {
-      "component": "pkg:cargo/sherpa-onnx-sys@1.13.5",
-      "group": "rust-package",
-      "reason": "license-text-not-bundled"
-    },
-    {
       "component": "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
       "group": "swift-package",
       "reason": "license-or-attribution-not-bundled"
@@ -169,6 +164,6 @@
   "schema": 1,
   "status": "known-gaps-block-release-compliance",
   "summary": {
-    "gaps": 33
+    "gaps": 32
   }
 }

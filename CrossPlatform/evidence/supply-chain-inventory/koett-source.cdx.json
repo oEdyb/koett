@@ -8347,7 +8347,7 @@
         },
         {
           "name": "koett:notice-state",
-          "value": "missing"
+          "value": "bundled"
         }
       ],
       "purl": "pkg:cargo/sherpa-onnx-sys@1.13.5",
@@ -8360,12 +8360,6 @@
         {
           "type": "vcs",
           "url": "https://github.com/k2-fsa/sherpa-onnx"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "352a5dbbd9623e800be27e77de514e87fcfe2120256acc4434e6ea87a56bc885"
         }
       ],
       "licenses": [

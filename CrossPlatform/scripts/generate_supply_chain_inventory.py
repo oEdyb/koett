@@ -111,7 +111,9 @@ def write_outputs(expected: dict[Path, bytes]) -> None:
         temporary.replace(path)
 
 
-def _cargo_license_files(repo_root: Path, package: dict[str, Any]) -> list[dict[str, Any]]:
+def _cargo_license_files(
+    repo_root: Path, package: dict[str, Any], *, is_root: bool = False,
+) -> list[dict[str, Any]]:
     manifest = Path(package["manifest_path"])
     candidates: list[Path] = []
     declared_file = package.get("license_file")
@@ -124,7 +126,7 @@ def _cargo_license_files(repo_root: Path, package: dict[str, Any]) -> list[dict[
             for child in package_root.iterdir()
             if child.is_file() and child.name.lower().startswith(LICENSE_FILE_PREFIXES)
         )
-    if package.get("source") is None and repo_root.is_dir():
+    if is_root and not candidates and repo_root.is_dir():
         candidates.extend(
             child
             for child in repo_root.iterdir()
@@ -237,6 +239,8 @@ def _input_records(repo_root: Path, policy_path: Path) -> list[dict[str, Any]]:
     paths = [
         "CrossPlatform/Cargo.lock",
         "CrossPlatform/Cargo.toml",
+        "CrossPlatform/vendor/sherpa-onnx/koett-provenance.json",
+        "CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json",
         "Package.resolved",
         "Package.swift",
         "LICENSE",
@@ -287,7 +291,7 @@ def build_documents(
         checksum = lock_packages[key]
         if (package.get("source") or "").startswith("registry+") and checksum is None:
             raise ValueError(f"registry package has no Cargo.lock checksum: {package['name']} {package['version']}")
-        license_files = _cargo_license_files(repo_root, package)
+        license_files = _cargo_license_files(repo_root, package, is_root=package["id"] == root_id)
         bundled = _bundled_cargo_licenses(repo_root, package, license_files)
         notice_state = "project-license" if package["id"] == root_id else ("bundled" if bundled else "missing")
         if package["id"] != root_id and not bundled:

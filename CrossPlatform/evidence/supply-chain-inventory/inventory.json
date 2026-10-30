@@ -7869,7 +7869,7 @@
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         }
       ],
-      "cargo_checksum_sha256": "352a5dbbd9623e800be27e77de514e87fcfe2120256acc4434e6ea87a56bc885",
+      "cargo_checksum_sha256": null,
       "declared_license": "Apache-2.0",
       "group": "rust-package",
       "license_files": [
@@ -7885,11 +7885,17 @@
       "repository": "https://github.com/k2-fsa/sherpa-onnx",
       "sbom_ref": "pkg:cargo/sherpa-onnx@1.13.5",
       "selected_license": "Apache-2.0",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "source": null,
       "version": "1.13.5"
     },
     {
-      "bundled_license_files": [],
+      "bundled_license_files": [
+        {
+          "bytes": 11358,
+          "path": "CrossPlatform/packaging/notices/rust/sherpa-onnx-sys-1.13.5/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ],
       "cargo_checksum_sha256": null,
       "declared_license": "Apache-2.0",
       "group": "rust-package",
@@ -7898,16 +7904,11 @@
           "bytes": 11358,
           "path": "LICENSE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
-        },
-        {
-          "bytes": 11341,
-          "path": "LICENSE",
-          "sha256": "f028e12a0eeb0a1c79810acff539785849a8513c6c7c478eddbcb95401168fec"
         }
       ],
       "name": "sherpa-onnx-sys",
       "normalized_declared_license": "Apache-2.0",
-      "notice_state": "missing",
+      "notice_state": "bundled",
       "repository": "https://github.com/k2-fsa/sherpa-onnx",
       "sbom_ref": "pkg:cargo/sherpa-onnx-sys@1.13.5",
       "selected_license": "Apache-2.0",
@@ -14620,19 +14621,19 @@
   ],
   "inputs": [
     {
-      "bytes": 83437,
+      "bytes": 83294,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "0ba23fd589e30b1f47fce91cbfe80eb4e1780e78ed820a451475734c9e6003aa"
+      "sha256": "d71b99e4e008fcb587f5e7ae8febddf41d1570d8b8980b189d53c4c3487115bf"
     },
     {
-      "bytes": 2403,
+      "bytes": 2449,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "f873d913bf1081db7697b903b23f48ee57077f02aed5fb24aae05999e6fa1dd2"
+      "sha256": "a6da6bf0d85f619c4272e6225d357c85d99220510719699e5d8821b297cd61c4"
     },
     {
-      "bytes": 4943,
+      "bytes": 5167,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "fbb08b72b55a63287ebf44398f5cf045641924032a8031fe85562e6ffc2cd79e"
+      "sha256": "8699a189592d47fa0b032fa00901a600b7071ff9910aff09417ced39fce60913"
     },
     {
       "bytes": 9465,
@@ -14643,6 +14644,16 @@
       "bytes": 18747,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
       "sha256": "e159a1391739db8719271c105c9fb4ed81b9c3d9015d694f25f46f98601bfc71"
+    },
+    {
+      "bytes": 2184,
+      "path": "CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json",
+      "sha256": "de771ec03cbdf908f6b74a4d1679292da36e8ba20a987e6ab7175ca00a036985"
+    },
+    {
+      "bytes": 2686,
+      "path": "CrossPlatform/vendor/sherpa-onnx/koett-provenance.json",
+      "sha256": "00e9037b009d44dd78bde0c48a644a0e01f596c69ec332af4e02b8206023ec63"
     },
     {
       "bytes": 11341,
@@ -16085,7 +16096,7 @@
     "components": 359,
     "models": 8,
     "native_libraries": 9,
-    "notice_gaps": 33,
+    "notice_gaps": 32,
     "rust_packages": 337,
     "swift_packages": 1
   }

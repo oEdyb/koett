@@ -60,4 +60,5 @@ ureq = { version = "=3.4.0", default-features = false, features = ["platform-ver
 ureq = { version = "=3.4.0", default-features = false, features = ["platform-verifier", "rustls"] }
 
 [patch.crates-io]
+sherpa-onnx = { path = "vendor/sherpa-onnx" }
 sherpa-onnx-sys = { path = "vendor/sherpa-onnx-sys" }

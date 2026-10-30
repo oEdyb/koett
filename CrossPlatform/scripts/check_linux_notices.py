@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt',
     'models/CC-BY-4.0.html', 'models/NVIDIA-Open-Model-License.html',
     'models/NEMOTRON-ATTRIBUTION.md', 'models/nemotron-model-card.md',
     'native/silero-vad/LICENSE', 'native/onnxruntime/ThirdPartyNotices.txt',

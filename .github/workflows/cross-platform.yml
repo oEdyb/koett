@@ -53,6 +53,8 @@ jobs:
         run: python3 scripts/test_workflow_pins.py
       - name: Test native build configuration
         run: python3 scripts/test_build_asr_native.py
+      - name: Test ASR wrapper provenance
+        run: python3 scripts/test_sherpa_wrapper.py
       - name: Test build receipts
         run: python3 scripts/test_build_receipt.py
       - name: Test supply-chain inventory
@@ -124,7 +126,11 @@ jobs:
           New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
           Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
           Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
+          Copy-Item -Recurse packaging/notices dist/Koett-Windows-x86_64/notices
+          Copy-Item native-build/build-receipt.json dist/Koett-Windows-x86_64/native-build-receipt.json
           Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
+      - name: Verify Windows archive notices
+        run: python scripts/check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip
       - name: Write checksum and build receipt
         run: >-
           python scripts/write_build_receipt.py
