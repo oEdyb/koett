@@ -91,6 +91,8 @@ python3 scripts/package_linux.py --flavor system-runtime --binary target/release
 
 The native builder verifies pinned sherpa-onnx source, disables TTS, and records
 its ASR-only link inputs. The Rust build rejects missing or mismatched receipts.
+The pinned Linux archives use different C++ string ABIs on x86-64 and ARM64;
+the builder selects and verifies each one. Rebuild older ARM native caches with it.
 `packaging/linux/Dockerfile` defines the Ubuntu 22.04 build floor. A build from a
 newer distribution alone is not a portability check.
 

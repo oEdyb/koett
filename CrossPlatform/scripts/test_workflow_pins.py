@@ -81,10 +81,18 @@ class WorkflowPinTests(unittest.TestCase):
         self.assertIn('package_linux.py --flavor system-runtime --output dist', linux)
         self.assertIn("python3 -m unittest discover -s scripts -p 'test_package_linux*.py'", linux)
         self.assertIn('test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz', linux)
-        self.assertLess(linux.index('test_package_linux_archive.py'), linux.index('actions/upload-artifact@'))
+        self.assertLess(linux.index('test_package_linux_archive.py'), linux.index('name: Upload Linux release candidate'))
         self.assertIn('build_asr_native.py --jobs 2', linux)
         self.assertIn('CARGO_BUILD_JOBS: 2', linux)
         self.assertIn('--bin koett-engine -- --self-test', linux)
+        self.assertNotIn('continue-on-error', linux)
+
+    def test_native_backtrace_is_only_collected_after_failed_required_inference(self) -> None:
+        linux = self.workflow.split('  linux:\n', 1)[1]
+        self.assertIn('id: asr_self_test', linux)
+        self.assertEqual(linux.count("if: failure() && steps.asr_self_test.outcome == 'failure'"), 2)
+        self.assertIn('gdb --batch --return-child-result', linux)
+        self.assertIn('native-asr-failure-${{ matrix.architecture }}', linux)
         self.assertNotIn('continue-on-error', linux)
 
     def test_windows_native_build_uses_the_microsoft_generator(self) -> None:

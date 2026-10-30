@@ -189,7 +189,25 @@ jobs:
       - name: Build
         run: cargo build --release --locked --bin koett
       - name: Runtime self-test
+        id: asr_self_test
         run: cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Capture native inference failure
+        if: failure() && steps.asr_self_test.outcome == 'failure'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdb
+          mkdir -p diagnostics
+          gdb --batch --return-child-result -ex run -ex 'thread apply all bt' \
+            --args target/release/koett-engine --self-test \
+            > diagnostics/native-asr-backtrace.log 2>&1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure() && steps.asr_self_test.outcome == 'failure'
+        with:
+          name: native-asr-failure-${{ matrix.architecture }}
+          path: |
+            CrossPlatform/diagnostics/native-asr-backtrace.log
+            CrossPlatform/native-build/build-receipt.json
+          if-no-files-found: warn
       - name: Test Linux packaging
         run: python3 -m unittest discover -s scripts -p 'test_package_linux*.py'
       - name: Package
@@ -205,7 +223,8 @@ jobs:
           --artifact dist/Koett-Linux-*.tar.gz
           --target ${{ matrix.target }}
           --output-directory dist
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Upload Linux release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Koett-Linux-${{ matrix.architecture }}-system-runtime
           path: |

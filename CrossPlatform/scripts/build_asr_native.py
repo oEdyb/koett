@@ -19,6 +19,12 @@ LIBRARIES = (
     "sherpa-onnx-kaldifst-core", "sherpa-onnx-fstfar", "sherpa-onnx-fst",
     "kaldi-native-fbank-core", "kissfft-float", "onnxruntime", "ssentencepiece_core",
 )
+# The pinned ONNX Runtime 1.27.1 static archives use different libstdc++ ABIs.
+LINUX_CPP_ABIS = {'x86_64-unknown-linux-gnu': '0', 'aarch64-unknown-linux-gnu': '1'}
+ONNX_CPP_ABI_SYMBOLS = {
+    '0': '_ZN11onnxruntime6common6Status11EmptyStringEv',
+    '1': '_ZN11onnxruntime6common6Status11EmptyStringB5cxx11Ev',
+}
 OPTIONS = {
     "CMAKE_BUILD_TYPE": "Release", "BUILD_SHARED_LIBS": "OFF",
     "SHERPA_ONNX_ENABLE_TTS": "OFF",
@@ -43,10 +49,18 @@ def sha256(path):
 def native_options(target):
     options = dict(OPTIONS)
     if "linux" in target:
-        # Upstream's manylinux ONNX archive uses the original libstdc++ ABI.
-        # Mixing both regex ABIs can corrupt memory (GCC PR libstdc++/118408).
-        options["CMAKE_CXX_FLAGS"] = "-D_GLIBCXX_USE_CXX11_ABI=0"
+        if target not in LINUX_CPP_ABIS:
+            raise ValueError(f"unreviewed Linux native C++ ABI: {target}")
+        options["CMAKE_CXX_FLAGS"] = f"-D_GLIBCXX_USE_CXX11_ABI={LINUX_CPP_ABIS[target]}"
     return options
+
+
+def validate_onnx_cpp_abi(target, symbols):
+    expected = LINUX_CPP_ABIS[target]
+    defined = {line.split()[-1] for line in symbols.splitlines() if line.split()}
+    actual = {abi for abi, symbol in ONNX_CPP_ABI_SYMBOLS.items() if symbol in defined}
+    if actual != {expected}:
+        raise ValueError(f"ONNX Runtime C++ ABI mismatch for {target}: expected {expected}, found {sorted(actual)}")
 
 
 def configure_command(source, build, target, generator=None):
@@ -117,6 +131,8 @@ def prepare_source(root):
 def stage_libraries(build, root, target):
     destination = root / "lib"
     destination.mkdir(exist_ok=True)
+    marker = destination / "koett-asr-only.txt"
+    marker.unlink(missing_ok=True)
     for path in destination.iterdir():
         if any(term in path.name.lower() for term in ("piper", "espeak", "ucd")):
             raise ValueError(f"forbidden native component: {path.name}")
@@ -128,11 +144,15 @@ def stage_libraries(build, root, target):
             raise ValueError(f"expected exactly one {filename}, found {len(candidates)}")
         shutil.copy2(candidates[0], destination / filename)
         files[filename] = sha256(destination / filename)
+    if "linux" in target:
+        symbols = subprocess.check_output(
+            ["nm", "-g", "--defined-only", str(destination / "libonnxruntime.a")], text=True)
+        validate_onnx_cpp_abi(target, symbols)
     receipt = {"schema_version": 1, "source_commit": SOURCE_COMMIT,
                "source_sha256": SOURCE_SHA256, "target": target,
                "cmake_options": native_options(target), "libraries": files}
     (root / "build-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    (destination / "koett-asr-only.txt").write_bytes(
+    marker.write_bytes(
         f"koett-asr-only-v1\nsource={SOURCE_COMMIT}\ntarget={target}\n".encode())
     print(json.dumps(receipt, indent=2))
 

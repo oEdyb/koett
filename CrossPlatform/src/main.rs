@@ -80,6 +80,7 @@ fn run() -> Result<(), String> {
 
 fn run_self_test() -> Result<(), String> {
     let (_, sample, mut transcriber) = load_self_test()?;
+    eprintln!("self_test_stage=decode");
     let result = transcriber.transcribe(&sample)?;
     check_self_test_text(&result.text)?;
     print_result("official-model-sample", result);
@@ -172,7 +173,9 @@ fn load_self_test() -> Result<(PathBuf, AudioRecording, ParakeetTranscriber), St
         ModelProgress::Ready => eprintln!("model_ready=true"),
     })?;
     let sample = model_directory.join("test_wavs").join("0.wav");
+    eprintln!("self_test_stage=read_wav");
     let audio = AudioRecording::read_wav(&sample)?;
+    eprintln!("self_test_stage=create_recognizer");
     let transcriber = ParakeetTranscriber::load(&model_directory, 2)?;
     Ok((model_directory, audio, transcriber))
 }

@@ -1,0 +1,7 @@
+model_ready=true
+self_test_stage=read_wav
+self_test_stage=create_recognizer
+self_test_stage=decode
+official-model-sample	Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.
+source=official-model-sample audio_seconds=7.435 transcribe_ms=55.9 realtime_factor=0.00752
+self_test=passed
