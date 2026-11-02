@@ -17,12 +17,19 @@ extension KoettController {
     func drawMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Draw on Screen")
         let toggle = menuItem(
-            title: "Draw While Dictating",
+            title: "Draw & Pin While Dictating",
             action: #selector(toggleDrawWhileDictating),
             selected: drawWhileDictating
         )
         toggle.isEnabled = state == .ready
         menu.addItem(toggle)
+        let selection = menuItem(
+            title: "Include Selected Text in Pins",
+            action: #selector(togglePinSelectedText),
+            selected: pinSelectedText
+        )
+        selection.isEnabled = state == .ready
+        menu.addItem(selection)
         menu.addItem(.separator())
         for key in DrawKey.allCases {
             let item = menuItem(
@@ -88,6 +95,13 @@ extension KoettController {
         rebuildMenu()
     }
 
+    @objc func togglePinSelectedText() {
+        guard state == .ready else { return }
+        pinSelectedText.toggle()
+        UserDefaults.standard.set(pinSelectedText, forKey: DrawKey.pinSelectedTextDefaultsKey)
+        rebuildMenu()
+    }
+
     @objc func selectDrawKey(_ sender: NSMenuItem) {
         guard state == .ready,
               let raw = sender.representedObject as? String,
@@ -110,6 +124,7 @@ extension KoettController {
             key: effectiveDrawKey,
             frames: sketchFrames,
             audioClock: { [weak recorder] in recorder?.currentTime ?? 0 },
+            includeSelection: pinSelectedText,
             onUpdate: { update in overlay.applySketch(update, session: session) }
         ), startedAt: startedAt)
     }
@@ -135,10 +150,9 @@ extension KoettController {
         guard !frames.isEmpty else {
             return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
         }
-        let summary = SketchLinking.keyframeSummary(
-            finalText: text,
-            words: words,
-            anchors: frames.map(\.start)
+        let summary = PinContext.annotate(
+            SketchLinking.keyframeSummary(finalText: text, words: words, anchors: frames.map(\.start)),
+            contexts: frames.map(\.context)
         )
         let sheet = SketchSheet.contactSheet(frames.map(\.image)).flatMap(SketchSheet.png)
         if sheet == nil { fputs("Warning: contact sheet could not be drawn\n", stderr) }

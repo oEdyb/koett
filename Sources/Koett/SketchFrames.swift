@@ -7,6 +7,8 @@ struct SketchFrame {
     let order: UInt64
     let start: Float
     let image: CGImage
+    /// Set for a pin: what was under the click.
+    var context: PinContext? = nil
 }
 
 /// Captured sketches scoped to one dictation, as in Linux `sketch/frames.rs`.

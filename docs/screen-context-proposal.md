@@ -1,7 +1,8 @@
 # Screen context pins
 
-Status: approach A chosen on 2026-11-02. Mac is built in this branch; Linux
-follows. Ask stays until pins have been used for about a week, then is removed.
+Status: approach A chosen on 2026-11-02. Mac is built (`PinContext.swift`,
+`PinContextReader.swift`, `SketchBoard` pins, tests in `SketchPinTests.swift`);
+live check pending. Linux follows. Ask stays until pins have been used for about a week, then is removed.
 
 Koett is used mostly to dictate into AI agents (Claude Code in a terminal,
 browser chats). The goal is that the agent also gets *where you were
