@@ -34,10 +34,48 @@ extension KoettController {
             item.isEnabled = state == .ready && !key.conflicts(with: dictationShortcut)
             menu.addItem(item)
         }
+        menu.addItem(.separator())
+        let chordItem = menuItem(title: "", action: #selector(toggleSketchPasteChord(_:)), selected: false)
+        chordItem.tag = Self.sketchPasteChordTag
+        menu.addItem(chordItem)
+        refreshSketchPasteChordItem(chordItem)
         let root = NSMenuItem(title: "Draw on Screen", action: nil, keyEquivalent: "")
         root.submenu = menu
         root.state = drawWhileDictating ? .on : .off
         return root
+    }
+
+    static let sketchPasteChordTag = 0x5343
+
+    /// Names the app the sheet would paste into now and its chord. The status
+    /// menu does not activate Koett, so the frontmost app is the paste target.
+    func refreshSketchPasteChordItem(_ item: NSMenuItem) {
+        let app = NSWorkspace.shared.frontmostApplication
+        guard let bundleID = app?.bundleIdentifier, bundleID != Bundle.main.bundleIdentifier else {
+            item.title = "Sketch Image Paste: Control-V in Terminals"
+            item.representedObject = nil
+            item.isEnabled = false
+            item.state = .off
+            return
+        }
+        let chord = SketchPasteChord.forApp(bundleID, overrides: SketchPasteChord.overrides(in: .standard))
+        item.title = "Paste Sketch Image with Control-V in \(app?.localizedName ?? bundleID)"
+        item.representedObject = bundleID
+        item.isEnabled = true
+        item.state = chord == .control ? .on : .off
+    }
+
+    func refreshSketchPasteChordItem(in menu: NSMenu) {
+        let draw = menu.items.first { $0.submenu?.title == "Draw on Screen" }?.submenu
+        if let item = draw?.item(withTag: Self.sketchPasteChordTag) {
+            refreshSketchPasteChordItem(item)
+        }
+    }
+
+    @objc func toggleSketchPasteChord(_ sender: NSMenuItem) {
+        guard let bundleID = sender.representedObject as? String else { return }
+        SketchPasteChord.toggle(bundleID, in: .standard)
+        refreshSketchPasteChordItem(sender)
     }
 
     @objc func toggleDrawWhileDictating() {
@@ -110,8 +148,10 @@ extension KoettController {
     /// Scrawl order: the numbered sheet first, then the matching text.
     func pasteSketchSheet(_ sketched: SketchedDictation) async {
         guard let sheet = sketched.sheet else { return }
-        let pasted = await SketchPaste.paste(png: sheet, postPaste: pasteAtCursor)
+        let target = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let chord = SketchPasteChord.forApp(target, overrides: SketchPasteChord.overrides(in: .standard))
+        let pasted = await SketchPaste.paste(png: sheet) { postPasteKey(flags: chord.flags) }
         if !pasted { fputs("Warning: contact sheet not pasted\n", stderr) }
-        print("SKETCHES PASTED (\(sketched.frameCount))")
+        print("SKETCHES PASTED (\(sketched.frameCount)) with \(chord.displayName) into \(target ?? "unknown app")")
     }
 }
