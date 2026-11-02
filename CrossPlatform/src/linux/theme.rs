@@ -38,22 +38,7 @@ pub(super) fn install(window: &gtk::ApplicationWindow) {
             let Some(window) = window.upgrade() else {
                 return;
             };
-            let theme = std::env::var("GTK_THEME")
-                .ok()
-                .unwrap_or_else(|| settings.gtk_theme_name().unwrap_or_default().to_string())
-                .to_lowercase();
-            let high_contrast = theme.contains("highcontrast")
-                || theme.contains("high-contrast")
-                || setting_is(settings, "gtk-interface-contrast", "more");
-            let dark = theme.ends_with(":dark")
-                || setting_is(settings, "gtk-interface-color-scheme", "dark")
-                || settings.is_gtk_application_prefer_dark_theme()
-                || window
-                    .style_context()
-                    .lookup_color("theme_bg_color")
-                    .is_some_and(|color| {
-                        color.red() * 0.2126 + color.green() * 0.7152 + color.blue() * 0.0722 < 0.5
-                    });
+            let (dark, high_contrast) = appearance(settings, window.upcast_ref());
             let palette = if high_contrast {
                 NATIVE
             } else if dark {
@@ -91,6 +76,26 @@ pub(super) fn install(window: &gtk::ApplicationWindow) {
         &provider,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
+}
+
+/// (dark, high contrast) for the current GTK settings, as seen by `widget`.
+pub(super) fn appearance(settings: &gtk::Settings, widget: &gtk::Widget) -> (bool, bool) {
+    let theme = std::env::var("GTK_THEME")
+        .ok()
+        .unwrap_or_else(|| settings.gtk_theme_name().unwrap_or_default().to_string())
+        .to_lowercase();
+    let high_contrast = theme.contains("highcontrast")
+        || theme.contains("high-contrast")
+        || setting_is(settings, "gtk-interface-contrast", "more");
+    #[allow(deprecated)]
+    let background = widget.style_context().lookup_color("theme_bg_color");
+    let dark = theme.ends_with(":dark")
+        || setting_is(settings, "gtk-interface-color-scheme", "dark")
+        || settings.is_gtk_application_prefer_dark_theme()
+        || background.is_some_and(|color| {
+            color.red() * 0.2126 + color.green() * 0.7152 + color.blue() * 0.0722 < 0.5
+        });
+    (dark, high_contrast)
 }
 
 fn setting_is(settings: &gtk::Settings, property: &str, expected: &str) -> bool {

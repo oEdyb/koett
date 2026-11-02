@@ -13,6 +13,7 @@ pub enum Update {
     Show(String),
     Settings(String),
     Completed(String),
+    Delivered,
     DeliveryFailed,
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
@@ -339,8 +340,12 @@ fn build_window(
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
     let ask = super::ask_view::AskView::new(application, actions.clone());
-    let overlay =
-        super::recording_overlay::RecordingOverlay::new(application, latest_delivery.clone());
+    let overlay = super::recording_overlay::RecordingOverlay::new(
+        application,
+        latest_delivery.clone(),
+        actions.clone(),
+    );
+    let mut done_until = None::<Instant>;
     let mut recording_started = None::<Instant>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
@@ -424,7 +429,11 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
+                    Update::Delivered => {
+                        done_until = Some(Instant::now() + Duration::from_secs(10));
+                    }
                     Update::DeliveryFailed => {
+                        done_until = None;
                         if latest_completed.borrow().is_some() {
                             recovery_until =
                                 Some(Instant::now() + super::feedback::RECOVERY_DURATION);
@@ -545,6 +554,7 @@ fn build_window(
                         let recording = message.starts_with("Recording");
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
+                            done_until = None;
                             feedback = super::feedback::CaptureFeedback::default();
                             recovery_until = None;
                             notice = None;
@@ -568,8 +578,20 @@ fn build_window(
                 notice = None;
                 notice_until = None;
             }
+            let pill_hovered = overlay.as_ref().is_some_and(|overlay| overlay.hovered());
             if recovery_until.is_some_and(|until| Instant::now() >= until) {
-                recovery_until = None;
+                if pill_hovered {
+                    recovery_until = Some(Instant::now() + Duration::from_secs(2));
+                } else {
+                    recovery_until = None;
+                }
+            }
+            if done_until.is_some_and(|until| Instant::now() >= until) {
+                done_until = if pill_hovered {
+                    Some(Instant::now() + Duration::from_secs(2))
+                } else {
+                    None
+                };
             }
             let unsaved_count = crate::history::recovery::pending_count();
             unsaved_row.set_visible(unsaved_count > 0);
@@ -609,6 +631,7 @@ fn build_window(
                     audio_levels.as_ref(),
                     warning,
                     recovering,
+                    done_until.is_some(),
                     if media_result {
                         latest_media.borrow().clone()
                     } else {

@@ -227,6 +227,17 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
                 continue;
             }
+            // Debug builds only: lets the private lab show sketch bands before
+            // the draw mode exists. Release builds ignore this command.
+            #[cfg(debug_assertions)]
+            if let Some(event) = std::str::from_utf8(&bytes)
+                .ok()
+                .and_then(|value| value.trim().strip_prefix("sketch-debug "))
+                .and_then(debug_sketch)
+            {
+                crate::sketch::publish(event);
+                continue;
+            }
             let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
                 value if value.starts_with("media ") => {
                     let source = &value[6..];
@@ -244,6 +255,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 "start" => TrayAction::Start,
                 "stop" => TrayAction::Stop,
                 "toggle" => TrayAction::Toggle,
+                "cancel" => TrayAction::Cancel,
                 "show" => TrayAction::OpenTranscripts,
                 "settings" => TrayAction::OpenSettings,
                 "quit" => TrayAction::Quit,
@@ -255,6 +267,30 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
         }
     });
     Ok(())
+}
+
+/// `INDEX START_MS END_MS|now live|done`
+#[cfg(debug_assertions)]
+fn debug_sketch(value: &str) -> Option<crate::sketch::SketchEvent> {
+    let parts: Vec<_> = value.split_whitespace().collect();
+    let [index, start, end, state] = parts.as_slice() else {
+        return None;
+    };
+    let end = if *end == "now" {
+        crate::sketch::elapsed_ms()?
+    } else {
+        end.parse().ok()?
+    };
+    Some(crate::sketch::SketchEvent {
+        index: index.parse().ok()?,
+        start_ms: start.parse().ok()?,
+        end_ms: end,
+        live: match *state {
+            "live" => true,
+            "done" => false,
+            _ => return None,
+        },
+    })
 }
 
 pub fn ask_status() -> Result<String, String> {

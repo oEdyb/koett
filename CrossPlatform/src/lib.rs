@@ -7,6 +7,7 @@ pub mod replacements;
 pub mod runtime;
 pub mod settings;
 pub mod shortcut;
+pub mod sketch;
 pub mod state;
 pub mod transcription;
 

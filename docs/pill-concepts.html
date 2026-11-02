@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Koett recording pill: three concepts</title>
+<style>
+  :root {
+    --page: #FAFAF9; --page-ink: #1C1917; --page-ink2: #75706B; --page-step: #F1EFED;
+    --coral: #FF4F42; --coral-text: #B84236;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--page-ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Cantarell, Ubuntu, sans-serif; }
+  main { max-width: 1480px; margin: 0 auto; padding: 48px 32px 120px; }
+  h1 { font-size: 44px; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 16px; }
+  .lede { font-size: 18px; max-width: 70ch; margin: 0 0 40px; }
+  h2 { font-size: 30px; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .concept { margin-top: 120px; }
+  .concept > p { max-width: 80ch; margin: 0 0 8px; }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0 32px; }
+  .facts div { background: var(--page-step); padding: 16px; border-radius: 8px; font-size: 14px; }
+  .facts strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+  th { text-align: left; font-size: 14px; color: var(--page-ink2); font-weight: 600; padding: 0 12px; }
+  td { vertical-align: middle; padding: 0; }
+  td.state { width: 150px; font-weight: 600; font-size: 15px; padding: 0 12px; }
+  td.note { width: 360px; font-size: 14px; padding: 0 16px; color: var(--page-ink); }
+  td.note b { font-weight: 600; }
+  .desk { height: 132px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .desk.dark { background: #2A2D33; }
+  .desk.light { background: #DCD8D2; }
+  .desk .absent { font-size: 13px; color: rgba(255,255,255,.55); }
+  .desk.light .absent { color: rgba(0,0,0,.5); }
+  .pick { margin-top: 140px; background: var(--page-step); padding: 40px; border-radius: 8px; }
+  .pick h2 { margin-bottom: 16px; }
+  .pick p, .pick li { max-width: 85ch; }
+  .research { margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+  .research h2 { font-size: 24px; }
+  .research li { margin-bottom: 8px; font-size: 15px; }
+  footer { margin-top: 80px; font-size: 14px; color: var(--page-ink2); }
+  a { color: var(--coral-text); }
+
+  /* ---------- the pill, 1:1 logical pixels ---------- */
+  .t-dark  { --bg: rgba(19,19,20,.97); --stroke: rgba(255,255,255,.10); --ink: rgba(255,255,255,.92); --ink2: rgba(255,255,255,.58);
+             --bar: rgba(255,255,255,.82); --dim: rgba(255,255,255,.28); --chip: rgba(255,255,255,.12); --chip-h: rgba(255,255,255,.20);
+             --dot: #FF4F42; --accent: #FF4F42; --accent-text: #FF7A70; --band: rgba(255,79,66,.24); --shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .t-light { --bg: rgba(255,255,255,.97); --stroke: rgba(28,25,23,.12); --ink: #1C1917; --ink2: #75706B;
+             --bar: rgba(28,25,23,.72); --dim: rgba(28,25,23,.22); --chip: rgba(28,25,23,.07); --chip-h: rgba(28,25,23,.13);
+             --dot: #E5483B; --accent: #D9443A; --accent-text: #B84236; --band: rgba(217,68,58,.16); --shadow: 0 8px 24px rgba(0,0,0,.14); }
+  .pill { height: 48px; border-radius: 24px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--stroke), var(--shadow);
+          display: flex; align-items: center; padding: 0 14px 0 16px; gap: 12px; color: var(--ink);
+          font: 500 13px/1 system-ui, -apple-system, "Segoe UI", Cantarell, sans-serif; white-space: nowrap; flex: none; position: relative; }
+  .pill.tall { height: auto; border-radius: 22px; flex-direction: column; align-items: stretch; padding: 12px 14px 10px 16px; gap: 10px; }
+  .pill.tall .row { display: flex; align-items: center; gap: 10px; }
+  .pill.draw { box-shadow: inset 0 0 0 2px var(--accent), var(--shadow); }
+  .nub { width: 36px; height: 6px; border-radius: 3px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--stroke), var(--shadow); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot); flex: none; }
+  .dot.hollow { background: transparent; box-shadow: inset 0 0 0 2px var(--dot); }
+  .bars { display: flex; align-items: center; gap: 3px; height: 28px; flex: none; }
+  .bars i { display: block; width: 3px; border-radius: 1.5px; background: var(--bar); }
+  .bars i.c { background: var(--accent); }
+  .bars.dimmed i { background: var(--dim); }
+  .bars.mini { gap: 2px; } .bars.mini i { width: 2.5px; }
+  .div { width: 1px; height: 24px; background: var(--chip); flex: none; }
+  .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); min-width: 30px; text-align: right; }
+  .muted { color: var(--ink2); }
+  .acc { color: var(--accent-text); font-weight: 600; }
+  .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .btn { height: 32px; border-radius: 16px; background: var(--chip); display: inline-flex; align-items: center; gap: 6px;
+         padding: 0 12px; font-weight: 600; font-size: 12.5px; color: var(--ink); flex: none; }
+  .btn.icon { width: 32px; padding: 0; justify-content: center; }
+  .btn.hov { background: var(--chip-h); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .kbd { font-size: 11px; color: var(--ink2); background: var(--chip); border-radius: 4px; padding: 3px 5px; font-weight: 600; flex: none; }
+  .count { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; flex: none; }
+  .count svg, .btn svg, .glyph { width: 14px; height: 14px; flex: none; }
+  svg { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .glyph.acc { color: var(--accent-text); }
+  .spin { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--chip); border-top: 2px solid var(--accent); flex: none; }
+  .text { font-size: 13.5px; font-weight: 500; }
+  .text .pending { color: var(--ink2); }
+  .tag { display: inline-flex; align-items: center; gap: 3px; height: 18px; padding: 0 6px; border-radius: 9px; background: var(--band);
+         color: var(--accent-text); font-size: 11.5px; font-weight: 700; vertical-align: 1px; }
+  .tag svg { width: 11px; height: 11px; }
+  .tag.live { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  /* timeline strip */
+  .strip { position: relative; height: 30px; display: flex; align-items: center; gap: 1px; flex: none; }
+  .strip i { display: block; width: 2px; border-radius: 1px; background: var(--bar); position: relative; z-index: 1; }
+  .strip i.s { height: 2px !important; background: var(--dim); }
+  .strip.done i { background: var(--dim); } .strip.done i.p { background: var(--bar); }
+  .band { position: absolute; top: 0; bottom: 0; background: var(--band); border-radius: 3px; z-index: 0; }
+  .band.live { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .pin { position: absolute; top: -9px; width: 14px; height: 14px; border-radius: 7px; background: var(--accent); color: #fff;
+         font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; z-index: 2; }
+  .head { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--accent); border-radius: 1px; z-index: 2; }
+  .w { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,.5); }
+  .desk.light .w { color: rgba(0,0,0,.45); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Koett pill: three concepts</h1>
+  <p class="lede">Every pill below is drawn at its real logical size (1 CSS px = 1 point on macOS, 1 GTK logical px on Linux) on a dark and a light desktop. Today's pill is 236 × 48 and shows a rolling waveform and a timer. Each concept covers six states: idle/hover, recording, drawing (Shift held), transcribing, done and error.</p>
+
+  <section class="research">
+    <div>
+      <h2>What the best pills do</h2>
+      <ul>
+        <li><b>Wispr Flow:</b> a small bar sits at the bottom of the screen at rest. You click it to dictate, right-click it to snooze it, and you can drag it to either edge. While recording it shows white level bars, and Esc cancels. It never shows live text: everything pastes at once when you release.</li>
+        <li><b>Superwhisper:</b> you can switch between a mini window (waveform and status only) and a large one that shows the mode. Right-click opens Expand, Settings and History. An optional always-on indicator starts recording or switches mode on hover. Users complain that it keeps reverting to the large view.</li>
+        <li><b>Scrawl:</b> press ⌥⇧S, talk, and drag with Shift held to draw. Shift-click drops a numbered pin, ⌘Z undoes and Esc cancels. Each spoken sentence is paired with the screen frame it was about. Numbered pins work well, and they're the model for Koett's sketch count.</li>
+        <li><b>macOS Dictation:</b> a small mic popover near the caret, with streaming text written straight into the field. Live text builds confidence, but it needs a streaming model.</li>
+        <li><b>Granola:</b> a quiet floating level meter during meetings and nothing else. It shows how far restraint can go.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Useful mid-dictation, or clutter</h2>
+      <ul>
+        <li><b>Useful:</b> proof that it's hearing you (real level), elapsed time, what you've drawn and where it sits in your speech, a cancel that works without the mouse, and something to do when paste fails.</li>
+        <li><b>Useful only with streaming:</b> live words. Phrase-by-phrase text that arrives a beat late is still reassuring. Text that flickers or rewrites itself is worse than none.</li>
+        <li><b>Clutter:</b> a language chip (Parakeet v3 auto-detects, but Koett doesn't receive the detected language), word counters while recording, model names in the main view, and decorative motion with no input behind it.</li>
+        <li><b>Rule kept from today:</b> the pill never takes focus, and silence never raises a warning.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div id="concepts"></div>
+
+  <section class="pick">
+    <h2>Recommendation: C, Timeline</h2>
+    <p>The pill becomes a record of this dictation, not just a level meter. Your whole recording sits in one strip, silence shows as dots (Silero already finds it), and each sketch is a numbered coral band at the moment you drew it. That's the one thing no other dictation pill shows, and it makes the Shift-to-draw feature legible: you can see that sketch 2 belongs to "this button here".</p>
+    <ul>
+      <li><b>No new model needed.</b> Every model can drive it today. The transcribing sweep uses real progress: Parakeet already decodes VAD segments one by one, so segments done out of total is an honest fraction.</li>
+      <li><b>Stays a pill.</b> At 300 × 48 it's only 64 px wider than today. Actions appear on hover or after the dictation ends, so the default view stays calm.</li>
+      <li><b>Grows into B later.</b> When Nemotron, or a phrase-commit Parakeet path, is ready, the "last phrase" line from B can go in C's hover row without redesigning anything.</li>
+      <li><b>Why not A:</b> it's the safe polish, but it barely answers "there has to be more on the pill". <b>Why not B:</b> it only works as designed on the English-only streaming model. With Parakeet it shows text one phrase late and burns CPU decoding during capture.</li>
+    </ul>
+  </section>
+
+  <section class="research">
+    <div>
+      <h2>Feasibility notes</h2>
+      <ul>
+        <li><b>Live partial text:</b> true streaming text exists only with Nemotron 560 ms (<code>CrossPlatform/src/transcription/nemotron.rs</code>, English only, labelled "Test" in the Mac menu). Parakeet v2/v3 are offline models. The approximation is to decode each Silero segment as it closes (after a ≥0.5 s pause), which puts text a phrase behind and runs ASR during capture. The final pass stays authoritative.</li>
+        <li><b>Clicks during recording:</b> today the pill has an empty input region and keyboard mode "none", and the docs say recording stays pointer-transparent. Hover actions need an input region on the pill itself, still without focus. That works on layer-shell and on a non-activating NSPanel. GNOME and X11 have no layer-shell, so they keep in-window feedback.</li>
+        <li><b>Esc to cancel:</b> needs a temporary global key while recording: the GlobalShortcuts portal on Wayland, a grab on X11, and an event tap on Mac. Shift is already taken by the draw worker, so the pill only reflects that state and never captures it.</li>
+        <li><b>Sketch data:</b> the draw worker must emit start/end timestamps and an index per sketch. Bands and pins are drawn from those, never inferred.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Motion, all concepts</h2>
+      <ul>
+        <li>Pill width changes run at 220 ms on <code>cubic-bezier(0.23,1,0.32,1)</code>, and content cross-fades with a 2 px blur. Appearing and disappearing are instant: they follow a keypress you make many times a day.</li>
+        <li>The drawing ring appears at 120 ms, and the waveform keeps moving because audio is still being recorded.</li>
+        <li>Bars and the strip follow measured RMS at 30 fps, and nothing moves without input. With reduced motion, bars are static, the strip adds a column per second, and the timer, counts and states still update.</li>
+        <li>Done stays up for 10 s (the current value), or until the pointer leaves after hovering. Errors stay until you act on them or for 30 s.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Sources: <a href="https://wispr.notion.site/What-s-the-bar-at-the-bottom-of-my-screen-1992ebdc73348143a4a6d2cdac57be71">Wispr Flow bar help</a>, <a href="https://superwhisper.com/docs/get-started/interface-rec-window">Superwhisper recording window docs</a>, <a href="https://futuretools.io/tools/scrawl-90189cca">Scrawl listing</a> (official site scrawl.kitlangton.com, not opened). Wispr's Esc-to-cancel comes from a third-party UX reference, not from Wispr. Static design reference only; not native runtime evidence.</footer>
+</main>
+
+<script>
+// Deterministic "speech-like" levels so the sheet is identical on every load.
+function lv(n, seed, silenceRanges = []) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const s = silenceRanges.some(([a, b]) => i >= a && i <= b);
+    const v = Math.abs(Math.sin(i * 1.7 + seed) * 0.6 + Math.sin(i * 0.43 + seed * 2) * 0.4);
+    out.push(s ? 0 : Math.min(1, 0.15 + v * 0.85));
+  }
+  return out;
+}
+const I = {
+  pen: '<svg viewBox="0 0 16 16"><path d="M10.5 2.5l3 3L6 13l-3.5.5L3 10z"/></svg>',
+  copy: '<svg viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>',
+  x: '<svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  hist: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/></svg>',
+  pause: '<svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
+  check: '<svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7"/></svg>',
+  warn: '<svg viewBox="0 0 16 16"><path d="M8 2l6.5 11.5h-13z"/><path d="M8 6.5v3M8 11.6v.1"/></svg>',
+  retry: '<svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>',
+  raw: '<svg viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h6"/></svg>',
+};
+function bars(levels, opt = {}) {
+  const max = opt.max ?? 24, center = opt.center ?? [6, 10];
+  return `<span class="bars ${opt.cls || ''}">` + levels.map((l, i) =>
+    `<i class="${i >= center[0] && i <= center[1] ? 'c' : ''}" style="height:${(3 + l * max).toFixed(1)}px"></i>`).join('') + '</span>';
+}
+function strip(levels, opt = {}) {
+  const step = 3; // 2px column + 1px gap
+  let h = `<span class="strip ${opt.cls || ''}" style="width:${levels.length * step - 1}px">`;
+  (opt.bands || []).forEach(b => {
+    h += `<span class="band ${b.live ? 'live' : ''}" style="left:${b.a * step - 1}px;width:${(b.b - b.a + 1) * step + 1}px"></span>`;
+    h += `<span class="pin" style="left:${b.a * step - 1}px">${b.n}</span>`;
+  });
+  if (opt.head != null) h += `<span class="head" style="left:${opt.head * step - 1}px"></span>`;
+  h += levels.map((l, i) => `<i class="${l === 0 ? 's' : ''}${opt.head != null && i < opt.head ? ' p' : ''}" style="height:${(4 + l * 22).toFixed(1)}px"></i>`).join('');
+  return h + '</span>';
+}
+const L17 = lv(17, 1.3), L17b = lv(17, 4.1), L5 = lv(5, 2.2);
+const SIL = [[14, 17], [33, 36], [47, 49]];
+const L60 = lv(64, 0.7, SIL);
+
+const concepts = [
+{
+  id: 'A', name: 'A · Signal',
+  idea: "The smallest change: today's pill, tightened. It keeps the 236 × 48 waveform as the signature and adds a drawing state, a sketch count and a better ending. It stays a meter, not a workspace.",
+  facts: [
+    ['Size', '236 × 48 recording; 276 × 48 with sketches; 344 × 48 done/error; 36 × 6 rest nub (optional)'],
+    ['Shows', 'Real level (17 bars), elapsed time, sketch count, word count on done'],
+    ['Actions', 'Esc cancels while recording; Copy, History and Paste again after; no clicks mid-dictation'],
+    ['Motion', 'Width eases 220 ms when the sketch count appears; ring on Shift; no idle motion'],
+  ],
+  states: [
+    ['Idle / hover', () => `<span class="nub"></span>`, () => `<div class="pill" style="width:236px"><span class="dot hollow"></span><span class="grow">Dictate</span><span class="kbd">Ctrl Space</span><span class="btn icon">${I.hist}</span></div>`,
+      '<b>Idle:</b> an optional 36 × 6 nub, off by default (Wispr-style). <b>Hover:</b> the nub opens to show the shortcut and History, without taking focus. Left: idle; right: hover.', 'split'],
+    ['Recording', () => `<div class="pill" style="width:236px">${'<span class="dot"></span>'}${bars(L17)}<span class="div"></span><span class="time">0:14</span></div>`, null,
+      'Exactly today\'s layout. For the first 2 s after start, the timer slot shows <span class="kbd">Esc</span> as a hint, once per session.'],
+    ['Recording, 2 sketches', () => `<div class="pill" style="width:276px"><span class="dot"></span>${bars(L17b)}<span class="div"></span><span class="time">0:41</span><span class="count acc">${I.pen}2</span></div>`, null,
+      'The sketch count appears after the first sketch and widens the pill by 40 px. It never appears with zero.'],
+    ['Drawing (Shift)', () => `<div class="pill draw" style="width:276px"><span class="glyph acc">${I.pen}</span>${bars(L17b, {cls: 'dimmed'})}<span class="div"></span><span class="time">0:44</span><span class="count acc">3</span></div>`, null,
+      'A coral ring appears and the dot becomes a pen. The bars dim but keep moving, because you are still being recorded. The count shows the sketch in progress.'],
+    ['Transcribing', () => `<div class="pill" style="width:236px"><span class="spin"></span><span class="grow">Transcribing…</span><span class="count muted">${I.pen}3</span></div>`, null,
+      'Same as today, plus the sketch count, so you know they\'re coming with the text.'],
+    ['Done / pasted', () => `<div class="pill" style="width:344px"><span class="glyph acc">${I.check}</span><span class="grow">Pasted · 86 words · 3 sketches</span><span class="btn">${I.copy}Copy</span></div>`, null,
+      'Shows a short receipt, not the text. Copy is the only button. Hovering adds History. Dismisses after 10 s.'],
+    ['Error / recovery', () => `<div class="pill" style="width:344px"><span class="glyph acc">${I.warn}</span><span class="grow">Not pasted · text saved</span><span class="btn">${I.copy}Copy</span><span class="btn icon">${I.retry}</span></div>`, null,
+      'Same delivery-failure recovery as today, plus Paste again. The text is already in the recovery cache. Stays until you act or 30 s pass.'],
+  ],
+},
+{
+  id: 'B', name: 'B · Live line',
+  idea: 'The pill becomes a single line of your words. The waveform shrinks to a 5-bar level next to the dot, and the space goes to the text you just said. Each sketch drops an inline chip at the word where you started drawing.',
+  facts: [
+    ['Size', '400 × 48 recording; 400–420 × 88 done/error (two rows); hidden when idle'],
+    ['Shows', 'Committed text (pending words greyed), mini level, time, inline sketch chips, model on hover'],
+    ['Actions', 'Hover: Cancel and Pause; after: Copy, Paste raw, History'],
+    ['Motion', 'New words fade in over 120 ms, never re-flow; line scrolls left; pending → committed is a colour change only'],
+  ],
+  states: [
+    ['Idle / hover', () => `<span class="absent">Nothing on screen when idle</span>`, () => `<div class="pill" style="width:400px"><span class="dot"></span>${bars(L5, {cls: 'mini', max: 14, center: [2, 2]})}<span class="grow text">…so the header should <span class="pending">stick on</span></span><span class="btn icon hov">${I.pause}</span><span class="btn icon">${I.x}</span></div>`,
+      '<b>Idle:</b> hidden. <b>Hover while recording</b> (right): the timer becomes Pause and Cancel. The pill takes clicks, never focus.', 'split'],
+    ['Recording', () => `<div class="pill" style="width:400px"><span class="dot"></span>${bars(L5, {cls: 'mini', max: 14, center: [2, 2]})}<span class="grow text" style="direction:rtl;text-align:left"><span style="direction:ltr;unicode-bidi:embed">…pricing table is too wide on mobile and <span class="pending">the header</span></span></span><span class="time">0:14</span></div>`, null,
+      'The newest words sit on the right, and older ones fall off the left edge. Grey words are still pending (Nemotron only). With Parakeet the text arrives a phrase at a time, after each pause.'],
+    ['Drawing (Shift)', () => `<div class="pill draw" style="width:400px"><span class="glyph acc">${I.pen}</span>${bars(L5, {cls: 'mini dimmed', max: 14, center: [9, 9]})}<span class="grow text">…this button <span class="tag live">${I.pen}2</span> <span class="pending">is broken</span></span><span class="time">0:31</span></div>`, null,
+      'A chip is placed where you started drawing in the text. The chip has an outline while you draw, then fills. This makes the speech–sketch link visible.'],
+    ['Transcribing', () => `<div class="pill" style="width:400px"><span class="spin"></span><span class="grow text muted">Finalizing… <span style="color:var(--ink)">this button <span class="tag">${I.pen}2</span> is broken</span></span><span class="count muted">${I.pen}2</span></div>`, null,
+      'The draft stays visible while the final pass runs. Then the final text replaces it in one swap, never word by word.'],
+    ['Done / pasted', () => `<div class="pill tall" style="width:400px"><div class="row"><span class="glyph acc">${I.check}</span><span class="grow text">The pricing table is too wide on mobile and this button…</span></div><div class="row"><span class="muted grow">Pasted · 2 sketches · Parakeet v3</span><span class="btn">${I.raw}Raw</span><span class="btn">${I.copy}Copy</span></div></div>`, null,
+      'Shows the first line of the result. <b>Raw</b> pastes the text from before replacements (history already stores <code>raw_text</code>). Dismisses after 10 s.'],
+    ['Error / recovery', () => `<div class="pill tall" style="width:420px"><div class="row"><span class="glyph acc">${I.warn}</span><span class="grow text">Not pasted: the window changed. Text saved.</span></div><div class="row"><span class="muted grow">86 words · 2 sketches</span><span class="btn icon">${I.hist}</span><span class="btn">${I.retry}Paste again</span><span class="btn">${I.copy}Copy</span></div></div>`, null,
+      'States the reason in plain words, using the existing focus guard. Stays until you act or 30 s pass.'],
+  ],
+},
+{
+  id: 'C', name: 'C · Timeline',
+  idea: 'The pill shows the whole dictation in one strip that compresses as it grows. Silence shows as dots, and each sketch is a numbered coral band at the moment you drew it. It\'s still a pill, but now it records what happened, not just the current level.',
+  facts: [
+    ['Size', '300 × 48 recording; 300 × 88 on hover/done; hidden when idle'],
+    ['Shows', 'Whole-session level history, silence gaps (Silero), sketch bands and numbers, time, real decode progress'],
+    ['Actions', 'Hover: Cancel, Pause, History; after: Copy, Raw, History; Esc cancels'],
+    ['Motion', 'Strip halves its resolution as it fills (a single 180 ms squeeze); sketch band grows live; decode playhead moves'],
+  ],
+  states: [
+    ['Idle / hover', () => `<span class="absent">Nothing on screen when idle</span>`, () => `<div class="pill tall" style="width:300px"><div class="row"><span class="dot"></span>${strip(lv(64, 0.7, [[14, 17], [33, 36]]), {bands: [{a: 20, b: 27, n: 1}]})}<span class="time">0:38</span></div><div class="row"><span class="btn">${I.x}Cancel</span><span class="btn icon">${I.pause}</span><span class="grow"></span><span class="muted">Parakeet v3</span></div></div>`,
+      '<b>Idle:</b> hidden. <b>Hover while recording</b> (right): a second row with Cancel, Pause and the model name. Without hover, Esc still cancels.', 'split'],
+    ['Recording', () => `<div class="pill" style="width:300px"><span class="dot"></span>${strip(lv(64, 0.7, [[14, 17], [33, 36]]))}<span class="time">0:38</span></div>`, null,
+      'Each column is real RMS. Dots mark stretches Silero calls silence, so thinking pauses look calm, not broken. When the strip fills, older columns merge two-into-one.'],
+    ['Drawing (Shift)', () => `<div class="pill draw" style="width:300px"><span class="glyph acc">${I.pen}</span>${strip(lv(64, 0.7, [[14, 17], [33, 36], [56, 58]]), {bands: [{a: 20, b: 27, n: 1}, {a: 57, b: 63, n: 2, live: true}]})}<span class="time">0:47</span></div>`, null,
+      'A band opens at the live edge and grows while Shift is held. Its pin number matches the number pasted with the sketch.'],
+    ['Transcribing', () => `<div class="pill" style="width:300px"><span class="spin"></span>${strip(L60, {cls: 'done', head: 38, bands: [{a: 20, b: 27, n: 1}, {a: 44, b: 51, n: 2}]})}<span class="muted time">3/5</span></div>`, null,
+      'A playhead crosses the strip as Parakeet finishes each VAD segment (3 of 5 here). The progress is real, not a fake spinner.'],
+    ['Done / pasted', () => `<div class="pill tall" style="width:300px"><div class="row"><span class="glyph acc">${I.check}</span>${strip(lv(64, 0.7, SIL), {bands: [{a: 20, b: 27, n: 1}, {a: 44, b: 51, n: 2}]})}</div><div class="row"><span class="grow">Pasted · 1:02</span><span class="btn">${I.copy}Copy</span><span class="btn icon">${I.raw}</span><span class="btn icon">${I.hist}</span></div></div>`, null,
+      'The strip stays as a receipt. In the build, hovering a pin shows that sketch\'s thumbnail above the pill. Dismisses after 10 s.'],
+    ['Error / recovery', () => `<div class="pill tall" style="width:300px"><div class="row"><span class="glyph acc">${I.warn}</span><span class="grow">Not pasted · text and 2 sketches saved</span></div><div class="row"><span class="btn">${I.retry}Paste again</span><span class="btn">${I.copy}Copy</span><span class="grow"></span><span class="btn icon">${I.hist}</span></div></div>`, null,
+      'Says the sketches were saved too. Stays until you act or 30 s pass.'],
+  ],
+},
+];
+
+const root = document.getElementById('concepts');
+for (const c of concepts) {
+  let h = `<section class="concept" id="concept-${c.id}"><h2>${c.name}</h2><p>${c.idea}</p><div class="facts">` +
+    c.facts.map(([k, v]) => `<div><strong>${k}</strong>${v}</div>`).join('') + '</div>';
+  h += '<table><thead><tr><th>State</th><th>Dark desktop</th><th>Light desktop</th><th>What it shows and does</th></tr></thead><tbody>';
+  for (const [state, a, b, note, mode] of c.states) {
+    const cell = (theme) => {
+      if (mode === 'split') {
+        return `<td><div class="desk ${theme} t-${theme}" style="flex-direction:column;height:auto;min-height:132px;padding:20px 0;gap:16px">${a()}${b()}</div></td>`;
+      }
+      return `<td><div class="desk ${theme} t-${theme}">${a()}</div></td>`;
+    };
+    h += `<tr><td class="state">${state}</td>${cell('dark')}${cell('light')}<td class="note">${note}</td></tr>`;
+  }
+  root.insertAdjacentHTML('beforeend', h + '</tbody></table></section>');
+}
+</script>
+</body>
+</html>
