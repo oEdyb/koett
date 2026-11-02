@@ -66,6 +66,7 @@ final class KoettController: NSObject {
     var drawKey: DrawKey
     let sketchFrames = SketchFrames()
     let sketchOverlay = SketchOverlay()
+    lazy var permissionsWindow = makePermissionsWindow()
     var s1MiniStyle: S1MiniStyle
     var s1MiniStructure: S1MiniStructure
     var s1MiniContext: S1MiniContext
@@ -293,6 +294,7 @@ final class KoettController: NSObject {
         rebuildMenu()
 
         do {
+            await waitForPermissions()
             try await prepare()
             try installHotkey()
             state = .ready
@@ -869,7 +871,7 @@ final class KoettController: NSObject {
         return true
     }
 
-    private func relaunch(with engine: SpeechEngine) {
+    func relaunch(with engine: SpeechEngine) {
         let argument = engine == .nemotron ? "--nemotron" : "--parakeet"
         let bundleURL = Bundle.main.bundleURL
         if bundleURL.pathExtension == "app" {

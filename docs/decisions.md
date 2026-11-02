@@ -115,3 +115,20 @@ on Mac a capture cannot contain another sketch's ink or the pill by
 construction. The draw key comes from modifier-flag monitors, so typing is
 never blocked and no keyboard access setup is needed. Details:
 docs/draw-while-dictating.md.
+
+## 2026-11-02: Mac permissions window instead of a failed setup
+
+Modelled on Scrawl's permission step (behaviour only). Koett shows one small
+floating window with Microphone, Accessibility and Screen Recording, a short
+purpose, a live status and one button per row: Allow (system prompt, first
+time) or Open Settings (the exact `x-apple.systempreferences:` privacy pane).
+It opens on first launch when anything is missing, at any launch while
+Microphone or Accessibility is missing (setup then waits and continues by
+itself once both are allowed, instead of failing with Retry Setup), when Draw
+While Dictating is turned on or a sketch capture fails without Screen
+Recording, after an Ask screen-access failure, and from the menu
+(Permissions…). Status is polled once a second while the window is open;
+Screen Recording also gets a real ScreenCaptureKit probe after Koett has asked,
+because its preflight can stay stale, and offers Relaunch. Input Monitoring is
+not listed: the shortcut tap and draw-key monitors run on Accessibility.
+Renders: docs/evidence/mac-permissions-20261102/.

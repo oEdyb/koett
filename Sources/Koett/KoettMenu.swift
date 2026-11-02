@@ -231,8 +231,8 @@ extension KoettController {
         cartesiaKeyItem.isEnabled = state == .ready
         assistantMenu.addItem(cartesiaKeyItem)
         assistantMenu.addItem(menuItem(
-            title: "Open Screen Recording Settings",
-            action: #selector(openScreenRecordingSettings),
+            title: "Screen Recording Permission…",
+            action: #selector(showPermissions),
             selected: false
         ))
 
@@ -301,6 +301,7 @@ extension KoettController {
             ))
         }
         menu.addItem(.separator())
+        menu.addItem(menuItem(title: "Permissions…", action: #selector(showPermissions), selected: false))
         let versionItem = NSMenuItem(
             title: "Koett \(Self.versionLabel)",
             action: nil,

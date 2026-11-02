@@ -82,8 +82,8 @@ extension KoettController {
         guard state == .ready else { return }
         drawWhileDictating.toggle()
         UserDefaults.standard.set(drawWhileDictating, forKey: DrawKey.enabledDefaultsKey)
-        if drawWhileDictating && !CGPreflightScreenCaptureAccess() {
-            _ = CGRequestScreenCaptureAccess()
+        if drawWhileDictating && !permissionsWindow.model.center.isGranted(.screenRecording) {
+            showPermissions()
         }
         rebuildMenu()
     }
@@ -132,6 +132,10 @@ extension KoettController {
             sketchOverlay.abandonPendingCaptures(session)
         }
         let frames = sketchFrames.take(session)
+        if frames.isEmpty, sketchOverlay.failedCaptures > 0,
+           !permissionsWindow.model.center.isGranted(.screenRecording) {
+            showPermissions()
+        }
         guard !frames.isEmpty else {
             return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
         }

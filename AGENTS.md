@@ -156,6 +156,9 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/Sketch*.swift`, `DrawKey.swift`: draw while dictating
   (overlay, capture, contact sheet, linking port, paste); see
   `docs/draw-while-dictating.md`.
+- `Sources/Koett/Permissions.swift`, `PermissionsWindow.swift`,
+  `PermissionOnboarding.swift`: permission rows, live status and the
+  first-launch window.
 - `Sources/Koett/EscapeKeyMonitor.swift`: Esc-to-cancel, installed only while
   recording.
 - `Sources/Koett/ShortcutBinding.swift`: shortcut matching, persistence values,

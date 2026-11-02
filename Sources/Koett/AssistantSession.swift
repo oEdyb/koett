@@ -172,6 +172,7 @@ extension KoettController {
             }
             let message = Self.shortAssistantError(error)
             assistantPanel.showResponseError(message)
+            if !permissionsWindow.model.center.isGranted(.screenRecording) { showPermissions() }
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
     }
@@ -340,22 +341,13 @@ extension KoettController {
         }
     }
 
-    @objc func openScreenRecordingSettings() {
-        guard let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-        ), NSWorkspace.shared.open(url) else {
-            fputs("Error: Screen Recording settings could not open.\n", stderr)
-            return
-        }
-    }
-
     private static func shortAssistantError(_ error: Error) -> String {
         let nsError = error as NSError
         let message = error.localizedDescription
         if nsError.domain == SCStreamErrorDomain
             || message.localizedCaseInsensitiveContains("screen capture")
             || message.localizedCaseInsensitiveContains("screen recording") {
-            return "Allow Screen Recording, then restart Koett."
+            return "Allow Screen Recording in Koett Permissions."
         }
         return message
     }
