@@ -11,11 +11,11 @@ Metrics:
                      wrote and this output lost, over the positive clips (if given).
                      Catches biasing that rewrites neighbours ("invoices" -> "receipts").
 """
-import json, re, sys
+import json, os, re, sys
 from collections import Counter
 from pathlib import Path
 
-CORPUS = json.loads((Path(__file__).parent / "corpus.json").read_text())
+CORPUS = json.loads((Path(__file__).parent / os.environ.get("KOETT_BENCH_CORPUS", "corpus.json")).read_text())
 
 def has_term(text: str, term: str) -> bool:
     return re.search(r"(?<![\w-])" + re.escape(term) + r"(?![\w-])", text) is not None

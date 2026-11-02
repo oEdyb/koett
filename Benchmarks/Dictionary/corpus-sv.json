@@ -1,0 +1,225 @@
+{
+ "dictionary": [
+  "Koett",
+  "Parakeet",
+  "sherpa-onnx",
+  "Nemotron",
+  "FluidAudio",
+  "Nordicrank",
+  "Hogia",
+  "Yakob",
+  "Matyas",
+  "Olle",
+  "Dyberg",
+  "Kubernetes",
+  "PostgreSQL",
+  "Tauri",
+  "GTK4",
+  "Supabase",
+  "SvelteKit",
+  "Fortnox",
+  "Skatteverket",
+  "Göteborg",
+  "fika",
+  "Hetzner",
+  "Cartesia",
+  "Groq",
+  "Qwen",
+  "Obsidian",
+  "Wayland",
+  "Hyprland",
+  "Claude",
+  "Codex",
+  "Figma"
+ ],
+ "positive": [
+  {
+   "id": "s-p01",
+   "text": "Jag använder Koett när jag skriver mejl.",
+   "terms": [
+    "Koett"
+   ]
+  },
+  {
+   "id": "s-p02",
+   "text": "Olle och Yakob ses i Göteborg på måndag.",
+   "terms": [
+    "Olle",
+    "Yakob",
+    "Göteborg"
+   ]
+  },
+  {
+   "id": "s-p03",
+   "text": "Skicka fakturan till Matyas via Fortnox.",
+   "terms": [
+    "Matyas",
+    "Fortnox"
+   ]
+  },
+  {
+   "id": "s-p04",
+   "text": "Skatteverket vill ha deklarationen före maj.",
+   "terms": [
+    "Skatteverket"
+   ]
+  },
+  {
+   "id": "s-p05",
+   "text": "Jag loggar in i Hogia och kollar bokföringen.",
+   "terms": [
+    "Hogia"
+   ]
+  },
+  {
+   "id": "s-p06",
+   "text": "Vi ritar skisserna i Figma i eftermiddag.",
+   "terms": [
+    "Figma"
+   ]
+  },
+  {
+   "id": "s-p07",
+   "text": "Databasen ligger hos Supabase just nu.",
+   "terms": [
+    "Supabase"
+   ]
+  },
+  {
+   "id": "s-p08",
+   "text": "Fråga Claude om koden fungerar.",
+   "terms": [
+    "Claude"
+   ]
+  },
+  {
+   "id": "s-p09",
+   "text": "Groq svarar snabbare än de andra.",
+   "terms": [
+    "Groq"
+   ]
+  },
+  {
+   "id": "s-p10",
+   "text": "Servern körs på en liten maskin hos Hetzner.",
+   "terms": [
+    "Hetzner"
+   ]
+  },
+  {
+   "id": "s-p11",
+   "text": "Nordicrank behöver rapporten på fredag.",
+   "terms": [
+    "Nordicrank"
+   ]
+  },
+  {
+   "id": "s-p12",
+   "text": "Ska vi ta en fika efter mötet?",
+   "terms": [
+    "fika"
+   ]
+  },
+  {
+   "id": "s-p13",
+   "text": "Klustret kör Kubernetes på tre noder.",
+   "terms": [
+    "Kubernetes"
+   ]
+  },
+  {
+   "id": "s-p14",
+   "text": "Koett skriver ner allt jag säger.",
+   "terms": [
+    "Koett"
+   ]
+  },
+  {
+   "id": "s-p15",
+   "text": "Yakob vill visa appen i Göteborg.",
+   "terms": [
+    "Yakob",
+    "Göteborg"
+   ]
+  },
+  {
+   "id": "s-p16",
+   "text": "Olle testar Figma och Claude samtidigt.",
+   "terms": [
+    "Olle",
+    "Figma",
+    "Claude"
+   ]
+  }
+ ],
+ "negative": [
+  {
+   "id": "s-n01",
+   "text": "Jag fikar idag med mina kollegor."
+  },
+  {
+   "id": "s-n02",
+   "text": "Han skriver kod hela dagen."
+  },
+  {
+   "id": "s-n03",
+   "text": "Alla var på plats i tid."
+  },
+  {
+   "id": "s-n04",
+   "text": "Vi köpte kött och potatis."
+  },
+  {
+   "id": "s-n05",
+   "text": "Det är kallt ute i kväll."
+  },
+  {
+   "id": "s-n06",
+   "text": "Jakob och Mattias åkte till stugan."
+  },
+  {
+   "id": "s-n07",
+   "text": "Hon har koll på allt."
+  },
+  {
+   "id": "s-n08",
+   "text": "Klockan är snart tolv."
+  },
+  {
+   "id": "s-n09",
+   "text": "Grodan hoppade i dammen."
+  },
+  {
+   "id": "s-n10",
+   "text": "Vi ses på torget vid tre."
+  },
+  {
+   "id": "s-n11",
+   "text": "Fakturan är redan betald."
+  },
+  {
+   "id": "s-n12",
+   "text": "Jag hörde ett skott i skogen."
+  },
+  {
+   "id": "s-n13",
+   "text": "Barnen leker på gården."
+  },
+  {
+   "id": "s-n14",
+   "text": "Han körde bil hela vägen hem."
+  },
+  {
+   "id": "s-n15",
+   "text": "Figuren på bordet är gammal."
+  },
+  {
+   "id": "s-n16",
+   "text": "Vi åt middag hos grannen."
+  }
+ ],
+ "voices": [
+  "sv-SE-SofieNeural",
+  "sv-SE-MattiasNeural"
+ ]
+}

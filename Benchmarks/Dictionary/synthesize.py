@@ -8,7 +8,7 @@ from pathlib import Path
 import edge_tts
 
 async def main(out: Path, only: str | None) -> None:
-    corpus = json.loads((Path(__file__).parent / "corpus.json").read_text())
+    corpus = json.loads((Path(__file__).parent / os.environ.get("KOETT_BENCH_CORPUS", "corpus.json")).read_text())
     out.mkdir(parents=True, exist_ok=True)
     clips = corpus["positive"] + corpus["negative"]
     for voice in [v for v in corpus["voices"] if only in (None, v)]:

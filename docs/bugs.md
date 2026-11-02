@@ -149,3 +149,15 @@ Adoption now requires the biased span to be exactly one term, places it over
 the closest plain words only, and keeps plain words that are all common English.
 Punctuated terms match literally, keys are NFC, and imports are capped with set
 deduplication. The benchmark gained a lost-words metric; it fell from 6 to 1.
+
+## 2026-11-02: second dictionary review (Codex, main at 6ffd62f)
+
+Adoption panicked on a punctuation-only biased span ("Hello , world"), doubled
+term symbols ("Use G++." → "Use C++++."), missed multi-word terms whose last
+word matched alone ("Old Dyberg"), and could turn everyday Swedish into a term
+("Jag fikar idag" → "Figma"). Literal terms missed decomposed text. Fix a word
+wrote Corrections.json 0644, stripped term symbols while learning ("c sharp" →
+"C"), compared case-sensitively ("ask Grok" → "Ask Groq"), kept corrections
+and dismissals without bound, relearned on every refresh, and dropped focus
+after Add or Dismiss. All fixed with a regression test each; a Swedish
+common-word list and an inflection guard (parakeets ≠ Parakeet) were added.

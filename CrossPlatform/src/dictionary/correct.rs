@@ -3,8 +3,9 @@
 //! Matching ignores case, spaces and hyphens ("sherpa onnx", "post gres q l" with
 //! form "post gres q l"), but never punctuation, so sentences keep their shape.
 //! Terms with their own punctuation (`C++`, `C#`, `Node.js`) match only when the
-//! text has that punctuation, and the whole literal is replaced. Keys are NFC, so
-//! decomposed "Göteborg" matches too. One pass; written terms are never matched again.
+//! text has that punctuation, and the whole literal is replaced. Text and keys are
+//! NFC, so decomposed "Göteborg" and "Göteborg.dev" match too. One pass; written
+//! terms are never matched again.
 
 use std::borrow::Cow;
 
@@ -56,6 +57,9 @@ pub fn apply(text: &str, entries: &[DictionaryEntry]) -> String {
     if targets.is_empty() {
         return text.to_string();
     }
+    // Offsets below index the NFC text, so literal and word matches agree.
+    let text = nfc(text);
+    let text = text.as_ref();
     let words = words(text);
     let mut output = String::with_capacity(text.len());
     let mut copied = 0;
@@ -78,6 +82,8 @@ pub fn apply(text: &str, entries: &[DictionaryEntry]) -> String {
 /// The term when the whole text, apart from outer punctuation, spells exactly one term.
 pub(super) fn exact_term<'a>(text: &str, entries: &'a [DictionaryEntry]) -> Option<&'a str> {
     let targets = targets(entries, false);
+    let text = nfc(text);
+    let text = text.as_ref();
     let words = words(text);
     let found = find(text, &words, 0, &targets)?;
     let outside = |slice: &str| slice.chars().all(|ch| !part_of_word(ch));
@@ -105,6 +111,9 @@ fn targets(entries: &[DictionaryEntry], forms: bool) -> Vec<Target<'_>> {
 }
 
 fn find<'a>(text: &str, words: &[Word], index: usize, targets: &[Target<'a>]) -> Option<Found<'a>> {
+    if index >= words.len() {
+        return None;
+    }
     literal_match(text, words, index, targets).or_else(|| word_match(text, words, index, targets))
 }
 
@@ -347,6 +356,24 @@ mod tests {
     fn decomposed_letters_match_composed_terms() {
         let entries = [entry("Göteborg", &[])];
         assert_eq!(apply("i go\u{308}teborg idag", &entries), "i Göteborg idag");
+    }
+
+    #[test]
+    fn punctuation_only_spans_are_not_terms() {
+        // Codex review 2 (A1): "Hello , world" aligns "," alone and used to panic.
+        let entries = [entry("Koett", &[])];
+        assert_eq!(exact_term(",", &entries), None);
+        assert_eq!(exact_term("", &entries), None);
+    }
+
+    #[test]
+    fn decomposed_text_matches_punctuated_terms() {
+        // Codex review 2 (A4).
+        let entries = [entry("Göteborg.dev", &[])];
+        assert_eq!(
+            apply("see go\u{308}teborg.dev now", &entries),
+            "see Göteborg.dev now"
+        );
     }
 
     #[test]

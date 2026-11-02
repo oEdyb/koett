@@ -33,6 +33,9 @@ The dictionary's common-word list (`src/dictionary/common-words.txt`) is
 derived from SCOWL 2020.12.07 (English and American words, levels 10 and 20) by
 Kevin Atkinson and contributors. Its copyright and permission notice is in
 `notices/data/scowl/Copyright`.
+The Swedish common-word list (`src/dictionary/common-words-sv.txt`) is derived
+from Språkbanken Text's Flashback corpora statistics under CC BY 4.0; see
+`notices/data/flashback-sv/NOTICE.md`.
 
 Some private/current-PC packages additionally distribute GTK 4.24.1 and
 llama.cpp CPU b11981. These are conditional package contents, not universal

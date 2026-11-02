@@ -5,18 +5,23 @@
 //! Both word sequences are aligned. A differing biased span is used only when
 //! it is exactly one dictionary term; the term then replaces the plain words
 //! that sound closest to it, and every other plain word and its punctuation stay.
-//! If those plain words are all common English ("the cloud" vs "Claude"), the
+//! If those plain words are all common words ("the cloud" vs "Claude"), the
 //! biased reading is too likely a boosted homophone, and the plain words stay.
+//! An inflected form of the term ("parakeets" for "Parakeet") also stays.
+//! Multi-word terms in the biased text are aligned as one unit, so "Olle
+//! Dyberg" can replace "Old Dyberg" even though "Dyberg" matches on its own.
 
 use super::DictionaryEntry;
 use super::correct;
 
 /// A differing plain span longer than this is too ambiguous to place a term in.
 const MAX_PLAIN_SPAN: usize = 8;
+/// Longest dictionary phrase, in words, aligned as one unit.
+const MAX_TERM_WORDS: usize = 4;
 
 pub fn adopt_terms(plain: &str, biased: &str, entries: &[DictionaryEntry]) -> String {
     let left: Vec<&str> = plain.split_whitespace().collect();
-    let right: Vec<&str> = biased.split_whitespace().collect();
+    let right = group_terms(biased.split_whitespace().collect(), entries);
     let left_keys: Vec<String> = left.iter().map(|word| correct::key(word)).collect();
     let right_keys: Vec<String> = right.iter().map(|word| correct::key(word)).collect();
     let mut output: Vec<String> = Vec::with_capacity(left.len());
@@ -43,6 +48,23 @@ pub fn adopt_terms(plain: &str, biased: &str, entries: &[DictionaryEntry]) -> St
     output.join(" ")
 }
 
+/// Join the words of each multi-word term occurrence into one token.
+fn group_terms(words: Vec<&str>, entries: &[DictionaryEntry]) -> Vec<String> {
+    let mut grouped = Vec::with_capacity(words.len());
+    let mut index = 0;
+    while index < words.len() {
+        let span = (2..=MAX_TERM_WORDS.min(words.len() - index))
+            .rev()
+            .find(|&count| {
+                correct::exact_term(&words[index..index + count].join(" "), entries).is_some()
+            })
+            .unwrap_or(1);
+        grouped.push(words[index..index + span].join(" "));
+        index += span;
+    }
+    grouped
+}
+
 /// Replace the run of plain words closest in sound to `term`, keeping the
 /// words around it and the punctuation at its edges.
 fn place(words: &[&str], keys: &[String], term: &str) -> Vec<String> {
@@ -63,7 +85,11 @@ fn place(words: &[&str], keys: &[String], term: &str) -> Vec<String> {
     }
     let (_, start, end) = best;
     let replaced = words[start..end].join(" ");
-    if super::common::is_common(&replaced) && correct::key(&replaced) != target {
+    let replaced_key = correct::key(&replaced);
+    let inflected = ["s", "es", "ed", "ing"]
+        .iter()
+        .any(|suffix| replaced_key == format!("{target}{suffix}"));
+    if inflected || super::common::is_common(&replaced) && replaced_key != target {
         return words.iter().map(|word| word.to_string()).collect();
     }
     let lead = edge(words[start], true);
@@ -74,15 +100,24 @@ fn place(words: &[&str], keys: &[String], term: &str) -> Vec<String> {
     placed
 }
 
-/// Leading or trailing punctuation of a whitespace word.
-fn edge(word: &str, leading: bool) -> &str {
+/// Sentence punctuation at the edge of a plain word: opening marks before it,
+/// closing marks after it. Symbols that belong to the misheard word ("G++")
+/// are not carried over, so a term with its own symbols ("C++") is not doubled.
+fn edge(word: &str, leading: bool) -> String {
     let core = |ch: char| ch.is_alphanumeric();
     if leading {
-        &word[..word.find(core).unwrap_or(word.len())]
+        word[..word.find(core).unwrap_or(word.len())]
+            .chars()
+            .filter(|ch| "\"'([{«“‘¿¡".contains(*ch))
+            .collect()
     } else {
-        &word[word.rfind(core).map_or(0, |index| {
+        let start = word.rfind(core).map_or(0, |index| {
             index + word[index..].chars().next().map_or(0, char::len_utf8)
-        })..]
+        });
+        word[start..]
+            .chars()
+            .filter(|ch| ".,;:!?\"')]}»”’…".contains(*ch))
+            .collect()
     }
 }
 
@@ -213,6 +248,56 @@ mod tests {
         assert_eq!(
             adopt_terms("Ask (koet), please", "Ask Koett please", &dictionary()),
             "Ask (Koett), please"
+        );
+    }
+
+    #[test]
+    fn everyday_swedish_is_not_turned_into_terms() {
+        // Codex review 2 (A5).
+        let dictionary = [DictionaryEntry::new("Figma", &[])];
+        let plain = "Jag fikar idag.";
+        assert_eq!(adopt_terms(plain, "Jag Figma idag.", &dictionary), plain);
+    }
+
+    #[test]
+    fn inflected_forms_of_a_term_stay() {
+        let dictionary = [
+            DictionaryEntry::new("Parakeet", &[]),
+            DictionaryEntry::new("Koett", &[]),
+        ];
+        for plain in [
+            "The parakeets were loud.",
+            "We koetted all day.",
+            "Koetting is fun.",
+        ] {
+            let biased = plain
+                .replace("parakeets", "Parakeet")
+                .replace("koetted", "Koett")
+                .replace("Koetting", "Koett");
+            assert_eq!(adopt_terms(plain, &biased, &dictionary), plain);
+        }
+    }
+
+    #[test]
+    fn punctuation_only_differences_do_not_panic() {
+        // Codex review 2 (A1).
+        let plain = "Hello world";
+        assert_eq!(adopt_terms(plain, "Hello , world", &dictionary()), plain);
+    }
+
+    #[test]
+    fn term_symbols_are_not_doubled() {
+        // Codex review 2 (A2): "Use G++." with biased "Use C++." gave "Use C++++.".
+        let dictionary = [DictionaryEntry::new("C++", &[])];
+        assert_eq!(adopt_terms("Use G++.", "Use C++.", &dictionary), "Use C++.");
+    }
+
+    #[test]
+    fn multiword_terms_align_as_one_unit() {
+        // Codex review 2 (A3): "Dyberg" matched alone and left "Old" unpaired.
+        assert_eq!(
+            adopt_terms("Call Old Dyberg.", "Call Olle Dyberg.", &dictionary()),
+            "Call Olle Dyberg."
         );
     }
 
