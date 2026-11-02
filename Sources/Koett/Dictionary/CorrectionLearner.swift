@@ -44,15 +44,19 @@ public enum CorrectionLearner {
         guard max(a.count, b.count) <= maxTokens else { return [] }
         let steps = align(a, b)
         let edits = steps.filter { !$0.same }.count
-        guard edits > 0, edits <= max(3, max(a.count, b.count) / 3) else { return [] }
+        guard edits <= max(3, max(a.count, b.count) / 3) else { return [] }
         var found = Set<Fix>()
+        for step in steps where step.same {
+            guard let i = step.original, let j = step.corrected else { continue }
+            if a[i] != b[j], distinctive(b[j], known: known) { found.insert(Fix(heard: a[i], term: b[j])) }
+        }
         for span in steps.split(whereSeparator: \.same) {
             let heard = span.compactMap { $0.original.map { a[$0] } }
             let term = span.compactMap { $0.corrected.map { b[$0] } }
             let sized = { (words: [String]) in (1...maxSpanWords).contains(words.count) }
             guard sized(heard), sized(term) else { continue }
             let fix = Fix(heard: heard.joined(separator: " "), term: term.joined(separator: " "))
-            if fix.heard != fix.term, distinctive(fix.term, known: known) { found.insert(fix) }
+            if !equalIgnoringASCIICase(fix.heard, fix.term), distinctive(fix.term, known: known) { found.insert(fix) }
         }
         return found
     }
@@ -63,10 +67,17 @@ public enum CorrectionLearner {
         let same: Bool
     }
 
+    static func equalIgnoringASCIICase(_ a: String, _ b: String) -> Bool {
+        let lower = { (scalar: Unicode.Scalar) -> Unicode.Scalar in
+            (65...90).contains(scalar.value) ? Unicode.Scalar(scalar.value + 32)! : scalar
+        }
+        return a.unicodeScalars.map(lower) == b.unicodeScalars.map(lower)
+    }
+
     /// Levenshtein alignment over words that ignores case.
     static func align(_ a: [String], _ b: [String]) -> [Step] {
-        let left = a.map { $0.lowercased() }
-        let right = b.map { $0.lowercased() }
+        let left = a.map { Array($0.unicodeScalars.flatMap { String($0).lowercased().unicodeScalars }) }
+        let right = b.map { Array($0.unicodeScalars.flatMap { String($0).lowercased().unicodeScalars }) }
         let width = right.count + 1
         var cost = [Int](repeating: 0, count: (left.count + 1) * width)
         for i in 0...left.count {
@@ -101,21 +112,25 @@ public enum CorrectionLearner {
         return steps.reversed()
     }
 
-    /// Whitespace words without sentence punctuation; a term's own (`C#`, `.NET`) stays.
+    /// Whitespace words without surrounding sentence punctuation; a term's own
+    /// symbols (`C++`, `C#`, `.NET`) stay.
     static func tokens(_ text: String) -> [String] {
-        text.split(whereSeparator: \.isWhitespace).compactMap { word in
-            var token = word.drop { openingPunctuation.contains($0) }
-            while let last = token.last, closingPunctuation.contains(last) { token = token.dropLast() }
-            return token.contains(where: { $0.unicodeScalars.first.map(DictionarySpelling.isAlphanumeric) ?? false })
-                ? String(token) : nil
+        DictionaryAdoption.whitespaceWords(text).compactMap { word in
+            var scalars = Substring(word).unicodeScalars[...]
+            while let first = scalars.first, openingPunctuation.contains(Character(first)) { scalars = scalars.dropFirst() }
+            while let last = scalars.last, closingPunctuation.contains(Character(last)) { scalars = scalars.dropLast() }
+            return scalars.contains(where: DictionarySpelling.isAlphanumeric) ? String(String.UnicodeScalarView(scalars)) : nil
         }
     }
 
-    /// A known dictionary term, a term with its own punctuation (`C#`), or a
+    /// A known dictionary term, a word with its own symbols (`C#`), or a
     /// capitalized phrase that is not just everyday words.
     static func distinctive(_ term: String, known: [String]) -> Bool {
-        known.contains(term)
-            || term.contains { !DictionarySpelling.isWordCharacter($0) && !DictionarySpelling.isLoose($0) && $0 != "'" && $0 != "’" }
-            || (term.contains(where: \.isUppercase) && !CommonWords.isCommon(term))
+        let symbols = term.unicodeScalars.contains {
+            !DictionarySpelling.isAlphanumeric($0) && !$0.properties.isWhitespace && $0 != "-" && $0 != "'"
+        }
+        return known.contains(term)
+            || symbols
+            || (term.unicodeScalars.contains { $0.properties.isUppercase } && !CommonWords.isCommon(term))
     }
 }

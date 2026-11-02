@@ -7,7 +7,7 @@ import Foundation
 /// stays untouched. Nothing reaches the dictionary until the user adds it.
 public struct Corrections: Codable, Equatable, Sendable {
     public static let version = 1
-    public static let maxEntries = 1_000
+    public static let maxEntries = 500
     public static let maxDismissed = 1_000
 
     public struct Correction: Codable, Equatable, Sendable {
@@ -75,7 +75,11 @@ public struct Corrections: Codable, Equatable, Sendable {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(saved)
         let folder = url.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: folder,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let partial = folder.appendingPathComponent(".\(url.lastPathComponent).\(ProcessInfo.processInfo.processIdentifier).part")
         guard FileManager.default.createFile(
             atPath: partial.path,
@@ -107,7 +111,12 @@ public struct Corrections: Codable, Equatable, Sendable {
         if trimmed != original.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty {
             entries.append(Correction(id: id, original: original, corrected: trimmed, updatedAtMS: nowMS))
         }
-        if entries.count > Self.maxEntries { entries.removeFirst(entries.count - Self.maxEntries) }
+        if entries.count > Self.maxEntries {
+            entries = entries.enumerated()
+                .sorted { ($0.element.updatedAtMS, $0.offset) < ($1.element.updatedAtMS, $1.offset) }
+                .map(\.element)
+            entries.removeFirst(entries.count - Self.maxEntries)
+        }
     }
 
     public mutating func dismiss(_ suggestion: Suggestion) {
@@ -120,9 +129,19 @@ public struct Corrections: Codable, Equatable, Sendable {
         dismissed.contains { $0.heard == suggestion.heard && $0.term == suggestion.term }
     }
 
+    /// Everything the corrections teach. This is the slow part; callers cache it
+    /// until a correction changes.
+    public func learned(_ dictionary: [DictionaryEntry]) -> [Suggestion] {
+        CorrectionLearner.learn(entries.map { ($0.original, $0.corrected) }, known: dictionary.map(\.term))
+    }
+
     /// Suggestions not yet dismissed and not already in the dictionary.
     public func proposals(_ dictionary: [DictionaryEntry]) -> [Proposal] {
-        CorrectionLearner.learn(entries.map { ($0.original, $0.corrected) }, known: dictionary.map(\.term))
+        filter(learned(dictionary), dictionary)
+    }
+
+    public func filter(_ learned: [Suggestion], _ dictionary: [DictionaryEntry]) -> [Proposal] {
+        learned
             .filter { !isDismissed($0) }
             .filter { !KoettDictionary.covers(dictionary, term: $0.term, heard: $0.heard) }
             .map { Proposal(suggestion: $0, everyday: CommonWords.isCommon($0.heard)) }

@@ -3,92 +3,68 @@ import Foundation
 /// Keeps the plain decode and takes only the boosted decode's dictionary
 /// words; a port of `CrossPlatform/src/dictionary/merge.rs`.
 ///
-/// Both word sequences are aligned. A differing boosted span is used only when
-/// it, with at most three matching neighbours on each side, is exactly one
-/// term ("Old Dyberg" → "Olle Dyberg"). The term replaces the plain words
-/// closest in sound, keeping every other plain word and its punctuation. When
-/// those plain words are all everyday words, the boosted term is too likely a
-/// homophone ("the cloud" → "Claude") and the plain words stay.
+/// Multi-word terms in the boosted text are joined into one token, then both
+/// word sequences are aligned. A differing boosted span is used only when it is
+/// exactly one term; the term replaces the plain words closest in sound, and
+/// every other plain word and its sentence punctuation stay. Plain words that
+/// are all everyday words ("the cloud" vs "Claude"), or the term plus an ending
+/// ("parakeets" for "Parakeet"), stay too.
 public enum DictionaryAdoption {
     static let maxPlainSpan = 8
-    static let maxNeighbours = 3
-
-    enum Block {
-        case same(plain: Int)
-        case differs(plain: Range<Int>, biased: Range<Int>)
-    }
+    static let maxTermWords = 4
+    static let opening: Set<Character> = ["\"", "'", "(", "[", "{", "«", "“", "‘", "¿", "¡"]
+    static let closing: Set<Character> = [".", ",", ";", ":", "!", "?", "\"", "'", ")", "]", "}", "»", "”", "’", "…"]
 
     public static func adoptTerms(plain: String, biased: String, entries: [DictionaryEntry]) -> String {
-        let left = plain.split(whereSeparator: \.isWhitespace).map(String.init)
-        let right = biased.split(whereSeparator: \.isWhitespace).map(String.init)
+        let left = whitespaceWords(plain)
+        let right = groupTerms(whitespaceWords(biased), entries)
         let leftKeys = left.map(DictionarySpelling.key)
         let rightKeys = right.map(DictionarySpelling.key)
-        let blocks = blocks(matches(leftKeys, rightKeys), left: left.count, right: right.count)
-
         var output: [String] = []
-        var unlocked = 0
-        var index = 0
-        while index < blocks.count {
-            switch blocks[index] {
-            case .same(let word):
-                output.append(left[word])
-                index += 1
-            case .differs(let plainRange, let biasedRange):
-                if let adopted = adopt(blocks, index, plainRange, biasedRange, unlocked, left, leftKeys, right, entries) {
-                    output.removeLast(adopted.before)
-                    output += adopted.words
-                    index += adopted.after + 1
-                    unlocked = index
-                } else {
-                    output += left[plainRange]
-                    index += 1
-                }
+        var (i, j) = (0, 0)
+        for (nextI, nextJ) in matches(leftKeys, rightKeys) + [(left.count, right.count)] {
+            let plainSpan = Array(left[i..<nextI])
+            let term = j < nextJ
+                ? DictionarySpelling.exactTerm(right[j..<nextJ].joined(separator: " "), entries: entries)
+                : nil
+            if let term, plainSpan.count <= maxPlainSpan {
+                output += place(plainSpan, Array(leftKeys[i..<nextI]), term: term)
+            } else {
+                output += plainSpan
             }
+            if nextI < left.count { output.append(left[nextI]) }
+            (i, j) = (nextI + 1, nextJ + 1)
         }
         return output.joined(separator: " ")
     }
 
-    private static func adopt(
-        _ blocks: [Block],
-        _ index: Int,
-        _ plainRange: Range<Int>,
-        _ biasedRange: Range<Int>,
-        _ unlocked: Int,
-        _ left: [String],
-        _ leftKeys: [String],
-        _ right: [String],
-        _ entries: [DictionaryEntry]
-    ) -> (before: Int, after: Int, words: [String])? {
-        guard !biasedRange.isEmpty else { return nil }
-        let isSame = { (block: Int) in
-            if case .same = blocks[block] { return true }
-            return false
+    static func whitespaceWords(_ text: String) -> [String] {
+        text.unicodeScalars
+            .split(whereSeparator: { $0.properties.isWhitespace })
+            .map { String(String.UnicodeScalarView($0)) }
+    }
+
+    /// Join the words of each multi-word term occurrence into one token.
+    static func groupTerms(_ words: [String], _ entries: [DictionaryEntry]) -> [String] {
+        var grouped: [String] = []
+        var index = 0
+        while index < words.count {
+            let longest = min(maxTermWords, words.count - index)
+            let span = longest < 2 ? 1 : (2...longest).reversed().first { count in
+                DictionarySpelling.exactTerm(words[index..<index + count].joined(separator: " "), entries: entries) != nil
+            } ?? 1
+            grouped.append(words[index..<index + span].joined(separator: " "))
+            index += span
         }
-        var before = 0
-        while before < maxNeighbours, index - before - 1 >= unlocked, isSame(index - before - 1) { before += 1 }
-        var after = 0
-        while after < maxNeighbours, index + after + 1 < blocks.count, isSame(index + after + 1) { after += 1 }
-        let extensions = (0...before).flatMap { lead in (0...after).map { (lead, $0) } }
-            .sorted { ($0.0 + $0.1, $0.0) < ($1.0 + $1.1, $1.0) }
-        for (lead, trail) in extensions {
-            let plainSpan = (plainRange.lowerBound - lead)..<(plainRange.upperBound + trail)
-            let biasedSpan = (biasedRange.lowerBound - lead)..<(biasedRange.upperBound + trail)
-            guard plainSpan.count <= maxPlainSpan,
-                  let term = DictionarySpelling.exactTerm(
-                      right[biasedSpan].joined(separator: " "),
-                      entries: entries
-                  ) else { continue }
-            let words = Array(left[plainSpan])
-            return (lead, trail, place(words, Array(leftKeys[plainSpan]), term: term))
-        }
-        return nil
+        return grouped
     }
 
     /// Replace the run of plain words closest in sound to `term`, keeping the
     /// words around it and the punctuation at its edges.
     static func place(_ words: [String], _ keys: [String], term: String) -> [String] {
         guard !words.isEmpty else { return [term] }
-        let target = Array(DictionarySpelling.key(term).unicodeScalars)
+        let targetKey = DictionarySpelling.key(term)
+        let target = Array(targetKey.unicodeScalars)
         var best = (cost: Int.max, start: 0, end: 0)
         for start in words.indices {
             var joined: [Unicode.Scalar] = []
@@ -100,39 +76,26 @@ public enum DictionaryAdoption {
         }
         let replaced = words[best.start..<best.end].joined(separator: " ")
         let replacedKey = DictionarySpelling.key(replaced)
-        let targetKey = String(String.UnicodeScalarView(target))
-        if CommonWords.isCommon(replaced), replacedKey != targetKey { return words }
-        if isInflection(replacedKey, of: targetKey) { return words }
-        let lead = edge(words[best.start], leading: true, term: term)
-        let trail = edge(words[best.end - 1], leading: false, term: term)
+        let inflected = ["s", "es", "ed", "ing"].contains { replacedKey == targetKey + $0 }
+        if inflected || (CommonWords.isCommon(replaced) && replacedKey != targetKey) { return words }
+        let lead = edge(words[best.start], leading: true)
+        let trail = edge(words[best.end - 1], leading: false)
         return Array(words[..<best.start]) + [lead + term + trail] + Array(words[best.end...])
     }
 
-    static let inflections = ["s", "es", "ed", "ing"]
-
-    /// "parakeets" for "Parakeet": the plain word is the term plus an ending, so
-    /// it was heard right; the spelling pass leaves it alone the same way.
-    static func isInflection(_ word: String, of term: String) -> Bool {
-        word.count > term.count && word.hasPrefix(term)
-            && inflections.contains(String(word.dropFirst(term.count)))
-    }
-
-    /// Leading or trailing punctuation of a whitespace word, without the
-    /// punctuation the term brings itself (plain "G++." with term "C++" keeps ".").
-    static func edge(_ word: String, leading: Bool, term: String) -> String {
-        let core = { (character: Character) in
-            character.unicodeScalars.first.map(DictionarySpelling.isAlphanumeric) ?? false
-        }
+    /// Sentence punctuation at the edge of a plain word. Symbols of the misheard
+    /// word ("G++") are not carried over, so "C++" is not doubled.
+    static func edge(_ word: String, leading: Bool) -> String {
+        let scalars = Array(word.unicodeScalars)
+        let core = { (scalar: Unicode.Scalar) in DictionarySpelling.isAlphanumeric(scalar) }
+        let marks: [Unicode.Scalar]
         if leading {
-            let own = Set(term.prefix { !core($0) })
-            var lead = word.prefix { !core($0) }
-            while let last = lead.last, own.contains(last) { lead = lead.dropLast() }
-            return String(lead)
+            marks = Array(scalars.prefix { !core($0) })
+        } else {
+            marks = Array(scalars.reversed().prefix { !core($0) }.reversed())
         }
-        let own = Set(term.reversed().prefix { !core($0) })
-        var trail = Substring(String(word.reversed().prefix { !core($0) }.reversed()))
-        while let first = trail.first, own.contains(first) { trail = trail.dropFirst() }
-        return String(trail)
+        let allowed = leading ? opening : closing
+        return String(String.UnicodeScalarView(marks.filter { allowed.contains(Character($0)) }))
     }
 
     static func distance(_ a: [Unicode.Scalar], _ b: [Unicode.Scalar]) -> Int {
@@ -147,20 +110,6 @@ public enum DictionaryAdoption {
             }
         }
         return row[b.count]
-    }
-
-    /// Matching and differing runs, in order, from the aligned index pairs.
-    static func blocks(_ pairs: [(Int, Int)], left: Int, right: Int) -> [Block] {
-        var blocks: [Block] = []
-        var (i, j) = (0, 0)
-        for (nextI, nextJ) in pairs + [(left, right)] {
-            if i < nextI || j < nextJ {
-                blocks.append(.differs(plain: i..<nextI, biased: j..<nextJ))
-            }
-            if nextI < left { blocks.append(.same(plain: nextI)) }
-            (i, j) = (nextI + 1, nextJ + 1)
-        }
-        return blocks
     }
 
     /// Index pairs of a longest common subsequence of word keys, in order.

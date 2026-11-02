@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Matching ignores case, spaces and hyphens, never punctuation. Terms with
 /// their own punctuation (`C++`, `.NET`) match only with it and are replaced
-/// whole. Comparison is canonical, so decomposed "Göteborg" matches. One pass.
+/// whole. Text and keys are NFC, so decomposed "Göteborg.dev" matches. One pass.
 public enum DictionarySpelling {
     static let maxSpanWords = 4
 
@@ -40,7 +40,7 @@ public enum DictionarySpelling {
     public static func apply(_ text: String, entries: [DictionaryEntry]) -> String {
         let targets = targets(entries, forms: true)
         guard !targets.isEmpty else { return text }
-        let characters = Array(text)
+        let characters = Array(text.precomposedStringWithCanonicalMapping)
         let words = words(characters)
         var output = ""
         var copied = 0
@@ -61,7 +61,7 @@ public enum DictionarySpelling {
 
     /// The term when the whole text, apart from outer punctuation, spells exactly one term.
     static func exactTerm(_ text: String, entries: [DictionaryEntry]) -> String? {
-        let characters = Array(text)
+        let characters = Array(text.precomposedStringWithCanonicalMapping)
         let words = words(characters)
         guard !words.isEmpty,
               let found = find(characters, words, 0, targets(entries, forms: false)) else { return nil }
