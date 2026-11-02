@@ -144,3 +144,12 @@ dictation. Hover actions replace the strip inside the row. The strip is full wid
 from the first frame and, after 16 s, resamples the whole dictation every frame, so
 it compresses smoothly. Paste again and the hover model name are gone; the tray
 keeps Paste last.
+
+## 2026-11-02: pill UI rules are a cross-platform contract
+
+The Mac pill at `e0ca1b9` passed its live test, so its rules are now the
+contract for both platforms: one fixed 300×48 row, a rolling full-width strip,
+in-place morphs, a short Done with Copy on the right, rescue states that wait,
+and off-screen renders at 0:05, 1:00, 5:00 and 20:00 plus morph frames before
+any merge. See "Pill and overlay UI rules" in `docs/ui-design.md`. The Linux
+strip still resamples the whole dictation and should move to the rolling window.
