@@ -60,9 +60,9 @@ pub fn prepare() -> Result<(), String> {
 // The maintained Rust GTK layer-shell wrapper has a mandatory native link.
 // Keep this optional ABI boundary limited to the upstream stable 1.0 C API.
 // The handle outlives every function call and the layer window.
-struct LayerShell(Library);
+pub(super) struct LayerShell(Library);
 impl LayerShell {
-    fn load() -> Result<Self, Box<dyn std::error::Error>> {
+    pub(super) fn load() -> Result<Self, Box<dyn std::error::Error>> {
         if !PRELOADED.load(Ordering::Relaxed) {
             return Err("layer-shell was not preloaded".into());
         }
@@ -96,6 +96,59 @@ impl LayerShell {
             anchor(pointer, 3, 1);
             margin(pointer, 3, 24);
             zone(pointer, -1);
+        }
+        Ok(())
+    }
+
+    /// Full-monitor overlay surface. Enums: overlay=3, keyboard none=0 or
+    /// exclusive=1, edges left=0 right=1 top=2 bottom=3.
+    pub(super) fn cover(
+        &self,
+        window: &gtk::Window,
+        monitor: &gtk::gdk::Monitor,
+        exclusive_keyboard: bool,
+    ) -> Result<(), libloading::Error> {
+        type WindowFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow);
+        type IntFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32);
+        type EdgeFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32, i32);
+        type MonitorFn =
+            unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, *mut gtk::gdk::ffi::GdkMonitor);
+        type NameFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, *const std::ffi::c_char);
+        // SAFETY: exact upstream C signatures, live library, live monitor and an
+        // unrealized GTK window on the GTK thread.
+        unsafe {
+            let init = self.0.get::<WindowFn>(b"gtk_layer_init_for_window\0")?;
+            let layer = self.0.get::<IntFn>(b"gtk_layer_set_layer\0")?;
+            let keyboard = self.0.get::<IntFn>(b"gtk_layer_set_keyboard_mode\0")?;
+            let anchor = self.0.get::<EdgeFn>(b"gtk_layer_set_anchor\0")?;
+            let zone = self.0.get::<IntFn>(b"gtk_layer_set_exclusive_zone\0")?;
+            let set_monitor = self.0.get::<MonitorFn>(b"gtk_layer_set_monitor\0")?;
+            let namespace = self.0.get::<NameFn>(b"gtk_layer_set_namespace\0")?;
+            let pointer = window.to_glib_none().0;
+            init(pointer);
+            namespace(pointer, c"koett-sketch".as_ptr());
+            layer(pointer, 3);
+            keyboard(pointer, i32::from(exclusive_keyboard));
+            set_monitor(pointer, monitor.to_glib_none().0);
+            for edge in 0..4 {
+                anchor(pointer, edge, 1);
+            }
+            zone(pointer, -1);
+        }
+        Ok(())
+    }
+
+    /// Releases (0) or takes (1) exclusive keyboard focus on a layer window.
+    pub(super) fn set_keyboard(
+        &self,
+        window: &gtk::Window,
+        mode: i32,
+    ) -> Result<(), libloading::Error> {
+        type IntFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32);
+        // SAFETY: upstream signature; the window was initialized by `cover`.
+        unsafe {
+            let keyboard = self.0.get::<IntFn>(b"gtk_layer_set_keyboard_mode\0")?;
+            keyboard(window.to_glib_none().0, mode);
         }
         Ok(())
     }
@@ -699,8 +752,13 @@ impl RecordingOverlay {
         pill.dark = dark;
         pill.levels = levels.cloned();
         pill.paused = recording && levels.is_some_and(crate::audio::AudioLevels::paused);
-        for event in crate::sketch::drain() {
-            pill.timeline.apply(event);
+        for update in crate::sketch::drain() {
+            match update {
+                crate::sketch::SketchUpdate::Upsert(event) => {
+                    pill.timeline.apply(event);
+                }
+                crate::sketch::SketchUpdate::Removed { index } => pill.timeline.remove(index),
+            }
         }
         let elapsed_ms = started.map_or(pill.duration_ms, |started| {
             u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX)

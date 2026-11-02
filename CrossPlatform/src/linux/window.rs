@@ -346,6 +346,10 @@ fn build_window(
         actions.clone(),
     );
     let mut done_until = None::<Instant>;
+    let sketch = super::sketch::SketchOverlay::new();
+    let sketch_application = application.clone();
+    let mut asking_until = None::<Instant>;
+    let mut sketch_recording = 0_u64;
     let mut recording_started = None::<Instant>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
@@ -389,6 +393,8 @@ fn build_window(
                 }
                 match update {
                     Update::PrepareAsk(ack) => {
+                        // The next recording is an Ask question, not dictation.
+                        asking_until = Some(Instant::now() + Duration::from_secs(20));
                         media_result = false;
                         recovery_until = None;
                         ask.hide();
@@ -554,6 +560,8 @@ fn build_window(
                         let recording = message.starts_with("Recording");
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
+                            // Scope sketches to this recording, even with drawing off.
+                            sketch_recording = super::sketch::begin_recording();
                             done_until = None;
                             feedback = super::feedback::CaptureFeedback::default();
                             recovery_until = None;
@@ -561,6 +569,13 @@ fn build_window(
                             notice_until = None;
                         }
                         if !recording {
+                            if recording_started.is_some() {
+                                asking_until = None;
+                                // Cancelled or failed: no transcript will claim them.
+                                if !message.starts_with("Transcribing") {
+                                    super::sketch::discard_recording();
+                                }
+                            }
                             recording_started = None;
                         }
                         let action = super::menu::recording_action(&message);
@@ -619,6 +634,18 @@ fn build_window(
                 && let Some(levels) = &audio_levels
             {
                 meter.set_value(f64::from((levels.current().0 * 10.0).clamp(0.0, 1.0)));
+            }
+            if let Some(sketch) = &sketch {
+                let asking = asking_until.is_some_and(|until| Instant::now() < until);
+                let paused = audio_levels
+                    .as_ref()
+                    .is_some_and(crate::audio::AudioLevels::paused);
+                sketch.update(
+                    &sketch_application,
+                    recording_started.map(|started| (started, sketch_recording)),
+                    asking,
+                    paused,
+                );
             }
             if let Some(overlay) = &overlay {
                 overlay.update(

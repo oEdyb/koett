@@ -1,5 +1,5 @@
 use crate::replacements::Replacement;
-use crate::settings::{PasteShortcut, RecordingMode, Settings};
+use crate::settings::{DrawKey, PasteShortcut, RecordingMode, Settings};
 use gtk4::{self as gtk, prelude::*};
 
 pub fn show(
@@ -397,6 +397,32 @@ Media: open Koett → Transcribe media",
         PasteShortcut::CtrlShiftV => "ctrl_shift_v",
     }));
     row(&text, "Paste shortcut", &paste);
+    let draw = gtk::CheckButton::with_label("_Draw on screen while dictating");
+    draw.set_use_underline(true);
+    draw.set_active(settings.draw_while_dictating);
+    text.append(&draw);
+    let draw_help = gtk::Label::new(Some(
+        "Hold the draw key and move the pointer to sketch on any screen. Sketches paste as one numbered image, then the text linked to each number. Needs KDE, niri, Sway or Hyprland; KDE asks once for screenshot permission.",
+    ));
+    draw_help.set_wrap(true);
+    draw_help.set_xalign(0.0);
+    draw_help.add_css_class("koett-setting-help");
+    text.append(&draw_help);
+    let draw_key = gtk::ComboBoxText::new();
+    draw_key.append(Some("shift"), "Shift");
+    draw_key.append(Some("control"), "Ctrl");
+    draw_key.append(Some("alt"), "Alt");
+    draw_key.set_active_id(Some(match settings.draw_key {
+        DrawKey::Shift => "shift",
+        DrawKey::Control => "control",
+        DrawKey::Alt => "alt",
+    }));
+    draw_key.set_sensitive(draw.is_active());
+    draw.connect_toggled({
+        let draw_key = draw_key.clone();
+        move |draw| draw_key.set_sensitive(draw.is_active())
+    });
+    row(&text, "Draw key", &draw_key);
     let replacements_title = gtk::Label::new(Some("Word replacements"));
     replacements_title.set_xalign(0.0);
     replacements_title.add_css_class("heading");
@@ -503,6 +529,12 @@ Media: open Koett → Transcribe media",
                 }
             };
             updated.pause_media = pause_media.is_active();
+            updated.draw_while_dictating = draw.is_active();
+            updated.draw_key = match draw_key.active_id().as_deref() {
+                Some("control") => DrawKey::Control,
+                Some("alt") => DrawKey::Alt,
+                _ => DrawKey::Shift,
+            };
             let mut edit = match Settings::edit() {
                 Ok(edit) => edit,
                 Err(message) => {

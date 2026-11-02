@@ -10,10 +10,11 @@ use super::{
     DIRECT_DECODE_LIMIT, MODEL_SAMPLE_RATE, ParakeetTranscriber, Transcriber, Transcript,
     VAD_WINDOW_SIZE,
 };
+use crate::annotation::TimedText;
 use crate::audio::AudioRecording;
 
 pub struct BackgroundSession {
-    completed: Receiver<Result<Option<String>, String>>,
+    completed: Receiver<Result<Option<TimedText>, String>>,
     cancelled: Arc<AtomicBool>,
 }
 
@@ -35,7 +36,7 @@ enum WorkerCommand {
         sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
         cancelled: Arc<AtomicBool>,
-        completed: Sender<Result<Option<String>, String>>,
+        completed: Sender<Result<Option<TimedText>, String>>,
     },
     Transcribe {
         audio: Arc<AudioRecording>,
@@ -128,9 +129,10 @@ impl TranscriptionWorker {
             .recv()
             .unwrap_or_else(|_| Err("background transcription stopped unexpectedly".to_string()))
         {
-            Ok(Some(text)) => Ok(Transcript {
+            Ok(Some(timed)) => Ok(Transcript {
                 raw: None,
-                text,
+                text: timed.text,
+                words: timed.words,
                 audio_duration: audio.duration(),
                 transcription: started.elapsed(),
             }),
@@ -259,7 +261,7 @@ impl ParakeetTranscriber {
         input_sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
         cancelled: &AtomicBool,
-    ) -> Result<Option<String>, String> {
+    ) -> Result<Option<TimedText>, String> {
         let Some(vad) = &self.vad else {
             while !cancelled.load(Ordering::Acquire) {
                 match audio_chunks.recv_timeout(std::time::Duration::from_millis(25)) {
@@ -275,7 +277,7 @@ impl ParakeetTranscriber {
         let mut resampler = None;
         let mut model_samples = Vec::new();
         let mut model_offset = 0_usize;
-        let mut parts = Vec::new();
+        let mut parts = TimedText::default();
         let mut is_long = false;
 
         loop {
@@ -341,12 +343,12 @@ impl ParakeetTranscriber {
         }
         vad.flush();
         self.decode_ready_vad_segments(&mut parts, true)?;
-        Ok(Some(parts.join(" ")))
+        Ok(Some(parts))
     }
 
     /// Decodes closed VAD segments. On the final call the remaining count is
     /// known, so it is published as the plan before decoding starts.
-    fn decode_ready_vad_segments(&self, parts: &mut Vec<String>, last: bool) -> Result<(), String> {
+    fn decode_ready_vad_segments(&self, parts: &mut TimedText, last: bool) -> Result<(), String> {
         let vad = self
             .vad
             .as_ref()
@@ -360,11 +362,10 @@ impl ParakeetTranscriber {
             super::progress_plan(segments.len());
         }
         for segment in segments {
-            let (text, _) = self.decode_bounded(segment.samples())?;
+            let offset = segment.start() as f32 / MODEL_SAMPLE_RATE as f32;
+            let (text, words, _) = self.decode_timed(segment.samples(), offset)?;
             super::progress_step();
-            if !text.is_empty() {
-                parts.push(text);
-            }
+            parts.push(&text, words);
         }
         Ok(())
     }

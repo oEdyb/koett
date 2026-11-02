@@ -1,3 +1,4 @@
+pub mod annotation;
 pub mod audio;
 pub mod corrections;
 pub mod dictionary;

@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Paste target</title>
+<style>body{font:15px sans-serif;margin:16px;background:#fafafa}#box{min-height:520px;border:2px solid #4a7;padding:10px;background:#fff}
+#box img{max-width:640px;display:block;margin:6px 0;border:1px solid #999}#log{font:12px monospace;white-space:pre-wrap;color:#333}</style></head>
+<body><div id="box" contenteditable="true"></div><pre id="log"></pre>
+<script>
+const box=document.getElementById('box'),log=document.getElementById('log');let n=0;
+function note(s){log.textContent+=s+"\n";document.title='pastes='+(++n);}
+box.addEventListener('paste',async e=>{
+  e.preventDefault();const items=[...e.clipboardData.items];
+  note('paste '+n+' types='+items.map(i=>i.type).join(','));
+  const img=items.find(i=>i.type.startsWith('image/'));
+  if(img){const f=img.getAsFile();const url=URL.createObjectURL(f);const el=new Image();
+    el.onload=()=>note('  image '+el.naturalWidth+'x'+el.naturalHeight+' bytes='+f.size);el.src=url;box.appendChild(el);return;}
+  const t=e.clipboardData.getData('text/plain');const p=document.createElement('div');p.textContent=t;box.appendChild(p);note('  text '+JSON.stringify(t));
+});
+box.focus();
+</script></body></html>

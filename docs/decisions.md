@@ -72,3 +72,19 @@ One-edit fuzzy matching was dropped: +2 points recall for 3 false rewrites
 ("parakeets" → "Parakeet"). Exact spelling normalization and user sounds-like
 forms stay. An empty dictionary keeps the old greedy path. Details and the Mac
 plan: `docs/dictionary.md`.
+
+## 2026-11-02: draw while dictating uses layer-shell, screen stills and one contact sheet
+
+Olle asked for Scrawl's sketch-and-talk behaviour and chose its paste format: one
+numbered contact-sheet PNG, then `- #N (M:SS) “words”` text. Linux uses one
+layer-shell overlay per monitor during dictation (off by default). Wayland has no
+global key state, so the overlay holds exclusive keyboard focus while recording
+to see the draw key, and releases it before paste. KWin reported stale modifier
+state on pointer events, so drawing follows the overlay's own key events.
+Stills, not video: each closed sketch captures its monitor with the ink visible,
+first through `grim` (wlr-screencopy: niri, Sway, Hyprland; Olle's niri disables
+the Screenshot portal) and otherwise through the non-interactive Screenshot portal
+(KDE asks once). Parakeet token timestamps link words to sketches. Image and text
+are pasted sequentially, because a single clipboard offer with both types makes
+each app choose only one of them. GNOME and X11 lack layer-shell and keep normal
+dictation. Details, limits and the Mac to-do: docs/draw-while-dictating.md.

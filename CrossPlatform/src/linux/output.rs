@@ -4,6 +4,12 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub static WINDOW_ACTIVE: AtomicBool = AtomicBool::new(false);
+/// Longest wait for the target to read a pasted contact sheet.
+pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(1500);
+/// Settle time after the image read, before the clipboard changes to text.
+pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
+/// wl-copy cannot report reads, so wait this long after an image paste.
+const WL_COPY_IMAGE_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 
 pub fn focused_window() -> Option<u32> {
     let output = Command::new("niri")
@@ -49,6 +55,36 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
     } else {
         Err("Copied · paste manually (virtual keyboard unavailable)".into())
     }
+}
+
+/// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
+/// text chord (terminal agents read the image themselves on Ctrl+V).
+pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
+    let mut copy = Command::new("wl-copy")
+        .args(["--type", "image/png"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Copy failed: {e}"))?;
+    copy.stdin
+        .take()
+        .ok_or("Clipboard input unavailable")?
+        .write_all(png)
+        .map_err(|e| e.to_string())?;
+    if !copy.wait().map_err(|e| e.to_string())?.success() {
+        return Err("image copy failed".into());
+    }
+    if !target_unchanged(target) {
+        return Err("target window changed".into());
+    }
+    let status = Command::new("wtype")
+        .args(wtype_arguments(PasteShortcut::CtrlV))
+        .status()
+        .map_err(|e| format!("automatic paste unavailable: {e}"))?;
+    if !status.success() {
+        return Err("virtual keyboard unavailable".into());
+    }
+    std::thread::sleep(WL_COPY_IMAGE_WAIT);
+    Ok(())
 }
 
 pub(super) fn paste_keysyms(shortcut: PasteShortcut) -> &'static [u32] {
