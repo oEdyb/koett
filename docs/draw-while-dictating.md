@@ -18,7 +18,11 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Recognizer word timestamps link speech to sketches: each sketch owns the words
   from the start of the clause in progress when it began until the next sketch;
   words before the first sketch belong to it. Clauses break at `, . ; : ? ! …`
-  or a 1.5 s pause.
+  or a 1.5 s pause. When replacements or cleanup change the text, recognizer
+  words are aligned to the final words (longest common subsequence), so removed
+  fillers cannot shift a sketch's words; unmatched spans map proportionally.
+- Each captured monitor is cropped around the sketch's ink, keeping at least
+  45% of the monitor in each direction as context.
 - On paste: one numbered contact-sheet PNG (sketches in time order, number chip
   per tile, 1600 px long edge) is pasted with Ctrl+V; once the target has read it,
   the text is pasted with the configured chord as
@@ -48,8 +52,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   global key state). Typing into another app during a recording is blocked while
   the feature is on; compositor and portal shortcuts still work. Focus returns
   to the previous window when recording stops, before paste.
-- The recording pill and the ink are part of the captured image; keyframes are
-  whole monitors (no auto-crop yet).
+- The ink (and the recording pill when the ink is near it) is part of the
+  captured image.
 - Multi-monitor: one overlay and one capture per monitor; portal images that
   span the desktop are cropped per monitor (unit-tested). The lab has a single
   virtual output, so multi-monitor drawing is not yet verified on hardware.
@@ -77,3 +81,19 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 5. Contact sheet with Core Graphics using the same layout constants.
 6. Paste: `NSPasteboard` PNG + Command-V, wait for the read, then the text.
 7. Run the root AGENTS.md Swift checks and a live test with Olle.
+
+## How this was chosen (2026-11-02)
+
+Olle asked for parallel takes. Two sub-agents built alternatives from the same
+base commit; each was compared on its own checks and against the lab flow above.
+
+- **Speech linking take** (`take/sketch-linking`): a 16-scenario labelled corpus
+  (draw-then-speak, two sketches in one clause, long pauses, filler removal…).
+  The original proportional mapping scored 13/16 scenarios, 48/51 words; the
+  word-alignment mapping scored 16/16, 51/51. Adopted, with the corpus as
+  regression tests (`src/annotation/evaluation.rs`).
+- **Clean-frame capture take** (`take/sketch-clean-frame`): capture a clean frame
+  when a sketch starts, composite the ink in software, crop around it. Its crop
+  was adopted on top of the verified capture-with-ink path. Clean-frame capture
+  was not: it was never measured on a real capture, can race the first stroke,
+  and the first frame can still contain the pill.

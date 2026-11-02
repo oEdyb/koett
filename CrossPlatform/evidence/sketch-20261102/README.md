@@ -24,3 +24,6 @@ After rebasing onto main with the Timeline pill (PR #5):
    sketch moments, published through `koett_engine::sketch`.
 6. `06-rebased-on-timeline-pill-pasted.png`: same two-sketch paste (1600×457
    sheet, then two linked bullets); pill shows Done.
+7. `07-ink-cropped-sheet-with-aligned-linking.png`: final branch (alignment
+   linker + ink-aware crop). Tiles are cropped around each sketch's ink with at
+   least 45% of the monitor as context; the pill is outside both crops.

@@ -135,9 +135,6 @@ fn labelled_linking_corpus() {
             &["one", "two", "three"],
         ),
     ];
-    let mut exact = [0; 2];
-    let mut correct = [0; 2];
-    let mut total = 0;
     for &(name, raw, final_text, starts, anchors, labels) in cases {
         let words = if starts.is_empty() {
             estimate_words(raw, 0., 4.)
@@ -165,42 +162,7 @@ fn labelled_linking_corpus() {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        let outputs = [
-            baseline_summary(final_text, &words, anchors),
-            keyframe_summary(final_text, &words, anchors),
-        ];
-        total += final_text.split_whitespace().count();
-        for (method, output) in outputs.iter().enumerate() {
-            exact[method] += usize::from(*output == expected);
-            // Count final-text word positions assigned to the labelled sketch.
-            let mut position = 0;
-            let expected_owners: Vec<_> = labels
-                .iter()
-                .enumerate()
-                .flat_map(|(i, l)| l.split_whitespace().map(move |_| i))
-                .collect();
-            for (owner, line) in output.lines().enumerate() {
-                if let Some((_, text)) = line.split_once('“') {
-                    for _ in text.trim_end_matches('”').split_whitespace() {
-                        correct[method] +=
-                            usize::from(expected_owners.get(position) == Some(&owner));
-                        position += 1;
-                    }
-                }
-            }
-        }
-        assert_eq!(outputs[1], expected, "{name}");
+        let output = keyframe_summary(final_text, &words, anchors);
+        assert_eq!(output, expected, "{name}");
     }
-    println!(
-        "method | exact | word ownership\ncurrent | {}/{} | {}/{}\naligned | {}/{} | {}/{}",
-        exact[0],
-        cases.len(),
-        correct[0],
-        total,
-        exact[1],
-        cases.len(),
-        correct[1],
-        total
-    );
-    assert!(exact[1] > exact[0]);
 }

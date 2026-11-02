@@ -67,6 +67,52 @@ pub fn crop(png: &[u8], x: i32, y: i32, width: i32, height: i32) -> Result<Vec<u
     encode(target)
 }
 
+/// Logical crop around the ink: its bounding box plus 40 px, at least 45% of
+/// the monitor each way for context, clamped to the monitor.
+fn ink_crop(logical: (i32, i32), strokes: &[Vec<(f64, f64)>]) -> (f64, f64, f64, f64) {
+    let (width, height) = (f64::from(logical.0), f64::from(logical.1));
+    let mut bounds = (width, height, 0.0_f64, 0.0_f64);
+    for &(x, y) in strokes.iter().flatten() {
+        bounds = (
+            bounds.0.min(x),
+            bounds.1.min(y),
+            bounds.2.max(x),
+            bounds.3.max(y),
+        );
+    }
+    if bounds.0 > bounds.2 {
+        return (0.0, 0.0, width, height);
+    }
+    let crop_width = (bounds.2 - bounds.0 + 80.0).max(width * 0.45).min(width);
+    let crop_height = (bounds.3 - bounds.1 + 80.0).max(height * 0.45).min(height);
+    (
+        ((bounds.0 + bounds.2 - crop_width) / 2.0).clamp(0.0, width - crop_width),
+        ((bounds.1 + bounds.3 - crop_height) / 2.0).clamp(0.0, height - crop_height),
+        crop_width,
+        crop_height,
+    )
+}
+
+/// Crops a monitor capture (any pixel scale) to the sketch's ink and context.
+pub fn crop_to_ink(
+    png: &[u8],
+    logical: (i32, i32),
+    strokes: &[Vec<(f64, f64)>],
+) -> Result<Vec<u8>, String> {
+    if logical.0 <= 0 || logical.1 <= 0 {
+        return Ok(png.to_vec());
+    }
+    let (width, height) = png_size(png)?;
+    let (x, y, crop_width, crop_height) = ink_crop(logical, strokes);
+    let scale_x = f64::from(width) / f64::from(logical.0);
+    let scale_y = f64::from(height) / f64::from(logical.1);
+    let left = (x * scale_x).floor() as i32;
+    let top = (y * scale_y).floor() as i32;
+    let right = (((x + crop_width) * scale_x).ceil() as i32).min(width);
+    let bottom = (((y + crop_height) * scale_y).ceil() as i32).min(height);
+    crop(png, left, top, right - left, bottom - top)
+}
+
 /// Rows of frame indices plus each row's height, for a canvas `width` wide.
 fn layout(aspects: &[f64], width: f64) -> Vec<(Vec<usize>, f64)> {
     let columns = (aspects.len() as f64).sqrt().ceil().max(1.0) as usize;
@@ -214,6 +260,26 @@ mod tests {
         context.paint().unwrap();
         drop(context);
         encode(surface).unwrap()
+    }
+
+    #[test]
+    fn ink_crop_keeps_context_and_stays_on_the_monitor() {
+        assert_eq!(
+            ink_crop((1000, 800), &[vec![(0.0, 0.0)]]),
+            (0.0, 0.0, 450.0, 360.0)
+        );
+        assert_eq!(
+            ink_crop((1000, 800), &[vec![(100.0, 100.0), (900.0, 700.0)]]),
+            (60.0, 60.0, 880.0, 680.0)
+        );
+        assert_eq!(ink_crop((1000, 800), &[]), (0.0, 0.0, 1000.0, 800.0));
+    }
+
+    #[test]
+    fn ink_crop_maps_fractional_scale_to_pixels() {
+        let frame = solid(1250, 1000, 0.5);
+        let cropped = crop_to_ink(&frame, (1000, 800), &[vec![(500.0, 400.0)]]).unwrap();
+        assert_eq!(png_size(&cropped).unwrap(), (564, 450));
     }
 
     #[test]

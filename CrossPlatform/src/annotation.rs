@@ -260,40 +260,4 @@ fn aligned_boundaries(words: &[TimedWord], output: &[&str]) -> Option<Vec<usize>
 }
 
 #[cfg(test)]
-fn baseline_summary(final_text: &str, words: &[TimedWord], anchors: &[f32]) -> String {
-    if anchors.is_empty() {
-        return final_text.to_owned();
-    }
-    let output: Vec<&str> = final_text.split_whitespace().collect();
-    let scale = |index: usize| {
-        if words.is_empty() {
-            if index == 0 { 0 } else { output.len() }
-        } else {
-            (index * output.len() + words.len() / 2) / words.len()
-        }
-    };
-    let ranges = if words.is_empty() {
-        // No timing at all: the first keyframe carries the whole transcript.
-        let mut ranges = vec![0..0; anchors.len()];
-        ranges[0] = 0..1;
-        ranges
-    } else {
-        keyframe_word_ranges(words, anchors)
-    };
-    let mut summary = String::new();
-    for (index, (range, anchor)) in ranges.iter().zip(anchors).enumerate() {
-        let (from, to) = (scale(range.start), scale(range.end));
-        let said = output[from.min(output.len())..to.min(output.len())].join(" ");
-        summary.push_str(&format!("- #{} ({})", index + 1, clock(*anchor)));
-        if said.is_empty() {
-            summary.push_str(" marked\n");
-        } else {
-            summary.push_str(&format!(" “{said}”\n"));
-        }
-    }
-    summary.truncate(summary.trim_end().len());
-    summary
-}
-
-#[cfg(test)]
 mod evaluation;

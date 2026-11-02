@@ -273,10 +273,13 @@ impl Session {
                 && (idle || self.finishing)
             {
                 let (id, target) = (group.id, self.surfaces[group.surface].target.clone());
+                let strokes = group.strokes.clone();
                 self.groups[index].phase = Phase::Capturing;
                 let results = self.results.clone();
                 std::thread::spawn(move || {
-                    let result = capture::capture(&target);
+                    let (_, _, width, height) = target.monitor;
+                    let result = capture::capture(&target)
+                        .and_then(|png| sheet::crop_to_ink(&png, (width, height), &strokes));
                     results
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
