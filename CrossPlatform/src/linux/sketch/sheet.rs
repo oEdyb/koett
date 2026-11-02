@@ -245,3 +245,105 @@ mod tests {
         assert!(width > 0 && width <= 1600 && height > 0 && height <= 1600);
     }
 }
+
+/// Composite in logical coordinates, then retain generous context around the ink.
+pub fn composite(
+    png: &[u8],
+    logical: (i32, i32),
+    strokes: &[Vec<(f64, f64)>],
+) -> Result<Vec<u8>, String> {
+    let source = decode(png)?;
+    let (w, h) = (source.width(), source.height());
+    if logical.0 <= 0 || logical.1 <= 0 {
+        return Err("invalid monitor geometry".into());
+    }
+    let context = cairo::Context::new(&source).map_err(|e| e.to_string())?;
+    context.scale(
+        f64::from(w) / f64::from(logical.0),
+        f64::from(h) / f64::from(logical.1),
+    );
+    context.set_source_rgb(super::INK.0, super::INK.1, super::INK.2);
+    context.set_line_width(super::INK_WIDTH);
+    context.set_line_cap(cairo::LineCap::Round);
+    context.set_line_join(cairo::LineJoin::Round);
+    for stroke in strokes {
+        if let Some((first, rest)) = stroke.split_first() {
+            context.move_to(first.0, first.1);
+            if rest.is_empty() {
+                context.line_to(first.0 + 0.1, first.1);
+            }
+            for &(x, y) in rest {
+                context.line_to(x, y);
+            }
+            context.stroke().map_err(|e| e.to_string())?;
+        }
+    }
+    drop(context);
+    let (x, y, cw, ch) = ink_crop(logical, strokes);
+    let sx = f64::from(w) / f64::from(logical.0);
+    let sy = f64::from(h) / f64::from(logical.1);
+    let left = (x * sx).floor() as i32;
+    let top = (y * sy).floor() as i32;
+    crop(
+        &encode(source)?,
+        left,
+        top,
+        ((x + cw) * sx).ceil() as i32 - left,
+        ((y + ch) * sy).ceil() as i32 - top,
+    )
+}
+
+fn ink_crop(logical: (i32, i32), strokes: &[Vec<(f64, f64)>]) -> (f64, f64, f64, f64) {
+    let (w, h) = (f64::from(logical.0), f64::from(logical.1));
+    let mut bounds = (w, h, 0.0_f64, 0.0_f64);
+    for &(x, y) in strokes.iter().flatten() {
+        bounds = (
+            bounds.0.min(x),
+            bounds.1.min(y),
+            bounds.2.max(x),
+            bounds.3.max(y),
+        );
+    }
+    let cw = (bounds.2 - bounds.0 + 80.0).max(w * 0.45).min(w);
+    let ch = (bounds.3 - bounds.1 + 80.0).max(h * 0.45).min(h);
+    (
+        ((bounds.0 + bounds.2 - cw) / 2.0).clamp(0.0, w - cw),
+        ((bounds.1 + bounds.3 - ch) / 2.0).clamp(0.0, h - ch),
+        cw,
+        ch,
+    )
+}
+
+#[cfg(test)]
+mod composite_tests {
+    use super::*;
+    #[test]
+    fn edge_crop_is_clamped_and_keeps_context() {
+        assert_eq!(
+            ink_crop((1000, 800), &[vec![(0.0, 0.0)]]),
+            (0.0, 0.0, 450.0, 360.0)
+        );
+    }
+    #[test]
+    fn fractional_mapping_composites_red_ink() {
+        let surface = cairo::ImageSurface::create(cairo::Format::ARgb32, 1250, 1000).unwrap();
+        let png = encode(surface).unwrap();
+        let result = composite(&png, (1000, 800), &[vec![(500.0, 400.0), (510.0, 400.0)]]).unwrap();
+        if let Ok(path) = std::env::var("KOETT_SAMPLE_PNG") {
+            std::fs::write(path, &result).unwrap();
+        }
+        let (w, h) = png_size(&result).unwrap();
+        assert!((562..=564).contains(&w));
+        assert_eq!(h, 450);
+        let mut decoded = decode(&result).unwrap();
+        assert!(
+            decoded
+                .data()
+                .unwrap()
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .any(|p| p[2] == 255 && p[1] == 59 && p[0] == 48)
+        );
+    }
+}

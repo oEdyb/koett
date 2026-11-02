@@ -2,7 +2,7 @@
 //! overlay covers every monitor. Holding the draw key (Shift by default) and
 //! moving the pointer leaves red ink; otherwise clicks pass through. Strokes on
 //! one monitor close into a sketch shortly after the key is released; that
-//! monitor is then captured with the ink still visible, and the ink fades.
+//! strokes are composited onto an initial monitor frame, and ink fades on lift.
 //! Delivery turns the captures into one numbered contact sheet.
 //!
 //! The overlay holds exclusive keyboard focus during recording so it can see
@@ -20,7 +20,7 @@ pub mod sheet;
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
 const INK_WIDTH: f64 = 5.0;
 const CAPTURE_AFTER: Duration = Duration::from_millis(700);
-const FADE_AFTER: Duration = Duration::from_millis(1500);
+const FADE_AFTER: Duration = Duration::ZERO;
 const FADE_FOR: Duration = Duration::from_millis(400);
 const GROUP_STROKES: usize = 12;
 const GROUP_SPAN: Duration = Duration::from_secs(20);
@@ -85,12 +85,13 @@ struct Group {
     end: Instant,
     lifted: Option<Instant>,
     phase: Phase,
+    clean: Option<std::thread::JoinHandle<Result<Vec<u8>, String>>>,
 }
 
 impl Group {
     fn alpha(&self, now: Instant) -> f64 {
         match (self.phase, self.lifted) {
-            (Phase::Captured, Some(lifted)) => {
+            (_, Some(lifted)) => {
                 let fading = now.saturating_duration_since(lifted + FADE_AFTER);
                 1.0 - (fading.as_secs_f64() / FADE_FOR.as_secs_f64()).min(1.0)
             }
@@ -105,6 +106,8 @@ struct Surface {
     target: capture::Target,
 }
 
+type CaptureResults = Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>;
+
 struct Session {
     started: Instant,
     key: DrawKey,
@@ -114,7 +117,7 @@ struct Session {
     held: bool,
     stroking: Option<u64>,
     finishing: bool,
-    results: Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>,
+    results: CaptureResults,
 }
 
 impl Session {
@@ -183,6 +186,10 @@ impl Session {
                         end: now,
                         lifted: None,
                         phase: Phase::Drawing,
+                        clean: Some({
+                            let target = self.surfaces[surface].target.clone();
+                            std::thread::spawn(move || capture::capture(&target))
+                        }),
                     });
                     self.groups.len() - 1
                 });
@@ -269,11 +276,25 @@ impl Session {
                 && self.stroking != Some(group.id)
                 && (idle || self.finishing)
             {
-                let (id, target) = (group.id, self.surfaces[group.surface].target.clone());
+                let id = group.id;
+                let logical = self.surfaces[group.surface].target.monitor;
+                let strokes = group.strokes.clone();
+                let clean = self.groups[index].clean.take();
+                let closed = Instant::now();
                 self.groups[index].phase = Phase::Capturing;
                 let results = self.results.clone();
                 std::thread::spawn(move || {
-                    let result = capture::capture(&target);
+                    let result = clean
+                        .ok_or_else(|| "missing clean frame".to_string())
+                        .and_then(|job| {
+                            job.join()
+                                .unwrap_or_else(|_| Err("capture worker panicked".into()))
+                        })
+                        .and_then(|png| sheet::composite(&png, (logical.2, logical.3), &strokes));
+                    eprintln!(
+                        "Sketch close-to-ready: {:.1} ms",
+                        closed.elapsed().as_secs_f64() * 1000.0
+                    );
                     results
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -288,9 +309,11 @@ impl Session {
         if self.finishing && !busy {
             return false;
         }
-        if self.groups.iter().any(|group| {
-            group.phase == Phase::Captured && group.alpha(now) > 0.0 && group.alpha(now) < 1.0
-        }) {
+        if self
+            .groups
+            .iter()
+            .any(|group| group.alpha(now) > 0.0 && group.alpha(now) < 1.0)
+        {
             self.redraw();
         }
         true
@@ -307,6 +330,9 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
         .iter()
         .filter(|group| group.surface == surface)
     {
+        if group.clean.as_ref().is_some_and(|job| !job.is_finished()) {
+            continue;
+        }
         let alpha = group.alpha(now);
         if alpha <= 0.0 {
             continue;
@@ -657,8 +683,9 @@ mod tests {
             end: now,
             lifted: Some(now),
             phase: Phase::Capturing,
+            clean: None,
         };
-        assert_eq!(group.alpha(now + Duration::from_secs(5)), 1.0);
+        assert_eq!(group.alpha(now + Duration::from_secs(5)), 0.0);
         group.phase = Phase::Captured;
         assert_eq!(group.alpha(now + FADE_AFTER), 1.0);
         assert_eq!(group.alpha(now + FADE_AFTER + FADE_FOR), 0.0);
