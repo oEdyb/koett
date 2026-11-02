@@ -97,6 +97,7 @@ enum TrayAction {
     Toggle,
     Start,
     Stop,
+    Cancel,
     OpenTranscripts,
     OpenSettings,
     Quit,
@@ -108,6 +109,7 @@ enum TrayUpdate {
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
+    Delivered,
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
     Shortcut(String),
@@ -574,6 +576,9 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::DeliveryFailed => {
                         let _ = worker_ui.send(window::Update::DeliveryFailed);
                     }
+                    TrayUpdate::Delivered => {
+                        let _ = worker_ui.send(window::Update::Delivered);
+                    }
                     TrayUpdate::Completed(text) => {
                         let _ = worker_ui.send(window::Update::Completed(text));
                     }
@@ -695,7 +700,20 @@ fn run_x11(
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
     let mut last_settings_check = Instant::now();
+    // Esc cancels only while recording: the grab exists for that window of
+    // time, so Esc keeps working everywhere else.
+    let escape = HotKey::new(None, global_hotkey::hotkey::Code::Escape);
+    let mut escape_registered = false;
     loop {
+        let recording = app.status == AppStatus::Recording;
+        if recording != escape_registered {
+            escape_registered = if recording {
+                hotkeys.register(escape).is_ok()
+            } else {
+                let _ = hotkeys.unregister(escape);
+                false
+            };
+        }
         while let Ok(action) = actions.try_recv() {
             match action {
                 TrayAction::Menu(command, reply) => {
@@ -724,6 +742,7 @@ fn run_x11(
                 TrayAction::Toggle => app.toggle(|| output.focused_window()),
                 TrayAction::Start => app.command(EngineCommand::Start, || output.focused_window()),
                 TrayAction::Stop => app.command(EngineCommand::Stop, || output.focused_window()),
+                TrayAction::Cancel => app.command(EngineCommand::Cancel, || None),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => {
                     update_tray_status(tray, "@settings");
@@ -762,6 +781,12 @@ fn run_x11(
             }
         }
         while let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
+            if event.id == escape.id() {
+                if escape_registered && event.state == HotKeyState::Pressed {
+                    app.command(EngineCommand::Cancel, || None);
+                }
+                continue;
+            }
             let editing = SHORTCUT_EDITING.load(std::sync::atomic::Ordering::Acquire);
             if event.state == HotKeyState::Pressed {
                 held_keys.insert(event.id);
@@ -1308,6 +1333,7 @@ async fn run_wayland(
                 TrayAction::Toggle => app.toggle(output::capture_target),
                 TrayAction::Start => app.command(EngineCommand::Start, output::capture_target),
                 TrayAction::Stop => app.command(EngineCommand::Stop, output::capture_target),
+                TrayAction::Cancel => app.command(EngineCommand::Cancel, || None),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => update_tray_status(tray, "@settings"),
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
@@ -2129,10 +2155,12 @@ fn require_x11_target(target: Option<u32>, focused: Option<u32>) -> Result<(), S
 }
 
 fn report_delivery(tray: Option<&TrayUpdates>, delivered: &Result<(), String>) {
-    if delivered.is_err()
-        && let Some(tray) = tray
-    {
-        let _ = tray.sender.send(TrayUpdate::DeliveryFailed);
+    if let Some(tray) = tray {
+        let _ = tray.sender.send(if delivered.is_ok() {
+            TrayUpdate::Delivered
+        } else {
+            TrayUpdate::DeliveryFailed
+        });
     }
 }
 
@@ -2176,7 +2204,7 @@ mod delivery_tests {
         let (sender, receiver) = mpsc::channel();
         let tray = TrayUpdates { sender };
         report_delivery(Some(&tray), &Ok(()));
-        assert!(receiver.try_recv().is_err());
+        assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Delivered)));
         report_delivery(Some(&tray), &Err("guarded clipboard-only result".into()));
         assert!(matches!(
             receiver.try_recv().unwrap(),

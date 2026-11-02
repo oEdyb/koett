@@ -58,8 +58,18 @@ window.koett-window { background-color: @koett_canvas; color: @koett_text; }
 
 window.koett-pill { background: transparent; }
 .koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }
-.koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }
-.koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }
+.koett-pill .koett-pill-text { font-size: 13px; font-weight: 500; font-feature-settings: "tnum"; }
+.koett-pill .koett-pill-secondary { font-size: 12px; font-feature-settings: "tnum"; }
+.koett-pill button.koett-pill-button { min-height: 28px; min-width: 0; padding: 0 10px; border-radius: 14px; border: none; box-shadow: none; font-size: 12.5px; font-weight: 600; transition: background-color 120ms ease-out, transform 120ms ease-out; }
+.koett-pill button.koett-pill-button:active { transform: scale(0.97); }
+.koett-pill-dark .koett-pill-text { color: alpha(white, 0.92); }
+.koett-pill-dark .koett-pill-secondary { color: alpha(white, 0.58); }
+.koett-pill-dark button.koett-pill-button { background: alpha(white, 0.12); color: alpha(white, 0.94); }
+.koett-pill-dark button.koett-pill-button:hover { background: alpha(white, 0.20); }
+.koett-pill-light .koett-pill-text { color: #1C1917; }
+.koett-pill-light .koett-pill-secondary { color: #75706B; }
+.koett-pill-light button.koett-pill-button { background: alpha(#1C1917, 0.07); color: #1C1917; }
+.koett-pill-light button.koett-pill-button:hover { background: alpha(#1C1917, 0.13); }
 
 .koett-window .error { color: @koett_error; }
 

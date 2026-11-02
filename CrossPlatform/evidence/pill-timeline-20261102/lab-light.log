@@ -1,0 +1,26 @@
+Captured desktop-idle
+Captured drawing
+Captured recording
+Captured hover
+Captured paused
+Captured transcribing-0
+Captured transcribing-1
+Captured transcribing-2
+Captured transcribing-3
+Captured transcribing-4
+Captured transcribing-5
+Captured done
+Captured recovery
+{
+  "checks": [
+    "hover reveals Cancel, Pause and History over the strip",
+    "Pause/Resume from the pill; hover leave hides actions; target keeps focus",
+    "6 transcribing frame(s) captured; done row after successful delivery of 368 chars",
+    "Done Copy places the exact SQLite text on the clipboard",
+    "done state dismisses itself after its timeout",
+    "guarded delivery shows Paste again / Copy / History",
+    "Cancel discards capture: no history row, no paste, pill hidden",
+    "`koett cancel` discards the active dictation"
+  ],
+  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-timeline-20261102/light"
+}

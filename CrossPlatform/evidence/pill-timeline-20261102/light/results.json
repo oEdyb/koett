@@ -1,0 +1,10 @@
+[
+  "hover reveals Cancel, Pause and History over the strip",
+  "Pause/Resume from the pill; hover leave hides actions; target keeps focus",
+  "6 transcribing frame(s) captured; done row after successful delivery of 368 chars",
+  "Done Copy places the exact SQLite text on the clipboard",
+  "done state dismisses itself after its timeout",
+  "guarded delivery shows Paste again / Copy / History",
+  "Cancel discards capture: no history row, no paste, pill hidden",
+  "`koett cancel` discards the active dictation"
+]

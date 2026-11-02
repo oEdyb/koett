@@ -1,5 +1,6 @@
 use std::ops::Range;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 use sherpa_onnx::{
@@ -16,6 +17,36 @@ mod recovery;
 pub use nemotron::NemotronTranscriber;
 
 pub use background::{BackgroundSession, TranscriptionWorker};
+
+static DECODED: AtomicU32 = AtomicU32::new(0);
+static PLANNED: AtomicU32 = AtomicU32::new(0);
+
+/// Decode units (VAD segments, or one whole short recording) finished and
+/// planned for the dictation being finalized. `planned` stays 0 until the
+/// final count is known, so callers never show an invented fraction.
+pub fn decode_progress() -> (u32, u32) {
+    (
+        DECODED.load(Ordering::Acquire),
+        PLANNED.load(Ordering::Acquire),
+    )
+}
+
+fn progress_reset() {
+    PLANNED.store(0, Ordering::Release);
+    DECODED.store(0, Ordering::Release);
+}
+
+fn progress_plan(remaining: usize) {
+    let remaining = u32::try_from(remaining).unwrap_or(u32::MAX);
+    PLANNED.store(
+        DECODED.load(Ordering::Acquire).saturating_add(remaining),
+        Ordering::Release,
+    );
+}
+
+fn progress_step() {
+    DECODED.fetch_add(1, Ordering::AcqRel);
+}
 
 const MODEL_SAMPLE_RATE: i32 = 16_000;
 const DIRECT_DECODE_LIMIT: Duration = Duration::from_secs(20);
@@ -132,9 +163,12 @@ impl ParakeetTranscriber {
         let stream = self.recognizer.create_stream();
         stream.accept_waveform(audio.sample_rate, &audio.samples);
 
+        progress_reset();
+        progress_plan(1);
         let started = Instant::now();
         self.recognizer.decode(&stream);
         let transcription = started.elapsed();
+        progress_step();
         let result = stream
             .get_result()
             .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
@@ -176,17 +210,27 @@ impl ParakeetTranscriber {
             }
             vad.flush();
 
+            let mut segments = Vec::new();
             while let Some(segment) = vad.front() {
                 vad.pop();
+                segments.push(segment);
+            }
+            progress_reset();
+            progress_plan(segments.len());
+            for segment in segments {
                 vad_segments += 1;
                 let (text, chunks) = self.decode_bounded(segment.samples())?;
+                progress_step();
                 decode_chunks += chunks;
                 if !text.is_empty() {
                     parts.push(text);
                 }
             }
         } else {
+            progress_reset();
+            progress_plan(1);
             let (text, chunks) = self.decode_bounded(samples)?;
+            progress_step();
             decode_chunks = chunks;
             if !text.is_empty() {
                 parts.push(text);
@@ -404,6 +448,25 @@ mod tests {
         Transcriber, Transcript, TranscriptionWorker, VAD_WINDOW_SIZE, bounded_decode_ranges,
         merge_overlapping_text, needs_segmentation,
     };
+
+    #[test]
+    fn decode_progress_counts_live_segments_and_plans_only_the_final_rest() {
+        super::progress_reset();
+        assert_eq!(super::decode_progress(), (0, 0));
+        // Two segments decoded while still recording: total not known yet.
+        super::progress_step();
+        super::progress_step();
+        assert_eq!(super::decode_progress(), (2, 0));
+        // Stop: three closed segments remain.
+        super::progress_plan(3);
+        assert_eq!(super::decode_progress(), (2, 5));
+        for _ in 0..3 {
+            super::progress_step();
+        }
+        assert_eq!(super::decode_progress(), (5, 5));
+        super::progress_reset();
+        assert_eq!(super::decode_progress(), (0, 0));
+    }
     use crate::audio::AudioRecording;
 
     #[test]

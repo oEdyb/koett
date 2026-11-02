@@ -1,0 +1,100 @@
+# Recording pill: timeline
+
+Concept C from `docs/pill-concepts.html`, built on Linux on 2026-11-02. Evidence
+lives in `CrossPlatform/evidence/pill-timeline-20261102/`.
+
+## States (Linux)
+
+| State | Size | Shows | Actions |
+| --- | --- | --- | --- |
+| Hidden | none | Nothing; idle has no on-screen nub | none |
+| Recording | 300×48 | Coral dot, whole-session strip, `m:ss` | Hover adds a row: Cancel, Pause/Resume, model name, History |
+| Drawing | 300×48 | Coral 2 px ring, pen glyph, live band | As recording |
+| Paused | 300×48 | Two-bar pause glyph; strip adds silence | Hover: Resume |
+| Transcribing | 300×48 | Spinner, playhead at decoded/planned, `3/5` | None (pointer-transparent) |
+| Done | 300×88 | Check, final strip, `Done · m:ss` | Copy, History; stays 10 s, longer while hovered |
+| Not pasted | 300×88 | Warning glyph, `Not pasted · text saved` | Paste again, Copy, History |
+
+The strip has 64 columns of 2 px bars with 1 px gaps. Each column covers 250 ms
+and the strip halves its resolution each time it fills. Columns under the
+silence threshold draw as dots. Each sketch band spans start→end; a live band
+is outlined and fills when finished. Reduced motion stops the spinner and
+redraws the strip once per second.
+
+## Sketch-event interface
+
+`CrossPlatform/src/sketch.rs`, exported as `koett_engine::sketch`:
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SketchEvent {
+    pub index: u32,     // 1-based; the number pasted with the sketch
+    pub start_ms: u64,  // ms since the dictation started, when drawing began
+    pub end_ms: u64,    // latest drawing time; keep raising it while live
+    pub live: bool,     // true while Shift is held
+}
+
+pub fn elapsed_ms() -> Option<u64>;            // the pill's clock; None when idle
+pub fn publish(event: SketchEvent) -> bool;    // call from any thread
+pub fn drain() -> Vec<SketchEvent>;            // the pill calls this
+pub fn set_recording_start(Option<Instant>);   // the pill calls this
+```
+
+Rules:
+- An event replaces any earlier event with the same `index` (upsert).
+  Republish a live sketch as it grows, then send it once more with
+  `live: false`.
+- Take `start_ms`/`end_ms` from `elapsed_ms()` so they share the pill's clock.
+  Paused time is included, because the strip shows wall time.
+- `publish` returns false and drops the event when no dictation is active,
+  when `index == 0`, or when `end_ms < start_ms`. Pending events are cleared
+  when a new dictation starts.
+- There is no removal event. If undo must remove a band, add
+  `Removed { index }` on both sides.
+
+Debug builds also accept `koett 'sketch-debug INDEX START END|now live|done'`.
+The lab uses it to draw bands before draw mode exists.
+
+## Decode progress
+
+`koett_engine::transcription::decode_progress() -> (decoded, planned)`.
+`planned` stays 0 until the final count is known:
+- Long Parakeet dictations: segments decoded during recording plus the
+  segments still pending at stop.
+- Short Parakeet dictations: 1.
+- Nemotron: never set, so the pill shows only the spinner.
+
+## Mac (Swift) to-do
+
+Build this on the MacBook in `Sources/Koett/RecordingOverlay.swift`, matching the Linux
+behaviour above:
+
+1. Replace the 17-bar rolling meter with a `Timeline` model (64 columns, 250 ms
+   base, pairwise max compression, silence threshold 0.08 on the existing dB
+   mapping). Port the Rust unit tests in `CrossPlatform/src/linux/timeline.rs`
+   to XCTest.
+2. Resize `RecordingOverlayController.fullSize` to 300×48. Done and recovery
+   use 300×88, with the action row above the strip. Keep the panel's bottom
+   edge fixed when it grows.
+3. Hover row: track mouse-entered on the panel and set `ignoresMouseEvents =
+   false` while recording. The panel is already `.nonactivatingPanel`. Add
+   Cancel, Pause/Resume and History buttons; keep the panel from ever
+   becoming key.
+4. Cancel: add a `DictationSession.cancel()` that stops `MicrophoneRecorder`,
+   drops its file and skips transcription, paste and history. Esc: a local
+   plus global `NSEvent` monitor for keyCode 53, installed only while
+   recording. It needs no extra permission beyond the existing Accessibility
+   access, and it must not consume Esc for other apps.
+5. Pause: gate `MicrophoneRecorder`'s write path with an atomic flag; keep
+   the meter at 0 while paused.
+6. Decode progress: Parakeet on the Mac goes through FluidAudio/CoreML. Find
+   out whether it exposes chunk progress. If not, show only the spinner, as
+   Nemotron does on Linux; never fake a fraction.
+7. Sketch events: mirror `SketchEvent` as a Swift struct with the same
+   fields and upsert rule, fed by the Mac draw mode.
+8. Light/dark: follow `NSApp.effectiveAppearance` with the palette in
+   `recording_overlay.rs` (`DARK`/`LIGHT`). Today the Mac pill is dark-only.
+9. Done state: after a successful paste, show `Done · m:ss` with Copy and History
+   for 10 s, extended while hovered. This replaces the current text result row.
+10. Keep `RecordingOverlayFormat` reduced-motion behaviour: a static strip
+    redrawn once per second.

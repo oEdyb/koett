@@ -68,6 +68,7 @@ impl AudioRecording {
 pub struct AudioLevels {
     rms: Arc<AtomicU32>,
     peak: Arc<AtomicU32>,
+    paused: Arc<AtomicBool>,
 }
 
 impl AudioLevels {
@@ -75,7 +76,21 @@ impl AudioLevels {
         Self {
             rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
+            paused: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    /// While paused the capture callback discards input: nothing is recorded,
+    /// transcribed or metered. The stream stays open so resuming is instant.
+    pub fn set_paused(&self, paused: bool) {
+        self.paused.store(paused, Ordering::Release);
+        if paused {
+            self.update(0.0, 0.0);
+        }
+    }
+
+    pub fn paused(&self) -> bool {
+        self.paused.load(Ordering::Acquire)
     }
 
     pub fn current(&self) -> (f32, f32) {
@@ -462,6 +477,9 @@ where
     T: Sample + SizedSample,
     f32: FromSample<T>,
 {
+    if levels.paused() {
+        return;
+    }
     let mut square_sum = 0.0_f32;
     let mut peak = 0.0_f32;
     let mut frame_count = 0_usize;
@@ -564,6 +582,15 @@ mod tests {
         assert_eq!(levels.current(), (0.0, 0.0));
         super::measure_input(&[128_u8; 4], 2, &levels, |_| {});
         assert_eq!(levels.current(), (0.0, 0.0));
+        super::measure_input(&[16384_i16, 16384], 2, &levels, |_| {});
+        levels.set_paused(true);
+        assert_eq!(levels.current(), (0.0, 0.0));
+        let mut consumed = 0;
+        super::measure_input(&[16384_i16, 16384], 2, &levels, |_| consumed += 1);
+        assert_eq!((consumed, levels.current()), (0, (0.0, 0.0)));
+        levels.set_paused(false);
+        super::measure_input(&[16384_i16, 16384], 2, &levels, |_| consumed += 1);
+        assert_eq!((consumed, levels.current()), (1, (0.5, 0.5)));
     }
 
     #[test]

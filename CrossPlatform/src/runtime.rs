@@ -30,6 +30,8 @@ pub enum EngineCommand {
     Toggle,
     Start,
     Stop,
+    /// Discards the active dictation: no transcription, paste or history.
+    Cancel,
     SwitchModel(model::LocalModel),
     Formatting(crate::formatting::Formatting),
     Quit,
@@ -864,7 +866,29 @@ fn run(
                     }
                 }
             }
-            EngineCommand::Toggle | EngineCommand::Start | EngineCommand::Stop => {}
+            EngineCommand::Cancel if status == AppStatus::Recording => {
+                drop(recorder.take());
+                drop(background.take());
+                capture_started = None;
+                #[cfg(target_os = "linux")]
+                if ask_image.take().is_some() {
+                    speech = None;
+                    let _ = updates.send(EngineUpdate::Ask(
+                        serde_json::json!({"phase": "Cancelled", "speech_notice": ""}),
+                    ));
+                }
+                #[cfg(target_os = "linux")]
+                if let Some(media) = &media {
+                    media_notice(&updates, media.resume());
+                }
+                status = AppStatus::Ready;
+                send_status(&updates, &status);
+                let _ = updates.send(EngineUpdate::Notice("Dictation cancelled".into()));
+            }
+            EngineCommand::Toggle
+            | EngineCommand::Start
+            | EngineCommand::Stop
+            | EngineCommand::Cancel => {}
         }
     }
     crate::formatting::CANCELLED.store(true, Ordering::Release);

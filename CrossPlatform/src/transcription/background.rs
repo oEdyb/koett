@@ -214,6 +214,7 @@ fn run_transcription_worker(
                 cancelled,
                 completed,
             } => {
+                super::progress_reset();
                 let result = match nemotron.as_ref().filter(|_| !offline) {
                     Some(engine) => engine.record(sample_rate, audio_chunks, &cancelled),
                     None => transcriber.transcribe_while_recording(
@@ -308,7 +309,7 @@ impl ParakeetTranscriber {
                 model_samples.extend(chunk);
             }
             accept_vad_windows(vad, &mut model_samples, &mut model_offset);
-            self.decode_ready_vad_segments(&mut parts)?;
+            self.decode_ready_vad_segments(&mut parts, false)?;
         }
 
         if cancelled.load(Ordering::Acquire) {
@@ -328,18 +329,28 @@ impl ParakeetTranscriber {
             vad.accept_waveform(&final_window);
         }
         vad.flush();
-        self.decode_ready_vad_segments(&mut parts)?;
+        self.decode_ready_vad_segments(&mut parts, true)?;
         Ok(Some(parts.join(" ")))
     }
 
-    fn decode_ready_vad_segments(&self, parts: &mut Vec<String>) -> Result<(), String> {
+    /// Decodes closed VAD segments. On the final call the remaining count is
+    /// known, so it is published as the plan before decoding starts.
+    fn decode_ready_vad_segments(&self, parts: &mut Vec<String>, last: bool) -> Result<(), String> {
         let vad = self
             .vad
             .as_ref()
             .ok_or_else(|| "voice detection is unavailable".to_string())?;
+        let mut segments = Vec::new();
         while let Some(segment) = vad.front() {
             vad.pop();
+            segments.push(segment);
+        }
+        if last {
+            super::progress_plan(segments.len());
+        }
+        for segment in segments {
             let (text, _) = self.decode_bounded(segment.samples())?;
+            super::progress_step();
             if !text.is_empty() {
                 parts.push(text);
             }

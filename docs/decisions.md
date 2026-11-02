@@ -34,3 +34,27 @@ to semantic roles. Scope it to Koett windows, retain native controls/fonts and
 high-contrast colors, and keep the recording pill's established appearance. This
 provides coherent surfaces without adding a UI framework or changing dictation.
 The reference brief and inspected native captures live in docs/ui-design.md.
+
+## 2026-11-02: the recording pill becomes a dictation timeline
+
+Olle picked concept C from `docs/pill-concepts.html`. On Linux the pill is now
+300×48 and shows the whole dictation as one strip of measured levels. Quiet
+columns are dots, and sketches are numbered bands. The strip halves its
+resolution each time it fills, so ten minutes still fits. While decoding, a
+playhead reports finished/planned VAD segments, and the plan is published only
+once known. Hover adds Cancel, Pause and History. After the dictation ends, the
+pill shows Done (Copy, History) or Not pasted (Paste again, Copy, History).
+The action row sits above the strip, so the bottom-anchored strip never moves.
+
+The pill now takes pointer input while recording, so hover works, but it never
+takes keyboard focus; decoding stays pointer-transparent. Pause discards input
+at the capture callback, and the 10-minute limit still counts wall time.
+Cancel drops the capture with no transcript, paste or history row.
+
+Esc cancels only on X11, where the grab exists only while recording. Wayland has
+no focus-free way to hear a bare Esc: a portal binding would take Esc from every
+app permanently, and layer-shell keyboard focus would steal focus. Wayland
+therefore offers the pill's Cancel button and `koett cancel`, which can be bound
+in the compositor. Silence dots come from the level floor, not from Silero, since
+the live path only runs VAD after 20 s. Draw mode feeds sketch bands through
+`koett_engine::sketch`; see `docs/pill-timeline.md`.

@@ -105,8 +105,10 @@ recovery; never send multiple paste chords to guess what the target accepts.
 ## State and interaction
 
 - Ready: Record is enabled and the active shortcut is visible.
-- Recording: Stop is primary; show elapsed time and actual audio level when available. The Linux
-  recording pill follows the existing Mac source: compact dark 236x48 capsule,
+- Recording: Stop is primary; show elapsed time and actual audio level when available. Since
+  2026-11-02 the Linux pill is the timeline described in `docs/pill-timeline.md`; the text
+  below describes the earlier Mac-matched pill, which macOS still uses. The earlier Linux
+  recording pill followed the existing Mac source: compact dark 236x48 capsule,
   coral recording dot, 17 rounded rolling amplitude bars (coral center/white edges),
   divider and monospaced elapsed timer. Samples follow real microphone RMS using
   the Mac dB mapping/smoothing, never decorative synthetic motion. Reset on each
