@@ -7,6 +7,7 @@ use sherpa_onnx::{
     VadModelConfig, VoiceActivityDetector,
 };
 
+use crate::annotation::{TimedText, TimedWord, estimate_words, words_from_tokens};
 use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
@@ -27,6 +28,8 @@ const MAX_OVERLAP_WORDS: usize = 20;
 pub struct Transcript {
     pub raw: Option<String>,
     pub text: String,
+    /// Recognizer word times for `text` before replacements or cleanup.
+    pub words: Vec<TimedWord>,
     pub audio_duration: Duration,
     pub transcription: Duration,
 }
@@ -139,9 +142,18 @@ impl ParakeetTranscriber {
             .get_result()
             .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
 
+        let duration = audio_duration.as_secs_f32();
+        let words = timed_words(
+            &result.text,
+            &result.tokens,
+            result.timestamps.as_deref(),
+            0.0,
+            duration,
+        );
         Ok(Transcript {
             raw: None,
             text: result.text,
+            words,
             audio_duration,
             transcription,
         })
@@ -160,7 +172,7 @@ impl ParakeetTranscriber {
             resampled.as_slice()
         };
 
-        let mut parts = Vec::new();
+        let mut parts = TimedText::default();
         let mut vad_segments = 0;
         let mut decode_chunks = 0;
         if let Some(vad) = &self.vad {
@@ -179,18 +191,15 @@ impl ParakeetTranscriber {
             while let Some(segment) = vad.front() {
                 vad.pop();
                 vad_segments += 1;
-                let (text, chunks) = self.decode_bounded(segment.samples())?;
+                let offset = segment.start() as f32 / MODEL_SAMPLE_RATE as f32;
+                let (text, words, chunks) = self.decode_timed(segment.samples(), offset)?;
                 decode_chunks += chunks;
-                if !text.is_empty() {
-                    parts.push(text);
-                }
+                parts.push(&text, words);
             }
         } else {
-            let (text, chunks) = self.decode_bounded(samples)?;
+            let (text, words, chunks) = self.decode_timed(samples, 0.0)?;
             decode_chunks = chunks;
-            if !text.is_empty() {
-                parts.push(text);
-            }
+            parts.push(&text, words);
         }
         eprintln!(
             "transcription_vad={} transcription_segments={vad_segments} transcription_decode_chunks={decode_chunks}",
@@ -199,15 +208,29 @@ impl ParakeetTranscriber {
 
         Ok(Transcript {
             raw: None,
-            text: parts.join(" "),
+            text: parts.text,
+            words: parts.words,
             audio_duration,
             transcription: started.elapsed(),
         })
     }
 
+    #[cfg(test)]
     fn decode_bounded(&self, samples: &[f32]) -> Result<(String, usize), String> {
+        self.decode_timed(samples, 0.0)
+            .map(|(text, _, chunks)| (text, chunks))
+    }
+
+    /// Decodes model-rate samples starting `offset` seconds into the recording.
+    fn decode_timed(
+        &self,
+        samples: &[f32],
+        offset: f32,
+    ) -> Result<(String, Vec<TimedWord>, usize), String> {
         let mut text = String::new();
+        let mut words = None;
         let ranges = bounded_decode_ranges(samples.len());
+        let duration = samples.len() as f32 / MODEL_SAMPLE_RATE as f32;
         for range in &ranges {
             let stream = self.recognizer.create_stream();
             stream.accept_waveform(MODEL_SAMPLE_RATE, &samples[range.clone()]);
@@ -215,10 +238,46 @@ impl ParakeetTranscriber {
             let result = stream
                 .get_result()
                 .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
+            if ranges.len() == 1 {
+                words = words_from_tokens(
+                    &result.text,
+                    &result.tokens,
+                    result.timestamps.as_deref().unwrap_or_default(),
+                    offset,
+                    duration,
+                );
+            }
             merge_overlapping_text(&mut text, &result.text);
         }
-        Ok((text, ranges.len()))
+        // Overlap merging drops tokens, so merged chunks get estimated times.
+        let words = words
+            .filter(|words| {
+                words
+                    .iter()
+                    .map(|word| word.text.as_str())
+                    .eq(text.split_whitespace())
+            })
+            .unwrap_or_else(|| estimate_words(&text, offset, offset + duration));
+        Ok((text, words, ranges.len()))
     }
+}
+
+/// Measured token times when they reproduce `text`, else an even estimate.
+pub(crate) fn timed_words(
+    text: &str,
+    tokens: &[String],
+    timestamps: Option<&[f32]>,
+    offset: f32,
+    duration: f32,
+) -> Vec<TimedWord> {
+    words_from_tokens(
+        text,
+        tokens,
+        timestamps.unwrap_or_default(),
+        offset,
+        duration,
+    )
+    .unwrap_or_else(|| estimate_words(text, offset, offset + duration))
 }
 
 fn bounded_decode_ranges(sample_count: usize) -> Vec<Range<usize>> {
@@ -407,10 +466,63 @@ mod tests {
     use crate::audio::AudioRecording;
 
     #[test]
+    #[ignore = "requires public Parakeet v2 evaluation model"]
+    fn public_transcripts_carry_measured_word_times() {
+        let directory = PathBuf::from(env::var("KOETT_PARAKEET_EVAL").unwrap());
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let mut transcriber = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let short = transcriber.transcribe(&audio).unwrap();
+        let texts = |transcript: &Transcript| {
+            transcript
+                .words
+                .iter()
+                .map(|word| word.text.clone())
+                .collect::<Vec<_>>()
+        };
+        assert!(
+            texts(&short)
+                .iter()
+                .map(String::as_str)
+                .eq(short.text.split_whitespace())
+        );
+        // Speech starts 0.4 s in; an even estimate would start at zero.
+        assert!(
+            (short.words[0].start - 0.4).abs() < 0.05,
+            "{:?}",
+            short.words[0]
+        );
+        let mut repeated = audio.samples.clone();
+        for _ in 0..3 {
+            repeated.extend(vec![0.0; audio.sample_rate as usize]);
+            repeated.extend(&audio.samples);
+        }
+        let long = transcriber
+            .transcribe(&AudioRecording::new(audio.sample_rate, repeated).unwrap())
+            .unwrap();
+        assert!(
+            texts(&long)
+                .iter()
+                .map(String::as_str)
+                .eq(long.text.split_whitespace())
+        );
+        assert!(
+            long.words
+                .windows(2)
+                .all(|pair| pair[0].start <= pair[1].start)
+        );
+        let last = long.words.last().unwrap();
+        assert!(
+            last.end > long.audio_duration.as_secs_f32() - 2.0,
+            "{last:?}"
+        );
+    }
+
+    #[test]
     fn realtime_factor_uses_transcription_over_audio() {
         let transcript = Transcript {
             raw: None,
             text: String::new(),
+            words: Vec::new(),
             audio_duration: Duration::from_secs(10),
             transcription: Duration::from_secs(1),
         };
@@ -566,6 +678,7 @@ mod tests {
             .transcribe_while_recording(MODEL_SAMPLE_RATE, receiver, &AtomicBool::new(false))
             .unwrap()
             .expect("seven minutes must use background transcription")
+            .text
             .to_ascii_lowercase();
         let production_elapsed = production_started.elapsed();
         let production_starts = production_text.matches("phoebe").count();

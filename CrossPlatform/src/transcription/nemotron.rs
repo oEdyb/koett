@@ -38,14 +38,16 @@ impl NemotronTranscriber {
         sample_rate: i32,
         chunks: Receiver<Vec<f32>>,
         cancelled: &AtomicBool,
-    ) -> Result<Option<String>, String> {
+    ) -> Result<Option<crate::annotation::TimedText>, String> {
         let stream = self.recognizer.create_stream();
+        let mut received = 0_usize;
         loop {
             if cancelled.load(Ordering::Acquire) {
                 return Err("Streaming cancelled".into());
             }
             match chunks.recv_timeout(Duration::from_millis(25)) {
                 Ok(samples) => {
+                    received += samples.len();
                     stream.accept_waveform(sample_rate, &samples);
                     while self.recognizer.is_ready(&stream) {
                         if cancelled.load(Ordering::Acquire) {
@@ -68,7 +70,20 @@ impl NemotronTranscriber {
         }
         self.recognizer
             .get_result(&stream)
-            .map(|result| Some(result.text))
+            .map(|result| {
+                let duration = received as f32 / sample_rate as f32;
+                let words = super::timed_words(
+                    &result.text,
+                    &result.tokens,
+                    result.timestamps.as_deref(),
+                    0.0,
+                    duration,
+                );
+                Some(crate::annotation::TimedText {
+                    text: result.text,
+                    words,
+                })
+            })
             .ok_or_else(|| "Nemotron returned no final result".into())
     }
 }
@@ -99,7 +114,8 @@ mod tests {
             let text = engine
                 .record(audio.sample_rate, receiver, &AtomicBool::new(false))
                 .unwrap()
-                .unwrap();
+                .unwrap()
+                .text;
             eprintln!(
                 "iteration={iteration} decode_ms={} text={text}",
                 started.elapsed().as_millis()
@@ -121,7 +137,8 @@ mod tests {
         let long = engine
             .record(audio.sample_rate, receiver, &AtomicBool::new(false))
             .unwrap()
-            .unwrap();
+            .unwrap()
+            .text;
         eprintln!(
             "long_decode_ms={} text={long}",
             started.elapsed().as_millis()
@@ -149,6 +166,7 @@ mod tests {
                 .record(16000, receiver, &AtomicBool::new(false))
                 .unwrap()
                 .unwrap()
+                .text
                 .is_empty()
         );
     }

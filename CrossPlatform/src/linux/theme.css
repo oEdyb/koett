@@ -59,6 +59,7 @@ window.koett-window { background-color: @koett_canvas; color: @koett_text; }
 window.koett-pill { background: transparent; }
 .koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }
 .koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }
+.koett-pill-timer.koett-pill-drawing { color: #ff3b30; }
 .koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }
 
 .koett-window .error { color: @koett_error; }

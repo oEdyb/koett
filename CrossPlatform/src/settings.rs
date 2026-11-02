@@ -38,6 +38,16 @@ pub enum PasteShortcut {
     CtrlShiftV,
 }
 
+/// Modifier held to draw on screen while dictating.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DrawKey {
+    #[default]
+    Shift,
+    Control,
+    Alt,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -51,6 +61,9 @@ pub struct Settings {
     pub replacements: Vec<crate::replacements::Replacement>,
     pub pause_media: bool,
     pub paste_shortcut: PasteShortcut,
+    /// Off by default: drawing takes keyboard focus while recording.
+    pub draw_while_dictating: bool,
+    pub draw_key: DrawKey,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -68,6 +81,8 @@ impl Default for Settings {
             replacements: Vec::new(),
             pause_media: false,
             paste_shortcut: PasteShortcut::default(),
+            draw_while_dictating: false,
+            draw_key: DrawKey::default(),
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -231,6 +246,12 @@ impl Settings {
         if self.paste_shortcut != opened.paste_shortcut {
             merged.paste_shortcut = self.paste_shortcut;
         }
+        if self.draw_while_dictating != opened.draw_while_dictating {
+            merged.draw_while_dictating = self.draw_while_dictating;
+        }
+        if self.draw_key != opened.draw_key {
+            merged.draw_key = self.draw_key;
+        }
         merged
     }
 
@@ -272,7 +293,7 @@ mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{PasteShortcut, Settings};
+    use super::{DrawKey, PasteShortcut, Settings};
 
     fn temporary_file(name: &str) -> std::path::PathBuf {
         let nonce = SystemTime::now()
@@ -411,6 +432,30 @@ mod tests {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert_eq!(settings.paste_shortcut, PasteShortcut::CtrlV);
         assert!(serde_json::from_str::<Settings>(r#"{"paste_shortcut":"shift_insert"}"#).is_err());
+    }
+
+    #[test]
+    fn drawing_is_off_with_shift_for_existing_settings() {
+        let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
+        assert!(!settings.draw_while_dictating);
+        assert_eq!(settings.draw_key, DrawKey::Shift);
+        let chosen: Settings =
+            serde_json::from_str(r#"{"draw_while_dictating":true,"draw_key":"alt"}"#).unwrap();
+        assert_eq!(chosen.draw_key, DrawKey::Alt);
+        assert!(serde_json::from_str::<Settings>(r#"{"draw_key":"super"}"#).is_err());
+    }
+
+    #[test]
+    fn editor_merge_keeps_drawing_changes_and_concurrent_edits() {
+        let opened = Settings::default();
+        let mut edited = opened.clone();
+        edited.draw_while_dictating = true;
+        edited.draw_key = DrawKey::Control;
+        let mut current = opened.clone();
+        current.pause_media = true;
+        let merged = edited.merge_editor(&opened, current);
+        assert!(merged.draw_while_dictating && merged.pause_media);
+        assert_eq!(merged.draw_key, DrawKey::Control);
     }
 
     #[cfg(unix)]

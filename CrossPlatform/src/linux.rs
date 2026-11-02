@@ -351,6 +351,7 @@ mod output;
 mod recording_overlay;
 mod recovery;
 mod settings_view;
+mod sketch;
 mod theme;
 mod window;
 
@@ -803,7 +804,7 @@ fn run_x11(
             }
         }
         app.poll(
-            |model, text, raw, target| {
+            |model, text, raw, _words, target| {
                 let loaded = Settings::load();
                 let paste_shortcut = loaded.as_ref().unwrap_or(&settings).paste_shortcut;
                 let (final_text, warning) = completed_text(text, loaded, &settings);
@@ -1348,11 +1349,12 @@ async fn run_wayland(
         }
         let mut completed = Vec::new();
         app.poll(
-            |model, text, raw, target| {
+            |model, text, raw, words, target| {
                 completed.push((
                     model.to_owned(),
                     text.to_owned(),
                     raw.map(str::to_owned),
+                    words.to_vec(),
                     target,
                 ));
                 Ok(())
@@ -1371,17 +1373,33 @@ async fn run_wayland(
                 }
             },
         );
-        for (model, formatted, original, target) in completed {
-            let raw = original.as_deref().unwrap_or(&formatted);
+        for (model, formatted, original, words, target) in completed {
             let loaded = Settings::load();
-            let (text, warning) = completed_text(&formatted, loaded.clone(), &settings);
+            let (spoken, warning) = completed_text(&formatted, loaded.clone(), &settings);
             if let Ok(updated) = loaded {
                 settings = updated;
             }
             if let Some(warning) = warning {
                 update_tray_status(tray, &format!("@notice:{warning}"));
             }
+            let sketches = sketch::take_keyframes(Duration::from_secs(8));
+            let (text, sheet) = sketch_delivery(&spoken, &words, &sketches);
+            let raw = if sheet.is_some() {
+                spoken.as_str()
+            } else {
+                original.as_deref().unwrap_or(&formatted)
+            };
             cache_completed(tray, &text);
+            if let Some(png) = &sheet {
+                // Scrawl order: the numbered sheet first, then the matching text.
+                let pasted = match &output {
+                    Some(output) => output.deliver_image(png, target).await,
+                    None => output::deliver_image(png, target),
+                };
+                if let Err(error) = pasted {
+                    update_tray_status(tray, &format!("@notice:Contact sheet not pasted: {error}"));
+                }
+            }
             let delivered = match &output {
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
@@ -1442,7 +1460,7 @@ mod queued_capture_tests {
                     EngineUpdate::Status(AppStatus::Ready)
                 })
                 .unwrap();
-            app.poll(|_, _, _, _| Ok(()), |_| {}, |_| {}, |_| {});
+            app.poll(|_, _, _, _, _| Ok(()), |_| {}, |_| {}, |_| {});
             assert!(!app.quit_busy());
         }
     }
@@ -1648,7 +1666,13 @@ impl LinuxEngine {
 
     fn poll(
         &mut self,
-        mut deliver: impl FnMut(&str, &str, Option<&str>, Option<u32>) -> Result<(), String>,
+        mut deliver: impl FnMut(
+            &str,
+            &str,
+            Option<&str>,
+            &[crate::annotation::TimedWord],
+            Option<u32>,
+        ) -> Result<(), String>,
         mut status_changed: impl FnMut(&str),
         mut recording_started: impl FnMut(crate::audio::AudioLevels),
         mut prepare_ask: impl FnMut(Sender<()>),
@@ -1697,6 +1721,7 @@ impl LinuxEngine {
                         &model,
                         &transcript.text,
                         transcript.raw.as_deref(),
+                        &transcript.words,
                         self.paste_target.take(),
                     ) {
                         eprintln!("Koett: {error}");
@@ -1852,7 +1877,25 @@ struct WaylandOutput {
     clipboard: Arc<Clipboard>,
     remote_desktop: RemoteDesktop,
     session: Session<RemoteDesktop>,
-    current_text: Arc<RwLock<String>>,
+    current: Arc<RwLock<ClipboardPayload>>,
+    served: Arc<std::sync::atomic::AtomicU64>,
+}
+
+/// What the portal clipboard currently offers: text or a contact sheet PNG.
+#[derive(Default)]
+struct ClipboardPayload {
+    image: bool,
+    bytes: Vec<u8>,
+}
+
+impl ClipboardPayload {
+    fn offers(&self, mime_type: &str) -> bool {
+        if self.image {
+            mime_type == "image/png"
+        } else {
+            mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8"
+        }
+    }
 }
 
 impl WaylandOutput {
@@ -1911,9 +1954,11 @@ impl WaylandOutput {
             save_restore_token(token)?;
         }
 
-        let current_text = Arc::new(RwLock::new(String::new()));
+        let current = Arc::new(RwLock::new(ClipboardPayload::default()));
+        let served = Arc::new(std::sync::atomic::AtomicU64::new(0));
         let transfer_clipboard = clipboard.clone();
-        let transfer_text = current_text.clone();
+        let transfer_payload = current.clone();
+        let transfer_served = served.clone();
         tokio::spawn(async move {
             let Ok(transfers) = transfer_clipboard
                 .receive_selection_transfer::<RemoteDesktop>()
@@ -1923,23 +1968,25 @@ impl WaylandOutput {
             };
             futures_util::pin_mut!(transfers);
             while let Some((session, mime_type, serial)) = transfers.next().await {
-                let supported =
-                    mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8";
-                let text = transfer_text
+                let bytes = transfer_payload
                     .read()
-                    .map(|text| text.clone())
-                    .unwrap_or_default();
-                let success = if supported {
-                    match transfer_clipboard.selection_write(&session, serial).await {
+                    .ok()
+                    .filter(|payload| payload.offers(&mime_type))
+                    .map(|payload| payload.bytes.clone());
+                let success = match bytes {
+                    Some(bytes) => match transfer_clipboard.selection_write(&session, serial).await
+                    {
                         Ok(fd) => {
                             let mut file = File::from(std::os::fd::OwnedFd::from(fd));
-                            file.write_all(text.as_bytes()).is_ok()
+                            file.write_all(&bytes).is_ok()
                         }
                         Err(_) => false,
-                    }
-                } else {
-                    false
+                    },
+                    None => false,
                 };
+                if success {
+                    transfer_served.fetch_add(1, std::sync::atomic::Ordering::Release);
+                }
                 let _ = transfer_clipboard
                     .selection_write_done(&session, serial, success)
                     .await;
@@ -1950,31 +1997,44 @@ impl WaylandOutput {
             clipboard,
             remote_desktop,
             session,
-            current_text,
+            current,
+            served,
         })
     }
 
-    async fn deliver(
-        &self,
-        text: &str,
-        target: Option<u32>,
-        shortcut: PasteShortcut,
-    ) -> Result<(), String> {
+    /// Pastes the contact sheet with Ctrl+V and waits until the target has
+    /// read it, so the following text paste cannot replace it too early.
+    async fn deliver_image(&self, png: &[u8], target: Option<u32>) -> Result<(), String> {
         *self
-            .current_text
+            .current
             .write()
-            .map_err(|_| "the clipboard text lock failed".to_string())? = text.to_string();
-        let mime_types = ["text/plain;charset=utf-8", "text/plain"];
+            .map_err(|_| "the clipboard lock failed".to_string())? = ClipboardPayload {
+            image: true,
+            bytes: png.to_vec(),
+        };
+        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
             .set_selection(
                 &self.session,
-                SetSelectionOptions::default().set_mime_types(&mime_types),
+                SetSelectionOptions::default().set_mime_types(&["image/png"]),
             )
             .await
-            .map_err(|error| format!("could not copy the transcript: {error}"))?;
+            .map_err(|error| format!("could not copy the contact sheet: {error}"))?;
         if !output::target_unchanged(target) {
-            return Err("Copied · paste into your target application".into());
+            return Err("target window changed".into());
         }
+        self.press(PasteShortcut::CtrlV).await?;
+        let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
+        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
+            && Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        tokio::time::sleep(output::AFTER_IMAGE_READ).await;
+        Ok(())
+    }
+
+    async fn press(&self, shortcut: PasteShortcut) -> Result<(), String> {
         let keys = output::paste_keysyms(shortcut);
         let mut result = Ok(());
         for key in keys {
@@ -1988,6 +2048,33 @@ impl WaylandOutput {
             result = result.and(released);
         }
         result
+    }
+
+    async fn deliver(
+        &self,
+        text: &str,
+        target: Option<u32>,
+        shortcut: PasteShortcut,
+    ) -> Result<(), String> {
+        *self
+            .current
+            .write()
+            .map_err(|_| "the clipboard text lock failed".to_string())? = ClipboardPayload {
+            image: false,
+            bytes: text.as_bytes().to_vec(),
+        };
+        let mime_types = ["text/plain;charset=utf-8", "text/plain"];
+        self.clipboard
+            .set_selection(
+                &self.session,
+                SetSelectionOptions::default().set_mime_types(&mime_types),
+            )
+            .await
+            .map_err(|error| format!("could not copy the transcript: {error}"))?;
+        if !output::target_unchanged(target) {
+            return Err("Copied · paste into your target application".into());
+        }
+        self.press(shortcut).await
     }
 
     async fn send_keysym(&self, keysym: i32, state: KeyState) -> Result<(), String> {
@@ -2106,6 +2193,27 @@ fn completed_text(
                 "Settings unavailable; using last valid replacements: {error}"
             )),
         ),
+    }
+}
+
+/// Pasted text and optional contact sheet for a dictation with sketches.
+fn sketch_delivery(
+    spoken: &str,
+    words: &[crate::annotation::TimedWord],
+    sketches: &[sketch::Keyframe],
+) -> (String, Option<Vec<u8>>) {
+    if sketches.is_empty() {
+        return (spoken.to_owned(), None);
+    }
+    let anchors: Vec<f32> = sketches.iter().map(|frame| frame.start).collect();
+    let text = crate::annotation::keyframe_summary(spoken, words, &anchors);
+    let frames: Vec<Vec<u8>> = sketches.iter().map(|frame| frame.png.clone()).collect();
+    match sketch::sheet::contact_sheet(&frames) {
+        Ok(png) => (text, Some(png)),
+        Err(error) => {
+            eprintln!("Contact sheet failed: {error}");
+            (text, None)
+        }
     }
 }
 

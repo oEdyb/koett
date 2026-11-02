@@ -341,6 +341,9 @@ fn build_window(
     let ask = super::ask_view::AskView::new(application, actions.clone());
     let overlay =
         super::recording_overlay::RecordingOverlay::new(application, latest_delivery.clone());
+    let sketch = super::sketch::SketchOverlay::new();
+    let sketch_application = application.clone();
+    let mut asking_until = None::<Instant>;
     let mut recording_started = None::<Instant>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
@@ -384,6 +387,8 @@ fn build_window(
                 }
                 match update {
                     Update::PrepareAsk(ack) => {
+                        // The next recording is an Ask question, not dictation.
+                        asking_until = Some(Instant::now() + Duration::from_secs(20));
                         media_result = false;
                         recovery_until = None;
                         ask.hide();
@@ -551,6 +556,9 @@ fn build_window(
                             notice_until = None;
                         }
                         if !recording {
+                            if recording_started.is_some() {
+                                asking_until = None;
+                            }
                             recording_started = None;
                         }
                         let action = super::menu::recording_action(&message);
@@ -598,7 +606,12 @@ fn build_window(
             {
                 meter.set_value(f64::from((levels.current().0 * 10.0).clamp(0.0, 1.0)));
             }
+            if let Some(sketch) = &sketch {
+                let asking = asking_until.is_some_and(|until| Instant::now() < until);
+                sketch.update(&sketch_application, recording_started, asking);
+            }
             if let Some(overlay) = &overlay {
+                overlay.set_drawing(sketch.as_ref().is_some_and(|sketch| sketch.drawing()));
                 overlay.update(
                     if media_result && recovering {
                         "Media result"

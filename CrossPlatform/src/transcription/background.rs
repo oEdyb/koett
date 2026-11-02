@@ -10,10 +10,11 @@ use super::{
     DIRECT_DECODE_LIMIT, MODEL_SAMPLE_RATE, ParakeetTranscriber, Transcriber, Transcript,
     VAD_WINDOW_SIZE,
 };
+use crate::annotation::TimedText;
 use crate::audio::AudioRecording;
 
 pub struct BackgroundSession {
-    completed: Receiver<Result<Option<String>, String>>,
+    completed: Receiver<Result<Option<TimedText>, String>>,
     cancelled: Arc<AtomicBool>,
 }
 
@@ -35,7 +36,7 @@ enum WorkerCommand {
         sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
         cancelled: Arc<AtomicBool>,
-        completed: Sender<Result<Option<String>, String>>,
+        completed: Sender<Result<Option<TimedText>, String>>,
     },
     Transcribe {
         audio: Arc<AudioRecording>,
@@ -127,9 +128,10 @@ impl TranscriptionWorker {
             .recv()
             .unwrap_or_else(|_| Err("background transcription stopped unexpectedly".to_string()))
         {
-            Ok(Some(text)) => Ok(Transcript {
+            Ok(Some(timed)) => Ok(Transcript {
                 raw: None,
-                text,
+                text: timed.text,
+                words: timed.words,
                 audio_duration: audio.duration(),
                 transcription: started.elapsed(),
             }),
@@ -247,7 +249,7 @@ impl ParakeetTranscriber {
         input_sample_rate: i32,
         audio_chunks: Receiver<Vec<f32>>,
         cancelled: &AtomicBool,
-    ) -> Result<Option<String>, String> {
+    ) -> Result<Option<TimedText>, String> {
         let Some(vad) = &self.vad else {
             while !cancelled.load(Ordering::Acquire) {
                 match audio_chunks.recv_timeout(std::time::Duration::from_millis(25)) {
@@ -263,7 +265,7 @@ impl ParakeetTranscriber {
         let mut resampler = None;
         let mut model_samples = Vec::new();
         let mut model_offset = 0_usize;
-        let mut parts = Vec::new();
+        let mut parts = TimedText::default();
         let mut is_long = false;
 
         loop {
@@ -329,20 +331,19 @@ impl ParakeetTranscriber {
         }
         vad.flush();
         self.decode_ready_vad_segments(&mut parts)?;
-        Ok(Some(parts.join(" ")))
+        Ok(Some(parts))
     }
 
-    fn decode_ready_vad_segments(&self, parts: &mut Vec<String>) -> Result<(), String> {
+    fn decode_ready_vad_segments(&self, parts: &mut TimedText) -> Result<(), String> {
         let vad = self
             .vad
             .as_ref()
             .ok_or_else(|| "voice detection is unavailable".to_string())?;
         while let Some(segment) = vad.front() {
             vad.pop();
-            let (text, _) = self.decode_bounded(segment.samples())?;
-            if !text.is_empty() {
-                parts.push(text);
-            }
+            let offset = segment.start() as f32 / MODEL_SAMPLE_RATE as f32;
+            let (text, words, _) = self.decode_timed(segment.samples(), offset)?;
+            parts.push(&text, words);
         }
         Ok(())
     }
