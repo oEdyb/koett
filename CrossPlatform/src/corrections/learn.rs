@@ -1,8 +1,10 @@
 //! Turn fixed transcripts into "sounds like" suggestions.
 //!
-//! Words are aligned with Levenshtein over whitespace tokens. Each edited run
-//! of one to three words becomes "heard → term". Large rewrites, punctuation
-//! fixes and ordinary capitalization ("put" → "Put") are ignored. Suggestions
+//! Words are aligned case-insensitively with Levenshtein over whitespace tokens.
+//! Tokens lose only sentence punctuation, so terms keep their own symbols
+//! ("c sharp" → "C#", "dot net" → ".NET"). Each edited run of one to three words
+//! becomes "heard → term" in the corrected spelling. Large rewrites, punctuation
+//! fixes and ordinary capitalization ("ask" → "Ask") are ignored. Suggestions
 //! are ranked by how many entries made the same fix; they are never applied
 //! without the user's explicit acceptance.
 
@@ -50,8 +52,17 @@ fn fixes(original: &str, corrected: &str, known: &[String]) -> BTreeSet<(String,
     }
     let steps = align(&a, &b);
     let edits = steps.iter().filter(|step| !step.2).count();
-    if edits == 0 || edits > 3.max(a.len().max(b.len()) / 3) {
+    if edits > 3.max(a.len().max(b.len()) / 3) {
         return found;
+    }
+    // A case-only fix of a distinctive word ("groq" → "Groq") is worth a term.
+    for step in &steps {
+        if let (Some(i), Some(j), true) = *step
+            && a[i] != b[j]
+            && distinctive(b[j], known)
+        {
+            found.insert((a[i].to_string(), b[j].to_string()));
+        }
     }
     for span in steps.split(|step| step.2) {
         let heard: Vec<&str> = span
@@ -67,7 +78,7 @@ fn fixes(original: &str, corrected: &str, known: &[String]) -> BTreeSet<(String,
             continue;
         }
         let (heard, term) = (heard.join(" "), term.join(" "));
-        if heard != term && distinctive(&term, known) {
+        if !heard.eq_ignore_ascii_case(&term) && distinctive(&term, known) {
             found.insert((heard, term));
         }
     }
@@ -85,14 +96,14 @@ fn align(a: &[&str], b: &[&str]) -> Vec<(Option<usize>, Option<usize>, bool)> {
                 (_, 0) => i,
                 _ => (cost[(i - 1) * width + j] + 1)
                     .min(cost[i * width + j - 1] + 1)
-                    .min(cost[(i - 1) * width + j - 1] + usize::from(a[i - 1] != b[j - 1])),
+                    .min(cost[(i - 1) * width + j - 1] + usize::from(!same(a[i - 1], b[j - 1]))),
             };
         }
     }
     let (mut i, mut j) = (a.len(), b.len());
     let mut steps = Vec::new();
     while i > 0 || j > 0 {
-        let same = i > 0 && j > 0 && a[i - 1] == b[j - 1];
+        let same = i > 0 && j > 0 && same(a[i - 1], b[j - 1]);
         if i > 0
             && j > 0
             && cost[i * width + j] == cost[(i - 1) * width + j - 1] + usize::from(!same)
@@ -112,17 +123,30 @@ fn align(a: &[&str], b: &[&str]) -> Vec<(Option<usize>, Option<usize>, bool)> {
     steps
 }
 
+fn same(a: &str, b: &str) -> bool {
+    a.to_lowercase() == b.to_lowercase()
+}
+
+/// Whitespace words without surrounding sentence punctuation; a term's own
+/// symbols (`C++`, `C#`, `.NET`) stay.
 fn tokens(text: &str) -> Vec<&str> {
     text.split_whitespace()
-        .map(|word| word.trim_matches(|ch: char| !ch.is_alphanumeric() && ch != '-'))
-        .filter(|word| !word.is_empty())
+        .map(|word| {
+            word.trim_start_matches(|ch: char| "\"'([{«“‘¿¡".contains(ch))
+                .trim_end_matches(|ch: char| ".,;:!?\"')]}»”’…".contains(ch))
+        })
+        .filter(|word| word.chars().any(char::is_alphanumeric))
         .collect()
 }
 
-/// A term worth learning: a known dictionary term, or a capitalized word that is
-/// not just an ordinary word at the start of a sentence.
+/// A term worth learning: a known dictionary term, a word with its own symbols,
+/// or a capitalized word that is not just an ordinary word starting a sentence.
 fn distinctive(term: &str, known: &[String]) -> bool {
+    let symbols = term
+        .chars()
+        .any(|ch| !ch.is_alphanumeric() && !ch.is_whitespace() && ch != '-' && ch != '\'');
     known.iter().any(|known| known == term)
+        || symbols
         || term.chars().any(char::is_uppercase) && !crate::dictionary::is_common(term)
 }
 
@@ -174,6 +198,41 @@ mod tests {
         let known = ["fika".to_string()];
         let suggestions = learn(&[("grab a fek later", "grab a fika later")], &known);
         assert_eq!(suggestions[0].term, "fika");
+    }
+
+    #[test]
+    fn term_symbols_survive_alignment() {
+        // Codex review 2 (B2): "c sharp" → "C#" used to suggest "c sharp → C".
+        let pairs = [
+            ("use c sharp now", "use C# now"),
+            ("in c plus plus.", "in C++."),
+            ("on dot net today", "on .NET today"),
+        ];
+        let mut found: Vec<(String, String)> = learned(&pairs)
+            .into_iter()
+            .map(|(heard, term, _)| (heard, term))
+            .collect();
+        found.sort();
+        assert_eq!(
+            found,
+            [
+                ("c plus plus".into(), "C++".into()),
+                ("c sharp".into(), "C#".into()),
+                ("dot net".into(), ".NET".into()),
+            ]
+        );
+    }
+
+    #[test]
+    fn alignment_ignores_case_and_keeps_the_corrected_spelling() {
+        // Codex review 2 (B3): "ask Grok" → "Ask Groq" suggested "ask Grok → Ask Groq".
+        assert_eq!(
+            learned(&[("ask Grok", "Ask Groq"), ("use groq", "use Groq")]),
+            [
+                ("Grok".into(), "Groq".into(), 1),
+                ("groq".into(), "Groq".into(), 1),
+            ]
+        );
     }
 
     #[test]

@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use gtk4::{self as gtk, prelude::*};
 
-use crate::corrections::{Corrections, Proposal};
+use crate::corrections::{Corrections, Proposal, Suggestion};
 use crate::history::HistoryRecord;
 use crate::settings::Settings;
 
@@ -86,10 +86,12 @@ pub fn show(parent: &gtk::ApplicationWindow, record: &HistoryRecord) {
     let suggestions = Suggestions {
         list: gtk::Box::new(gtk::Orientation::Vertical, 8),
         corrections,
+        learned: Rc::default(),
         notice: notice.clone(),
+        fallback: save.clone(),
     };
     page.append(&suggestions.list);
-    suggestions.refresh();
+    suggestions.refresh(None);
 
     save.connect_clicked({
         let edited = edited.clone();
@@ -101,6 +103,7 @@ pub fn show(parent: &gtk::ApplicationWindow, record: &HistoryRecord) {
             suggestions.update(
                 |corrections| corrections.record(&record.id, &record.text, &text, now_ms()),
                 "Correction saved. History keeps what Koett wrote.",
+                None,
             );
         }
     });
@@ -109,20 +112,28 @@ pub fn show(parent: &gtk::ApplicationWindow, record: &HistoryRecord) {
 }
 
 /// The suggestion list; every change saves the store and rebuilds the rows.
+/// Learning runs only when the corrections change; Add and Dismiss refilter.
 #[derive(Clone)]
 struct Suggestions {
     list: gtk::Box,
     corrections: Rc<RefCell<Corrections>>,
+    learned: Rc<RefCell<Option<Vec<Suggestion>>>>,
     notice: gtk::Label,
+    /// Takes focus when the last suggestion is handled.
+    fallback: gtk::Button,
 }
 
 impl Suggestions {
-    /// Apply a change to a copy, save it, and only then keep it.
-    fn update(&self, change: impl FnOnce(&mut Corrections), done: &str) {
+    /// Apply a change to a copy, save it, and only then keep it. `focus` is the
+    /// row whose action should get focus next (after Dismiss).
+    fn update(&self, change: impl FnOnce(&mut Corrections), done: &str, focus: Option<usize>) {
         let mut updated = self.corrections.borrow().clone();
         change(&mut updated);
         match updated.save() {
             Ok(()) => {
+                if updated.entries != self.corrections.borrow().entries {
+                    self.learned.borrow_mut().take();
+                }
                 *self.corrections.borrow_mut() = updated;
                 if !done.is_empty() {
                     self.notice.set_text(done);
@@ -130,10 +141,12 @@ impl Suggestions {
             }
             Err(error) => self.notice.set_text(&error),
         }
-        self.refresh();
+        self.refresh(focus);
     }
 
-    fn refresh(&self) {
+    /// Rebuild the rows; with `focus`, put keyboard focus on that row's first
+    /// action (or the last row's, or Save when none are left).
+    fn refresh(&self, focus: Option<usize>) {
         while let Some(child) = self.list.first_child() {
             self.list.remove(&child);
         }
@@ -145,19 +158,33 @@ impl Suggestions {
                 return;
             }
         };
-        let proposals = self.corrections.borrow().proposals(&dictionary);
+        let learned = self
+            .learned
+            .borrow_mut()
+            .get_or_insert_with(|| self.corrections.borrow().learned(&dictionary))
+            .clone();
+        let proposals = self.corrections.borrow().filter(learned, &dictionary);
         if proposals.is_empty() {
             self.list.append(&label(
                 "No suggestions yet. Fix a misheard word above and save.",
                 "koett-setting-help",
             ));
         }
-        for proposal in &proposals {
-            self.list.append(&self.row(proposal));
+        let mut actions = Vec::new();
+        for (index, proposal) in proposals.iter().enumerate() {
+            let (row, add) = self.row(proposal, index);
+            self.list.append(&row);
+            actions.push(add);
+        }
+        if let Some(index) = focus {
+            match actions.get(index).or(actions.last()) {
+                Some(action) => action.grab_focus(),
+                None => self.fallback.grab_focus(),
+            };
         }
     }
 
-    fn row(&self, proposal: &Proposal) -> gtk::Box {
+    fn row(&self, proposal: &Proposal, index: usize) -> (gtk::Box, gtk::Button) {
         let suggestion = &proposal.suggestion;
         let row = gtk::Box::new(gtk::Orientation::Vertical, 4);
         row.add_css_class("koett-setting-row");
@@ -211,15 +238,21 @@ impl Suggestions {
                     ),
                     Err(error) => format!("Could not add: {error}"),
                 });
-                this.refresh();
+                this.refresh(Some(index));
             }
         });
         dismiss.connect_clicked({
             let this = self.clone();
             let suggestion = suggestion.clone();
-            move |_| this.update(|corrections| corrections.dismiss(&suggestion), "")
+            move |_| {
+                this.update(
+                    |corrections| corrections.dismiss(&suggestion),
+                    "",
+                    Some(index),
+                )
+            }
         });
-        row
+        (row, add)
     }
 }
 

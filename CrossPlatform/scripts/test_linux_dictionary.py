@@ -2,7 +2,7 @@
 """Dictionary Settings page in a private agent-lab session, through AT-SPI.
 
   /usr/bin/python3 scripts/test_linux_dictionary.py --binary target/debug/koett --lab koett \
-      [--model PARAKEET_V2_DIR --clip SPEECH.wav --term Supabase --heard Superbase]
+      [--model PARAKEET_V2_DIR --clip p05-en-US-EmmaNeural.wav]
 Start the lab first; its owner stops it. Only synthetic words and temporary
 config/data directories are used. Checks add, save, reopen, export and import.
 With --model, also dictates the clip through the private lab microphone twice:
@@ -48,8 +48,8 @@ def arguments():
     parser.add_argument("--output", type=Path)
     parser.add_argument("--model", type=Path)
     parser.add_argument("--clip", type=Path)
-    parser.add_argument("--term", default="Supabase")
-    parser.add_argument("--heard", default="Superbase")
+    parser.add_argument("--term", default="Nemotron")
+    parser.add_argument("--heard", default="Nematron")
     parser.add_argument("--fix-word", action="store_true")
     parser.add_argument("--inside-session", action="store_true", help=argparse.SUPPRESS)
     return parser.parse_args()
@@ -294,12 +294,15 @@ def main():
         press("Add to dictionary", dialog)
         wait(lambda: json.loads(config.read_text()).get("dictionary") == [{"term": "Groq", "sounds_like": ["Grok"]}], "Groq added")
         wait(lambda: label_with("Write “Groq”", dialog) is None, "added suggestion leaves the list")
+        focused = lambda name: (node := find(name, "button", dialog)) and node.get_state_set().contains(Atspi.StateType.FOCUSED)
+        wait(lambda: focused("Add anyway"), "focus moves to the next suggestion")
         assert everyday
         press("Dismiss", dialog)
         wait(lambda: json.loads(corrections.read_text())["dismissed"] == [{"heard": "all", "term": "Olle"}], "dismissal saved")
         wait(lambda: label_with("No suggestions yet", dialog), "list empty after review")
+        wait(lambda: focused("Save correction"), "focus returns to Save when none are left")
         assert json.loads(config.read_text())["dictionary"] == [{"term": "Groq", "sounds_like": ["Grok"]}]
-        results.append("Add puts one form in the dictionary; Dismiss keeps the everyday all→Olle out")
+        results.append("Add puts one form in the dictionary; Dismiss keeps the everyday all→Olle out; focus moves to the next action")
         wait(lambda: dialog.get_state_set().contains(Atspi.StateType.ACTIVE), "Fix a word focused")
         subprocess.run([INPUT, "key", "1"], check=True)  # Esc
         wait(lambda: find("Fix a word", "frame") is None, "Fix a word closed")

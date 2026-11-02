@@ -17,9 +17,14 @@ like" forms (what Koett writes instead). Linux ships it; the Mac to-do is below.
    in sound, keeping the other plain words and their punctuation. The hotword
    boost also rewrites unrelated words ("Code Turns My Voice", "invoices" →
    "receipts"), so everything else keeps the plain decode. When the plain words
-   are all common English (SCOWL levels 10–20, `dictionary/common-words.txt`),
-   the biased term is treated as a boosted homophone ("the cloud" → "Claude")
-   and the plain words stay.
+   are all common words, the biased term is treated as a boosted homophone
+   ("the cloud" → "Claude", "Jag fikar" → "Figma") and the plain words stay.
+   The lists are English SCOWL levels 10–20 (`dictionary/common-words.txt`) and
+   25,000 Swedish forms from Språkbanken's Flashback statistics, CC BY 4.0
+   (`dictionary/common-words-sv.txt`). An inflected plain word ("parakeets" for
+   "Parakeet": +s, es, ed, ing) also stays. Multi-word terms in the biased text
+   align as one unit ("Old Dyberg" → "Olle Dyberg"), and only sentence
+   punctuation around the plain words is kept, so "G++." becomes "C++.".
 3. **Spelling pass** (`CrossPlatform/src/dictionary/correct.rs`). Completed
    dictation rewrites spans of up to four words that match a term or a sounds-like
    form, ignoring case and hyphens but not punctuation. Terms with their own
@@ -57,6 +62,12 @@ speech is cleaner than a microphone; treat numbers as relative.
 | **Now: exact-term spans, common words kept** | **70% (114/162)** | **0** | **6.9%** | **0.16%** | **0** | **1** |
 | Now + accepted learned sounds-like forms | 79% (128/162) | 0 | 5.1% | 0.16% | 0 | 1 |
 
+Swedish benchmark (`corpus-sv.json`, run with `KOETT_BENCH_CORPUS=corpus-sv.json`):
+16 sentences with terms, 16 everyday sentences with near-sounding words
+("fikar", "kod", "alla", "kött", "koll", "Figuren"), two Swedish voices, Parakeet v3:
+baseline 27% (12/44), dictionary 55% (24/44), 0 false terms, 0 broken
+everyday sentences, 1 lost word.
+
 "Lost words" counts words outside the terms that the baseline wrote correctly
 and the output lost, in the 40 term sentences (`score.py` `collateral_words`).
 PR #8 lost 6: "the cloud"/"the call"/"calling" became "Claude", and spans like
@@ -74,7 +85,7 @@ Parakeet v3 baseline: 36% recall. Latency, release build, 2 threads, clips of
 3–4 s: greedy median 96 ms, dictionary 188 ms (two streams). Most audio is
 decoded while recording, so only the last segment adds to the wait. Integration
 checks: `scripts/test_linux_dictionary.py` (Settings page, and with `--model`
-a real dictation that turns "Superbase" into "Supabase" after Save, no restart);
+a real dictation of benchmark clip p05 that turns "Nematron" into "Nemotron" after Save, no restart; the plain decode of "Superbase" proved borderline through the lab microphone);
 an ignored model test in `transcription/hotwords.rs` (Phebe → Phoebe and back).
 
 **Fix a word** (Linux, `linux/fix_word_view.rs`, `corrections/`): History →

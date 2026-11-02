@@ -17,6 +17,10 @@ use crate::dictionary::DictionaryEntry;
 pub use learn::{Suggestion, learn};
 
 const VERSION: u32 = 1;
+/// Newest corrections kept; older ones stop teaching once this many exist.
+pub const MAX_CORRECTIONS: usize = 500;
+/// Newest dismissals kept.
+pub const MAX_DISMISSED: usize = 1_000;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
@@ -68,18 +72,43 @@ impl Corrections {
         }
     }
 
+    /// Atomic and private: the temporary file, and so the result, are 0600 like
+    /// the history database; a folder Koett creates is 0700.
     pub fn save_to(&self, path: &Path) -> Result<(), String> {
         let parent = path.parent().ok_or("corrections file has no folder")?;
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        let mut folder = fs::DirBuilder::new();
+        folder.recursive(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt as _;
+            folder.mode(0o700);
+        }
+        folder.create(parent).map_err(|error| error.to_string())?;
         let saved = Self {
             version: VERSION,
             ..self.clone()
         };
         let data = serde_json::to_vec_pretty(&saved).map_err(|error| error.to_string())?;
         let partial = path.with_extension(format!("{}.part", std::process::id()));
-        fs::write(&partial, data)
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        options
+            .open(&partial)
+            .and_then(|mut file| {
+                use std::io::Write as _;
+                file.write_all(&data)?;
+                file.sync_all()
+            })
             .and_then(|()| fs::rename(&partial, path))
-            .map_err(|error| format!("could not save corrections: {error}"))
+            .map_err(|error| {
+                let _ = fs::remove_file(&partial);
+                format!("could not save corrections: {error}")
+            })
     }
 
     pub fn get(&self, id: &str) -> Option<&Correction> {
@@ -98,6 +127,11 @@ impl Corrections {
                 updated_at_ms: now_ms,
             });
         }
+        if self.entries.len() > MAX_CORRECTIONS {
+            self.entries.sort_by_key(|entry| entry.updated_at_ms);
+            let excess = self.entries.len() - MAX_CORRECTIONS;
+            self.entries.drain(..excess);
+        }
     }
 
     pub fn dismiss(&mut self, suggestion: &Suggestion) {
@@ -107,6 +141,10 @@ impl Corrections {
                 term: suggestion.term.clone(),
             });
         }
+        if self.dismissed.len() > MAX_DISMISSED {
+            let excess = self.dismissed.len() - MAX_DISMISSED;
+            self.dismissed.drain(..excess);
+        }
     }
 
     fn is_dismissed(&self, suggestion: &Suggestion) -> bool {
@@ -115,8 +153,9 @@ impl Corrections {
             .any(|known| known.heard == suggestion.heard && known.term == suggestion.term)
     }
 
-    /// Suggestions not yet dismissed and not already in the dictionary.
-    pub fn proposals(&self, dictionary: &[DictionaryEntry]) -> Vec<Proposal> {
+    /// Everything the corrections teach. This is the slow part; callers cache it
+    /// until a correction changes.
+    pub fn learned(&self, dictionary: &[DictionaryEntry]) -> Vec<Suggestion> {
         let pairs: Vec<(&str, &str)> = self
             .entries
             .iter()
@@ -124,6 +163,20 @@ impl Corrections {
             .collect();
         let known: Vec<String> = dictionary.iter().map(|entry| entry.term.clone()).collect();
         learn(&pairs, &known)
+    }
+
+    /// Suggestions not yet dismissed and not already in the dictionary.
+    pub fn proposals(&self, dictionary: &[DictionaryEntry]) -> Vec<Proposal> {
+        self.filter(self.learned(dictionary), dictionary)
+    }
+
+    /// Filter already learned suggestions against dismissals and the dictionary.
+    pub fn filter(
+        &self,
+        learned: Vec<Suggestion>,
+        dictionary: &[DictionaryEntry],
+    ) -> Vec<Proposal> {
+        learned
             .into_iter()
             .filter(|suggestion| !self.is_dismissed(suggestion))
             .filter(|suggestion| {
