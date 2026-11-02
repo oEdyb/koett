@@ -19,10 +19,21 @@
   `CGEventSource.keyState` check: that check returned `false` during real Right
   Option down events on this Mac.
 - Tink and Basso sounds mark recording start and stop.
-- After the stop sound, the same pill shows `Transcribing…` until the text is
-  pasted or an error replaces it. A too-short recording shows nothing.
-- A nonactivating bottom-center pill shows real microphone levels and elapsed
-  recording time. It stays above apps without taking keyboard focus.
+- After the stop sound, the same pill keeps the dimmed timeline with a spinner
+  until the text is pasted or an error replaces it. A too-short recording shows
+  nothing. A successful paste shows `Done · m:ss` with Copy and History for ten
+  seconds, longer while hovered. A delivery failure after a save shows
+  `Not pasted · text saved` with Paste again, Copy and History.
+- A nonactivating bottom-center 300×48 pill shows the whole dictation as a
+  64-column timeline of real microphone levels (see `docs/pill-timeline.md`)
+  and elapsed wall time. It stays above apps without taking keyboard focus and
+  follows the system light or dark appearance.
+- Hovering a dictation pill adds a row above it, so the bottom edge stays put:
+  Cancel, Pause/Resume (Parakeet only), the model name and History. Esc also
+  cancels while recording; its monitor exists only during recording and never
+  consumes Esc. Cancel saves, pastes and transcribes nothing and deletes the
+  audio. Pause drops microphone buffers before the file, so paused time is not
+  transcribed. Ask recordings get no hover row.
 - The Microphone submenu selects a persistent Core Audio device UID for dictation
   and Ask. System Default resolves the current macOS input at recording start.
   An unavailable explicit selection is replaced by an available built-in input,
@@ -110,12 +121,12 @@
   `~/Library/Application Support/Koett/Media Transcripts/` with its source URL,
   title, and transcript. If that save fails, shared transcript recovery retains
   the text, title, and source URL; the pill reports the fallback or storage warning.
-- The existing pill shows fetch and transcription progress. The compact 250×48
-  result uses Koett's coral waveform, one normalized transcript preview line
-  with a native trailing ellipsis, and a labeled `doc.on.doc` **Copy** button.
-  The button has hover and pointer states, then shows a coral checkmark plus
-  **Copied** for one second. The result pill closes by itself after ten
-  seconds; the menu keeps the latest result.
+- The existing pill shows fetch and transcription progress. The 300×88 result
+  shows Koett's coral waveform mark, one normalized transcript preview line
+  with a trailing ellipsis, and **Copy** and **History** buttons. Copy shows
+  **Copied** and the pill closes 1.5 seconds later. The result pill closes by
+  itself after ten seconds, longer while hovered; the menu keeps the latest
+  result.
 - Do not bundle third-party platform logos in the first version. Their trademark
   rules differ; TikTok requires prior written permission, and YouTube's in-app
   icon rules require a link back to YouTube content. Known platform names use
@@ -212,15 +223,17 @@
 
 ### Recording feedback accessibility
 
-- The recording pill is one stable `AXStaticText` element with the label
-  `Koett status` and value `Recording`. Its 30 Hz waveform redraw never changes
-  the accessibility value.
-- Status and copied states are static text. Download progress is an
-  `AXProgressIndicator` with a numeric 0...1 value and a spoken percentage.
-  The media result is an `AXButton` with a labeled Copy action.
-- When macOS Reduce Motion is on, Koett stops waveform level motion and updates
-  only the elapsed timer at 1 Hz. Koett observes the workspace display-options
-  notification so a live recording follows a settings change.
+- The recording pill has one stable `AXStaticText` element with the label
+  `Koett status` and value `Recording` or `Paused`. Its 30 Hz timeline redraw
+  never changes the accessibility value. Each action-row button is its own
+  `AXButton`.
+- Status, done and not-pasted states are static text. Download progress and
+  long-dictation decode progress are an `AXProgressIndicator` with a numeric
+  0...1 value and a spoken percentage.
+- When macOS Reduce Motion is on, the meter keeps sampling at 30 Hz so the
+  timeline has no gaps, but the pill redraws once per second and the spinner
+  stops. Koett observes the workspace display-options notification so a live
+  recording follows a settings change.
 - The menu ends with a disabled `Koett <version>` item read from the bundle.
 - The menu keeps the latest result or failure after its transient pill closes.
   This state is session-only; durable transcript recovery remains in the

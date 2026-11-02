@@ -24,17 +24,12 @@ enum RecordingOverlayFormat {
         return String(normalized.prefix(limit))
     }
 
-    static func refreshInterval(reduceMotion: Bool) -> TimeInterval {
-        reduceMotion ? 1 : 1.0 / 30.0
-    }
+    /// The meter is sampled at this rate so the timeline has no gaps.
+    static let sampleInterval: TimeInterval = 1.0 / 30.0
 
-    static func smoothedLevel(
-        previous: CGFloat,
-        target: CGFloat,
-        reduceMotion: Bool
-    ) -> CGFloat? {
-        guard !reduceMotion else { return nil }
-        return (previous * 0.55) + (target * 0.45)
+    /// Reduced motion keeps a static strip that is redrawn once per second.
+    static func redrawInterval(reduceMotion: Bool) -> TimeInterval {
+        reduceMotion ? 1 : 0
     }
 }
 
@@ -63,24 +58,39 @@ enum RecordingOverlayOutcome: Equatable {
     }
 }
 
+/// Actions the hover row offers while a dictation records.
+struct RecordingControls {
+    let modelName: String
+    let canPause: Bool
+    let cancel: () -> Void
+}
+
+/// A panel that shows above every app but never becomes key or main.
+final class PillPanel: NSPanel {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+}
+
 @MainActor
 final class RecordingOverlayController: NSObject {
-    private static let fullSize = NSSize(width: 236, height: 48)
-    private static let resultSize = NSSize(width: 250, height: 48)
     static let resultDisplayDuration: TimeInterval = 10
 
-    private let meterView = RecordingMeterView(
-        frame: NSRect(origin: .zero, size: fullSize)
+    let pillView = PillView(
+        frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight)
     )
     private lazy var panel: NSPanel = makePanel()
     private weak var recorder: MicrophoneRecorder?
+    private var startedAt: TimeInterval?
     private var timer: Timer?
+    private var lastRedraw: TimeInterval = 0
     private var dismissWorkItem: DispatchWorkItem?
-    private var smoothedLevel: CGFloat = 0
+    private var resultText: String?
     private(set) var latestOutcome: RecordingOverlayOutcome?
     var isTrackingRecording: Bool { recorder?.isRecording == true }
     private(set) var isShowingTranscribing = false
     var onLatestOutcomeChange: (() -> Void)?
+    var onOpenHistory: (() -> Void)?
+    var onPasteAgain: (() -> Void)?
 
     override init() {
         super.init()
@@ -90,65 +100,57 @@ final class RecordingOverlayController: NSObject {
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
             object: NSWorkspace.shared
         )
+        pillView.onHoverChange = { [weak self] in self?.layoutPanel() }
+        pillView.pauseButton.action = { [weak self] in self?.togglePause() }
+        pillView.historyButton.action = { [weak self] in
+            guard let self else { return }
+            if !isTrackingRecording { hide() }
+            onOpenHistory?()
+        }
+        pillView.copyButton.action = { [weak self] in self?.copyResult() }
+        pillView.pasteButton.action = { [weak self] in
+            self?.hide()
+            self?.onPasteAgain?()
+        }
     }
 
-    func start(recorder: MicrophoneRecorder) {
+    /// Milliseconds since the current dictation started, or nil when idle.
+    var sketchElapsedMs: UInt64? {
+        guard isTrackingRecording, let startedAt else { return nil }
+        return Self.milliseconds(ProcessInfo.processInfo.systemUptime - startedAt)
+    }
+
+    func start(recorder: MicrophoneRecorder, controls: RecordingControls? = nil) {
         stop()
         self.recorder = recorder
-        smoothedLevel = 0
-        meterView.reset(reduceMotion: reduceMotion)
-        setPanelSize(Self.fullSize)
-        panel.ignoresMouseEvents = true
-        positionPanel()
-        panel.orderFrontRegardless()
-        startRefreshTimer()
+        startedAt = ProcessInfo.processInfo.systemUptime
+        pillView.timeline.reset()
+        pillView.elapsed = 0
+        pillView.hasRecordingControls = controls != nil
+        pillView.canPause = controls?.canPause ?? false
+        pillView.modelName = controls?.modelName ?? ""
+        pillView.cancelButton.action = controls.map { controls in { controls.cancel() } }
+        show(.recording(paused: false))
+        startTimer()
     }
 
+    /// Hides the pill. The finished timeline stays for the transcribing and done states.
     func stop() {
-        dismissWorkItem?.cancel()
-        dismissWorkItem = nil
-        timer?.invalidate()
-        timer = nil
-        recorder = nil
-        isShowingTranscribing = false
-        meterView.onCopy = nil
-        panel.orderOut(nil)
+        if isTrackingRecording, let startedAt {
+            pillView.elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+        }
+        hide()
     }
 
     func showStatus(_ text: String) {
-        dismissWorkItem?.cancel()
-        dismissWorkItem = nil
-        timer?.invalidate()
-        timer = nil
-        recorder = nil
-        isShowingTranscribing = false
-        meterView.showStatus(text)
-        setPanelSize(Self.fullSize)
-        panel.ignoresMouseEvents = true
-        positionPanel()
-        panel.orderFrontRegardless()
+        pillView.timeline.reset()
+        show(.status(text))
     }
 
-    func showProgress(
-        _ text: String,
-        accessibilityLabel: String,
-        fraction: Double
-    ) {
-        dismissWorkItem?.cancel()
-        dismissWorkItem = nil
-        timer?.invalidate()
-        timer = nil
-        recorder = nil
-        isShowingTranscribing = false
-        meterView.showProgress(
-            text,
-            accessibilityLabel: accessibilityLabel,
-            fraction: fraction
-        )
-        setPanelSize(Self.fullSize)
-        panel.ignoresMouseEvents = true
-        positionPanel()
-        panel.orderFrontRegardless()
+    func showProgress(_ text: String, accessibilityLabel: String, fraction: Double) {
+        pillView.timeline.reset()
+        show(.progress(text: text, fraction: fraction))
+        pillView.statusElement.setAccessibilityLabel(accessibilityLabel)
     }
 
     func showTransientStatus(_ text: String, duration: TimeInterval = 2) {
@@ -158,8 +160,17 @@ final class RecordingOverlayController: NSObject {
 
     /// Keeps the pill visible between the stop sound and the pasted text.
     func showTranscribing() {
-        showStatus("Transcribing…")
+        show(.transcribing(fraction: nil))
         isShowingTranscribing = true
+        startTimer()
+    }
+
+    /// Moves the decode playhead. Fractions only come from the ASR engine.
+    func setDecodeProgress(_ fraction: Double) {
+        guard isShowingTranscribing, fraction.isFinite,
+              case .transcribing(let current) = pillView.content else { return }
+        let next = min(1, max(current ?? 0, fraction))
+        pillView.content = .transcribing(fraction: next)
     }
 
     /// Hides the transcribing pill unless a result or error replaced it.
@@ -168,25 +179,30 @@ final class RecordingOverlayController: NSObject {
         stop()
     }
 
+    /// Replaces the transcribing pill after a successful paste.
+    func showDone(text: String) {
+        guard isShowingTranscribing else { return }
+        resultText = text
+        show(.done(duration: pillView.elapsed))
+        dismiss(after: Self.resultDisplayDuration)
+    }
+
+    /// Replaces the transcribing pill when the text was saved but not pasted.
+    /// Returns false when another message already replaced it.
+    @discardableResult
+    func showNotPasted(text: String) -> Bool {
+        guard isShowingTranscribing else { return false }
+        resultText = text
+        show(.notPasted)
+        recordFailure("Not pasted · text saved")
+        dismiss(after: Self.resultDisplayDuration)
+        return true
+    }
+
     func showResult(_ text: String, message: String) {
-        dismissWorkItem?.cancel()
-        dismissWorkItem = nil
-        timer?.invalidate()
-        timer = nil
-        recorder = nil
-        isShowingTranscribing = false
-        meterView.showResult(message)
-        setPanelSize(Self.resultSize)
-        meterView.onCopy = { [weak self] in
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            guard pasteboard.setString(text, forType: .string) else { return }
-            self?.meterView.showCopied()
-            self?.dismiss(after: 1)
-        }
-        panel.ignoresMouseEvents = false
-        positionPanel()
-        panel.orderFrontRegardless()
+        pillView.timeline.reset()
+        resultText = text
+        show(.media(preview: message))
         latestOutcome = .result(message)
         onLatestOutcomeChange?()
         dismiss(after: Self.resultDisplayDuration)
@@ -203,58 +219,118 @@ final class RecordingOverlayController: NSObject {
         onLatestOutcomeChange?()
     }
 
+    /// Adds or replaces a sketch band. Returns false when no dictation is active
+    /// or the event is malformed.
+    @discardableResult
+    func publishSketch(_ event: SketchEvent) -> Bool {
+        guard event.isValid, isTrackingRecording else { return false }
+        pillView.timeline.apply(event)
+        pillView.needsDisplay = true
+        return true
+    }
+
+    // MARK: Private
+
+    private func show(_ content: PillContent) {
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        isShowingTranscribing = false
+        if case .recording = content {} else {
+            timer?.invalidate()
+            timer = nil
+            recorder = nil
+        }
+        pillView.copyTitle = "Copy"
+        pillView.content = content
+        layoutPanel()
+        panel.orderFrontRegardless()
+    }
+
+    private func hide() {
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        timer?.invalidate()
+        timer = nil
+        recorder = nil
+        isShowingTranscribing = false
+        resultText = nil
+        pillView.setHovered(false)
+        panel.orderOut(nil)
+    }
+
+    private func togglePause() {
+        guard let recorder, recorder.isRecording, pillView.canPause else { return }
+        recorder.isPaused.toggle()
+        pillView.content = .recording(paused: recorder.isPaused)
+    }
+
+    private func copyResult() {
+        guard let resultText else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if pasteboard.setString(resultText, forType: .string) {
+            pillView.copyTitle = "Copied"
+            dismiss(after: 1.5)
+        } else {
+            pillView.copyTitle = "Copy failed"
+        }
+    }
+
     private func dismiss(after delay: TimeInterval) {
         dismissWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.stop()
+            guard let self else { return }
+            if pillView.hovered && pillView.showsActions {
+                dismiss(after: 1)
+            } else {
+                stop()
+            }
         }
         dismissWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
-    @objc private func refresh(_ timer: Timer) {
-        guard let recorder, recorder.isRecording else {
-            stop()
+    @objc private func tick(_ timer: Timer) {
+        let now = ProcessInfo.processInfo.systemUptime
+        switch pillView.content {
+        case .recording:
+            guard let recorder, recorder.isRecording, let startedAt else {
+                stop()
+                return
+            }
+            let level = recorder.isPaused ? 0 : RecordingOverlayFormat.level(forDecibels: recorder.averagePower)
+            pillView.timeline.push(elapsedMs: Self.milliseconds(now - startedAt), level: Double(level))
+            pillView.elapsed = now - startedAt
+        case .transcribing:
+            guard !reduceMotion else { return }
+            pillView.spin = CGFloat(now * 5).truncatingRemainder(dividingBy: 2 * .pi)
+        default:
+            timer.invalidate()
             return
         }
-
-        let target = RecordingOverlayFormat.level(
-            forDecibels: recorder.averagePower
-        )
-        let displayedLevel = RecordingOverlayFormat.smoothedLevel(
-            previous: smoothedLevel,
-            target: target,
-            reduceMotion: reduceMotion
-        )
-        if let displayedLevel {
-            smoothedLevel = displayedLevel
+        if now - lastRedraw >= RecordingOverlayFormat.redrawInterval(reduceMotion: reduceMotion) {
+            lastRedraw = now
+            pillView.needsDisplay = true
         }
-        meterView.update(
-            level: displayedLevel,
-            elapsed: recorder.currentTime
-        )
     }
 
     @objc private func displayOptionsDidChange(_ notification: Notification) {
-        guard recorder?.isRecording == true else { return }
-        smoothedLevel = 0
-        meterView.setReduceMotion(reduceMotion)
-        startRefreshTimer()
+        lastRedraw = 0
+        pillView.needsDisplay = true
     }
 
     private var reduceMotion: Bool {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     }
 
-    private func startRefreshTimer() {
+    private func startTimer() {
         timer?.invalidate()
-        let interval = RecordingOverlayFormat.refreshInterval(
-            reduceMotion: reduceMotion
-        )
+        lastRedraw = 0
+        let interval = RecordingOverlayFormat.sampleInterval
         let timer = Timer(
             timeInterval: interval,
             target: self,
-            selector: #selector(refresh(_:)),
+            selector: #selector(tick(_:)),
             userInfo: nil,
             repeats: true
         )
@@ -264,9 +340,13 @@ final class RecordingOverlayController: NSObject {
         timer.fire()
     }
 
+    private static func milliseconds(_ seconds: TimeInterval) -> UInt64 {
+        UInt64(max(0, seconds * 1_000))
+    }
+
     private func makePanel() -> NSPanel {
-        let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: Self.fullSize),
+        let panel = PillPanel(
+            contentRect: NSRect(origin: .zero, size: pillView.frame.size),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -278,6 +358,7 @@ final class RecordingOverlayController: NSObject {
         panel.becomesKeyOnlyIfNeeded = true
         panel.hidesOnDeactivate = false
         panel.ignoresMouseEvents = true
+        panel.acceptsMouseMovedEvents = true
         panel.level = .screenSaver
         panel.collectionBehavior = [
             .canJoinAllSpaces,
@@ -288,416 +369,25 @@ final class RecordingOverlayController: NSObject {
         ]
         panel.animationBehavior = .none
         panel.isReleasedWhenClosed = false
-        panel.contentView = meterView
+        panel.contentView = pillView
         return panel
     }
 
-    private func setPanelSize(_ size: NSSize) {
-        panel.setContentSize(size)
-        meterView.frame = NSRect(origin: .zero, size: size)
-    }
-
-    private func positionPanel() {
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else { return }
-        let frame = screen.visibleFrame
-        panel.setFrameOrigin(NSPoint(
-            x: frame.midX - (panel.frame.width / 2),
-            y: frame.minY + 72
-        ))
-    }
-}
-
-@MainActor
-final class RecordingMeterView: NSView {
-    private enum Content {
-        case recording
-        case status(String)
-        case progress(text: String, fraction: CGFloat)
-        case result(message: String, copied: Bool)
-    }
-
-    private static let barCount = 17
-    private var levels = [CGFloat](repeating: 0, count: barCount)
-    private var elapsedText = "0:00"
-    private var content = Content.recording
-    private var copyHovered = false
-    private var copyTrackingArea: NSTrackingArea?
-    private var reduceMotion = false
-    var onCopy: (() -> Void)?
-
-    override var isOpaque: Bool { false }
-
-    func reset(reduceMotion: Bool) {
-        content = .recording
-        self.reduceMotion = reduceMotion
-        setStaticStatus("Recording")
-        copyHovered = false
-        levels = [CGFloat](repeating: 0, count: Self.barCount)
-        elapsedText = "0:00"
-        needsDisplay = true
-    }
-
-    func setReduceMotion(_ reduceMotion: Bool) {
-        self.reduceMotion = reduceMotion
-        if reduceMotion {
-            levels = [CGFloat](repeating: 0, count: Self.barCount)
-        }
-        needsDisplay = true
-    }
-
-    func showStatus(_ text: String) {
-        content = .status(text)
-        setStaticStatus(text)
-        copyHovered = false
-        onCopy = nil
-        needsDisplay = true
-    }
-
-    func showProgress(
-        _ text: String,
-        accessibilityLabel: String,
-        fraction: Double
-    ) {
-        let clamped = CGFloat(min(1, max(0, fraction)))
-        content = .progress(text: text, fraction: clamped)
-        setAccessibilityElement(true)
-        setAccessibilityRole(.progressIndicator)
-        setAccessibilityLabel(accessibilityLabel)
-        setAccessibilityValue(NSNumber(value: Double(clamped)))
-        setAccessibilityMinValue(NSNumber(value: 0))
-        setAccessibilityMaxValue(NSNumber(value: 1))
-        setAccessibilityValueDescription("\(Int((clamped * 100).rounded())) percent")
-        copyHovered = false
-        onCopy = nil
-        needsDisplay = true
-    }
-
-    func showResult(_ message: String) {
-        content = .result(message: message, copied: false)
-        copyHovered = false
-        setAccessibilityElement(true)
-        setAccessibilityRole(.button)
-        setAccessibilityLabel("\(message). Copy transcript")
-        setAccessibilityValue(nil)
-        setAccessibilityMinValue(nil)
-        setAccessibilityMaxValue(nil)
-        setAccessibilityValueDescription(nil)
-        window?.invalidateCursorRects(for: self)
-        needsDisplay = true
-    }
-
-    func showCopied() {
-        guard case .result = content else { return }
-        content = .result(message: "Copied", copied: true)
-        copyHovered = false
-        setStaticStatus("Transcript copied")
-        window?.invalidateCursorRects(for: self)
-        needsDisplay = true
-    }
-
-    func update(level: CGFloat?, elapsed: TimeInterval) {
-        if !reduceMotion, let level {
-            levels.removeFirst()
-            levels.append(level)
-        }
-        elapsedText = RecordingOverlayFormat.elapsedTime(elapsed)
-        needsDisplay = true
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        let pillRect = bounds.insetBy(dx: 1, dy: 1)
-        let pill = NSBezierPath(
-            roundedRect: pillRect,
-            xRadius: pillRect.height / 2,
-            yRadius: pillRect.height / 2
-        )
-        NSColor(srgbRed: 0.075, green: 0.075, blue: 0.08, alpha: 0.97).setFill()
-        pill.fill()
-        NSColor.white.withAlphaComponent(0.10).setStroke()
-        pill.lineWidth = 1
-        pill.stroke()
-
-        switch content {
-        case .recording:
-            drawRecording()
-        case .status(let text):
-            drawStatus(text)
-        case .progress(let text, let fraction):
-            drawProgress(text: text, fraction: fraction)
-        case .result(let message, let copied):
-            drawResult(message: message, copied: copied)
-        }
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        guard case .result(_, copied: false) = content,
-              copyButtonRect.contains(convert(event.locationInWindow, from: nil)) else {
+    /// Sizes the panel for the current content. The bottom edge stays put,
+    /// so the strip never moves under the pointer when the action row appears.
+    private func layoutPanel() {
+        let size = NSSize(width: PillView.width, height: pillView.preferredHeight)
+        panel.ignoresMouseEvents = !pillView.acceptsMouse
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            panel.setContentSize(size)
+            pillView.frame = NSRect(origin: .zero, size: size)
             return
         }
-        onCopy?()
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        guard case .result(_, copied: false) = content else { return }
-        copyHovered = true
-        needsDisplay = true
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        copyHovered = false
-        needsDisplay = true
-    }
-
-    override func updateTrackingAreas() {
-        if let copyTrackingArea {
-            removeTrackingArea(copyTrackingArea)
-        }
-        let trackingArea = NSTrackingArea(
-            rect: copyButtonRect,
-            options: [.mouseEnteredAndExited, .activeAlways],
-            owner: self,
-            userInfo: nil
+        let visible = screen.visibleFrame
+        panel.setFrame(
+            NSRect(x: visible.midX - size.width / 2, y: visible.minY + 72, width: size.width, height: size.height),
+            display: true
         )
-        addTrackingArea(trackingArea)
-        copyTrackingArea = trackingArea
-        super.updateTrackingAreas()
-    }
-
-    override func resetCursorRects() {
-        super.resetCursorRects()
-        guard case .result(_, copied: false) = content else { return }
-        addCursorRect(copyButtonRect, cursor: .pointingHand)
-    }
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        true
-    }
-
-    override func accessibilityPerformPress() -> Bool {
-        guard case .result(_, copied: false) = content else { return false }
-        onCopy?()
-        return true
-    }
-
-    private func setStaticStatus(_ value: String) {
-        setAccessibilityElement(true)
-        setAccessibilityRole(.staticText)
-        setAccessibilityLabel("Koett status")
-        setAccessibilityValue(value)
-        setAccessibilityMinValue(nil)
-        setAccessibilityMaxValue(nil)
-        setAccessibilityValueDescription(nil)
-    }
-
-    private var copyButtonRect: NSRect {
-        NSRect(x: bounds.maxX - 90, y: 8, width: 80, height: 32)
-    }
-
-    private func drawRecording() {
-        let coral = NSColor(
-            srgbRed: 1.0,
-            green: 0.31,
-            blue: 0.26,
-            alpha: 1
-        )
-        coral.setFill()
-        NSBezierPath(
-            ovalIn: NSRect(x: 16, y: bounds.midY - 4, width: 8, height: 8)
-        ).fill()
-
-        let barWidth: CGFloat = 3
-        let barStep: CGFloat = 6
-        let waveformStartX: CGFloat = 39
-        for (index, level) in levels.enumerated() {
-            let height = 3 + (level * 24)
-            let rect = NSRect(
-                x: waveformStartX + (CGFloat(index) * barStep),
-                y: bounds.midY - (height / 2),
-                width: barWidth,
-                height: height
-            )
-            let bar = NSBezierPath(roundedRect: rect, xRadius: 1.5, yRadius: 1.5)
-            if (6...10).contains(index) {
-                coral.setFill()
-            } else {
-                NSColor.white.withAlphaComponent(0.82).setFill()
-            }
-            bar.fill()
-        }
-
-        NSColor.white.withAlphaComponent(0.13).setFill()
-        NSBezierPath(rect: NSRect(x: 153, y: 12, width: 1, height: 24)).fill()
-
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.90),
-        ]
-        let timerText = NSAttributedString(string: elapsedText, attributes: attributes)
-        let timerSize = timerText.size()
-        timerText.draw(at: NSPoint(
-            x: 194 - (timerSize.width / 2),
-            y: bounds.midY - (timerSize.height / 2)
-        ))
-    }
-
-    private func drawStatus(_ text: String) {
-        let coral = NSColor(
-            srgbRed: 1.0,
-            green: 0.31,
-            blue: 0.26,
-            alpha: 1
-        )
-        coral.setFill()
-        NSBezierPath(
-            ovalIn: NSRect(x: 17, y: bounds.midY - 4, width: 8, height: 8)
-        ).fill()
-
-        drawText(
-            text,
-            in: NSRect(x: 36, y: 0, width: 184, height: bounds.height),
-            alignment: .left
-        )
-    }
-
-    private func drawProgress(text: String, fraction: CGFloat) {
-        let trackRect = NSRect(x: 36, y: 10, width: 184, height: 3)
-        let track = NSBezierPath(
-            roundedRect: trackRect,
-            xRadius: trackRect.height / 2,
-            yRadius: trackRect.height / 2
-        )
-        NSColor.white.withAlphaComponent(0.14).setFill()
-        track.fill()
-
-        if fraction > 0 {
-            let fillRect = NSRect(
-                x: trackRect.minX,
-                y: trackRect.minY,
-                width: trackRect.width * fraction,
-                height: trackRect.height
-            )
-            let fill = NSBezierPath(
-                roundedRect: fillRect,
-                xRadius: fillRect.height / 2,
-                yRadius: fillRect.height / 2
-            )
-            Self.coral.setFill()
-            fill.fill()
-        }
-
-        drawText(
-            text,
-            in: NSRect(x: 36, y: 12, width: 184, height: 32),
-            alignment: .left
-        )
-    }
-
-    private func drawResult(message: String, copied: Bool) {
-        drawTranscriptMark()
-        drawText(
-            message,
-            in: NSRect(
-                x: 44,
-                y: 0,
-                width: copyButtonRect.minX - 54,
-                height: bounds.height
-            ),
-            alignment: .left
-        )
-
-        let button = NSBezierPath(
-            roundedRect: copyButtonRect,
-            xRadius: copyButtonRect.height / 2,
-            yRadius: copyButtonRect.height / 2
-        )
-        let buttonAlpha: CGFloat = copied ? 0.16 : (copyHovered ? 0.20 : 0.12)
-        NSColor.white.withAlphaComponent(buttonAlpha).setFill()
-        button.fill()
-
-        let symbolName = copied ? "checkmark" : "doc.on.doc"
-        let pointSize = NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
-        let color = NSImage.SymbolConfiguration(paletteColors: [
-            copied ? Self.coral : NSColor.white.withAlphaComponent(0.92),
-        ])
-        guard let symbol = NSImage(
-            systemSymbolName: symbolName,
-            accessibilityDescription: copied ? "Copied" : "Copy transcript"
-        )?.withSymbolConfiguration(pointSize.applying(color)) else {
-            return
-        }
-        let action = copied ? "Copied" : "Copy"
-        let actionAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 12.5, weight: .semibold),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.94),
-        ]
-        let actionText = NSAttributedString(string: action, attributes: actionAttributes)
-        let symbolSize = symbol.size
-        let actionSize = actionText.size()
-        let spacing: CGFloat = 6
-        let contentWidth = symbolSize.width + spacing + actionSize.width
-        let startX = copyButtonRect.midX - (contentWidth / 2)
-        symbol.draw(in: NSRect(
-            x: startX,
-            y: copyButtonRect.midY - (symbolSize.height / 2),
-            width: symbolSize.width,
-            height: symbolSize.height
-        ))
-        actionText.draw(at: NSPoint(
-            x: startX + symbolSize.width + spacing,
-            y: copyButtonRect.midY - (actionSize.height / 2)
-        ))
-    }
-
-    private static let coral = NSColor(
-        srgbRed: 1.0,
-        green: 0.31,
-        blue: 0.26,
-        alpha: 1
-    )
-
-    private func drawTranscriptMark() {
-        let heights: [CGFloat] = [7, 13, 19, 13, 7]
-        let barWidth: CGFloat = 2.5
-        let gap: CGFloat = 2
-        Self.coral.setFill()
-        for (index, height) in heights.enumerated() {
-            let rect = NSRect(
-                x: 16 + (CGFloat(index) * (barWidth + gap)),
-                y: bounds.midY - (height / 2),
-                width: barWidth,
-                height: height
-            )
-            NSBezierPath(
-                roundedRect: rect,
-                xRadius: barWidth / 2,
-                yRadius: barWidth / 2
-            ).fill()
-        }
-    }
-
-    private func drawText(
-        _ text: String,
-        in rect: NSRect,
-        alignment: NSTextAlignment,
-        size: CGFloat = 13
-    ) {
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = alignment
-        paragraph.lineBreakMode = .byTruncatingTail
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: size, weight: .medium),
-            .foregroundColor: NSColor.white.withAlphaComponent(0.90),
-            .paragraphStyle: paragraph,
-        ]
-        let string = NSAttributedString(string: text, attributes: attributes)
-        let textSize = string.size()
-        string.draw(in: NSRect(
-            x: rect.minX,
-            y: rect.midY - (textSize.height / 2),
-            width: rect.width,
-            height: textSize.height
-        ))
+        pillView.frame = NSRect(origin: .zero, size: size)
     }
 }

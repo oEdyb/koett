@@ -66,6 +66,7 @@ final class KoettController: NSObject {
     var speechDetector: VadManager?
     var speechDetectorLoad: Task<Void, Never>?
     lazy var formattingPopover = FormattingPopoverController(controller: self)
+    lazy var escapeMonitor = EscapeKeyMonitor { [weak self] in self?.cancelDictation() }
     private var dictationModifierState = ModifierShortcutState()
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()
@@ -74,6 +75,7 @@ final class KoettController: NSObject {
             if state != oldValue {
                 rebuildMenu()
                 refreshMicrophoneMonitorTarget()
+                escapeMonitor.isActive = state == .recording
             }
         }
     }
@@ -166,6 +168,8 @@ final class KoettController: NSObject {
         recordingOverlay.onLatestOutcomeChange = { [weak self] in
             self?.rebuildMenu()
         }
+        recordingOverlay.onOpenHistory = { [weak self] in self?.openTranscripts() }
+        recordingOverlay.onPasteAgain = { [weak self] in self?.pasteLastTranscriptNow() }
     }
 
     func prepare() async throws {

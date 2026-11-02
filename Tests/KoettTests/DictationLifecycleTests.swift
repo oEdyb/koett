@@ -60,6 +60,35 @@ final class DictationLifecycleTests: XCTestCase {
         controller.recordingOverlay.stop()
     }
 
+    func testCancelDiscardsTheDictationWithoutSavingOrPasting() async throws {
+        let history = FileManager.default.temporaryDirectory.appendingPathComponent("koett-cancel-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: history) }
+        let controller = try makeController()
+        let input = FakeCapture()
+        let live = try NemotronLiveRecorder(adapter: FakeAdapter(), input: input, maximumDuration: 1)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-cancel-test-\(UUID()).wav")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let backup = try makeBackup(url)
+        try controller.startNemotronRecording(live: live) { (backup, url) }
+        controller.state = .recording
+        XCTAssertTrue(controller.escapeMonitor.isActive)
+        let lastTranscript = controller.lastTranscript
+        controller.cancelDictation()
+        XCTAssertFalse(controller.escapeMonitor.isActive)
+        XCTAssertNil(controller.nemotronRecorder)
+        XCTAssertNil(controller.recorder)
+        XCTAssertNil(controller.recordingURL)
+        XCTAssertFalse(backup.isRecording)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        for _ in 0..<300 where controller.state != .ready { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(controller.state, .ready)
+        XCTAssertEqual(controller.lastTranscript, lastTranscript)
+        XCTAssertNil(controller.recordingOverlay.latestOutcome)
+        XCTAssertFalse(controller.recordingOverlay.isShowingTranscribing)
+        controller.cancelDictation()
+        XCTAssertEqual(controller.state, .ready)
+    }
+
     func testDroppingAnActiveLiveCaptureStopsInputAndProcessing() async throws {
         let input = FakeCapture()
         var live: NemotronLiveRecorder? = try NemotronLiveRecorder(adapter: FakeAdapter(), input: input, maximumDuration: 1)

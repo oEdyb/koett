@@ -44,7 +44,8 @@ public enum DictationTranscriber {
     public static func transcribe(
         _ url: URL,
         using manager: AsrManager,
-        detector: VadManager? = nil
+        detector: VadManager? = nil,
+        onProgress: (@Sendable (Double) -> Void)? = nil
     ) async throws -> ASRResult {
         try Task.checkCancellation()
         let samples = try loadSamples(url)
@@ -61,6 +62,8 @@ public enum DictationTranscriber {
         guard !speech.samples.isEmpty else {
             return ASRResult(text: "", confidence: 0, duration: duration, processingTime: 0)
         }
+        let progress = await observeProgress(of: manager, samples: speech.samples.count, onProgress: onProgress)
+        defer { progress?.cancel() }
         let result = try await manager.transcribe(speech.samples, decoderState: &decoder)
         return ASRResult(
             text: result.text,
@@ -72,6 +75,22 @@ public enum DictationTranscriber {
             ctcDetectedTerms: result.ctcDetectedTerms,
             ctcAppliedTerms: result.ctcAppliedTerms
         )
+    }
+
+    /// FluidAudio reports chunk progress only for audio longer than one model
+    /// window; shorter dictations get no fraction, so the pill shows a spinner.
+    private static func observeProgress(
+        of manager: AsrManager,
+        samples: Int,
+        onProgress: (@Sendable (Double) -> Void)?
+    ) async -> Task<Void, Never>? {
+        guard let onProgress, samples > ASRConstants.maxModelSamples else { return nil }
+        let stream = await manager.transcriptionProgressStream
+        return Task {
+            do {
+                for try await fraction in stream { onProgress(fraction) }
+            } catch {}
+        }
     }
 
     static func trimmedSpeech(

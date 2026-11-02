@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 @testable import Koett
 import XCTest
 
@@ -30,31 +31,10 @@ final class RecordingOverlayTests: XCTestCase {
         )
     }
 
-    func testReduceMotionUsesOneHertzAndSuppressesWaveformLevels() {
-        XCTAssertEqual(
-            RecordingOverlayFormat.refreshInterval(reduceMotion: false),
-            1.0 / 30.0,
-            accuracy: 0.000_001
-        )
-        XCTAssertEqual(
-            RecordingOverlayFormat.refreshInterval(reduceMotion: true),
-            1,
-            accuracy: 0.000_001
-        )
-        XCTAssertEqual(
-            RecordingOverlayFormat.smoothedLevel(
-                previous: 0.4,
-                target: 0.8,
-                reduceMotion: false
-            ) ?? -1,
-            0.58,
-            accuracy: 0.000_001
-        )
-        XCTAssertNil(RecordingOverlayFormat.smoothedLevel(
-            previous: 0.4,
-            target: 0.8,
-            reduceMotion: true
-        ))
+    func testReduceMotionRedrawsOncePerSecondButKeepsSampling() {
+        XCTAssertEqual(RecordingOverlayFormat.sampleInterval, 1.0 / 30.0, accuracy: 0.000_001)
+        XCTAssertEqual(RecordingOverlayFormat.redrawInterval(reduceMotion: false), 0)
+        XCTAssertEqual(RecordingOverlayFormat.redrawInterval(reduceMotion: true), 1)
     }
 
     func testTranscribingPillEndsOnlyWhenNothingReplacedIt() {
@@ -72,83 +52,155 @@ final class RecordingOverlayTests: XCTestCase {
         controller.stop()
     }
 
-    func testRecordingAccessibilitySnapshotDoesNotFollowWaveformUpdates() {
-        let view = RecordingMeterView(
-            frame: NSRect(x: 0, y: 0, width: 236, height: 48)
+    func testDoneAndNotPastedOnlyReplaceTheTranscribingPill() {
+        let controller = RecordingOverlayController()
+        controller.showDone(text: "ignored")
+        XCTAssertNotEqual(controller.pillView.content, .done(duration: 0))
+
+        controller.showTranscribing()
+        controller.showDone(text: "Hello")
+        XCTAssertEqual(controller.pillView.content, .done(duration: 0))
+        XCTAssertTrue(controller.pillView.showsActions)
+        XCTAssertEqual(controller.pillView.preferredHeight, 88)
+
+        controller.showTranscribing()
+        controller.showError("Save failed")
+        XCTAssertFalse(controller.showNotPasted(text: "Hello"))
+        XCTAssertEqual(controller.latestOutcome, .failure("Save failed"))
+
+        controller.showTranscribing()
+        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        XCTAssertEqual(controller.pillView.content, .notPasted)
+        XCTAssertEqual(controller.latestOutcome, .failure("Not pasted · text saved"))
+        controller.stop()
+    }
+
+    func testDecodeProgressOnlyMovesForwardWhileTranscribing() {
+        let controller = RecordingOverlayController()
+        controller.setDecodeProgress(0.5)
+        XCTAssertNotEqual(controller.pillView.content, .transcribing(fraction: 0.5))
+        controller.showTranscribing()
+        XCTAssertEqual(controller.pillView.content, .transcribing(fraction: nil))
+        controller.setDecodeProgress(0.6)
+        controller.setDecodeProgress(0.4)
+        controller.setDecodeProgress(.nan)
+        XCTAssertEqual(controller.pillView.content, .transcribing(fraction: 0.6))
+        controller.stop()
+    }
+
+    func testHistoryKeepsTheRecordingPillAndClosesTheDonePill() throws {
+        let controller = RecordingOverlayController()
+        var opened = 0
+        controller.onOpenHistory = { opened += 1 }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-pill-\(UUID()).wav")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let recorder = try MicrophoneRecorder(
+            url: url,
+            device: MicrophoneDevice(id: 1, uid: "fake", name: "Fake"),
+            input: SilentCapture()
         )
-        view.reset(reduceMotion: false)
+        controller.start(recorder: recorder, controls: RecordingControls(modelName: "Parakeet v2", canPause: true, cancel: {}))
+        controller.pillView.historyButton.action?()
+        XCTAssertEqual(opened, 1)
+        XCTAssertTrue(controller.isTrackingRecording)
+        XCTAssertNotNil(controller.sketchElapsedMs)
+        XCTAssertTrue(controller.publishSketch(SketchEvent(index: 1, startMs: 0, endMs: 10, live: true)))
+        controller.pillView.pauseButton.action?()
+        XCTAssertTrue(recorder.isPaused)
+        XCTAssertEqual(controller.pillView.content, .recording(paused: true))
+        controller.stop()
+        recorder.stop()
+        controller.showTranscribing()
+        controller.showDone(text: "Hi")
+        controller.pillView.historyButton.action?()
+        XCTAssertEqual(opened, 2)
+        XCTAssertNil(controller.sketchElapsedMs)
+    }
+
+    func testSketchesNeedAnActiveDictation() {
+        let controller = RecordingOverlayController()
+        XCTAssertNil(controller.sketchElapsedMs)
+        XCTAssertFalse(controller.publishSketch(SketchEvent(index: 1, startMs: 0, endMs: 10, live: true)))
+    }
+
+    func testHoverRowShowsOnlyForDictationControls() {
+        let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
+        view.content = .recording(paused: false)
+        view.setHovered(true)
+        XCTAssertFalse(view.showsActions, "Ask recordings have no hover row")
+        XCTAssertFalse(view.acceptsMouse)
+        view.hasRecordingControls = true
+        view.canPause = true
+        XCTAssertTrue(view.showsActions)
+        XCTAssertTrue(view.acceptsMouse)
+        view.frame.size.height = view.preferredHeight
+        XCTAssertFalse(view.cancelButton.isHidden)
+        XCTAssertFalse(view.pauseButton.isHidden)
+        XCTAssertTrue(view.copyButton.isHidden)
+        XCTAssertEqual(view.pauseButton.title, "Pause")
+        view.content = .recording(paused: true)
+        XCTAssertEqual(view.pauseButton.title, "Resume")
+        XCTAssertEqual(view.cancelButton.accessibilityRole(), .button)
+        view.setHovered(false)
+        XCTAssertFalse(view.showsActions)
+        view.content = .transcribing(fraction: nil)
+        XCTAssertFalse(view.acceptsMouse)
+    }
+
+    func testRecordingAccessibilitySnapshotDoesNotFollowWaveformUpdates() {
+        let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
+        view.content = .recording(paused: false)
         let expected = """
         element=true
         role=AXStaticText
         label=Koett status
         value=Recording
         """
-
-        XCTAssertEqual(accessibilitySnapshot(view), expected)
-        view.update(level: 0.2, elapsed: 0.1)
-        view.update(level: 1, elapsed: 0.2)
-        XCTAssertEqual(accessibilitySnapshot(view), expected)
+        XCTAssertEqual(accessibilitySnapshot(view.statusElement), expected)
+        view.timeline.push(elapsedMs: 100, level: 0.2)
+        view.timeline.push(elapsedMs: 200, level: 1)
+        view.elapsed = 1
+        XCTAssertEqual(accessibilitySnapshot(view.statusElement), expected)
+        view.content = .recording(paused: true)
+        XCTAssertEqual(view.statusElement.accessibilityValue() as? String, "Paused")
     }
 
     func testStatusProgressAndResultAccessibilitySnapshots() {
-        let view = RecordingMeterView(
-            frame: NSRect(x: 0, y: 0, width: 250, height: 48)
-        )
-
-        view.showStatus("Transcribing locally…")
-        XCTAssertEqual(accessibilitySnapshot(view), """
+        let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
+        view.content = .status("Transcribing locally…")
+        XCTAssertEqual(accessibilitySnapshot(view.statusElement), """
         element=true
         role=AXStaticText
         label=Koett status
         value=Transcribing locally…
         """)
 
-        view.showProgress(
-            "Parakeet v2 · 42%",
-            accessibilityLabel: "Downloading Parakeet v2",
-            fraction: 0.42
-        )
-        XCTAssertEqual(accessibilitySnapshot(view), """
+        view.content = .progress(text: "Downloading Parakeet v2", fraction: 0.42)
+        XCTAssertEqual(accessibilitySnapshot(view.statusElement), """
         element=true
         role=AXProgressIndicator
         label=Downloading Parakeet v2
         value=0.42
         """)
-        XCTAssertEqual(view.accessibilityValueDescription(), "42 percent")
+        XCTAssertEqual(view.statusElement.accessibilityValueDescription(), "42 percent")
 
-        view.showProgress(
-            "Parakeet v2 · 73%",
-            accessibilityLabel: "Downloading Parakeet v2",
-            fraction: 0.73
-        )
-        XCTAssertEqual(view.accessibilityLabel(), "Downloading Parakeet v2")
-        XCTAssertEqual(view.accessibilityValue() as? NSNumber, 0.73)
-        XCTAssertEqual(view.accessibilityValueDescription(), "73 percent")
+        view.content = .transcribing(fraction: 0.73)
+        XCTAssertEqual(view.statusElement.accessibilityValue() as? NSNumber, 0.73)
+        XCTAssertEqual(view.statusElement.accessibilityValueDescription(), "73 percent")
 
-        var pressed = false
-        view.onCopy = { pressed = true }
-        view.showResult("Media transcript ready")
-        XCTAssertEqual(accessibilitySnapshot(view), """
-        element=true
-        role=AXButton
-        label=Media transcript ready. Copy transcript
-        value=nil
-        """)
-        XCTAssertNil(view.accessibilityMinValue())
-        XCTAssertNil(view.accessibilityMaxValue())
-        XCTAssertTrue(view.accessibilityPerformPress())
-        XCTAssertTrue(pressed)
-
-        view.showCopied()
-        XCTAssertEqual(accessibilitySnapshot(view), """
+        view.content = .done(duration: 12)
+        XCTAssertEqual(accessibilitySnapshot(view.statusElement), """
         element=true
         role=AXStaticText
         label=Koett status
-        value=Transcript copied
+        value=Done · 0:12
         """)
-        XCTAssertNil(view.accessibilityMinValue())
-        XCTAssertNil(view.accessibilityMaxValue())
-        XCTAssertFalse(view.accessibilityPerformPress())
+        XCTAssertNil(view.statusElement.accessibilityMinValue())
+
+        var copied = false
+        view.copyButton.action = { copied = true }
+        XCTAssertTrue(view.copyButton.accessibilityPerformPress())
+        XCTAssertTrue(copied)
     }
 
     func testLatestOutcomeMenuTitlesAreBoundedAndKeepTheirKind() {
@@ -167,7 +219,7 @@ final class RecordingOverlayTests: XCTestCase {
         )
     }
 
-    private func accessibilitySnapshot(_ view: RecordingMeterView) -> String {
+    private func accessibilitySnapshot(_ view: NSView) -> String {
         let role = view.accessibilityRole()?.rawValue ?? "nil"
         let label = view.accessibilityLabel() ?? "nil"
         let value = view.accessibilityValue().map { String(describing: $0) } ?? "nil"
@@ -178,4 +230,12 @@ final class RecordingOverlayTests: XCTestCase {
         value=\(value)
         """
     }
+}
+
+@MainActor
+private final class SilentCapture: MicrophoneCapturing {
+    let format = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)!
+    var error: Error?
+    func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {}
+    func stop() {}
 }

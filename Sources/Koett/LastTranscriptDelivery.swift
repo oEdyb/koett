@@ -67,6 +67,12 @@ extension KoettController: NSMenuDelegate {
         lastTranscriptMenuActions.queue(.paste(lastTranscript))
     }
 
+    /// Pastes the last transcript into the app under the pill.
+    func pasteLastTranscriptNow() {
+        guard state == .ready, let lastTranscript else { return }
+        performLastTranscriptAction(.paste(lastTranscript))
+    }
+
     func menuDidClose(_ menu: NSMenu) {
         guard menu === statusItem?.menu,
               let action = lastTranscriptMenuActions.takeAfterMenuDidClose()

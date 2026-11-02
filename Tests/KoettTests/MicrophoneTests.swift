@@ -105,6 +105,27 @@ final class MicrophoneTests: XCTestCase {
         XCTAssertEqual(sink.duration, 200, accuracy: 0.001)
     }
 
+    func testPausedCaptureWritesNoAudioAndSilencesTheMeter() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-mic-test-\(UUID()).wav")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1))
+        let sink = try MicrophoneFileSink(url: url, inputFormat: format)
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1_600))
+        buffer.frameLength = 1_600
+        buffer.floatChannelData![0].initialize(repeating: 0.5, count: 1_600)
+        sink.append(buffer)
+        XCTAssertGreaterThan(sink.averagePower, -10)
+        sink.isPaused = true
+        XCTAssertEqual(sink.averagePower, -160)
+        for _ in 0..<5 { sink.append(buffer) }
+        XCTAssertEqual(sink.duration, 0.1, accuracy: 0.001)
+        sink.isPaused = false
+        sink.append(buffer)
+        sink.close()
+        XCTAssertNil(sink.error)
+        XCTAssertEqual(try AVAudioFile(forReading: url).length, 3_200)
+    }
+
     func testCaptureFailureStopsWritingAndKeepsCompletedAudio() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-mic-test-\(UUID()).wav")
         defer { try? FileManager.default.removeItem(at: url) }
