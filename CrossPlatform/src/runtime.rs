@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -61,7 +61,37 @@ pub enum EngineUpdate {
     TranscriptReady {
         model: String,
         transcript: Transcript,
+        /// The dictation this belongs to; see [`DictationSessions`].
+        session: u64,
     },
+}
+
+/// Numbers each dictation so a Cancel can invalidate it immediately, from any
+/// thread, even while the engine is still blocked decoding it after Stop.
+#[derive(Default)]
+pub struct DictationSessions {
+    current: AtomicU64,
+    cancelled: AtomicU64,
+}
+
+impl DictationSessions {
+    fn begin(&self) -> u64 {
+        self.current.fetch_add(1, Ordering::AcqRel) + 1
+    }
+
+    pub fn current(&self) -> u64 {
+        self.current.load(Ordering::Acquire)
+    }
+
+    /// Marks the latest dictation cancelled; its transcript must not be
+    /// pasted or saved, wherever it is in the pipeline.
+    pub fn cancel_current(&self) {
+        self.cancelled.store(self.current(), Ordering::Release);
+    }
+
+    pub fn is_cancelled(&self, session: u64) -> bool {
+        session != 0 && self.cancelled.load(Ordering::Acquire) == session
+    }
 }
 
 pub struct EngineHandle {
@@ -69,6 +99,7 @@ pub struct EngineHandle {
     pub updates: Receiver<EngineUpdate>,
     cancelled: Arc<AtomicBool>,
     ask_cancelled: Arc<AtomicBool>,
+    sessions: Arc<DictationSessions>,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -83,11 +114,27 @@ impl EngineHandle {
                 updates: incoming,
                 cancelled: Arc::new(AtomicBool::new(false)),
                 ask_cancelled: Arc::new(AtomicBool::new(false)),
+                sessions: Arc::new(DictationSessions::default()),
                 worker: None,
             },
             received,
             updates,
         )
+    }
+
+    /// Invalidates the active dictation at once, before the queued Cancel
+    /// command reaches a worker that may be busy finishing a Stop.
+    pub fn cancel_dictation(&self) {
+        self.sessions.cancel_current();
+    }
+
+    pub fn dictation_cancelled(&self, session: u64) -> bool {
+        self.sessions.is_cancelled(session)
+    }
+
+    #[cfg(all(test, target_os = "linux"))]
+    pub(crate) fn begin_test_session(&self) -> u64 {
+        self.sessions.begin()
     }
 
     pub fn cancel_ask(&self) {
@@ -112,6 +159,8 @@ pub fn start(settings: Settings) -> EngineHandle {
     let worker_cancelled = cancelled.clone();
     let ask_cancelled = Arc::new(AtomicBool::new(false));
     let worker_ask_cancelled = ask_cancelled.clone();
+    let sessions = Arc::new(DictationSessions::default());
+    let worker_sessions = sessions.clone();
     model::SWITCH_CANCELLED.store(false, Ordering::Release);
     let worker = thread::spawn(move || {
         run(
@@ -120,6 +169,7 @@ pub fn start(settings: Settings) -> EngineHandle {
             update_sender,
             worker_cancelled,
             worker_ask_cancelled,
+            worker_sessions,
         )
     });
 
@@ -128,6 +178,7 @@ pub fn start(settings: Settings) -> EngineHandle {
         updates: update_receiver,
         cancelled,
         ask_cancelled,
+        sessions,
         worker: Some(worker),
     }
 }
@@ -138,6 +189,7 @@ fn run(
     updates: Sender<EngineUpdate>,
     cancelled: Arc<AtomicBool>,
     ask_cancelled: Arc<AtomicBool>,
+    sessions: Arc<DictationSessions>,
 ) {
     #[cfg(not(target_os = "linux"))]
     let _ = ask_cancelled;
@@ -720,6 +772,7 @@ fn run(
                         Ok((started, session))
                     }) {
                     Ok((started, session)) => {
+                        sessions.begin();
                         capture_started = Some(std::time::Instant::now());
                         let levels = started.levels();
                         recorder = Some(started);
@@ -829,6 +882,16 @@ fn run(
                             continue;
                         }
 
+                        let session = sessions.current();
+                        if sessions.is_cancelled(session) {
+                            let _ =
+                                updates.send(EngineUpdate::Notice("Dictation cancelled".into()));
+                            status = status
+                                .next(AppEvent::TranscriptionFinished, None)
+                                .expect("transcription can always finish");
+                            send_status(&updates, &status);
+                            continue;
+                        }
                         if settings.formatting.enabled
                             && !transcript.text.is_empty()
                             && let Some(cleaner) = cleaner.as_mut()
@@ -847,6 +910,7 @@ fn run(
                         let _ = updates.send(EngineUpdate::TranscriptReady {
                             model: model.clone(),
                             transcript,
+                            session,
                         });
                         status = status
                             .next(AppEvent::TranscriptionFinished, None)
@@ -867,6 +931,7 @@ fn run(
                 }
             }
             EngineCommand::Cancel if status == AppStatus::Recording => {
+                sessions.cancel_current();
                 drop(recorder.take());
                 drop(background.take());
                 capture_started = None;
@@ -885,6 +950,8 @@ fn run(
                 send_status(&updates, &status);
                 let _ = updates.send(EngineUpdate::Notice("Dictation cancelled".into()));
             }
+            // A Cancel that queued behind Stop was already applied through
+            // `EngineHandle::cancel_dictation`; nothing is left to stop.
             EngineCommand::Toggle
             | EngineCommand::Start
             | EngineCommand::Stop
