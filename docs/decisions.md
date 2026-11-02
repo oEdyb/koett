@@ -58,6 +58,7 @@ therefore offers the pill's Cancel button and `koett cancel`, which can be bound
 in the compositor. Silence dots come from the level floor, not from Silero, since
 the live path only runs VAD after 20 s. Draw mode feeds sketch bands through
 `koett_engine::sketch`; see `docs/pill-timeline.md`.
+
 ## 2026-11-02: dictionary uses decoder hotwords, kept only where they spell a term
 
 Three approaches were built in parallel and scored on one synthetic benchmark
