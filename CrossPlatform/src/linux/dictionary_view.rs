@@ -203,6 +203,12 @@ fn chooser(
     text.add_pattern("*.txt");
     text.add_mime_type("text/plain");
     dialog.add_filter(&text);
+    if let Some(documents) = directories::UserDirs::new()
+        .and_then(|dirs| dirs.document_dir().map(std::path::Path::to_path_buf))
+    {
+        // A missing folder only leaves the chooser at its own default.
+        let _ = dialog.set_current_folder(Some(&gtk::gio::File::for_path(documents)));
+    }
     dialog
 }
 

@@ -311,7 +311,7 @@ def main():
 
     def section(name, root):
         combo = wait(lambda: find("Settings section", "combo box", root), "Settings section selector")
-        choose_option(combo, ["Audio", "Shortcuts", "Text", "General"].index(name))
+        choose_option(combo, ["Audio", "Shortcuts", "Text", "Dictionary", "General"].index(name))
         time.sleep(0.4)
 
     def labels():
@@ -582,6 +582,19 @@ def main():
         replacement = find("Replacement", "text", settings_window)
         assert phrase.get_editable_text_iface().set_text_contents("koet")
         assert replacement.get_editable_text_iface().set_text_contents("Koett")
+        section("Dictionary", settings_window)
+        button("Add word", settings_window)
+        term = wait(lambda: find("Word", "text", settings_window), "labeled dictionary word")
+        heard = find("Sounds like", "text", settings_window)
+        wait(lambda: term.get_state_set().contains(Atspi.StateType.FOCUSED), "new dictionary word is focused")
+        assert term.get_editable_text_iface().set_text_contents(" Nordicrank ")
+        assert heard.get_editable_text_iface().set_text_contents("nordic rank,, nordic bank")
+        screenshot("settings-dictionary.png")
+        button("Import…", settings_window)
+        chooser = wait(lambda: find("Import dictionary", "dialog") or find("Import dictionary", "frame"), "dictionary import chooser")
+        button("Cancel", chooser)
+        wait(lambda: not chooser.get_state_set().contains(Atspi.StateType.SHOWING) or chooser.get_state_set().contains(Atspi.StateType.DEFUNCT), "import chooser cancelled")
+        results.append("native Dictionary page adds a focused word with sounds-like forms and opens the import chooser")
         section("General", settings_window)
         pause = find("Pause media while recording", "check box", settings_window)
         if pause.get_action_iface().get_n_actions():
@@ -597,6 +610,7 @@ def main():
         persisted = wait(lambda: json.loads(config.read_text()).get("replacements"), "saved settings")
         assert persisted == [{"phrase": "koet", "replacement": "Koett"}]
         saved = json.loads(config.read_text())
+        assert saved["dictionary"] == [{"term": "Nordicrank", "sounds_like": ["nordic rank", "nordic bank"]}]
         assert saved["shortcut"] == saved_shortcut and saved["pause_media"]
         assert saved["paste_shortcut"] == "ctrl_shift_v"
         assert saved["microphone"] is not None
@@ -606,13 +620,18 @@ def main():
             wait(lambda: find(saved_shortcut, "label"), "updated shortcut footer")
         if lab_runtime:
             wait(lambda: not capture_streams(), "Save releases Settings preview stream")
-        results.append("native settings persist microphone ID, shortcut, replacement and media choice")
+        results.append("native settings persist microphone ID, shortcut, replacement, dictionary and media choice")
         wait(lambda: not settings_window.get_state_set().contains(Atspi.StateType.SHOWING), "saved Settings window closed")
         button("Settings")
         settings_window = wait(lambda: find("Settings", "frame"), "reopened settings")
         wait(lambda: settings_window.get_state_set().contains(Atspi.StateType.ACTIVE), "reopened Settings activates")
         section("Text", settings_window)
         wait(lambda: (entry := find("Phrase", "text", settings_window)) and entry_text(entry) == "koet", "reopened replacement")
+        section("Dictionary", settings_window)
+        wait(lambda: (entry := find("Word", "text", settings_window)) and entry_text(entry) == "Nordicrank", "reopened dictionary word")
+        wait(lambda: (entry := find("Sounds like", "text", settings_window)) and entry_text(entry) == "nordic rank, nordic bank", "reopened sounds-like forms")
+        screenshot("settings-dictionary-reopened.png")
+        section("Text", settings_window)
         paste_choice = wait(lambda: find("Paste shortcut", "combo box", settings_window), "reopened paste shortcut")
         screenshot("settings-paste-reopened.png")
         section("Audio", settings_window)
