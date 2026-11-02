@@ -53,20 +53,37 @@ public enum DictationTranscriber {
         guard let samples else {
             return try await manager.transcribe(url, decoderState: &decoder)
         }
-        let speech = await trimmedSpeech(samples, using: detector)
-        guard !speech.isEmpty else {
-            return ASRResult(text: "", confidence: 0, duration: 0, processingTime: 0)
+        let speech = await trimmedSpeech(samples) { samples in
+            guard let detector else { return nil }
+            return try await SpeechTrimmer.speechRanges(in: samples, using: detector)
         }
-        return try await manager.transcribe(speech, decoderState: &decoder)
+        let duration = Double(samples.count) / Double(VadManager.sampleRate)
+        guard !speech.samples.isEmpty else {
+            return ASRResult(text: "", confidence: 0, duration: duration, processingTime: 0)
+        }
+        let result = try await manager.transcribe(speech.samples, decoderState: &decoder)
+        return ASRResult(
+            text: result.text,
+            confidence: result.confidence,
+            duration: duration,
+            processingTime: result.processingTime,
+            tokenTimings: speech.sourceTimings(result.tokenTimings),
+            performanceMetrics: result.performanceMetrics,
+            ctcDetectedTerms: result.ctcDetectedTerms,
+            ctcAppliedTerms: result.ctcAppliedTerms
+        )
     }
 
-    static func trimmedSpeech(_ samples: [Float], using detector: VadManager?) async -> [Float] {
-        guard let detector else { return samples }
+    static func trimmedSpeech(
+        _ samples: [Float],
+        speechRanges: ([Float]) async throws -> [Range<Int>]?
+    ) async -> TrimmedSpeech {
         do {
-            return try await SpeechTrimmer.speech(in: samples, using: detector)
+            guard let ranges = try await speechRanges(samples) else { return .untrimmed(samples) }
+            return SpeechTrimmer.join(samples, speech: ranges)
         } catch {
             fputs("Warning: silence trimming skipped: \(error.localizedDescription)\n", stderr)
-            return samples
+            return .untrimmed(samples)
         }
     }
 

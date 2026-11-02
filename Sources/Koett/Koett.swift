@@ -64,6 +64,7 @@ final class KoettController: NSObject {
     var s1MiniContext: S1MiniContext
     var s1MiniCleaner: S1MiniCleaner?
     var speechDetector: VadManager?
+    var speechDetectorLoad: Task<Void, Never>?
     lazy var formattingPopover = FormattingPopoverController(controller: self)
     private var dictationModifierState = ModifierShortcutState()
     private var mediaModifierState = ModifierShortcutState()
@@ -199,7 +200,7 @@ final class KoettController: NSObject {
         var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
         let silence = [Float](repeating: 0, count: 4_800)
         _ = try await manager.transcribe(silence, decoderState: &decoderState)
-        speechDetector = await Self.loadSpeechDetector()
+        startLoadingSpeechDetector()
 
         if s1MiniEnabled {
             setSetupStatus(.checkingModel("S1-mini"))
@@ -230,6 +231,15 @@ final class KoettController: NSObject {
             try await nemotronAdapter.prepare(
                 progressHandler: fluidAudioProgressHandler(model: "Nemotron 560 ms")
             )
+        }
+    }
+
+    func startLoadingSpeechDetector() {
+        guard speechDetector == nil, speechDetectorLoad == nil else { return }
+        speechDetectorLoad = Task { @MainActor [weak self] in
+            let detector = await Self.loadSpeechDetector()
+            self?.speechDetector = detector
+            self?.speechDetectorLoad = nil
         }
     }
 

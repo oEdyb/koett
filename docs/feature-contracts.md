@@ -60,8 +60,11 @@
   before ASR (threshold 0.5, 0.5 s minimum silence, 0.25 s minimum speech,
   0.25 s padding). Each silence longer than 0.4 s keeps only its first and last
   0.2 s; shorter pauses stay whole. No detected speech returns empty text
-  without running ASR and without a warning. A detector load or run failure
-  sends the full recording to ASR. Media and the URL path are not trimmed.
+  without running ASR and without a warning. The detector loads in the
+  background after Parakeet is ready and never delays readiness; until it is
+  loaded, or after a load or run failure, the full recording goes to ASR.
+  Token timings are mapped back to the original recording clock. Media and the
+  URL path are not trimmed.
 - Nemotron Streaming EN 0.6B at the 560 ms configuration is an experimental
   menu option. It processes microphone audio while the user speaks.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery
