@@ -46,6 +46,7 @@ enum WorkerCommand {
         cancelled: Arc<AtomicBool>,
         completed: Sender<Result<String, String>>,
     },
+    Dictionary(Vec<crate::dictionary::DictionaryEntry>),
     Quit,
 }
 
@@ -177,6 +178,11 @@ impl TranscriptionWorker {
         Ok(reply)
     }
 
+    /// Applied between jobs; a failed decoder reload keeps the previous dictionary.
+    pub fn set_dictionary(&self, dictionary: Vec<crate::dictionary::DictionaryEntry>) {
+        let _ = self.commands.send(WorkerCommand::Dictionary(dictionary));
+    }
+
     pub fn stop(mut self) {
         self.shutdown();
     }
@@ -236,6 +242,11 @@ fn run_transcription_worker(
             } => {
                 let result = transcribe_media_pcm(&mut transcriber, &path, &cancelled);
                 let _ = completed.send(result);
+            }
+            WorkerCommand::Dictionary(dictionary) => {
+                if let Err(error) = transcriber.set_dictionary(&dictionary) {
+                    eprintln!("dictionary_bias_error={error}");
+                }
             }
             WorkerCommand::Quit => break,
         }

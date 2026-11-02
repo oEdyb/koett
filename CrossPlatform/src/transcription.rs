@@ -12,6 +12,7 @@ use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
 mod background;
+mod hotwords;
 mod nemotron;
 mod recovery;
 pub use nemotron::NemotronTranscriber;
@@ -76,10 +77,41 @@ pub struct ParakeetTranscriber {
     recognizer: OfflineRecognizer,
     vad: Option<VoiceActivityDetector>,
     model_load: Duration,
+    model_directory: PathBuf,
+    threads: i32,
+    bias: Option<hotwords::Bias>,
 }
 
 impl ParakeetTranscriber {
     pub fn load(model_directory: &Path, threads: i32) -> Result<Self, String> {
+        Self::load_with_dictionary(model_directory, threads, &[])
+    }
+
+    /// Load with Olle's dictionary. Transducer models bias decoding toward its terms.
+    pub fn load_with_dictionary(
+        model_directory: &Path,
+        threads: i32,
+        dictionary: &[crate::dictionary::DictionaryEntry],
+    ) -> Result<Self, String> {
+        let bias = hotwords::Bias::new(model_directory, dictionary)?;
+        let started = Instant::now();
+        let recognizer = Self::recognizer(model_directory, threads, bias.as_ref())?;
+        let vad = load_vad(model_directory)?;
+        Ok(Self {
+            recognizer,
+            vad,
+            model_load: started.elapsed(),
+            model_directory: model_directory.to_path_buf(),
+            threads,
+            bias,
+        })
+    }
+
+    fn recognizer(
+        model_directory: &Path,
+        threads: i32,
+        bias: Option<&hotwords::Bias>,
+    ) -> Result<OfflineRecognizer, String> {
         let tokens = required_file(model_directory, "tokens.txt")?;
 
         let mut config = OfflineRecognizerConfig::default();
@@ -107,37 +139,37 @@ impl ParakeetTranscriber {
             };
             config.model_config.model_type = Some("nemo_transducer".to_string());
         }
-
-        let started = Instant::now();
-        let recognizer = OfflineRecognizer::create(&config)
-            .ok_or_else(|| "sherpa-onnx could not load the model".to_string())?;
-        let vad_path = model_directory.join(VAD_FILE);
-        let vad = if vad_path.is_file() {
-            let mut vad_config = VadModelConfig::default();
-            vad_config.silero_vad.model = Some(path_string(&vad_path)?);
-            vad_config.silero_vad.threshold = 0.5;
-            vad_config.silero_vad.min_silence_duration = 0.5;
-            vad_config.silero_vad.min_speech_duration = 0.25;
-            vad_config.silero_vad.max_speech_duration = 20.0;
-            vad_config.silero_vad.window_size = VAD_WINDOW_SIZE as i32;
-            vad_config.sample_rate = MODEL_SAMPLE_RATE;
-            vad_config.num_threads = 1;
-            vad_config.provider = Some("cpu".to_string());
-            Some(
-                VoiceActivityDetector::create(&vad_config, 60.0)
-                    .ok_or_else(|| "sherpa-onnx could not load voice detection".to_string())?,
-            )
-        } else {
-            None
-        };
-
-        Ok(Self {
-            recognizer,
-            vad,
-            model_load: started.elapsed(),
-        })
+        if let Some(bias) = bias {
+            bias.configure(&mut config)?;
+        }
+        OfflineRecognizer::create(&config)
+            .ok_or_else(|| "sherpa-onnx could not load the model".to_string())
     }
+}
 
+fn load_vad(model_directory: &Path) -> Result<Option<VoiceActivityDetector>, String> {
+    let vad_path = model_directory.join(VAD_FILE);
+    Ok(if vad_path.is_file() {
+        let mut vad_config = VadModelConfig::default();
+        vad_config.silero_vad.model = Some(path_string(&vad_path)?);
+        vad_config.silero_vad.threshold = 0.5;
+        vad_config.silero_vad.min_silence_duration = 0.5;
+        vad_config.silero_vad.min_speech_duration = 0.25;
+        vad_config.silero_vad.max_speech_duration = 20.0;
+        vad_config.silero_vad.window_size = VAD_WINDOW_SIZE as i32;
+        vad_config.sample_rate = MODEL_SAMPLE_RATE;
+        vad_config.num_threads = 1;
+        vad_config.provider = Some("cpu".to_string());
+        Some(
+            VoiceActivityDetector::create(&vad_config, 60.0)
+                .ok_or_else(|| "sherpa-onnx could not load voice detection".to_string())?,
+        )
+    } else {
+        None
+    })
+}
+
+impl ParakeetTranscriber {
     pub fn model_load(&self) -> Duration {
         self.model_load
     }
@@ -160,22 +192,16 @@ fn needs_segmentation(duration: Duration) -> bool {
 impl ParakeetTranscriber {
     fn transcribe_short(&self, audio: &AudioRecording) -> Result<Transcript, String> {
         let audio_duration = audio.duration();
-        let stream = self.recognizer.create_stream();
-        stream.accept_waveform(audio.sample_rate, &audio.samples);
-
         progress_reset();
         progress_plan(1);
         let started = Instant::now();
-        self.recognizer.decode(&stream);
+        let text = self.decode_text(audio.sample_rate, &audio.samples)?;
         let transcription = started.elapsed();
         progress_step();
-        let result = stream
-            .get_result()
-            .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
 
         Ok(Transcript {
             raw: None,
-            text: result.text,
+            text,
             audio_duration,
             transcription,
         })
@@ -253,13 +279,8 @@ impl ParakeetTranscriber {
         let mut text = String::new();
         let ranges = bounded_decode_ranges(samples.len());
         for range in &ranges {
-            let stream = self.recognizer.create_stream();
-            stream.accept_waveform(MODEL_SAMPLE_RATE, &samples[range.clone()]);
-            self.recognizer.decode(&stream);
-            let result = stream
-                .get_result()
-                .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
-            merge_overlapping_text(&mut text, &result.text);
+            let decoded = self.decode_text(MODEL_SAMPLE_RATE, &samples[range.clone()])?;
+            merge_overlapping_text(&mut text, &decoded);
         }
         Ok((text, ranges.len()))
     }

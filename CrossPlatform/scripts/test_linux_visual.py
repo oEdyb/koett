@@ -107,7 +107,7 @@ def find(name, root=None, role=None):
 
 
 def click(name, root=None):
-    if name in ['Audio', 'Shortcuts', 'Text', 'General']:
+    if name in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
         combo = wait(lambda: find('Settings section', root, 'combo box'), 'Settings selector')
         kwin(f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === "Settings") {{ w.frameGeometry={{x:400,y:140,width:540,height:460}}; workspace.activeWindow=w; }}')
         rect = combo.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
@@ -115,7 +115,7 @@ def click(name, root=None):
         subprocess.run([input_tool, 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
         subprocess.run([input_tool, 'click'], check=True)
         keys('key', 102)
-        for _ in range(['Audio', 'Shortcuts', 'Text', 'General'].index(name)):
+        for _ in range(['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General'].index(name)):
             keys('key', 108)
         keys('key', 28)
         time.sleep(0.4)
@@ -228,14 +228,14 @@ try:
     resize('Koett', 960, 680)
     control('settings')
     settings = wait(lambda: find('Settings', role='frame'), 'Settings')
-    for section in ['Audio', 'Shortcuts', 'Text', 'General']:
+    for section in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
         click(section, settings)
         assert find('Save', settings)
         if section != 'Audio':
             wait(lambda: not current_streams(), 'hidden Audio releases input')
         capture('settings-' + section.lower())
     resize('Settings', 500, 460)
-    for section in ['Audio', 'Shortcuts', 'Text', 'General']:
+    for section in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
         click(section, settings)
         assert find('Save', settings)
         capture('settings-' + section.lower() + '-narrow')

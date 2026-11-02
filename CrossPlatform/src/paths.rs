@@ -53,6 +53,14 @@ pub fn formatting_model_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.cache_dir().join("S1-mini"))
 }
 
+/// Derived hotword vocabulary for one model; never written into the model folder.
+pub fn hotword_vocabulary(model: &str) -> Result<PathBuf, String> {
+    Ok(project_directories()?
+        .cache_dir()
+        .join("Hotwords")
+        .join(format!("{model}.vocab")))
+}
+
 pub fn last_transcript() -> Result<PathBuf, String> {
     Ok(project_directories()?
         .data_dir()

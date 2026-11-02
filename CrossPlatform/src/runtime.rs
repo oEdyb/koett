@@ -176,6 +176,7 @@ fn run(
         return;
     }
     let mut transcription = worker;
+    let mut dictionary = DictionarySync::new(settings.dictionary.clone());
 
     let _ = updates.send(EngineUpdate::ActiveModel(model.clone()));
     status = match status.next(AppEvent::Prepared, None) {
@@ -401,7 +402,10 @@ fn run(
         } else {
             match commands.recv_timeout(Duration::from_millis(50)) {
                 Ok(command) => command,
-                Err(RecvTimeoutError::Timeout) => continue,
+                Err(RecvTimeoutError::Timeout) => {
+                    dictionary.sync(&transcription);
+                    continue;
+                }
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         };
@@ -619,8 +623,13 @@ fn run(
                         let _ = updates.send(EngineUpdate::ModelProgress(progress));
                     })
                     .and_then(|directory| {
-                        let worker =
-                            load_worker(&directory, selection, &model::SWITCH_CANCELLED, &updates)?;
+                        let worker = load_worker(
+                            &directory,
+                            selection,
+                            dictionary.current(),
+                            &model::SWITCH_CANCELLED,
+                            &updates,
+                        )?;
                         Ok((directory, worker))
                     });
                 match candidate {
@@ -949,13 +958,20 @@ fn prepare_engine(
             let _ = updates.send(EngineUpdate::ModelProgress(progress));
         })?,
     };
-    let worker = load_worker(&directory, settings.selected_model, cancelled, updates)?;
+    let worker = load_worker(
+        &directory,
+        settings.selected_model,
+        &settings.dictionary,
+        cancelled,
+        updates,
+    )?;
     Ok((directory, worker))
 }
 
 fn load_worker(
     directory: &Path,
     selection: model::LocalModel,
+    dictionary: &[crate::dictionary::DictionaryEntry],
     cancelled: &AtomicBool,
     updates: &Sender<EngineUpdate>,
 ) -> Result<TranscriptionWorker, String> {
@@ -968,11 +984,45 @@ fn load_worker(
             let _ = updates.send(EngineUpdate::ModelProgress(progress));
         })?;
         TranscriptionWorker::start_with_nemotron(
-            ParakeetTranscriber::load(&backup, 2)?,
+            ParakeetTranscriber::load_with_dictionary(&backup, 2, dictionary)?,
             Some(nemotron),
         )
     } else {
-        TranscriptionWorker::start(ParakeetTranscriber::load(directory, 2)?)
+        TranscriptionWorker::start(ParakeetTranscriber::load_with_dictionary(
+            directory, 2, dictionary,
+        )?)
+    }
+}
+
+/// Follows the saved dictionary while idle, so Settings edits bias the next dictation.
+struct DictionarySync {
+    entries: Vec<crate::dictionary::DictionaryEntry>,
+    checked: std::time::Instant,
+}
+
+impl DictionarySync {
+    fn new(entries: Vec<crate::dictionary::DictionaryEntry>) -> Self {
+        Self {
+            entries,
+            checked: std::time::Instant::now(),
+        }
+    }
+
+    fn current(&self) -> &[crate::dictionary::DictionaryEntry] {
+        &self.entries
+    }
+
+    fn sync(&mut self, worker: &TranscriptionWorker) {
+        if self.checked.elapsed() < Duration::from_secs(1) {
+            return;
+        }
+        self.checked = std::time::Instant::now();
+        if let Ok(saved) = Settings::load()
+            && saved.dictionary != self.entries
+        {
+            self.entries = saved.dictionary;
+            worker.set_dictionary(self.entries.clone());
+        }
     }
 }
 
