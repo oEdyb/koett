@@ -1,0 +1,9 @@
+[package]
+name = "koett-parity"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+icu_normalizer = { version = "=2.3.0", default-features = false, features = ["compiled_data"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"

@@ -56,6 +56,7 @@ let package = Package(
             resources: [
                 .copy("Resources/AssistantRenderer"),
                 .copy("Resources/History"),
+                .copy("Resources/Dictionary"),
             ]
         ),
         .testTarget(

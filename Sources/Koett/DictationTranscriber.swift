@@ -45,6 +45,7 @@ public enum DictationTranscriber {
         _ url: URL,
         using manager: AsrManager,
         detector: VadManager? = nil,
+        boost: (@Sendable (String, [TokenTiming], [Float]) async -> String?)? = nil,
         onProgress: (@Sendable (Double) -> Void)? = nil
     ) async throws -> ASRResult {
         try Task.checkCancellation()
@@ -65,8 +66,9 @@ public enum DictationTranscriber {
         let progress = await observeProgress(of: manager, samples: speech.samples.count, onProgress: onProgress)
         defer { progress?.cancel() }
         let result = try await manager.transcribe(speech.samples, decoderState: &decoder)
+        let boosted = await boost?(result.text, result.tokenTimings ?? [], speech.samples)
         return ASRResult(
-            text: result.text,
+            text: boosted ?? result.text,
             confidence: result.confidence,
             duration: duration,
             processingTime: result.processingTime,

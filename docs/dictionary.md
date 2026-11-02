@@ -103,31 +103,49 @@ Remaining misses are words Parakeet hears as ordinary English ("all" for Olle,
 "code"/"coat" for Koett, "Jakob" for Yakob, "Quinn" for Qwen). Hotwords cannot
 safely override real words; a sounds-like form can, at the user's choice.
 
-## Mac to-do
+## How it works on the Mac
 
-The Mac app has no dictionary yet. Port in this order:
+Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
 
-1. Storage: a `[DictionaryEntry]` (term, soundsLike) in the Mac preferences,
-   plus the same plain-text import/export format so one file moves between
-   machines.
-2. Editor: a small SwiftUI window opened from the menu (like History) with
-   Word / Sounds like rows, Add, Remove, Import… and Export… via
-   `NSOpenPanel`/`NSSavePanel`. No large settings screen.
-3. Spelling pass: port `correct.rs` (about 120 lines: Unicode word spans, key =
-   lowercased alphanumerics, longest span first, single pass) and run it in
-   `DictationSession` before delivery. Port its unit tests.
-4. Decoder biasing: FluidAudio 0.15.6 has no TDT hotword beam search. It offers
-   CTC vocabulary boosting (`Documentation/ASR/CustomVocabulary.md`,
-   `VocabularyBoostingSession`). Parakeet 0.6B v2/v3 needs a separate CTC
-   encoder (Parakeet 110M CTC, about 130 MB, about 26× real time): build a
-   `CustomVocabularyContext` from the terms, create
-   `VocabularyBoostingSession(vocabulary:ctcModels:)`, then
-   `rescore(text:tokenTimings:audioSamples:)` after the TDT transcript. Keep the
-   session loaded; fall back to the raw transcript on `nil` or error. Load the
-   CTC models only when the dictionary is non-empty.
-5. Fix a word: the same per-entry correction file (same JSON shape), a Swift
-   port of `corrections/learn.rs`, and a History action with explicit
-   Add/Dismiss. Never apply learned forms automatically.
-6. Measure before shipping: run `Benchmarks/Dictionary` clips through the Mac
-   path and require 0 false terms on the negatives, as on Linux. Then run the
-   Swift test suite and the release build checks in `AGENTS.md`.
+1. **Storage**: `[DictionaryEntry]` as JSON in the preferences (`dictionary`
+   key, the same `term`/`sounds_like` fields as Linux settings). Menu →
+   Dictionary… edits it, with Import… and Export… in the same text format.
+2. **Vocabulary boosting** (`VocabularyBooster.swift`). FluidAudio has no TDT
+   hotword beam search, so Parakeet's text is rescored with the separate
+   Parakeet CTC 110M model (`VocabularyBoostingSession`, about 100 MB). The
+   model loads in the background only while the dictionary has words and is
+   dropped when it is emptied. Dictation never waits for it: until it is ready,
+   after a failure, or when rescoring takes over 2 s, the plain text is used.
+   The rescored text then goes through the same term adoption as Linux.
+   Rescorer floor: string similarity 0.70, acoustic rescue pass off.
+3. **Spelling pass** in `DictationSession.prepareDictation`, before and after the
+   optional S1-mini cleanup. Nemotron gets the spelling pass only.
+4. **Fix a word**: History → Fix a Word…, `~/Library/Application Support/Koett/Corrections.json`
+   (same JSON shape, 0600), explicit Add or Dismiss, everyday-word warning.
+
+`Tests/KoettTests/Dictionary/Fixtures/parity.json` holds the Rust output for
+benchmark transcripts; `DictionaryParityTests` requires identical Swift output.
+Regenerate it whenever `CrossPlatform/src/dictionary` or `corrections/learn.rs`
+changes.
+
+### Mac evidence
+
+Same 210 clips (`synthesize.py`), Parakeet v2 with silence trimming, the 30
+corpus terms, no sounds-like forms. Run with
+`KOETT_DICTIONARY_BENCH=<clips> KOETT_DICTIONARY_BENCH_OUT=<dir> swift test --filter DictionaryBenchmarkTests`,
+then `score.py <dir>/mac-boosted-koett.json <dir>/mac-baseline.json`.
+
+| Mac, all voices | Term recall | False terms | WER pos. | WER neg. | Broken neg. | Lost words |
+|---|---|---|---|---|---|---|
+| Baseline | 30% (49/162) | 0 | 14.4% | 0.28% | 0 | 0 |
+| Spelling pass only | 38% (61/162) | 0 | 12.4% | 0.28% | 0 | 0 |
+| CTC boosting, FluidAudio defaults | 81% (131/162) | 18 | 4.8% | 2.9% | 15 | 3 |
+| Similarity floor 0.60 | 81% (131/162) | 12 | 4.8% | 2.1% | 9 | 3 |
+| **Similarity floor 0.70 (shipped)** | **72% (117/162)** | **0** | **5.8%** | **0.28%** | **0** | **0** |
+
+At FluidAudio defaults the rescorer turned "salad" into "Wayland", "Highland"
+into "Hyprland", "Jacob and Matthias" into "Yakob and Matyas", "Gothenburg" into
+"Göteborg" and "parakeets" into "Parakeet". Floors 0.65 and 0.70 insert none
+(0.65: 120/162). A plain word that is the term plus "s", "es", "ed" or "ing"
+stays. Latency per 3–4 s clip, release-to-text: median 74 ms plain, about 310 ms
+with boosting.

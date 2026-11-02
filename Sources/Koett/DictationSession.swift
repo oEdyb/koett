@@ -307,6 +307,7 @@ extension KoettController {
                 url,
                 using: manager,
                 detector: speechDetector,
+                boost: vocabularyBooster.boost,
                 onProgress: decodeProgressHandler
             )
             transcriptionCompleted = true
@@ -454,6 +455,7 @@ extension KoettController {
                 url,
                 using: manager,
                 detector: speechDetector,
+                boost: vocabularyBooster.boost,
                 onProgress: decodeProgressHandler
             )
             transcriptionCompleted = true
@@ -549,9 +551,11 @@ extension KoettController {
     }
 
     private func prepareDictation(
-        _ rawText: String,
+        _ heardText: String,
         model: String
     ) async -> PreparedDictation {
+        let dictionary = dictionaryStore.entries
+        let rawText = DictionarySpelling.apply(heardText, entries: dictionary)
         guard s1MiniEnabled,
               let cleaner = s1MiniCleaner else {
             return PreparedDictation(text: rawText, model: model, rawText: nil)
@@ -565,7 +569,7 @@ extension KoettController {
                 context: s1MiniContext
             )
             return PreparedDictation(
-                text: cleaned,
+                text: DictionarySpelling.apply(cleaned, entries: dictionary),
                 model: "\(model) + S1-mini by Superwhisper "
                     + "(\(s1MiniStyle.displayName), "
                     + "\(s1MiniStructure.displayName), "
