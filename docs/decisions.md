@@ -132,3 +132,15 @@ Screen Recording also gets a real ScreenCaptureKit probe after Koett has asked,
 because its preflight can stay stale, and offers Relaunch. Input Monitoring is
 not listed: the shortcut tap and draw-key monitors run on Accessibility.
 Renders: docs/evidence/mac-permissions-20261102/.
+
+## 2026-11-02: the pill stays one fixed 300×48 row
+
+After trying the timeline pill on Mac, Olle said the finished state looked weird,
+the pill lingered after pasting and grew taller, and the strip got longer and then
+jumped when it compressed. Every state is now one 300×48 row. Done is the old
+result row with Copy on the right; it morphs in place from the decoding pill and
+fades after 1.75 s unless hovered (Mac timings). Not pasted stays until Copy or the next
+dictation. Hover actions replace the strip inside the row. The strip is full width
+from the first frame and, after 16 s, resamples the whole dictation every frame, so
+it compresses smoothly. Paste again and the hover model name are gone; the tray
+keeps Paste last.

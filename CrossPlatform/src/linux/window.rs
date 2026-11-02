@@ -345,7 +345,14 @@ fn build_window(
         latest_delivery.clone(),
         actions.clone(),
     );
+    // Done: shown briefly after a successful paste, held while hovered, then
+    // faded. Not pasted: no timeout; it stays until Copy or the next dictation.
     let mut done_until = None::<Instant>;
+    let mut done_fading = None::<Instant>;
+    // Wayland pastes asynchronously, so Ready arrives before the paste
+    // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
+    // so it morphs straight into Done instead of hiding and remapping.
+    let mut settling_until = None::<Instant>;
     let sketch = super::sketch::SketchOverlay::new();
     let sketch_application = application.clone();
     let mut asking_until = None::<Instant>;
@@ -436,13 +443,15 @@ fn build_window(
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
                     Update::Delivered => {
-                        done_until = Some(Instant::now() + Duration::from_secs(10));
+                        settling_until = None;
+                        done_until = Some(Instant::now() + DONE_DURATION);
+                        done_fading = None;
                     }
                     Update::DeliveryFailed => {
+                        settling_until = None;
                         done_until = None;
                         if latest_completed.borrow().is_some() {
-                            recovery_until =
-                                Some(Instant::now() + super::feedback::RECOVERY_DURATION);
+                            recovery_until = Some(Instant::now() + UNTIL_ACTED);
                             delivery_copy.set_label("Copy transcript");
                         }
                     }
@@ -541,6 +550,9 @@ fn build_window(
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
                         let phase = message.trim_start_matches("@notice:");
+                        if phase == "Dictation cancelled" {
+                            settling_until = None;
+                        }
                         if matches!(
                             phase,
                             "Fetching audio…" | "Converting audio…" | "Transcribing locally…"
@@ -558,6 +570,18 @@ fn build_window(
                             recovery_until = None;
                         }
                         let recording = message.starts_with("Recording");
+                        // X11 delivers synchronously: the outcome may already be in.
+                        if state.starts_with("Transcribing")
+                            && !message.starts_with("Transcribing")
+                            && !recording
+                            && done_until.is_none()
+                            && recovery_until.is_none()
+                        {
+                            settling_until = Some(Instant::now() + SETTLE);
+                        }
+                        if recording {
+                            settling_until = None;
+                        }
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
                             // Scope sketches to this recording, even with drawing off.
@@ -594,19 +618,37 @@ fn build_window(
                 notice_until = None;
             }
             let pill_hovered = overlay.as_ref().is_some_and(|overlay| overlay.hovered());
+            let acted = overlay.as_ref().is_some_and(|overlay| overlay.take_acted());
+            if acted && recovery_until.is_some() && !media_result {
+                recovery_until = Some(Instant::now() + AFTER_COPY);
+            }
             if recovery_until.is_some_and(|until| Instant::now() >= until) {
                 if pill_hovered {
-                    recovery_until = Some(Instant::now() + Duration::from_secs(2));
+                    recovery_until = Some(Instant::now() + HOVER_GRACE);
                 } else {
                     recovery_until = None;
                 }
             }
-            if done_until.is_some_and(|until| Instant::now() >= until) {
-                done_until = if pill_hovered {
-                    Some(Instant::now() + Duration::from_secs(2))
+            if let Some(until) = done_until
+                && Instant::now() >= until
+            {
+                if pill_hovered {
+                    done_until = Some(Instant::now() + HOVER_GRACE);
+                    done_fading = None;
+                    if let Some(overlay) = &overlay {
+                        overlay.fade(false);
+                    }
+                } else if let Some(since) = done_fading {
+                    if since.elapsed() >= FADE {
+                        done_until = None;
+                        done_fading = None;
+                    }
                 } else {
-                    None
-                };
+                    done_fading = Some(Instant::now());
+                    if let Some(overlay) = &overlay {
+                        overlay.fade(true);
+                    }
+                }
             }
             let unsaved_count = crate::history::recovery::pending_count();
             unsaved_row.set_visible(unsaved_count > 0);
@@ -655,6 +697,8 @@ fn build_window(
                 overlay.update(
                     if media_result && recovering {
                         "Media result"
+                    } else if settling_until.is_some_and(|until| Instant::now() < until) {
+                        "Transcribing…"
                     } else {
                         &state
                     },
@@ -693,6 +737,19 @@ fn build_window(
         window.present();
     }
 }
+
+/// Done stays this long after a successful paste, unless hovered.
+const DONE_DURATION: Duration = Duration::from_millis(1_750);
+/// Longest wait for a paste outcome after decoding before the pill hides.
+const SETTLE: Duration = Duration::from_millis(1_000);
+/// Fade-out of the Done pill before it is hidden (matches the CSS transition).
+const FADE: Duration = Duration::from_millis(260);
+/// After the pointer leaves a held pill.
+const HOVER_GRACE: Duration = Duration::from_millis(1_000);
+/// Not-pasted recovery closes this soon after Copy succeeds.
+const AFTER_COPY: Duration = Duration::from_millis(1_500);
+/// Not pasted has no timeout; this only keeps the Instant arithmetic finite.
+const UNTIL_ACTED: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
 // Count interactive windows together: deactivation of History must not clear
 // the paste guard while Settings is active. The layer surface never participates.

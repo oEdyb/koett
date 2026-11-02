@@ -41,8 +41,6 @@ impl CaptureFeedback {
     }
 }
 
-pub(super) const RECOVERY_DURATION: Duration = Duration::from_secs(20);
-
 pub(super) fn copy_transcript(
     clipboard: &gtk4::gdk::Clipboard,
     text: &str,

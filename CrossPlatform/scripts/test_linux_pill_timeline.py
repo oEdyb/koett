@@ -86,6 +86,12 @@ def press(name, root=None):
     time.sleep(0.2)
 
 
+def pill_window():
+    pill = find('Koett recording')
+    assert pill, 'the pill is not on screen'
+    return pill
+
+
 def control(command):
     subprocess.run([str(binary), command], check=True, capture_output=True)
 
@@ -178,8 +184,12 @@ app.connect('activate',activate);app.run([])
     keys('move', centre_x, row_y)
     pill = wait(lambda: find('Cancel', role='button'), 'hover row appears')
     assert find('Pause', role='button') and find('History', role='button')
-    capture('hover')
-    checks.append('hover reveals Cancel, Pause and History over the strip')
+    hover = capture('hover')
+    column = [hover.getpixel((centre_x, y))[:3] for y in range(hover.height - 140, hover.height)]
+    background = column[0]
+    tall = sum(1 for pixel in column if pixel != background)
+    assert tall <= 50, f'hover pill is {tall} px tall'
+    checks.append('hover reveals Cancel, Pause and History inside the 48 px pill')
     press('Pause')
     wait(lambda: find('Resume', role='button'), 'paused')
     time.sleep(2.0)
@@ -200,23 +210,44 @@ app.connect('activate',activate);app.run([])
     player = play()
     player.wait(timeout=15)
     control('stop')
-    transcribing = []
-    for frame in range(6):
-        if not find('Koett recording'):
+    # Morph: decoding strip -> same-height Done row -> fade -> gone.
+    done_seen = gone = None
+    for frame in range(80):
+        capture(f'morph-{frame:02d}', settle=0)
+        now = time.monotonic()
+        pill = find('Koett recording')
+        if done_seen is None and pill and find('Copy', pill, 'button'):
+            done_seen = now
+        if done_seen is not None and not find('Koett recording'):
+            gone = now
             break
-        transcribing.append(capture(f'transcribing-{frame}', settle=0.05))
-    wait(lambda: len(rows()) > count, 'real ASR result persisted', timeout=180)
-    wait(lambda: find('Copy', role='button'), 'done row')
-    capture('done')
+    assert done_seen and gone, 'Done appeared and then went away by itself'
+    lasted = gone - done_seen
+    assert 1.2 <= lasted <= 4.0, f'Done lasted {lasted:.1f} s'
     text = rows()[-1][0]
     wait(lambda: Atspi.Text.get_text(entry, 0, -1).strip() == text.strip(), 'transcript delivered to target', timeout=10)
-    checks.append(f'{len(transcribing)} transcribing frame(s) captured; done row after successful delivery of {len(text)} chars')
-    press('Copy')
-    wait(lambda: find('Copied', role='button'), 'Copied')
-    assert subprocess.check_output(['wl-paste', '--no-newline']).decode() == text
-    checks.append('Done Copy places the exact SQLite text on the clipboard')
-    wait(lambda: not find('Koett recording'), 'done dismisses itself', timeout=20)
-    checks.append('done state dismisses itself after its timeout')
+    checks.append(f'morph: decoding -> same-height Done with Copy -> faded and gone after {lasted:.1f} s; delivered {len(text)} chars')
+
+    # Hovering holds Done; leaving lets it go.
+    count = len(rows())
+    control('start')
+    wait(lambda: find('Koett recording'), 'recording pill (hover hold)')
+    play().wait(timeout=15)
+    control('stop')
+    wait(lambda: len(rows()) > count, 'hover-hold result', timeout=180)
+    wait(lambda: find('Copy', pill_window(), 'button'), 'done row (hover hold)')
+    keys('move', centre_x, row_y)
+    keys('move', centre_x + 2, row_y)
+    capture('done-hovered', settle=0.1)
+    time.sleep(4.0)
+    assert find('Copy', pill_window(), 'button'), 'hover keeps Done up'
+    press('Copy', pill_window())
+    wait(lambda: find('Copied', pill_window(), 'button'), 'Copied')
+    assert subprocess.check_output(['wl-paste', '--no-newline']).decode() == rows()[-1][0]
+    capture('done-copied', settle=0)
+    keys('move', 80, 80)
+    wait(lambda: not find('Koett recording'), 'leaving lets Done go', timeout=5)
+    checks.append('hover holds Done past its 1.8 s; Copy exact; leaving dismisses it')
 
     # Recovery: focus moves away during capture, so the guard skips paste.
     focus('Koett')
@@ -228,16 +259,23 @@ app.connect('activate',activate);app.run([])
     focus('Koett')
     control('stop')
     wait(lambda: len(rows()) > count, 'second result persisted', timeout=180)
-    wait(lambda: find('Paste again', role='button'), 'recovery row')
+    wait(lambda: find('Copy', pill_window(), 'button'), 'recovery row')
     capture('recovery')
-    checks.append('guarded delivery shows Paste again / Copy / History')
+    time.sleep(6.0)
+    assert find('Copy', pill_window(), 'button'), 'not pasted stays until acted on'
+    capture('recovery-after-6s', settle=0)
+    press('Copy', pill_window())
+    wait(lambda: find('Copied', pill_window(), 'button'), 'recovery Copied')
+    assert subprocess.check_output(['wl-paste', '--no-newline']).decode() == rows()[-1][0]
+    wait(lambda: not find('Koett recording'), 'recovery closes after Copy', timeout=5)
+    checks.append('not pasted: same-height row with Copy; stays 6 s untouched; Copy is exact and closes it')
     focus('Pill typing target')
 
     # Cancel discards: no transcript, no paste.
     count = len(rows())
     before = Atspi.Text.get_text(entry, 0, -1)
     control('start')
-    wait(lambda: find('Koett recording') and not find('Paste again', role='button'), 'recording pill 3')
+    wait(lambda: find('Koett recording') and not find('Copy', pill_window(), 'button'), 'recording pill 3')
     player = play()
     time.sleep(2.0)
     keys('move', centre_x, row_y)
