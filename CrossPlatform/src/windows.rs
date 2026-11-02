@@ -489,7 +489,9 @@ impl WindowsApp {
                     let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
                 }
                 EngineUpdate::FormattingBusy(_) => {}
-                EngineUpdate::TranscriptReady { model, transcript } => {
+                EngineUpdate::TranscriptReady {
+                    model, transcript, ..
+                } => {
                     self.deliver(&model, &transcript.text, transcript.raw.as_deref());
                 }
             }

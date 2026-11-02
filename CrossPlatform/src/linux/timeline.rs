@@ -8,6 +8,9 @@ pub(super) const COLUMNS: usize = 64;
 pub(super) const BASE_MS: u64 = 250;
 /// Columns quieter than this draw as a silence dot.
 pub(super) const SILENT: f64 = 0.08;
+/// Distinct sketches kept per dictation. Later new indices are ignored;
+/// already-known sketches keep updating. Bounds memory and per-frame drawing.
+pub(super) const MAX_SKETCHES: usize = 256;
 
 pub(super) struct Timeline {
     levels: Vec<f64>,
@@ -73,15 +76,18 @@ impl Timeline {
         self.ms_per_column
     }
 
-    /// Inserts or replaces the sketch with the same index.
-    pub fn apply(&mut self, event: SketchEvent) {
+    /// Replaces the sketch with the same index, or inserts it while fewer than
+    /// [`MAX_SKETCHES`] are known. Returns false when a new index was dropped.
+    pub fn apply(&mut self, event: SketchEvent) -> bool {
         match self
             .sketches
             .binary_search_by_key(&event.index, |sketch| sketch.index)
         {
             Ok(position) => self.sketches[position] = event,
+            Err(_) if self.sketches.len() >= MAX_SKETCHES => return false,
             Err(position) => self.sketches.insert(position, event),
         }
+        true
     }
 
     pub fn sketches(&self) -> &[SketchEvent] {
@@ -194,6 +200,24 @@ mod tests {
         assert_eq!(timeline.span(&timeline.sketches()[1]), (18, 22));
         let late = sketch(3, 900_000, 999_000, true);
         assert_eq!(timeline.span(&late), (COLUMNS - 1, COLUMNS - 1));
+    }
+
+    #[test]
+    fn sketch_history_is_bounded_but_known_sketches_keep_updating() {
+        let mut timeline = Timeline::default();
+        for index in 1..=100_000 {
+            timeline.apply(sketch(index, 0, 10, true));
+        }
+        assert_eq!(timeline.sketches().len(), MAX_SKETCHES);
+        assert!(!timeline.apply(sketch(100_001, 0, 10, false)));
+        assert_eq!(timeline.sketches().len(), MAX_SKETCHES);
+        // An existing index still finishes after the limit is reached.
+        assert!(timeline.apply(sketch(7, 0, 900, false)));
+        let seventh = timeline.sketches().iter().find(|s| s.index == 7).unwrap();
+        assert_eq!((seventh.end_ms, seventh.live), (900, false));
+        timeline.reset();
+        assert!(timeline.sketches().is_empty());
+        assert!(timeline.apply(sketch(100_001, 0, 10, false)));
     }
 
     #[test]

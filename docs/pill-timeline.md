@@ -49,6 +49,8 @@ Rules:
 - `publish` returns false and drops the event when no dictation is active,
   when `index == 0`, or when `end_ms < start_ms`. Pending events are cleared
   when a new dictation starts.
+- The pill keeps at most 256 distinct sketches per dictation. New indices
+  beyond that are ignored; known indices keep updating.
 - There is no removal event. If undo must remove a band, add
   `Removed { index }` on both sides.
 

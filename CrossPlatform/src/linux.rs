@@ -1475,6 +1475,79 @@ mod queued_capture_tests {
         }
     }
 
+    fn transcript(text: &str) -> crate::transcription::Transcript {
+        crate::transcription::Transcript {
+            raw: None,
+            text: text.into(),
+            audio_duration: Duration::from_secs(1),
+            transcription: Duration::from_millis(10),
+        }
+    }
+
+    #[test]
+    fn cancel_queued_behind_stop_never_pastes_or_saves() {
+        let _guard = runtime_test_guard();
+        let (engine, received, updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        let session = app.engine.begin_test_session();
+        app.status = AppStatus::Recording;
+        app.command(EngineCommand::Stop, || None);
+        // The pill still showed Recording when Cancel was clicked; it reaches
+        // the engine only after decoding, when it is already Ready.
+        app.command(EngineCommand::Cancel, || None);
+        let sent: Vec<_> = received.try_iter().collect();
+        assert!(matches!(
+            sent.as_slice(),
+            [EngineCommand::Stop, EngineCommand::Cancel]
+        ));
+        updates
+            .send(EngineUpdate::TranscriptReady {
+                model: "test".into(),
+                transcript: transcript("discarded words"),
+                session,
+            })
+            .unwrap();
+        updates
+            .send(EngineUpdate::Status(AppStatus::Transcribing))
+            .unwrap();
+        updates
+            .send(EngineUpdate::Status(AppStatus::Ready))
+            .unwrap();
+        let mut delivered = Vec::new();
+        let mut notices = Vec::new();
+        app.poll(
+            |_, text, _, _| {
+                delivered.push(text.to_string());
+                Ok(())
+            },
+            |status| notices.push(status.to_string()),
+            |_| {},
+            |_| {},
+        );
+        assert!(delivered.is_empty(), "cancelled dictation was delivered");
+        assert!(notices.iter().any(|n| n == "@notice:Dictation cancelled"));
+
+        // The next dictation is unaffected by the earlier cancel.
+        let next = app.engine.begin_test_session();
+        updates
+            .send(EngineUpdate::TranscriptReady {
+                model: "test".into(),
+                transcript: transcript("kept words"),
+                session: next,
+            })
+            .unwrap();
+        app.poll(
+            |_, text, _, _| {
+                delivered.push(text.to_string());
+                Ok(())
+            },
+            |_| {},
+            |_| {},
+            |_| {},
+        );
+        assert_eq!(delivered, ["kept words"]);
+    }
+
     #[test]
     fn capture_is_guarded_before_worker_status_arrives() {
         for command in [
@@ -1608,6 +1681,9 @@ impl LinuxEngine {
     }
 
     fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
+        if matches!(command, EngineCommand::Cancel) {
+            self.engine.cancel_dictation();
+        }
         if matches!(command, EngineCommand::CancelAsk) {
             self.engine.cancel_ask();
             let _ = self.engine.commands.send(command);
@@ -1720,7 +1796,18 @@ impl LinuxEngine {
                     );
                     status_changed(status_text(&self.status).as_str());
                 }
-                EngineUpdate::TranscriptReady { model, transcript } => {
+                EngineUpdate::TranscriptReady {
+                    model,
+                    transcript,
+                    session,
+                } => {
+                    // Cancel may land after decoding finished; never paste or
+                    // save a dictation the user discarded.
+                    if self.engine.dictation_cancelled(session) {
+                        self.paste_target = None;
+                        status_changed("@notice:Dictation cancelled");
+                        continue;
+                    }
                     if let Err(error) = deliver(
                         &model,
                         &transcript.text,
