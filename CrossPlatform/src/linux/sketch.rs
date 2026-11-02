@@ -95,6 +95,9 @@ struct Surface {
     target: capture::Target,
 }
 
+/// Finished captures by sketch id, filled by capture threads.
+type CaptureResults = Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>;
+
 struct Session {
     started: Instant,
     key: DrawKey,
@@ -104,7 +107,7 @@ struct Session {
     held: bool,
     stroking: Option<u64>,
     finishing: bool,
-    results: Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>,
+    results: CaptureResults,
 }
 
 impl Session {
@@ -116,7 +119,9 @@ impl Session {
         for surface in &self.surfaces {
             if let Some(native) = surface.window.surface() {
                 if accept {
-                    native.set_input_region(None);
+                    let (_, _, width, height) = surface.target.monitor;
+                    let all = gtk::cairo::RectangleInt::new(0, 0, width, height);
+                    native.set_input_region(Some(&gtk::cairo::Region::create_rectangle(&all)));
                 } else {
                     native.set_input_region(Some(&gtk::cairo::Region::create()));
                 }
@@ -124,6 +129,8 @@ impl Session {
             surface
                 .window
                 .set_cursor_from_name(accept.then_some("crosshair"));
+            // GDK applies a new input region with the next surface commit.
+            surface.area.queue_draw();
         }
     }
 
@@ -472,7 +479,7 @@ impl SketchOverlay {
             let motion = gtk::EventControllerMotion::new();
             motion.connect_motion({
                 let session = Rc::downgrade(&self.session);
-                move |controller, x, y| {
+                move |_, x, y| {
                     let Some(session) = session.upgrade() else {
                         return;
                     };
@@ -485,13 +492,8 @@ impl SketchOverlay {
                     if !session.held || session.finishing {
                         return;
                     }
-                    if !controller
-                        .current_event_state()
-                        .contains(key_mask(session.key))
-                    {
-                        session.release();
-                        return;
-                    }
+                    // Pointer events can carry stale modifier state (seen on
+                    // KWin), so drawing follows the overlay's own key events.
                     session.point(surface, x, y);
                 }
             });
@@ -509,6 +511,20 @@ impl SketchOverlay {
             area.add_controller(motion);
             if index == 0 {
                 window.add_controller(self.keys());
+                // A missed key release must not leave clicks blocked.
+                window.connect_is_active_notify({
+                    let session = Rc::downgrade(&self.session);
+                    move |window| {
+                        if !window.is_active()
+                            && let Some(session) = session.upgrade()
+                            && let Ok(mut session) = session.try_borrow_mut()
+                            && let Some(session) = session.as_mut()
+                            && session.held
+                        {
+                            session.release();
+                        }
+                    }
+                });
             }
             window.connect_realize(|window| {
                 if let Some(native) = window.surface() {

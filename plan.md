@@ -187,4 +187,5 @@ destructive removal of original archives remain separate approvals.
 - [x] Native niri search/copy/accessibility checks and real microphone capture/stop pass.
 - [x] Private KWin/current GTK and Ubuntu22/GTK4.6 UI checks, private candidate install and independent persistence review pass.
 - [ ] Before broad release: complete GNOME/other wlroots, physical shortcut, terminal, ARM64 and native Windows gates; resolve notice/SBOM gaps.
+- [x] 2026-11-02: Linux draw-while-dictating (Scrawl-style sketches, contact sheet + linked text) verified in private KWin; see docs/draw-while-dictating.md for limits and the Mac to-do.
 - [x] Mac runtime verification explicitly deferred by Olle; exact pending gates retained in [verification report](docs/linux-ui-verification-2026-10-26.md).
