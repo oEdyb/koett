@@ -40,6 +40,10 @@ final class PermissionsTests: XCTestCase {
         XCTAssertEqual(PermissionKind.allCases.filter(\.isRequired), [.microphone, .accessibility])
     }
 
+    func testSetupNamesThePermissionItIsWaitingFor() {
+        XCTAssertEqual(SetupStatus.waitingForPermission("Accessibility").menuTitle, "Waiting for Accessibility Access")
+    }
+
     func testAskedStateIsRememberedPerPermission() throws {
         let name = "koett-permissions-\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))

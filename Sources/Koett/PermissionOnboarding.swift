@@ -25,7 +25,8 @@ extension KoettController {
         }
         guard !center.requiredGranted else { return }
         showPermissions()
-        while !center.requiredGranted {
+        while let missing = PermissionKind.allCases.first(where: { $0.isRequired && !center.isGranted($0) }) {
+            setSetupStatus(.waitingForPermission(missing.title), showOverlay: false)
             try? await Task.sleep(for: .milliseconds(500))
         }
         permissionsWindow.model.refresh()

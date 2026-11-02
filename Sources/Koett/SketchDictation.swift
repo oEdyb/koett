@@ -132,10 +132,6 @@ extension KoettController {
             sketchOverlay.abandonPendingCaptures(session)
         }
         let frames = sketchFrames.take(session)
-        if frames.isEmpty, sketchOverlay.failedCaptures > 0,
-           !permissionsWindow.model.center.isGranted(.screenRecording) {
-            showPermissions()
-        }
         guard !frames.isEmpty else {
             return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
         }
@@ -147,6 +143,13 @@ extension KoettController {
         let sheet = SketchSheet.contactSheet(frames.map(\.image)).flatMap(SketchSheet.png)
         if sheet == nil { fputs("Warning: contact sheet could not be drawn\n", stderr) }
         return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count)
+    }
+
+    /// Called after delivery, so the window never takes focus before Command-V.
+    func showPermissionsIfSketchesNeededScreen() {
+        guard sketchOverlay.takeFailedCaptures() > 0,
+              !permissionsWindow.model.center.isGranted(.screenRecording) else { return }
+        showPermissions()
     }
 
     /// Scrawl order: the numbered sheet first, then the matching text.

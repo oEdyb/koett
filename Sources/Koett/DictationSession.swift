@@ -509,6 +509,7 @@ extension KoettController {
         session: UInt64,
         deliveredText: inout String?
     ) async throws -> Completion {
+        defer { showPermissionsIfSketchesNeededScreen() }
         let prepared = rawText.isEmpty
             ? PreparedDictation(text: "", model: model, rawText: nil)
             : await prepareDictation(rawText, model: model)

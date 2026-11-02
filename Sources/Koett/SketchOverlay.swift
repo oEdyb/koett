@@ -32,6 +32,12 @@ final class SketchOverlay {
 
     var isActive: Bool { session != nil }
 
+    /// Failed captures since the last call (read once, after delivery).
+    func takeFailedCaptures() -> Int {
+        defer { failedCaptures = 0 }
+        return failedCaptures
+    }
+
     func start(_ session: Session, startedAt: TimeInterval) {
         discard()
         self.session = session
