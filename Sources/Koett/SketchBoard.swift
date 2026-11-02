@@ -7,10 +7,11 @@ enum SketchUpdate: Equatable, Sendable {
     case removed(index: UInt32)
 }
 
-/// Sketch state for one dictation, without windows or capture: holds, strokes,
-/// numbering and capture phases. Mirrors the Linux `Session` rules: one draw-key
-/// hold is one sketch per screen, numbers follow creation order, and a failed
-/// capture renumbers the rest.
+/// Sketch and pin state for one dictation, without windows or capture: holds,
+/// strokes, clicks, numbering and capture phases. Mirrors the Linux `Session`
+/// rules: one draw-key hold is one sketch per screen, numbers follow creation
+/// order, and a failed capture renumbers the rest. A click while the key is held
+/// drops a pin instead (rules in `docs/screen-context-proposal.md`).
 struct SketchBoard {
     static let maxSketches = 256
     /// Points the pointer must travel before a hold starts a sketch, so Shift
@@ -18,6 +19,14 @@ struct SketchBoard {
     static let startDistance: CGFloat = 3
     static let fadeAfter: TimeInterval = 1.5
     static let fadeFor: TimeInterval = 0.4
+    /// A press that travels this far becomes ink instead of a pin.
+    static let pinSlop: CGFloat = 12
+    /// A press held longer than this drops no pin.
+    static let pinPressLimit: TimeInterval = 1
+    /// Ink shorter than this before a click in the same hold is aiming jitter
+    /// and is dropped for the pin; longer ink makes the click part of the drawing.
+    static let pinJitterInk: CGFloat = 12
+    static let pinPulse: TimeInterval = 0.45
 
     enum Phase: Equatable { case drawing, capturing, captured }
 
@@ -33,9 +42,12 @@ struct SketchBoard {
         var lifted: TimeInterval?
         var closed = false
         var phase = Phase.drawing
+        /// Set for a pin: the click point, in the same coordinates as strokes.
+        var pin: CGPoint?
 
         func alpha(at now: TimeInterval) -> Double {
             guard closed, let lifted else { return 1 }
+            if pin != nil { return 1 - min(max((now - lifted) / SketchBoard.pinPulse, 0), 1) }
             let fading = now - (lifted + SketchBoard.fadeAfter)
             return 1 - min(max(fading / SketchBoard.fadeFor, 0), 1)
         }
@@ -49,6 +61,18 @@ struct SketchBoard {
     private(set) var finishing = false
     private var nextID: UInt64 = 0
     private var holdOrigin: (screen: Int, point: CGPoint, time: TimeInterval, audio: Float)?
+    /// Ink travelled in the current hold.
+    private var holdInk: CGFloat = 0
+    private var pressing: Press?
+
+    private struct Press {
+        let screen: Int
+        let point: CGPoint
+        let time: TimeInterval
+        let audio: Float
+        /// False for the second click of a double-click.
+        let pins: Bool
+    }
 
     init(startedAt: TimeInterval) {
         self.startedAt = startedAt
@@ -58,13 +82,17 @@ struct SketchBoard {
         guard !finishing else { return }
         held = true
         holdOrigin = nil
+        holdInk = 0
+        pressing = nil
     }
 
-    /// Ends the hold: its sketches close and become ready for capture.
+    /// Ends the hold: its sketches close and become ready for capture. A click
+    /// still pressed when the key lifts counts as released now.
     mutating func release(now: TimeInterval) -> [SketchUpdate] {
+        var updates = finishPress(now: now)
         held = false
         holdOrigin = nil
-        let updates = lift(now: now)
+        updates += lift(now: now)
         for index in groups.indices { groups[index].closed = true }
         return updates
     }
@@ -79,8 +107,15 @@ struct SketchBoard {
     /// A pointer sample while the key is held. `audio` is the captured-audio clock.
     mutating func point(screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float) -> [SketchUpdate] {
         guard held, !finishing else { return [] }
+        if let press = pressing {
+            guard press.screen == screen,
+                  hypot(point.x - press.point.x, point.y - press.point.y) >= Self.pinSlop else { return [] }
+            pressing = nil
+            holdOrigin = (press.screen, press.point, press.time, press.audio)
+        }
         if let current = stroking.flatMap(position(of:)), groups[current].screen == screen {
-            guard groups[current].strokes.last?.last != point else { return [] }
+            guard let last = groups[current].strokes.last?.last, last != point else { return [] }
+            holdInk += hypot(point.x - last.x, point.y - last.y)
             groups[current].end = now
             groups[current].strokes[groups[current].strokes.count - 1].append(point)
             return events()
@@ -89,7 +124,9 @@ struct SketchBoard {
             holdOrigin = (screen, point, now, audio)
             return []
         }
-        guard hypot(point.x - origin.point.x, point.y - origin.point.y) >= Self.startDistance else { return [] }
+        let travel = hypot(point.x - origin.point.x, point.y - origin.point.y)
+        guard travel >= Self.startDistance else { return [] }
+        holdInk += travel
         var updates = lift(now: now)
         let open = groups.firstIndex { $0.screen == screen && $0.phase == .drawing && !$0.closed }
         let index: Int
@@ -110,6 +147,53 @@ struct SketchBoard {
         holdOrigin = (screen, point, now, audio)
         updates = events()
         return updates
+    }
+
+    /// A mouse button went down while the key is held. Ink so far in this hold
+    /// shorter than `pinJitterInk` is dropped; longer ink keeps drawing and
+    /// the click drops no pin.
+    mutating func mouseDown(
+        screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float, clickCount: Int
+    ) -> [SketchUpdate] {
+        guard held, !finishing else { return [] }
+        guard holdInk < Self.pinJitterInk else {
+            pressing = nil
+            return []
+        }
+        var updates: [SketchUpdate] = []
+        let before = groups.count
+        groups.removeAll { !$0.closed && $0.pin == nil }
+        if groups.count < before {
+            stroking = nil
+            let freed = (groups.count + 1)...before
+            updates = events() + freed.map { .removed(index: UInt32($0)) }
+        }
+        holdInk = 0
+        holdOrigin = nil
+        pressing = Press(screen: screen, point: point, time: now, audio: audio, pins: clickCount <= 1)
+        return updates
+    }
+
+    /// The button came up: a short, still press becomes a pin.
+    mutating func mouseUp(now: TimeInterval) -> [SketchUpdate] {
+        finishPress(now: now)
+    }
+
+    private mutating func finishPress(now: TimeInterval) -> [SketchUpdate] {
+        guard let press = pressing else { return [] }
+        pressing = nil
+        holdOrigin = nil
+        guard press.pins, held, !finishing, now - press.time <= Self.pinPressLimit,
+              groups.count < Self.maxSketches else { return [] }
+        nextID += 1
+        var group = Group(
+            id: nextID, screen: press.screen, strokes: [], start: press.time, end: press.time, audioStart: press.audio
+        )
+        group.pin = press.point
+        group.closed = true
+        group.lifted = now
+        groups.append(group)
+        return events()
     }
 
     /// Closed sketches that should be captured now; they move to `.capturing`.

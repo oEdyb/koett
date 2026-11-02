@@ -94,7 +94,7 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Multi-monitor: one overlay and one capture per monitor; portal images that
   span the desktop are cropped per monitor (unit-tested). The lab has a single
   virtual output, so multi-monitor drawing is not yet verified on hardware.
-- Pins (Scrawl's Shift-click), click keyframes and spoken cue keyframes are not
+- On Linux, pins (Scrawl's Shift-click), click keyframes and spoken cue keyframes are not
   implemented.
 - `wl-copy` cannot report when the target read the image, so the wlroots path
   waits a fixed 700 ms before switching the clipboard to text. The portal path
@@ -111,7 +111,8 @@ Same output as Linux: one numbered contact sheet, then the same
 `SketchSheet.swift`, `SketchFrames.swift`, `SketchPaste.swift`,
 `SketchDictation.swift`, `DrawKey.swift`.
 
-- Menu › **Draw on Screen**: **Draw While Dictating** (off by default) and
+- Menu › **Draw on Screen**: **Draw & Pin While Dictating** (off by default),
+  **Include Selected Text in Pins** (on by default) and
   **Draw Key** Shift (default), Control or Option. A key the modifier-only
   dictation shortcut uses is disabled (Option with the default "Either
   Option"), and Koett falls back to the first free key. Turning drawing on
@@ -132,6 +133,14 @@ Same output as Linux: one numbered contact sheet, then the same
   therefore cannot contain another sketch's ink or the pill, and needs no
   frame-presentation sync. Ctrl+Z undo is not ported: the overlay never has
   keyboard focus and captures start on release.
+- Pins (Mac only so far): a click while the draw key is held drops numbered
+  pin #N at the click instead of ink. It shares numbering, linking, the sheet
+  and the paste with sketches; its tile is a crop around a red ring, and its
+  bullet gains a context line read through Accessibility only (window owner,
+  page URL and title, link or image under the pointer, YouTube `t=` from the
+  `ytp-progress-bar` slider, selected text capped at 500 characters). Shift+move
+  never pins, Shift+click never starts ink; the full gesture table and its tests
+  are in `screen-context-proposal.md` and `SketchPinTests.swift`.
 - Clocks: linking uses the recorder's written-audio time (`currentTime`, paused
   buffers are never written); the pill uses its own wall clock. Parakeet token
   times come from FluidAudio `tokenTimings` (`▁` marks a word start); they are

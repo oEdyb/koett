@@ -1,8 +1,8 @@
 import AppKit
 
-/// Draw while dictating: one transparent, non-activating panel per screen.
-/// Holding the draw key makes the panels take the pointer and leave red ink;
-/// otherwise clicks pass through. The key is read from modifier-flag events
+/// Draw and pin while dictating: one transparent, non-activating panel per
+/// screen. Holding the draw key makes the panels take the pointer: moving
+/// leaves red ink, clicking drops a pin. Otherwise clicks pass through. The key is read from modifier-flag events
 /// only, so the overlay never takes keyboard focus and typing keeps working.
 @MainActor
 final class SketchOverlay {
@@ -12,6 +12,8 @@ final class SketchOverlay {
         let frames: SketchFrames
         /// Captured-audio seconds (paused time excluded), for speech linking.
         let audioClock: () -> TimeInterval
+        /// Pins also read the selected text of the app under the click.
+        let includeSelection: Bool
         let onUpdate: (SketchUpdate) -> Void
     }
 
@@ -132,6 +134,19 @@ final class SketchOverlay {
         }
     }
 
+    /// A click on a panel; it only arrives while the key is held.
+    private func mouse(down: Bool, screen index: Int, at point: CGPoint, clickCount: Int) {
+        guard var board, let session, index < surfaces.count else { return }
+        let updates = down
+            ? board.mouseDown(screen: index, point, now: Self.now, audio: Float(session.audioClock()), clickCount: clickCount)
+            : board.mouseUp(now: Self.now)
+        self.board = board
+        publish(updates)
+        redraw()
+        if !down { startCaptures() }
+        startTicker()
+    }
+
     private func setAcceptsPointer(_ accepts: Bool) {
         for surface in surfaces { surface.panel.ignoresMouseEvents = !accepts }
     }
@@ -142,19 +157,27 @@ final class SketchOverlay {
         guard var board, let session else { return }
         let ready = board.takeReadyForCapture()
         self.board = board
+        let mainTop = NSScreen.screens.first?.frame.maxY ?? 0
         for group in ready where group.screen < surfaces.count {
             let surface = surfaces[group.screen]
             let logical = surface.frame.size
+            let includeSelection = session.includeSelection
+            let global = group.pin.map {
+                CGPoint(x: surface.frame.minX + $0.x, y: mainTop - surface.frame.maxY + $0.y)
+            }
             Task { @MainActor [weak self] in
-                let result: Result<CGImage, Error>
+                async let context = global.asyncMap { await PinContextReader.read(at: $0, includeSelection: includeSelection) }
+                let result: Result<(CGImage, PinContext?), Error>
                 do {
                     let still = try await SketchCapture.still(displayID: surface.displayID, scale: surface.scale)
-                    guard let frame = SketchSheet.keyframe(screen: still, logical: logical, strokes: group.strokes) else {
+                    guard let frame = SketchSheet.keyframe(
+                        screen: still, logical: logical, strokes: group.strokes, pin: group.pin
+                    ) else {
                         throw NSError(domain: "Koett.Sketch", code: 2, userInfo: [
                             NSLocalizedDescriptionKey: "The sketch image could not be drawn.",
                         ])
                     }
-                    result = .success(frame)
+                    result = .success((frame, await context ?? nil))
                 } catch {
                     result = .failure(error)
                 }
@@ -163,12 +186,16 @@ final class SketchOverlay {
         }
     }
 
-    private func finishCapture(_ id: UInt64, session sessionID: UInt64, result: Result<CGImage, Error>) {
+    private func finishCapture(
+        _ id: UInt64, session sessionID: UInt64, result: Result<(CGImage, PinContext?), Error>
+    ) {
         guard var board, let session, session.id == sessionID else { return }
         switch result {
-        case .success(let image):
+        case .success(let (image, context)):
             if let group = board.captured(id) {
-                session.frames.push(session.id, SketchFrame(order: group.id, start: group.audioStart, image: image))
+                session.frames.push(session.id, SketchFrame(
+                    order: group.id, start: group.audioStart, image: image, context: context
+                ))
             }
         case .failure(let error):
             failedCaptures += 1
@@ -246,6 +273,9 @@ final class SketchOverlay {
             guard let board = self?.board else { return [] }
             return board.groups.filter { $0.screen == index }
         }
+        view.onMouse = { [weak self] down, point, clickCount in
+            self?.mouse(down: down, screen: index, at: point, clickCount: clickCount)
+        }
         panel.contentView = view
         panel.setFrame(screen.frame, display: false)
         panel.orderFrontRegardless()
@@ -255,11 +285,26 @@ final class SketchOverlay {
     private static var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
 }
 
-/// Paints one screen's ink; captured sketches fade 1.5 s after release.
+/// Paints one screen's ink and pin pulses; captured sketches fade 1.5 s after
+/// release. Receives clicks only while the draw key is held.
 final class SketchInkView: NSView {
     var groups: () -> [SketchBoard.Group] = { [] }
+    var onMouse: (_ down: Bool, _ point: CGPoint, _ clickCount: Int) -> Void = { _, _, _ in }
 
     override var isFlipped: Bool { true }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        onMouse(true, convert(event.locationInWindow, from: nil), event.clickCount)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        onMouse(false, convert(event.locationInWindow, from: nil), event.clickCount)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {}
+    override func otherMouseDown(with event: NSEvent) {}
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
@@ -267,7 +312,19 @@ final class SketchInkView: NSView {
         for group in groups() {
             let alpha = group.alpha(at: now)
             guard alpha > 0 else { continue }
-            SketchSheet.strokeInk(group.strokes, in: context, alpha: alpha)
+            if let pin = group.pin {
+                let grown = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 1 : 1.6 - 0.6 * alpha
+                SketchSheet.drawPin(at: pin, in: context, radius: SketchSheet.pinRadius * grown, alpha: alpha)
+            } else {
+                SketchSheet.strokeInk(group.strokes, in: context, alpha: alpha)
+            }
         }
+    }
+}
+
+private extension Optional {
+    func asyncMap<T>(_ transform: (Wrapped) async -> T) async -> T? {
+        guard let self else { return nil }
+        return await transform(self)
     }
 }

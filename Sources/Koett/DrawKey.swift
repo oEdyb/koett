@@ -9,6 +9,7 @@ enum DrawKey: String, CaseIterable, Sendable {
 
     static let defaultsKey = "drawKey"
     static let enabledDefaultsKey = "drawWhileDictating"
+    static let pinSelectedTextDefaultsKey = "pinSelectedText"
 
     var flag: NSEvent.ModifierFlags {
         switch self {

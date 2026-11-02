@@ -64,6 +64,7 @@ final class KoettController: NSObject {
     var s1MiniEnabled: Bool
     var drawWhileDictating: Bool
     var drawKey: DrawKey
+    var pinSelectedText: Bool
     let sketchFrames = SketchFrames()
     let sketchOverlay = SketchOverlay()
     lazy var permissionsWindow = makePermissionsWindow()
@@ -172,6 +173,7 @@ final class KoettController: NSObject {
             .flatMap(S1MiniContext.init(rawValue:)) ?? .general
         drawWhileDictating = defaults.bool(forKey: DrawKey.enabledDefaultsKey)
         drawKey = defaults.string(forKey: DrawKey.defaultsKey).flatMap(DrawKey.init(rawValue:)) ?? .shift
+        pinSelectedText = defaults.object(forKey: DrawKey.pinSelectedTextDefaultsKey) as? Bool ?? true
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()

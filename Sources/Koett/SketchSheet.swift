@@ -39,7 +39,9 @@ enum SketchSheet {
 
     /// Draws the sketch's own ink onto a screen still (any pixel scale) and
     /// crops it around the ink. Only this sketch's strokes are ever drawn.
-    static func keyframe(screen image: CGImage, logical: CGSize, strokes: [[CGPoint]]) -> CGImage? {
+    static func keyframe(
+        screen image: CGImage, logical: CGSize, strokes: [[CGPoint]], pin: CGPoint? = nil
+    ) -> CGImage? {
         guard logical.width > 0, logical.height > 0 else { return image }
         let (width, height) = (image.width, image.height)
         guard let context = canvas(width: width, height: height) else { return nil }
@@ -49,8 +51,9 @@ enum SketchSheet {
         context.translateBy(x: 0, y: CGFloat(height))
         context.scaleBy(x: scaleX, y: -scaleY)
         strokeInk(strokes, in: context, alpha: 1)
+        if let pin { drawPin(at: pin, in: context, radius: pinRadius, alpha: 1) }
         guard let inked = context.makeImage() else { return nil }
-        let crop = inkCrop(screen: logical, strokes: strokes)
+        let crop = inkCrop(screen: logical, strokes: strokes + (pin.map { [[$0]] } ?? []))
         let left = Int((crop.minX * scaleX).rounded(.down))
         let top = Int((crop.minY * scaleY).rounded(.down))
         let right = min(Int((crop.maxX * scaleX).rounded(.up)), width)
@@ -71,6 +74,21 @@ enum SketchSheet {
             for point in stroke.dropFirst() { context.addLine(to: point) }
             context.strokePath()
         }
+    }
+
+    static let pinRadius: CGFloat = 16
+
+    /// A pin's ring, white-edged so it reads on dark and light pages.
+    static func drawPin(at point: CGPoint, in context: CGContext, radius: CGFloat, alpha: CGFloat) {
+        let ring = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
+        context.setLineWidth(inkWidth + 3)
+        context.setStrokeColor(CGColor(gray: 1, alpha: 0.9 * alpha))
+        context.strokeEllipse(in: ring)
+        context.setLineWidth(inkWidth)
+        context.setStrokeColor(ink.copy(alpha: alpha) ?? ink)
+        context.strokeEllipse(in: ring)
+        context.setFillColor(ink.copy(alpha: alpha) ?? ink)
+        context.fillEllipse(in: CGRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6))
     }
 
     typealias Row = (indices: [Int], height: Double)

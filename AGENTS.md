@@ -155,7 +155,7 @@ Dictation and all audio transcription stay local.
   light/dark palette (see `docs/pill-timeline.md`).
 - `Sources/Koett/Sketch*.swift`, `DrawKey.swift`: draw while dictating
   (overlay, capture, contact sheet, linking port, paste); see
-  `docs/draw-while-dictating.md`.
+  `docs/draw-while-dictating.md` and pins in `docs/screen-context-proposal.md` (`PinContext*.swift`).
 - `Sources/Koett/Permissions.swift`, `PermissionsWindow.swift`,
   `PermissionOnboarding.swift`: permission rows, live status and the
   first-launch window.
