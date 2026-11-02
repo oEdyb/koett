@@ -10,11 +10,19 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   **Draw key**: Shift (default), Ctrl or Alt.
 - **Keep typing while recording** (opt-in): Koett reads the draw key from the
   keyboard devices, so the overlay never takes keyboard focus and typing keeps
-  working during a dictation. It checks only Shift/Ctrl/Alt/Super state
-  (`EVIOCGKEY`, ~60×/s), never reads key events, and opens the devices only
-  while a dictation with drawing records. Settings shows the access status and
-  copies a one-time udev rule (`uaccess` for keyboards). Without access Koett
-  falls back to the focused overlay and says so.
+  working during a dictation. About 60 times a second it samples which keys are
+  held (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly
+  contains every held key), uses only Shift/Ctrl/Alt/Super, stores nothing and
+  wipes the sample with volatile writes. It never reads key events or typed
+  text, and opens keyboards only while a dictation with drawing records.
+  Keyboards are found through sysfs capabilities and rescanned every 2 s, so
+  hot-plugged ones join; unplugged handles are dropped. Unreadable keyboards
+  are reported; if every handle is lost, the overlay takes focus for the rest
+  of that recording and says so.
+- Setup (Settings copies it): a `koett-keyboard` group, the user added to it,
+  and a udev rule that adds a **read-only** ACL for that group on keyboard
+  devices (owner and the `input` group unchanged). Log out and back in once.
+  Any app the user runs can then read keyboards, which is why this is opt-in.
 - While a dictation records, a transparent overlay covers every monitor. Hold
   the draw key and move the pointer to leave red (#ff3b30) ink. Without the key,
   clicks pass through to the apps underneath. Ctrl+Z removes the last stroke of
@@ -28,7 +36,11 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   ink is shown there (other and newer ink reappears after it), so an image never
   contains another sketch's strokes. The screenshot starts only once GDK reports
   wp_presentation feedback for a frame painted that way (a discarded frame is
-  repainted; 2 s fallback for compositors without the protocol).
+  repainted; 2 s fallback when no timing arrives). This relies on GDK's frame
+  timings: KWin, niri, Sway and Hyprland implement wp_presentation, so the time
+  is the compositor's. On a compositor without it GDK may report an estimated
+  presentation time, which GTK does not let Koett tell apart, so there the
+  guarantee is only "GDK considers the frame done".
 - Sketch numbers follow creation order everywhere (sheet, bullets, pill), even
   when sketches made during a pause share an audio time. Captures that finish or
   fail after Stop still renumber the pill until the next dictation starts.

@@ -430,18 +430,24 @@ Media: open Koett → Transcribe media",
     from_keyboard.set_active(settings.draw_key_from_keyboard);
     text.append(&from_keyboard);
     let keyboard_help = gtk::Label::new(Some(
-        "Koett then checks only whether Shift, Ctrl, Alt or Super is held, about 60 times a second, and only while a dictation with drawing records. It never reads other keys. Linux grants this per keyboard device, so the one-time setup below lets any app you run read keyboards; skip it to keep the overlay focused instead (typing paused while recording).",
+        "While a dictation with drawing records, Koett samples which keys are held about 60 times a second (Linux reports all keys at once), uses only Shift, Ctrl, Alt and Super, stores nothing and wipes each sample. It never reads typed text or key events. The one-time setup gives your user read-only access to keyboards, which any app you run could then use. Without it, the overlay keeps keyboard focus instead and typing pauses while recording.",
     ));
     keyboard_help.set_wrap(true);
     keyboard_help.set_xalign(0.0);
     keyboard_help.add_css_class("koett-setting-help");
     text.append(&keyboard_help);
-    let access = gtk::Label::new(Some(match super::sketch::keys::Keyboards::open() {
-        Ok(_) => "Keyboard access: ready.",
+    let access = gtk::Label::new(Some(&match super::sketch::keys::Keyboards::open() {
+        Ok(keyboards) if keyboards.unreadable() > 0 => format!(
+            "Keyboard access: partial. {} keyboard(s) can't be read; run the setup command, then log out and back in.",
+            keyboards.unreadable()
+        ),
+        Ok(_) => "Keyboard access: ready.".to_string(),
         Err(super::sketch::keys::Access::Denied) => {
-            "Keyboard access: not set up. Run the setup command once in a terminal, then reopen Settings."
+            "Keyboard access: not set up. Run the setup command once in a terminal, then log out and back in.".to_string()
         }
-        Err(super::sketch::keys::Access::NoKeyboards) => "Keyboard access: no keyboard found.",
+        Err(super::sketch::keys::Access::NoKeyboards) => {
+            "Keyboard access: no keyboard found.".to_string()
+        }
     }));
     access.set_wrap(true);
     access.set_xalign(0.0);

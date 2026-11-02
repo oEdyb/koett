@@ -94,8 +94,12 @@ dictation. Details, limits and the Mac to-do: docs/draw-while-dictating.md.
 Olle chose maximum UX over the compositor-shortcut option: bare Shift, each
 hold one separate sketch (release ends it), many sketches per dictation, and
 typing never blocked. Wayland clients cannot see Shift without focus, so the
-opt-in "Keep typing" mode reads only modifier bits from keyboard devices with
-EVIOCGKEY while a drawing dictation records; it never reads key events. Access
-comes from a one-time udev `uaccess` rule that Settings copies; without it the
-focused overlay remains the fallback and Koett says so. This grants keyboard
-read access to the user's session, which is why it is opt-in, not default.
+opt-in "Keep typing" mode samples held keys with EVIOCGKEY while a drawing
+dictation records and uses only the modifier bits (the kernel has no
+modifier-only query; samples are wiped, nothing is stored, key events are never
+read). Access comes from a one-time setup Settings copies: a `koett-keyboard`
+group with a read-only udev ACL on keyboards (review preferred this over
+`uaccess`, which grants read and write). Without access, the focused overlay
+remains the fallback and Koett says so. Keyboards are rescanned during a
+recording for hot-plug. Read access to keyboards for the user's apps is the
+cost, which is why it is opt-in, not default.

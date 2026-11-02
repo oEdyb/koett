@@ -25,6 +25,8 @@ const FADE_AFTER: Duration = Duration::from_millis(1500);
 const FADE_FOR: Duration = Duration::from_millis(400);
 /// Matches the pill timeline's cap (`timeline::MAX_SKETCHES`, 256 per dictation).
 const MAX_SKETCHES: usize = 256;
+/// How often device mode looks for added or removed keyboards.
+const KEYBOARD_RESCAN: Duration = Duration::from_secs(2);
 
 pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
 #[cfg(test)]
@@ -173,6 +175,10 @@ struct Session {
     results: CaptureResults,
     /// Device mode (no keyboard focus); `None` means the overlay holds focus.
     keyboards: Option<keys::Keyboards>,
+    rescanned: Option<Instant>,
+    reported_unreadable: usize,
+    notices: Vec<String>,
+    layer: Rc<super::recording_overlay::LayerShell>,
 }
 
 impl Session {
@@ -226,12 +232,41 @@ impl Session {
         self.set_input(true);
     }
 
-    /// Device mode: follows the draw key from keyboard modifier state.
+    /// Device mode: follows the draw key from keyboard modifier state,
+    /// picking up hot-plugged keyboards and reporting unreadable ones.
     fn poll_keys(&mut self) {
-        let Some(keyboards) = &self.keyboards else {
+        let Some(keyboards) = self.keyboards.as_mut() else {
             return;
         };
+        if self
+            .rescanned
+            .is_none_or(|at| at.elapsed() >= KEYBOARD_RESCAN)
+        {
+            keyboards.refresh();
+            self.rescanned = Some(Instant::now());
+            let unreadable = keyboards.unreadable();
+            if unreadable > self.reported_unreadable {
+                self.notices.push(format!(
+                    "Drawing: {unreadable} keyboard(s) can't be read, so Shift on them won't draw. Settings › Text has the setup."
+                ));
+            }
+            self.reported_unreadable = unreadable;
+        }
         let draws = !self.finishing && keyboards.modifiers().draws(self.key);
+        if keyboards.is_empty() {
+            // Every handle failed: fall back to the focused overlay.
+            self.keyboards = None;
+            if let Some(first) = self.surfaces.first()
+                && let Err(error) = self.layer.set_keyboard(&first.window, 1)
+            {
+                eprintln!("Sketch keyboard focus failed: {error}");
+            }
+            self.notices.push(
+                "Drawing: keyboard access was lost, so typing is paused for the rest of this recording."
+                    .into(),
+            );
+            return;
+        }
         match (draws, self.held) {
             (true, false) => self.press(),
             (false, true) => self.release(),
@@ -493,7 +528,7 @@ fn other_modifiers(key: DrawKey) -> gdk::ModifierType {
 type SessionCell = Rc<RefCell<Option<Session>>>;
 
 pub struct SketchOverlay {
-    layer: super::recording_overlay::LayerShell,
+    layer: Rc<super::recording_overlay::LayerShell>,
     session: SessionCell,
     styled: std::cell::Cell<bool>,
     /// Last recording id the overlay decided on, so settings load once.
@@ -515,7 +550,7 @@ impl SketchOverlay {
             .inspect_err(|error| eprintln!("Draw while dictating unavailable: {error}"))
             .ok()?;
         Some(Self {
-            layer,
+            layer: Rc::new(layer),
             session: Rc::new(RefCell::new(None)),
             styled: std::cell::Cell::new(false),
             decided: std::cell::Cell::new(0),
@@ -554,7 +589,13 @@ impl SketchOverlay {
                     self.open(application, started, id, settings.draw_key, keyboards);
                 }
             }
-            (Some(session), Some(_)) => session.clock.observe(paused, Instant::now()),
+            (Some(session), Some(_)) => {
+                session.clock.observe(paused, Instant::now());
+                if !session.notices.is_empty() {
+                    *self.notice.borrow_mut() =
+                        Some(std::mem::take(&mut session.notices).join(" "));
+                }
+            }
             (Some(session), None) if !session.finishing => {
                 session.finishing = true;
                 session.release();
@@ -696,7 +737,9 @@ impl SketchOverlay {
                 }
             });
             area.add_controller(motion);
-            if focus && index == 0 {
+            // Device mode can fall back to focus mid-recording, so the key
+            // controller is always present; without focus it receives nothing.
+            if index == 0 {
                 window.add_controller(self.keys());
                 // A missed key release must not leave clicks blocked.
                 window.connect_is_active_notify({
@@ -748,6 +791,10 @@ impl SketchOverlay {
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
             keyboards,
+            rescanned: None,
+            reported_unreadable: 0,
+            notices: Vec::new(),
+            layer: self.layer.clone(),
         });
         // 16 ms: device mode polls the draw key on this tick.
         glib::timeout_add_local(Duration::from_millis(16), {

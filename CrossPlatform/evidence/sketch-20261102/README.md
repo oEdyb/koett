@@ -53,3 +53,7 @@ key; Koett saw it only through EVIOCGKEY key state. The pointer moved through
 KWin fake input without key events (`lab-gesture 0 …`).
 Not covered in the lab: the "access denied" fallback (unit-tested decision;
 focus mode itself is the verified PR #6 path).
+13. `13-device-mode-hotplugged-keyboard.png`: the virtual keyboard appeared
+    after recording started; the rescan picked it up, three holds gave three
+    sketches (#3 after speech ended is `marked`), and typing still reached
+    Chrome.
