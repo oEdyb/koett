@@ -22,11 +22,12 @@ async def main(out: Path) -> None:
                     await edge_tts.Communicate(clip["text"], voice).save(str(mp3))
                     break
                 except edge_tts.exceptions.NoAudioReceived:
-                    await asyncio.sleep(1 + attempt)
+                    await asyncio.sleep(5 * (attempt + 1))
             else:
                 raise SystemExit(f"no audio for {wav.name}")
             subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(mp3),
                             "-ac", "1", "-ar", "16000", "-sample_fmt", "s16", str(wav)], check=True)
             mp3.unlink()
+            await asyncio.sleep(0.7)  # the free service drops bursts
 
 asyncio.run(main(Path(sys.argv[1])))
