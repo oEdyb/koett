@@ -423,6 +423,66 @@ Media: open Koett → Transcribe media",
         move |draw| draw_key.set_sensitive(draw.is_active())
     });
     row(&text, "Draw key", &draw_key);
+    let from_keyboard = gtk::CheckButton::with_label(
+        "_Keep typing while recording (read the draw key from the keyboard)",
+    );
+    from_keyboard.set_use_underline(true);
+    from_keyboard.set_active(settings.draw_key_from_keyboard);
+    text.append(&from_keyboard);
+    let keyboard_help = gtk::Label::new(Some(
+        "While a dictation with drawing records, Koett samples which keys are held about 60 times a second (Linux reports all keys at once), uses only Shift, Ctrl, Alt and Super, stores nothing and wipes each sample. It never reads typed text or key events. The one-time setup gives your user read-only access to keyboards, which any app you run could then use. Without it, the overlay keeps keyboard focus instead and typing pauses while recording.",
+    ));
+    keyboard_help.set_wrap(true);
+    keyboard_help.set_xalign(0.0);
+    keyboard_help.add_css_class("koett-setting-help");
+    text.append(&keyboard_help);
+    let access = gtk::Label::new(Some(&match super::sketch::keys::Keyboards::open() {
+        Ok(keyboards) if keyboards.unreadable() > 0 => format!(
+            "Keyboard access: partial. {} keyboard(s) can't be read; run the setup command, then log out and back in.",
+            keyboards.unreadable()
+        ),
+        Ok(_) => "Keyboard access: ready.".to_string(),
+        Err(super::sketch::keys::Access::Denied) => {
+            "Keyboard access: not set up. Run the setup command once in a terminal, then log out and back in.".to_string()
+        }
+        Err(super::sketch::keys::Access::NoKeyboards) => {
+            "Keyboard access: no keyboard found.".to_string()
+        }
+    }));
+    access.set_wrap(true);
+    access.set_xalign(0.0);
+    text.append(&access);
+    let setup = gtk::Button::with_label("Copy setup command");
+    setup.set_halign(gtk::Align::Start);
+    setup.set_tooltip_text(Some(super::sketch::keys::SETUP_COMMAND));
+    setup.connect_clicked(|button| {
+        button
+            .clipboard()
+            .set_text(super::sketch::keys::SETUP_COMMAND);
+        button.set_label("Copied · paste into a terminal");
+    });
+    text.append(&setup);
+    for widget in [
+        from_keyboard.upcast_ref::<gtk::Widget>(),
+        keyboard_help.upcast_ref(),
+        access.upcast_ref(),
+        setup.upcast_ref(),
+    ] {
+        widget.set_sensitive(draw.is_active());
+    }
+    draw.connect_toggled({
+        let widgets = [
+            from_keyboard.clone().upcast::<gtk::Widget>(),
+            keyboard_help.clone().upcast(),
+            access.clone().upcast(),
+            setup.clone().upcast(),
+        ];
+        move |draw| {
+            for widget in &widgets {
+                widget.set_sensitive(draw.is_active());
+            }
+        }
+    });
     let replacements_title = gtk::Label::new(Some("Word replacements"));
     replacements_title.set_xalign(0.0);
     replacements_title.add_css_class("heading");
@@ -530,6 +590,7 @@ Media: open Koett → Transcribe media",
             };
             updated.pause_media = pause_media.is_active();
             updated.draw_while_dictating = draw.is_active();
+            updated.draw_key_from_keyboard = from_keyboard.is_active();
             updated.draw_key = match draw_key.active_id().as_deref() {
                 Some("control") => DrawKey::Control,
                 Some("alt") => DrawKey::Alt,

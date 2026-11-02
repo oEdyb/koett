@@ -60,7 +60,7 @@ static void pause_ms(long ms) { struct timespec t = {ms / 1000, (ms % 1000) * 10
 int main(int argc, char **argv) {
     char socket[PATH_MAX]; private_socket(socket, sizeof(socket));
     if (argc != 6) { fputs("Usage: gesture KEY CX CY RADIUS STEPS\n", stderr); return 2; }
-    uint32_t key = (uint32_t)integer(argv[1], 1, KEY_MAX);
+    uint32_t key = (uint32_t)integer(argv[1], 0, KEY_MAX);
     int cx = integer(argv[2], 0, 16384), cy = integer(argv[3], 0, 16384);
     int r = integer(argv[4], 1, 4000), steps = integer(argv[5], 3, 2000);
     struct wl_display *display = wl_display_connect(socket);
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     org_kde_kwin_fake_input_authenticate(input, "Agent Lab", "Koett sketch gesture in an isolated test desktop");
     org_kde_kwin_fake_input_pointer_motion_absolute(input, wl_fixed_from_int(cx + r), wl_fixed_from_int(cy));
     wl_display_roundtrip(display); pause_ms(150);
-    org_kde_kwin_fake_input_keyboard_key(input, key, 1);
+    if (key) org_kde_kwin_fake_input_keyboard_key(input, key, 1);
     wl_display_roundtrip(display); pause_ms(150);
     for (int i = 0; i <= steps; i++) {
         double a = 6.283185307179586 * i / steps;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
         wl_display_roundtrip(display); pause_ms(12);
     }
     pause_ms(100);
-    org_kde_kwin_fake_input_keyboard_key(input, key, 0);
+    if (key) org_kde_kwin_fake_input_keyboard_key(input, key, 0);
     wl_display_roundtrip(display); pause_ms(100);
     org_kde_kwin_fake_input_destroy(input);
     wl_display_disconnect(display);
