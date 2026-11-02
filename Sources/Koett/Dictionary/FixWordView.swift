@@ -11,6 +11,7 @@ struct FixWordView: View {
     @State private var edited = ""
     @State private var notice: String?
     @State private var loadError: String?
+    @State private var learned: [Suggestion] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -31,7 +32,7 @@ struct FixWordView: View {
                 }
                 Divider()
                 Text("Suggested for your dictionary").font(.headline)
-                let proposals = corrections.proposals(dictionary.entries)
+                let proposals = corrections.filter(learned, dictionary.entries)
                 if proposals.isEmpty {
                     Text("No suggestions yet").foregroundStyle(.secondary)
                 }
@@ -73,6 +74,7 @@ struct FixWordView: View {
         do {
             let loaded = try Corrections.load(from: correctionsURL)
             corrections = loaded
+            learned = loaded.learned(dictionary.entries)
             edited = loaded.correction(for: record.id)?.corrected ?? record.text
         } catch {
             loadError = error.localizedDescription
@@ -92,6 +94,7 @@ struct FixWordView: View {
         change(&updated)
         do {
             try updated.save(to: correctionsURL)
+            if updated.entries != corrections?.entries { learned = updated.learned(dictionary.entries) }
             corrections = updated
             if !done.isEmpty { notice = done }
         } catch {

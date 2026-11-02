@@ -5,6 +5,7 @@ import XCTest
 /// Runs `Benchmarks/Dictionary` clips through the Mac dictation path. Set
 /// KOETT_DICTIONARY_BENCH to the clip folder and KOETT_DICTIONARY_BENCH_OUT to
 /// an output folder; score the JSON files with `Benchmarks/Dictionary/score.py`.
+/// For Swedish add KOETT_BENCH_CORPUS=corpus-sv.json and KOETT_DICTIONARY_BENCH_MODEL=v3.
 final class DictionaryBenchmarkTests: XCTestCase {
     func testMacDictionaryPathOnTheSharedCorpus() async throws {
         let environment = ProcessInfo.processInfo.environment
@@ -14,13 +15,16 @@ final class DictionaryBenchmarkTests: XCTestCase {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
         let corpus = try JSONSerialization.jsonObject(
-            with: Data(contentsOf: root.appendingPathComponent("Benchmarks/Dictionary/corpus.json"))
+            with: Data(contentsOf: root.appendingPathComponent(
+                "Benchmarks/Dictionary/" + (environment["KOETT_BENCH_CORPUS"] ?? "corpus.json")
+            ))
         ) as? [String: Any]
         let terms = try XCTUnwrap(corpus?["dictionary"] as? [String])
         let dictionary = terms.map { DictionaryEntry($0) }
 
         let asr = AsrManager(config: .default)
-        try await asr.loadModels(try await AsrModels.downloadAndLoad(version: .v2))
+        let version: AsrModelVersion = environment["KOETT_DICTIONARY_BENCH_MODEL"] == "v3" ? .v3 : .v2
+        try await asr.loadModels(try await AsrModels.downloadAndLoad(version: version))
         let detector = try await VadManager(config: SpeechTrimmer.detectorConfig)
         let files = try FileManager.default.contentsOfDirectory(atPath: clips).filter { $0.hasSuffix(".wav") }.sorted()
         let folder = URL(fileURLWithPath: out)
@@ -74,6 +78,7 @@ final class DictionaryBenchmarkTests: XCTestCase {
 extension DictionaryBenchmarkTests {
     static let tunings: [String: BoostTuning] = [
         "koett": .koett,
+        "koett-v3": .forModel(.v3),
         "default": BoostTuning(minSimilarity: ContextBiasingConstants.defaultMinSimilarity, config: .default),
         "norescue": BoostTuning(minSimilarity: ContextBiasingConstants.defaultMinSimilarity, config: .init(spotterRescueEnabled: false)),
         "floors": BoostTuning(minSimilarity: ContextBiasingConstants.defaultMinSimilarity, config: VocabularyBoostingSession.itnDefaultConfig),
@@ -82,6 +87,8 @@ extension DictionaryBenchmarkTests {
         "sim70": BoostTuning(minSimilarity: 0.70, config: .init(spotterRescueEnabled: false)),
         "sim65rescue": BoostTuning(minSimilarity: 0.65, config: .default),
         "sim65": BoostTuning(minSimilarity: 0.65, config: .init(spotterRescueEnabled: false)),
+        "sim80": BoostTuning(minSimilarity: 0.80, config: .init(spotterRescueEnabled: false)),
+        "sim85": BoostTuning(minSimilarity: 0.85, config: .init(spotterRescueEnabled: false)),
         "sim75": BoostTuning(minSimilarity: 0.75, config: .init(spotterRescueEnabled: false)),
     ]
 }

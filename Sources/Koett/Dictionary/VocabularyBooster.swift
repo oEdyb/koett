@@ -133,13 +133,19 @@ public struct BoostTuning: Sendable {
     public var minSimilarity: Float
     public var config: VocabularyRescorer.Config
 
-    /// 0.70 is the lowest floor with margin: at 0.60 the shared benchmark gets
-    /// "Highland" → "Hyprland" and "Jacob" → "Yakob"; 0.65 and 0.70 insert none.
-    /// The acoustic rescue pass adds no recall here, so it stays off.
-    public static let koett = BoostTuning(
-        minSimilarity: 0.70,
-        config: .init(spotterRescueEnabled: false)
-    )
+    /// The lowest string-similarity floor that inserts no wrong terms on
+    /// `Benchmarks/Dictionary` for each model. English (Parakeet v2, the app's
+    /// model): 0.60 still writes "Highland" as "Hyprland", 0.70 writes none.
+    /// Swedish (Parakeet v3): 0.80 still writes "Jakob och Mattias" as "Yakob och
+    /// Matyas", 0.85 writes none. The acoustic rescue pass adds no recall, so it is off.
+    public static func forModel(_ version: AsrModelVersion) -> BoostTuning {
+        BoostTuning(
+            minSimilarity: version == .v2 ? 0.70 : 0.85,
+            config: .init(spotterRescueEnabled: false)
+        )
+    }
+
+    public static let koett = forModel(.v2)
 }
 
 /// The CTC models, loaded once and kept while the dictionary has words.

@@ -1,5 +1,5 @@
 {
-"source": "CrossPlatform/src at 6ffd62f",
+"source": "CrossPlatform/src at fbcfcf2",
 "input": {
 "dictionary": [
 {
@@ -2557,7 +2557,7 @@
 "Hi, this is Olle Dyberg calling about the meeting.",
 "Hi, this is Olle Dyberg calling about the meeting.",
 "Hi, this is Olle Dyberg calling about the meeting.",
-"Hi. This is all Dyberg calling about the meeting.",
+"Hi. This is Olle Dyberg calling about the meeting.",
 "Hogia and Skatteverket both need the same numbers.",
 "Hoggier and Skatteverket both need the same numbers.",
 "Hogia and Skatteverket both need the same numbers.",
@@ -2640,7 +2640,7 @@
 "Nordicrank pays through Fortnox.",
 "Nordicrank pays through Fortnox.",
 "Nordicrank pays through four knocks",
-"Olle will review the pull request tonight.",
+"Ol will review the pull request tonight.",
 "Olle will review the pull request tonight.",
 "Olle will review the pull request tonight.",
 "On the Mac we use FluidAudio for speech recognition.",
@@ -2725,7 +2725,7 @@
 "The meeting starts at nine tomorrow morning.",
 "The old coat hangs behind the door.",
 "The parakeet model runs locally on the laptop.",
-"The Parakeet in the park are loud in the morning.",
+"The parakeets in the park are loud in the morning.",
 "The parakeets in the park are loud in the morning.",
 "The parrot sat on the kitchen counter.",
 "The queen visited the city last summer.",
@@ -2936,11 +2936,6 @@
 "Dyberg",
 "Diberg",
 1
-],
-[
-"y",
-"Y",
-1
 ]
 ],
 [
@@ -2948,20 +2943,9 @@
 "Dyberg",
 "Dieberg",
 1
-],
-[
-"y",
-"Y",
-1
 ]
 ],
-[
-[
-"a y",
-"A Y",
-1
-]
-],
+[],
 [
 [
 "Fort Knox",
@@ -3193,7 +3177,28 @@
 [],
 [],
 [],
-[],
+[
+[
+"Gataborg",
+"Göteborg",
+1
+],
+[
+"all",
+"Olle",
+1
+],
+[
+"Jakob",
+"Yakob",
+1
+],
+[
+"Fika",
+"fika",
+1
+]
+],
 [],
 [
 [
@@ -3481,13 +3486,7 @@
 ]
 ],
 [],
-[
-[
-"Olle",
-"Ol",
-1
-]
-],
+[],
 [],
 [],
 [
@@ -3584,13 +3583,7 @@
 [],
 [],
 [],
-[
-[
-"Scadever could send",
-"Skatteverket sent",
-1
-]
-],
+[],
 [
 [
 "Nordic Rank",
@@ -3691,11 +3684,6 @@
 [
 "Tauri",
 "Tori",
-1
-],
-[
-"web view",
-"Web View",
 1
 ]
 ],
@@ -3896,7 +3884,18 @@
 [],
 [],
 [],
-[],
+[
+[
+"Göteborg",
+"Gataborg",
+1
+],
+[
+"Yakob",
+"Jakob",
+1
+]
+],
 [],
 [
 [

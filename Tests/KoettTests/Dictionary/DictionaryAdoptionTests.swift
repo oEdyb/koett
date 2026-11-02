@@ -46,6 +46,9 @@ final class DictionaryAdoptionTests: XCTestCase {
         let entries = [DictionaryEntry("Parakeet")]
         XCTAssertEqual(adopt("The parakeets are loud.", "The Parakeet are loud.", entries), "The parakeets are loud.")
         XCTAssertEqual(adopt("The parakeat is loud.", "The Parakeet is loud.", entries), "The Parakeet is loud.")
+        let koett = [DictionaryEntry("Koett")]
+        XCTAssertEqual(adopt("We koetted all day.", "We Koett all day.", koett), "We koetted all day.")
+        XCTAssertEqual(adopt("Koetting is fun.", "Koett is fun.", koett), "Koetting is fun.")
     }
 
     func testPlainPunctuationSurvivesAroundTheTerm() {

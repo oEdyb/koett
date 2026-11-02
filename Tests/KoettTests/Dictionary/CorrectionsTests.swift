@@ -28,13 +28,20 @@ final class CorrectionsTests: XCTestCase {
         ]), [])
     }
 
-    func testAlignmentIgnoresCase() {
-        XCTAssertEqual(learned([("ask Grok", "Ask Groq")]), [Suggestion(heard: "Grok", term: "Groq", count: 1)])
+    func testAlignmentIgnoresCaseAndKeepsTheCorrectedSpelling() {
+        XCTAssertEqual(
+            learned([("ask Grok", "Ask Groq"), ("use groq", "use Groq")]),
+            [Suggestion(heard: "Grok", term: "Groq", count: 1), Suggestion(heard: "groq", term: "Groq", count: 1)]
+        )
     }
 
-    func testTermPunctuationIsKept() {
-        XCTAssertEqual(learned([("I write c sharp daily.", "I write C# daily.")]), [Suggestion(heard: "c sharp", term: "C#", count: 1)])
-        XCTAssertEqual(learned([("Ship it on dot net.", "Ship it on .NET.")]), [Suggestion(heard: "dot net", term: ".NET", count: 1)])
+    func testTermSymbolsSurviveAlignment() {
+        let found = learned([
+            ("use c sharp now", "use C# now"),
+            ("in c plus plus.", "in C++."),
+            ("on dot net today", "on .NET today"),
+        ]).map { [$0.heard, $0.term] }.sorted { $0.joined() < $1.joined() }
+        XCTAssertEqual(found, [["c plus plus", "C++"], ["c sharp", "C#"], ["dot net", ".NET"]])
     }
 
     func testKnownLowercaseTermsAreLearned() {
@@ -69,13 +76,14 @@ final class CorrectionsTests: XCTestCase {
 
     func testCorrectionsAndDismissalsAreBounded() {
         var corrections = Corrections()
-        for index in 0...(Corrections.maxEntries + 5) {
+        for index in 0...(Corrections.maxDismissed + 5) {
             corrections.record(id: "\(index)", original: "ask Grok", corrected: "ask Groq \(index)", nowMS: Int64(index))
             corrections.dismiss(Suggestion(heard: "h\(index)", term: "T\(index)", count: 1))
         }
         XCTAssertEqual(corrections.entries.count, Corrections.maxEntries)
         XCTAssertEqual(corrections.dismissed.count, Corrections.maxDismissed)
-        XCTAssertEqual(corrections.entries.last?.id, "\(Corrections.maxEntries + 5)")
+        XCTAssertEqual(Corrections.maxEntries, 500)
+        XCTAssertEqual(corrections.entries.last?.id, "\(Corrections.maxDismissed + 5)")
         XCTAssertNil(corrections.correction(for: "0"))
     }
 
@@ -91,6 +99,8 @@ final class CorrectionsTests: XCTestCase {
         XCTAssertEqual(loaded.entries, corrections.entries)
         let permissions = try FileManager.default.attributesOfItem(atPath: url.path)[.posixPermissions] as? Int
         XCTAssertEqual(permissions, 0o600)
+        let folder = try FileManager.default.attributesOfItem(atPath: url.deletingLastPathComponent().path)[.posixPermissions] as? Int
+        XCTAssertEqual(folder, 0o700)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
         let first = try XCTUnwrap((json["entries"] as? [[String: Any]])?.first)
         XCTAssertEqual(first["updated_at_ms"] as? Int, 7)

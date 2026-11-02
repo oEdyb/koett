@@ -95,13 +95,19 @@ final class DictionaryTests: XCTestCase {
         }
     }
 
+    func testEverydaySwedishIsCommon() {
+        for phrase in ["fikar", "kod", "alla", "kött", "koll", "Jag fikar idag"] {
+            XCTAssertTrue(CommonWords.isCommon(phrase), phrase)
+        }
+    }
+
     func testMisheardNamesAndJargonAreNotCommon() {
-        for phrase in ["Grok", "Superbase", "Towery", "Quinn", "fek", "Claude", "", "C++"] {
+        for phrase in ["Grok", "Superbase", "Towery", "Quinn", "fek", "Claude", "", "C++", "G++", "C#"] {
             XCTAssertFalse(CommonWords.isCommon(phrase), phrase)
         }
     }
 
-    func testBundledEnglishListMatchesTheLinuxList() throws {
+    func testBundledWordListsMatchTheLinuxLists() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
         for name in CommonWords.lists {

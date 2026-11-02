@@ -2,7 +2,7 @@
 
 The dictionary makes Koett write Olle's own words his way: names, products,
 jargon and Swedish terms. Each entry is a written term plus optional "sounds
-like" forms (what Koett writes instead). Linux ships it; the Mac to-do is below.
+like" forms (what Koett writes instead). Linux and the Mac both ship it with the same rules.
 
 ## How it works on Linux
 
@@ -117,7 +117,8 @@ Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
    dropped when it is emptied. Dictation never waits for it: until it is ready,
    after a failure, or when rescoring takes over 2 s, the plain text is used.
    The rescored text then goes through the same term adoption as Linux.
-   Rescorer floor: string similarity 0.70, acoustic rescue pass off.
+   Rescorer floor: string similarity 0.70 for Parakeet v2 (the Mac app's model)
+   and 0.85 for Parakeet v3; acoustic rescue pass off (`BoostTuning.forModel`).
 3. **Spelling pass** in `DictationSession.prepareDictation`, before and after the
    optional S1-mini cleanup. Nemotron gets the spelling pass only.
 4. **Fix a word**: History → Fix a Word…, `~/Library/Application Support/Koett/Corrections.json`
@@ -147,5 +148,21 @@ At FluidAudio defaults the rescorer turned "salad" into "Wayland", "Highland"
 into "Hyprland", "Jacob and Matthias" into "Yakob and Matyas", "Gothenburg" into
 "Göteborg" and "parakeets" into "Parakeet". Floors 0.65 and 0.70 insert none
 (0.65: 120/162). A plain word that is the term plus "s", "es", "ed" or "ing"
-stays. Latency per 3–4 s clip, release-to-text: median 74 ms plain, about 310 ms
+stays. Floors 0.75/0.80/0.85 give 111/86/74 terms, all with 0 false terms.
+Latency per 3–4 s clip, release-to-text: median 74 ms plain, about 310 ms
 with boosting.
+
+Swedish (`KOETT_BENCH_CORPUS=corpus-sv.json KOETT_DICTIONARY_BENCH_MODEL=v3`,
+64 clips, Parakeet v3, 31 terms):
+
+| Mac, Swedish | Term recall | False terms | WER pos. | WER neg. | Broken neg. | Lost words |
+|---|---|---|---|---|---|---|
+| Baseline | 39% (17/44) | 0 | 12.5% | 6.2% | 0 | 0 |
+| Spelling pass only | 55% (24/44) | 0 | 12.5% | 6.2% | 0 | 0 |
+| Floor 0.70 | 91% (40/44) | 4 | 4.3% | 8.3% | 2 | 0 |
+| Floor 0.80 | 82% (36/44) | 2 | 6.4% | 7.2% | 2 | 0 |
+| **Floor 0.85 (v3 setting)** | **66% (29/44)** | **0** | **9.9%** | **6.2%** | **0** | **0** |
+
+Below 0.85 the rescorer turns "Jakob och Mattias" into "Yakob och Matyas", which
+sound the same. The Mac app ships Parakeet v2 only, so v3's floor is recorded
+for when the multilingual model reaches the Mac.
