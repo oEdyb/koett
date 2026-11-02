@@ -35,6 +35,7 @@ extension KoettController {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        if menu === statusItem?.menu { refreshSketchPasteChordItem(in: menu) }
         guard menu === statusItem?.menu,
               let item = menu.items.first(where: { $0.submenu?.title == "Microphone" }) else { return }
         refreshMicrophoneMenu(item)
