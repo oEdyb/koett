@@ -5,7 +5,7 @@ import Darwin
 import FluidAudio
 import Foundation
 
-private struct PreparedDictation {
+struct PreparedDictation {
     let text: String
     let model: String
     let rawText: String?
@@ -58,7 +58,8 @@ extension KoettController {
                 modelName: speechEngine.displayName,
                 canPause: nemotronRecorder == nil,
                 cancel: { [weak self] in self?.cancelDictation(session) }
-            ))
+            ), sketchSession: session)
+            startSketching(session: session, recorder: recorder)
         }
         play(startSound)
         print("RECORDING")
@@ -141,9 +142,11 @@ extension KoettController {
         switch state {
         case .recording:
             activeDictationID = nil
+            discardSketches(active)
             discardRecording()
         case .transcribing:
             activeDictationID = nil
+            discardSketches(active)
             recordingOverlay.stop()
             dictationTask?.cancel()
             print("CANCELLED")
@@ -196,6 +199,7 @@ extension KoettController {
 
     func stopRecording(releaseEventTimestamp: TimeInterval) {
         recordingOverlay.stop()
+        sketchOverlay.finish()
         let session = activeDictationID ?? beginDictationSession()
         switch speechEngine {
         case .parakeet:
@@ -217,6 +221,7 @@ extension KoettController {
         print("TRANSCRIBING")
 
         guard duration >= 0.25 else {
+            discardSketches(session)
             cleanup(url)
             state = .ready
             print("Ignored: recording was too short.")
@@ -307,29 +312,15 @@ extension KoettController {
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            guard !rawText.isEmpty else {
-                print("No speech detected. Clipboard unchanged.")
-                return
-            }
-
-            let prepared = await prepareDictation(
+            let completion = try await completeDictation(
                 rawText,
-                model: speechEngine.displayName
+                words: Self.timedWords(rawText, result),
+                model: speechEngine.displayName,
+                session: session,
+                deliveredText: &deliveredText
             )
-            let textReadyAt = ProcessInfo.processInfo.systemUptime
-            guard !prepared.text.isEmpty else {
-                guard claimDelivery(session) else { return }
-                try saveTranscript(prepared)
-                print("S1-mini removed filler-only text. Clipboard unchanged.")
-                return
-            }
-
-            guard claimDelivery(session) else { return }
-            deliveredText = prepared.text
-            let pastePostedAt = try deliver(prepared)
-            recordingOverlay.showDone(text: prepared.text)
-            print("PASTE POSTED (\(prepared.text.count) characters)")
+            guard case .pasted(let text, let textReadyAt, let pastePostedAt) = completion else { return }
+            print("PASTE POSTED (\(text.count) characters)")
             print(String(
                 format: "LATENCY release-to-ASR-start %.1fms | ASR %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
                 (transcriptionStartedAt - releaseEventTimestamp) * 1_000,
@@ -366,6 +357,7 @@ extension KoettController {
         }
 
         if duration < 0.3 {
+            discardSketches(session)
             var captureError = pendingCapture.error ?? recoveryError
             do {
                 try await pendingCapture.processingTask.value
@@ -422,29 +414,18 @@ extension KoettController {
 
         let asrReadyAt = ProcessInfo.processInfo.systemUptime
         cleanup(recoveryURL)
-        guard !rawText.isEmpty else {
-            print("No speech detected. Clipboard unchanged.")
-            return
-        }
 
         var deliveredText: String?
         do {
-            let prepared = await prepareDictation(
+            let completion = try await completeDictation(
                 rawText,
-                model: speechEngine.displayName
+                words: SketchLinking.estimateWords(rawText, start: 0, end: Float(duration)),
+                model: speechEngine.displayName,
+                session: session,
+                deliveredText: &deliveredText
             )
-            let textReadyAt = ProcessInfo.processInfo.systemUptime
-            guard !prepared.text.isEmpty else {
-                guard claimDelivery(session) else { return }
-                try saveTranscript(prepared)
-                print("S1-mini removed filler-only text. Clipboard unchanged.")
-                return
-            }
-            guard claimDelivery(session) else { return }
-            deliveredText = prepared.text
-            let pastePostedAt = try deliver(prepared)
-            recordingOverlay.showDone(text: prepared.text)
-            print("PASTE POSTED (\(prepared.text.count) characters)")
+            guard case .pasted(let text, let textReadyAt, let pastePostedAt) = completion else { return }
+            print("PASTE POSTED (\(text.count) characters)")
             print(String(
                 format: "LATENCY Nemotron release-to-finish-start %.1fms | finish %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
                 (finalizationStartedAt - releaseEventTimestamp) * 1_000,
@@ -478,27 +459,15 @@ extension KoettController {
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !rawText.isEmpty else {
-                print("No speech detected. Clipboard unchanged.")
-                return true
-            }
-
-            let prepared = await prepareDictation(
+            let completion = try await completeDictation(
                 rawText,
-                model: "Parakeet v2 (Nemotron recovery)"
+                words: Self.timedWords(rawText, result),
+                model: "Parakeet v2 (Nemotron recovery)",
+                session: session,
+                deliveredText: &deliveredText
             )
-            let textReadyAt = ProcessInfo.processInfo.systemUptime
-            guard !prepared.text.isEmpty else {
-                guard claimDelivery(session) else { return true }
-                try saveTranscript(prepared)
-                print("S1-mini removed filler-only text. Clipboard unchanged.")
-                return true
-            }
-            guard claimDelivery(session) else { return true }
-            deliveredText = prepared.text
-            let pastePostedAt = try deliver(prepared)
-            recordingOverlay.showDone(text: prepared.text)
-            print("PASTE POSTED by Parakeet recovery (\(prepared.text.count) characters)")
+            guard case .pasted(let text, let textReadyAt, let pastePostedAt) = completion else { return true }
+            print("PASTE POSTED by Parakeet recovery (\(text.count) characters)")
             print(String(
                 format: "LATENCY recovery-start %.1fms | recovery-ASR %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
                 (fallbackStartedAt - releaseEventTimestamp) * 1_000,
@@ -515,6 +484,56 @@ extension KoettController {
             fputs("Error: Parakeet recovery failed: \(error.localizedDescription)\n", stderr)
             return transcriptionCompleted
         }
+    }
+
+    private enum Completion {
+        case finished
+        case pasted(text: String, textReadyAt: TimeInterval, pastePostedAt: TimeInterval)
+    }
+
+    private static func timedWords(_ text: String, _ result: ASRResult) -> [TimedWord] {
+        SketchLinking.timedWords(
+            text: text,
+            tokens: result.tokenTimings?.map { ($0.token, $0.startTime) },
+            duration: result.duration
+        )
+    }
+
+    /// Cleanup, sketches, the last Cancel check, then the sheet and the text.
+    private func completeDictation(
+        _ rawText: String,
+        words: [TimedWord],
+        model: String,
+        session: UInt64,
+        deliveredText: inout String?
+    ) async throws -> Completion {
+        let prepared = rawText.isEmpty
+            ? PreparedDictation(text: "", model: model, rawText: nil)
+            : await prepareDictation(rawText, model: model)
+        let sketched = await sketchedDictation(
+            text: prepared.text,
+            rawText: prepared.rawText,
+            words: words,
+            session: session
+        )
+        let textReadyAt = ProcessInfo.processInfo.systemUptime
+        guard !sketched.text.isEmpty else {
+            guard !rawText.isEmpty else {
+                print("No speech detected. Clipboard unchanged.")
+                return .finished
+            }
+            guard claimDelivery(session) else { return .finished }
+            try saveTranscript(prepared)
+            print("S1-mini removed filler-only text. Clipboard unchanged.")
+            return .finished
+        }
+        guard claimDelivery(session) else { return .finished }
+        let final = PreparedDictation(text: sketched.text, model: prepared.model, rawText: sketched.rawText)
+        deliveredText = final.text
+        await pasteSketchSheet(sketched)
+        let pastePostedAt = try deliver(final)
+        recordingOverlay.showDone(text: final.text)
+        return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
     /// Text that was saved but not pasted gets the Not pasted pill with Paste again.

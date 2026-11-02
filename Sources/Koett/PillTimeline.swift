@@ -75,6 +75,14 @@ struct PillTimeline {
         return true
     }
 
+    /// Removes the band with this number (undone or failed sketch).
+    @discardableResult
+    mutating func remove(index: UInt32) -> Bool {
+        guard let position = sketches.firstIndex(where: { $0.index == index }) else { return false }
+        sketches.remove(at: position)
+        return true
+    }
+
     /// Inclusive column range covered by a sketch, compressed with the strip.
     func span(of sketch: SketchEvent) -> ClosedRange<Int> {
         let last = UInt64(Self.columnCount - 1)

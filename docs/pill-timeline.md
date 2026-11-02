@@ -51,8 +51,9 @@ Rules:
   when a new dictation starts.
 - The pill keeps at most 256 distinct sketches per dictation. New indices
   beyond that are ignored; known indices keep updating.
-- There is no removal event. If undo must remove a band, add
-  `Removed { index }` on both sides.
+- Undo or a failed capture sends `Removed { index }` (Swift:
+  `SketchUpdate.removed(index:)`) for the freed number after republishing the
+  renumbered sketches.
 
 Debug builds also accept `koett 'sketch-debug INDEX START END|now live|done'`.
 The lab uses it to draw bands before draw mode exists.
@@ -77,9 +78,9 @@ Mac-specific choices:
   `PillTimelineTests`. The meter is sampled at 30 Hz even under Reduce Motion;
   only the redraw drops to 1 Hz.
 - `SketchEvent` mirrors the Rust struct (`index`, `startMs`, `endMs`, `live`)
-  and upserts by index. A future Mac draw mode calls
-  `recordingOverlay.publishSketch(_:)` with times from `sketchElapsedMs`; it
-  returns false when no dictation records or the event is malformed.
+  and upserts by index. Mac draw mode sends `SketchUpdate`s through
+  `recordingOverlay.applySketch(_:session:)`, which accepts changes for the
+  pill's own dictation until the next one starts.
 - Decode progress: FluidAudio 0.15.6 exposes `AsrManager.transcriptionProgressStream`
   only for audio longer than one model window (240,000 samples, 15 s). Koett
   subscribes only then and moves the playhead from those fractions. The

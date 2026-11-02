@@ -81,6 +81,9 @@ final class RecordingOverlayController: NSObject {
     private lazy var panel: NSPanel = makePanel()
     private weak var recorder: MicrophoneRecorder?
     private var startedAt: TimeInterval?
+    /// The dictation whose sketch bands the pill shows. Kept after Stop so late
+    /// captures can still renumber; replaced by the next dictation.
+    private(set) var sketchSession: UInt64?
     private var timer: Timer?
     private var lastRedraw: TimeInterval = 0
     private var dismissWorkItem: DispatchWorkItem?
@@ -123,9 +126,13 @@ final class RecordingOverlayController: NSObject {
         return Self.milliseconds(ProcessInfo.processInfo.systemUptime - startedAt)
     }
 
-    func start(recorder: MicrophoneRecorder, controls: RecordingControls? = nil) {
+    /// The pill clock's origin (`systemUptime`) for the current dictation.
+    var recordingStartedAt: TimeInterval? { startedAt }
+
+    func start(recorder: MicrophoneRecorder, controls: RecordingControls? = nil, sketchSession: UInt64? = nil) {
         stop()
         self.recorder = recorder
+        self.sketchSession = sketchSession
         startedAt = ProcessInfo.processInfo.systemUptime
         pillView.timeline.reset()
         pillView.elapsed = 0
@@ -146,11 +153,13 @@ final class RecordingOverlayController: NSObject {
     }
 
     func showStatus(_ text: String) {
+        sketchSession = nil
         pillView.timeline.reset()
         show(.status(text))
     }
 
     func showProgress(_ text: String, accessibilityLabel: String, fraction: Double) {
+        sketchSession = nil
         pillView.timeline.reset()
         show(.progress(text: text, fraction: fraction))
         pillView.statusElement.setAccessibilityLabel(accessibilityLabel)
@@ -203,6 +212,7 @@ final class RecordingOverlayController: NSObject {
     }
 
     func showResult(_ text: String, message: String) {
+        sketchSession = nil
         pillView.timeline.reset()
         resultText = text
         show(.media(preview: message))
@@ -229,6 +239,22 @@ final class RecordingOverlayController: NSObject {
         guard event.isValid, isTrackingRecording, pillView.timeline.apply(event) else { return false }
         pillView.needsDisplay = true
         return true
+    }
+
+    /// Applies a sketch change for `session`, also after Stop (captures can
+    /// finish or fail while transcribing) until another dictation starts.
+    @discardableResult
+    func applySketch(_ update: SketchUpdate, session: UInt64) -> Bool {
+        guard session == sketchSession else { return false }
+        let applied: Bool
+        switch update {
+        case .upsert(let event):
+            applied = event.isValid && pillView.timeline.apply(event)
+        case .removed(let index):
+            applied = pillView.timeline.remove(index: index)
+        }
+        if applied { pillView.needsDisplay = true }
+        return applied
     }
 
     // MARK: Private

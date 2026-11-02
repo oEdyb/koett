@@ -103,3 +103,15 @@ group with a read-only udev ACL on keyboards (review preferred this over
 remains the fallback and Koett says so. Keyboards are rescanned during a
 recording for hot-plug. Read access to keyboards for the user's apps is the
 cost, which is why it is opt-in, not default.
+
+## 2026-11-02: Mac draw mode captures without its own windows
+
+The Mac port keeps the Linux output (sheet, bullets, numbering, scope) and the
+linker is a direct Swift port proven against Linux-generated golden cases. One
+mechanism differs: ScreenCaptureKit can exclude Koett's own windows, so each
+sketch is captured from the screen without the overlay and its own strokes are
+drawn on afterwards. Linux had to hide other ink and wait for a presented frame;
+on Mac a capture cannot contain another sketch's ink or the pill by
+construction. The draw key comes from modifier-flag monitors, so typing is
+never blocked and no keyboard access setup is needed. Details:
+docs/draw-while-dictating.md.

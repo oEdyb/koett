@@ -153,6 +153,9 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/PillTimeline.swift`, `PillView.swift`, `PillButton.swift`,
   `PillPalette.swift`: whole-dictation timeline model, drawing, hover row and
   light/dark palette (see `docs/pill-timeline.md`).
+- `Sources/Koett/Sketch*.swift`, `DrawKey.swift`: draw while dictating
+  (overlay, capture, contact sheet, linking port, paste); see
+  `docs/draw-while-dictating.md`.
 - `Sources/Koett/EscapeKeyMonitor.swift`: Esc-to-cancel, installed only while
   recording.
 - `Sources/Koett/ShortcutBinding.swift`: shortcut matching, persistence values,
