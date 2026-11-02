@@ -34,11 +34,14 @@ pub enum SketchUpdate {
 
 struct Registry {
     started: Option<Instant>,
+    /// The dictation that just ended; its overlay may still finalize sketches.
+    finished: Option<Instant>,
     pending: Vec<SketchUpdate>,
 }
 
 static REGISTRY: Mutex<Registry> = Mutex::new(Registry {
     started: None,
+    finished: None,
     pending: Vec::new(),
 });
 
@@ -51,8 +54,11 @@ fn registry() -> std::sync::MutexGuard<'static, Registry> {
 /// Called by the UI when a dictation starts (`Some`) or ends (`None`).
 pub fn set_recording_start(started: Option<Instant>) {
     let mut registry = registry();
-    if registry.started != started {
+    if started.is_none() {
+        registry.finished = registry.started.or(registry.finished);
+    } else if registry.started != started {
         registry.pending.clear();
+        registry.finished = None;
     }
     registry.started = started;
 }
@@ -86,6 +92,37 @@ pub fn remove(index: u32) -> bool {
     }
     registry.pending.push(SketchUpdate::Removed { index });
     true
+}
+
+fn accepts(registry: &Registry, recording: Instant) -> bool {
+    registry.pending.len() < PENDING_LIMIT
+        && (registry.started == Some(recording)
+            || (registry.started.is_none() && registry.finished == Some(recording)))
+}
+
+/// Publishes a change for the dictation that started at `recording`. Unlike
+/// [`publish`], this is still accepted after that dictation stops (captures can
+/// finish or fail during transcription), until the next dictation starts.
+pub fn publish_for(recording: Instant, event: SketchEvent) -> bool {
+    if event.index == 0 || event.end_ms < event.start_ms {
+        return false;
+    }
+    let mut registry = registry();
+    let accepted = accepts(&registry, recording);
+    if accepted {
+        registry.pending.push(SketchUpdate::Upsert(event));
+    }
+    accepted
+}
+
+/// [`remove`] for the dictation that started at `recording`; see [`publish_for`].
+pub fn remove_for(recording: Instant, index: u32) -> bool {
+    let mut registry = registry();
+    let accepted = index != 0 && accepts(&registry, recording);
+    if accepted {
+        registry.pending.push(SketchUpdate::Removed { index });
+    }
+    accepted
 }
 
 /// Takes every update published since the last call, oldest first.
@@ -136,5 +173,38 @@ mod tests {
         set_recording_start(Some(Instant::now() + std::time::Duration::from_secs(1)));
         assert!(drain().is_empty());
         set_recording_start(None);
+    }
+
+    #[test]
+    fn a_stopped_dictation_can_still_finalize_its_sketches() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let first = Instant::now();
+        set_recording_start(Some(first));
+        drain();
+        set_recording_start(None);
+        // Stop with captures pending: #1 fails, #2 is renumbered to #1.
+        assert!(publish_for(first, event(1, 300, 400, false)));
+        assert!(remove_for(first, 2));
+        assert!(
+            !publish(event(1, 0, 1, false)),
+            "plain publish stays live-only"
+        );
+        assert_eq!(
+            drain(),
+            vec![
+                SketchUpdate::Upsert(event(1, 300, 400, false)),
+                SketchUpdate::Removed { index: 2 },
+            ]
+        );
+        let next = first + std::time::Duration::from_secs(60);
+        set_recording_start(Some(next));
+        assert!(
+            !publish_for(first, event(1, 0, 1, false)),
+            "next dictation started"
+        );
+        assert!(!remove_for(first, 1));
+        assert!(publish_for(next, event(1, 0, 1, true)));
+        set_recording_start(None);
+        drain();
     }
 }

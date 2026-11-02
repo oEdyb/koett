@@ -28,9 +28,29 @@ const GROUP_SPAN: Duration = Duration::from_secs(20);
 
 pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
 
-/// Delay between hiding other ink and starting a capture, so the compositor
-/// has presented the frame that shows only the sketch being captured.
-const CAPTURE_SETTLE: Duration = Duration::from_millis(60);
+/// Longest wait for presentation feedback before capturing anyway (for a
+/// compositor without wp_presentation, or a surface it never presents).
+const PRESENT_TIMEOUT: Duration = Duration::from_secs(2);
+
+#[derive(Debug, PartialEq)]
+enum Readiness {
+    Wait,
+    Capture,
+    Redraw,
+}
+
+/// Whether the frame that painted only the queued sketch's ink is on screen.
+/// `timing` is GDK's (complete, presentation time) for that frame; GDK fills it
+/// from wp_presentation feedback. A complete frame without a presentation time
+/// was discarded (never shown), so it must be painted again.
+fn readiness(timing: Option<(bool, i64)>, waited: Duration) -> Readiness {
+    match timing {
+        Some((true, presented)) if presented > 0 => Readiness::Capture,
+        _ if waited >= PRESENT_TIMEOUT => Readiness::Capture,
+        Some((true, _)) => Readiness::Redraw,
+        _ => Readiness::Wait,
+    }
+}
 
 /// Pill timeline position: wall time since the recording started, matching
 /// `koett_engine::sketch::elapsed_ms`, so it includes paused spans.
@@ -90,6 +110,8 @@ struct Group {
     end: Instant,
     /// Start on the captured-audio clock, used to link speech.
     audio_start: Duration,
+    /// Frame that painted this queued sketch with other ink hidden.
+    painted: std::cell::Cell<Option<i64>>,
     lifted: Option<Instant>,
     phase: Phase,
 }
@@ -204,6 +226,7 @@ impl Session {
                         start: now,
                         end: now,
                         audio_start: self.clock.at(self.started, now),
+                        painted: std::cell::Cell::new(None),
                         lifted: None,
                         phase: Phase::Drawing,
                     });
@@ -247,7 +270,7 @@ impl Session {
         let before = self.groups.len();
         self.groups.remove(index);
         self.publish();
-        crate::sketch::remove(u32::try_from(before).unwrap_or(u32::MAX));
+        crate::sketch::remove_for(self.started, u32::try_from(before).unwrap_or(u32::MAX));
     }
 
     /// Republishes every sketch to the recording pill's timeline. Numbers
@@ -256,14 +279,17 @@ impl Session {
     /// linking uses `audio_start` instead.
     fn publish(&self) {
         let mut groups: Vec<&Group> = self.groups.iter().collect();
-        groups.sort_by_key(|group| group.start);
+        groups.sort_by_key(|group| group.id);
         for (index, group) in groups.into_iter().enumerate() {
-            crate::sketch::publish(crate::sketch::SketchEvent {
-                index: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                start_ms: pill_ms(self.started, group.start),
-                end_ms: pill_ms(self.started, group.end),
-                live: self.stroking == Some(group.id),
-            });
+            crate::sketch::publish_for(
+                self.started,
+                crate::sketch::SketchEvent {
+                    index: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                    start_ms: pill_ms(self.started, group.start),
+                    end_ms: pill_ms(self.started, group.end),
+                    live: self.stroking == Some(group.id),
+                },
+            );
         }
     }
 
@@ -284,6 +310,7 @@ impl Session {
                 Ok(png) => {
                     self.groups[index].phase = Phase::Captured;
                     let frame = Keyframe {
+                        order: id,
                         start: self.groups[index].audio_start.as_secs_f32(),
                         png,
                     };
@@ -312,11 +339,34 @@ impl Session {
             {
                 let surface = group.surface;
                 self.groups[index].phase = Phase::Queued(now);
+                self.groups[index].painted.set(None);
                 self.surfaces[surface].area.queue_draw();
                 continue;
             }
-            if let Phase::Queued(since) = group.phase
-                && now >= since + CAPTURE_SETTLE
+            let Phase::Queued(since) = group.phase else {
+                continue;
+            };
+            let area = &self.surfaces[group.surface].area;
+            let timing = group.painted.get().map(|frame| {
+                area.frame_clock()
+                    .and_then(|clock| clock.timings(frame))
+                    .map_or((true, 0), |timing| {
+                        (timing.is_complete(), timing.presentation_time())
+                    })
+            });
+            match readiness(timing, now.saturating_duration_since(since)) {
+                Readiness::Wait => continue,
+                Readiness::Redraw => {
+                    group.painted.set(None);
+                    area.queue_draw();
+                    continue;
+                }
+                Readiness::Capture => {
+                    if !timing.is_some_and(|(_, presented)| presented > 0) {
+                        eprintln!("Sketch capture without presentation feedback");
+                    }
+                }
+            }
             {
                 let (id, target) = (group.id, self.surfaces[group.surface].target.clone());
                 let strokes = group.strokes.clone();
@@ -527,12 +577,20 @@ impl SketchOverlay {
             let surface = surfaces.len();
             area.set_draw_func({
                 let session = Rc::downgrade(&self.session);
-                move |_, context, _, _| {
+                move |area, context, _, _| {
                     if let Some(session) = session.upgrade()
                         && let Ok(session) = session.try_borrow()
                         && let Some(session) = session.as_ref()
                     {
                         paint(session, surface, context);
+                        // Remember which frame shows the isolated ink, so the
+                        // capture waits until that frame is presented.
+                        let frame = area.frame_clock().map(|clock| clock.frame_counter());
+                        for group in &session.groups {
+                            if group.surface == surface && matches!(group.phase, Phase::Queued(_)) {
+                                group.painted.set(frame);
+                            }
+                        }
                     }
                 }
             });
@@ -708,6 +766,7 @@ mod tests {
             start: now,
             end: now,
             audio_start: Duration::ZERO,
+            painted: std::cell::Cell::new(None),
             lifted: Some(now),
             phase: Phase::Capturing,
         };
@@ -726,6 +785,7 @@ mod tests {
             start: now,
             end: now,
             audio_start: Duration::ZERO,
+            painted: std::cell::Cell::new(None),
             lifted: None,
             phase,
         }
@@ -757,6 +817,27 @@ mod tests {
         assert_eq!(
             idle.iter().filter(|group| visible(&idle, 0, group)).count(),
             2
+        );
+    }
+
+    #[test]
+    fn capture_waits_for_the_isolated_frame_to_be_presented() {
+        let soon = Duration::from_millis(50);
+        assert_eq!(readiness(None, soon), Readiness::Wait, "not painted yet");
+        assert_eq!(
+            readiness(Some((false, 0)), soon),
+            Readiness::Wait,
+            "in flight"
+        );
+        assert_eq!(
+            readiness(Some((true, 0)), soon),
+            Readiness::Redraw,
+            "discarded"
+        );
+        assert_eq!(readiness(Some((true, 123)), soon), Readiness::Capture);
+        assert_eq!(
+            readiness(Some((false, 0)), PRESENT_TIMEOUT),
+            Readiness::Capture
         );
     }
 

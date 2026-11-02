@@ -34,3 +34,6 @@ After the PR #6 review fixes:
    (1600×457 sheet, two linked bullets, pill bands 1 and 2).
 9. `09-cancelled-sketch-not-pasted-later.png`: draw, `koett cancel`, turn
    drawing off, dictate normally: only `text/plain` is pasted, no image.
+10. `10-presentation-gated-capture.png`: captures start only after GDK reports
+    wp_presentation feedback for the frame showing only that sketch's ink; the
+    log has no timeout fallback ("without presentation feedback") entries.

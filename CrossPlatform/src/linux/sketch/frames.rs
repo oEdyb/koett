@@ -7,6 +7,8 @@ use std::time::Duration;
 
 /// A captured sketch: start seconds on the captured-audio clock and its PNG.
 pub struct Keyframe {
+    /// Creation order; the contact sheet, bullets and pill all number by it.
+    pub order: u64,
     pub start: f32,
     pub png: Vec<u8>,
 }
@@ -38,9 +40,11 @@ pub fn begin_recording() -> u64 {
     state.recording
 }
 
-/// Drops the current recording's frames (cancelled or failed recording).
+/// Drops the current recording's frames (cancelled or failed recording) and
+/// closes its scope, so its late captures are rejected too.
 pub fn discard_recording() {
     let mut state = frames();
+    state.recording += 1;
     state.open = false;
     state.frames.clear();
     CLOSED.notify_all();
@@ -72,7 +76,9 @@ pub fn take(timeout: Duration) -> Vec<Keyframe> {
         .wait_timeout_while(frames(), timeout, |state| state.open)
         .unwrap_or_else(PoisonError::into_inner);
     let mut taken = std::mem::take(&mut state.frames);
-    taken.sort_by(|a, b| a.start.total_cmp(&b.start));
+    // Creation order, not audio time: sketches made during one pause share an
+    // audio start, and their captures can finish in either order.
+    taken.sort_by_key(|frame| frame.order);
     taken
 }
 
@@ -85,6 +91,7 @@ mod tests {
 
     fn frame(start: f32) -> Keyframe {
         Keyframe {
+            order: (start * 10.0) as u64,
             start,
             png: vec![start as u8],
         }
@@ -114,6 +121,10 @@ mod tests {
         let cancelled = begin_recording();
         assert!(push(cancelled, frame(1.0)));
         discard_recording();
+        assert!(
+            !push(cancelled, frame(2.0)),
+            "late result of a discarded session"
+        );
         // Drawing turned off: the next recording opens no overlay.
         begin_recording();
         assert!(take(Duration::ZERO).is_empty());
@@ -141,5 +152,28 @@ mod tests {
         );
         assert!(push(current, frame(3.0)));
         assert_eq!(starts(&take(Duration::ZERO)), [3.0]);
+    }
+
+    #[test]
+    fn sketches_drawn_during_one_pause_keep_their_creation_order() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let recording = begin_recording();
+        let second = Keyframe {
+            order: 2,
+            start: 5.0,
+            png: vec![2],
+        };
+        let first = Keyframe {
+            order: 1,
+            start: 5.0,
+            png: vec![1],
+        };
+        assert!(push(recording, second));
+        assert!(push(recording, first));
+        let taken = take(Duration::ZERO);
+        assert_eq!(
+            taken.iter().map(|frame| frame.png[0]).collect::<Vec<_>>(),
+            [1, 2]
+        );
     }
 }

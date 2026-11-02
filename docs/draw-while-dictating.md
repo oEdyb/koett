@@ -17,7 +17,12 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   captured with the ink visible, then the ink fades 1.5 s after the pen lifted.
   Captures are serialized per monitor: while one is pending, only that sketch's
   ink is shown there (other and newer ink reappears after it), so an image never
-  contains another sketch's strokes.
+  contains another sketch's strokes. The screenshot starts only once GDK reports
+  wp_presentation feedback for a frame painted that way (a discarded frame is
+  repainted; 2 s fallback for compositors without the protocol).
+- Sketch numbers follow creation order everywhere (sheet, bullets, pill), even
+  when sketches made during a pause share an audio time. Captures that finish or
+  fail after Stop still renumber the pill until the next dictation starts.
 - Sketch times for speech linking use the captured-audio clock: paused spans are
   excluded, matching the transcript's word times. The pill's bands use its own
   wall clock (`koett_engine::sketch::elapsed_ms`), which includes pauses.
