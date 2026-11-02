@@ -153,3 +153,13 @@ in-place morphs, a short Done with Copy on the right, rescue states that wait,
 and off-screen renders at 0:05, 1:00, 5:00 and 20:00 plus morph frames before
 any merge. See "Pill and overlay UI rules" in `docs/ui-design.md`. The Linux
 strip still resamples the whole dictation and should move to the rolling window.
+
+## 2026-11-03: Linux pill follows the Mac pill exactly
+
+Olle preferred the Mac strip ("the waveform slides to the left constantly, even
+when you're not talking") and the Mac design overall. Linux replaces the
+whole-dictation strip from #22 with the Mac rolling window, adds Paste to Not
+pasted, shows `NN%` instead of a decode playhead while transcribing, allows
+hover Cancel/History while transcribing, and uses the Mac close timings (Copy
+1 s even while hovered, 0.8 s after the pointer leaves). The Mac pill
+(`344d11f`) is the reference; where Linux differs, Linux changes.

@@ -1,0 +1,9 @@
+[
+  "hover reveals Cancel, Pause and History inside the 48 px pill",
+  "Pause/Resume from the pill; hover leave hides actions; target keeps focus",
+  "morph: decoding -> same-height Done with Copy -> faded and gone after 2.1 s; delivered 368 chars",
+  "hover holds Done past its 1.8 s; Copy exact; leaving dismisses it",
+  "not pasted: same-height row with Paste and Copy; stays 6 s untouched; Copy is exact and closes it",
+  "Cancel discards capture: no history row, no paste, pill hidden",
+  "`koett cancel` discards the active dictation"
+]

@@ -349,6 +349,8 @@ fn build_window(
     // faded. Not pasted: no timeout; it stays until Copy or the next dictation.
     let mut done_until = None::<Instant>;
     let mut done_fading = None::<Instant>;
+    // Set after Copy: the pill closes on time even while hovered.
+    let mut closing = false;
     // Wayland pastes asynchronously, so Ready arrives before the paste
     // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
     // so it morphs straight into Done instead of hiding and remapping.
@@ -618,10 +620,29 @@ fn build_window(
                 notice_until = None;
             }
             let pill_hovered = overlay.as_ref().is_some_and(|overlay| overlay.hovered());
-            let acted = overlay.as_ref().is_some_and(|overlay| overlay.take_acted());
-            if acted && recovery_until.is_some() && !media_result {
-                recovery_until = Some(Instant::now() + AFTER_COPY);
+            // Mac: Copy shows "Copied" and closes after 1 s even while hovered;
+            // Paste (Not pasted) closes at once and pastes from the tray action.
+            match overlay.as_ref().and_then(|overlay| overlay.take_acted()) {
+                Some(super::recording_overlay::Acted::Copied) => {
+                    let close = Some(Instant::now() + AFTER_COPY);
+                    if recovery_until.is_some() {
+                        recovery_until = close;
+                    }
+                    if done_until.is_some() {
+                        done_until = close;
+                        done_fading = None;
+                    }
+                    closing = true;
+                }
+                Some(super::recording_overlay::Acted::Pasted) => {
+                    recovery_until = None;
+                }
+                None => {}
             }
+            if recovery_until.is_none() && done_until.is_none() {
+                closing = false;
+            }
+            let pill_hovered = pill_hovered && !closing;
             if recovery_until.is_some_and(|until| Instant::now() >= until) {
                 if pill_hovered {
                     recovery_until = Some(Instant::now() + HOVER_GRACE);
@@ -745,9 +766,9 @@ const SETTLE: Duration = Duration::from_millis(1_000);
 /// Fade-out of the Done pill before it is hidden (matches the CSS transition).
 const FADE: Duration = Duration::from_millis(260);
 /// After the pointer leaves a held pill.
-const HOVER_GRACE: Duration = Duration::from_millis(1_000);
+const HOVER_GRACE: Duration = Duration::from_millis(800);
 /// Not-pasted recovery closes this soon after Copy succeeds.
-const AFTER_COPY: Duration = Duration::from_millis(1_500);
+const AFTER_COPY: Duration = Duration::from_millis(1_000);
 /// Not pasted has no timeout; this only keeps the Instant arithmetic finite.
 const UNTIL_ACTED: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 

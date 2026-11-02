@@ -1,0 +1,48 @@
+Captured desktop-idle
+Captured drawing
+Captured recording
+Captured hover
+Captured paused
+Captured morph-00
+Captured morph-01
+Captured morph-02
+Captured morph-03
+Captured morph-04
+Captured morph-05
+Captured morph-06
+Captured morph-07
+Captured morph-08
+Captured morph-09
+Captured morph-10
+Captured morph-11
+Captured morph-12
+Captured morph-13
+Captured morph-14
+Captured morph-15
+Captured morph-16
+Captured morph-17
+Captured morph-18
+Captured morph-19
+Captured morph-20
+Captured morph-21
+Captured morph-22
+Captured morph-23
+Captured morph-24
+Captured morph-25
+Captured morph-26
+Captured done-hovered
+Captured done-copied
+Captured recovery
+Captured recovery-after-6s
+{
+  "checks": [
+    "hover reveals Cancel, Pause and History inside the 48 px pill",
+    "Pause/Resume from the pill; hover leave hides actions; target keeps focus",
+    "morph: decoding -> same-height Done with Copy -> faded and gone after 2.2 s; delivered 368 chars",
+    "hover holds Done past its 1.8 s; Copy exact; leaving dismisses it",
+    "not pasted: same-height row with Paste and Copy; stays 6 s untouched; Copy is exact and closes it",
+    "Cancel discards capture: no history row, no paste, pill hidden",
+    "`koett cancel` discards the active dictation"
+  ],
+  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-rolling-20261103/light-states"
+}

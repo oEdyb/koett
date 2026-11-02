@@ -11,12 +11,12 @@ Revised 2026-11-02 after Olle tried the Mac pill. Every state is exactly
 | State | Shows | Actions | Leaves |
 | --- | --- | --- | --- |
 | Hidden | Nothing | none | — |
-| Recording | Coral dot, full-width strip, `m:ss` | Hover swaps the strip for Cancel, Pause/Resume and History inside the same row | Stop or Cancel |
+| Recording | Coral dot, rolling strip, `m:ss` | Hover swaps the strip for Cancel, Pause/Resume and History inside the same row | Stop or Cancel |
 | Drawing | Coral 2 px ring, pen glyph, live band | As recording | Shift released |
 | Paused | Two-bar pause glyph; the strip records silence | Hover: Resume | Resume |
-| Transcribing | Spinner, playhead at decoded/planned, `3/5` | None (pointer-transparent) | Result |
-| Done | Transcript mark, one-line result, Copy on the right | Copy | Morphs in from the decoding pill (240 ms), fades out after 1.75 s (250 ms fade); held while hovered, then 1 s after the pointer leaves |
-| Not pasted | Warning glyph, `Not pasted · text saved`, Copy | Copy | Never times out; closes 1.5 s after Copy succeeds, or at the next dictation |
+| Transcribing | Spinner, frozen dimmed strip, `NN%` once the engine's segment plan is known | Hover: Cancel, History | Result |
+| Done | Transcript mark, one-line result, Copy on the right | Copy | Morphs in from the decoding pill (240 ms), fades out after 1.75 s (250 ms fade); held while hovered, then 0.8 s after the pointer leaves; Copy closes it after 1 s |
+| Not pasted | Warning glyph, `Not pasted · saved`, Paste and Copy on the right | Paste, Copy | Never times out; Paste closes it and pastes, Copy closes it after 1 s, or the next dictation replaces it |
 
 After a successful paste, the decoding pill morphs in place into Done (240 ms:
 the old content slides 8 px left and fades out while the new content slides in),
@@ -24,14 +24,14 @@ at the same size and position. Wayland pastes asynchronously, so Ready arrives
 before the paste outcome: the decoding pill holds for up to 1 s until the outcome
 arrives, so the pill never unmaps and remaps between the two.
 
-The strip is always 64 columns (2 px bars, 1 px gaps), full width from the
-first frame. For the first 16 s each column is a fixed 250 ms slot, and the
-not-yet-recorded rest is a faint dotted track. After 16 s the whole dictation is
-resampled into the same 64 columns every frame, so it compresses continuously:
-no jump, and the strip never grows. Levels are stored at 250 ms resolution in at
-most 4,096 buckets (pairs merge beyond that, invisibly). Columns under the
-silence threshold draw as dots. Reduced motion stops the spinner and redraws the
-strip once per second.
+The strip is a rolling window, the same as the Mac `PillTimeline`: the last 9.6 s
+as 64 columns of 150 ms (2 px bars, 1 px gaps). It is sampled at 30 Hz while
+recording, so it slides left at a constant rate even in silence. Columns are
+never re-binned, so 0:05 and 20:00 look alike; memory stays at 66 columns. Time
+before the start draws as dim dots, and the left six columns fade out. Sketch
+bands slide with the audio and leave on the left. Reduced motion keeps sampling
+and redraws once a second. The rules for both platforms live in
+`docs/ui-design.md` ("Pill and overlay UI rules").
 
 Lab evidence runs the debug build against Koett's packaged GTK runtime
 (4.24.1 + upstream `21d3eb76`). The host's unpatched 4.24.1 can abort in AT-SPI

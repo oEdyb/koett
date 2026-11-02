@@ -302,12 +302,19 @@ only with a new live test, and record why in `docs/decisions.md`.
 - No design or animation skill was loaded. The timings came from keeping
   motion short and in place, then checking the stacked morph frames.
 
-### Known Linux gap (2026-11-02)
+### Linux status (2026-11-03)
 
-Linux follows the shape, states and timings above, but its strip resamples the
-whole dictation after 16 s (`CrossPlatform/src/linux/timeline.rs`, PR #22)
-instead of using the rolling window. It should move to the rolling window. Its
-Not pasted state has Copy but no Paste.
+Linux now matches the Mac pill (`344d11f`). Its strip is the same rolling window
+(`CrossPlatform/src/linux/timeline.rs`): the last 9.6 s as 64 columns of 150 ms,
+sampled at 30 Hz so it slides left at a constant rate, silence included. It
+never re-bins, and it fades over the left six columns. Not pasted shows
+**Paste** and **Copy**: Paste closes the pill and pastes the last transcript,
+and Copy closes it after 1 s. Transcribing shows a frozen dimmed strip, `NN%`
+from the engine's real VAD-segment plan, and Cancel/History on hover. Leaving a
+held pill closes it after 0.8 s. Remaining platform differences: Linux has no
+"other errors" pill state (engine errors show in the main window), and Esc only
+cancels on X11 (Wayland uses the hover Cancel button or `koett cancel`). Linux
+renders: `CrossPlatform/evidence/pill-rolling-20261103/`.
 
 ## Usability verification
 
