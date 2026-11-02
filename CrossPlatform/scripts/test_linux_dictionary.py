@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Dictionary Settings page in a private agent-lab session, through AT-SPI.
 
-  /usr/bin/python3 scripts/test_linux_dictionary.py --binary target/debug/koett --lab koett
+  /usr/bin/python3 scripts/test_linux_dictionary.py --binary target/debug/koett --lab koett \
+      [--model PARAKEET_V2_DIR --clip SPEECH.wav --term Supabase --heard Superbase]
 Start the lab first; its owner stops it. Only synthetic words and temporary
 config/data directories are used. Checks add, save, reopen, export and import.
+With --model, also dictates the clip through the private lab microphone twice:
+without the term, then after saving it, and checks the stored transcript.
 """
 from __future__ import annotations
 
@@ -40,6 +43,10 @@ def arguments():
     parser.add_argument("--binary", type=Path, default=Path("target/debug/koett"))
     parser.add_argument("--lab", default="koett")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--model", type=Path)
+    parser.add_argument("--clip", type=Path)
+    parser.add_argument("--term", default="Supabase")
+    parser.add_argument("--heard", default="Superbase")
     parser.add_argument("--inside-session", action="store_true", help=argparse.SUPPRESS)
     return parser.parse_args()
 
@@ -93,15 +100,33 @@ def enable_private_accessibility(lab):
             wait(lambda: not has_owner(), "private GTK portal restart")
 
 
+def private_microphone(output):
+    """Route ALSA capture to a remap of the lab's own audio sink monitor."""
+    import atexit
+    source = f"koett_dictionary_mic_{os.getpid()}"
+    module = subprocess.check_output(["pactl", "load-module", "module-remap-source",
+                                      "master=agent_lab_audio.monitor", f"source_name={source}"], text=True).strip()
+    atexit.register(lambda: subprocess.run(["pactl", "unload-module", module], check=False))
+    alsa = output / "alsa-private.conf"
+    alsa.write_text(f'</usr/share/alsa/alsa.conf>\npcm.!default {{ type pulse device "{source}" }}\n'
+                    'ctl.!default { type pulse }\n')
+    os.environ["ALSA_CONFIG_PATH"] = str(alsa)
+    os.environ["PULSE_SOURCE"] = source
+
+
 def main():
     args = arguments()
     output = (args.output or Path(tempfile.mkdtemp(prefix="koett-dictionary-test-"))).resolve()
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     if not args.inside_session:
         lab = shutil.which("agent-lab") or str(Path.home() / ".local/bin/agent-lab")
+        extra = []
+        if args.model:
+            extra = ["--model", str(args.model.resolve()), "--clip", str(args.clip.resolve()),
+                     "--term", args.term, "--heard", args.heard]
         return subprocess.call([lab, "run", args.lab, "--", "/usr/bin/python3", str(Path(__file__).resolve()),
                                 "--inside-session", "--lab", args.lab, "--binary", str(args.binary.resolve()),
-                                "--output", str(output)])
+                                "--output", str(output), *extra])
     enable_private_accessibility(args.lab)
     os.environ.update({
         "XDG_CONFIG_HOME": str(output / "config"), "XDG_DATA_HOME": str(output / "data"),
@@ -112,9 +137,12 @@ def main():
     config.parent.mkdir(parents=True, exist_ok=True)
     (output / "config/user-dirs.dirs").write_text(f'XDG_DOCUMENTS_DIR="{output}"\n')
     config.write_text(json.dumps({
-        "start_at_login": False, "model_directory": str(output / "missing-model"),
-        "dictionary": [{"term": "Koett", "sounds_like": ["cot"]}],
+        "start_at_login": False,
+        "model_directory": str(args.model or output / "missing-model"),
+        "dictionary": [] if args.model else [{"term": "Koett", "sounds_like": ["cot"]}],
     }))
+    if args.model:
+        private_microphone(output)
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi
@@ -192,8 +220,35 @@ def main():
         screenshot(title.lower().replace(" ", "-") + ".png")
         press(accept, dialog)
 
+    def dictate():
+        database = output / "data/koett/History.sqlite3"
+        wait(lambda: find("Record", "button"), "Ready to record", timeout=90)
+        subprocess.run([str(args.binary), "start"], check=True)
+        wait(lambda: find("Stop", "button"), "recording", timeout=20)
+        time.sleep(0.5)
+        subprocess.run(["pw-play", "--target", "agent_lab_audio", str(args.clip)], check=True)
+        time.sleep(0.8)
+        subprocess.run([str(args.binary), "stop"], check=True)
+        wait(lambda: find("Record", "button"), "transcription finished", timeout=60)
+        import sqlite3
+        with sqlite3.connect(database) as connection:
+            return connection.execute("SELECT text FROM transcripts ORDER BY created_at_ms DESC LIMIT 1").fetchone()[0]
+
     try:
         wait(application, "accessible Koett", timeout=30)
+        if args.model:
+            before = dictate()
+            assert args.term not in before and args.heard in before, before
+            settings = json.loads(config.read_text())
+            settings["dictionary"] = [{"term": args.term, "sounds_like": []}]
+            config.write_text(json.dumps(settings))
+            time.sleep(2.5)  # The idle engine follows saved Settings within a second.
+            after = dictate()
+            assert args.term in after and args.heard not in after, after
+            results.append(f"real dictation: '{before}' became '{after}' after saving {args.term}")
+            print(json.dumps({"checks": results, "artifacts": str(output)}, indent=2))
+            (output / "results.json").write_text(json.dumps(results, indent=2))
+            return 0
         window = open_settings()
         word = wait(lambda: find("Word", "text", window), "existing word")
         assert text(word) == "Koett" and text(find("Sounds like", "text", window)) == "cot"
