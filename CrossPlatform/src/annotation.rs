@@ -163,8 +163,104 @@ pub fn clock(seconds: f32) -> String {
 
 /// Builds the pasted text. `final_text` is the delivered transcript after
 /// replacements or cleanup; ranges computed on the timed recognizer words are
-/// mapped onto it proportionally when the word counts differ.
+/// mapped by matching surviving words, with proportional fallback for unmatched spans.
 pub fn keyframe_summary(final_text: &str, words: &[TimedWord], anchors: &[f32]) -> String {
+    if anchors.is_empty() {
+        return final_text.to_owned();
+    }
+    let output: Vec<&str> = final_text.split_whitespace().collect();
+    let boundaries = aligned_boundaries(words, &output);
+    let scale = |index: usize| {
+        if let Some(ref boundaries) = boundaries {
+            return boundaries[index];
+        }
+        if words.is_empty() {
+            if index == 0 { 0 } else { output.len() }
+        } else {
+            (index * output.len() + words.len() / 2) / words.len()
+        }
+    };
+    let ranges = if words.is_empty() {
+        // No timing at all: the first keyframe carries the whole transcript.
+        let mut ranges = vec![0..0; anchors.len()];
+        ranges[0] = 0..1;
+        ranges
+    } else {
+        keyframe_word_ranges(words, anchors)
+    };
+    let mut summary = String::new();
+    for (index, (range, anchor)) in ranges.iter().zip(anchors).enumerate() {
+        let (from, to) = (scale(range.start), scale(range.end));
+        let said = output[from.min(output.len())..to.min(output.len())].join(" ");
+        summary.push_str(&format!("- #{} ({})", index + 1, clock(*anchor)));
+        if said.is_empty() {
+            summary.push_str(" marked\n");
+        } else {
+            summary.push_str(&format!(" “{said}”\n"));
+        }
+    }
+    summary.truncate(summary.trim_end().len());
+    summary
+}
+
+#[cfg(test)]
+mod tests;
+
+/// Align unchanged words across cleanup. Unmatched spans retain proportional
+/// boundaries; matched words pin boundaries so deleted fillers cannot shift them.
+fn aligned_boundaries(words: &[TimedWord], output: &[&str]) -> Option<Vec<usize>> {
+    let n = words.len();
+    let m = output.len();
+    // Bound quadratic work for unusually long recordings.
+    if n == 0 || n.checked_mul(m)? > 1_000_000 {
+        return None;
+    }
+    let normalize = |s: &str| {
+        s.trim_matches(|c: char| !c.is_alphanumeric())
+            .to_lowercase()
+    };
+    let source: Vec<_> = words.iter().map(|w| normalize(&w.text)).collect();
+    let target: Vec<_> = output.iter().map(|w| normalize(w)).collect();
+    let mut scores = vec![vec![0usize; m + 1]; n + 1];
+    for i in (0..n).rev() {
+        for j in (0..m).rev() {
+            scores[i][j] = if !source[i].is_empty() && source[i] == target[j] {
+                1 + scores[i + 1][j + 1]
+            } else {
+                scores[i + 1][j].max(scores[i][j + 1])
+            };
+        }
+    }
+    if scores[0][0] == 0 {
+        return None;
+    }
+    let mut pins = vec![(0, 0)];
+    let (mut i, mut j) = (0, 0);
+    while i < n && j < m {
+        if !source[i].is_empty() && source[i] == target[j] {
+            pins.push((i, j));
+            pins.push((i + 1, j + 1));
+            i += 1;
+            j += 1;
+        } else if scores[i + 1][j] >= scores[i][j + 1] {
+            i += 1;
+        } else {
+            j += 1;
+        }
+    }
+    pins.push((n, m));
+    let mut boundaries = vec![0; n + 1];
+    for pair in pins.windows(2) {
+        let ((a, b), (c, d)) = (pair[0], pair[1]);
+        for (k, boundary) in boundaries.iter_mut().enumerate().take(c + 1).skip(a) {
+            *boundary = b + (k - a) * (d - b) / (c - a).max(1);
+        }
+    }
+    Some(boundaries)
+}
+
+#[cfg(test)]
+fn baseline_summary(final_text: &str, words: &[TimedWord], anchors: &[f32]) -> String {
     if anchors.is_empty() {
         return final_text.to_owned();
     }
@@ -200,4 +296,4 @@ pub fn keyframe_summary(final_text: &str, words: &[TimedWord], anchors: &[f32]) 
 }
 
 #[cfg(test)]
-mod tests;
+mod evaluation;
