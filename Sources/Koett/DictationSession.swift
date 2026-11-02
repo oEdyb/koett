@@ -217,7 +217,7 @@ extension KoettController {
 
         do {
             let transcriptionStartedAt = ProcessInfo.processInfo.systemUptime
-            let result = try await DictationTranscriber.transcribe(url, using: manager)
+            let result = try await DictationTranscriber.transcribe(url, using: manager, detector: speechDetector)
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -381,7 +381,7 @@ extension KoettController {
         var transcriptionCompleted = false
         do {
             let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
-            let result = try await DictationTranscriber.transcribe(url, using: manager)
+            let result = try await DictationTranscriber.transcribe(url, using: manager, detector: speechDetector)
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)

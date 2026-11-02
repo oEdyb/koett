@@ -41,15 +41,33 @@ public enum DictationTranscriber {
     }
 
     @concurrent
-    public static func transcribe(_ url: URL, using manager: AsrManager) async throws -> ASRResult {
+    public static func transcribe(
+        _ url: URL,
+        using manager: AsrManager,
+        detector: VadManager? = nil
+    ) async throws -> ASRResult {
         try Task.checkCancellation()
         let samples = try loadSamples(url)
         let layers = await manager.decoderLayerCount
         var decoder = TdtDecoderState.make(decoderLayers: layers)
-        if let samples {
-            return try await manager.transcribe(samples, decoderState: &decoder)
+        guard let samples else {
+            return try await manager.transcribe(url, decoderState: &decoder)
         }
-        return try await manager.transcribe(url, decoderState: &decoder)
+        let speech = await trimmedSpeech(samples, using: detector)
+        guard !speech.isEmpty else {
+            return ASRResult(text: "", confidence: 0, duration: 0, processingTime: 0)
+        }
+        return try await manager.transcribe(speech, decoderState: &decoder)
+    }
+
+    static func trimmedSpeech(_ samples: [Float], using detector: VadManager?) async -> [Float] {
+        guard let detector else { return samples }
+        do {
+            return try await SpeechTrimmer.speech(in: samples, using: detector)
+        } catch {
+            fputs("Warning: silence trimming skipped: \(error.localizedDescription)\n", stderr)
+            return samples
+        }
     }
 
     private static func failure(_ message: String) -> NSError {
