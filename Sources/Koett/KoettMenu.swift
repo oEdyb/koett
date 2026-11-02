@@ -92,6 +92,7 @@ extension KoettController {
         )
         formattingItem.isEnabled = canChangeModel
         menu.addItem(formattingItem)
+        menu.addItem(drawMenuItem())
         menu.addItem(.separator())
         let toggleItem = menuItem(
             title: "Mode: Toggle",

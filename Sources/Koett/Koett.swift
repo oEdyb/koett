@@ -59,6 +59,10 @@ final class KoettController: NSObject {
     var assistantVoice: AssistantVoice
     var assistantSpeechEnabled: Bool
     var s1MiniEnabled: Bool
+    var drawWhileDictating: Bool
+    var drawKey: DrawKey
+    let sketchFrames = SketchFrames()
+    let sketchOverlay = SketchOverlay()
     var s1MiniStyle: S1MiniStyle
     var s1MiniStructure: S1MiniStructure
     var s1MiniContext: S1MiniContext
@@ -161,6 +165,8 @@ final class KoettController: NSObject {
             .flatMap(S1MiniStructure.init(rawValue:)) ?? .prose
         s1MiniContext = defaults.string(forKey: "s1MiniContext")
             .flatMap(S1MiniContext.init(rawValue:)) ?? .general
+        drawWhileDictating = defaults.bool(forKey: DrawKey.enabledDefaultsKey)
+        drawKey = defaults.string(forKey: DrawKey.defaultsKey).flatMap(DrawKey.init(rawValue:)) ?? .shift
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
