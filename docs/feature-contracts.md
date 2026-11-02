@@ -228,8 +228,11 @@
   Events entitlements. The public `v0.1.1` ZIP is signed by
   `Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)`, notarized, and
   stapled.
-- Keep one stable signing identity. An ad-hoc or changing identity can make
-  macOS request Accessibility approval again after an update.
+- Keep one stable signing identity. An ad-hoc or changing identity makes
+  macOS ask for every permission again after an update; the installer refuses
+  that change unless `KOETT_ALLOW_SIGNATURE_CHANGE=1`. Only the permissions
+  window's Allow button raises a system prompt. See
+  [Mac permission prompts](mac-permissions.md).
 
 ### Recording feedback accessibility
 

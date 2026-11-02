@@ -205,8 +205,7 @@ final class KoettController: NSObject {
         }
 
         setSetupStatus(.checkingAccessibility, showOverlay: false)
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        guard AXIsProcessTrustedWithOptions(options) else {
+        guard AXIsProcessTrusted() else {
             throw Self.failure(
                 "Allow Accessibility access in System Settings > Privacy & Security > Accessibility, then choose Retry Setup from the Koett menu.",
                 code: StartupErrorCode.accessibility.rawValue
@@ -617,8 +616,6 @@ final class KoettController: NSObject {
     }
 
     @objc func openAccessibilitySettings() {
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
         guard let url = URL(
             string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
         ), NSWorkspace.shared.open(url) else {

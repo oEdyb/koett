@@ -87,6 +87,28 @@ codesign --force --options runtime \
     --sign "$signing_identity" "$stage_app"
 codesign --verify --deep --strict "$stage_app"
 
+designated_requirement() {
+    codesign -d -r- "$1" 2>/dev/null | sed -n 's/^designated => //p'
+}
+
+# macOS ties Microphone, Accessibility, Screen Recording and Automation grants
+# to the designated requirement. A different requirement makes macOS ask for
+# every permission again, so refuse that unless it is intended.
+if [[ -e "$app_path" ]]; then
+    installed_requirement=$(designated_requirement "$app_path")
+    staged_requirement=$(designated_requirement "$stage_app")
+    if [[ "$installed_requirement" == *"anchor apple"* \
+        && "$installed_requirement" != "$staged_requirement" \
+        && "${KOETT_ALLOW_SIGNATURE_CHANGE:-}" != 1 ]]; then
+        print -u2 "This build is signed differently from the installed Koett."
+        print -u2 "Installed: $installed_requirement"
+        print -u2 "This build: $staged_requirement"
+        print -u2 "macOS would ask for every permission again. Koett was not updated."
+        print -u2 "Set KOETT_CODESIGN_IDENTITY to the installed identity, or rerun with KOETT_ALLOW_SIGNATURE_CHANGE=1."
+        exit 1
+    fi
+fi
+
 ditto "$stage_app" "$incoming_app"
 codesign --verify --deep --strict "$incoming_app"
 
