@@ -58,3 +58,16 @@ therefore offers the pill's Cancel button and `koett cancel`, which can be bound
 in the compositor. Silence dots come from the level floor, not from Silero, since
 the live path only runs VAD after 20 s. Draw mode feeds sketch bands through
 `koett_engine::sketch`; see `docs/pill-timeline.md`.
+## 2026-11-02: dictionary uses decoder hotwords, kept only where they spell a term
+
+Three approaches were built in parallel and scored on one synthetic benchmark
+(`Benchmarks/Dictionary/`): sherpa-onnx hotwords, fuzzy text correction, and
+suggestions learned from corrections. Hotwords gave the large gain (31% → 73%
+term recall on Parakeet v2) but a single biased stream recapitalized ordinary
+words. Koett therefore decodes plain and biased streams in one batch and adopts
+only biased spans that spell a dictionary term: 73% recall, 0 false terms, 0
+broken near-miss sentences, about twice the decode time while a dictionary exists.
+One-edit fuzzy matching was dropped: +2 points recall for 3 false rewrites
+("parakeets" → "Parakeet"). Exact spelling normalization and user sounds-like
+forms stay. An empty dictionary keeps the old greedy path. Details and the Mac
+plan: `docs/dictionary.md`.

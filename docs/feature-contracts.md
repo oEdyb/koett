@@ -281,3 +281,15 @@
   contracts. Apple does not publish an exact status-item Copy Last or Paste Last
   reference implementation. Koett uses the smallest direct combination of
   those APIs. FluidAudio 0.15.6 is not part of this path and remains pinned.
+
+### Dictionary (Linux; Mac pending)
+
+- Entries are a term plus optional sounds-like forms in `Settings.dictionary`;
+  plain-text import/export is `Term = form, form`. See `docs/dictionary.md`.
+- An empty dictionary must leave decoding exactly as before (single greedy pass).
+- Biased decoding may only change words that become a dictionary term. Keep the
+  plain stream as the base; never ship single-stream biasing.
+- The spelling pass ignores case, spaces and hyphens, never punctuation, runs
+  once, and precedes literal replacements.
+- Never write derived files (the hotword `bpe.vocab`) into model folders.
+- Dictionary edits apply to the next dictation without restarting Koett.
