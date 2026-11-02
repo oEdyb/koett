@@ -195,7 +195,7 @@ final class RecordingOverlayController: NSObject {
     func showDone(text: String) {
         guard isShowingTranscribing else { return }
         resultText = text
-        show(.done(duration: pillView.elapsed))
+        show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
         dismiss(after: Self.resultDisplayDuration)
     }
 
@@ -308,7 +308,7 @@ final class RecordingOverlayController: NSObject {
         dismissWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            if pillView.hovered && pillView.showsActions {
+            if pillView.hovered && pillView.acceptsMouse {
                 dismiss(after: 1)
             } else {
                 stop()

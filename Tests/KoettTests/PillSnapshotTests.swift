@@ -12,37 +12,45 @@ final class PillSnapshotTests: XCTestCase {
         }
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        var speech = PillTimeline()
-        for step in 0..<(11 * 30) {
-            let seconds = Double(step) / 30
-            let word = abs(sin(seconds * 2.7)) * (seconds.truncatingRemainder(dividingBy: 3.4) < 2.6 ? 1 : 0)
-            speech.push(elapsedMs: UInt64(seconds * 1_000), level: word == 0 ? 0.01 : 0.25 + 0.6 * word * abs(sin(seconds * 9)))
+        func speech(seconds total: Double) -> PillTimeline {
+            var timeline = PillTimeline()
+            for step in 0...Int(total * 30) {
+                let seconds = Double(step) / 30
+                let word = abs(sin(seconds * 2.7)) * (seconds.truncatingRemainder(dividingBy: 3.4) < 2.6 ? 1 : 0)
+                timeline.push(elapsedMs: UInt64(seconds * 1_000), level: word == 0 ? 0.01 : 0.25 + 0.6 * word * abs(sin(seconds * 9)))
+            }
+            return timeline
         }
-        var sketched = speech
+        let short = speech(seconds: 11)
+        var sketched = short
         sketched.apply(SketchEvent(index: 1, startMs: 1_500, endMs: 3_250, live: false))
         sketched.apply(SketchEvent(index: 2, startMs: 7_500, endMs: 10_750, live: true))
+        let done = PillContent.done(preview: "Please buy milk and bread, and call the dentist on Friday about the appointment.")
 
-        let states: [(String, PillContent, PillTimeline, Bool)] = [
-            ("recording", .recording(paused: false), speech, false),
-            ("recording-hover", .recording(paused: false), speech, true),
-            ("drawing", .recording(paused: false), sketched, false),
-            ("paused-hover", .recording(paused: true), speech, true),
-            ("transcribing", .transcribing(fraction: nil), speech, false),
-            ("transcribing-progress", .transcribing(fraction: 0.55), speech, false),
-            ("done", .done(duration: 11), speech, false),
-            ("not-pasted", .notPasted, PillTimeline(), false),
-            ("media", .media(preview: "Today we are looking at what local models can do"), PillTimeline(), false),
-            ("status", .status("Transcribing locally…"), PillTimeline(), false),
+        let states: [(String, PillContent, PillTimeline, Bool, TimeInterval)] = [
+            ("recording-0m05", .recording(paused: false), speech(seconds: 5), false, 5),
+            ("recording-1m00", .recording(paused: false), speech(seconds: 60), false, 60),
+            ("recording-5m00", .recording(paused: false), speech(seconds: 300), false, 300),
+            ("recording-20m00", .recording(paused: false), speech(seconds: 1_200), false, 1_200),
+            ("recording-hover", .recording(paused: false), short, true, 11),
+            ("drawing", .recording(paused: false), sketched, false, 11),
+            ("paused-hover", .recording(paused: true), short, true, 11),
+            ("transcribing", .transcribing(fraction: nil), short, false, 11),
+            ("transcribing-progress", .transcribing(fraction: 0.55), short, false, 11),
+            ("done", done, PillTimeline(), false, 11),
+            ("not-pasted", .notPasted, PillTimeline(), false, 11),
+            ("media", .media(preview: "Today we are looking at what local models can do"), PillTimeline(), false, 11),
+            ("status", .status("Transcribing locally…"), PillTimeline(), false, 11),
         ]
         for (appearanceName, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
-            for (name, content, timeline, hovered) in states {
+            for (name, content, timeline, hovered, elapsed) in states {
                 let view = PillView(frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight))
                 view.appearance = NSAppearance(named: appearance)
                 view.hasRecordingControls = true
                 view.canPause = true
                 view.modelName = "Parakeet v2"
                 view.timeline = timeline
-                view.elapsed = 11
+                view.elapsed = elapsed
                 view.spin = 1
                 view.content = content
                 view.setHovered(hovered)

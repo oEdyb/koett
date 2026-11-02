@@ -55,13 +55,17 @@ final class RecordingOverlayTests: XCTestCase {
     func testDoneAndNotPastedOnlyReplaceTheTranscribingPill() {
         let controller = RecordingOverlayController()
         controller.showDone(text: "ignored")
-        XCTAssertNotEqual(controller.pillView.content, .done(duration: 0))
+        XCTAssertNotEqual(controller.pillView.content, .done(preview: "ignored"))
 
         controller.showTranscribing()
         controller.showDone(text: "Hello")
-        XCTAssertEqual(controller.pillView.content, .done(duration: 0))
-        XCTAssertTrue(controller.pillView.showsActions)
-        XCTAssertEqual(controller.pillView.preferredHeight, 88)
+        XCTAssertEqual(controller.pillView.content, .done(preview: "Hello"))
+        XCTAssertFalse(controller.pillView.showsActions, "Done is one row")
+        XCTAssertEqual(controller.pillView.preferredHeight, 48)
+        XCTAssertTrue(controller.pillView.acceptsMouse)
+        XCTAssertFalse(controller.pillView.copyButton.isHidden)
+        XCTAssertTrue(controller.pillView.historyButton.isHidden)
+        XCTAssertLessThan(controller.pillView.copyButton.frame.maxY, 48, "Copy sits on the right of the row")
 
         controller.showTranscribing()
         controller.showError("Save failed")
@@ -196,12 +200,12 @@ final class RecordingOverlayTests: XCTestCase {
         XCTAssertEqual(view.statusElement.accessibilityValue() as? NSNumber, 0.73)
         XCTAssertEqual(view.statusElement.accessibilityValueDescription(), "73 percent")
 
-        view.content = .done(duration: 12)
+        view.content = .done(preview: "Hello there")
         XCTAssertEqual(accessibilitySnapshot(view.statusElement), """
         element=true
         role=AXStaticText
         label=Koett status
-        value=Done · 0:12
+        value=Hello there
         """)
         XCTAssertNil(view.statusElement.accessibilityMinValue())
 

@@ -15,21 +15,33 @@ struct SketchEvent: Equatable, Sendable {
     var isValid: Bool { index > 0 && endMs >= startMs }
 }
 
-/// Whole-dictation level history. Every column comes from measured
-/// microphone input; nothing moves without input.
+/// Live level strip with a fixed width: the newest audio enters at the right
+/// edge and older columns slide left and out. The width never changes and no
+/// column is ever re-binned, so the strip looks the same at 5 s and at 20 min.
+/// Every column comes from measured microphone input.
 struct PillTimeline {
     static let columnCount = 64
-    static let baseMs: UInt64 = 250
+    static let columnMs: UInt64 = 150
     static let silentLevel = 0.08
     /// Distinct sketches kept per dictation. Updates to a kept index always apply.
     static let sketchLimit = 256
 
+    /// One drawn column. `x` is in column units from the strip's left edge
+    /// (0..<columnCount, fractional while sliding); `level` is nil before the
+    /// dictation started.
+    struct Bar: Equatable {
+        let x: Double
+        let level: Double?
+    }
+
     private(set) var levels: [Double] = []
-    private(set) var msPerColumn = baseMs
+    private(set) var firstColumn = 0
+    private(set) var latestMs: UInt64 = 0
     private(set) var sketches: [SketchEvent] = []
     private var smoothed = 0.0
+    private var started = false
 
-    var isEmpty: Bool { levels.isEmpty }
+    var isEmpty: Bool { !started }
     var isDrawing: Bool { sketches.contains(where: \.live) }
 
     mutating func reset() {
@@ -40,25 +52,41 @@ struct PillTimeline {
     mutating func push(elapsedMs: UInt64, level: Double) {
         let level = level.isFinite ? min(1, max(0, level)) : 0
         smoothed = smoothed * 0.55 + level * 0.45
-        var index = elapsedMs / msPerColumn
-        while index >= UInt64(Self.columnCount) {
-            compress()
-            index = elapsedMs / msPerColumn
+        started = true
+        latestMs = max(latestMs, elapsedMs)
+        let column = Int(elapsedMs / Self.columnMs)
+        let lastColumn = firstColumn + levels.count - 1
+        if column > lastColumn {
+            levels.append(contentsOf: repeatElement(0, count: column - lastColumn))
         }
-        let column = Int(index)
-        if levels.count <= column {
-            levels.append(contentsOf: repeatElement(0, count: column + 1 - levels.count))
+        let position = column - firstColumn
+        if levels.indices.contains(position) {
+            levels[position] = max(levels[position], smoothed)
         }
-        levels[column] = max(levels[column], smoothed)
+        let overflow = levels.count - (Self.columnCount + 2)
+        if overflow > 0 {
+            levels.removeFirst(overflow)
+            firstColumn += overflow
+        }
     }
 
-    private mutating func compress() {
-        levels = stride(from: 0, to: levels.count, by: 2).map { start in
-            levels[start..<min(start + 2, levels.count)].max() ?? 0
+    /// The strip's right edge in column units since the dictation started.
+    private var head: Double { Double(latestMs) / Double(Self.columnMs) }
+
+    private func unit(ms: UInt64) -> Double {
+        Double(ms) / Double(Self.columnMs) - head + Double(Self.columnCount - 1)
+    }
+
+    /// Columns to draw, oldest first, at their sliding positions.
+    func bars() -> [Bar] {
+        let newest = Int(latestMs / Self.columnMs)
+        return (newest - Self.columnCount...newest).compactMap { column in
+            let x = Double(column) - head + Double(Self.columnCount - 1)
+            guard x > -1 else { return nil }
+            guard column >= 0 else { return Bar(x: x, level: nil) }
+            let position = column - firstColumn
+            return Bar(x: x, level: levels.indices.contains(position) ? levels[position] : 0)
         }
-        msPerColumn = msPerColumn.multipliedReportingOverflow(by: 2).overflow
-            ? UInt64.max
-            : msPerColumn * 2
     }
 
     /// Inserts or replaces the sketch with the same index. Returns false when a
@@ -83,17 +111,12 @@ struct PillTimeline {
         return true
     }
 
-    /// Inclusive column range covered by a sketch, compressed with the strip.
-    func span(of sketch: SketchEvent) -> ClosedRange<Int> {
-        let last = UInt64(Self.columnCount - 1)
-        let start = min(sketch.startMs / msPerColumn, last)
-        let end = min(max(sketch.endMs / msPerColumn, start), last)
-        return Int(start)...Int(end)
-    }
-
-    /// Column reached by decoding, for a 0...1 fraction of the recording.
-    func decodeHead(fraction: Double) -> Int {
-        let fraction = fraction.isFinite ? min(1, max(0, fraction)) : 0
-        return Int((Double(levels.count) * fraction).rounded())
+    /// A sketch's band in column units, clipped to the strip; nil once it has
+    /// slid out on the left.
+    func band(of sketch: SketchEvent) -> ClosedRange<Double>? {
+        let start = max(0, unit(ms: sketch.startMs))
+        let end = min(Double(Self.columnCount), unit(ms: sketch.endMs) + 1)
+        guard end > 0, start < Double(Self.columnCount), end >= start else { return nil }
+        return start...end
     }
 }

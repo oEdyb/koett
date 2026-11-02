@@ -3,14 +3,14 @@ import AppKit
 enum PillContent: Equatable {
     case recording(paused: Bool)
     case transcribing(fraction: Double?)
-    case done(duration: TimeInterval)
+    case done(preview: String)
     case notPasted
     case media(preview: String)
     case status(String)
     case progress(text: String, fraction: Double)
 }
 
-/// The recording pill: a whole-dictation timeline in a 48 px row, with an
+/// The recording pill: a fixed-width live strip in a 48 px row, with an
 /// action row above it. The bottom row never moves when the action row shows.
 @MainActor
 final class PillView: NSView {
@@ -72,8 +72,8 @@ final class PillView: NSView {
     var showsActions: Bool {
         switch content {
         case .recording, .transcribing: hasRecordingControls && hovered
-        case .done, .notPasted, .media: true
-        case .status, .progress: false
+        case .notPasted: true
+        case .done, .media, .status, .progress: false
         }
     }
 
@@ -131,8 +131,7 @@ final class PillView: NSView {
     private var hasStrip: Bool {
         guard !timeline.isEmpty else { return false }
         switch content {
-        case .recording, .done: return true
-        case .transcribing: return true
+        case .recording, .transcribing: return true
         default: return false
         }
     }
@@ -144,8 +143,8 @@ final class PillView: NSView {
         let recording = if case .recording = content { true } else { false }
         let paused = if case .recording(true) = content { true } else { false }
         let notPasted = content == .notPasted
-        let result = switch content {
-        case .done, .notPasted, .media: true
+        let resultRow = switch content {
+        case .done, .media: true
         default: false
         }
         let transcribing = if case .transcribing = content { true } else { false }
@@ -153,7 +152,7 @@ final class PillView: NSView {
         pauseButton.isHidden = !(actions && recording && canPause)
         pauseButton.title = paused ? "Resume" : "Pause"
         pasteButton.isHidden = !(actions && notPasted)
-        copyButton.isHidden = !(actions && result)
+        copyButton.isHidden = !(resultRow || (actions && notPasted))
         historyButton.isHidden = !actions
 
         let palette = palette
@@ -164,10 +163,19 @@ final class PillView: NSView {
             left = button.frame.maxX + 6
         }
         var right = bounds.width - 12
-        for button in [historyButton, copyButton] where !button.isHidden {
+        for button in [historyButton, copyButton] where !button.isHidden && !(resultRow && button === copyButton) {
             let width = button.fittingWidth
             button.frame = NSRect(x: right - width, y: y, width: width, height: PillButton.height)
             right = button.frame.minX - 6
+        }
+        if resultRow {
+            let width = copyButton.fittingWidth
+            copyButton.frame = NSRect(
+                x: bounds.width - 12 - width,
+                y: (Self.rowHeight - PillButton.height) / 2,
+                width: width,
+                height: PillButton.height
+            )
         }
         actionLabelRect = NSRect(x: left + 4, y: y, width: max(0, right - left - 8), height: PillButton.height)
         for button in [cancelButton, pauseButton, pasteButton, copyButton, historyButton] {
@@ -182,8 +190,6 @@ final class PillView: NSView {
     private var actionLabel: (String, NSTextAlignment)? {
         switch content {
         case .recording: (modelName, .right)
-        case .done(let duration): ("Done · \(RecordingOverlayFormat.elapsedTime(duration))", .left)
-        case .media: ("Media transcript", .left)
         default: nil
         }
     }
@@ -213,7 +219,7 @@ final class PillView: NSView {
         case .recording(let paused): staticText(paused ? "Paused" : "Recording")
         case .transcribing(let fraction?): progress("Transcribing", fraction)
         case .transcribing(nil): staticText("Transcribing…")
-        case .done(let duration): staticText("Done · \(RecordingOverlayFormat.elapsedTime(duration))")
+        case .done(let preview): staticText(preview)
         case .notPasted: staticText("Not pasted · text saved")
         case .media(let preview): staticText(preview)
         case .status(let text): staticText(text)
@@ -290,12 +296,6 @@ final class PillView: NSView {
             arc.appendArc(withCenter: NSPoint(x: 23, y: cy), radius: 6, startAngle: start, endAngle: start - 92, clockwise: true)
             palette.accent.setStroke()
             arc.stroke()
-        case .done:
-            path.lineWidth = 2
-            path.move(to: NSPoint(x: 17.5, y: cy - 0.5))
-            path.line(to: NSPoint(x: 21.5, y: cy - 4.5))
-            path.line(to: NSPoint(x: 29, y: cy + 4))
-            path.stroke()
         case .notPasted:
             path.lineWidth = 1.8
             path.move(to: NSPoint(x: 23, y: cy + 7))
@@ -306,7 +306,7 @@ final class PillView: NSView {
             path.line(to: NSPoint(x: 23, y: cy - 1.5))
             path.stroke()
             NSBezierPath(ovalIn: NSRect(x: 22, y: cy - 4.8, width: 2, height: 2)).fill()
-        case .media:
+        case .done, .media:
             for (index, height) in [7.0, 13.0, 19.0, 13.0, 7.0].enumerated() {
                 NSBezierPath(
                     roundedRect: NSRect(x: 14 + CGFloat(index) * 4.5, y: cy - height / 2, width: 2.5, height: height),
@@ -318,65 +318,50 @@ final class PillView: NSView {
     }
 
     private func drawStrip(cy: CGFloat, palette: PillPalette) {
-        let head: Int? = if case .transcribing(let fraction?) = content {
-            timeline.decodeHead(fraction: fraction)
-        } else {
-            nil
-        }
         let transcribing = if case .transcribing = content { true } else { false }
-        for sketch in timeline.sketches {
-            let span = timeline.span(of: sketch)
-            let rect = NSRect(
-                x: Self.stripX + CGFloat(span.lowerBound) * Self.step - 1,
-                y: cy - 15,
-                width: CGFloat(span.count) * Self.step + 1,
-                height: 30
-            )
-            let band = NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3)
+        func x(_ unit: Double) -> CGFloat { Self.stripX + CGFloat(unit) * Self.step }
+        let bands = timeline.sketches.compactMap { sketch in timeline.band(of: sketch).map { (sketch, $0) } }
+        for (sketch, band) in bands {
+            let rect = NSRect(x: x(band.lowerBound) - 1, y: cy - 15, width: CGFloat(band.upperBound - band.lowerBound) * Self.step + 1, height: 30)
+            let shape = NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3)
             palette.band.setFill()
-            band.fill()
+            shape.fill()
             if sketch.live {
                 palette.accent.setStroke()
-                band.lineWidth = 1.5
-                band.stroke()
+                shape.lineWidth = 1.5
+                shape.stroke()
             }
         }
-        for (index, level) in timeline.levels.enumerated() {
-            let x = Self.stripX + CGFloat(index) * Self.step
-            if level < PillTimeline.silentLevel {
-                palette.dim.setFill()
-                NSBezierPath(roundedRect: NSRect(x: x, y: cy - 1, width: 2, height: 2), xRadius: 1, yRadius: 1).fill()
+        let fade = 6.0
+        for bar in timeline.bars() {
+            let alpha = CGFloat(min(1, max(0, (bar.x + 1) / fade)))
+            let left = x(bar.x)
+            guard let level = bar.level, level >= PillTimeline.silentLevel else {
+                palette.dim.withAlphaComponent(palette.dim.alphaComponent * alpha).setFill()
+                NSBezierPath(roundedRect: NSRect(x: left, y: cy - 1, width: 2, height: 2), xRadius: 1, yRadius: 1).fill()
                 continue
             }
-            let bright = head.map { index < $0 } ?? !transcribing
-            (bright ? palette.bar : palette.dim).setFill()
+            let color = transcribing ? palette.dim : palette.bar
+            color.withAlphaComponent(color.alphaComponent * alpha).setFill()
             let height = 4 + CGFloat(level) * 22
             NSBezierPath(
-                roundedRect: NSRect(x: x, y: cy - height / 2, width: 2, height: height),
-                xRadius: 1,
-                yRadius: 1
-            ).fill()
-        }
-        if let head {
-            palette.accent.setFill()
-            NSBezierPath(
-                roundedRect: NSRect(x: Self.stripX + CGFloat(head) * Self.step - 1.5, y: cy - 17, width: 2, height: 34),
+                roundedRect: NSRect(x: left, y: cy - height / 2, width: 2, height: height),
                 xRadius: 1,
                 yRadius: 1
             ).fill()
         }
         let font = NSFont.systemFont(ofSize: 9, weight: .bold)
-        for sketch in timeline.sketches {
-            let x = Self.stripX + CGFloat(timeline.span(of: sketch).lowerBound) * Self.step + 5
+        for (sketch, band) in bands {
+            let center = max(x(band.lowerBound) + 5, Self.stripX + 6.5)
             let y = cy + 15
             palette.accent.setFill()
-            NSBezierPath(ovalIn: NSRect(x: x - 6.5, y: y - 6.5, width: 13, height: 13)).fill()
+            NSBezierPath(ovalIn: NSRect(x: center - 6.5, y: y - 6.5, width: 13, height: 13)).fill()
             let label = NSAttributedString(string: "\(sketch.index)", attributes: [
                 .font: font,
                 .foregroundColor: NSColor.white,
             ])
             let size = label.size()
-            label.draw(at: NSPoint(x: x - size.width / 2, y: y - size.height / 2))
+            label.draw(at: NSPoint(x: center - size.width / 2, y: y - size.height / 2))
         }
     }
 
@@ -391,8 +376,11 @@ final class PillView: NSView {
             drawText("Transcribing…", in: textRect, alignment: .left, color: palette.text)
         case .notPasted:
             drawText("Not pasted · text saved", in: textRect, alignment: .left, color: palette.text)
-        case .media(let preview):
-            drawText(preview, in: textRect, alignment: .left, color: palette.text)
+        case .done(let preview), .media(let preview):
+            let right = copyButton.isHidden ? textRect.maxX : copyButton.frame.minX - 10
+            drawText(preview, in: NSRect(x: 44, y: 0, width: right - 44, height: row.height), alignment: .left, color: palette.text)
+        case .transcribing(let fraction?) where hasStrip:
+            drawText("\(Int((fraction * 100).rounded()))%", in: clockRect, alignment: .right, monospaced: true, color: palette.text.withAlphaComponent(0.62))
         case .status(let text):
             drawText(text, in: textRect, alignment: .left, color: palette.text)
         case .progress(let text, let fraction):
@@ -409,7 +397,7 @@ final class PillView: NSView {
                 ).fill()
             }
             drawText(text, in: NSRect(x: 40, y: 12, width: 244, height: 32), alignment: .left, color: palette.text)
-        case .transcribing, .done:
+        case .transcribing:
             break
         }
     }
