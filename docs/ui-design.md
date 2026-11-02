@@ -201,6 +201,114 @@ Preserve existing `append_transcript_resilient`/last-result recovery APIs while
 cutting their internals over to SQLite. Store/query/import off UI and audio threads.
 Private files, bounded queries and durable failed-save fallbacks remain required.
 
+## Pill and overlay UI rules
+
+These rules come from the Mac pill that passed its live test on 2026-11-02
+(`e0ca1b9`, PRs #9, #11, #19, #21). Both platforms follow them. Change a rule
+only with a new live test, and record why in `docs/decisions.md`.
+
+### Shape
+
+- **One row, always.** Every state is a 300×48 capsule (radius 23). Nothing ever
+  grows taller. Hover actions, results, Not pasted and errors all fit inside
+  that row. A taller pill read as "goes big" and was rejected.
+- **Fixed width from the first frame.** The level strip spans its full width
+  (64 columns, 3 px pitch, 2 px bars) on the very first sample; time before the
+  start draws as dim silence dots. The pill never gets longer as you talk.
+- **The strip is a rolling window, not a whole-dictation overview.** Mac: the
+  last 9.6 s, as 64 columns of 150 ms. The newest audio enters at the right
+  edge; columns slide left by elapsed time, with sub-column precision, and fade
+  out over the left six columns. Nothing is ever re-binned, so 0:05 and 20:00
+  look the same, and memory stays at 66 columns.
+- **Fixed slots in the row:** glyph centered at x = 23; strip from x = 44 to
+  236; clock right-aligned in 238–284. Hover buttons start at x = 40 and must
+  end before the clock (x < 238).
+- **Light and dark follow the system.** Use the shared palette
+  (`PillPalette` / Linux `DARK`/`LIGHT`); coral is the only accent.
+
+### States
+
+| State | Row content | Leaves |
+| --- | --- | --- |
+| Recording | coral dot (pen while drawing, two bars while paused), strip, `m:ss` | on stop |
+| Hover while recording or transcribing | Cancel, Pause/Resume, History replace the strip; the clock stays | when the pointer leaves |
+| Transcribing | spinner, frozen dimmed strip, `NN%` only when the engine reports real progress | on result or error |
+| Done | 5-bar coral mark, one-line preview, **Copy** on the right | 1.75 s, held while hovered |
+| Not pasted | warning glyph, `Not pasted · saved`, **Paste** and **Copy** on the right | only when acted on or clicked |
+| Error with text or audio to rescue | warning glyph, message | only when clicked or replaced |
+| Other errors | warning glyph, message | 5 s |
+| Media result | same row as Done | 10 s, held while hovered |
+
+### Motion and timing
+
+- **Morph in place.** Transcribing becomes Done (or Not pasted) without moving or
+  resizing: a 0.24 s ease-out (cubic) crossfade. The old content fades faster
+  (`1 − 1.6 t`), the new content fades in and slides 8 px from the right, and
+  Copy fades in with it.
+- **Leave quickly.** Done stays 1.75 s, then the panel fades out over 0.25 s.
+  Hovering holds it; once the pointer leaves, it fades after 0.8 s. Copy shows
+  "Copied" and fades after 1 s. Nothing else extends it. The old 10 s timeout
+  was rejected as "lingers a long time after I'm finished".
+- **Things that need rescuing never time out.** Not pasted, and errors that hold
+  text or audio, stay until they are used or clicked.
+- **Reduce Motion:** keep sampling the meter at 30 Hz, redraw the strip once a
+  second, stop the spinner, and skip the morph and the fade.
+- **The pill never takes focus.** It is a non-activating panel that cannot
+  become key or main. It takes the pointer only in states that have buttons.
+
+### How a pill change is verified
+
+1. Render every state off-screen in dark and light with
+   `KOETT_PILL_SNAPSHOT_DIR=/tmp/pill swift test --filter PillSnapshotTests` (Mac),
+   so the user's screen is never driven. Include recording at **0:05, 1:00, 5:00 and
+   20:00**, hover, paused, drawing, transcribing, Done, Not pasted and error.
+2. Render the morph at t = 0, 0.25, 0.5, 0.75 and 1, and look at the frames
+   stacked. A frame where two glyphs or texts fight is a bug.
+3. Look at every PNG before claiming done; put them in `docs/evidence/` and in
+   the PR body.
+4. Unit tests guard the rules: every state is 48 px, its buttons fit inside
+   without overlapping the clock, the strip reaches both edges at every point
+   over 20 minutes, a peak moves only by elapsed time, Done leaves after about
+   2 s and is held by hover, and Not pasted and rescue errors stay.
+5. Install and let the user try it. Only a live try counts as passing.
+
+### Rejected, and why
+
+- **Whole-dictation timeline that halves its resolution when full.** The strip
+  visibly grew and then jumped ("once it reaches a threshold, it compresses").
+- **Smooth resampling of the whole dictation.** It still squeezes, and at
+  20 minutes each bar covers about 19 s and looks like a flat block. A rolling
+  window has no compression to hide.
+- **A 300×88 pill with an action row on top**, for Done, Not pasted or hover. It
+  "goes big".
+- **A Done receipt with the strip, `Done · m:ss` and History.** It "looks weird";
+  the one-row Copy result was wanted back.
+- **A 10 s Done timeout.**
+- **A decode playhead on the strip.** FluidAudio's progress counts dispatched
+  chunks of trimmed audio, so a playhead on wall time misleads. Show a
+  percentage, or only the spinner.
+- **Model name in the hover row.** There is no room for it at 48 px.
+
+### What helped
+
+- The user's literal complaints, quoted and used as the spec. Every rule above
+  answers one of them.
+- The `verification-before-completion` skill: a claim needs matching evidence,
+  so every state was rendered and looked at, and the user's live try was the
+  final gate.
+- The `development` skill: check library behavior against its source before
+  building on it (the FluidAudio progress stream), and make test fixtures prove
+  the bug they guard against.
+- No design or animation skill was loaded. The timings came from keeping
+  motion short and in place, then checking the stacked morph frames.
+
+### Known Linux gap (2026-11-02)
+
+Linux follows the shape, states and timings above, but its strip resamples the
+whole dictation after 16 s (`CrossPlatform/src/linux/timeline.rs`, PR #22)
+instead of using the rolling window. It should move to the rolling window. Its
+Not pasted state has Copy but no Paste.
+
 ## Usability verification
 
 Exercise first launch, choose input, record/stop, recover failed paste, find an old
