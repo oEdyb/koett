@@ -7,8 +7,12 @@ Metrics:
   false_terms    dictionary terms that appear in negative clips (none are spoken there)
   wer_positive / wer_negative   word error rate against the reference sentence
   broken_negatives   negative clips whose WER got worse than the baseline (if given)
+  collateral_words   reference words outside the dictionary terms that the baseline
+                     wrote and this output lost, over the positive clips (if given).
+                     Catches biasing that rewrites neighbours ("invoices" -> "receipts").
 """
 import json, re, sys
+from collections import Counter
 from pathlib import Path
 
 CORPUS = json.loads((Path(__file__).parent / "corpus.json").read_text())
@@ -28,8 +32,15 @@ def wer(ref: str, hyp: str) -> float:
             prev, d[j] = d[j], min(d[j] + 1, d[j - 1] + 1, prev + (r[i - 1] != h[j - 1]))
     return d[len(h)] / max(1, len(r))
 
+def lost_words(ref: str, terms: list[str], base: str, out: str) -> int:
+    """Non-term reference words present in the baseline but missing from the output."""
+    term_words = {w for t in terms for w in words(t)}
+    wanted = Counter(w for w in words(ref) if w not in term_words)
+    had, has = Counter(words(base)), Counter(words(out))
+    return sum(max(0, min(n, had[w]) - min(n, has[w])) for w, n in wanted.items())
+
 def score(out: dict, base: dict | None = None) -> dict:
-    hits = total = false_terms = broken = 0
+    hits = total = false_terms = broken = collateral = 0
     wp, wn, missing, false_list = [], [], [], []
     for voice in CORPUS["voices"]:
         for clip in CORPUS["positive"]:
@@ -42,6 +53,8 @@ def score(out: dict, base: dict | None = None) -> dict:
                 else:
                     missing.append((key, term, text))
             wp.append(wer(clip["text"], text))
+            if base is not None:
+                collateral += lost_words(clip["text"], clip["terms"], base.get(key, ""), text)
         for clip in CORPUS["negative"]:
             key = f"{clip['id']}-{voice}"
             text = out.get(key, "")
@@ -60,6 +73,7 @@ def score(out: dict, base: dict | None = None) -> dict:
     }
     if base is not None:
         result["broken_negatives"] = broken
+        result["collateral_words"] = collateral
     return result
 
 if __name__ == "__main__":

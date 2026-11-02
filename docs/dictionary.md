@@ -12,13 +12,19 @@ like" forms (what Koett writes instead). Linux ships it; the Mac to-do is below.
    terms as sherpa-onnx per-stream hotwords (modified beam search, 4 paths,
    score 2.0, as the pinned upstream Parakeet TDT example uses).
 2. **Term adoption** (`CrossPlatform/src/dictionary/merge.rs`). The two word
-   sequences are aligned. A differing biased span replaces the plain words only
-   when it spells a dictionary term. The hotword boost also capitalizes
-   unrelated words ("Code Turns My Voice"), so everything else keeps the plain
-   decode.
+   sequences are aligned. A differing biased span is used only when it is
+   exactly one dictionary term; the term then replaces the plain words closest
+   in sound, keeping the other plain words and their punctuation. The hotword
+   boost also rewrites unrelated words ("Code Turns My Voice", "invoices" →
+   "receipts"), so everything else keeps the plain decode. When the plain words
+   are all common English (SCOWL levels 10–20, `dictionary/common-words.txt`),
+   the biased term is treated as a boosted homophone ("the cloud" → "Claude")
+   and the plain words stay.
 3. **Spelling pass** (`CrossPlatform/src/dictionary/correct.rs`). Completed
    dictation rewrites spans of up to four words that match a term or a sounds-like
-   form, ignoring case and hyphens but not punctuation. Terms also match across
+   form, ignoring case and hyphens but not punctuation. Terms with their own
+   punctuation (`C++`, `C#`, `.NET`) match only with it and are replaced whole.
+   Keys are NFC, so a decomposed "Göteborg" matches. Terms also match across
    spaces ("sherpa onnx"); a form only matches spans with its own word count, so
    the form "Superbase" leaves "the super base price" alone. One pass, no
    cascades. Literal replacements run afterwards.
@@ -41,15 +47,21 @@ Shared benchmark in `Benchmarks/Dictionary/`: 30 terms, 40 sentences using them,
 park", "Jacob and Matthias"), three synthetic voices, 210 clips. Synthetic
 speech is cleaner than a microphone; treat numbers as relative.
 
-| Parakeet v2, all voices | Term recall | False terms | WER pos. | WER neg. | Broken neg. |
-|---|---|---|---|---|---|
-| Baseline (greedy) | 31% (50/162) | 0 | 14.3% | 0.28% | 0 |
-| Fuzzy text correction only | 47% | 3 | 10.3% | 0.62% | 3 |
-| Hotwords, single biased stream, score 2 | 73% | 0 | 6.4% | 0.79% | 4 + 66 case changes |
-| Hotwords, score 3 / score 4 | 73% / 76% | 23 / 72 | — | — | 22 / 57 |
-| **Shipped: plain + biased, adopt terms** | **73% (118/162)** | **0** | **6.6%** | **0.16%** | **0** |
-| Shipped + one-edit fuzzy matching | 75% | 3 | 6.3% | 0.49% | 3 |
-| **Shipped + accepted learned sounds-like forms** | **81% (131/162)** | **0** | **5.3%** | **0.16%** | **0** |
+| Parakeet v2, all voices | Term recall | False terms | WER pos. | WER neg. | Broken neg. | Lost words |
+|---|---|---|---|---|---|---|
+| Baseline (greedy) | 31% (50/162) | 0 | 14.3% | 0.28% | 0 | 0 |
+| Fuzzy text correction only | 47% | 3 | 10.3% | 0.62% | 3 | — |
+| Hotwords, single biased stream, score 2 | 73% | 0 | 6.4% | 0.79% | 4 + 66 case changes | 11 |
+| Hotwords, score 3 / score 4 | 73% / 76% | 23 / 72 | — | — | 22 / 57 | — |
+| PR #8: plain + biased, adopt any span with a term | 73% (118/162) | 0 | 6.6% | 0.16% | 0 | 6 |
+| **Now: exact-term spans, common words kept** | **70% (114/162)** | **0** | **6.9%** | **0.16%** | **0** | **1** |
+| Now + accepted learned sounds-like forms | 79% (128/162) | 0 | 5.1% | 0.16% | 0 | 1 |
+
+"Lost words" counts words outside the terms that the baseline wrote correctly
+and the output lost, in the 40 term sentences (`score.py` `collateral_words`).
+PR #8 lost 6: "the cloud"/"the call"/"calling" became "Claude", and spans like
+"Superbase invoices" were replaced whole. The remaining 1 comes from beam search
+itself ("met in" → "met and"), which unbiased beam also produces.
 
 Learning loop (approach c, prototype on branch `learning-correction-loop`):
 corrections from one voice, aligned word by word, suggested 26 forms with no

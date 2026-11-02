@@ -29,6 +29,11 @@ the upstream patches are provided in `notices/native/onnxruntime/SOURCE-ACCESS.m
 Historical blocked TTS/eSpeak receipts describe earlier
 control builds, not the inspected ASR-only binary.
 
+The dictionary's common-word list (`src/dictionary/common-words.txt`) is
+derived from SCOWL 2020.12.07 (English and American words, levels 10 and 20) by
+Kevin Atkinson and contributors. Its copyright and permission notice is in
+`notices/data/scowl/Copyright`.
+
 Some private/current-PC packages additionally distribute GTK 4.24.1 and
 llama.cpp CPU b11981. These are conditional package contents, not universal
 CI dependencies. GTK license and embedded source notices are under

@@ -2,7 +2,13 @@
 //!
 //! Matching ignores case, spaces and hyphens ("sherpa onnx", "post gres q l" with
 //! form "post gres q l"), but never punctuation, so sentences keep their shape.
-//! It runs once over the original text; written terms are never matched again.
+//! Terms with their own punctuation (`C++`, `C#`, `Node.js`) match only when the
+//! text has that punctuation, and the whole literal is replaced. Keys are NFC, so
+//! decomposed "Göteborg" matches too. One pass; written terms are never matched again.
+
+use std::borrow::Cow;
+
+use icu_normalizer::ComposingNormalizerBorrowed;
 
 use super::DictionaryEntry;
 
@@ -10,11 +16,24 @@ const MAX_SPAN_WORDS: usize = 4;
 
 /// A key to find and the term to write. Terms match across any word split
 /// ("sherpa onnx"); a sounds-like form only with its own word count, so the
-/// form "Superbase" leaves an ordinary "super base" alone.
+/// form "Superbase" leaves an ordinary "super base" alone. A literal target
+/// keeps its punctuation and is compared character by character.
 struct Target<'a> {
     key: String,
     words: Option<usize>,
+    literal: Option<String>,
     term: &'a str,
+}
+
+impl<'a> Target<'a> {
+    fn new(form: &str, words: Option<usize>, term: &'a str) -> Self {
+        Self {
+            key: key(form),
+            words,
+            literal: significant_punctuation(form).then(|| squash(form)),
+            term,
+        }
+    }
 }
 
 /// One word: its byte range in the text and its lowercase alphanumeric key.
@@ -24,8 +43,16 @@ struct Word {
     key: String,
 }
 
+/// A match: replaced byte range and the index of the first word after it.
+struct Found<'a> {
+    start: usize,
+    end: usize,
+    next: usize,
+    term: &'a str,
+}
+
 pub fn apply(text: &str, entries: &[DictionaryEntry]) -> String {
-    let targets = targets(entries);
+    let targets = targets(entries, true);
     if targets.is_empty() {
         return text.to_string();
     }
@@ -34,50 +61,42 @@ pub fn apply(text: &str, entries: &[DictionaryEntry]) -> String {
     let mut copied = 0;
     let mut index = 0;
     while index < words.len() {
-        match longest_match(text, &words[index..], &targets) {
-            Some((count, term)) => {
-                output.push_str(&text[copied..words[index].start]);
-                output.push_str(term);
-                copied = words[index + count - 1].end;
-                index += count;
+        match find(text, &words, index, &targets) {
+            Some(found) if found.start >= copied => {
+                output.push_str(&text[copied..found.start]);
+                output.push_str(found.term);
+                copied = found.end;
+                index = found.next;
             }
-            None => index += 1,
+            _ => index += 1,
         }
     }
     output.push_str(&text[copied..]);
     output
 }
 
-/// True when the text spells any dictionary term (not just a "sounds like" form).
-pub(super) fn contains_term(text: &str, entries: &[DictionaryEntry]) -> bool {
-    let targets: Vec<Target> = entries
-        .iter()
-        .map(|entry| Target {
-            key: key(&entry.term),
-            words: None,
-            term: &entry.term,
-        })
-        .filter(|target| !target.key.is_empty())
-        .collect();
+/// The term when the whole text, apart from outer punctuation, spells exactly one term.
+pub(super) fn exact_term<'a>(text: &str, entries: &'a [DictionaryEntry]) -> Option<&'a str> {
+    let targets = targets(entries, false);
     let words = words(text);
-    (0..words.len()).any(|index| longest_match(text, &words[index..], &targets).is_some())
+    let found = find(text, &words, 0, &targets)?;
+    let outside = |slice: &str| slice.chars().all(|ch| !part_of_word(ch));
+    (found.next == words.len() && outside(&text[..found.start]) && outside(&text[found.end..]))
+        .then_some(found.term)
 }
 
-/// Every term and form, longest keys first so longer phrases win.
-fn targets(entries: &[DictionaryEntry]) -> Vec<Target<'_>> {
+/// Every term (and, if asked, every form), longest keys first so longer phrases win.
+fn targets(entries: &[DictionaryEntry], forms: bool) -> Vec<Target<'_>> {
     let mut targets: Vec<Target> = entries
         .iter()
         .flat_map(|entry| {
-            let term = Target {
-                key: key(&entry.term),
-                words: None,
-                term: &entry.term,
-            };
-            std::iter::once(term).chain(entry.sounds_like.iter().map(|form| Target {
-                key: key(form),
-                words: Some(words(form).len()),
-                term: &entry.term,
-            }))
+            let term = Target::new(&entry.term, None, &entry.term);
+            let forms = entry
+                .sounds_like
+                .iter()
+                .filter(move |_| forms)
+                .map(|form| Target::new(form, Some(words(form).len()), &entry.term));
+            std::iter::once(term).chain(forms)
         })
         .filter(|target| !target.key.is_empty())
         .collect();
@@ -85,11 +104,17 @@ fn targets(entries: &[DictionaryEntry]) -> Vec<Target<'_>> {
     targets
 }
 
-fn longest_match<'a>(
+fn find<'a>(text: &str, words: &[Word], index: usize, targets: &[Target<'a>]) -> Option<Found<'a>> {
+    literal_match(text, words, index, targets).or_else(|| word_match(text, words, index, targets))
+}
+
+fn word_match<'a>(
     text: &str,
     words: &[Word],
+    index: usize,
     targets: &[Target<'a>],
-) -> Option<(usize, &'a str)> {
+) -> Option<Found<'a>> {
+    let words = &words[index..];
     let mut joined = String::new();
     let mut best = None;
     for count in 1..=MAX_SPAN_WORDS.min(words.len()) {
@@ -97,18 +122,94 @@ fn longest_match<'a>(
             break;
         }
         joined.push_str(&words[count - 1].key);
-        if let Some(target) = targets
-            .iter()
-            .find(|target| target.key == joined && target.words.is_none_or(|words| words == count))
-        {
-            best = Some((count, target.term));
+        if let Some(target) = targets.iter().find(|target| {
+            target.literal.is_none()
+                && target.key == joined
+                && target.words.is_none_or(|words| words == count)
+        }) {
+            best = Some(Found {
+                start: words[0].start,
+                end: words[count - 1].end,
+                next: index + count,
+                term: target.term,
+            });
         }
     }
     best
 }
 
+/// A literal target starting at this word, possibly with leading punctuation
+/// (".NET"). The longest literal wins; word boundaries are required on both sides.
+fn literal_match<'a>(
+    text: &str,
+    words: &[Word],
+    index: usize,
+    targets: &[Target<'a>],
+) -> Option<Found<'a>> {
+    let word_start = words[index].start;
+    targets
+        .iter()
+        .filter_map(|target| {
+            let literal = target.literal.as_deref()?;
+            let lead: String = literal
+                .chars()
+                .take_while(|ch| !part_of_word(*ch))
+                .collect();
+            let start = word_start.checked_sub(lead.len())?;
+            if text.get(start..word_start)? != lead {
+                return None;
+            }
+            let end = literal_end(text, start, literal)?;
+            let before = text[..start].chars().next_back();
+            let after = text[end..].chars().next();
+            (!before.is_some_and(part_of_word) && !after.is_some_and(part_of_word)).then(|| Found {
+                start,
+                end,
+                next: words
+                    .iter()
+                    .position(|word| word.start >= end)
+                    .unwrap_or(words.len()),
+                term: target.term,
+            })
+        })
+        .max_by_key(|found| found.end)
+}
+
+/// End of `literal` in `text` from `start`, case-insensitive, skipping spaces
+/// and hyphens between characters the way `squash` does.
+fn literal_end(text: &str, start: usize, literal: &str) -> Option<usize> {
+    let mut expected = literal.chars().peekable();
+    let mut end = start;
+    for (offset, ch) in text[start..].char_indices() {
+        let Some(&next) = expected.peek() else { break };
+        if loose(ch) && end > start {
+            continue;
+        }
+        if !ch.to_lowercase().eq(next.to_lowercase()) {
+            return None;
+        }
+        expected.next();
+        end = start + offset + ch.len_utf8();
+    }
+    expected.peek().is_none().then_some(end)
+}
+
 fn joinable(gap: &str) -> bool {
-    gap.chars().all(|ch| ch.is_whitespace() || ch == '-')
+    gap.chars().all(loose)
+}
+
+fn loose(ch: char) -> bool {
+    ch.is_whitespace() || ch == '-'
+}
+
+/// Punctuation that belongs to the term: anything besides letters, digits,
+/// spaces, hyphens and combining marks.
+fn significant_punctuation(form: &str) -> bool {
+    form.chars().any(|ch| !part_of_word(ch) && !loose(ch))
+}
+
+fn squash(form: &str) -> String {
+    nfc(form).chars().filter(|ch| !loose(*ch)).collect()
 }
 
 fn words(text: &str) -> Vec<Word> {
@@ -135,8 +236,13 @@ fn part_of_word(ch: char) -> bool {
     ch.is_alphanumeric() || ch == '_' || ('\u{0300}'..='\u{036f}').contains(&ch)
 }
 
+fn nfc(text: &str) -> Cow<'_, str> {
+    ComposingNormalizerBorrowed::new_nfc().normalize(text)
+}
+
 pub(super) fn key(text: &str) -> String {
-    text.chars()
+    nfc(text)
+        .chars()
         .filter(|ch| ch.is_alphanumeric())
         .flat_map(char::to_lowercase)
         .collect()
@@ -217,6 +323,39 @@ mod tests {
             apply("Gataborg för en FIKA, göteborg.", &entries),
             "Göteborg för en fika, Göteborg."
         );
+    }
+
+    #[test]
+    fn punctuated_terms_replace_the_whole_literal() {
+        let entries = [entry("C++", &[]), entry("C#", &[]), entry(".NET", &[])];
+        assert_eq!(
+            apply("c++ code, C++ and c# on .net", &entries),
+            "C++ code, C++ and C# on .NET"
+        );
+    }
+
+    #[test]
+    fn punctuated_terms_need_their_punctuation() {
+        let entries = [entry("C++", &[]), entry("Node.js", &[])];
+        assert_eq!(
+            apply("Plan C, node js and Node.js.", &entries),
+            "Plan C, node js and Node.js."
+        );
+    }
+
+    #[test]
+    fn decomposed_letters_match_composed_terms() {
+        let entries = [entry("Göteborg", &[])];
+        assert_eq!(apply("i go\u{308}teborg idag", &entries), "i Göteborg idag");
+    }
+
+    #[test]
+    fn exact_term_requires_the_whole_span() {
+        let entries = [entry("Supabase", &["Superbase"]), entry("Olle Dyberg", &[])];
+        assert_eq!(exact_term("Supabase,", &entries), Some("Supabase"));
+        assert_eq!(exact_term("Olle Dyberg", &entries), Some("Olle Dyberg"));
+        assert_eq!(exact_term("Supabase receipts", &entries), None);
+        assert_eq!(exact_term("Superbase", &entries), None);
     }
 
     #[test]
