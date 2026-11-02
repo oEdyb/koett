@@ -32,7 +32,7 @@ extension KoettController {
 
     private func presentTranscriptSaveOutcome(_ outcome: TranscriptPersistence.Outcome) {
         if let warning = outcome.warning {
-            recordingOverlay.showError(warning)
+            recordingOverlay.showError(warning, keepUntilClicked: true)
         }
         rebuildMenu()
     }
@@ -42,7 +42,7 @@ extension KoettController {
         transcriptPersistence.recoverInBackground { [weak self] outcome in
             guard let self else { return }
             if let warning = outcome.warning {
-                recordingOverlay.showError(warning)
+                recordingOverlay.showError(warning, keepUntilClicked: true)
                 fputs("Warning: \(warning)\n", stderr)
             }
             rebuildMenu()

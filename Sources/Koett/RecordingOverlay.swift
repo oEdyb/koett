@@ -73,7 +73,12 @@ final class PillPanel: NSPanel {
 
 @MainActor
 final class RecordingOverlayController: NSObject {
-    static let resultDisplayDuration: TimeInterval = 10
+    /// A pasted result stays this long unless hovered, then fades.
+    static let doneDisplayDuration: TimeInterval = 1.75
+    /// Media results take longer to arrive, so they stay longer.
+    static let mediaDisplayDuration: TimeInterval = 10
+    static let morphDuration: TimeInterval = 0.24
+    static let fadeDuration: TimeInterval = 0.25
 
     let pillView = PillView(
         frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight)
@@ -87,6 +92,13 @@ final class RecordingOverlayController: NSObject {
     private var timer: Timer?
     private var lastRedraw: TimeInterval = 0
     private var dismissWorkItem: DispatchWorkItem?
+    /// Set when a dismiss came due while hovered; the pill leaves once the pointer does.
+    private var dismissOnExit = false
+    private var morphTimer: Timer?
+    private var morphStartedAt: TimeInterval = 0
+    private var visibleGeneration = 0
+    /// True from `show` until the pill is hidden or starts fading out.
+    private(set) var isPresented = false
     private var resultText: String?
     private(set) var latestOutcome: RecordingOverlayOutcome?
     var isTrackingRecording: Bool { recorder?.isRecording == true }
@@ -103,14 +115,11 @@ final class RecordingOverlayController: NSObject {
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
             object: NSWorkspace.shared
         )
-        pillView.onHoverChange = { [weak self] in self?.layoutPanel() }
+        pillView.onHoverChange = { [weak self] in self?.hoverChanged() }
+        pillView.onDismiss = { [weak self] in self?.fadeOut() }
         pillView.pauseButton.action = { [weak self] in self?.togglePause() }
         pillView.historyButton.action = { [weak self] in
             guard let self else { return }
-            switch pillView.content {
-            case .done, .notPasted, .media: hide()
-            default: break
-            }
             onOpenHistory?()
         }
         pillView.copyButton.action = { [weak self] in self?.copyResult() }
@@ -191,12 +200,15 @@ final class RecordingOverlayController: NSObject {
         stop()
     }
 
-    /// Replaces the transcribing pill after a successful paste.
+    /// Morphs the transcribing pill, in place and at the same size, into the
+    /// pasted result with Copy, then fades it out shortly after.
     func showDone(text: String) {
         guard isShowingTranscribing else { return }
+        let from = pillView.content
         resultText = text
         show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
-        dismiss(after: Self.resultDisplayDuration)
+        startMorph(from: from)
+        dismiss(after: Self.doneDisplayDuration)
     }
 
     /// Replaces the transcribing pill when the text was saved but not pasted.
@@ -205,9 +217,10 @@ final class RecordingOverlayController: NSObject {
     func showNotPasted(text: String) -> Bool {
         guard isShowingTranscribing else { return false }
         resultText = text
+        let from = pillView.content
         show(.notPasted)
+        startMorph(from: from)
         recordFailure("Not pasted · text saved")
-        dismiss(after: Self.resultDisplayDuration)
         return true
     }
 
@@ -218,13 +231,17 @@ final class RecordingOverlayController: NSObject {
         show(.media(preview: message))
         latestOutcome = .result(message)
         onLatestOutcomeChange?()
-        dismiss(after: Self.resultDisplayDuration)
+        dismiss(after: Self.mediaDisplayDuration)
     }
 
-    func showError(_ text: String) {
-        showStatus(text)
+    /// Shows an error in the same 48 px row. One that holds text or audio to
+    /// rescue stays until clicked or replaced; others leave after five seconds.
+    func showError(_ text: String, keepUntilClicked: Bool = false) {
+        sketchSession = nil
+        pillView.timeline.reset()
+        show(.error(text))
         recordFailure(text)
-        dismiss(after: 5)
+        if !keepUntilClicked { dismiss(after: 5, holdWhileHovered: false) }
     }
 
     func recordFailure(_ text: String) {
@@ -262,6 +279,11 @@ final class RecordingOverlayController: NSObject {
     private func show(_ content: PillContent) {
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
+        dismissOnExit = false
+        stopMorph()
+        visibleGeneration += 1
+        isPresented = true
+        panel.alphaValue = 1
         isShowingTranscribing = false
         if case .recording = content {} else {
             timer?.invalidate()
@@ -277,6 +299,10 @@ final class RecordingOverlayController: NSObject {
     private func hide() {
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
+        dismissOnExit = false
+        stopMorph()
+        visibleGeneration += 1
+        isPresented = false
         timer?.invalidate()
         timer = nil
         recorder = nil
@@ -284,6 +310,67 @@ final class RecordingOverlayController: NSObject {
         resultText = nil
         pillView.setHovered(false)
         panel.orderOut(nil)
+        panel.alphaValue = 1
+    }
+
+    /// Hides like `hide()`, but the panel fades out instead of vanishing.
+    private func fadeOut() {
+        guard !reduceMotion, panel.isVisible else {
+            stop()
+            return
+        }
+        let generation = visibleGeneration + 1
+        let panel = panel
+        hide()
+        panel.orderFrontRegardless()
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = Self.fadeDuration
+            panel.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, self.visibleGeneration == generation else { return }
+                panel.orderOut(nil)
+                panel.alphaValue = 1
+            }
+        }
+    }
+
+    private func hoverChanged() {
+        layoutPanel()
+        if !pillView.hovered && dismissOnExit {
+            dismissOnExit = false
+            dismiss(after: 0.8)
+        }
+    }
+
+    private func startMorph(from: PillContent) {
+        guard case .transcribing = from, !reduceMotion else { return }
+        pillView.morphFrom = from
+        pillView.morph = 0
+        morphStartedAt = ProcessInfo.processInfo.systemUptime
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.advanceMorph() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        morphTimer = timer
+    }
+
+    private func advanceMorph() {
+        let t = min(1, (ProcessInfo.processInfo.systemUptime - morphStartedAt) / Self.morphDuration)
+        pillView.morph = CGFloat(Self.easeOut(t))
+        if t >= 1 { stopMorph() }
+    }
+
+    private func stopMorph() {
+        morphTimer?.invalidate()
+        morphTimer = nil
+        pillView.morphFrom = nil
+        pillView.morph = 1
+    }
+
+    static func easeOut(_ t: Double) -> Double {
+        let t = min(1, max(0, t))
+        return 1 - pow(1 - t, 3)
     }
 
     private func togglePause() {
@@ -298,20 +385,21 @@ final class RecordingOverlayController: NSObject {
         pasteboard.clearContents()
         if pasteboard.setString(resultText, forType: .string) {
             pillView.copyTitle = "Copied"
-            dismiss(after: 1.5)
+            dismissOnExit = false
+            dismiss(after: 1, holdWhileHovered: false)
         } else {
             pillView.copyTitle = "Copy failed"
         }
     }
 
-    private func dismiss(after delay: TimeInterval) {
+    private func dismiss(after delay: TimeInterval, holdWhileHovered: Bool = true) {
         dismissWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            if pillView.hovered && pillView.acceptsMouse {
-                dismiss(after: 1)
+            if holdWhileHovered && pillView.hovered && pillView.acceptsMouse {
+                dismissOnExit = true
             } else {
-                stop()
+                fadeOut()
             }
         }
         dismissWorkItem = workItem

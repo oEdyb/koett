@@ -83,7 +83,12 @@ Mac-specific choices:
   Memory holds 66 columns. The meter is sampled at 30 Hz even under Reduce
   Motion; only the redraw drops to 1 Hz.
 - Done and media results are one 300×48 row with Copy on the right, as before
-  the timeline. Not pasted keeps its 300×88 action row.
+  the timeline.
+- Every state is one 300×48 row (Linux table above uses 300×88 for results;
+  the Mac no longer does). Hover buttons replace the strip inside the row.
+  Done morphs in place from the transcribing pill (0.24 s, ease-out), stays
+  1.75 s unless hovered, then fades out. Not pasted (`Paste`, `Copy`) and
+  rescue errors stay until acted on.
 - `SketchEvent` mirrors the Rust struct (`index`, `startMs`, `endMs`, `live`)
   and upserts by index. Mac draw mode sends `SketchUpdate`s through
   `recordingOverlay.applySketch(_:session:)`, which accepts changes for the

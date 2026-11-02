@@ -14,11 +14,15 @@ final class PillButton: NSView {
         didSet { needsDisplay = true }
     }
     var action: (() -> Void)?
+    /// Drawn opacity, used while the pill morphs into a result.
+    var opacity: CGFloat = 1 {
+        didSet { needsDisplay = true }
+    }
     private var hovered = false
     private var trackingArea: NSTrackingArea?
 
     static let height: CGFloat = 26
-    private static let font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+    private static let font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
 
     init(title: String) {
         self.title = title
@@ -36,10 +40,11 @@ final class PillButton: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     var fittingWidth: CGFloat {
-        ceil(NSAttributedString(string: title, attributes: [.font: Self.font]).size().width) + 20
+        ceil(NSAttributedString(string: title, attributes: [.font: Self.font]).size().width) + 16
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        NSGraphicsContext.current?.cgContext.setAlpha(opacity)
         let shape = NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2)
         (hovered ? palette.buttonHover : palette.button).setFill()
         shape.fill()

@@ -7,7 +7,7 @@ extension KoettController {
             if transcriptPersistence.hasVolatileTranscripts {
                 recoverTranscripts()
                 guard !transcriptPersistence.hasVolatileTranscripts else {
-                    recordingOverlay.showError("Text in memory · Save failed · Copy Unsaved Transcripts")
+                    recordingOverlay.showError("Text in memory · Save failed · Copy Unsaved Transcripts", keepUntilClicked: true)
                     return .terminateCancel
                 }
             }

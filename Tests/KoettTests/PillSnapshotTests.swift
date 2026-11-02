@@ -27,7 +27,8 @@ final class PillSnapshotTests: XCTestCase {
         sketched.apply(SketchEvent(index: 2, startMs: 7_500, endMs: 10_750, live: true))
         let done = PillContent.done(preview: "Please buy milk and bread, and call the dentist on Friday about the appointment.")
 
-        let states: [(String, PillContent, PillTimeline, Bool, TimeInterval)] = [
+        let morphFrames: [CGFloat] = [0, 0.25, 0.5, 0.75, 1]
+        let plain: [(String, PillContent, PillTimeline, Bool, TimeInterval)] = [
             ("recording-0m05", .recording(paused: false), speech(seconds: 5), false, 5),
             ("recording-1m00", .recording(paused: false), speech(seconds: 60), false, 60),
             ("recording-5m00", .recording(paused: false), speech(seconds: 300), false, 300),
@@ -41,9 +42,14 @@ final class PillSnapshotTests: XCTestCase {
             ("not-pasted", .notPasted, PillTimeline(), false, 11),
             ("media", .media(preview: "Today we are looking at what local models can do"), PillTimeline(), false, 11),
             ("status", .status("Transcribing locally…"), PillTimeline(), false, 11),
+            ("error", .error("Dictation failed · Audio saved"), PillTimeline(), false, 11),
         ]
+        let morphStates: [(String, PillContent, PillTimeline, Bool, TimeInterval, CGFloat?)] = morphFrames.enumerated().map { index, morph in
+            ("morph-\(index)", done, short, false, 11, morph)
+        }
+        let states = morphStates + plain.map { ($0.0, $0.1, $0.2, $0.3, $0.4, CGFloat?.none) }
         for (appearanceName, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
-            for (name, content, timeline, hovered, elapsed) in states {
+            for (name, content, timeline, hovered, elapsed, morph) in states {
                 let view = PillView(frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight))
                 view.appearance = NSAppearance(named: appearance)
                 view.hasRecordingControls = true
@@ -53,6 +59,10 @@ final class PillSnapshotTests: XCTestCase {
                 view.elapsed = elapsed
                 view.spin = 1
                 view.content = content
+                if let morph {
+                    view.morphFrom = .transcribing(fraction: nil)
+                    view.morph = morph
+                }
                 view.setHovered(hovered)
                 view.frame.size.height = view.preferredHeight
                 let canvas = NSView(frame: view.frame.insetBy(dx: -12, dy: -12))
