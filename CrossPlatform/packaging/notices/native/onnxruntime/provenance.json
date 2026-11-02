@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "reviewed": "2026-10-30",
+  "archive": {
+    "url": "https://github.com/csukuangfj/onnxruntime-libs/releases/download/v1.27.1/onnxruntime-linux-x64-static_lib-1.27.1-glibc2_17.zip",
+    "asset_id": 488086792,
+    "created_at": "2026-07-24T06:18:00Z",
+    "updated_at": "2026-07-24T06:18:01Z",
+    "bytes": 23603000,
+    "sha256": "6b4df7fc46d3367b6be73fdea80dee323b9dc9eaa8dc50136a33d8524e7f06bb",
+    "contents": "headers and one libonnxruntime.a; no license files"
+  },
+  "library": {
+    "sha256": "9dbbd7bff1db5698d04ae6710a28e995a33d0409adc362f8ff2bb0bf7e8fc2ea",
+    "bytes": 109507520,
+    "matches_release_archive": true,
+    "member_count": 872,
+    "embedded_build_info": "ORT Build Info: git-branch=HEAD, git-commit-id=df2ba1cf8, fp8-kv-cache=1, build type=Release"
+  },
+  "onnxruntime_source": {
+    "repository": "https://github.com/microsoft/onnxruntime",
+    "tag": "v1.27.1",
+    "commit": "df2ba1cf8108aa63627cf4cdf8f807880b938616",
+    "third_party_notices_sha256": "0e07b95f3a8d6230037707c5c4a2b554d12c4cb67369669ac255635528ffcee2",
+    "third_party_notices_match_source": true
+  },
+  "builder": {
+    "repository": "https://github.com/csukuangfj/onnxruntime-build",
+    "commit": "d225cd6b04034501792fe4ae2183292a3cc41223",
+    "run_url": "https://github.com/csukuangfj/onnxruntime-build/actions/runs/30070551571",
+    "job_id": 89410313271,
+    "job_steps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Build addnab/docker-run-action@v3",
+        "conclusion": "success"
+      },
+      {
+        "name": "Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Cache build result for 1.27.1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Update ONNX Runtime",
+        "conclusion": "success"
+      },
+      {
+        "name": "Download protoc",
+        "conclusion": "success"
+      },
+      {
+        "name": "Set environment variable",
+        "conclusion": "success"
+      },
+      {
+        "name": "Display protoc info for 1.27.1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Show current directory",
+        "conclusion": "success"
+      },
+      {
+        "name": "Build onnxruntime 1.27.1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Collect result",
+        "conclusion": "success"
+      },
+      {
+        "name": "Upload v1.27.1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Publish to huggingface",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run actions/upload-artifact@v4",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Cache build result for 1.27.1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ],
+    "recipe": "build-provenance/.github/workflows/linux-217.yaml + build-static_lib.sh + static_lib/CMakeLists.txt + static_lib/bundle_static_library.cmake",
+    "configuration": "Release static; manylinux2014_x86_64; devtoolset-11; unit tests off; custom protoc21.12; default CPU provider; no GPU option requested",
+    "patch": "build-static_lib.sh removes SOVERSION line in cmake/onnxruntime.cmake; bundled exact recipe retains this change"
+  },
+  "coverage": {
+    "explicit_bundled_targets": [
+      "onnxruntime core/session/optimizer/providers/util/framework/graph/mlas/common/flatbuffers",
+      "onnx_test_data_proto",
+      "onnx",
+      "onnx_proto",
+      "libprotobuf-lite",
+      "re2",
+      "absl_base/throw_delegate/raw_hash_set/hash/city/low_level_hash",
+      "cpuinfo"
+    ],
+    "header_dependencies_notice_superset": [
+      "Eigen",
+      "FP16",
+      "nlohmann/json",
+      "Microsoft GSL",
+      "Boost mp11",
+      "SafeInt",
+      "date"
+    ],
+    "original_notices": "ThirdPartyNotices.txt matches exact ONNX Runtime source; dependencies/ additionally retains original license/copyright files at exact deps.txt archive identities",
+    "source_access": "SOURCE-ACCESS.md"
+  },
+  "limits": [
+    "Public run metadata and release digest establish a matching recipe/version/time, not a signed build attestation. Authenticated build logs were unavailable (HTTP403).",
+    "No independent rebuild or assertion of every archive member source correspondence. Explicit bundled target list and exact source dependency pins were reviewed.",
+    "No additional known missing native notice text remains for reviewed CPU configuration after source-access and original dependency notices are included. This is not universal license compliance."
+  ]
+}

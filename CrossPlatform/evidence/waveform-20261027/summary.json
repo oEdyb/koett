@@ -1,0 +1,42 @@
+{
+  "owned_files": [
+    "src/linux/recording_overlay.rs",
+    "src/linux/waveform.rs",
+    "src/linux/window.rs",
+    "scripts/test_linux_waveform.py",
+    "scripts/test_linux_ui.py (waveform assertions only)"
+  ],
+  "gates": {
+    "test": "85 passed; 3 existing ignored",
+    "clippy": "pass --all-targets -- -D warnings",
+    "release": "pass --release --locked",
+    "fmt": "pass",
+    "diff_check": "pass",
+    "python_compile": "pass",
+    "windows": "not run; no shared or Windows code changed"
+  },
+  "native_runs": [
+    "dynamic/results.json",
+    "light/results.json",
+    "reduced-clean/results.json"
+  ],
+  "key_artifacts": [
+    "dynamic/motion.gif",
+    "dynamic/motion-06-pill.png",
+    "light/motion-06-pill.png",
+    "light/transcribing-pill.png",
+    "dynamic/dynamic-reduced-pill.png",
+    "dynamic/dynamic-resumed-pill.png",
+    "reduced-clean/motion.gif"
+  ],
+  "limits": [
+    "Private KWin only; existing optional layer-shell support limits retained. No GNOME/X11 always-on-top claim.",
+    "Parent owns GTK4.6 floor build, independent reviews, final installation and project documentation.",
+    "One reused-session GTK/AT-SPI SIGSEGV retained in reduced-first-crash.log; clean-session reduced and subsequent dynamic lifecycle passed. No root cause established.",
+    "Early lab startup failures and corrected test harness failures retained; authoritative successful runs listed above.",
+    "Full existing test_linux_ui.py not rerun here; surgical waveform assertion updates compiled and behavior covered by focused native script."
+  ],
+  "host_app": "PID 1867818 untouched; no install or commit",
+  "release_sha256": "7b386d23ead0f911e4ec234e6572aa16d489171354e229329481072a358f2551",
+  "lab": "koett-waveform stopped"
+}

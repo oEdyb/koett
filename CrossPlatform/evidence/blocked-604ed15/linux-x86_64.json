@@ -1,0 +1,285 @@
+{
+  "artifact": {
+    "binary_bytes": 38141744,
+    "binary_format": "ELF64-x86_64",
+    "binary_path": "Koett-Linux-x86_64/koett",
+    "binary_sha256": "9a968b928252b9a536c13f1690281862df6ef9a4d6dad75718d5e65472b0b812",
+    "github_archive_bytes": 15015124,
+    "github_archive_sha256": "4fb96069abd0a80c8d684fd271ed35d8b6a4503944fce7191a7cdb2d9433a1e7",
+    "id": 9554518521,
+    "name": "Koett-Linux-x86_64",
+    "package_bytes": 15051818,
+    "package_sha256": "3d98cb89de3eb2d3a23a47ac67820f959bcc37c94c907dbec2223c5ab6b9fe18"
+  },
+  "control_commit": "604ed15e19b3cdeb1704aa8e658f98e5cbadb63c",
+  "inspection": {
+    "commands": [
+      [
+        "objdump",
+        "-p",
+        "Koett-Linux-x86_64/koett"
+      ],
+      [
+        "python-standard-library",
+        "ASCII-and-UTF-16LE-string-scan"
+      ]
+    ],
+    "imported_libraries": [
+      "ld-linux-x86-64.so.2",
+      "libasound.so.2",
+      "libc.so.6",
+      "libgcc_s.so.1",
+      "libm.so.6",
+      "libstdc++.so.6"
+    ],
+    "matched_indicators": [
+      "espeak",
+      "piper",
+      "tts"
+    ],
+    "string_evidence": {
+      "espeak": {
+        "match_count": 18,
+        "samples": [
+          "%s/espeak-ng-data",
+          "CallPhonemizeEspeak",
+          "ESPEAK_DATA_PATH",
+          "Failed to initialize espeak-ng with data dir: %s. Return code is: %d",
+          "Failed to phonemize '%s' with espeak-ng voice '%s': %s",
+          "Failed to set eSpeak-ng voice",
+          "It should require espeak-ng",
+          "The espeak-ng library has not been initialized",
+          "The requested functionality has not been built into espeak-ng",
+          "The specified espeak-ng voice does not exist",
+          "Use espeak-ng to handle the OOV: '%s'",
+          "Wrong version of espeak-ng-data",
+          "espeak",
+          "espeak: Bad intonation data",
+          "espeak: No envelope",
+          "has_espeak",
+          "use espeak for %s",
+          "use_espeak"
+        ],
+        "samples_truncated": false
+      },
+      "piper": {
+        "match_count": 7,
+        "samples": [
+          "/home/runner/work/sherpa-onnx/sherpa-onnx/sherpa-onnx/csrc/piper-phonemize-lexicon.cc",
+          "N11sherpa_onnx21PiperPhonemizeLexiconE",
+          "PiperPhonemesToIdsKitten",
+          "PiperPhonemesToIdsKokoroOrKitten",
+          "PiperPhonemesToIdsMatcha",
+          "PiperPhonemesToIdsVits",
+          "piper"
+        ],
+        "samples_truncated": false
+      },
+      "tts": {
+        "match_count": 43,
+        "samples": [
+          "*Z38SherpaOnnxOfflineTtsGenerateWithConfigEUlPKfifE_",
+          "*Z40SherpaOnnxOfflineTtsGenerateWithCallbackEUlPKfifE_",
+          "*Z47SherpaOnnxOfflineTtsGenerateWithCallbackWithArgEUlPKfifE_",
+          "*Z48SherpaOnnxOfflineTtsGenerateWithProgressCallbackEUlPKfifE_",
+          "*Z55SherpaOnnxOfflineTtsGenerateWithProgressCallbackWithArgEUlPKfifE_",
+          "GetOfflineTtsConfig",
+          "N11sherpa_onnx14MeloTtsLexiconE",
+          "N11sherpa_onnx14OfflineTtsImplE",
+          "N11sherpa_onnx16MatchaTtsLexiconE",
+          "N11sherpa_onnx18OfflineTtsFrontendE",
+          "N11sherpa_onnx18OfflineTtsVitsImplE",
+          "N11sherpa_onnx20OfflineTtsKittenImplE",
+          "N11sherpa_onnx20OfflineTtsKokoroImplE",
+          "N11sherpa_onnx20OfflineTtsMatchaImplE",
+          "N11sherpa_onnx20OfflineTtsPocketImplE",
+          "N11sherpa_onnx22OfflineTtsZipvoiceImplE",
+          "N11sherpa_onnx24OfflineTtsSupertonicImplE",
+          "N11sherpa_onnx27OfflineTtsCharacterFrontendE",
+          "OfflineTtsConfig(",
+          "OfflineTtsKittenImpl",
+          "OfflineTtsKittenModelConfig(",
+          "OfflineTtsKokoroImpl",
+          "OfflineTtsKokoroModelConfig(",
+          "OfflineTtsMatchaImpl",
+          "OfflineTtsMatchaModelConfig(",
+          "OfflineTtsModelConfig(",
+          "OfflineTtsPocketImpl",
+          "OfflineTtsPocketModelConfig(",
+          "OfflineTtsSupertonicImpl",
+          "OfflineTtsSupertonicModelConfig(",
+          "OfflineTtsVitsImpl",
+          "OfflineTtsVitsModelConfig(",
+          "OfflineTtsZipvoiceModelConfig(",
+          "SherpaOnnxCreateOfflineTts",
+          "SherpaOnnxOfflineTtsGenerate",
+          "SherpaOnnxOfflineTtsGenerateInternal",
+          "SherpaOnnxOfflineTtsGenerateWithCallback",
+          "SherpaOnnxOfflineTtsGenerateWithCallbackWithArg",
+          "SherpaOnnxOfflineTtsGenerateWithConfig",
+          "SherpaOnnxOfflineTtsGenerateWithProgressCallback"
+        ],
+        "samples_truncated": true
+      }
+    },
+    "symbol_or_header_evidence": {
+      "espeak": {
+        "match_count": 0,
+        "samples": [],
+        "samples_truncated": false
+      },
+      "piper": {
+        "match_count": 0,
+        "samples": [],
+        "samples_truncated": false
+      },
+      "tts": {
+        "match_count": 0,
+        "samples": [],
+        "samples_truncated": false
+      }
+    },
+    "tools": {
+      "objdump": {
+        "bytes": 118928,
+        "path": "/usr/bin/objdump",
+        "sha256": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818",
+        "version": "Apple LLVM version 21.0.0"
+      },
+      "python": {
+        "bytes": 34640,
+        "path": "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "sha256": "4f00ea2ad53d62437a6a3946b73c73614a97e8accdc5b96dc095ea1a0d9c6a56",
+        "version": "3.14.6"
+      }
+    }
+  },
+  "limitations": [
+    "Imported-library inspection does not identify code linked from static archives.",
+    "String matches are supporting evidence and are not sufficient alone.",
+    "The verified native inputs and callable/exported symbol evidence provide the stronger provenance evidence."
+  ],
+  "mac_model_cache_manifest": {
+    "bytes": 7397,
+    "file": "mac-model-cache.json",
+    "model_ids": [
+      "nemotron-speech-streaming-en-0.6b-560ms",
+      "parakeet-tdt-0.6b-v2"
+    ],
+    "sha256": "c17ff5c7ee059239389172231a6cbc57aecfc09b1dd235fb0dbff1797b261712",
+    "verified": true
+  },
+  "schema_version": 1,
+  "source_linkage_evidence": {
+    "crate": {
+      "build_rs_sha256": "4a39abcde016314654a82a332cd466f1d99d94ab241b0a695316207eaaf72274",
+      "bytes": 31477,
+      "sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493"
+    },
+    "native_archives": [
+      {
+        "asset_id": 509849908,
+        "bytes": 120217991,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/espeak-ng.lib"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib/lib/piper_phonemize.lib"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-win-x64-static-MT-Release-lib.tar.bz2",
+        "sha256": "b7080b6f470bac96ef0afe56b25ae9b2f9f0ca82d10dad19bf3a2fc5ffd6cffc"
+      },
+      {
+        "asset_id": 509858680,
+        "bytes": 22394054,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libespeak-ng.a"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-x64-static-lib/lib/libpiper_phonemize.a"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-linux-x64-static-lib.tar.bz2",
+        "sha256": "2ade8b7c62de66b9cf2e32bd7dbe077addaa4b18f422b49dc1bf3a1a0b1f762e"
+      },
+      {
+        "asset_id": 509806377,
+        "bytes": 20775501,
+        "component_evidence": {
+          "espeak": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libespeak-ng.a"
+            ],
+            "samples_truncated": false
+          },
+          "piper": {
+            "match_count": 1,
+            "samples": [
+              "sherpa-onnx-v1.13.5-linux-aarch64-static-lib/lib/libpiper_phonemize.a"
+            ],
+            "samples_truncated": false
+          },
+          "tts": {
+            "match_count": 0,
+            "samples": [],
+            "samples_truncated": false
+          }
+        },
+        "name": "sherpa-onnx-v1.13.5-linux-aarch64-static-lib.tar.bz2",
+        "sha256": "f78af8260892f3060c8c0aba9ae93e4e4c1b16fe509238b88e3688889235e1b2"
+      }
+    ],
+    "release_id": 368382218,
+    "schema_version": 1,
+    "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+    "source_tag": "v1.13.5",
+    "static_libraries_requested_by_build_script": [
+      "sherpa-onnx-c-api",
+      "sherpa-onnx-core",
+      "kaldi-decoder-core",
+      "sherpa-onnx-kaldifst-core",
+      "sherpa-onnx-fstfar",
+      "sherpa-onnx-fst",
+      "kaldi-native-fbank-core",
+      "kissfft-float",
+      "piper_phonemize",
+      "espeak-ng",
+      "ucd",
+      "onnxruntime",
+      "ssentencepiece_core"
+    ],
+    "verified": true
+  },
+  "verdict": "blocked",
+  "workflow_run": "https://github.com/oEdyb/koett/actions/runs/32824639724"
+}

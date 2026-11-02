@@ -1,0 +1,11 @@
+{
+  "binary": "/tmp/koett-x11-lifecycle-release",
+  "sha256": "03f901951be6bba12629aa7b1c55df0b3e19b31d9cd7b91945cc9e20ea084563",
+  "display": ":1",
+  "checks": [
+    "Double-clicking native recorder still captures grabbed chord and releases editing",
+    "Ask Reset cancels active Dictation recorder; old global shortcut still records",
+    "Closing active recorder then reopening allows capture; unsaved changes remain discarded"
+  ],
+  "pass": true
+}

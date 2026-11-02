@@ -1,0 +1,14 @@
+{
+  "runtime": {
+    "release": "b11981",
+    "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11981/llama-b11981-bin-ubuntu-x64.tar.gz",
+    "sha256": "sha256:78986f25ddf08ba9b2d81b53ab6a6d68ac9548ad8022c19df75920a55f6d84ac",
+    "evaluation_only": true
+  },
+  "model": {
+    "revision": "ee2c0f56e56345f475749a44ff2893e21c3cb292",
+    "bytes": 484219808,
+    "sha256": "3b41ebe2502cbd03e811d5d16b022f5ab551eda58d62597d152f89535003c634"
+  },
+  "scope": "Private CPU-only two-core agent-lab; no installation"
+}

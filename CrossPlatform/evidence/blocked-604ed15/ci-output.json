@@ -1,0 +1,51 @@
+{
+  "head_commit": "604ed15e19b3cdeb1704aa8e658f98e5cbadb63c",
+  "jobs": [
+    {
+      "job_id": 97729880263,
+      "log_bytes": 58507,
+      "log_sha256": "02ef529f082596a5a545e77535fbec9f02d1ae4b74cb41c8729b576290e38345",
+      "name": "windows",
+      "required_outputs": [
+        "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+        "test result: ok. 33 passed; 0 failed; 1 ignored",
+        "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+        "source=official-model-sample audio_seconds=7.435 transcribe_ms=180.7 realtime_factor=0.02430",
+        "self_test=passed",
+        "long_self_test=passed sample_rate=44100 audio_seconds=420.000 transcribe_ms=75.0 realtime_factor=0.00018 recognized_starts=57 recognized_ends=56 short_utterance=passed"
+      ]
+    },
+    {
+      "job_id": 97729880348,
+      "log_bytes": 90678,
+      "log_sha256": "877228eeebd5fa4400f28f14a74f7ad26bae6f8536874c8557b62c36b37a6b77",
+      "name": "linux (ubuntu-22.04, x86_64)",
+      "required_outputs": [
+        "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+        "test result: ok. 31 passed; 0 failed; 1 ignored",
+        "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+        "source=official-model-sample audio_seconds=7.435 transcribe_ms=187.6 realtime_factor=0.02523",
+        "self_test=passed"
+      ]
+    },
+    {
+      "job_id": 97729880478,
+      "log_bytes": 86244,
+      "log_sha256": "ba8ce476cb1e1968c057276b8e18e6ff037315fc5b1963a402625aa81d691251",
+      "name": "linux (ubuntu-22.04-arm, arm64)",
+      "required_outputs": [
+        "rustc 1.92.0 (ded5c06cf 2025-12-08)",
+        "test result: ok. 31 passed; 0 failed; 1 ignored",
+        "official-model-sample\tWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+        "source=official-model-sample audio_seconds=7.435 transcribe_ms=131.5 realtime_factor=0.01769",
+        "self_test=passed"
+      ]
+    }
+  ],
+  "log_archive_bytes": 54444,
+  "log_archive_sha256": "7b5f59910a0b7338f84aa4701c94526b3b412c00575478716872339fd42907d6",
+  "run_attempt": 1,
+  "run_id": 32824639724,
+  "schema_version": 1,
+  "verified": true
+}

@@ -1,0 +1,31 @@
+{
+  "installed": {
+    "sha256": "874cd0145ed5bfca8b0f3b1ecc1d58554a120397c6e949a10fa4777a85b28aa2",
+    "bytes": 48889968,
+    "backup": "/home/olle/.local/state/koett/install-backups/20261028T230555Z/koett",
+    "restarted": true,
+    "restart_deferred": false,
+    "pid": 3470461,
+    "preferences_preserved": true
+  },
+  "floor": {
+    "os": "Ubuntu 22.04",
+    "gtk": "4.6.9",
+    "glibc_max": "2.34",
+    "native_ui": "floor-ui-results.json",
+    "xvfb_clipboard_consumption": "skipped; exact Copy covered by private Wayland native proof"
+  },
+  "source_only_windows_check": "passed with DOCS_RS=1 LIBSQLITE3_SYS_USE_PKG_CONFIG=1 PKG_CONFIG_ALLOW_CROSS=1",
+  "rust_1_92_check": "pass",
+  "python_unit_tests": 29,
+  "heldout_reviews": {
+    "code/A": "no high-confidence actionable findings",
+    "code/B": "no high-confidence actionable findings"
+  },
+  "limits": [
+    "live desktop theme setting changes not manually exercised",
+    "physical input, portal injection and X11 paste consumption not rerun",
+    "Mac execution deferred"
+  ],
+  "selected_screenshots": "inspection/; raw captures and full transient state remain locally; no personal transcripts included"
+}

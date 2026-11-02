@@ -1,0 +1,10 @@
+   Compiling sherpa-onnx-sys v1.13.5 (/home/olle/dev/koett/CrossPlatform/vendor/sherpa-onnx-sys)
+   Compiling sherpa-onnx v1.13.5
+   Compiling koett-engine v0.1.0 (/home/olle/dev/koett/CrossPlatform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.47s
+     Running unittests src/lib.rs (target/debug/deps/koett_engine-1aedc86df496a484)
+
+running 1 test
+test transcription::tests::realtime_factor_uses_transcription_over_audio ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 149 filtered out; finished in 0.00s

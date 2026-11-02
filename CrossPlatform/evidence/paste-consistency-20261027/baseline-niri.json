@@ -1,0 +1,9 @@
+{
+  "backend": "wtype/niri",
+  "checks": [
+    "GUI Ctrl+V consumed actual ASR text after typed Swedish prefix",
+    "GUI exact Swedish/Japanese Unicode, typing during capture and Enter preserved",
+    "kitty Ctrl+Shift+V exact Unicode consumed once; typing and Enter preserved",
+    "focus changed to Settings: clipboard only, terminal unchanged, final text saved"
+  ]
+}

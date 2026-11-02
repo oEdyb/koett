@@ -1,0 +1,10 @@
+{
+  "restart_copy_exact": true,
+  "paste_focus_guard": true,
+  "two_unsaved_copy_retry_quit": true,
+  "sqlite_once": true,
+  "missing_mic_capture_warning": true,
+  "no_success_wav": true,
+  "explicit_fixture_quit_anyway": true,
+  "cli_exit_codes": true
+}

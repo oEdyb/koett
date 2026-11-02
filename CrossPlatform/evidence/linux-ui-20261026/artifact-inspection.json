@@ -1,0 +1,39 @@
+{
+  "binary_sha256": "78bae91271891412952a616a0d247384104df06df553f58a8c549410409aabe7",
+  "binary_bytes": 48483416,
+  "glibc_max": "2.34",
+  "forbidden_symbols": {
+    "espeak": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    },
+    "piper": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    },
+    "tts": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    }
+  },
+  "forbidden_strings": {
+    "espeak": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    },
+    "piper": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    },
+    "tts": {
+      "match_count": 0,
+      "samples": [],
+      "samples_truncated": false
+    }
+  }
+}

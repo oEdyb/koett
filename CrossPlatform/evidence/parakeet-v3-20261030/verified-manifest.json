@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "app_model_schema_version": 1,
+  "model_id": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+  "purpose": "NVIDIA Parakeet v3 multilingual (25 European languages including English and Swedish, automatic language detection); k2-fsa ONNX int8 conversion with Silero voice activity detection",
+  "artifacts": [
+    {
+      "id": "asr",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
+      "immutable_revision": "github-release:130628817/asset:283097583/sha256:5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+      "bytes": 487170055,
+      "sha256": "5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+      "license": "CC-BY-4.0",
+      "upstream_reference_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3"
+    },
+    {
+      "id": "vad",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+      "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "license": "MIT",
+      "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+    }
+  ],
+  "files": [
+    {
+      "artifact": "asr",
+      "path": "tokens.txt",
+      "bytes": 93939,
+      "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d"
+    },
+    {
+      "artifact": "asr",
+      "path": "joiner.int8.onnx",
+      "bytes": 6355277,
+      "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3"
+    },
+    {
+      "artifact": "asr",
+      "path": "decoder.int8.onnx",
+      "bytes": 11845275,
+      "sha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e"
+    },
+    {
+      "artifact": "asr",
+      "path": "encoder.int8.onnx",
+      "bytes": 652184281,
+      "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/en.wav",
+      "bytes": 184608,
+      "sha256": "148b936b43ce7c546a866e64da059f0458aee2d65e617f16e9d94f06e8d99ed6"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/fr.wav",
+      "bytes": 219180,
+      "sha256": "b59be4349b92d344fb903677165eaf4694025d1ab119c608726ecbcb3164b528"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/es.wav",
+      "bytes": 235052,
+      "sha256": "49fd2cfa4b62db7068143c582b35de9d31ec2733495ece3611105131d21de06c"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/de.wav",
+      "bytes": 121388,
+      "sha256": "36d3c4845b9808a1656a2a2e92d884590e2db94389e6fe559643291ae0cd3710"
+    },
+    {
+      "artifact": "vad",
+      "path": "silero_vad.onnx",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    }
+  ]
+}

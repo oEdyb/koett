@@ -1,0 +1,82 @@
+{
+  "checks": [
+    "native keyboard menu has named items; Copy last disabled before a result; Escape closes",
+    "Ctrl+F focuses search; Ctrl+, and real tray Settings reuse drafts; native menu and visible header open Settings",
+    "native History and Hide route correctly; actual tray activation reopens without recording",
+    "native menu fits normal and narrow widths (requested 960/460; GTK enforces minimum); actual private pointer opens and Escape closes",
+    "real tray Record/Stop; native menu remains usable with disabled Transcribing; extra Start rejected",
+    "second complete dictation and ASR cycle leave target active and typed contents unchanged",
+    "Copy last becomes enabled after real private dictation; clipboard exactly matches persisted ASR result",
+    "real unavailable-input failure exposes Retry in tray and History",
+    "native menu Quit quits only owned test app"
+  ],
+  "actual_window_sizes": {
+    "normal": [
+      960,
+      680
+    ],
+    "narrow": [
+      500,
+      600
+    ]
+  },
+  "menu_accessible_names": [
+    "History",
+    "Copy last transcript",
+    "Settings",
+    "Hide window",
+    "Quit Koett"
+  ],
+  "busy_tray": [
+    [
+      1,
+      {
+        "enabled": "0",
+        "label": "Transcribing\u2026"
+      }
+    ],
+    [
+      2,
+      {
+        "type": "separator"
+      }
+    ],
+    [
+      3,
+      {
+        "enabled": "0",
+        "label": "Transcribing\u2026"
+      }
+    ],
+    [
+      4,
+      {
+        "label": "Settings"
+      }
+    ],
+    [
+      5,
+      {
+        "label": "History"
+      }
+    ],
+    [
+      6,
+      {
+        "type": "separator"
+      }
+    ],
+    [
+      7,
+      {
+        "icon-name": "application-exit-symbolic",
+        "label": "Quit Koett"
+      }
+    ]
+  ],
+  "renderer": "cairo",
+  "app_cpu_affinity": "one inherited allowed CPU to expose real ASR busy state",
+  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "theme": "dark",
+  "tray": "disposable private watcher and actual dbusmenu dispatch; no rendered tray host"
+}

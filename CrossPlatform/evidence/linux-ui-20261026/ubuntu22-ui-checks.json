@@ -1,0 +1,12 @@
+[
+  "failed model exposes Retry",
+  "initial page has exactly 50 summaries and newest full text",
+  "bounded chronological paging",
+  "search, clear and explicit selection",
+  "SKIP clipboard: wl-copy/wl-paste and Wayland required",
+  "native Export chooser writes exact plain text",
+  "native settings persist microphone ID, shortcut, replacement and media choice",
+  "settings reopen and system default microphone",
+  "failed-model Retry loads real model and reaches Ready",
+  "empty history has Record and no blank editor actions"
+]

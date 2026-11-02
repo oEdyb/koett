@@ -1,0 +1,169 @@
+{
+  "gaps": [
+    {
+      "component": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8@157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:model:sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8@5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:model:sherpa-onnx-nemo-parakeet-tdt-ctc-110m-int8@17f945007b52ccd8b7200ffc7c5652e9e8e961dfdf479cefcabd06cf5703630b",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:model:sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25@78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
+      "group": "model",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "koett:native:fastcluster@FluidAudio-0.15.6",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:github/FluidInference/text-processing-rs@v0.3.0",
+      "group": "native-library",
+      "reason": "license-or-attribution-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/block2@0.6.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/clipboard-win@5.4.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/dispatch2@0.3.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/jni-macros@0.22.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/jni-sys-macros@0.4.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/jni@0.22.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/ndk-context@0.1.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/ndk-sys@0.6.0+11769913",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/ndk@0.9.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-app-kit@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-audio-toolbox@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-avf-audio@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-audio-types@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-audio@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-foundation@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-core-graphics@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-encode@4.1.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2-io-surface@0.3.2",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/objc2@0.6.4",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/r-efi@6.0.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/rsqlite-vfs@0.2.0",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/rustls-platform-verifier-android@0.1.1",
+      "group": "rust-package",
+      "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+      "group": "swift-package",
+      "reason": "license-or-attribution-not-bundled"
+    }
+  ],
+  "schema": 1,
+  "status": "known-gaps-block-release-compliance",
+  "summary": {
+    "gaps": 32
+  }
+}

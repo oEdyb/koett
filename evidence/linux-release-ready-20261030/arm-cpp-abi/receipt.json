@@ -1,0 +1,43 @@
+{
+  "failed_commit": "7bb56f8",
+  "failed_run": 40988239436,
+  "job": 123844181640,
+  "observed_failure": "free(): invalid pointer after model_ready=true, runtime self-test exit134",
+  "confirmed_mismatch": "build forced _GLIBCXX_USE_CXX11_ABI=0 on an ARM archive using ABI1",
+  "arm_archive": {
+    "url": "https://github.com/csukuangfj/onnxruntime-libs/releases/download/v1.27.1/onnxruntime-linux-aarch64-static_lib-1.27.1-glibc2_17.zip",
+    "sha256": "051131cfe80d07257631311f0b1f726b7302e85e1c7e2176cb84e461eea1fe27",
+    "bytes": 21617816,
+    "library_sha256": "d4e24750438ffd374349355ef5bf1f623f0b8996814c4b3e3adc7ad46cc8b1ec",
+    "new_string_abi_defined_symbols": 39763,
+    "old_string_abi_defined_symbols": 0
+  },
+  "x64_archive": {
+    "sha256": "6b4df7fc46d3367b6be73fdea80dee323b9dc9eaa8dc50136a33d8524e7f06bb",
+    "new_string_abi_defined_symbols": 0,
+    "old_string_abi_defined_symbols": 40873
+  },
+  "static_builder": {
+    "source_commit": "d225cd6b04034501792fe4ae2183292a3cc41223",
+    "arm_workflow": "https://github.com/csukuangfj/onnxruntime-build/blob/d225cd6b04034501792fe4ae2183292a3cc41223/.github/workflows/aarch64-217.yaml",
+    "arm_run": "https://github.com/csukuangfj/onnxruntime-build/actions/runs/30070551635",
+    "x64_run": "https://github.com/csukuangfj/onnxruntime-build/actions/runs/30070551571"
+  },
+  "fixes": [
+    "target-specific C++ ABI",
+    "actual archive symbol check before valid native marker",
+    "failed staging invalidates stale marker",
+    "self-test stage markers and failure-only native backtrace artifact"
+  ],
+  "local_checks": {
+    "rust_tests_passed": 148,
+    "rust_tests_ignored": 10,
+    "python_tests_passed": 65,
+    "two_independent_reviews": "no findings",
+    "real_x64_archive_staging": "passed, identical library hashes/marker",
+    "real_x64_model_self_test": "passed",
+    "cpp_abi_swaps_and_unknown_or_mixed_symbols": "rejected"
+  },
+  "remaining": "native ARM rebuild and inference must pass in CI; abort resolution not yet verified",
+  "host_desktop_or_app_changed": false
+}

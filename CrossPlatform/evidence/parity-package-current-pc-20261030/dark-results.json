@@ -1,0 +1,23 @@
+[
+  "real CLI forwards GTK-cached activation tokens; recording IPC stays plain",
+  "failed model exposes Retry",
+  "initial page has exactly 50 summaries and newest full text",
+  "bounded chronological paging",
+  "search, clear and explicit selection",
+  "native Copy preserves exact selected text",
+  "native Export chooser writes exact plain text",
+  "Settings activates and repeated requests reuse one window",
+  "Settings level-only preview: private signal, silence, unsaved input switching and one owned stream; no settings write",
+  "native settings persist microphone ID, shortcut, replacement and media choice",
+  "native Paste shortcut selection persists through Save/reopen and restores Ctrl+V",
+  "preview unavailable-device error has zero level and no fallback; unsaved selection recovers; close releases stream",
+  "settings reopen and system default microphone",
+  "failed-model Retry loads real model and reaches Ready",
+  "empty history has Record and no blank editor actions",
+  "background history search and clear remain responsive during real capture without focus theft",
+  "stop lifecycle observed: completed",
+  "Settings preview yields its sole stream to dictation, accepts unsaved input changes while paused, and resumes afterward",
+  "capture failure leaves no stale pill; pill pointer region passes clicks to target",
+  "real meter responds to private audio; typing remains in target during capture; Settings capture preserves focus and avoids paste",
+  "native layer pill above owned target, nonactivating start/stop, completion cleanup, Settings activation"
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "main",
+    "role": "desktop frame",
+    "states": "[]"
+  },
+  {
+    "name": "xdg-desktop-portal-gtk",
+    "role": "application",
+    "states": "[]"
+  }
+]

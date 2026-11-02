@@ -1,0 +1,7 @@
+{
+  "version": "4.24.1",
+  "source": "https://download.gnome.org/sources/gtk/4.24/gtk-4.24.1.tar.xz",
+  "source_sha256": "e98abe720e16129c8c0f50761dee0a2e9ae2478055e31018f6cf977fcf6513e9",
+  "patch_commit": "21d3eb76b68d6758122eddaf00b5823f9b2d7f34",
+  "patch_sha256": "f2d4b12c7dcd5bd98cf20df429fac67ba764fb0dac42271f4d58eafb06840535"
+}

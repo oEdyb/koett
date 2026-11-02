@@ -1,0 +1,7 @@
+{
+  "archive": "/home/olle/dev/koett/CrossPlatform/target/x86_64-pc-windows-msvc/debug/libsherpa_onnx.rlib",
+  "tts_native_undefined": [],
+  "asr_native_undefined_count": 38,
+  "source": "path+file:///home/olle/dev/koett/CrossPlatform/vendor/sherpa-onnx#1.13.5",
+  "scope": "Windows COFF Rust wrapper build and undefined-symbol inspection only; no native Windows linker execution"
+}

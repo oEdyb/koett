@@ -1,0 +1,5 @@
+{
+  "url": "https://github.com/rustsec/rustsec/releases/download/cargo-audit/v0.22.2/cargo-audit-x86_64-unknown-linux-musl-v0.22.2.tgz",
+  "sha256": "7fb9497f8594b389e5fce5ef9b92db08432996895b2e0c5a0167a69ed445c428",
+  "registry_checksum": "700c2b240f7fd330c24b675fe429f73a5b676531fcc6300400b2b67f155ba12a"
+}

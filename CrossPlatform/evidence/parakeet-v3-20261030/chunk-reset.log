@@ -1,0 +1,16 @@
+   Compiling koett-engine v0.1.0 (/home/olle/dev/koett/CrossPlatform)
+    Finished `release` profile [optimized] target(s) in 0.44s
+     Running `target/release/examples/parakeet_v3_probe /home/olle/.cache/koett/model-evaluations/parakeet-v3/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8`
+/work/CrossPlatform/native-build/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 24000
+   output_sample_rate: 16000
+
+/work/CrossPlatform/native-build/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 24000
+   output_sample_rate: 16000
+
+/work/CrossPlatform/native-build/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 24000
+   output_sample_rate: 16000
+
+{"chunked_long_seconds_at_least":65,"english":"Ask not what your country can do for you, ask what you can do for your country.","short_after_long_exact":true,"short_reset_exact":true}

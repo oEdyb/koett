@@ -1,0 +1,87 @@
+{
+  "branch": "feat/linux-ui-history",
+  "implementation_files": [
+    "src/linux.rs",
+    "src/linux/settings_view.rs",
+    "src/linux/input_preview.rs",
+    "src/linux/window.rs",
+    "src/linux/recording_overlay.rs",
+    "src/linux/feedback.rs",
+    "src/audio/preview.rs",
+    "scripts/test_linux_feedback.py",
+    "scripts/test_linux_ui.py"
+  ],
+  "source_sha256": {
+    "src/linux.rs": "2a55ab9ca975757978ceea88cfb7d05167c1b6e3495311275cae72bce0302fb7",
+    "src/linux/settings_view.rs": "a9697ea321aa95fb5b755d5fcf26d8b2dfb403941b320a00c11e5500fdc0fd35",
+    "src/linux/input_preview.rs": "98097f6946b9f395379e2182f7adc6e2290120c5b4fee0927e7d25638396b4e0",
+    "src/linux/window.rs": "e9e92aa7eaed7abdee35b35c4b5cca7b6b2b333ce4414461cbdcbc1491f8bf93",
+    "src/linux/recording_overlay.rs": "3e40ef4da9a54ede0bdb2f44a4b9971e83e1c84667d32f335c6733251f6724b0",
+    "src/linux/feedback.rs": "17208371d98dedc406dc9ff3cb6ab23ffb4a532b74f5678b3d0cfcaf3304aadc",
+    "src/audio/preview.rs": "b5648d10137d93625c28b73349f0006e1a36ccbd72b3eca287ccb8c8199d878a",
+    "scripts/test_linux_feedback.py": "ec0494d16f46923278a83e221a495b43e14c9c562a54f58f4c3a946c13e36be7",
+    "scripts/test_linux_ui.py": "330635533c4710a3a63c1ad527fdac7230b4f4d76d98fe5f186fc425d9474504"
+  },
+  "binary_sha256": "8798fb2e1351b1dd964cf10974d1a24b1adbede229654ba97971df86bac8a34e",
+  "native_library_marker": "koett-asr-only-v1\nsource=3dc7c569f31ca2cd4a20ed6f7db780327e6714c5\ntarget=x86_64-unknown-linux-gnu\n",
+  "gates": {
+    "cargo fmt --check": "pass",
+    "cargo test --locked": "88 passed, 3 intentional ignores",
+    "cargo clippy --locked --all-targets -- -D warnings": "pass",
+    "cargo build --release --locked": "pass",
+    "git diff --check": "pass",
+    "Python harness py_compile": "pass"
+  },
+  "passed_native_runs": [
+    "dark-09",
+    "light-verified"
+  ],
+  "settings_render_run": "light-render (explicit Cairo, Settings-only)",
+  "native_checks": [
+    "all four native sections and persistent Save at default 460px; hidden Audio releases capture",
+    "native tab keyboard access",
+    "paste shortcut and exact replacement persist; invalid Save selects Text and focuses phrase",
+    "real private CPAL Settings capture warns on sustained silence and loud synthetic input",
+    "recording uses one real stream, preview yields; real pill warnings clear across capture lifecycle",
+    "guarded clipboard-only and controlled external clipboard failure retain exact ASR text; recovery Copy matches SQLite bytes without focus change",
+    "next capture clears recovery; 20-second timeout hides pill, retains Copy last, and restores Ready"
+  ],
+  "limits": [
+    "Synthetic private audio and bundled public ASR sample; no physical microphone or host desktop interaction.",
+    "Private KWin Wayland fallback output path tested; X11, portal-injection failures, and unsupported-overlay compositor not rerun here. Parent owns Ubuntu22/GTK4.6 native floor rerun.",
+    "Existing test_linux_ui.py section navigation adapted and py_compiled; full rerun belongs to parent.",
+    "No new explicit reduced-motion native run; existing waveform reduced-motion unit tests passed and waveform mechanism preserved."
+  ],
+  "lab": "koett-feedback stopped; own test processes exited",
+  "commits_or_pushes": false,
+  "screenshots": [
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/capture-no-input.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/capture-too-loud.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/delivery-recovery-before-copy.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/delivery-recovery-copied.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/delivery-recovery.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/invalid-selects-text.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/main-narrow.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/preview-no-input.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/preview-too-loud.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/recovery-expired.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/settings-audio.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/settings-general.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/settings-shortcuts.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/dark-09/settings-text.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/capture-no-input.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/capture-too-loud.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/delivery-recovery-before-copy.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/delivery-recovery-copied.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/delivery-recovery.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/invalid-selects-text.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/main-narrow.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/preview-no-input.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/preview-too-loud.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/recovery-expired.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/settings-audio.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/settings-general.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/settings-shortcuts.png",
+    "/home/olle/dev/koett/CrossPlatform/evidence/feedback-20261027/light-verified/settings-text.png"
+  ]
+}

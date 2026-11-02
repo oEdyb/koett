@@ -1,0 +1,35 @@
+           PID: 2278484 (koett)
+           TID: 2278484 (koett)
+           UID: 1000 (olle)
+           GID: 1000 (olle)
+        Signal: 11 (SEGV) si_code: SEGV_MAPERR
+     Timestamp: Thu 2026-10-29 16:51:16 CET (10min ago)
+  Command Line: /home/olle/dev/koett/CrossPlatform/target/release/koett
+    Executable: /home/olle/dev/koett/CrossPlatform/target/release/koett
+ Control Group: /user.slice/user-1000.slice/user@1000.service/agents.slice/agents-lab.slice/agent-lab-koett-shortcuts-parent-client-156d4f75.scope
+          Unit: user@1000.service
+     User Unit: agent-lab-koett-shortcuts-parent-client-156d4f75.scope
+         Slice: user-1000.slice
+     Owner UID: 1000 (olle)
+       Boot ID: de6dfd85461a4974b5511682f69e0cdc
+    Machine ID: 0f2ba4eed56843c8a6bb238444577502
+      Hostname: PC
+       Storage: /var/lib/systemd/coredump/core.koett.1000.de6dfd85461a4974b5511682f69e0cdc.2278484.1793289076000000.zst (present)
+  Size on Disk: 102.5M
+       Message: Process 2278484 (koett) of user 1000 dumped core.
+
+                Stack trace of thread 2278484:
+                #0  0x00007f44f28d6dd6 g_variant_builder_add_value (libglib-2.0.so.0 + 0xd4dd6)
+                #1  0x00007f44f28d715a n/a (libglib-2.0.so.0 + 0xd515a)
+                #2  0x00007f44f28d714e n/a (libglib-2.0.so.0 + 0xd514e)
+                #3  0x00007f44f28d796a g_variant_new_va (libglib-2.0.so.0 + 0xd596a)
+                #4  0x00007f44f28d7b65 g_variant_new (libglib-2.0.so.0 + 0xd5b65)
+                #5  0x00007f44f3240c5f n/a (libgtk-4.so.1 + 0x440c5f)
+                #6  0x00007f44f2b2e79a n/a (libgio-2.0.so.0 + 0x12e79a)
+                #7  0x00007f44f2870c35 n/a (libglib-2.0.so.0 + 0x6ec35)
+                #8  0x00007f44f2872068 n/a (libglib-2.0.so.0 + 0x70068)
+                #9  0x00007f44f28721c2 g_main_context_iteration (libglib-2.0.so.0 + 0x701c2)
+                #10 0x00007f44f2afaffe g_application_run (libgio-2.0.so.0 + 0xfaffe)
+                #11 0x0000561c159b0de8 _ZN5ashpd8registry33register_host_app_with_connection28_$u7b$$u7b$closure$u7d$$u7d$17h2cb78d1d72adc935E (/home/olle/dev/koett/CrossPlatform/target/release/koett (deleted) + 0xae4de8)
+                #12 0x00007fff979c3000 n/a (n/a + 0x0)
+                ELF object binary architecture: AMD x86-64

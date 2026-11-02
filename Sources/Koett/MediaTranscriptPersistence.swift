@@ -38,7 +38,7 @@ enum MediaTranscriptPersistence {
             return Outcome(
                 fileURL: nil,
                 recoveryRecord: record,
-                recoveryOutcome: recovery.persist(record)
+                recoveryOutcome: await recovery.persistAsync(record)
             )
         }
     }

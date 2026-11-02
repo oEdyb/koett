@@ -1,0 +1,191 @@
+   Compiling sherpa-onnx-sys v1.13.5 (/home/olle/dev/koett/CrossPlatform/vendor/sherpa-onnx-sys)
+   Compiling koett-engine v0.2.0-linux.1 (/home/olle/dev/koett/CrossPlatform)
+   Compiling sherpa-onnx v1.13.5
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.30s
+     Running unittests src/lib.rs (target/debug/deps/koett_engine-d29ff9c3475fb445)
+
+running 158 tests
+test assistant::speech::transport::fixture::private_wss_playback ... ignored, requires private koett-speech lab and local TLS fixture
+test assistant::speech::transport::tests::request_trace_is_compiled_out ... ok
+test assistant::speech::lead::tests::strips_links_and_code ... ok
+test assistant::speech::lead::tests::streamed_boundary_and_limit ... ok
+test assistant::speech::transport::tests::rejects_invalid_pcm ... ok
+test assistant::tests::exact_request_has_only_question_and_single_image ... ok
+test assistant::tests::invalid_configuration_and_secret_rejected_before_external_io ... ok
+test audio::preview::tests::missing_selected_preview_never_uses_recording_fallback ... ignored, requires the private koett-last-recovery agent-lab
+test assistant::tests::cancellation_before_answer_start_never_opens_secret_service_or_cloud ... ok
+test audio::tests::levels_report_rms_and_peak ... ok
+test assistant::tests::stream_survives_every_utf8_fragment_boundary_and_retains_partial_on_disconnect ... ok
+test audio::tests::empty_recording_is_rejected ... ok
+test audio::tests::collector_keeps_recovery_audio_and_forwards_the_same_samples ... ok
+test audio::tests::live_levels_convert_integer_stereo_and_reset_for_silence ... ok
+test audio::tests::duration_uses_sample_count_and_rate ... ok
+test assistant::tests::malformed_empty_oversized_streams_fail_closed ... ok
+test assistant::tests::local_protocol_fixture_observes_only_single_question_image_and_streams_answer ... ok
+test assistant::screen::descriptor_tests::restricted_fd_survives_exec_even_when_already_at_target ... ok
+test audio::tests::missing_input_chooses_builtin_then_default_then_first ... ok
+test audio::tests::recoverable_stream_notices_do_not_discard_recording ... ok
+test audio::tests::streaming_queue_overflow_preserves_captured_audio ... ok
+test formatting::settings_tests::rejects_truncated_output ... ok
+test formatting::settings_tests::all_control_values_round_trip_and_raw_is_default ... ok
+test formatting::tests::official_control_line_and_greedy_request ... ok
+test history::recovery::tests::failed_media_and_blank_dictation_preserve_last ... ok
+test formatting::tests::rejects_empty_missing_and_invalid_output ... ok
+test history::tests::benchmark_100k ... ignored, explicit 100k-entry performance measurement
+test formatting::lifecycle_tests::dead_owned_child_is_rejected_and_reaped ... ok
+test assistant::tests::oversized_completed_events_are_rejected_before_emitting_text ... ok
+test history::recovery::tests::last_is_exact_private_atomic_and_failure_preserves_old ... ok
+test history::tests::fallback_and_private_files ... ok
+test history::recovery::tests::two_failed_records_retry_exactly_once_with_raw_and_collision ... ok
+test history::tests::changed_unmarked_source_replaces_searchable_version_and_preserves_bytes ... ok
+test history::tests::interrupted_import_retries_without_duplicate_records ... ok
+test history::tests::interrupted_new_version_keeps_previous_search_and_ownership ... ok
+test history::tests::interrupted_transaction_and_empty_save ... ok
+test history::tests::legacy_unicode_markers_raw_cleaned_retry_and_original_bytes ... ok
+test history::tests::marked_dictation_preserves_timestamp_headings_and_previews_are_bounded ... ok
+
+running 1 test
+test history::tests::default_open_does_not_read_legacy_archive ... ok
+test history::tests::previously_preserved_only_archives_are_indexed_on_explicit_retry ... ok
+test history::tests::raw_fallback_can_be_reimported_with_exact_identity ... ok
+test history::tests::reconciliation_protects_native_saves_other_sources_and_repeated_dictations ... ok
+test history::tests::paging_search_retries_restart_and_conflicts ... ok
+test formatting::lifecycle_tests::loopback_requests_bypass_environment_proxies ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 157 filtered out; finished in 0.01s
+
+test formatting::lifecycle_tests::loopback_requests_bypass_environment_proxies ... ok
+test linux::ask_settings::speech_fixture::native_speech_settings ... ignored, requires private koett-speech desktop
+test linux::ask_view::spoken_fixture::native_spoken_answer ... ignored, requires private speech WSS and desktop fixture
+test linux::control::tests::activation_is_forwarded_only_for_window_requests_and_validated ... ok
+test linux::control::tests::recording_commands_keep_legacy_wire_bytes_with_activation_environment ... ok
+test linux::control::tests::socket_reads_complete_fragmented_tokens_and_bounds_input ... ok
+test linux::delivery_tests::completed_text_remains_copyable_when_delivery_and_storage_fail ... ok
+test linux::delivery_tests::corrupt_settings_preserve_raw_text_and_warn ... ok
+test linux::delivery_tests::delivery_recovery_is_typed_and_independent_of_storage ... ok
+test linux::delivery_tests::x11_focus_guard_preserves_clipboard_only_recovery ... ok
+test linux::feedback::recording_status_tests::capture_keeps_input_replacement_and_save_failure_notices_visible ... ok
+test linux::feedback::tests::interrupted_levels_and_new_capture_restart_debounce ... ok
+test linux::feedback::tests::silence_never_warns_and_only_sustained_loud_input_does ... ok
+test linux::input_preview::tests::selection_and_close_reject_late_levels_and_errors ... ok
+test history::tests::schema_one_upgrade_is_sqlite_only_and_explicit_import_versions_completion ... ok
+test linux::media::tests::mpris_disposable_child ... ok
+test history::tests::schema_upgrade_protects_preexisting_native_id_referenced_by_import ... ok
+test linux::menu::tests::capture_actions_match_phase_and_block_busy_capture ... ok
+test linux::menu_preferences::tests::every_catalog_model_is_selectable_through_the_agent_command ... ok
+test linux::menu_preferences::tests::formatting_patches_preserve_other_controls_and_reject_invalid_values ... ok
+test linux::menu_preferences::tests::formatting_request_blocks_a_stale_second_patch_before_worker_completion ... ok
+test linux::menu_preferences::tests::menu_errors_offer_a_fix_and_never_claim_success ... ok
+test linux::menu_preferences::tests::model_command_dispatches_valid_choice_and_rejects_busy_or_invalid_requests ... ok
+test linux::menu_preferences::tests::pending_capture_rejects_model_and_formatting_changes ... ok
+test linux::menu_tests::shortcut_failures_preserve_capture_actions_on_both_surfaces ... ok
+test linux::menu_tests::control_messages_preserve_tray_phase_and_busy_sensitivity ... ok
+test linux::menu_tests::tray_navigation_and_capture_dispatch_are_distinct ... ok
+test linux::portal_binding_tests::returned_ids_without_assigned_keys_are_not_active ... ok
+test linux::queued_capture_tests::capture_is_guarded_before_worker_status_arrives ... ok
+test linux::menu_tests::tray_recovery_and_folder_actions_dispatch_shared_operations ... ok
+test linux::queued_capture_tests::queued_capture_refuses_quit_before_any_worker_status ... ok
+test linux::recording_overlay::waveform::tests::finite_bounded_levels_and_new_capture_reset ... ok
+test linux::recording_overlay::waveform::tests::real_amplitude_is_scaled_smoothed_and_rolled ... ok
+test linux::recording_overlay::waveform::tests::reduced_motion_clears_history_and_resumes_without_backfill ... ok
+test linux::x11_editing_tests::editing_blocks_new_presses_but_releases_existing_hold ... ok
+test linux::settings_view::shortcut_capture_tests::native_chord_capture_uses_the_existing_shortcut_contract ... ok
+test assistant::tests::cancellation_reaps_worker_before_first_byte ... ok
+test media_transcription::tests::final_filename_is_local_single_item_and_preserves_title ... ok
+test history::tests::appended_ambiguous_tail_reconciles_only_changed_chunk_and_retries ... ok
+test media_transcription::tests::temporary_audio_is_removed_on_drop ... ok
+test media_transcription::tests::url_boundary ... ok
+test model::tests::a_valid_concurrent_winner_is_kept ... ok
+test model::tests::cache_validation_latency_probe ... ignored, requires KOETT_MODEL_DIR and measures the local model cache
+test model::tests::cache_verification_rejects_a_locally_modified_file ... ok
+test model::tests::cache_verification_rejects_a_truncated_file ... ok
+test model::tests::cache_verification_rejects_a_wrong_declared_byte_count ... ok
+test model::tests::cache_verification_rejects_a_wrong_declared_hash ... ok
+test model::tests::cache_verification_rejects_correct_names_with_wrong_content ... ok
+test model::tests::cancelled_download_removes_the_partial_file ... ok
+test history::tests::interrupted_archive_chunk_import_retries_without_duplicates ... ok
+test model::tests::concurrent_installs_use_different_transaction_directories ... ok
+test model::tests::corrupt_cache_falls_through_and_cancellation_stops_recovery ... ok
+test model::tests::concurrent_complete_installs_accept_one_valid_winner ... ok
+test model::tests::corrupt_cache_is_quarantined_and_a_valid_cache_can_replace_it ... ok
+test model::tests::embedded_manifest_matches_the_pinned_default_model ... ok
+test model::tests::interrupted_download_removes_the_partial_file ... ok
+test model::tests::extracted_files_are_verified_before_cache_promotion ... ok
+test history::tests::identical_archive_chunks_at_different_offsets_remain_distinct ... ok
+test model::tests::optional_v2_verification_rejects_incomplete_cache_without_loading ... ok
+test model::tests::optional_v2_catalog_pins_distinct_official_artifacts ... ok
+test model::tests::pinned_model_name_matches_the_archive_root ... ok
+test model::tests::v3_catalog_is_distinct_valid_and_serializable_without_changing_default ... ok
+test model::tests::invalid_vad_never_creates_a_live_model_directory ... ok
+test model::tests::verified_download_accepts_the_expected_bytes_and_hash ... ok
+test paths::tests::settings_and_history_use_platform_directories ... ok
+test replacements::tests::equal_phrases_use_first_rule ... ok
+test replacements::tests::longest_original_phrase_wins_without_cascades ... ok
+test replacements::tests::unicode_boundaries_and_case_are_explicit ... ok
+test runtime::tests::model_name_uses_the_model_folder ... ok
+test runtime::tests::shutdown_cannot_be_reset_by_queued_model_setup ... ok
+test settings::tests::concurrent_owned_field_edits_keep_both_changes ... ok
+test settings::tests::failed_save_preserves_previous_preferences ... ok
+test settings::tests::failed_transaction_preserves_file_and_releases_lock ... ok
+test model::tests::verified_extracted_files_are_promoted_together ... ok
+test settings::tests::invalid_json_is_not_silently_replaced ... ok
+test settings::tests::missing_file_uses_small_public_defaults ... ok
+test settings::tests::paste_shortcut_defaults_for_existing_settings_and_rejects_unknown_chords ... ok
+test settings::tests::legacy_bindings_keep_working_when_new_defaults_would_collide ... ok
+test settings::tests::settings_round_trip_as_readable_json ... ok
+test settings::tests::shortcuts_migrate_validate_and_merge_independently ... ok
+test settings::tests::stale_editor_preserves_live_changes_and_applies_only_user_edits ... ok
+test shortcut::tests::default_shortcut_round_trips ... ok
+test shortcut::tests::shortcut_builds_an_xdg_preferred_trigger ... ok
+test shortcut::tests::shortcut_accepts_cross_platform_modifier_names ... ok
+test shortcut::tests::shortcut_needs_a_modifier ... ok
+test shortcut::tests::shortcut_rejects_windows_reserved_f12 ... ok
+test state::shortcut_tests::changing_mode_while_held_still_stops_the_original_capture ... ok
+test state::shortcut_tests::repeated_hold_events_start_and_stop_once ... ok
+test state::tests::error_can_recover_to_ready ... ok
+test state::shortcut_tests::toggle_ignores_repeat_until_release ... ok
+test state::tests::invalid_second_start_is_rejected ... ok
+test state::tests::normal_toggle_session_has_one_explicit_path ... ok
+test transcription::background::nemotron_recovery_tests::public_stream_failure_uses_warm_parakeet_once ... ignored, requires public Parakeet v2 evaluation model
+test transcription::background::nemotron_recovery_tests::stopped_backup_preserves_failed_recording ... ignored, requires public v2 model and isolated recovery directory
+test transcription::nemotron::tests::public_stream_reset_probe ... ignored, requires verified public Nemotron evaluation model
+test transcription::background::tests::dropping_a_session_cancels_background_work ... ok
+test transcription::recovery::tests::failed_audio_is_readable_private_and_collision_safe ... ok
+test transcription::tests::background_segment_latency_probe ... ignored, requires KOETT_MODEL_DIR and measures the local machine
+test transcription::tests::decoder_chunks_have_a_hard_limit_and_overlap ... ok
+test transcription::tests::only_long_recordings_use_segmentation ... ok
+test transcription::tests::overlapping_text_is_not_duplicated ... ok
+test transcription::tests::realtime_factor_uses_transcription_over_audio ... ok
+test transcription::tests::overlapping_text_tolerates_a_small_recognition_change ... ok
+test transcription::tests::uncertain_overlap_preserves_inserted_words ... ok
+test transcription::tests::unmatched_text_is_never_dropped ... ok
+test history::tests::malformed_huge_and_ambiguous_are_lossless ... ok
+test media_transcription::tests::aggregate_fragments_exceed_limit_and_are_cleaned_up ... ok
+test model::tests::verification_stamp_rechecks_a_normally_modified_file ... ok
+test history::tests::huge_unmarked_archive_is_searchable_with_unknown_original_metadata ... ok
+test linux::media::tests::disposable_mpris_bus ... ok
+test media_transcription::tests::owned_process_exit_timeout_and_cancel ... ok
+test media_transcription::tests::child_cannot_write_past_file_bound ... ok
+test formatting::lifecycle_tests::stalled_http_request_has_a_bounded_timeout_and_drop_reaps_child ... ok
+test history::tests::archive_chunks_complete_unicode_scalars_and_reconstruct_exact_text ... ok
+test audio::preview::tests::recording_waits_for_preview_release_and_blocks_preview_until_dropped ... ok
+
+test result: ok. 148 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+     Running unittests src/bin/koett.rs (target/debug/deps/koett-02f67e638daab452)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/koett_engine-895c031bc2c2e5a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests koett_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

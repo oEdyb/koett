@@ -1,0 +1,14 @@
+Negative: unchanged absolute cursor after window resize; no motion/enter before button.
+[01:12:33.694864] {Default Queue} wl_pointer#35.enter(193, wl_surface#50, 746.00000000, 144.00000000)
+[01:12:44.960375] {Default Queue} wl_pointer#35.button(208, 349895899, 272, 1)
+[01:12:44.960383] {Default Queue} wl_pointer#35.button(209, 349895899, 272, 0)
+Positive: forced cursor exit/re-entry updates GTK surface coordinates before button.
+[01:13:17.986597] {Default Queue} wl_pointer#35.enter(214, wl_surface#50, 746.00000000, 144.00000000)
+[01:13:37.003685] {Default Queue} wl_pointer#35.leave(229, wl_surface#50)
+[01:13:37.107474] {Default Queue} wl_pointer#35.enter(230, wl_surface#50, 826.00000000, 204.00000000)
+[01:13:37.214529] {Default Queue} wl_pointer#35.button(231, 349948153, 272, 1)
+[01:13:37.214573] {Default Queue} wl_pointer#35.button(232, 349948153, 272, 0)
+[01:13:37.215205] {Default Queue}  -> wl_data_device#38.set_selection(wl_data_source#103, 231)
+[01:13:40.719681] {Default Queue}  -> wl_data_device#38.set_selection(wl_data_source#103, 241)
+[01:13:46.396994] {Default Queue}  -> wl_data_device#38.set_selection(wl_data_source#103, 302)
+[01:13:52.455017] {Default Queue}  -> wl_data_device#38.set_selection(wl_data_source#103, 370)

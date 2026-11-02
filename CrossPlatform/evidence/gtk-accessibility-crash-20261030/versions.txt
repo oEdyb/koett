@@ -1,0 +1,21 @@
+gtk4 1:4.24.1-1.1
+glib2 2.90.1-1.1
+kwin 6.8.1-2.1
+at-spi2-core 2.62.1-1.1
+fd50597c435753a2ac7382702e4cd107557e647c975d9d3ed12824d167edad07  /usr/lib/libgtk-4.so.1
+dffbe3e8947b626d72cc947d55e97310aa6e7576b4264c9fe2120f6302fb249b  /usr/lib/libgio-2.0.so.0
+03f901951be6bba12629aa7b1c55df0b3e19b31d9cd7b91945cc9e20ea084563  /tmp/koett-a11y-diagnosis.KKls9w/koett-frozen
+dd59cffc889e8cfc792832c42b44222c0524ed86fc7deef16731dc73a9de3933  /tmp/koett-a11y-diagnosis.KKls9w/gtkatspiroot.c
+769c0bd70bf311e7596c859020e3c0e45c64cabfad6d81424acedddc4fd38284  /tmp/koett-a11y-diagnosis.KKls9w/gtkatspicontext.c
+
+Displaying notes found in: .note.gnu.build-id
+  Owner                Data size 	Description
+  GNU                  0x00000014	NT_GNU_BUILD_ID (unique build ID bitstring)
+    Build ID: cf276d19849f7ec9762c2ae86baa1be288cf22ae
+
+Displaying notes found in: .note.gnu.property
+  Owner                Data size 	Description
+  GNU                  0x00000030	NT_GNU_PROPERTY_TYPE_0
+      Properties: x86 feature: IBT, SHSTK
+	x86 feature used: x86, x87, XMM, YMM, ZMM, MASK
+	x86 ISA used: x86-64-baseline, x86-64-v2, x86-64-v3, x86-64-v4

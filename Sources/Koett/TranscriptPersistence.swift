@@ -2,7 +2,7 @@ import Foundation
 
 @MainActor
 final class TranscriptPersistence {
-    struct Outcome {
+    struct Outcome: Sendable {
         let historySaved: Bool
         let recoveryURL: URL?
         let lastTranscriptSaved: Bool
@@ -13,7 +13,7 @@ final class TranscriptPersistence {
         }
     }
 
-    struct RecoveryOutcome {
+    struct RecoveryOutcome: Sendable {
         let recoveredCount: Int
         let pendingCount: Int
         let unreadableCount: Int
@@ -28,6 +28,8 @@ final class TranscriptPersistence {
     let recovery: FailedTranscriptStore
     private var pending: [String: TranscriptRecord] = [:]
     private var volatileIDs: Set<String> = []
+    private var queuedWork: Task<Void, Never>?
+    private var importStarted = false
 
     var hasVolatileTranscripts: Bool {
         !volatileIDs.isEmpty
@@ -107,14 +109,121 @@ final class TranscriptPersistence {
         )
     }
 
+    /// Callers that deliver text synchronously enqueue I/O after delivery. Marking
+    /// the record volatile BEFORE scheduling keeps quit/relaunch protection valid.
+    @discardableResult
+    func enqueue(
+        _ record: TranscriptRecord, keepAsLast: Bool = false,
+        completion: @escaping @MainActor (Outcome) -> Void = { _ in }
+    ) -> Outcome {
+        guard record.hasText else {
+            let outcome = Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
+            completion(outcome)
+            return outcome
+        }
+        recoverInBackground { _ in }
+        pending[record.id] = record
+        volatileIDs.insert(record.id)
+        let previous = queuedWork
+        let history = history
+        let recovery = recovery
+        queuedWork = Task {
+            await previous?.value
+            let outcome = await Task.detached(priority: .utility) {
+                Self.write(record, history: history, recovery: recovery, keepAsLast: keepAsLast)
+            }.value
+            apply(outcome, to: record)
+            completion(outcome)
+            NotificationCenter.default.post(name: .transcriptHistoryChanged, object: nil)
+        }
+        return Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
+    }
+
+    func persistAsync(_ record: TranscriptRecord) async -> Outcome {
+        await withCheckedContinuation { continuation in
+            enqueue(record) { outcome in continuation.resume(returning: outcome) }
+        }
+    }
+
+    func recoverInBackground(completion: @escaping @MainActor (RecoveryOutcome) -> Void) {
+        let previous = queuedWork
+        let history = history
+        let recovery = recovery
+        let memoryRecords = Array(pending.values)
+        queuedWork = Task {
+            await previous?.value
+            let scan = await Task.detached(priority: .utility) {
+                var records: [(TranscriptRecord, URL)] = []
+                var unreadable = 0
+                do {
+                    for file in try recovery.pendingFiles() {
+                        do { records.append((try recovery.load(file), file)) }
+                        catch { unreadable += 1 }
+                    }
+                } catch { unreadable += 1 }
+                return (records, unreadable)
+            }.value
+            for (record, _) in scan.0 where pending[record.id] == nil { pending[record.id] = record }
+            let files = Dictionary(scan.0.map { ($0.0.id, $0.1) }, uniquingKeysWith: { first, _ in first })
+            var recovered = 0
+            let records = Dictionary((memoryRecords + scan.0.map { $0.0 }).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            for record in records.values.sorted(by: { $0.date < $1.date }) {
+                let outcome = await Task.detached(priority: .utility) {
+                    Self.write(record, history: history, recovery: recovery, keepAsLast: false, recoveryFile: files[record.id])
+                }.value
+                apply(outcome, to: record)
+                if outcome.historySaved { recovered += 1 }
+            }
+            completion(RecoveryOutcome(recoveredCount: recovered, pendingCount: pending.count, unreadableCount: scan.1))
+            NotificationCenter.default.post(name: .transcriptHistoryChanged, object: nil)
+        }
+    }
+
+    func importHistoryInBackground() {
+        guard !importStarted else { return }
+        importStarted = true
+        let history = history
+        Task {
+            do {
+                try await Task.detached(priority: .utility) { try history.prepare() }.value
+                NotificationCenter.default.post(name: .transcriptHistoryChanged, object: nil)
+            } catch {
+                importStarted = false
+                Self.log("Legacy history import could not finish; originals retained", error)
+            }
+        }
+    }
+
+    private func apply(_ outcome: Outcome, to record: TranscriptRecord) {
+        if outcome.historySaved {
+            pending.removeValue(forKey: record.id)
+            volatileIDs.remove(record.id)
+        } else if outcome.recoveryURL != nil {
+            volatileIDs.remove(record.id)
+        } else {
+            volatileIDs.insert(record.id)
+        }
+    }
+
     private func attempt(_ record: TranscriptRecord, keepAsLast: Bool) -> Outcome {
-        var recoveryURL: URL?
+        let outcome = Self.write(record, history: history, recovery: recovery, keepAsLast: keepAsLast)
+        apply(outcome, to: record)
+        return outcome
+    }
+
+    nonisolated private static func write(
+        _ record: TranscriptRecord, history: TranscriptStore,
+        recovery: FailedTranscriptStore, keepAsLast: Bool, recoveryFile: URL? = nil
+    ) -> Outcome {
+        var recoveryURL: URL? = recoveryFile
         var historySaved = false
         var lastTranscriptSaved = false
-        do {
-            recoveryURL = try recovery.preserve(record)
-        } catch {
-            log("Transcript recovery file could not be saved", error)
+        if recoveryURL == nil {
+            do {
+                recoveryURL = try recovery.preserve(record)
+            } catch {
+                log("Transcript recovery file could not be saved", error)
+            }
         }
         do {
             try history.append(record)
@@ -127,15 +236,8 @@ final class TranscriptPersistence {
                     log("Transcript recovery file could not be removed", error)
                 }
             }
-            pending.removeValue(forKey: record.id)
-            volatileIDs.remove(record.id)
         } catch {
             log("Transcript history could not be saved", error)
-            if recoveryURL == nil {
-                volatileIDs.insert(record.id)
-            } else {
-                volatileIDs.remove(record.id)
-            }
         }
         if keepAsLast {
             do {
@@ -167,7 +269,7 @@ final class TranscriptPersistence {
         )
     }
 
-    private func log(_ message: String, _ error: Error) {
+    nonisolated private static func log(_ message: String, _ error: Error) {
         fputs("Warning: \(message): \(error.localizedDescription)\n", stderr)
     }
 }

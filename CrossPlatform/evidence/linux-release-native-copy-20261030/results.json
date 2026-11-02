@@ -1,0 +1,19 @@
+{
+  "native_history_action_keyboard_pointer": true,
+  "long_unicode_exact": true,
+  "selection_search_clear": true,
+  "settings_focus_return": true,
+  "restart": true,
+  "binary_sha256": "b142eed9c4236344b2ddc60c421caa69d1a711d9aeca4a0f931013416085e0d6",
+  "gtk_sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
+  "v3_history_rows": 1,
+  "fixture_rows": 5,
+  "history_rows_total": 6,
+  "v3_native_recovery_action": true,
+  "v3_native_last_keyboard": true,
+  "v3_native_history_action": true,
+  "v3_text_sha256": "e2563ab52138c3118473233ef1b48fd8c0cc143ddc9dab69a40a28f60a6e8b44",
+  "v3_text_bytes": 79,
+  "successful_wav_retained": false,
+  "gtk_mapped": true
+}

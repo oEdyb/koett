@@ -1,0 +1,6 @@
+Koett patches sherpa-onnx-sys 1.13.5 build.rs to require its pinned ASR-only
+native source/target receipt and exclude disabled TTS link dependencies.
+The original Apache-2.0 license and raw binding implementations are unchanged.
+Source and original file hashes: CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json
+Upstream crate SHA-256: c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493
+Source: https://static.crates.io/crates/sherpa-onnx-sys/sherpa-onnx-sys-1.13.5.crate

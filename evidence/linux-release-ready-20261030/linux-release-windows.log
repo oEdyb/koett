@@ -1,0 +1,6 @@
+    Blocking waiting for file lock on build directory
+    Blocking waiting for file lock on artifact directory
+   Compiling koett-engine v0.2.0-linux.1 (/home/olle/dev/koett/CrossPlatform)
+   Compiling sherpa-onnx-sys v1.13.5 (/home/olle/dev/koett/CrossPlatform/vendor/sherpa-onnx-sys)
+    Checking sherpa-onnx v1.13.5
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.95s

@@ -1,0 +1,18 @@
+{
+  "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa",
+  "media_format": "dash",
+  "clipboard_exact_saved": true,
+  "ui_cli_copy_equal": true,
+  "typing_retained": true,
+  "busy_rejected": true,
+  "cancel_retry": true,
+  "global_media_shortcut": true,
+  "focus_change_rejected": true,
+  "midlookup_navigation_rejected": true,
+  "unresponsive_browser_bounded": true,
+  "current_document_changed": true,
+  "repeated_completion": true,
+  "timer_expired_cache_retained": true,
+  "nonbrowser_manual_fallback": true,
+  "browser": "google-chrome-stable"
+}

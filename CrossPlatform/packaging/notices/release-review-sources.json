@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/.github/workflows/linux-217.yaml",
+      "sha256": "02939cf76f72c083a00c17cd7ea61178bcf4237c6531a78e4ddf7ec416ced228",
+      "source_url": "https://raw.githubusercontent.com/csukuangfj/onnxruntime-build/d225cd6b04034501792fe4ae2183292a3cc41223/.github/workflows/linux-217.yaml"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/build-static_lib.sh",
+      "sha256": "e52231c8e4d9b073734a874326535044b2b1af84edd657d8ff1d7cda17dc9b74",
+      "source_url": "https://raw.githubusercontent.com/csukuangfj/onnxruntime-build/d225cd6b04034501792fe4ae2183292a3cc41223/build-static_lib.sh"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/static_lib/CMakeLists.txt",
+      "sha256": "131537f64110e53ca4619a8c6fc9804c62c050e6290b8c09437ea6b075f99cdc",
+      "source_url": "https://raw.githubusercontent.com/csukuangfj/onnxruntime-build/d225cd6b04034501792fe4ae2183292a3cc41223/static_lib/CMakeLists.txt"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/static_lib/bundle_static_library.cmake",
+      "sha256": "a597f6c351f38a6e15c51128e19f6088c791ddf91c4bb0440a972f19b81bbb13",
+      "source_url": "https://raw.githubusercontent.com/csukuangfj/onnxruntime-build/d225cd6b04034501792fe4ae2183292a3cc41223/static_lib/bundle_static_library.cmake"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/.gitmodules",
+      "sha256": "574a0f0639651ae669fb57f8bbadbe4ecab124a75fb5980cedd5988f875354ca",
+      "source_url": "https://raw.githubusercontent.com/csukuangfj/onnxruntime-build/d225cd6b04034501792fe4ae2183292a3cc41223/.gitmodules"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/cmake/deps.txt",
+      "sha256": "e411468ead299e3386b2e5e9d773e50e1939b5fc0baca599666ca5757eeb3f71",
+      "source_url": "https://raw.githubusercontent.com/microsoft/onnxruntime/df2ba1cf8108aa63627cf4cdf8f807880b938616/cmake/deps.txt"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/cmake/external/eigen.cmake",
+      "sha256": "9db439c44f215186d3e8bde7970affd03d8fa911d89cac19adc30ed681ff32a2",
+      "source_url": "https://raw.githubusercontent.com/microsoft/onnxruntime/df2ba1cf8108aa63627cf4cdf8f807880b938616/cmake/external/eigen.cmake"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/cmake/patches/eigen/s390x-build.patch",
+      "sha256": "6d41f4504f665bc591336c668a1aa16ffc5e0f02fe9c2f9c46c6f5660b54c849",
+      "source_url": "https://raw.githubusercontent.com/microsoft/onnxruntime/df2ba1cf8108aa63627cf4cdf8f807880b938616/cmake/patches/eigen/s390x-build.patch"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/build-provenance/cmake/patches/eigen/s390x-build-werror.patch",
+      "sha256": "a1a7b0ca8382cb00542587b6bc725f59abd59ad5bb491825f7876ad6e344ef0b",
+      "source_url": "https://raw.githubusercontent.com/microsoft/onnxruntime/df2ba1cf8108aa63627cf4cdf8f807880b938616/cmake/patches/eigen/s390x-build-werror.patch"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/abseil_cpp/LICENSE",
+      "sha256": "c79a7fea0e3cac04cd43f20e7b648e5a0ff8fa5344e644b0ee09ca1162b62747",
+      "source_url": "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250814.0.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/date/LICENSE.txt",
+      "sha256": "c90f6c00fb961170560299cbda28ca2d45804913aa8b2a9f36dbb8e0028d6930",
+      "source_url": "https://github.com/HowardHinnant/date/archive/refs/tags/v3.0.1.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/COPYING.APACHE",
+      "sha256": "03379001a7b12a2ec997a25554247d985270b353c10d5bafee9ac8d6519820b7",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/COPYING.BSD",
+      "sha256": "51928dce36213c5333ba3172e847d735d4c6e9b7ff2722a326c49067155b82eb",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/COPYING.MINPACK",
+      "sha256": "c87b7f8ee88f6195e91743820c00354833583aef091b72e2d4a49c8e28e798a0",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/COPYING.MPL2",
+      "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/COPYING.README",
+      "sha256": "db640ff2bd90c6abd6a4d3fbb351e0ee4d555417cf840492054d1cbb2ea85644",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/eigen/LICENSE",
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "source_url": "https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/flatbuffers/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source_url": "https://github.com/google/flatbuffers/archive/refs/tags/v23.5.26.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/fp16/LICENSE",
+      "sha256": "17e4f539024be2749ee729d1e2f01d24cef12ece8c9bf18e91a4349be29c80bf",
+      "source_url": "https://github.com/Maratyszcza/FP16/archive/0a92994d729ff76a58f692d3028ca1b64b145d91.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/json/LICENSE.MIT",
+      "sha256": "86b998c792894ccb911a1cb7994f7a9652894e7a094c0b5e45be2f553f45cf14",
+      "source_url": "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/microsoft_gsl/LICENSE",
+      "sha256": "4c21dc82a1c7186ea754fd59d504c00947953a3401fe8e24eaa44109ef8e2555",
+      "source_url": "https://github.com/microsoft/GSL/archive/refs/tags/v4.2.1.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/mp11/include/boost/mp11.hpp",
+      "sha256": "0833ec323b3026fedf48af005792b5b61a1ec941e08a972cd2226f8f447d6079",
+      "source_url": "https://github.com/boostorg/mp11/archive/refs/tags/boost-1.82.0.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/onnx/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source_url": "https://github.com/onnx/onnx/archive/refs/tags/v1.21.0.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/protobuf/LICENSE",
+      "sha256": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d",
+      "source_url": "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v21.12.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/pytorch_cpuinfo/LICENSE",
+      "sha256": "8e7e60636c3aa0cb03571a1a841ce5697f9551ff92b3c426c2561613d15ade70",
+      "source_url": "https://github.com/pytorch/cpuinfo/archive/403d652dca4c1046e8145950b1c0997a9f748b57.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/re2/LICENSE",
+      "sha256": "6040cda75d90b1738292a631d89934c411ef7ffd543c4d6a1b7edfc8edf29449",
+      "source_url": "https://github.com/google/re2/archive/refs/tags/2024-07-02.zip"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/dependencies/safeint/LICENSE",
+      "sha256": "a46919cc8f01eb73f6e4b84af0d41b46b2a33b87c74e864279ef585079f82da4",
+      "source_url": "https://github.com/dcleblanc/SafeInt/archive/refs/tags/3.0.28.zip"
+    },
+    {
+      "path": "packaging/notices/renderer/marked-LICENSE.txt",
+      "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt"
+    },
+    {
+      "path": "packaging/notices/renderer/katex-LICENSE.txt",
+      "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt"
+    },
+    {
+      "path": "packaging/notices/renderer/highlight-LICENSE.txt",
+      "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt"
+    },
+    {
+      "path": "packaging/notices/renderer/dompurify-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt"
+    },
+    {
+      "path": "packaging/notices/renderer/dompurify-LICENSE-MPL.txt",
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE-MPL.txt"
+    },
+    {
+      "path": "packaging/notices/renderer/THIRD-PARTY-NOTICES.md",
+      "sha256": "2eb0fa55711b775069784eee60e149fd5b4ad2a876f98778b85c84735f809b23",
+      "source_url": "repository:Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md"
+    },
+    {
+      "path": "packaging/notices/renderer/katex-font-metadata.json",
+      "sha256": "c58128244ee8e9ebdf9594e6f3cfb10ac0f07d9c6b6177247bcaa89024999899",
+      "source_url": "embedded WOFF2 name table IDs 0, 13, 14"
+    },
+    {
+      "path": "packaging/notices/renderer/katex-font-copyrights.txt",
+      "sha256": "e7d24a12c9e15769dc7c65365f1482a11414c7ffd90fa61d403dad951d10013b",
+      "source_url": "embedded WOFF2 name table ID 13; see katex-font-metadata.json"
+    },
+    {
+      "path": "packaging/notices/renderer/katex-font-OFL-1.1.txt",
+      "sha256": "8eea8287e5876b539670cadb82e99f9a7afddec6f6730811be1daf25d2e9bcfd",
+      "source_url": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/OFL-1.1.txt"
+    },
+    {
+      "path": "packaging/notices/models/nemotron-provenance/export-nemotron-speech-streaming-en-0.6b.yaml",
+      "sha256": "c98881690002c0d3e2a1ed3669154efaf0a35e8fb51372f1de43fc24e96810b6",
+      "source_url": "https://raw.githubusercontent.com/k2-fsa/sherpa-onnx/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/.github/workflows/export-nemotron-speech-streaming-en-0.6b.yaml"
+    },
+    {
+      "path": "packaging/notices/models/nemotron-provenance/export_onnx.py",
+      "sha256": "27d64f0196c270aac4e3b3c902ba9dd330355bc79f5a7760d2921bbc6f92d697",
+      "source_url": "https://raw.githubusercontent.com/k2-fsa/sherpa-onnx/3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/scripts/nemo/nemotron-speech-streaming-en-0.6b/export_onnx.py"
+    },
+    {
+      "path": "packaging/notices/models/nemotron-model-card.md",
+      "sha256": "7701f4b2f1c16542c8ceb2b3a61dd144032898c17f4dc9cc1bbecda6972edec8",
+      "source_url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b/raw/ebe59e5a817142986528bbbee5dba8db7b38ed50/README.md"
+    },
+    {
+      "path": "packaging/notices/models/nemotron-provenance/converted-model-README.md",
+      "sha256": "ad40d7ecc09840a3c4a58d5c57db02e07b1bc30ccc3d8c982ef39072049daeeb",
+      "source_url": "https://huggingface.co/csukuangfj2/sherpa-onnx-nemotron-speech-streaming-en-0.6b-560ms-int8-2026-04-25/raw/52056fdc070914a48dcd68b31b44d6a6f5b85902/README.md"
+    },
+    {
+      "path": "packaging/notices/native/kissfft/LICENSES/BSD-3-Clause",
+      "sha256": "4d6bcab46f27d6d0c878e8305d4bdcfe040d52bf6656b9771f04c9fb9902c0ed",
+      "source_url": "https://raw.githubusercontent.com/mborgerding/kissfft/febd4caeed32e33ad8b2e0bb5ea77542c40f18ec/LICENSES/BSD-3-Clause"
+    },
+    {
+      "path": "packaging/notices/models/NEMOTRON-ATTRIBUTION.md",
+      "sha256": "6161b49eb639a8e499c3a9afb1dacdbfe1eeb09669140246774a7ed915db9ee7",
+      "kind": "reviewed-authored-record"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/provenance.json",
+      "sha256": "2d30651a3e9ebc80f7766d4408402f55a7c9a2405cb1ce4a987d9608064af0a8",
+      "kind": "reviewed-authored-record"
+    },
+    {
+      "path": "packaging/notices/native/onnxruntime/SOURCE-ACCESS.md",
+      "sha256": "d3eb59dea38d652262aef062e3c486c4cc897cf7b1b06ecc2abe9efb9439a6ae",
+      "kind": "reviewed-authored-record"
+    }
+  ]
+}

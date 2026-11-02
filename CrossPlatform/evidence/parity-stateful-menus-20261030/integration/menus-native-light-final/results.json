@@ -1,0 +1,166 @@
+{
+  "ok": true,
+  "binary_sha256": "d3d809ac597e61ca024541f86ffea4a64209595b827754e7f2dd192d5d0385b0",
+  "gtk_library": "/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
+  "gtk_sha256": "4c7b561bdea19407b7d795072360b1be6c5f5860d87f315580501c97d9f7d204",
+  "final_status": {
+    "active_engine": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+    "busy": false,
+    "desired_model": "compact",
+    "formatting": {
+      "context": "email",
+      "enabled": false,
+      "structure": "lists",
+      "style": "formal"
+    },
+    "login_registered": false,
+    "microphone": null,
+    "microphones": {
+      "devices": [
+        {
+          "id": "alsa:null",
+          "label": "Discard all samples (playback) or generate zero samples (capture)"
+        },
+        {
+          "id": "alsa:lab",
+          "label": "Private lab microphone"
+        },
+        {
+          "id": "alsa:lavrate",
+          "label": "Rate Converter Plugin Using Libav/FFmpeg Library"
+        },
+        {
+          "id": "alsa:samplerate",
+          "label": "Rate Converter Plugin Using Samplerate Library"
+        },
+        {
+          "id": "alsa:speexrate",
+          "label": "Rate Converter Plugin Using Speex Resampler"
+        },
+        {
+          "id": "alsa:jack",
+          "label": "JACK Audio Connection Kit"
+        },
+        {
+          "id": "alsa:oss",
+          "label": "Open Sound System"
+        },
+        {
+          "id": "alsa:pipewire",
+          "label": "PipeWire Sound Server"
+        },
+        {
+          "id": "alsa:pulse",
+          "label": "PulseAudio Sound Server"
+        },
+        {
+          "id": "alsa:speex",
+          "label": "Plugin using Speex DSP (resample, agc, denoise, echo, dereverb)"
+        },
+        {
+          "id": "alsa:upmix",
+          "label": "Plugin for channel upmix (4,6,8)"
+        },
+        {
+          "id": "alsa:vdownmix",
+          "label": "Plugin for channel downmix (stereo) with a simple spacialization"
+        },
+        {
+          "id": "alsa:default",
+          "label": "Default ALSA Output (currently PipeWire Media Server)"
+        },
+        {
+          "id": "alsa:usbstream:CARD=NVidia",
+          "label": "HDA NVidia"
+        },
+        {
+          "id": "alsa:usbstream:CARD=Generic",
+          "label": "HD-Audio Generic"
+        },
+        {
+          "id": "alsa:sysdefault:CARD=Generic_1",
+          "label": "HD-Audio Generic, ALC1220 Analog"
+        },
+        {
+          "id": "alsa:front:CARD=Generic_1,DEV=0",
+          "label": "HD-Audio Generic, ALC1220 Analog"
+        },
+        {
+          "id": "alsa:usbstream:CARD=Generic_1",
+          "label": "HD-Audio Generic"
+        },
+        {
+          "id": "alsa:sysdefault:CARD=O2",
+          "label": "OBSBOT Meet 2, USB Audio"
+        },
+        {
+          "id": "alsa:front:CARD=O2,DEV=0",
+          "label": "OBSBOT Meet 2, USB Audio"
+        },
+        {
+          "id": "alsa:usbstream:CARD=O2",
+          "label": "OBSBOT Meet 2"
+        },
+        {
+          "id": "alsa:sysdefault:CARD=Xstrm",
+          "label": "Endgame Gear Xstrm, USB Audio"
+        },
+        {
+          "id": "alsa:front:CARD=Xstrm,DEV=0",
+          "label": "Endgame Gear Xstrm, USB Audio"
+        },
+        {
+          "id": "alsa:usbstream:CARD=Xstrm",
+          "label": "Endgame Gear Xstrm"
+        },
+        {
+          "id": "alsa:hw:CARD=2,DEV=0",
+          "label": "HD-Audio Generic, ALC1220 Analog"
+        },
+        {
+          "id": "alsa:plughw:CARD=2,DEV=0",
+          "label": "HD-Audio Generic, ALC1220 Analog"
+        },
+        {
+          "id": "alsa:hw:CARD=2,DEV=2",
+          "label": "HD-Audio Generic, ALC1220 Alt Analog"
+        },
+        {
+          "id": "alsa:plughw:CARD=2,DEV=2",
+          "label": "HD-Audio Generic, ALC1220 Alt Analog"
+        },
+        {
+          "id": "alsa:hw:CARD=3,DEV=0",
+          "label": "OBSBOT Meet 2, USB Audio"
+        },
+        {
+          "id": "alsa:plughw:CARD=3,DEV=0",
+          "label": "OBSBOT Meet 2, USB Audio"
+        },
+        {
+          "id": "alsa:hw:CARD=4,DEV=0",
+          "label": "Endgame Gear Xstrm, USB Audio"
+        },
+        {
+          "id": "alsa:plughw:CARD=4,DEV=0",
+          "label": "Endgame Gear Xstrm, USB Audio"
+        }
+      ],
+      "ok": true
+    },
+    "ok": true,
+    "recording_mode": "toggle",
+    "start_at_login": false,
+    "version": "0.1.0"
+  },
+  "checks": [
+    "direct cached model selection",
+    "all formatting field CLI patches",
+    "preference persistence and save failure",
+    "native keyboard and pointer menu selection",
+    "real tray checked-state and action",
+    "private microphone next capture",
+    "busy model and preference rejection",
+    "About and narrow layout"
+  ]
+}

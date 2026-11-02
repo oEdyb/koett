@@ -1,0 +1,18 @@
+{
+  "failed_run": 40986211951,
+  "source": "9ccb8882b9860655b4ceac59c03af25632724dad",
+  "dependency_review": {
+    "cause": "repository dependency graph disabled",
+    "repair": "enabled dependency graph and vulnerability alerts via documented repository endpoint; automatic update PRs remain disabled",
+    "verification": "enable and subsequent read both returned HTTP204",
+    "snapshot_retry_seconds": 120,
+    "guard_unchanged": "dependency review still fails on findings; no warn-only mode"
+  },
+  "windows": {
+    "cause": "unconditional Ninja selected GNU MinGW; upstream static ONNX requires x64 Microsoft platform",
+    "repair": "Visual Studio 18 2026 generator, explicit x64 platform, Release multi-configuration build",
+    "verification": "14 impacted Python tests; Ruff, Python compilation and diff checks pass",
+    "remaining": "actual Windows native build awaits CI"
+  },
+  "linux": "Ninja generator and pinned original libstdc++ ABI preserved"
+}

@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "installed: actual Pause starts capture",
+    "installed: actual Pause stops and completes ASR"
+  ],
+  "environment": "Private agent-lab nested Niri26.04 with Swedish layout",
+  "host_input_injected": false,
+  "voxtype_listener": "voxtype-mouse.service disabled; daemon preserved",
+  "binding": "Pause repeat=false -> ~/.local/bin/koett toggle",
+  "replaces": "Ctrl+Shift+Space"
+}

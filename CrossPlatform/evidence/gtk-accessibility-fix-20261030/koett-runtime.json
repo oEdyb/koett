@@ -1,0 +1,6 @@
+{
+  "binary": "/tmp/koett-shortcuts-parent-release",
+  "binary_sha256": "26f178545ddd5c1044cbfbe75297fe52d7f49ab41ad3a9c1e4f9c6f96e099921",
+  "gtk_library": "/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
+  "gtk_sha256": "4c7b561bdea19407b7d795072360b1be6c5f5860d87f315580501c97d9f7d204"
+}

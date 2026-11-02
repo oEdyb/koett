@@ -1,0 +1,44 @@
+{
+  "failed_run": 40988239436,
+  "source_before": "7bb56f8",
+  "cause": "unused safe Rust TTS wrappers in a retained COFF object reference symbols deliberately absent from the ASR-only native library",
+  "fix": "same pinned sherpa-onnx1.13.5 wrapper with TTS module/export excluded; no native TTS stubs or linker-error suppression",
+  "source_provenance": {
+    "upstream_crate_sha256": "352a5dbbd9623e800be27e77de514e87fcfe2120256acc4434e6ea87a56bc885",
+    "original_files_retained": 24,
+    "changed_upstream_files": [
+      "src/lib.rs"
+    ],
+    "unrelated_locked_dependency_changes": false
+  },
+  "windows_coff_probe": {
+    "native_tts_undefined_before": 5,
+    "native_tts_undefined_after": 0,
+    "asr_undefined_after": 38,
+    "native_windows_link_execution": false
+  },
+  "local_gates": {
+    "rust_tests_passed": 148,
+    "rust_tests_ignored": 10,
+    "python_tests_passed": 61,
+    "notice_files": 686,
+    "real_inference": [
+      "110M official sample passed",
+      "v3 official English sample passed"
+    ],
+    "clippy": "passed",
+    "release_build": "passed",
+    "msrv_1_92": "passed",
+    "windows_source_check": "passed",
+    "rustfmt": "passed",
+    "ruff": "passed",
+    "inventory_check": "passed"
+  },
+  "review_corrections": [
+    "restrict repository license inheritance to root package; preserve dependency original license",
+    "Windows ZIP includes and validates complete canonical notices and native build receipt",
+    "retain and hash original crate lockfile and VCS metadata"
+  ],
+  "remaining": "actual Windows linking/runtime and final clean-source CI packages must pass before release",
+  "host_app_changed": false
+}

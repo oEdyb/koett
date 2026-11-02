@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Check Koett's small set of immutable workflow and Rust pins."""
+
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+WORKFLOW = ROOT / ".github/workflows/cross-platform.yml"
+TOOLCHAIN = ROOT / "CrossPlatform/rust-toolchain.toml"
+CARGO_MANIFEST = ROOT / "CrossPlatform/Cargo.toml"
+
+ACTION_PINS = {
+    "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+    "actions/dependency-review-action": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+    "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+}
+
+
+def external_action_pins(workflow: str) -> list[tuple[str, str]]:
+    pins = []
+    uses_lines = re.findall(
+        r"(?m)^\s*(?:-\s*)?uses:\s*(\S+?)(?:\s+#\s+(v[0-9.]+))?\s*$", workflow
+    )
+    for reference, version in uses_lines:
+        if reference.startswith("./"):
+            continue
+        match = re.fullmatch(r"([\w.-]+/[\w.-]+)@([0-9a-f]{40})", reference)
+        if match is None or not version:
+            raise ValueError(f"external action is not pinned to a reviewed full commit: {reference}")
+        pins.append((match.group(1), match.group(2)))
+    return pins
+
+
+class WorkflowPinTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.workflow = WORKFLOW.read_text(encoding="utf-8")
+
+    def test_every_action_uses_the_reviewed_full_commit(self) -> None:
+        uses = external_action_pins(self.workflow)
+        self.assertTrue(uses)
+        for action, commit in uses:
+            self.assertEqual(commit, ACTION_PINS[action])
+        self.assertEqual({action for action, _ in uses}, set(ACTION_PINS))
+
+    def test_action_pin_check_rejects_a_branch_reference(self) -> None:
+        workflow = (
+            "steps:\n"
+            "  - name: Checkout\n"
+            "    uses: actions/checkout@main # v7.0.1\n"
+        )
+        with self.assertRaisesRegex(ValueError, "not pinned"):
+            external_action_pins(workflow)
+
+    def test_checkout_never_persists_credentials(self) -> None:
+        checkout_steps = re.findall(
+            r"uses:\s*actions/checkout@[0-9a-f]{40}[^\n]*\n"
+            r"\s+with:\n\s+persist-credentials:\s*false",
+            self.workflow,
+        )
+        self.assertEqual(len(checkout_steps), self.workflow.count("uses: actions/checkout@"))
+
+    def test_main_and_minimum_rust_are_separate(self) -> None:
+        toolchain = TOOLCHAIN.read_text(encoding="utf-8")
+        package = CARGO_MANIFEST.read_text(encoding="utf-8")
+        self.assertIn('channel = "1.98.0"', toolchain)
+        self.assertIn('components = ["clippy", "rustfmt"]', toolchain)
+        self.assertIn('profile = "minimal"', toolchain)
+        self.assertRegex(package, r'(?m)^rust-version = "1\.92"$')
+        self.assertIn("rustup default 1.98.0", self.workflow)
+        self.assertEqual(self.workflow.count("--component clippy,rustfmt"), 3)
+        self.assertIn("cargo +1.92.0 check --locked --all-targets", self.workflow)
+
+    def test_linux_artifacts_are_installed_before_upload(self) -> None:
+        self.assertIn('run: python3 scripts/check_linux_notices.py', self.workflow)
+        self.assertEqual(self.workflow.count('"Sources/Koett/Resources/AssistantRenderer/**"'), 2)
+        linux = self.workflow.split('  linux:\n', 1)[1]
+        self.assertIn('package_linux.py --flavor system-runtime --output dist', linux)
+        self.assertIn("python3 -m unittest discover -s scripts -p 'test_package_linux*.py'", linux)
+        self.assertIn('test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz', linux)
+        self.assertLess(linux.index('test_package_linux_archive.py'), linux.index('name: Upload Linux release candidate'))
+        self.assertIn('build_asr_native.py --jobs 2', linux)
+        self.assertIn('CARGO_BUILD_JOBS: 2', linux)
+        self.assertIn('--bin koett-engine -- --self-test', linux)
+        self.assertNotIn('continue-on-error', linux)
+
+    def test_native_backtrace_is_only_collected_after_failed_required_inference(self) -> None:
+        linux = self.workflow.split('  linux:\n', 1)[1]
+        self.assertIn('id: asr_self_test', linux)
+        self.assertEqual(linux.count("if: failure() && steps.asr_self_test.outcome == 'failure'"), 2)
+        self.assertIn('gdb --batch --return-child-result', linux)
+        self.assertIn('native-asr-failure-${{ matrix.architecture }}', linux)
+        self.assertNotIn('continue-on-error', linux)
+
+    def test_windows_native_build_uses_the_microsoft_generator(self) -> None:
+        windows = self.workflow.split('  windows:\n', 1)[1].split('  linux:\n', 1)[0]
+        self.assertIn('build_asr_native.py --generator "Visual Studio 18 2026"', windows)
+        self.assertIn('runs-on: windows-2025', windows)
+        self.assertIn('check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip', windows)
+        self.assertLess(windows.index('check_windows_archive.py'), windows.index('actions/upload-artifact@'))
+
+    def test_advisory_tools_are_exact_and_read_only(self) -> None:
+        self.assertIn('retry-on-snapshot-warnings: true', self.workflow)
+        self.assertIn('retry-on-snapshot-warnings-timeout: 120', self.workflow)
+        self.assertNotIn('warn-only: true', self.workflow)
+        self.assertIn("cargo install cargo-audit --version 0.22.2 --locked", self.workflow)
+        self.assertIn("run: cargo audit", self.workflow)
+        self.assertIn("permissions:\n  contents: read", self.workflow)
+        self.assertNotIn("contents: write", self.workflow)
+        self.assertNotIn("id-token: write", self.workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()

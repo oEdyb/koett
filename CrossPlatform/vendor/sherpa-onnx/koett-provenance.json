@@ -1,0 +1,37 @@
+{
+  "upstream_crate_sha256": "352a5dbbd9623e800be27e77de514e87fcfe2120256acc4434e6ea87a56bc885",
+  "upstream_crate_url": "https://static.crates.io/crates/sherpa-onnx/sherpa-onnx-1.13.5.crate",
+  "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+  "modified_files": [
+    "src/lib.rs"
+  ],
+  "upstream_files": {
+    "Cargo.toml": "98ea02a29fb8e3657239b15b535ecffef975ac25e1dec1c8c62a0f0aff2be728",
+    "Cargo.toml.orig": "35e2213a43d8aa442b964c69f8e5a3ab3d34ecbd78eaca622825da3cdec129a9",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "f37c9bb94bac15e309c8805345df8d79f2749404a7e7bc675cdd6f5cd302f9ed",
+    "src/audio_tagging.rs": "5adc7e71d68b0d547e4c4c54f7d72675ad2f5eae9d2fcd5d348700a6387e6cdf",
+    "src/display.rs": "0c5cf706bb05eaacfecdea9fb47e1c91ab2e3c0ec54bca7db1c3fc44362a1873",
+    "src/kws.rs": "7c529ce92e35710d028b6de071d3ff84b42d42ba38bd506593a27fd058c71b23",
+    "src/lib.rs": "8648a9947175f03ea9bd221a223e50fc85b9ba3d032ca802d886038178e00063",
+    "src/offline_asr.rs": "a155560b35a6e355a02880757b7435083b637e3c9b24f3194d2af0fec1d3de86",
+    "src/offline_punctuation.rs": "cd5f3af39913a9e2d5d536fc93f79084683de7865a0afb47a9a5632848130e3b",
+    "src/offline_speaker_diarization.rs": "383cac2e9158738a249ab9cc284b436795aa13073c4ba3840a08a36d59e8b21f",
+    "src/offline_speech_denoiser.rs": "8e8831dcc909aaf5d94c0a4062bc6bafb41c1312125cb8696f7ce0002f40a03e",
+    "src/online_asr.rs": "15b43c2af47358355fb60f0df963fbd654f47f1afe3d41a7be0afc26aa442bb9",
+    "src/online_punctuation.rs": "4410806fd862e21c1a18eac788fd9004da204e35ed9a4f6d24c67e0ef8ef1fb1",
+    "src/online_speech_denoiser.rs": "343a3043eec4850d07a792816c993473d620691269c9d6dc6935fed2337e8f96",
+    "src/resampler.rs": "5a4206d1eb1d3da4a9f0b77e8527138069c38fc2929f8bc7e0a17ef982ea7593",
+    "src/speaker_embedding.rs": "b7a2bcbfd2f5cc36bfdbeda0a0bf65fafe493696a07d8ec72e3692890249980e",
+    "src/spoken_language_identification.rs": "235f4831aa361be8f939f708e90e57ac6b0060861bdc45c5c922eb7955ccab12",
+    "src/tts.rs": "2ba0b8340c881590e66bebde2464d4c4f62f3a4e9c7ea2a72611d7456f2d086b",
+    "src/utils.rs": "5784454be6c178baff6c57daa7dc8b278edb49198ca5b6aff319fc913f70c699",
+    "src/vad.rs": "b7ba35b70f4e91cd64b1b8fd0bd869be894fa708cae9b9e0aa4fdc2b8c14b8f8",
+    "src/wave.rs": "4d9a5176b1f0eb4c8642f3625ea1beb1903ad5498f1fccc6889a01a8607bbca2",
+    ".cargo_vcs_info.json": "08d586bf67362568e4f327b8386e4586a0641e25798cc308167792d86adc7e49",
+    "Cargo.lock": "3f12b804133d766a6ef22844f83a6c26813d7fe0233523fb8ac6e396c84969a5"
+  },
+  "patched_files": {
+    "src/lib.rs": "0132e5b4918fc4f18b755b26dadab17cceb7302b8eda466b1d84b8d77097ae5c"
+  }
+}

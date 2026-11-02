@@ -1,0 +1,1 @@
+{"active": ["media"], "backend": "portal", "editing_supported": true, "missing": ["toggle-recording", "ask"], "ok": false, "triggers": {"ask": "", "media": "Ctrl+Shift+T", "toggle-recording": ""}}

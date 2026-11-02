@@ -1,0 +1,16 @@
+microphone=Default Audio Device sample_rate=48000 channels=2 format=f32
+microphone_rms=0.000000 microphone_peak=0.000000
+/tmp/koett-native-host-abi0/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 48000
+   output_sample_rate: 16000
+
+microphone=Default Audio Device sample_rate=48000 channels=2 format=f32
+microphone_rms=0.000000 microphone_peak=0.000000
+/tmp/koett-native-host-abi0/sherpa-onnx-3dc7c569f31ca2cd4a20ed6f7db780327e6714c5/sherpa-onnx/csrc/offline-stream.cc:AcceptWaveformImpl:130 Creating a resampler:
+   in_sample_rate: 48000
+   output_sample_rate: 16000
+
+
+(koett:2278484): GLib-CRITICAL **: 16:51:16.974: g_variant_is_object_path: assertion 'string != NULL' failed
+
+(koett:2278484): GLib-CRITICAL **: 16:51:16.975: g_variant_new_object_path: assertion 'g_variant_is_object_path (object_path)' failed

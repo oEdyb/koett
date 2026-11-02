@@ -1,0 +1,30 @@
+{
+  "archive": {
+    "bytes": 463945051,
+    "sha256": "78e2b79fcf7271553a74402a76b771b09ea40117a39566a79f52235b23db6358",
+    "verified_before_extraction": true,
+    "isolated_cache": "/tmp/koett-nemotron-eval"
+  },
+  "nvidia_model_card": {
+    "url": "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b",
+    "license_name": "nvidia-open-model-license"
+  },
+  "fluidinference_card": {
+    "url": "https://huggingface.co/FluidInference/nemotron-speech-streaming-en-0.6b-coreml",
+    "metadata_license": "nvidia-open-model-license",
+    "prose_footer_license": "Apache 2.0",
+    "conflict_unresolved": true,
+    "used_on_linux": false
+  },
+  "sherpa_archive_readme": {
+    "nvidia_source_link_present": true,
+    "chunk_ms": 560,
+    "full_license_notice_present": false,
+    "exact_nvidia_checkpoint_revision_present": false
+  },
+  "native_pin": {
+    "version": "1.13.5",
+    "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+    "upgrade": false
+  }
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "target": "aarch64-unknown-linux-gnu",
+    "cmake_options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "BUILD_SHARED_LIBS": "OFF",
+      "SHERPA_ONNX_ENABLE_TTS": "OFF",
+      "SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION": "OFF",
+      "SHERPA_ONNX_ENABLE_PORTAUDIO": "OFF",
+      "SHERPA_ONNX_ENABLE_WEBSOCKET": "OFF",
+      "SHERPA_ONNX_ENABLE_BINARY": "OFF",
+      "SHERPA_ONNX_BUILD_C_API_EXAMPLES": "OFF",
+      "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE": "OFF",
+      "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY": "OFF",
+      "CMAKE_CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=1"
+    },
+    "library_sha256": "d4e24750438ffd374349355ef5bf1f623f0b8996814c4b3e3adc7ad46cc8b1ec",
+    "abi_guard": "passed",
+    "opposite_abi_rejected": true
+  },
+  {
+    "target": "x86_64-unknown-linux-gnu",
+    "cmake_options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "BUILD_SHARED_LIBS": "OFF",
+      "SHERPA_ONNX_ENABLE_TTS": "OFF",
+      "SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION": "OFF",
+      "SHERPA_ONNX_ENABLE_PORTAUDIO": "OFF",
+      "SHERPA_ONNX_ENABLE_WEBSOCKET": "OFF",
+      "SHERPA_ONNX_ENABLE_BINARY": "OFF",
+      "SHERPA_ONNX_BUILD_C_API_EXAMPLES": "OFF",
+      "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE": "OFF",
+      "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY": "OFF",
+      "CMAKE_CXX_FLAGS": "-D_GLIBCXX_USE_CXX11_ABI=0"
+    },
+    "library_sha256": "9dbbd7bff1db5698d04ae6710a28e995a33d0409adc362f8ff2bb0bf7e8fc2ea",
+    "abi_guard": "passed",
+    "opposite_abi_rejected": true
+  }
+]

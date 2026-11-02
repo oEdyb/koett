@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "app_model_schema_version": 1,
+  "model_id": "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
+  "purpose": "Offline English dictation with voice activity detection",
+  "artifacts": [
+    {
+      "id": "asr",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2",
+      "immutable_revision": "github-release:130628817/asset:283097678/sha256:157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+      "bytes": 482468385,
+      "sha256": "157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad",
+      "license": "CC-BY-4.0",
+      "upstream_reference_url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2"
+    },
+    {
+      "id": "vad",
+      "source_url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+      "immutable_revision": "github-release:130628817/asset:271935959/sha256:9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "license": "MIT",
+      "upstream_reference_url": "https://github.com/snakers4/silero-vad"
+    }
+  ],
+  "files": [
+    {
+      "artifact": "asr",
+      "path": "decoder.int8.onnx",
+      "bytes": 7257753,
+      "sha256": "b6bb64963457237b900e496ee9994b59294526439fbcc1fecf705b31a15c6b4e"
+    },
+    {
+      "artifact": "asr",
+      "path": "encoder.int8.onnx",
+      "bytes": 652184296,
+      "sha256": "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab"
+    },
+    {
+      "artifact": "asr",
+      "path": "joiner.int8.onnx",
+      "bytes": 1739080,
+      "sha256": "7946164367946e7f9f29a122407c3252b680dbae9a51343eb2488d057c3c43d2"
+    },
+    {
+      "artifact": "asr",
+      "path": "test_wavs/0.wav",
+      "bytes": 237964,
+      "sha256": "5fceacff0315d49cb59fcc505bcecf1ed5f2f35c2897b1e65a59f30e5d922150"
+    },
+    {
+      "artifact": "asr",
+      "path": "tokens.txt",
+      "bytes": 9384,
+      "sha256": "ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d"
+    },
+    {
+      "artifact": "vad",
+      "path": "silero_vad.onnx",
+      "bytes": 643854,
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "binary": "/tmp/koett-x11-final-release",
+  "sha256": "26f178545ddd5c1044cbfbe75297fe52d7f49ab41ad3a9c1e4f9c6f96e099921",
+  "display": ":1",
+  "checks": [
+    "Actual default X11 Dictation shortcut starts and stops recording",
+    "Toggle autorepeat and release preserve recording until next press",
+    "Actual Ask shortcut dispatches disabled-provider Error; cancel returns Cancelled",
+    "Native capture Escape restores label and releases SHORTCUT_EDITING: shortcut records",
+    "Native capture Save/reopen new binding activates; staged duplicate Save rejects without persistence",
+    "Native capture and Save swap already grabbed Dictation and Ask; both new actions activate correctly",
+    "Hold starts on press, survives autorepeat, stops on release",
+    "Existing Hold release still stops recording after entering native shortcut capture",
+    "Occupied XGrabKey fails; old binding still activates; unrelated pause_media persists",
+    "Public cached WAV through real shortcut capture produces exact matching Last and History",
+    "Settings reopen and Save preserve exact Last bytes",
+    "Exact Last bytes survive full restart and Copy Last matches private X11 clipboard",
+    "Saved swapped binding persists across full process restart and still activates"
+  ],
+  "initial": {
+    "active": [
+      "shift+control+Space",
+      "control+alt+Space",
+      "shift+control+KeyT"
+    ],
+    "backend": "x11",
+    "desired": [
+      "Ctrl+Shift+Space",
+      "Ctrl+Alt+Space",
+      "Ctrl+Shift+T"
+    ],
+    "error": null,
+    "missing": [],
+    "ok": true
+  },
+  "occupied_failure": {
+    "active": [
+      "Ctrl+Alt+Space",
+      "Ctrl+Shift+F8",
+      "Ctrl+Shift+T"
+    ],
+    "backend": "x11",
+    "desired": [
+      "Ctrl+Shift+F9",
+      "Ctrl+Shift+F8",
+      "Ctrl+Shift+T"
+    ],
+    "error": {
+      "code": "shortcut_rebind_failed",
+      "fix": "Choose an available shortcut in Settings.",
+      "message": "Rebind failed: HotKey already registered: HotKey { mods: Modifiers(CONTROL | SHIFT), key: F9, id: 34078888 }; previous bindings retained"
+    },
+    "ok": false
+  },
+  "last_text": "Well, I don't wish to see it any more, observed Phobe, turning away her eyes. It is certainly very like the old portrait",
+  "last_sha256": "05029b07fe9f1b495517f58b20cd25dd2151dcb8527611cc76ca22b8fbd4df4d",
+  "pass": true
+}

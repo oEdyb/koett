@@ -1,0 +1,7 @@
+{
+  "text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait",
+  "input": "native GTK Entry; no programmatic text assignment",
+  "database": "/home/olle/.local/state/agent-lab/koett/data/koett/History.sqlite3",
+  "audio_source": "public model WAV through virtual microphone and actual CPAL",
+  "backend": "agent-lab KWin / KDE RemoteDesktop+Clipboard portals / native GTK target"
+}

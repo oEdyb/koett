@@ -1,0 +1,41 @@
+
+/usr/lib/libgio-2.0.so.0:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+000000000012e719 <call_in_idle_cb+0xb9>:
+  12e719:	48 89 df             	mov    %rbx,%rdi
+  12e71c:	67 e8 4e ba 01 00    	addr32 call 14a170 <g_dbus_method_invocation_get_user_data>
+  12e722:	48 89 df             	mov    %rbx,%rdi
+  12e725:	49 89 c4             	mov    %rax,%r12
+  12e728:	ff 15 6a 54 0d 00    	call   *0xd546a(%rip)        # 203b98 <g_object_ref>
+  12e72e:	48 89 df             	mov    %rbx,%rdi
+  12e731:	48 89 c5             	mov    %rax,%rbp
+  12e734:	67 e8 d6 b9 01 00    	addr32 call 14a110 <g_dbus_method_invocation_get_parameters>
+  12e73a:	48 89 df             	mov    %rbx,%rdi
+  12e73d:	48 89 44 24 18       	mov    %rax,0x18(%rsp)
+  12e742:	67 e8 a8 b8 01 00    	addr32 call 149ff0 <g_dbus_method_invocation_get_method_name>
+  12e748:	48 89 df             	mov    %rbx,%rdi
+  12e74b:	48 89 44 24 10       	mov    %rax,0x10(%rsp)
+  12e750:	67 e8 7a b7 01 00    	addr32 call 149ed0 <g_dbus_method_invocation_get_interface_name>
+  12e756:	48 89 df             	mov    %rbx,%rdi
+  12e759:	49 89 c6             	mov    %rax,%r14
+  12e75c:	67 e8 0e b7 01 00    	addr32 call 149e70 <g_dbus_method_invocation_get_object_path>
+  12e762:	48 89 df             	mov    %rbx,%rdi
+  12e765:	49 89 c7             	mov    %rax,%r15
+  12e768:	67 e8 a2 b6 01 00    	addr32 call 149e10 <g_dbus_method_invocation_get_sender>
+  12e76e:	48 89 df             	mov    %rbx,%rdi
+  12e771:	48 89 44 24 08       	mov    %rax,0x8(%rsp)
+  12e776:	67 e8 d4 b8 01 00    	addr32 call 14a050 <g_dbus_method_invocation_get_connection>
+  12e77c:	41 54                	push   %r12
+  12e77e:	4c 89 fa             	mov    %r15,%rdx
+  12e781:	55                   	push   %rbp
+  12e782:	4c 8b 4c 24 28       	mov    0x28(%rsp),%r9
+  12e787:	4c 89 f1             	mov    %r14,%rcx
+  12e78a:	48 89 c7             	mov    %rax,%rdi
+  12e78d:	4c 8b 44 24 20       	mov    0x20(%rsp),%r8
+  12e792:	48 8b 74 24 18       	mov    0x18(%rsp),%rsi
+  12e797:	41 ff d5             	call   *%r13
+  12e79a:	58                   	pop    %rax
+  12e79b:	5a                   	pop    %rdx

@@ -42,6 +42,7 @@ final class KoettController: NSObject {
     let failedRecordingStore: FailedRecordingStore
     var failedTranscriptStore: FailedTranscriptStore { transcriptPersistence.recovery }
     let transcriptPersistence: TranscriptPersistence
+    var historyWindow: HistoryWindowController?
     let recordingOverlay = RecordingOverlayController()
     let assistantPanel = AssistantPanelController()
     let assistantClient = AssistantClient()
@@ -151,6 +152,7 @@ final class KoettController: NSObject {
         startSound = try Self.soundPlayer(named: "Tink")
         stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
+        transcriptPersistence.importHistoryInBackground()
         do {
             lastTranscript = try transcriptStore.loadLastTranscript()
         } catch {
@@ -592,13 +594,17 @@ final class KoettController: NSObject {
     }
 
     @objc func openTranscripts() {
-        do {
-            try transcriptStore.prepare()
-            guard NSWorkspace.shared.open(transcriptStore.fileURL) else {
-                throw Self.failure("The transcript file could not open.")
+        // Wait for status-menu tracking to finish before activating a window.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if historyWindow == nil {
+                historyWindow = HistoryWindowController(store: transcriptStore) { [weak self] in
+                    guard let self, state == .ready else { return }
+                    NSApp.hide(nil)
+                    startRecordingIfReady()
+                }
             }
-        } catch {
-            fputs("Error: \(error.localizedDescription)\n", stderr)
+            historyWindow?.show()
         }
     }
 

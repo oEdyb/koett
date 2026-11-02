@@ -1,0 +1,55 @@
+{
+  "version": "0.2.0-linux.1",
+  "source_base": "0d519a0414b36b4471e82907637f82217564d681",
+  "source_dirty": true,
+  "rust_tests": {
+    "passed": 148,
+    "ignored": 10,
+    "default_parallel": true
+  },
+  "python_tests": 53,
+  "notice_files": 683,
+  "checks": [
+    "rustfmt",
+    "strict all-target clippy",
+    "locked release build",
+    "Rust 1.92 source check",
+    "Windows 1.98 source check",
+    "Ruff 0.17.2",
+    "Python compilation",
+    "shell syntax",
+    "deterministic inventory",
+    "canonical notice validation",
+    "extracted Ubuntu22 archive canonical-notice/loader/install/integrity checks",
+    "private GTK4.6 history/export/settings/retry",
+    "private native v3 capture and exact History/recovery/Last Copy"
+  ],
+  "reviews": {
+    "packaging": [
+      "A: prefix-inside-package recursion fixed and regression added",
+      "B: no findings"
+    ],
+    "history_and_busy_fixture": "no actionable findings",
+    "notices": [
+      "A: complete KISS FFT license and authored provenance binding added",
+      "B: canonical archive notice checking and renderer CI paths added"
+    ]
+  },
+  "limits": [
+    "final clean-source CI x86_64 and ARM64 builds pending",
+    "ARM64 desktop acceptance pending",
+    "Mac runtime verification deferred",
+    "live optional Ask/TTS providers unverified",
+    "Nemotron upstream checkpoint/conversion/test-audio attribution clarification remains; no weights bundled"
+  ],
+  "binary_sha256": {
+    "host": "b142eed9c4236344b2ddc60c421caa69d1a711d9aeca4a0f931013416085e0d6",
+    "ubuntu22": "4e0724b53445b9fcbd4b5693817803570e6f5fcb693aab1da7224be937df62d1"
+  },
+  "secret_scan": {
+    "tool": "gitleaks 8.30.1",
+    "scope": "staged diff, after prior all-ref/tracked-source scan",
+    "findings": 2,
+    "classification": "both are native static archive SHA-256 digests; no credentials found"
+  }
+}

@@ -1,0 +1,9 @@
+[
+  "all four native sections and persistent Save at default 460px; hidden Audio releases capture",
+  "native tab keyboard access",
+  "paste shortcut and exact replacement persist; invalid Save selects Text and focuses phrase",
+  "real private CPAL preview accepts silence and warns only on sustained loud input",
+  "recording uses one real stream, preview yields; real pill warnings clear across capture lifecycle",
+  "guarded clipboard-only and controlled external clipboard failure retain exact ASR text; recovery Copy matches SQLite bytes without focus change",
+  "next capture clears recovery; 20-second timeout hides pill, retains Copy last, and restores Ready"
+]

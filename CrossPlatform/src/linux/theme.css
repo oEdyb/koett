@@ -1,0 +1,72 @@
+@define-color koett_canvas @koett_stone_50;
+@define-color koett_surface @koett_stone_0;
+@define-color koett_text @koett_stone_900;
+@define-color koett_secondary @koett_stone_500;
+@define-color koett_border @koett_stone_200;
+@define-color koett_selected @koett_selection;
+@define-color koett_focus @koett_focus_ring;
+@define-color koett_error @koett_focus_ring;
+
+window.koett-window { background-color: @koett_canvas; color: @koett_text; }
+.koett-window headerbar { background: @koett_surface; color: @koett_text; border-bottom: 1px solid @koett_border; box-shadow: none; padding: 4px 8px; }
+.koett-window .koett-title { font-size: 1em; font-weight: 600; }
+.koett-window button { background: @koett_surface; color: @koett_text; border: 1px solid @koett_border; min-height: 24px; padding: 4px 12px; border-radius: 8px; box-shadow: none; }
+.koett-window button:hover { background: @koett_canvas; }
+.koett-window button:checked { background: @koett_selected; color: @koett_selected_text; }
+.koett-window headerbar button { min-height: 24px; }
+.koett-window headerbar windowcontrols button { padding: 0; border: 0; background: transparent; min-width: 24px; min-height: 24px; }
+.koett-window .koett-record, .koett-window .koett-save { background: @koett_primary; color: @koett_on_primary; border: 1px solid transparent; font-weight: 600; }
+.koett-window .koett-record:hover, .koett-window .koett-save:hover { background: shade(@koett_primary, 0.92); }
+.koett-window button:disabled { opacity: 0.5; }
+.koett-window button:focus-visible, .koett-window entry:focus-within, .koett-window row:focus-visible { outline: 2px solid @koett_focus; outline-offset: -2px; }
+.koett-window .koett-history { background: @koett_canvas; }
+.koett-window .koett-history-heading { padding: 20px 24px 16px; border-bottom: 1px solid @koett_border; }
+.koett-window .koett-search { background: @koett_surface; color: @koett_text; border: 1px solid @koett_border; border-radius: 8px; min-height: 28px; padding: 4px 8px; }
+.koett-window .koett-navigation { background: @koett_canvas; }
+.koett-window .koett-history-list { background: transparent; padding: 8px; }
+.koett-window .koett-history-list row { border-radius: 8px; padding: 0; margin-bottom: 4px; border: 1px solid transparent; color: @koett_text; }
+.koett-window .koett-history-list row:hover { background: @koett_surface; }
+.koett-window .koett-history-list row:selected { background: @koett_selected; color: @koett_selected_text; border-color: @koett_border; }
+.koett-window .koett-history-list row:selected .koett-metadata { color: @koett_selected_text; }
+.koett-window .koett-excerpt { font-size: 1em; }
+.koett-window .koett-metadata { font-size: 0.86em; color: @koett_secondary; }
+.koett-window .koett-paging { padding: 8px 12px 12px; border-top: 1px solid @koett_border; }
+.koett-window .koett-reading { background: @koett_surface; padding: 24px; }
+.koett-window .koett-reading-heading { font-size: 1.14em; font-weight: 600; }
+.koett-window .koett-transcript, .koett-window .koett-transcript text { background: @koett_surface; color: @koett_text; }
+.koett-window .koett-transcript { font-size: 1.143em; }
+.koett-window .koett-transcript text selection { background: @theme_selected_bg_color; color: @theme_selected_fg_color; }
+.koett-window .koett-empty { padding: 32px; }
+.koett-window .koett-empty-brand { font-weight: 600; color: @koett_secondary; }
+.koett-window .koett-empty-title { font-size: 1.43em; font-weight: 600; }
+.koett-window .koett-notice { padding: 0 24px; color: @koett_secondary; }
+.koett-window .koett-status .koett-metadata { font-size: 1em; }
+.koett-window .koett-status { background: @koett_canvas; padding: 8px 16px; border-top: 1px solid @koett_border; font-size: 0.86em; }
+.koett-window .koett-delivery { background: @koett_canvas; padding: 0 16px 8px; font-size: 0.86em; }
+.koett-window .koett-settings-nav { margin: 16px 24px 0; }
+.koett-window .koett-settings-nav button { min-width: 0; padding: 4px 16px; }
+.koett-window .koett-settings-page { padding: 12px 16px; }
+.koett-window .koett-settings-heading { font-size: 1.14em; font-weight: 600; margin-bottom: 4px; }
+.koett-window .koett-setting-row { background: transparent; border: 0; border-radius: 0; padding: 4px 0; }
+.koett-window .koett-setting-label { font-weight: 400; }
+.koett-window .koett-setting-row combobox { min-width: 0; }
+.koett-window .koett-setting-row combobox button { background: @koett_canvas; color: @koett_text; border: 1px solid @koett_border; }
+.koett-window .koett-setting-row checkbutton { padding: 4px 0; }
+.koett-window .koett-setting-help { color: @koett_secondary; font-size: 0.86em; }
+.koett-window .koett-settings-footer { background: @koett_surface; border-top: 1px solid @koett_border; padding: 12px 24px; }
+.koett-window .koett-save { min-width: 72px; }
+
+window.koett-pill { background: transparent; }
+.koett-feedback { background: #202024; color: white; padding: 8px; border-radius: 12px; }
+.koett-pill-timer { font-family: monospace; font-size: 13px; font-weight: 500; color: alpha(white, 0.90); }
+.koett-pill-status { font-size: 13px; color: alpha(white, 0.90); }
+
+.koett-window .error { color: @koett_error; }
+
+.koett-formatting > contents { padding: 0; }
+.koett-formatting { font-size: 13px; }
+.koett-formatting .heading { font-size: 15px; font-weight: 600; }
+.koett-window .koett-formatting button { min-height: 20px; padding: 0 8px; border-radius: 5px; }
+.koett-formatting combobox { margin: 0; padding: 0; }
+
+.koett-ask-answer, .koett-ask-answer text { background: transparent; }
