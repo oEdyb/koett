@@ -56,6 +56,15 @@
   bounded chunk reads into Float32 samples outside the main actor. The reader
   must collect every expected frame, including after a short read. Other formats
   and longer files keep FluidAudio's URL transcription path.
+- Buffered dictation and Ask recordings pass through FluidAudio's Silero VAD
+  before ASR (threshold 0.5, 0.5 s minimum silence, 0.25 s minimum speech,
+  0.25 s padding). Each silence longer than 0.4 s keeps only its first and last
+  0.2 s; shorter pauses stay whole. No detected speech returns empty text
+  without running ASR and without a warning. The detector loads in the
+  background after Parakeet is ready and never delays readiness; until it is
+  loaded, or after a load or run failure, the full recording goes to ASR.
+  Token timings are mapped back to the original recording clock. Media and the
+  URL path are not trimmed.
 - Nemotron Streaming EN 0.6B at the 560 ms configuration is an experimental
   menu option. It processes microphone audio while the user speaks.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery

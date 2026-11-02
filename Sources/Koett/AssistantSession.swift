@@ -124,7 +124,7 @@ extension KoettController {
         do {
             try await AssistantQuestionPipeline.run(
                 transcribe: {
-                    return try await DictationTranscriber.transcribe(url, using: self.manager).text
+                    return try await DictationTranscriber.transcribe(url, using: self.manager, detector: self.speechDetector).text
                 },
                 transcriptionFailed: {
                     shouldCleanup = false
