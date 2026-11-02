@@ -75,6 +75,20 @@ final class PillTimelineTests: XCTestCase {
         XCTAssertTrue(sketch(1, 2, 2, live: false).isValid)
     }
 
+    func testSketchStorageIsBoundedButKeptIndicesStillUpdate() {
+        var timeline = PillTimeline()
+        for index in 1...UInt32(PillTimeline.sketchLimit) {
+            XCTAssertTrue(timeline.apply(sketch(index, 0, 10, live: true)))
+        }
+        XCTAssertFalse(timeline.apply(sketch(UInt32(PillTimeline.sketchLimit) + 1, 0, 10, live: true)))
+        XCTAssertEqual(timeline.sketches.count, PillTimeline.sketchLimit)
+        XCTAssertTrue(timeline.apply(sketch(7, 0, 500, live: false)))
+        XCTAssertEqual(timeline.sketches[6], sketch(7, 0, 500, live: false))
+        XCTAssertEqual(timeline.sketches.count, PillTimeline.sketchLimit)
+        timeline.reset()
+        XCTAssertTrue(timeline.apply(sketch(999, 0, 1, live: false)))
+    }
+
     func testDecodeHeadIsBoundedByRecordedColumns() {
         var timeline = PillTimeline()
         XCTAssertEqual(timeline.decodeHead(fraction: 0.5), 0)

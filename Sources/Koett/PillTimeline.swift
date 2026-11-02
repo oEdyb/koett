@@ -21,6 +21,8 @@ struct PillTimeline {
     static let columnCount = 64
     static let baseMs: UInt64 = 250
     static let silentLevel = 0.08
+    /// Distinct sketches kept per dictation. Updates to a kept index always apply.
+    static let sketchLimit = 256
 
     private(set) var levels: [Double] = []
     private(set) var msPerColumn = baseMs
@@ -59,14 +61,18 @@ struct PillTimeline {
             : msPerColumn * 2
     }
 
-    /// Inserts or replaces the sketch with the same index.
-    mutating func apply(_ event: SketchEvent) {
+    /// Inserts or replaces the sketch with the same index. Returns false when a
+    /// new index arrives after `sketchLimit` sketches.
+    @discardableResult
+    mutating func apply(_ event: SketchEvent) -> Bool {
         if let position = sketches.firstIndex(where: { $0.index == event.index }) {
             sketches[position] = event
-        } else {
-            let position = sketches.firstIndex(where: { $0.index > event.index }) ?? sketches.endIndex
-            sketches.insert(event, at: position)
+            return true
         }
+        guard sketches.count < Self.sketchLimit else { return false }
+        let position = sketches.firstIndex(where: { $0.index > event.index }) ?? sketches.endIndex
+        sketches.insert(event, at: position)
+        return true
     }
 
     /// Inclusive column range covered by a sketch, compressed with the strip.
