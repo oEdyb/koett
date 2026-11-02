@@ -7,7 +7,7 @@ final class HistoryWindowController {
     let model: HistoryModel
     private let window: NSWindow
 
-    init(store: TranscriptStore, record: @escaping @MainActor () -> Void) {
+    init(store: TranscriptStore, dictionary: DictionaryStore, record: @escaping @MainActor () -> Void) {
         model = HistoryModel(store: store)
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 960, height: 680),
@@ -17,7 +17,7 @@ final class HistoryWindowController {
         window.title = "Koett — History"
         window.minSize = NSSize(width: 360, height: 420)
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: HistoryView(model: model, record: record))
+        window.contentView = NSHostingView(rootView: HistoryView(model: model, dictionary: dictionary, record: record))
         window.center()
     }
 
@@ -30,7 +30,9 @@ final class HistoryWindowController {
 
 private struct HistoryView: View {
     @ObservedObject var model: HistoryModel
+    let dictionary: DictionaryStore
     let record: @MainActor () -> Void
+    @State private var fixing: TranscriptRecord?
     @FocusState private var searchFocused: Bool
     @State private var actionError: String?
     @State private var copied = false
@@ -90,6 +92,9 @@ private struct HistoryView: View {
         .alert("History action failed", isPresented: Binding(
             get: { actionError != nil }, set: { if !$0 { actionError = nil } }
         )) { Button("OK") { actionError = nil } } message: { Text(actionError ?? "") }
+        .sheet(item: Binding(get: { fixing.map(FixingRecord.init) }, set: { fixing = $0?.record })) { item in
+            FixWordView(record: item.record, dictionary: dictionary)
+        }
     }
 
     private var transcriptList: some View {
@@ -147,6 +152,8 @@ private struct HistoryView: View {
                             Button("Markdown…") { export(transcript, markdown: true) }
                         } label: { Label("Export", systemImage: "square.and.arrow.up") }
                         .menuStyle(.borderlessButton).fixedSize()
+                        Button("Fix a Word…", systemImage: "character.cursor.ibeam") { fixing = transcript }
+                            .disabled(transcript.id.hasPrefix("archive-") || transcript.text.isEmpty)
                     }
                 }.padding(20)
                 Divider()
@@ -208,4 +215,9 @@ private struct HistoryView: View {
             }
         }
     }
+}
+
+private struct FixingRecord: Identifiable {
+    let record: TranscriptRecord
+    var id: String { record.id }
 }

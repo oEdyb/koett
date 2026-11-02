@@ -176,6 +176,10 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/Resources/AssistantRenderer/`: pinned local renderer assets.
 - `Sources/Koett/ScreenContextCapture.swift`: one in-memory screen image.
 - `Sources/Koett/TranscriptStore.swift`: local SQLite history and legacy import.
+- `Sources/Koett/Dictionary/`: the dictionary (Swift port of
+  `CrossPlatform/src/dictionary/`), CTC vocabulary boosting, the editor window,
+  and Fix a word. See `docs/dictionary.md`; `DictionaryParityTests` keep Mac and
+  Linux output identical.
 - `Sources/Koett/HistoryWindow.swift`: native searchable history, Copy and Export.
 - `Tests/KoettTests/`: shortcut, storage, media, renderer, client, TTS-buffer,
   live-audio, and S1-mini request tests.

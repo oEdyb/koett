@@ -307,6 +307,7 @@ extension KoettController {
                 url,
                 using: manager,
                 detector: speechDetector,
+                boost: vocabularyBooster.boost,
                 onProgress: decodeProgressHandler
             )
             transcriptionCompleted = true
@@ -454,6 +455,7 @@ extension KoettController {
                 url,
                 using: manager,
                 detector: speechDetector,
+                boost: vocabularyBooster.boost,
                 onProgress: decodeProgressHandler
             )
             transcriptionCompleted = true
@@ -549,9 +551,10 @@ extension KoettController {
     }
 
     private func prepareDictation(
-        _ rawText: String,
+        _ heardText: String,
         model: String
     ) async -> PreparedDictation {
+        let rawText = DictionarySpelling.apply(heardText, entries: dictionaryStore.entries)
         guard s1MiniEnabled,
               let cleaner = s1MiniCleaner else {
             return PreparedDictation(text: rawText, model: model, rawText: nil)

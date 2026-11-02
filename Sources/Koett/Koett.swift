@@ -43,6 +43,9 @@ final class KoettController: NSObject {
     var failedTranscriptStore: FailedTranscriptStore { transcriptPersistence.recovery }
     let transcriptPersistence: TranscriptPersistence
     var historyWindow: HistoryWindowController?
+    var dictionaryWindow: DictionaryWindowController?
+    let dictionaryStore: DictionaryStore
+    let vocabularyBooster = VocabularyBooster()
     let recordingOverlay = RecordingOverlayController()
     let assistantPanel = AssistantPanelController()
     let assistantClient = AssistantClient()
@@ -129,6 +132,7 @@ final class KoettController: NSObject {
         self.defaultMicrophoneID = defaultMicrophoneID
         self.speechEngine = speechEngine
         microphoneSelection = MicrophoneSelection(defaults: defaults)
+        dictionaryStore = DictionaryStore(defaults: defaults)
         nemotronAdapter = speechEngine == .nemotron
             ? NemotronStreamingAdapter()
             : nil
@@ -183,6 +187,10 @@ final class KoettController: NSObject {
             self?.rebuildMenu()
         }
         recordingOverlay.onOpenHistory = { [weak self] in self?.openTranscripts() }
+        let booster = vocabularyBooster
+        dictionaryStore.onChange = { entries in
+            Task { await booster.update(entries) }
+        }
         recordingOverlay.onPasteAgain = { [weak self] in self?.pasteLastTranscriptNow() }
     }
 
@@ -219,6 +227,9 @@ final class KoettController: NSObject {
         let silence = [Float](repeating: 0, count: 4_800)
         _ = try await manager.transcribe(silence, decoderState: &decoderState)
         startLoadingSpeechDetector()
+        let booster = vocabularyBooster
+        let dictionary = dictionaryStore.entries
+        Task { await booster.update(dictionary) }
 
         if s1MiniEnabled {
             setSetupStatus(.checkingModel("S1-mini"))
@@ -639,13 +650,23 @@ final class KoettController: NSObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if historyWindow == nil {
-                historyWindow = HistoryWindowController(store: transcriptStore) { [weak self] in
+                historyWindow = HistoryWindowController(store: transcriptStore, dictionary: dictionaryStore) { [weak self] in
                     guard let self, state == .ready else { return }
                     NSApp.hide(nil)
                     startRecordingIfReady()
                 }
             }
             historyWindow?.show()
+        }
+    }
+
+    @objc func openDictionary() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if dictionaryWindow == nil {
+                dictionaryWindow = DictionaryWindowController(store: dictionaryStore, booster: vocabularyBooster)
+            }
+            dictionaryWindow?.show()
         }
     }
 

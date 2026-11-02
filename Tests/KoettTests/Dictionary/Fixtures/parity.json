@@ -1,0 +1,4256 @@
+{
+"source": "CrossPlatform/src at fbcfcf2",
+"input": {
+"dictionary": [
+{
+"term": "Koett",
+"sounds_like": [
+"cot",
+"quett"
+]
+},
+{
+"term": "Parakeet",
+"sounds_like": []
+},
+{
+"term": "sherpa-onnx",
+"sounds_like": []
+},
+{
+"term": "Nemotron",
+"sounds_like": []
+},
+{
+"term": "FluidAudio",
+"sounds_like": []
+},
+{
+"term": "Nordicrank",
+"sounds_like": []
+},
+{
+"term": "Hogia",
+"sounds_like": []
+},
+{
+"term": "Yakob",
+"sounds_like": []
+},
+{
+"term": "Matyas",
+"sounds_like": []
+},
+{
+"term": "Olle",
+"sounds_like": [
+"all"
+]
+},
+{
+"term": "Dyberg",
+"sounds_like": []
+},
+{
+"term": "Kubernetes",
+"sounds_like": []
+},
+{
+"term": "PostgreSQL",
+"sounds_like": []
+},
+{
+"term": "Tauri",
+"sounds_like": []
+},
+{
+"term": "GTK4",
+"sounds_like": []
+},
+{
+"term": "Supabase",
+"sounds_like": [
+"super base",
+"Superbase"
+]
+},
+{
+"term": "SvelteKit",
+"sounds_like": []
+},
+{
+"term": "Fortnox",
+"sounds_like": [
+"four knocks"
+]
+},
+{
+"term": "Skatteverket",
+"sounds_like": []
+},
+{
+"term": "Göteborg",
+"sounds_like": [
+"gataborg"
+]
+},
+{
+"term": "fika",
+"sounds_like": []
+},
+{
+"term": "Hetzner",
+"sounds_like": []
+},
+{
+"term": "Cartesia",
+"sounds_like": []
+},
+{
+"term": "Groq",
+"sounds_like": [
+"grok"
+]
+},
+{
+"term": "Qwen",
+"sounds_like": []
+},
+{
+"term": "Obsidian",
+"sounds_like": []
+},
+{
+"term": "Wayland",
+"sounds_like": []
+},
+{
+"term": "Hyprland",
+"sounds_like": []
+},
+{
+"term": "Claude",
+"sounds_like": []
+},
+{
+"term": "Codex",
+"sounds_like": []
+},
+{
+"term": "C++",
+"sounds_like": []
+},
+{
+"term": "C#",
+"sounds_like": []
+},
+{
+"term": ".NET",
+"sounds_like": []
+},
+{
+"term": "Node.js",
+"sounds_like": []
+},
+{
+"term": "Olle Dyberg",
+"sounds_like": []
+},
+{
+"term": "Claude Code",
+"sounds_like": []
+}
+],
+"spell": [
+"All will review the pull request tonight.",
+"Ask Claude to write the tests and Codex to review them",
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codecs to review them.",
+"Ask Claude to write the tests and codex to review them",
+"Ask uses Grok because it answers very quickly.",
+"Ask uses Grok, because it answers very quickly.",
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly.",
+"COATE turns my voice into text without the cloud",
+"COATE turns my voice into text without the cloud.",
+"Can you look at the budget again?",
+"Can you send me the code from yesterday?",
+"Cartesa reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud.",
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tori prototype last week.",
+"Claude wrote the Towery prototype last week.",
+"Cloud storage is cheaper than it used to be.",
+"Coet turns my voice into text without the cloud.",
+"Compare Nematron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nimitron with Parakeet on the same clips",
+"Diberg is spelled with a Y.",
+"Dieberg is spelled with a Y.",
+"Dyberg is spelled with A Y.",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with a y.",
+"Export the receipts to Fort Knox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month.",
+"Fortunately the train arrived on time.",
+"Global shortcuts work differently on Wayland",
+"Global shortcuts work differently on Wayland.",
+"Grok serves Quen faster than the other providers.",
+"Grok serves Quinn faster than the other providers.",
+"Groq serves Quinn faster than the other providers.",
+"Groq serves Qwen faster than the other providers.",
+"He drove the cart across the field.",
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Göteborg in the spring.",
+"Hi, this is Aldiberg calling about the meeting.",
+"Hi, this is Dyberg calling about the meeting.",
+"Hi, this is Old Dieberg calling about the meeting.",
+"Hi, this is Old Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi. This is all Dyberg calling about the meeting.",
+"Hogea and Scatterverkit both need the same numbers.",
+"Hoggier and Skatoverkit both need the same numbers.",
+"Hoggier and Skatteverket both need the same numbers.",
+"Hogia and Skadaverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hold on, I will call you back in a minute.",
+"Hold on. I will call you back in a minute.",
+"I am taking the train to Gataborg on Monday.",
+"I am taking the train to Gatteborg on Monday.",
+"I am taking the train to Goatborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I bought a coat and a new pair of boots.",
+"I logged into Hoggia to check the invoices.",
+"I logged into Hogia to check the invoices.",
+"I want to grow tomatoes in the garden this year.",
+"Jacob and Matthias went fishing on Sunday.",
+"Jakob and all met in Gataborg for Afica",
+"Jakob and all met in Gataborg for a Fika.",
+"Jakob and all met in Goatborg for a fek.",
+"Jakob wants a demo of the booking app tomorrow",
+"Jakob wants a demo of the booking app tomorrow.",
+"Koett turns my voice into text without the cloud.",
+"Let's grab a FICA after the call.",
+"Let's grab a feaker after the call.",
+"Let's grab a fika after the call.",
+"Madhyas asked whether Coat works on Wayland",
+"Matthias asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland.",
+"Matyas paid the last three invoices.",
+"Motios asked whether Coet works on Wayland.",
+"Motios asked whether Coet works on Weyland.",
+"Motios asked whether Koett works on Wayland.",
+"Motios paid the last three invoices.",
+"Move the database from Supabase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from SuperBase to a Hetzner server",
+"Move the database from Superbase to a Hetzna server.",
+"Move the database from Superbase to a Hetzner server",
+"My desktop is Hyperland with a single monitor",
+"My desktop is Hyperland with a single monitor.",
+"My desktop is Hyprland with a single monitor",
+"My desktop is Hyprland with a single monitor.",
+"Nematron streams partial results every half second",
+"Nematron streams partial results every half second.",
+"Nemetron streams partial results every half second.",
+"Nemotron streams partial results every half second",
+"Nemotron streams partial results every half second.",
+"Nordic Rank pays through Fort Knox.",
+"Nordic rank pays through Fort Knox",
+"Nordicrank pays through Fortnox",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through four knocks",
+"Ol will review the pull request tonight.",
+"Olle will review the pull request tonight.",
+"On the Mac we use FluidAudio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use fluid audio for speech recognition",
+"On the Mac we use fluid audio for speech recognition.",
+"Open Code and press the Option key to start dictating",
+"Open Code and press the Option key to start dictating.",
+"Open Codex and press the Option key to start dictating.",
+"Open Coed and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating.",
+"Please fix the typo in the second paragraph.",
+"Put the kettle on and make some tea.",
+"Remember to back up your files every week.",
+"Run Parakeet through Sherbonks on Linux.",
+"Run Parakeet through Sherponks on Linux.",
+"Run Parakeet through Sherpronx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Save the notes in Obsidian under the Project folder.",
+"Save the notes in Obsidian under the project folder",
+"Save the notes in Obsidian under the project folder.",
+"Scadever could send a letter about the VAT return.",
+"Send the backlink report to Nordic Rank by Friday.",
+"Send the backlink report to Nordicrank by Friday.",
+"She sent a short note to the team.",
+"Skadaverket sent a letter about the VAT return.",
+"Skatoverkit sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Store the bookings in Postger SQL instead of a flat file",
+"Store the bookings in PostgreQ instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Supabase handles the Hogia and the database.",
+"Supabase handles the login and the database.",
+"Superbase handles the login and the database.",
+"Tauri bundles the Web View into a small desktop app",
+"Tauri bundles the web view into a small desktop app.",
+"Thanks that sounds good to me.",
+"Thanks, that sounds good to me.",
+"Thanks. That sounds good to me.",
+"That matters more than the deadline.",
+"The Highland cattle stood in the rain.",
+"The Hyprland cattle stood in the rain.",
+"The Parakeet in the park are loud in the morning.",
+"The Parakeet model runs locally on the laptop",
+"The Parakeet model runs locally on the laptop.",
+"The Queen visited the city last summer.",
+"The audio was too fluid to follow.",
+"The car was parked outside the hotel.",
+"The cluster runs on Kubernetes with three nodes.",
+"The default model is Quen with 27 billion parameters.",
+"The default model is Quen with twenty seven billion parameters.",
+"The default model is Qwen with 27 billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is quin with twenty seven billion parameters.",
+"The highland cattle stood in the rain.",
+"The landing page is built with Svelte Kit",
+"The landing page is built with SvelteKit",
+"The landing page is built with SvelteKit.",
+"The landing page is built with Sveltekit.",
+"The meeting starts at nine tomorrow morning.",
+"The old coat hangs behind the door.",
+"The parakeet model runs locally on the laptop.",
+"The parakeets in the park are loud in the morning.",
+"The parrot sat on the kitchen counter.",
+"The queen visited the city last summer.",
+"The server is a small Hetzner machine in Helsinki",
+"The server is a small Hetzner machine in Helsinki.",
+"The settings window is written in GTK4",
+"The settings window is written in GTK4.",
+"The super base price does not include tax.",
+"The tower was built more than a hundred years ago.",
+"The weather in the bay was calm and sunny, but",
+"The weather in the bay was calm and sunny.",
+"Tori bundles the Web View into a small desktop app",
+"Towere bundles the web view into a small desktop app.",
+"Towery bundles the web view into a small desktop app.",
+"We compiled Sherbonx from the PinSource tag",
+"We compiled Sherpalongs from the pin source tag.",
+"We compiled Sherparonx from the pin source tag.",
+"We compiled sherpa-onnx from the PinSource tag",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag.",
+"We need a group decision before launch.",
+"We need a group decision before lunch.",
+"We ordered a pizza and some Wayland,",
+"We ordered a pizza and some Wayland.",
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some salad.",
+"We should hire another designer next quarter.",
+"Yakob and Matyas went fishing on Sunday.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob and all met in Goatborg for a fek.",
+"Yakob and all met in Göteborg for Afica",
+"Yakob and all met in Göteborg for a fek.",
+"Yakob and all met in Göteborg for a fika.",
+"Yakob and all met in Göteborg for fika",
+"Yakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow.",
+"all will review the pull request tonight.",
+"ask claude to write the tests and codecs to review them.",
+"ask claude to write the tests and codex to review them",
+"ask uses grok because it answers very quickly.",
+"ask uses grok, because it answers very quickly.",
+"can you look at the budget again?",
+"can you send me the code from yesterday?",
+"cartesa reads the first sentence of the answer out loud.",
+"cartesia reads the first sentence of the answer out loud.",
+"claude wrote the tori prototype last week.",
+"claude wrote the towery prototype last week.",
+"cloud storage is cheaper than it used to be.",
+"coate turns my voice into text without the cloud",
+"coate turns my voice into text without the cloud.",
+"coet turns my voice into text without the cloud.",
+"compare nematron with parakeet on the same clips.",
+"compare nimitron with parakeet on the same clips",
+"diberg is spelled with a y.",
+"dieberg is spelled with a y.",
+"dyberg is spelled with a y.",
+"export the receipts to fort knox before the end of the month.",
+"export the receipts to fortnox before the end of the month.",
+"fortunately the train arrived on time.",
+"global shortcuts work differently on wayland",
+"global shortcuts work differently on wayland.",
+"grok serves quen faster than the other providers.",
+"grok serves quinn faster than the other providers.",
+"he drove the cart across the field.",
+"her sister moved to gothenburg in the spring.",
+"hi, this is aldiberg calling about the meeting.",
+"hi, this is old dieberg calling about the meeting.",
+"hi. this is all dyberg calling about the meeting.",
+"hogea and scatterverkit both need the same numbers.",
+"hoggier and skatoverkit both need the same numbers.",
+"hogia and skadaverkit both need the same numbers.",
+"hold on, i will call you back in a minute.",
+"hold on. i will call you back in a minute.",
+"i am taking the train to gataborg on monday.",
+"i am taking the train to gatteborg on monday.",
+"i am taking the train to goatborg on monday.",
+"i bought a coat and a new pair of boots.",
+"i logged into hoggia to check the invoices.",
+"i logged into hogia to check the invoices.",
+"i want to grow tomatoes in the garden this year.",
+"jacob and matthias went fishing on sunday.",
+"jakob and all met in gataborg for a fika.",
+"jakob and all met in gataborg for afica",
+"jakob and all met in goatborg for a fek.",
+"jakob wants a demo of the booking app tomorrow",
+"jakob wants a demo of the booking app tomorrow.",
+"let's grab a feaker after the call.",
+"let's grab a fica after the call.",
+"madhyas asked whether coat works on wayland",
+"matthias asked whether coat works on wayland",
+"matyas paid the last three invoices.",
+"motios asked whether coet works on weyland.",
+"motios paid the last three invoices.",
+"move the database from superbase to a hetzna server.",
+"move the database from superbase to a hetzner server",
+"my desktop is hyperland with a single monitor",
+"my desktop is hyperland with a single monitor.",
+"nematron streams partial results every half second",
+"nematron streams partial results every half second.",
+"nemetron streams partial results every half second.",
+"nordic rank pays through fort knox",
+"nordic rank pays through fort knox.",
+"nordicrank pays through four knocks",
+"ol will review the pull request tonight.",
+"on the mac we use fluid audio for speech recognition",
+"on the mac we use fluid audio for speech recognition.",
+"open code and press the option key to start dictating",
+"open code and press the option key to start dictating.",
+"open coed and press the option key to start dictating.",
+"please fix the typo in the second paragraph.",
+"put the kettle on and make some tea.",
+"put the kettle on, and make some tea.",
+"remember to back up your files every week.",
+"run parakeet through sherbonks on linux.",
+"run parakeet through sherponks on linux.",
+"run parakeet through sherpronx on linux.",
+"save the notes in obsidian under the project folder",
+"save the notes in obsidian under the project folder.",
+"scadever could send a letter about the vat return.",
+"send the backlink report to nordic rank by friday.",
+"send the backlink report to nordicrank by friday.",
+"she sent a short note to the team",
+"she sent a short note to the team.",
+"skadaverket sent a letter about the vat return.",
+"skatoverkit sent a letter about the vat return.",
+"store the bookings in postger sql instead of a flat file",
+"store the bookings in postgreq instead of a flat file.",
+"store the bookings in postgresql instead of a flat file.",
+"supabase handles the login and the database.",
+"superbase handles the login and the database.",
+"thanks that sounds good to me.",
+"thanks. that sounds good to me.",
+"that matters more than the deadline.",
+"the audio was too fluid to follow.",
+"the car was parked outside the hotel.",
+"the cluster runs on kubernetes with three nodes.",
+"the default model is quen with 27 billion parameters.",
+"the default model is quen with twenty seven billion parameters.",
+"the default model is quin with twenty seven billion parameters.",
+"the highland cattle stood in the rain.",
+"the landing page is built with svelte kit",
+"the landing page is built with sveltekit.",
+"the meeting starts at nine tomorrow morning.",
+"the old coat hangs behind the door.",
+"the parakeet model runs locally on the laptop",
+"the parakeet model runs locally on the laptop.",
+"the parakeets in the park are loud in the morning.",
+"the parrot sat on the kitchen counter.",
+"the queen visited the city last summer.",
+"the server is a small hetzner machine in helsinki",
+"the settings window is written in gtk4",
+"the settings window is written in gtk4.",
+"the super base price does not include tax.",
+"the tower was built more than a hundred years ago.",
+"the weather in the bay was calm and sunny, but",
+"the weather in the bay was calm and sunny.",
+"tori bundles the web view into a small desktop app",
+"towere bundles the web view into a small desktop app.",
+"towery bundles the web view into a small desktop app.",
+"we compiled sherbonx from the pinsource tag",
+"we compiled sherpalongs from the pin source tag.",
+"we compiled sherparonx from the pin source tag.",
+"we need a group decision before launch.",
+"we need a group decision before lunch.",
+"we ordered a pizza and some salad,",
+"we ordered a pizza and some salad.",
+"we should hire another designer next quarter.",
+"c++ code, C++ and c# on .net",
+"Use node.js and göteborg.dev",
+"all Dyberg and all",
+"Super. Base",
+"claude code and the cloud"
+],
+"adopt": [
+[
+"All will review the pull request tonight.",
+"Olle will review the pull request tonight."
+],
+[
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codecs to review them."
+],
+[
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codex to review them"
+],
+[
+"Ask Claude to write the tests and codecs to review them.",
+"Ask Claude to write the tests and Codex to review them."
+],
+[
+"Ask Claude to write the tests and codex to review them",
+"Ask Claude to write the tests and Codex to review them"
+],
+[
+"Ask Claude to write the tests and codex to review them",
+"Ask Claude to write the tests and Codex to review them."
+],
+[
+"Ask uses Grok because it answers very quickly.",
+"Ask uses Groq because it answers very quickly."
+],
+[
+"Ask uses Grok, because it answers very quickly.",
+"Ask uses Groq because it answers very quickly."
+],
+[
+"Ask uses Grok, because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly."
+],
+[
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Grok because it answers very quickly."
+],
+[
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Grok, because it answers very quickly."
+],
+[
+"COATE turns my voice into text without the cloud",
+"Koett turns my voice into text without the cloud."
+],
+[
+"COATE turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud."
+],
+[
+"Can you look at the budget again?",
+"Can you look at the budget again?"
+],
+[
+"Can you send me the code from yesterday?",
+"Can you send me the code from yesterday?"
+],
+[
+"Cartesa reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud."
+],
+[
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesa reads the first sentence of the answer out loud."
+],
+[
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud."
+],
+[
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tori prototype last week."
+],
+[
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Towery prototype last week."
+],
+[
+"Claude wrote the Tori prototype last week.",
+"Claude wrote the Tauri prototype last week."
+],
+[
+"Claude wrote the Towery prototype last week.",
+"Claude wrote the Tauri prototype last week."
+],
+[
+"Cloud storage is cheaper than it used to be.",
+"Cloud storage is cheaper than it used to be."
+],
+[
+"Coet turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud."
+],
+[
+"Compare Nematron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips."
+],
+[
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nematron with Parakeet on the same clips."
+],
+[
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nimitron with Parakeet on the same clips"
+],
+[
+"Compare Nimitron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips"
+],
+[
+"Compare Nimitron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips."
+],
+[
+"Diberg is spelled with a Y.",
+"Dyberg is spelled with a Y."
+],
+[
+"Diberg is spelled with a Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dieberg is spelled with a Y.",
+"Dyberg is spelled with a Y."
+],
+[
+"Dieberg is spelled with a Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dyberg is spelled with A Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dyberg is spelled with a y.",
+"Diberg is spelled with a Y."
+],
+[
+"Dyberg is spelled with a y.",
+"Dieberg is spelled with a Y."
+],
+[
+"Dyberg is spelled with a y.",
+"Dyberg is spelled with A Y."
+],
+[
+"Export the receipts to Fort Knox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month."
+],
+[
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fort Knox before the end of the month."
+],
+[
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month."
+],
+[
+"Fortunately the train arrived on time.",
+"Fortunately the train arrived on time."
+],
+[
+"Global shortcuts work differently on Wayland",
+"Global shortcuts work differently on Wayland."
+],
+[
+"Global shortcuts work differently on Wayland.",
+"Global shortcuts work differently on Wayland"
+],
+[
+"Global shortcuts work differently on Wayland.",
+"Global shortcuts work differently on Wayland."
+],
+[
+"Grok serves Quen faster than the other providers.",
+"Groq serves Qwen faster than the other providers."
+],
+[
+"Grok serves Quinn faster than the other providers.",
+"Groq serves Quinn faster than the other providers."
+],
+[
+"Grok serves Quinn faster than the other providers.",
+"Groq serves Qwen faster than the other providers."
+],
+[
+"Groq serves Qwen faster than the other providers.",
+"Grok serves Quen faster than the other providers."
+],
+[
+"Groq serves Qwen faster than the other providers.",
+"Grok serves Quinn faster than the other providers."
+],
+[
+"He drove the cart across the field.",
+"He drove the cart across the field."
+],
+[
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Gothenburg in the spring."
+],
+[
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Göteborg in the spring."
+],
+[
+"Hi, this is Aldiberg calling about the meeting.",
+"Hi, this is Dyberg calling about the meeting."
+],
+[
+"Hi, this is Aldiberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hi, this is Old Dieberg calling about the meeting.",
+"Hi, this is Old Dyberg calling about the meeting."
+],
+[
+"Hi, this is Old Dieberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Aldiberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Old Dieberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi. This is all Dyberg calling about the meeting."
+],
+[
+"Hi. This is all Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hogea and Scatterverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hoggier and Skatoverkit both need the same numbers.",
+"Hoggier and Skatteverket both need the same numbers."
+],
+[
+"Hoggier and Skatoverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hogia and Skadaverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hogea and Scatterverkit both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hoggier and Skatoverkit both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skadaverkit both need the same numbers."
+],
+[
+"Hold on, I will call you back in a minute.",
+"Hold on, I will call you back in a minute."
+],
+[
+"Hold on, I will call you back in a minute.",
+"Hold on. I will call you back in a minute."
+],
+[
+"Hold on. I will call you back in a minute.",
+"Hold on, I will call you back in a minute."
+],
+[
+"I am taking the train to Gataborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Gatteborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Goatborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Gataborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Gatteborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Goatborg on Monday."
+],
+[
+"I bought a coat and a new pair of boots.",
+"I bought a coat and a new pair of boots."
+],
+[
+"I logged into Hoggia to check the invoices.",
+"I logged into Hogia to check the invoices."
+],
+[
+"I logged into Hogia to check the invoices.",
+"I logged into Hoggia to check the invoices."
+],
+[
+"I logged into Hogia to check the invoices.",
+"I logged into Hogia to check the invoices."
+],
+[
+"I want to grow tomatoes in the garden this year.",
+"I want to grow tomatoes in the garden this year."
+],
+[
+"Jacob and Matthias went fishing on Sunday.",
+"Jacob and Matthias went fishing on Sunday."
+],
+[
+"Jacob and Matthias went fishing on Sunday.",
+"Yakob and Matyas went fishing on Sunday."
+],
+[
+"Jakob and all met in Gataborg for Afica",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Gataborg for Afica",
+"Yakob and all met in Göteborg for Afica"
+],
+[
+"Jakob and all met in Gataborg for Afica",
+"Yakob and all met in Göteborg for fika"
+],
+[
+"Jakob and all met in Gataborg for a Fika.",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Gataborg for a Fika.",
+"Yakob and all met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Goatborg for a fek.",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Goatborg for a fek.",
+"Yakob and all met in Goatborg for a fek."
+],
+[
+"Jakob and all met in Goatborg for a fek.",
+"Yakob and all met in Göteborg for a fek."
+],
+[
+"Jakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow"
+],
+[
+"Jakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow."
+],
+[
+"Jakob wants a demo of the booking app tomorrow.",
+"Yakob wants a demo of the booking app tomorrow."
+],
+[
+"Koett turns my voice into text without the cloud.",
+"COATE turns my voice into text without the cloud"
+],
+[
+"Koett turns my voice into text without the cloud.",
+"COATE turns my voice into text without the cloud."
+],
+[
+"Koett turns my voice into text without the cloud.",
+"Coet turns my voice into text without the cloud."
+],
+[
+"Let's grab a FICA after the call.",
+"Let's grab a fika after the call."
+],
+[
+"Let's grab a feaker after the call.",
+"Let's grab a fika after the call."
+],
+[
+"Let's grab a fika after the call.",
+"Let's grab a FICA after the call."
+],
+[
+"Let's grab a fika after the call.",
+"Let's grab a feaker after the call."
+],
+[
+"Madhyas asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland"
+],
+[
+"Madhyas asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Matthias asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland"
+],
+[
+"Matthias asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Madhyas asked whether Coat works on Wayland"
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Matthias asked whether Coat works on Wayland"
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Motios asked whether Coet works on Weyland."
+],
+[
+"Matyas paid the last three invoices.",
+"Matyas paid the last three invoices."
+],
+[
+"Matyas paid the last three invoices.",
+"Motios paid the last three invoices."
+],
+[
+"Motios asked whether Coet works on Weyland.",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Motios asked whether Coet works on Weyland.",
+"Motios asked whether Coet works on Wayland."
+],
+[
+"Motios asked whether Coet works on Weyland.",
+"Motios asked whether Koett works on Wayland."
+],
+[
+"Motios paid the last three invoices.",
+"Matyas paid the last three invoices."
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from SuperBase to a Hetzner server"
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Superbase to a Hetzna server."
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Superbase to a Hetzner server"
+],
+[
+"Move the database from SuperBase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server"
+],
+[
+"Move the database from SuperBase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"Move the database from Superbase to a Hetzna server.",
+"Move the database from Supabase to a Hetzna server."
+],
+[
+"Move the database from Superbase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"Move the database from Superbase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server"
+],
+[
+"Move the database from Superbase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"My desktop is Hyperland with a single monitor",
+"My desktop is Hyprland with a single monitor"
+],
+[
+"My desktop is Hyperland with a single monitor",
+"My desktop is Hyprland with a single monitor."
+],
+[
+"My desktop is Hyperland with a single monitor.",
+"My desktop is Hyprland with a single monitor."
+],
+[
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyperland with a single monitor"
+],
+[
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyperland with a single monitor."
+],
+[
+"Nematron streams partial results every half second",
+"Nemotron streams partial results every half second"
+],
+[
+"Nematron streams partial results every half second",
+"Nemotron streams partial results every half second."
+],
+[
+"Nematron streams partial results every half second.",
+"Nemotron streams partial results every half second."
+],
+[
+"Nemetron streams partial results every half second.",
+"Nemotron streams partial results every half second."
+],
+[
+"Nemotron streams partial results every half second.",
+"Nematron streams partial results every half second"
+],
+[
+"Nemotron streams partial results every half second.",
+"Nematron streams partial results every half second."
+],
+[
+"Nemotron streams partial results every half second.",
+"Nemetron streams partial results every half second."
+],
+[
+"Nordic Rank pays through Fort Knox.",
+"Nordicrank pays through Fortnox."
+],
+[
+"Nordic rank pays through Fort Knox",
+"Nordicrank pays through Fortnox"
+],
+[
+"Nordic rank pays through Fort Knox",
+"Nordicrank pays through Fortnox."
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordic Rank pays through Fort Knox."
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordic rank pays through Fort Knox"
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through four knocks"
+],
+[
+"Nordicrank pays through four knocks",
+"Nordicrank pays through Fortnox."
+],
+[
+"Ol will review the pull request tonight.",
+"Olle will review the pull request tonight."
+],
+[
+"Olle will review the pull request tonight.",
+"All will review the pull request tonight."
+],
+[
+"Olle will review the pull request tonight.",
+"Ol will review the pull request tonight."
+],
+[
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use fluid audio for speech recognition"
+],
+[
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use fluid audio for speech recognition."
+],
+[
+"On the Mac we use fluid audio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition"
+],
+[
+"On the Mac we use fluid audio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition."
+],
+[
+"On the Mac we use fluid audio for speech recognition.",
+"On the Mac we use FluidAudio for speech recognition."
+],
+[
+"Open Code and press the Option key to start dictating",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Code and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Coed and press the Option key to start dictating.",
+"Open Codex and press the Option key to start dictating."
+],
+[
+"Open Coed and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Code and press the Option key to start dictating"
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Code and press the Option key to start dictating."
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Coed and press the Option key to start dictating."
+],
+[
+"Please fix the typo in the second paragraph.",
+"Please fix the typo in the second paragraph."
+],
+[
+"Put the kettle on and make some tea.",
+"Put the kettle on and make some tea."
+],
+[
+"Put the kettle on and make some tea.",
+"put the kettle on, and make some tea."
+],
+[
+"Remember to back up your files every week.",
+"Remember to back up your files every week."
+],
+[
+"Run Parakeet through Sherbonks on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through Sherponks on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through Sherpronx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherbonks on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherponks on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherpronx on Linux."
+],
+[
+"Save the notes in Obsidian under the Project folder.",
+"Save the notes in Obsidian under the project folder."
+],
+[
+"Save the notes in Obsidian under the project folder",
+"Save the notes in Obsidian under the project folder."
+],
+[
+"Save the notes in Obsidian under the project folder.",
+"Save the notes in Obsidian under the Project folder."
+],
+[
+"Save the notes in Obsidian under the project folder.",
+"Save the notes in Obsidian under the project folder"
+],
+[
+"Scadever could send a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Send the backlink report to Nordic Rank by Friday.",
+"Send the backlink report to Nordicrank by Friday."
+],
+[
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordic Rank by Friday."
+],
+[
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordicrank by Friday."
+],
+[
+"She sent a short note to the team.",
+"She sent a short note to the team."
+],
+[
+"She sent a short note to the team.",
+"she sent a short note to the team"
+],
+[
+"Skadaverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Skatoverkit sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Scadever could send a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Skadaverket sent a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Skatoverkit sent a letter about the VAT return."
+],
+[
+"Store the bookings in Postger SQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file"
+],
+[
+"Store the bookings in Postger SQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Store the bookings in PostgreQ instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in Postger SQL instead of a flat file"
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreQ instead of a flat file."
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Supabase handles the login and the database.",
+"Supabase handles the Hogia and the database."
+],
+[
+"Supabase handles the login and the database.",
+"Supabase handles the login and the database."
+],
+[
+"Supabase handles the login and the database.",
+"Superbase handles the login and the database."
+],
+[
+"Superbase handles the login and the database.",
+"Supabase handles the Hogia and the database."
+],
+[
+"Superbase handles the login and the database.",
+"Supabase handles the login and the database."
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Tori bundles the Web View into a small desktop app"
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Towere bundles the web view into a small desktop app."
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Towery bundles the web view into a small desktop app."
+],
+[
+"Thanks that sounds good to me.",
+"Thanks, that sounds good to me."
+],
+[
+"Thanks, that sounds good to me.",
+"Thanks that sounds good to me."
+],
+[
+"Thanks, that sounds good to me.",
+"Thanks. That sounds good to me."
+],
+[
+"Thanks. That sounds good to me.",
+"Thanks, that sounds good to me."
+],
+[
+"That matters more than the deadline.",
+"That matters more than the deadline."
+],
+[
+"The Highland cattle stood in the rain.",
+"The Hyprland cattle stood in the rain."
+],
+[
+"The Highland cattle stood in the rain.",
+"The highland cattle stood in the rain."
+],
+[
+"The Parakeet model runs locally on the laptop",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop"
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The parakeet model runs locally on the laptop."
+],
+[
+"The Queen visited the city last summer.",
+"The queen visited the city last summer."
+],
+[
+"The audio was too fluid to follow.",
+"The audio was too fluid to follow."
+],
+[
+"The car was parked outside the hotel.",
+"The car was parked outside the hotel."
+],
+[
+"The cluster runs on Kubernetes with three nodes.",
+"The cluster runs on Kubernetes with three nodes."
+],
+[
+"The default model is Quen with 27 billion parameters.",
+"The default model is Qwen with 27 billion parameters."
+],
+[
+"The default model is Quen with 27 billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The default model is Quen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Quen with 27 billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Quen with twenty seven billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is quin with twenty seven billion parameters."
+],
+[
+"The default model is quin with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The highland cattle stood in the rain.",
+"The Highland cattle stood in the rain."
+],
+[
+"The landing page is built with Svelte Kit",
+"The landing page is built with SvelteKit"
+],
+[
+"The landing page is built with Svelte Kit",
+"The landing page is built with SvelteKit."
+],
+[
+"The landing page is built with SvelteKit.",
+"The landing page is built with Svelte Kit"
+],
+[
+"The landing page is built with SvelteKit.",
+"The landing page is built with Sveltekit."
+],
+[
+"The landing page is built with Sveltekit.",
+"The landing page is built with SvelteKit."
+],
+[
+"The meeting starts at nine tomorrow morning.",
+"The meeting starts at nine tomorrow morning."
+],
+[
+"The old coat hangs behind the door.",
+"The old coat hangs behind the door."
+],
+[
+"The parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The parakeets in the park are loud in the morning.",
+"The Parakeet in the park are loud in the morning."
+],
+[
+"The parakeets in the park are loud in the morning.",
+"The parakeets in the park are loud in the morning."
+],
+[
+"The parrot sat on the kitchen counter.",
+"The parrot sat on the kitchen counter."
+],
+[
+"The queen visited the city last summer.",
+"The Queen visited the city last summer."
+],
+[
+"The server is a small Hetzner machine in Helsinki",
+"The server is a small Hetzner machine in Helsinki."
+],
+[
+"The server is a small Hetzner machine in Helsinki.",
+"The server is a small Hetzner machine in Helsinki"
+],
+[
+"The settings window is written in GTK4",
+"The settings window is written in GTK4."
+],
+[
+"The settings window is written in GTK4.",
+"The settings window is written in GTK4"
+],
+[
+"The settings window is written in GTK4.",
+"The settings window is written in GTK4."
+],
+[
+"The super base price does not include tax.",
+"The super base price does not include tax."
+],
+[
+"The tower was built more than a hundred years ago.",
+"The tower was built more than a hundred years ago."
+],
+[
+"The weather in the bay was calm and sunny, but",
+"The weather in the bay was calm and sunny."
+],
+[
+"The weather in the bay was calm and sunny.",
+"The weather in the bay was calm and sunny, but"
+],
+[
+"The weather in the bay was calm and sunny.",
+"The weather in the bay was calm and sunny."
+],
+[
+"Tori bundles the Web View into a small desktop app",
+"Tauri bundles the Web View into a small desktop app"
+],
+[
+"Tori bundles the Web View into a small desktop app",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"Towere bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"Towery bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"We compiled Sherbonx from the PinSource tag",
+"We compiled sherpa-onnx from the PinSource tag"
+],
+[
+"We compiled Sherbonx from the PinSource tag",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled Sherpalongs from the pin source tag.",
+"We compiled sherpa-onnx from the pin source tag."
+],
+[
+"We compiled Sherpalongs from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled Sherparonx from the pin source tag.",
+"We compiled sherpa-onnx from the pin source tag."
+],
+[
+"We compiled Sherparonx from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherbonx from the PinSource tag"
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherpalongs from the pin source tag."
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherparonx from the pin source tag."
+],
+[
+"We need a group decision before launch.",
+"We need a group decision before lunch."
+],
+[
+"We need a group decision before lunch.",
+"We need a group decision before launch."
+],
+[
+"We need a group decision before lunch.",
+"We need a group decision before lunch."
+],
+[
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some Wayland,"
+],
+[
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some salad."
+],
+[
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some Wayland."
+],
+[
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some salad,"
+],
+[
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some salad."
+],
+[
+"We should hire another designer next quarter.",
+"We should hire another designer next quarter."
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Gataborg for Afica"
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Gataborg for a Fika."
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Goatborg for a fek."
+],
+[
+"Yakob wants a demo of the booking app tomorrow.",
+"Jakob wants a demo of the booking app tomorrow"
+],
+[
+"Yakob wants a demo of the booking app tomorrow.",
+"Jakob wants a demo of the booking app tomorrow."
+],
+[
+"put the kettle on, and make some tea.",
+"Put the kettle on and make some tea."
+],
+[
+"she sent a short note to the team",
+"She sent a short note to the team."
+]
+],
+"learn": [
+[
+"All will review the pull request tonight.",
+"Olle will review the pull request tonight."
+],
+[
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codecs to review them."
+],
+[
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codex to review them"
+],
+[
+"Ask Claude to write the tests and codecs to review them.",
+"Ask Claude to write the tests and Codex to review them."
+],
+[
+"Ask Claude to write the tests and codex to review them",
+"Ask Claude to write the tests and Codex to review them."
+],
+[
+"Ask uses Grok because it answers very quickly.",
+"Ask uses Groq because it answers very quickly."
+],
+[
+"Ask uses Grok, because it answers very quickly.",
+"Ask uses Groq because it answers very quickly."
+],
+[
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Grok because it answers very quickly."
+],
+[
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Grok, because it answers very quickly."
+],
+[
+"COATE turns my voice into text without the cloud",
+"Koett turns my voice into text without the cloud."
+],
+[
+"COATE turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud."
+],
+[
+"Can you look at the budget again?",
+"Can you look at the budget again?"
+],
+[
+"Can you send me the code from yesterday?",
+"Can you send me the code from yesterday?"
+],
+[
+"Cartesa reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud."
+],
+[
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesa reads the first sentence of the answer out loud."
+],
+[
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud."
+],
+[
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tori prototype last week."
+],
+[
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Towery prototype last week."
+],
+[
+"Claude wrote the Tori prototype last week.",
+"Claude wrote the Tauri prototype last week."
+],
+[
+"Claude wrote the Towery prototype last week.",
+"Claude wrote the Tauri prototype last week."
+],
+[
+"Cloud storage is cheaper than it used to be.",
+"Cloud storage is cheaper than it used to be."
+],
+[
+"Coet turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud."
+],
+[
+"Compare Nematron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips."
+],
+[
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nematron with Parakeet on the same clips."
+],
+[
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nimitron with Parakeet on the same clips"
+],
+[
+"Compare Nimitron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips."
+],
+[
+"Diberg is spelled with a Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dieberg is spelled with a Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dyberg is spelled with A Y.",
+"Dyberg is spelled with a y."
+],
+[
+"Dyberg is spelled with a y.",
+"Diberg is spelled with a Y."
+],
+[
+"Dyberg is spelled with a y.",
+"Dieberg is spelled with a Y."
+],
+[
+"Dyberg is spelled with a y.",
+"Dyberg is spelled with A Y."
+],
+[
+"Export the receipts to Fort Knox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month."
+],
+[
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fort Knox before the end of the month."
+],
+[
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month."
+],
+[
+"Fortunately the train arrived on time.",
+"Fortunately the train arrived on time."
+],
+[
+"Global shortcuts work differently on Wayland",
+"Global shortcuts work differently on Wayland."
+],
+[
+"Global shortcuts work differently on Wayland.",
+"Global shortcuts work differently on Wayland"
+],
+[
+"Global shortcuts work differently on Wayland.",
+"Global shortcuts work differently on Wayland."
+],
+[
+"Grok serves Quen faster than the other providers.",
+"Groq serves Qwen faster than the other providers."
+],
+[
+"Grok serves Quinn faster than the other providers.",
+"Groq serves Qwen faster than the other providers."
+],
+[
+"Groq serves Qwen faster than the other providers.",
+"Grok serves Quen faster than the other providers."
+],
+[
+"Groq serves Qwen faster than the other providers.",
+"Grok serves Quinn faster than the other providers."
+],
+[
+"He drove the cart across the field.",
+"He drove the cart across the field."
+],
+[
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Gothenburg in the spring."
+],
+[
+"Hi, this is Aldiberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hi, this is Old Dieberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Aldiberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Old Dieberg calling about the meeting."
+],
+[
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi. This is all Dyberg calling about the meeting."
+],
+[
+"Hi. This is all Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting."
+],
+[
+"Hogea and Scatterverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hoggier and Skatoverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hogia and Skadaverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hogea and Scatterverkit both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hoggier and Skatoverkit both need the same numbers."
+],
+[
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skadaverkit both need the same numbers."
+],
+[
+"Hold on, I will call you back in a minute.",
+"Hold on, I will call you back in a minute."
+],
+[
+"Hold on, I will call you back in a minute.",
+"Hold on. I will call you back in a minute."
+],
+[
+"Hold on. I will call you back in a minute.",
+"Hold on, I will call you back in a minute."
+],
+[
+"I am taking the train to Gataborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Gatteborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Goatborg on Monday.",
+"I am taking the train to Göteborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Gataborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Gatteborg on Monday."
+],
+[
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Goatborg on Monday."
+],
+[
+"I bought a coat and a new pair of boots.",
+"I bought a coat and a new pair of boots."
+],
+[
+"I logged into Hoggia to check the invoices.",
+"I logged into Hogia to check the invoices."
+],
+[
+"I logged into Hogia to check the invoices.",
+"I logged into Hoggia to check the invoices."
+],
+[
+"I logged into Hogia to check the invoices.",
+"I logged into Hogia to check the invoices."
+],
+[
+"I want to grow tomatoes in the garden this year.",
+"I want to grow tomatoes in the garden this year."
+],
+[
+"Jacob and Matthias went fishing on Sunday.",
+"Jacob and Matthias went fishing on Sunday."
+],
+[
+"Jakob and all met in Gataborg for Afica",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Gataborg for a Fika.",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob and all met in Goatborg for a fek.",
+"Yakob and Olle met in Göteborg for a fika."
+],
+[
+"Jakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow."
+],
+[
+"Jakob wants a demo of the booking app tomorrow.",
+"Yakob wants a demo of the booking app tomorrow."
+],
+[
+"Koett turns my voice into text without the cloud.",
+"COATE turns my voice into text without the cloud"
+],
+[
+"Koett turns my voice into text without the cloud.",
+"COATE turns my voice into text without the cloud."
+],
+[
+"Koett turns my voice into text without the cloud.",
+"Coet turns my voice into text without the cloud."
+],
+[
+"Let's grab a FICA after the call.",
+"Let's grab a fika after the call."
+],
+[
+"Let's grab a feaker after the call.",
+"Let's grab a fika after the call."
+],
+[
+"Let's grab a fika after the call.",
+"Let's grab a FICA after the call."
+],
+[
+"Let's grab a fika after the call.",
+"Let's grab a feaker after the call."
+],
+[
+"Madhyas asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Matthias asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Madhyas asked whether Coat works on Wayland"
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Matthias asked whether Coat works on Wayland"
+],
+[
+"Matyas asked whether Koett works on Wayland.",
+"Motios asked whether Coet works on Weyland."
+],
+[
+"Matyas paid the last three invoices.",
+"Matyas paid the last three invoices."
+],
+[
+"Matyas paid the last three invoices.",
+"Motios paid the last three invoices."
+],
+[
+"Motios asked whether Coet works on Weyland.",
+"Matyas asked whether Koett works on Wayland."
+],
+[
+"Motios paid the last three invoices.",
+"Matyas paid the last three invoices."
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from SuperBase to a Hetzner server"
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Superbase to a Hetzna server."
+],
+[
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Superbase to a Hetzner server"
+],
+[
+"Move the database from SuperBase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"Move the database from Superbase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"Move the database from Superbase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server."
+],
+[
+"My desktop is Hyperland with a single monitor",
+"My desktop is Hyprland with a single monitor."
+],
+[
+"My desktop is Hyperland with a single monitor.",
+"My desktop is Hyprland with a single monitor."
+],
+[
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyperland with a single monitor"
+],
+[
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyperland with a single monitor."
+],
+[
+"Nematron streams partial results every half second",
+"Nemotron streams partial results every half second."
+],
+[
+"Nematron streams partial results every half second.",
+"Nemotron streams partial results every half second."
+],
+[
+"Nemetron streams partial results every half second.",
+"Nemotron streams partial results every half second."
+],
+[
+"Nemotron streams partial results every half second.",
+"Nematron streams partial results every half second"
+],
+[
+"Nemotron streams partial results every half second.",
+"Nematron streams partial results every half second."
+],
+[
+"Nemotron streams partial results every half second.",
+"Nemetron streams partial results every half second."
+],
+[
+"Nordic Rank pays through Fort Knox.",
+"Nordicrank pays through Fortnox."
+],
+[
+"Nordic rank pays through Fort Knox",
+"Nordicrank pays through Fortnox."
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordic Rank pays through Fort Knox."
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordic rank pays through Fort Knox"
+],
+[
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through four knocks"
+],
+[
+"Nordicrank pays through four knocks",
+"Nordicrank pays through Fortnox."
+],
+[
+"Ol will review the pull request tonight.",
+"Olle will review the pull request tonight."
+],
+[
+"Olle will review the pull request tonight.",
+"All will review the pull request tonight."
+],
+[
+"Olle will review the pull request tonight.",
+"Ol will review the pull request tonight."
+],
+[
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use fluid audio for speech recognition"
+],
+[
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use fluid audio for speech recognition."
+],
+[
+"On the Mac we use fluid audio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition."
+],
+[
+"On the Mac we use fluid audio for speech recognition.",
+"On the Mac we use FluidAudio for speech recognition."
+],
+[
+"Open Code and press the Option key to start dictating",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Code and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Coed and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating."
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Code and press the Option key to start dictating"
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Code and press the Option key to start dictating."
+],
+[
+"Open Koett and press the option key to start dictating.",
+"Open Coed and press the Option key to start dictating."
+],
+[
+"Please fix the typo in the second paragraph.",
+"Please fix the typo in the second paragraph."
+],
+[
+"Put the kettle on and make some tea.",
+"Put the kettle on and make some tea."
+],
+[
+"Put the kettle on and make some tea.",
+"put the kettle on, and make some tea."
+],
+[
+"Remember to back up your files every week.",
+"Remember to back up your files every week."
+],
+[
+"Run Parakeet through Sherbonks on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through Sherponks on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through Sherpronx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherbonks on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherponks on Linux."
+],
+[
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through Sherpronx on Linux."
+],
+[
+"Save the notes in Obsidian under the Project folder.",
+"Save the notes in Obsidian under the project folder."
+],
+[
+"Save the notes in Obsidian under the project folder",
+"Save the notes in Obsidian under the project folder."
+],
+[
+"Save the notes in Obsidian under the project folder.",
+"Save the notes in Obsidian under the Project folder."
+],
+[
+"Save the notes in Obsidian under the project folder.",
+"Save the notes in Obsidian under the project folder"
+],
+[
+"Scadever could send a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Send the backlink report to Nordic Rank by Friday.",
+"Send the backlink report to Nordicrank by Friday."
+],
+[
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordic Rank by Friday."
+],
+[
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordicrank by Friday."
+],
+[
+"She sent a short note to the team.",
+"She sent a short note to the team."
+],
+[
+"She sent a short note to the team.",
+"she sent a short note to the team"
+],
+[
+"Skadaverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Skatoverkit sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Scadever could send a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Skadaverket sent a letter about the VAT return."
+],
+[
+"Skatteverket sent a letter about the VAT return.",
+"Skatoverkit sent a letter about the VAT return."
+],
+[
+"Store the bookings in Postger SQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Store the bookings in PostgreQ instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in Postger SQL instead of a flat file"
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreQ instead of a flat file."
+],
+[
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file."
+],
+[
+"Supabase handles the login and the database.",
+"Supabase handles the login and the database."
+],
+[
+"Supabase handles the login and the database.",
+"Superbase handles the login and the database."
+],
+[
+"Superbase handles the login and the database.",
+"Supabase handles the login and the database."
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Tori bundles the Web View into a small desktop app"
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Towere bundles the web view into a small desktop app."
+],
+[
+"Tauri bundles the web view into a small desktop app.",
+"Towery bundles the web view into a small desktop app."
+],
+[
+"Thanks that sounds good to me.",
+"Thanks, that sounds good to me."
+],
+[
+"Thanks, that sounds good to me.",
+"Thanks that sounds good to me."
+],
+[
+"Thanks, that sounds good to me.",
+"Thanks. That sounds good to me."
+],
+[
+"Thanks. That sounds good to me.",
+"Thanks, that sounds good to me."
+],
+[
+"That matters more than the deadline.",
+"That matters more than the deadline."
+],
+[
+"The Highland cattle stood in the rain.",
+"The highland cattle stood in the rain."
+],
+[
+"The Parakeet model runs locally on the laptop",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop"
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The Parakeet model runs locally on the laptop.",
+"The parakeet model runs locally on the laptop."
+],
+[
+"The Queen visited the city last summer.",
+"The queen visited the city last summer."
+],
+[
+"The audio was too fluid to follow.",
+"The audio was too fluid to follow."
+],
+[
+"The car was parked outside the hotel.",
+"The car was parked outside the hotel."
+],
+[
+"The cluster runs on Kubernetes with three nodes.",
+"The cluster runs on Kubernetes with three nodes."
+],
+[
+"The default model is Quen with 27 billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The default model is Quen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Quen with 27 billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Quen with twenty seven billion parameters."
+],
+[
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is quin with twenty seven billion parameters."
+],
+[
+"The default model is quin with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters."
+],
+[
+"The highland cattle stood in the rain.",
+"The Highland cattle stood in the rain."
+],
+[
+"The landing page is built with Svelte Kit",
+"The landing page is built with SvelteKit."
+],
+[
+"The landing page is built with SvelteKit.",
+"The landing page is built with Svelte Kit"
+],
+[
+"The landing page is built with SvelteKit.",
+"The landing page is built with Sveltekit."
+],
+[
+"The landing page is built with Sveltekit.",
+"The landing page is built with SvelteKit."
+],
+[
+"The meeting starts at nine tomorrow morning.",
+"The meeting starts at nine tomorrow morning."
+],
+[
+"The old coat hangs behind the door.",
+"The old coat hangs behind the door."
+],
+[
+"The parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop."
+],
+[
+"The parakeets in the park are loud in the morning.",
+"The parakeets in the park are loud in the morning."
+],
+[
+"The parrot sat on the kitchen counter.",
+"The parrot sat on the kitchen counter."
+],
+[
+"The queen visited the city last summer.",
+"The Queen visited the city last summer."
+],
+[
+"The server is a small Hetzner machine in Helsinki",
+"The server is a small Hetzner machine in Helsinki."
+],
+[
+"The server is a small Hetzner machine in Helsinki.",
+"The server is a small Hetzner machine in Helsinki"
+],
+[
+"The settings window is written in GTK4",
+"The settings window is written in GTK4."
+],
+[
+"The settings window is written in GTK4.",
+"The settings window is written in GTK4"
+],
+[
+"The settings window is written in GTK4.",
+"The settings window is written in GTK4."
+],
+[
+"The super base price does not include tax.",
+"The super base price does not include tax."
+],
+[
+"The tower was built more than a hundred years ago.",
+"The tower was built more than a hundred years ago."
+],
+[
+"The weather in the bay was calm and sunny, but",
+"The weather in the bay was calm and sunny."
+],
+[
+"The weather in the bay was calm and sunny.",
+"The weather in the bay was calm and sunny, but"
+],
+[
+"The weather in the bay was calm and sunny.",
+"The weather in the bay was calm and sunny."
+],
+[
+"Tori bundles the Web View into a small desktop app",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"Towere bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"Towery bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app."
+],
+[
+"We compiled Sherbonx from the PinSource tag",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled Sherpalongs from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled Sherparonx from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag."
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherbonx from the PinSource tag"
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherpalongs from the pin source tag."
+],
+[
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled Sherparonx from the pin source tag."
+],
+[
+"We need a group decision before launch.",
+"We need a group decision before lunch."
+],
+[
+"We need a group decision before lunch.",
+"We need a group decision before launch."
+],
+[
+"We need a group decision before lunch.",
+"We need a group decision before lunch."
+],
+[
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some salad."
+],
+[
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some salad,"
+],
+[
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some salad."
+],
+[
+"We should hire another designer next quarter.",
+"We should hire another designer next quarter."
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Gataborg for Afica"
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Gataborg for a Fika."
+],
+[
+"Yakob and Olle met in Göteborg for a fika.",
+"Jakob and all met in Goatborg for a fek."
+],
+[
+"Yakob wants a demo of the booking app tomorrow.",
+"Jakob wants a demo of the booking app tomorrow"
+],
+[
+"Yakob wants a demo of the booking app tomorrow.",
+"Jakob wants a demo of the booking app tomorrow."
+],
+[
+"put the kettle on, and make some tea.",
+"Put the kettle on and make some tea."
+],
+[
+"she sent a short note to the team",
+"She sent a short note to the team."
+]
+]
+},
+"expected": {
+"adopt": [
+"All will review the pull request tonight.",
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codex to review them",
+"Ask Claude to write the tests and codex to review them",
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly.",
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Groq because it answers very quickly.",
+"Koett turns my voice into text without the cloud",
+"Koett turns my voice into text without the cloud.",
+"Can you look at the budget again?",
+"Can you send me the code from yesterday?",
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud.",
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tauri prototype last week.",
+"Cloud storage is cheaper than it used to be.",
+"Koett turns my voice into text without the cloud.",
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with A Y.",
+"Dyberg is spelled with a y.",
+"Dyberg is spelled with a y.",
+"Dyberg is spelled with a y.",
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month.",
+"Fortunately the train arrived on time.",
+"Global shortcuts work differently on Wayland",
+"Global shortcuts work differently on Wayland.",
+"Global shortcuts work differently on Wayland.",
+"Groq serves Qwen faster than the other providers.",
+"Groq serves Quinn faster than the other providers.",
+"Groq serves Qwen faster than the other providers.",
+"Groq serves Qwen faster than the other providers.",
+"Groq serves Qwen faster than the other providers.",
+"He drove the cart across the field.",
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Göteborg in the spring.",
+"Hi, this is Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Old Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi. This is Olle Dyberg calling about the meeting.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hoggier and Skatteverket both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hold on, I will call you back in a minute.",
+"Hold on, I will call you back in a minute.",
+"Hold on. I will call you back in a minute.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I bought a coat and a new pair of boots.",
+"I logged into Hogia to check the invoices.",
+"I logged into Hogia to check the invoices.",
+"I logged into Hogia to check the invoices.",
+"I want to grow tomatoes in the garden this year.",
+"Jacob and Matthias went fishing on Sunday.",
+"Yakob and Matyas went fishing on Sunday.",
+"Yakob and all met in Göteborg for Afica",
+"Yakob and all met in Göteborg for Afica",
+"Yakob and all met in Göteborg for fika",
+"Yakob and all met in Göteborg for a Fika.",
+"Yakob and all met in Göteborg for a Fika.",
+"Yakob and all met in Göteborg for a fika.",
+"Yakob and all met in Goatborg for a fek.",
+"Yakob and all met in Göteborg for a fek.",
+"Yakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow.",
+"Koett turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud.",
+"Koett turns my voice into text without the cloud.",
+"Let's grab a fika after the call.",
+"Let's grab a fika after the call.",
+"Let's grab a fika after the call.",
+"Let's grab a fika after the call.",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland.",
+"Matyas asked whether Koett works on Wayland.",
+"Matyas asked whether Koett works on Wayland.",
+"Matyas paid the last three invoices.",
+"Matyas paid the last three invoices.",
+"Matyas asked whether Koett works on Wayland.",
+"Motios asked whether Coet works on Wayland.",
+"Motios asked whether Koett works on Wayland.",
+"Matyas paid the last three invoices.",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server",
+"My desktop is Hyprland with a single monitor",
+"My desktop is Hyprland with a single monitor",
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyprland with a single monitor.",
+"My desktop is Hyprland with a single monitor.",
+"Nemotron streams partial results every half second",
+"Nemotron streams partial results every half second",
+"Nemotron streams partial results every half second.",
+"Nemotron streams partial results every half second.",
+"Nemotron streams partial results every half second.",
+"Nemotron streams partial results every half second.",
+"Nemotron streams partial results every half second.",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through Fortnox",
+"Nordicrank pays through Fortnox",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through four knocks",
+"Ol will review the pull request tonight.",
+"Olle will review the pull request tonight.",
+"Olle will review the pull request tonight.",
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use FluidAudio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition.",
+"Open Code and press the Option key to start dictating",
+"Open Code and press the Option key to start dictating.",
+"Open Codex and press the Option key to start dictating.",
+"Open Koett and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating.",
+"Open Koett and press the option key to start dictating.",
+"Open Koett and press the option key to start dictating.",
+"Please fix the typo in the second paragraph.",
+"Put the kettle on and make some tea.",
+"Put the kettle on and make some tea.",
+"Remember to back up your files every week.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Save the notes in Obsidian under the Project folder.",
+"Save the notes in Obsidian under the project folder",
+"Save the notes in Obsidian under the project folder.",
+"Save the notes in Obsidian under the project folder.",
+"Scadever could send a letter about the VAT return.",
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordicrank by Friday.",
+"She sent a short note to the team.",
+"She sent a short note to the team.",
+"Skatteverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Store the bookings in PostgreSQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Supabase handles the Hogia and the database.",
+"Supabase handles the login and the database.",
+"Supabase handles the login and the database.",
+"Supabase handles the Hogia and the database.",
+"Supabase handles the login and the database.",
+"Tauri bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app.",
+"Thanks that sounds good to me.",
+"Thanks, that sounds good to me.",
+"Thanks, that sounds good to me.",
+"Thanks. That sounds good to me.",
+"That matters more than the deadline.",
+"The Hyprland cattle stood in the rain.",
+"The Highland cattle stood in the rain.",
+"The Parakeet model runs locally on the laptop",
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop.",
+"The Parakeet model runs locally on the laptop.",
+"The Queen visited the city last summer.",
+"The audio was too fluid to follow.",
+"The car was parked outside the hotel.",
+"The cluster runs on Kubernetes with three nodes.",
+"The default model is Qwen with 27 billion parameters.",
+"The default model is Qwen with 27 billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The highland cattle stood in the rain.",
+"The landing page is built with SvelteKit",
+"The landing page is built with SvelteKit",
+"The landing page is built with SvelteKit.",
+"The landing page is built with SvelteKit.",
+"The landing page is built with Sveltekit.",
+"The meeting starts at nine tomorrow morning.",
+"The old coat hangs behind the door.",
+"The parakeet model runs locally on the laptop.",
+"The parakeets in the park are loud in the morning.",
+"The parakeets in the park are loud in the morning.",
+"The parrot sat on the kitchen counter.",
+"The queen visited the city last summer.",
+"The server is a small Hetzner machine in Helsinki",
+"The server is a small Hetzner machine in Helsinki.",
+"The settings window is written in GTK4",
+"The settings window is written in GTK4.",
+"The settings window is written in GTK4.",
+"The super base price does not include tax.",
+"The tower was built more than a hundred years ago.",
+"The weather in the bay was calm and sunny, but",
+"The weather in the bay was calm and sunny.",
+"The weather in the bay was calm and sunny.",
+"Tauri bundles the Web View into a small desktop app",
+"Tauri bundles the Web View into a small desktop app",
+"Tauri bundles the web view into a small desktop app.",
+"Tauri bundles the web view into a small desktop app.",
+"We compiled sherpa-onnx from the PinSource tag",
+"We compiled sherpa-onnx from the PinSource tag",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled sherpa-onnx from the pinned source tag.",
+"We compiled sherpa-onnx from the pinned source tag.",
+"We need a group decision before launch.",
+"We need a group decision before lunch.",
+"We need a group decision before lunch.",
+"We ordered a pizza and some Wayland,",
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some Wayland.",
+"We ordered a pizza and some salad.",
+"We ordered a pizza and some salad.",
+"We should hire another designer next quarter.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob wants a demo of the booking app tomorrow.",
+"Yakob wants a demo of the booking app tomorrow.",
+"put the kettle on, and make some tea.",
+"she sent a short note to the team"
+],
+"learn": [
+[
+[
+"All",
+"Olle",
+1
+]
+],
+[],
+[],
+[
+[
+"codecs",
+"Codex",
+1
+]
+],
+[
+[
+"codex",
+"Codex",
+1
+]
+],
+[
+[
+"Grok",
+"Groq",
+1
+]
+],
+[
+[
+"Grok",
+"Groq",
+1
+]
+],
+[
+[
+"Groq",
+"Grok",
+1
+]
+],
+[
+[
+"Groq",
+"Grok",
+1
+]
+],
+[
+[
+"COATE",
+"Koett",
+1
+]
+],
+[
+[
+"COATE",
+"Koett",
+1
+]
+],
+[],
+[],
+[
+[
+"Cartesa",
+"Cartesia",
+1
+]
+],
+[
+[
+"Cartesia",
+"Cartesa",
+1
+]
+],
+[],
+[
+[
+"Tauri",
+"Tori",
+1
+]
+],
+[
+[
+"Tauri",
+"Towery",
+1
+]
+],
+[
+[
+"Tori",
+"Tauri",
+1
+]
+],
+[
+[
+"Towery",
+"Tauri",
+1
+]
+],
+[],
+[
+[
+"Coet",
+"Koett",
+1
+]
+],
+[
+[
+"Nematron",
+"Nemotron",
+1
+]
+],
+[
+[
+"Nemotron",
+"Nematron",
+1
+]
+],
+[
+[
+"Nemotron",
+"Nimitron",
+1
+]
+],
+[
+[
+"Nimitron",
+"Nemotron",
+1
+]
+],
+[
+[
+"Diberg",
+"Dyberg",
+1
+]
+],
+[
+[
+"Dieberg",
+"Dyberg",
+1
+]
+],
+[],
+[
+[
+"Dyberg",
+"Diberg",
+1
+]
+],
+[
+[
+"Dyberg",
+"Dieberg",
+1
+]
+],
+[],
+[
+[
+"Fort Knox",
+"Fortnox",
+1
+]
+],
+[
+[
+"Fortnox",
+"Fort Knox",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"Grok",
+"Groq",
+1
+],
+[
+"Quen",
+"Qwen",
+1
+]
+],
+[
+[
+"Grok",
+"Groq",
+1
+],
+[
+"Quinn",
+"Qwen",
+1
+]
+],
+[
+[
+"Groq",
+"Grok",
+1
+],
+[
+"Qwen",
+"Quen",
+1
+]
+],
+[
+[
+"Groq",
+"Grok",
+1
+],
+[
+"Qwen",
+"Quinn",
+1
+]
+],
+[],
+[],
+[
+[
+"Aldiberg",
+"Olle Dyberg",
+1
+]
+],
+[
+[
+"Old Dieberg",
+"Olle Dyberg",
+1
+]
+],
+[
+[
+"Olle Dyberg",
+"Aldiberg",
+1
+]
+],
+[
+[
+"Olle Dyberg",
+"Old Dieberg",
+1
+]
+],
+[],
+[
+[
+"all",
+"Olle",
+1
+]
+],
+[
+[
+"Hogea",
+"Hogia",
+1
+],
+[
+"Scatterverkit",
+"Skatteverket",
+1
+]
+],
+[
+[
+"Hoggier",
+"Hogia",
+1
+],
+[
+"Skatoverkit",
+"Skatteverket",
+1
+]
+],
+[
+[
+"Skadaverkit",
+"Skatteverket",
+1
+]
+],
+[
+[
+"Hogia",
+"Hogea",
+1
+],
+[
+"Skatteverket",
+"Scatterverkit",
+1
+]
+],
+[
+[
+"Hogia",
+"Hoggier",
+1
+],
+[
+"Skatteverket",
+"Skatoverkit",
+1
+]
+],
+[
+[
+"Skatteverket",
+"Skadaverkit",
+1
+]
+],
+[],
+[],
+[],
+[
+[
+"Gataborg",
+"Göteborg",
+1
+]
+],
+[
+[
+"Gatteborg",
+"Göteborg",
+1
+]
+],
+[
+[
+"Goatborg",
+"Göteborg",
+1
+]
+],
+[
+[
+"Göteborg",
+"Gataborg",
+1
+]
+],
+[
+[
+"Göteborg",
+"Gatteborg",
+1
+]
+],
+[
+[
+"Göteborg",
+"Goatborg",
+1
+]
+],
+[],
+[
+[
+"Hoggia",
+"Hogia",
+1
+]
+],
+[
+[
+"Hogia",
+"Hoggia",
+1
+]
+],
+[],
+[],
+[],
+[],
+[
+[
+"Gataborg",
+"Göteborg",
+1
+],
+[
+"all",
+"Olle",
+1
+],
+[
+"Jakob",
+"Yakob",
+1
+],
+[
+"Fika",
+"fika",
+1
+]
+],
+[],
+[
+[
+"Jakob",
+"Yakob",
+1
+]
+],
+[
+[
+"Jakob",
+"Yakob",
+1
+]
+],
+[
+[
+"Koett",
+"COATE",
+1
+]
+],
+[
+[
+"Koett",
+"COATE",
+1
+]
+],
+[
+[
+"Koett",
+"Coet",
+1
+]
+],
+[
+[
+"FICA",
+"fika",
+1
+]
+],
+[
+[
+"feaker",
+"fika",
+1
+]
+],
+[
+[
+"fika",
+"FICA",
+1
+]
+],
+[],
+[
+[
+"Coat",
+"Koett",
+1
+],
+[
+"Madhyas",
+"Matyas",
+1
+]
+],
+[
+[
+"Coat",
+"Koett",
+1
+],
+[
+"Matthias",
+"Matyas",
+1
+]
+],
+[
+[
+"Matyas",
+"Madhyas",
+1
+]
+],
+[
+[
+"Matyas",
+"Matthias",
+1
+]
+],
+[
+[
+"Koett",
+"Coet",
+1
+],
+[
+"Matyas",
+"Motios",
+1
+],
+[
+"Wayland",
+"Weyland",
+1
+]
+],
+[],
+[
+[
+"Matyas",
+"Motios",
+1
+]
+],
+[
+[
+"Coet",
+"Koett",
+1
+],
+[
+"Motios",
+"Matyas",
+1
+],
+[
+"Weyland",
+"Wayland",
+1
+]
+],
+[
+[
+"Motios",
+"Matyas",
+1
+]
+],
+[
+[
+"Supabase",
+"SuperBase",
+1
+]
+],
+[
+[
+"Hetzner",
+"Hetzna",
+1
+],
+[
+"Supabase",
+"Superbase",
+1
+]
+],
+[
+[
+"Supabase",
+"Superbase",
+1
+]
+],
+[
+[
+"SuperBase",
+"Supabase",
+1
+]
+],
+[
+[
+"Hetzna",
+"Hetzner",
+1
+],
+[
+"Superbase",
+"Supabase",
+1
+]
+],
+[
+[
+"Superbase",
+"Supabase",
+1
+]
+],
+[
+[
+"Hyperland",
+"Hyprland",
+1
+]
+],
+[
+[
+"Hyperland",
+"Hyprland",
+1
+]
+],
+[
+[
+"Hyprland",
+"Hyperland",
+1
+]
+],
+[
+[
+"Hyprland",
+"Hyperland",
+1
+]
+],
+[
+[
+"Nematron",
+"Nemotron",
+1
+]
+],
+[
+[
+"Nematron",
+"Nemotron",
+1
+]
+],
+[
+[
+"Nemetron",
+"Nemotron",
+1
+]
+],
+[
+[
+"Nemotron",
+"Nematron",
+1
+]
+],
+[
+[
+"Nemotron",
+"Nematron",
+1
+]
+],
+[
+[
+"Nemotron",
+"Nemetron",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"four knocks",
+"Fortnox",
+1
+]
+],
+[
+[
+"Ol",
+"Olle",
+1
+]
+],
+[],
+[],
+[],
+[],
+[
+[
+"fluid audio",
+"FluidAudio",
+1
+]
+],
+[
+[
+"fluid audio",
+"FluidAudio",
+1
+]
+],
+[
+[
+"Code",
+"Koett",
+1
+]
+],
+[
+[
+"Code",
+"Koett",
+1
+]
+],
+[
+[
+"Coed",
+"Koett",
+1
+]
+],
+[],
+[],
+[
+[
+"Koett",
+"Coed",
+1
+]
+],
+[],
+[],
+[],
+[],
+[
+[
+"Sherbonks",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"Sherponks",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"Sherpronx",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"sherpa-onnx",
+"Sherbonks",
+1
+]
+],
+[
+[
+"sherpa-onnx",
+"Sherponks",
+1
+]
+],
+[
+[
+"sherpa-onnx",
+"Sherpronx",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"Nordic Rank",
+"Nordicrank",
+1
+]
+],
+[
+[
+"Nordicrank",
+"Nordic Rank",
+1
+]
+],
+[],
+[],
+[],
+[
+[
+"Skadaverket",
+"Skatteverket",
+1
+]
+],
+[
+[
+"Skatoverkit",
+"Skatteverket",
+1
+]
+],
+[
+[
+"Skatteverket sent",
+"Scadever could send",
+1
+]
+],
+[
+[
+"Skatteverket",
+"Skadaverket",
+1
+]
+],
+[
+[
+"Skatteverket",
+"Skatoverkit",
+1
+]
+],
+[
+[
+"Postger SQL",
+"PostgreSQL",
+1
+]
+],
+[
+[
+"PostgreQ",
+"PostgreSQL",
+1
+]
+],
+[
+[
+"PostgreSQL",
+"Postger SQL",
+1
+]
+],
+[
+[
+"PostgreSQL",
+"PostgreQ",
+1
+]
+],
+[],
+[],
+[
+[
+"Supabase",
+"Superbase",
+1
+]
+],
+[
+[
+"Superbase",
+"Supabase",
+1
+]
+],
+[
+[
+"Tauri",
+"Tori",
+1
+]
+],
+[
+[
+"Tauri",
+"Towere",
+1
+]
+],
+[
+[
+"Tauri",
+"Towery",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"Quen",
+"Qwen",
+1
+]
+],
+[
+[
+"Quen",
+"Qwen",
+1
+]
+],
+[
+[
+"Qwen",
+"Quen",
+1
+]
+],
+[
+[
+"Qwen",
+"Quen",
+1
+]
+],
+[],
+[
+[
+"quin",
+"Qwen",
+1
+]
+],
+[
+[
+"highland",
+"Highland",
+1
+]
+],
+[
+[
+"Svelte Kit",
+"SvelteKit",
+1
+]
+],
+[
+[
+"SvelteKit",
+"Svelte Kit",
+1
+]
+],
+[
+[
+"SvelteKit",
+"Sveltekit",
+1
+]
+],
+[
+[
+"Sveltekit",
+"SvelteKit",
+1
+]
+],
+[],
+[],
+[
+[
+"parakeet",
+"Parakeet",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"Tori",
+"Tauri",
+1
+]
+],
+[
+[
+"Towere",
+"Tauri",
+1
+]
+],
+[
+[
+"Towery",
+"Tauri",
+1
+]
+],
+[
+[
+"Sherbonx",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"Sherpalongs",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"Sherparonx",
+"sherpa-onnx",
+1
+]
+],
+[
+[
+"pinned source",
+"PinSource",
+1
+],
+[
+"sherpa-onnx",
+"Sherbonx",
+1
+]
+],
+[
+[
+"sherpa-onnx",
+"Sherpalongs",
+1
+]
+],
+[
+[
+"sherpa-onnx",
+"Sherparonx",
+1
+]
+],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[],
+[
+[
+"Göteborg",
+"Gataborg",
+1
+],
+[
+"Yakob",
+"Jakob",
+1
+]
+],
+[],
+[
+[
+"Yakob",
+"Jakob",
+1
+]
+],
+[
+[
+"Yakob",
+"Jakob",
+1
+]
+],
+[],
+[]
+],
+"spell": [
+"Olle will review the pull request tonight.",
+"Ask Claude to write the tests and Codex to review them",
+"Ask Claude to write the tests and Codex to review them.",
+"Ask Claude to write the tests and codecs to review them.",
+"Ask Claude to write the tests and Codex to review them",
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly.",
+"Ask uses Groq because it answers very quickly.",
+"Ask uses Groq, because it answers very quickly.",
+"COATE turns my voice into text without the cloud",
+"COATE turns my voice into text without the cloud.",
+"Can you look at the budget again?",
+"Can you send me the code from yesterday?",
+"Cartesa reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud.",
+"Claude wrote the Tauri prototype last week.",
+"Claude wrote the Tori prototype last week.",
+"Claude wrote the Towery prototype last week.",
+"Cloud storage is cheaper than it used to be.",
+"Coet turns my voice into text without the cloud.",
+"Compare Nematron with Parakeet on the same clips.",
+"Compare Nemotron with Parakeet on the same clips",
+"Compare Nemotron with Parakeet on the same clips.",
+"Compare Nimitron with Parakeet on the same clips",
+"Diberg is spelled with a Y.",
+"Dieberg is spelled with a Y.",
+"Dyberg is spelled with A Y.",
+"Dyberg is spelled with a Y.",
+"Dyberg is spelled with a y.",
+"Export the receipts to Fort Knox before the end of the month.",
+"Export the receipts to Fortnox before the end of the month.",
+"Fortunately the train arrived on time.",
+"Global shortcuts work differently on Wayland",
+"Global shortcuts work differently on Wayland.",
+"Groq serves Quen faster than the other providers.",
+"Groq serves Quinn faster than the other providers.",
+"Groq serves Quinn faster than the other providers.",
+"Groq serves Qwen faster than the other providers.",
+"He drove the cart across the field.",
+"Her sister moved to Gothenburg in the spring.",
+"Her sister moved to Göteborg in the spring.",
+"Hi, this is Aldiberg calling about the meeting.",
+"Hi, this is Dyberg calling about the meeting.",
+"Hi, this is Old Dieberg calling about the meeting.",
+"Hi, this is Old Dyberg calling about the meeting.",
+"Hi, this is Olle Dyberg calling about the meeting.",
+"Hi. This is Olle Dyberg calling about the meeting.",
+"Hogea and Scatterverkit both need the same numbers.",
+"Hoggier and Skatoverkit both need the same numbers.",
+"Hoggier and Skatteverket both need the same numbers.",
+"Hogia and Skadaverkit both need the same numbers.",
+"Hogia and Skatteverket both need the same numbers.",
+"Hold on, I will call you back in a minute.",
+"Hold on. I will call you back in a minute.",
+"I am taking the train to Göteborg on Monday.",
+"I am taking the train to Gatteborg on Monday.",
+"I am taking the train to Goatborg on Monday.",
+"I am taking the train to Göteborg on Monday.",
+"I bought a coat and a new pair of boots.",
+"I logged into Hoggia to check the invoices.",
+"I logged into Hogia to check the invoices.",
+"I want to grow tomatoes in the garden this year.",
+"Jacob and Matthias went fishing on Sunday.",
+"Jakob and Olle met in Göteborg for Afica",
+"Jakob and Olle met in Göteborg for a fika.",
+"Jakob and Olle met in Goatborg for a fek.",
+"Jakob wants a demo of the booking app tomorrow",
+"Jakob wants a demo of the booking app tomorrow.",
+"Koett turns my voice into text without the cloud.",
+"Let's grab a FICA after the call.",
+"Let's grab a feaker after the call.",
+"Let's grab a fika after the call.",
+"Madhyas asked whether Coat works on Wayland",
+"Matthias asked whether Coat works on Wayland",
+"Matyas asked whether Coat works on Wayland",
+"Matyas asked whether Koett works on Wayland.",
+"Matyas paid the last three invoices.",
+"Motios asked whether Coet works on Wayland.",
+"Motios asked whether Coet works on Weyland.",
+"Motios asked whether Koett works on Wayland.",
+"Motios paid the last three invoices.",
+"Move the database from Supabase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzner server.",
+"Move the database from Supabase to a Hetzner server",
+"Move the database from Supabase to a Hetzna server.",
+"Move the database from Supabase to a Hetzner server",
+"My desktop is Hyperland with a single monitor",
+"My desktop is Hyperland with a single monitor.",
+"My desktop is Hyprland with a single monitor",
+"My desktop is Hyprland with a single monitor.",
+"Nematron streams partial results every half second",
+"Nematron streams partial results every half second.",
+"Nemetron streams partial results every half second.",
+"Nemotron streams partial results every half second",
+"Nemotron streams partial results every half second.",
+"Nordicrank pays through Fort Knox.",
+"Nordicrank pays through Fort Knox",
+"Nordicrank pays through Fortnox",
+"Nordicrank pays through Fortnox.",
+"Nordicrank pays through Fortnox",
+"Ol will review the pull request tonight.",
+"Olle will review the pull request tonight.",
+"On the Mac we use FluidAudio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition.",
+"On the Mac we use FluidAudio for speech recognition",
+"On the Mac we use FluidAudio for speech recognition.",
+"Open Code and press the Option key to start dictating",
+"Open Code and press the Option key to start dictating.",
+"Open Codex and press the Option key to start dictating.",
+"Open Coed and press the Option key to start dictating.",
+"Open Koett and press the option key to start dictating.",
+"Please fix the typo in the second paragraph.",
+"Put the kettle on and make some tea.",
+"Remember to back up your files every week.",
+"Run Parakeet through Sherbonks on Linux.",
+"Run Parakeet through Sherponks on Linux.",
+"Run Parakeet through Sherpronx on Linux.",
+"Run Parakeet through sherpa-onnx on Linux.",
+"Save the notes in Obsidian under the Project folder.",
+"Save the notes in Obsidian under the project folder",
+"Save the notes in Obsidian under the project folder.",
+"Scadever could send a letter about the VAT return.",
+"Send the backlink report to Nordicrank by Friday.",
+"Send the backlink report to Nordicrank by Friday.",
+"She sent a short note to the team.",
+"Skadaverket sent a letter about the VAT return.",
+"Skatoverkit sent a letter about the VAT return.",
+"Skatteverket sent a letter about the VAT return.",
+"Store the bookings in Postger SQL instead of a flat file",
+"Store the bookings in PostgreQ instead of a flat file.",
+"Store the bookings in PostgreSQL instead of a flat file",
+"Store the bookings in PostgreSQL instead of a flat file.",
+"Supabase handles the Hogia and the database.",
+"Supabase handles the login and the database.",
+"Supabase handles the login and the database.",
+"Tauri bundles the Web View into a small desktop app",
+"Tauri bundles the web view into a small desktop app.",
+"Thanks that sounds good to me.",
+"Thanks, that sounds good to me.",
+"Thanks. That sounds good to me.",
+"That matters more than the deadline.",
+"The Highland cattle stood in the rain.",
+"The Hyprland cattle stood in the rain.",
+"The Parakeet in the park are loud in the morning.",
+"The Parakeet model runs locally on the laptop",
+"The Parakeet model runs locally on the laptop.",
+"The Queen visited the city last summer.",
+"The audio was too fluid to follow.",
+"The car was parked outside the hotel.",
+"The cluster runs on Kubernetes with three nodes.",
+"The default model is Quen with 27 billion parameters.",
+"The default model is Quen with twenty seven billion parameters.",
+"The default model is Qwen with 27 billion parameters.",
+"The default model is Qwen with twenty seven billion parameters.",
+"The default model is quin with twenty seven billion parameters.",
+"The highland cattle stood in the rain.",
+"The landing page is built with SvelteKit",
+"The landing page is built with SvelteKit",
+"The landing page is built with SvelteKit.",
+"The landing page is built with SvelteKit.",
+"The meeting starts at nine tomorrow morning.",
+"The old coat hangs behind the door.",
+"The Parakeet model runs locally on the laptop.",
+"The parakeets in the park are loud in the morning.",
+"The parrot sat on the kitchen counter.",
+"The queen visited the city last summer.",
+"The server is a small Hetzner machine in Helsinki",
+"The server is a small Hetzner machine in Helsinki.",
+"The settings window is written in GTK4",
+"The settings window is written in GTK4.",
+"The Supabase price does not include tax.",
+"The tower was built more than a hundred years ago.",
+"The weather in the bay was calm and sunny, but",
+"The weather in the bay was calm and sunny.",
+"Tori bundles the Web View into a small desktop app",
+"Towere bundles the web view into a small desktop app.",
+"Towery bundles the web view into a small desktop app.",
+"We compiled Sherbonx from the PinSource tag",
+"We compiled Sherpalongs from the pin source tag.",
+"We compiled Sherparonx from the pin source tag.",
+"We compiled sherpa-onnx from the PinSource tag",
+"We compiled sherpa-onnx from the pin source tag.",
+"We compiled sherpa-onnx from the pinned source tag.",
+"We need a group decision before launch.",
+"We need a group decision before lunch.",
+"We ordered a pizza and some Wayland,",
+"We ordered a pizza and some Wayland.",
+"We ordered a pizza and some salad,",
+"We ordered a pizza and some salad.",
+"We should hire another designer next quarter.",
+"Yakob and Matyas went fishing on Sunday.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob and Olle met in Goatborg for a fek.",
+"Yakob and Olle met in Göteborg for Afica",
+"Yakob and Olle met in Göteborg for a fek.",
+"Yakob and Olle met in Göteborg for a fika.",
+"Yakob and Olle met in Göteborg for fika",
+"Yakob wants a demo of the booking app tomorrow",
+"Yakob wants a demo of the booking app tomorrow.",
+"Olle will review the pull request tonight.",
+"ask Claude to write the tests and codecs to review them.",
+"ask Claude to write the tests and Codex to review them",
+"ask uses Groq because it answers very quickly.",
+"ask uses Groq, because it answers very quickly.",
+"can you look at the budget again?",
+"can you send me the code from yesterday?",
+"cartesa reads the first sentence of the answer out loud.",
+"Cartesia reads the first sentence of the answer out loud.",
+"Claude wrote the tori prototype last week.",
+"Claude wrote the towery prototype last week.",
+"cloud storage is cheaper than it used to be.",
+"coate turns my voice into text without the cloud",
+"coate turns my voice into text without the cloud.",
+"coet turns my voice into text without the cloud.",
+"compare nematron with Parakeet on the same clips.",
+"compare nimitron with Parakeet on the same clips",
+"diberg is spelled with a y.",
+"dieberg is spelled with a y.",
+"Dyberg is spelled with a y.",
+"export the receipts to fort knox before the end of the month.",
+"export the receipts to Fortnox before the end of the month.",
+"fortunately the train arrived on time.",
+"global shortcuts work differently on Wayland",
+"global shortcuts work differently on Wayland.",
+"Groq serves quen faster than the other providers.",
+"Groq serves quinn faster than the other providers.",
+"he drove the cart across the field.",
+"her sister moved to gothenburg in the spring.",
+"hi, this is aldiberg calling about the meeting.",
+"hi, this is old dieberg calling about the meeting.",
+"hi. this is Olle Dyberg calling about the meeting.",
+"hogea and scatterverkit both need the same numbers.",
+"hoggier and skatoverkit both need the same numbers.",
+"Hogia and skadaverkit both need the same numbers.",
+"hold on, i will call you back in a minute.",
+"hold on. i will call you back in a minute.",
+"i am taking the train to Göteborg on monday.",
+"i am taking the train to gatteborg on monday.",
+"i am taking the train to goatborg on monday.",
+"i bought a coat and a new pair of boots.",
+"i logged into hoggia to check the invoices.",
+"i logged into Hogia to check the invoices.",
+"i want to grow tomatoes in the garden this year.",
+"jacob and matthias went fishing on sunday.",
+"jakob and Olle met in Göteborg for a fika.",
+"jakob and Olle met in Göteborg for afica",
+"jakob and Olle met in goatborg for a fek.",
+"jakob wants a demo of the booking app tomorrow",
+"jakob wants a demo of the booking app tomorrow.",
+"let's grab a feaker after the call.",
+"let's grab a fica after the call.",
+"madhyas asked whether coat works on Wayland",
+"matthias asked whether coat works on Wayland",
+"Matyas paid the last three invoices.",
+"motios asked whether coet works on weyland.",
+"motios paid the last three invoices.",
+"move the database from Supabase to a hetzna server.",
+"move the database from Supabase to a Hetzner server",
+"my desktop is hyperland with a single monitor",
+"my desktop is hyperland with a single monitor.",
+"nematron streams partial results every half second",
+"nematron streams partial results every half second.",
+"nemetron streams partial results every half second.",
+"Nordicrank pays through fort knox",
+"Nordicrank pays through fort knox.",
+"Nordicrank pays through Fortnox",
+"ol will review the pull request tonight.",
+"on the mac we use FluidAudio for speech recognition",
+"on the mac we use FluidAudio for speech recognition.",
+"open code and press the option key to start dictating",
+"open code and press the option key to start dictating.",
+"open coed and press the option key to start dictating.",
+"please fix the typo in the second paragraph.",
+"put the kettle on and make some tea.",
+"put the kettle on, and make some tea.",
+"remember to back up your files every week.",
+"run Parakeet through sherbonks on linux.",
+"run Parakeet through sherponks on linux.",
+"run Parakeet through sherpronx on linux.",
+"save the notes in Obsidian under the project folder",
+"save the notes in Obsidian under the project folder.",
+"scadever could send a letter about the vat return.",
+"send the backlink report to Nordicrank by friday.",
+"send the backlink report to Nordicrank by friday.",
+"she sent a short note to the team",
+"she sent a short note to the team.",
+"skadaverket sent a letter about the vat return.",
+"skatoverkit sent a letter about the vat return.",
+"store the bookings in postger sql instead of a flat file",
+"store the bookings in postgreq instead of a flat file.",
+"store the bookings in PostgreSQL instead of a flat file.",
+"Supabase handles the login and the database.",
+"Supabase handles the login and the database.",
+"thanks that sounds good to me.",
+"thanks. that sounds good to me.",
+"that matters more than the deadline.",
+"the audio was too fluid to follow.",
+"the car was parked outside the hotel.",
+"the cluster runs on Kubernetes with three nodes.",
+"the default model is quen with 27 billion parameters.",
+"the default model is quen with twenty seven billion parameters.",
+"the default model is quin with twenty seven billion parameters.",
+"the highland cattle stood in the rain.",
+"the landing page is built with SvelteKit",
+"the landing page is built with SvelteKit.",
+"the meeting starts at nine tomorrow morning.",
+"the old coat hangs behind the door.",
+"the Parakeet model runs locally on the laptop",
+"the Parakeet model runs locally on the laptop.",
+"the parakeets in the park are loud in the morning.",
+"the parrot sat on the kitchen counter.",
+"the queen visited the city last summer.",
+"the server is a small Hetzner machine in helsinki",
+"the settings window is written in GTK4",
+"the settings window is written in GTK4.",
+"the Supabase price does not include tax.",
+"the tower was built more than a hundred years ago.",
+"the weather in the bay was calm and sunny, but",
+"the weather in the bay was calm and sunny.",
+"tori bundles the web view into a small desktop app",
+"towere bundles the web view into a small desktop app.",
+"towery bundles the web view into a small desktop app.",
+"we compiled sherbonx from the pinsource tag",
+"we compiled sherpalongs from the pin source tag.",
+"we compiled sherparonx from the pin source tag.",
+"we need a group decision before launch.",
+"we need a group decision before lunch.",
+"we ordered a pizza and some salad,",
+"we ordered a pizza and some salad.",
+"we should hire another designer next quarter.",
+"C++ code, C++ and C# on .NET",
+"Use Node.js and Göteborg.dev",
+"Olle Dyberg and Olle",
+"Super. Base",
+"Claude Code and the cloud"
+]
+}
+}

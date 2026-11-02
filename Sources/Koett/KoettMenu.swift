@@ -9,6 +9,7 @@ extension KoettController {
         historyItem.keyEquivalent = "h"
         historyItem.keyEquivalentModifierMask = [.command, .shift]
         menu.addItem(historyItem)
+        menu.addItem(menuItem(title: "Dictionary…", action: #selector(openDictionary), selected: false))
         menu.addItem(.separator())
         if isPreparing {
             let item = NSMenuItem(
