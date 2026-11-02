@@ -79,6 +79,83 @@ final class RecordingOverlayTests: XCTestCase {
         controller.stop()
     }
 
+    func testDoneMorphsInPlaceThenLeavesUnlessHovered() async throws {
+        let controller = RecordingOverlayController()
+        controller.showTranscribing()
+        controller.showDone(text: "Hello")
+        XCTAssertEqual(controller.pillView.preferredHeight, 48, "Done never grows")
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            XCTAssertEqual(controller.pillView.morphFrom, .transcribing(fraction: nil))
+            XCTAssertLessThan(controller.pillView.morph, 1)
+        }
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertNil(controller.pillView.morphFrom, "the morph finished")
+        XCTAssertFalse(controller.isPresented, "Done leaves after about two seconds")
+
+        controller.showTranscribing()
+        controller.showDone(text: "Hello")
+        controller.pillView.setHovered(true)
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertTrue(controller.isPresented, "hovering keeps Done up")
+        controller.pillView.setHovered(false)
+        try await Task.sleep(for: .seconds(1.2))
+        XCTAssertFalse(controller.isPresented)
+    }
+
+    func testNotPastedAndRescueErrorsStayUntilClicked() async throws {
+        let controller = RecordingOverlayController()
+        controller.showTranscribing()
+        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        controller.showError("Text in memory", keepUntilClicked: false)
+        controller.showTranscribing()
+        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertTrue(controller.isPresented, "Not pasted waits for the user")
+        XCTAssertFalse(controller.pillView.pasteButton.isHidden)
+        XCTAssertFalse(controller.pillView.copyButton.isHidden)
+        controller.pillView.onDismiss?()
+        XCTAssertFalse(controller.isPresented)
+
+        controller.showError("Save failed · Copy Unsaved Transcripts", keepUntilClicked: true)
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertTrue(controller.isPresented)
+        XCTAssertTrue(controller.pillView.acceptsMouse)
+        controller.pillView.onDismiss?()
+        XCTAssertFalse(controller.isPresented)
+    }
+
+    func testEveryStateIsOneRowAndItsButtonsFitInside() {
+        let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
+        view.hasRecordingControls = true
+        view.canPause = true
+        view.timeline.push(elapsedMs: 1_000, level: 0.5)
+        view.setHovered(true)
+        let states: [PillContent] = [
+            .recording(paused: false), .recording(paused: true), .transcribing(fraction: 0.4),
+            .done(preview: "Hello"), .notPasted, .media(preview: "Clip"),
+            .status("Loading"), .error("Failed"), .progress(text: "Downloading", fraction: 0.5),
+        ]
+        for state in states {
+            view.content = state
+            XCTAssertEqual(view.preferredHeight, 48, "\(state)")
+            let shown = view.subviews.compactMap { $0 as? PillButton }.filter { !$0.isHidden }
+            for button in shown {
+                XCTAssertTrue(view.bounds.contains(button.frame), "\(button.title) fits in \(state)")
+            }
+            for (index, button) in shown.enumerated() {
+                for other in shown[(index + 1)...] {
+                    XCTAssertFalse(button.frame.intersects(other.frame), "\(button.title) overlaps \(other.title)")
+                }
+            }
+            if case .recording = state {
+                XCTAssertLessThan(shown.map(\.frame.maxX).max() ?? 0, 238, "hover buttons leave the clock visible")
+            }
+        }
+        XCTAssertEqual(RecordingOverlayController.easeOut(0), 0)
+        XCTAssertEqual(RecordingOverlayController.easeOut(1), 1)
+        XCTAssertGreaterThan(RecordingOverlayController.easeOut(0.5), 0.5)
+    }
+
     func testDecodeProgressOnlyMovesForwardWhileTranscribing() {
         let controller = RecordingOverlayController()
         controller.setDecodeProgress(0.5)

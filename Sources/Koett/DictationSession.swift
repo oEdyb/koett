@@ -546,7 +546,8 @@ extension KoettController {
                 error: error.localizedDescription,
                 transcriptionCompleted: true,
                 audioSaved: false
-            )
+            ),
+            keepUntilClicked: true
         )
     }
 
@@ -665,13 +666,13 @@ extension KoettController {
     private func preserveFailedRecording(_ url: URL) -> URL? {
         do {
             let savedURL = try failedRecordingStore.preserve(url)
-            recordingOverlay.showError("Dictation failed · Audio saved")
+            recordingOverlay.showError("Dictation failed · Audio saved", keepUntilClicked: true)
             rebuildMenu()
             fputs("Failed dictation audio saved at \(savedURL.path)\n", stderr)
             return savedURL
         } catch {
             NSWorkspace.shared.activateFileViewerSelecting([url])
-            recordingOverlay.showError("Dictation failed · Audio shown in Finder")
+            recordingOverlay.showError("Dictation failed · Audio shown in Finder", keepUntilClicked: true)
             fputs(
                 "Error: failed dictation audio remains at \(url.path): "
                     + "\(error.localizedDescription)\n",

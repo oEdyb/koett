@@ -21,18 +21,22 @@
 - Tink and Basso sounds mark recording start and stop.
 - After the stop sound, the same pill keeps the frozen, dimmed strip with a
   spinner until the text is pasted or an error replaces it. A too-short
-  recording shows nothing. A successful paste shows one 300×48 row: the coral
-  mark, a one-line transcript preview and **Copy** on the right, for ten
-  seconds, longer while hovered. A delivery failure after a save shows
-  `Not pasted · text saved` with Paste again, Copy and History.
+  recording shows nothing. Every pill state is one 300×48 row; nothing ever
+  grows taller. A successful paste morphs the pill in place (0.24 s crossfade)
+  into the coral mark, a one-line transcript preview and **Copy** on the
+  right. It stays 1.75 s, or for as long as it is hovered, then fades out over
+  0.25 s. A delivery failure after a save shows `Not pasted · saved` with
+  **Paste** and **Copy** and stays until one is used or the pill is clicked.
+  Errors that hold text or audio to rescue also stay until clicked; other
+  errors leave after five seconds. Reduce Motion skips the morph and fade.
 - A nonactivating bottom-center 300×48 pill shows a fixed-width strip of the
   last 9.6 seconds of real microphone levels (64 columns of 150 ms; see
   `docs/pill-timeline.md`) and elapsed wall time. The strip is full width from
   the first frame and slides left continuously; it never grows or re-bins, so
   20 minutes looks like 5 seconds. It stays above apps without taking keyboard focus and
   follows the system light or dark appearance.
-- Hovering a dictation pill adds a row above it, so the bottom edge stays put:
-  Cancel, Pause/Resume (Parakeet only), the model name and History. Cancel
+- Hovering a dictation pill swaps the strip for Cancel, Pause/Resume
+  (Parakeet only) and History inside the same row; the clock stays. Cancel
   stays on the transcribing pill. Esc also cancels; its monitor exists only
   while a dictation records or transcribes and never consumes Esc. Each
   dictation has its own session ID, so a stale Cancel never touches the next
@@ -130,7 +134,7 @@
 - The existing pill shows fetch and transcription progress. The 300×48 result
   shows Koett's coral waveform mark, one normalized transcript preview line
   with a trailing ellipsis, and a **Copy** button on the right. Copy shows
-  **Copied** and the pill closes 1.5 seconds later. The result pill closes by
+  **Copied** and the pill fades one second later. The media result fades by
   itself after ten seconds, longer while hovered; the menu keeps the latest
   result.
 - Do not bundle third-party platform logos in the first version. Their trademark
