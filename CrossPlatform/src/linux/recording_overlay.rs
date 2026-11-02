@@ -155,8 +155,8 @@ impl LayerShell {
 }
 
 const WIDTH: i32 = 300;
+/// Every state is exactly this tall; nothing ever grows.
 const ROW: i32 = 48;
-const ACTIONS: i32 = 40;
 /// Left edge of the strip; the glyph sits in the 44 px before it.
 const STRIP_X: f64 = 44.0;
 const STEP: f64 = 3.0;
@@ -197,35 +197,45 @@ pub(super) fn phase(
     }
 }
 
-/// The action row is shown above the strip, so the bottom-anchored strip
-/// never moves under the pointer when the row appears.
+/// Only recording has actions, shown on hover in place of the strip inside
+/// the same 48 px row. Finished states are one row with Copy on the right.
 pub(super) fn shows_actions(phase: Phase, hovered: bool) -> bool {
-    match phase {
-        Phase::Recording => hovered,
-        Phase::Done | Phase::Recovery | Phase::Media => true,
-        Phase::Hidden | Phase::Transcribing => false,
+    phase == Phase::Recording && hovered
+}
+
+/// One-line result for the finished pill: whitespace collapsed, bounded.
+pub(super) fn result_preview(text: &str) -> String {
+    let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    match collapsed.char_indices().nth(96) {
+        Some((end, _)) => collapsed[..end].to_string(),
+        None => collapsed,
+    }
+}
+
+/// Debug builds only: `KOETT_DEBUG_PILL_TIME_SCALE=N` runs the pill's clock N
+/// times faster, so the lab can show a 20-minute strip in 5 real minutes.
+/// Recording, decoding and the engine's limit keep real time.
+fn time_scale() -> u64 {
+    #[cfg(debug_assertions)]
+    {
+        static SCALE: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+        *SCALE.get_or_init(|| {
+            std::env::var("KOETT_DEBUG_PILL_TIME_SCALE")
+                .ok()
+                .and_then(|value| value.parse().ok())
+                .filter(|scale| (1..=64).contains(scale))
+                .unwrap_or(1)
+        })
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        1
     }
 }
 
 pub(super) fn clock(milliseconds: u64) -> String {
     let seconds = milliseconds / 1_000;
     format!("{}:{:02}", seconds / 60, seconds % 60)
-}
-
-/// Short model name for the hover row; unknown names pass through.
-pub(super) fn model_label(active: &str) -> String {
-    let lower = active.to_lowercase();
-    if lower.contains("nemotron") {
-        "Nemotron".into()
-    } else if lower.contains("110m") {
-        "Parakeet 110M".into()
-    } else if lower.contains("v3") {
-        "Parakeet v3".into()
-    } else if lower.contains("v2") || lower.contains("0.6b") {
-        "Parakeet v2".into()
-    } else {
-        active.into()
-    }
 }
 
 /// "3/5" once the final decode plan is known and has more than one step.
@@ -277,6 +287,21 @@ struct Pill {
     hovered: bool,
     levels: Option<crate::audio::AudioLevels>,
     last_draw: Option<Instant>,
+    /// Content being morphed away from, and when the morph began.
+    morph_from: Option<Phase>,
+    morph_started: Option<Instant>,
+}
+
+/// Same-size content morph between states, as on the Mac.
+const MORPH: std::time::Duration = std::time::Duration::from_millis(240);
+
+impl Pill {
+    /// Eased 0..1 while a morph runs; `None` once it has finished.
+    fn morph_progress(&self) -> Option<f64> {
+        let started = self.morph_started?;
+        let t = started.elapsed().as_secs_f64() / MORPH.as_secs_f64();
+        (t < 1.0).then(|| 1.0 - (1.0 - t).powi(3))
+    }
 }
 
 pub struct RecordingOverlay {
@@ -284,12 +309,13 @@ pub struct RecordingOverlay {
     drawing: gtk::DrawingArea,
     primary: gtk::Label,
     row: gtk::Box,
-    secondary: gtk::Label,
     cancel: gtk::Button,
     pause: gtk::Button,
-    paste: gtk::Button,
     copy: gtk::Button,
     history: gtk::Button,
+    latest: Rc<RefCell<Option<String>>>,
+    acted: Rc<std::cell::Cell<bool>>,
+    body: gtk::Box,
     warning: gtk::Label,
     state: Rc<RefCell<Pill>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
@@ -321,7 +347,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     let palette = if pill.dark { &DARK } else { &LIGHT };
     let (ar, ag, ab) = palette.accent;
     let drawing = pill.phase == Phase::Recording && pill.timeline.drawing();
-    let radius = if height > f64::from(ROW) { 22.0 } else { 24.0 };
+    let radius = height / 2.0;
     rounded(
         context,
         1.0,
@@ -341,12 +367,51 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     }
     context.stroke()?;
 
-    // The main row is always the bottom 48 px.
-    let cy = height - f64::from(ROW) / 2.0;
+    // Morphing content slides; keep it inside the pill.
+    rounded(
+        context,
+        1.0,
+        1.0,
+        f64::from(WIDTH) - 2.0,
+        height - 2.0,
+        radius,
+    );
+    context.clip();
+    let cy = height / 2.0;
+    let morph = pill.morph_progress();
+    match (pill.morph_from, morph) {
+        // Same-size morph: the old content slides left and fades quickly while
+        // the new content slides in from the right (matches the Mac pill).
+        (Some(from), Some(m)) => {
+            context.push_group();
+            context.translate(-8.0 * m, 0.0);
+            paint_body(context, pill, from, cy, palette)?;
+            context.pop_group_to_source()?;
+            context.paint_with_alpha((1.0 - m * 1.6).max(0.0))?;
+            context.push_group();
+            context.translate(8.0 * (1.0 - m), 0.0);
+            paint_body(context, pill, pill.phase, cy, palette)?;
+            context.pop_group_to_source()?;
+            context.paint_with_alpha(m)?;
+            Ok(())
+        }
+        _ => paint_body(context, pill, pill.phase, cy, palette),
+    }
+}
+
+fn paint_body(
+    context: &gtk::cairo::Context,
+    pill: &Pill,
+    phase: Phase,
+    cy: f64,
+    palette: &Palette,
+) -> Result<(), gtk::cairo::Error> {
+    let (ar, ag, ab) = palette.accent;
+    let drawing = phase == Phase::Recording && pill.timeline.drawing();
     context.set_source_rgb(ar, ag, ab);
     context.set_line_cap(gtk::cairo::LineCap::Round);
     context.set_line_join(gtk::cairo::LineJoin::Round);
-    match pill.phase {
+    match phase {
         Phase::Recording if pill.paused => {
             context.set_line_width(2.5);
             for x in [20.5, 26.5] {
@@ -378,13 +443,6 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
             context.arc(23.0, cy, 6.0, pill.spin, pill.spin + 1.6);
             context.stroke()?;
         }
-        Phase::Done => {
-            context.set_line_width(2.0);
-            context.move_to(17.5, cy + 0.5);
-            context.line_to(21.5, cy + 4.5);
-            context.line_to(29.0, cy - 4.0);
-            context.stroke()?;
-        }
         Phase::Recovery => {
             context.set_line_width(1.8);
             context.move_to(23.0, cy - 7.0);
@@ -397,7 +455,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
             context.arc(23.0, cy + 3.8, 1.0, 0.0, std::f64::consts::TAU);
             context.fill()?;
         }
-        Phase::Media => {
+        Phase::Done | Phase::Media => {
             for (index, bar) in [7.0, 13.0, 19.0, 13.0, 7.0].into_iter().enumerate() {
                 rounded(
                     context,
@@ -413,23 +471,22 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
         Phase::Hidden => {}
     }
 
-    let columns = pill.timeline.columns();
-    let strip = matches!(
-        pill.phase,
-        Phase::Recording | Phase::Transcribing | Phase::Done
-    ) && !columns.is_empty();
+    let strip = matches!(phase, Phase::Recording | Phase::Transcribing)
+        && !pill.timeline.is_empty()
+        && !pill.actions;
     if !strip {
         return Ok(());
     }
+    let columns = pill.timeline.columns();
     let (decoded, planned) = pill.progress;
-    let head = (pill.phase == Phase::Transcribing && planned > 0).then(|| {
+    let head = (phase == Phase::Transcribing && planned > 0).then(|| {
         pill.timeline
             .decode_head(f64::from(decoded) / f64::from(planned))
     });
     for sketch in pill.timeline.sketches() {
         let (start, end) = pill.timeline.span(sketch);
-        let x = STRIP_X + start as f64 * STEP - 1.0;
-        let width = (end - start + 1) as f64 * STEP + 1.0;
+        let x = STRIP_X + start * STEP - 1.0;
+        let width = ((end - start) * STEP + 3.0).max(4.0);
         rounded(context, x, cy - 15.0, width, 30.0, 3.0);
         set_source(context, palette.band);
         if sketch.live {
@@ -441,19 +498,29 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
             context.fill()?;
         }
     }
-    for (index, level) in columns.iter().enumerate() {
+    let (tr, tg, tb, ta) = palette.dim;
+    for (index, column) in columns.iter().enumerate() {
         let x = STRIP_X + index as f64 * STEP;
         let bright = match head {
-            Some(head) => index < head,
-            None => pill.phase != Phase::Transcribing,
+            Some(head) => (index as f64) < head,
+            None => phase != Phase::Transcribing,
         };
-        if *level < timeline::SILENT {
-            set_source(context, palette.dim);
-            rounded(context, x, cy - 1.0, 2.0, 2.0, 1.0);
-        } else {
-            set_source(context, if bright { palette.bar } else { palette.dim });
-            let bar = 4.0 + level * 22.0;
-            rounded(context, x, cy - bar / 2.0, 2.0, bar, 1.0);
+        match column {
+            // Not recorded yet: a faint track, so the strip is full width
+            // from the first frame and never grows.
+            None => {
+                context.set_source_rgba(tr, tg, tb, ta * 0.45);
+                rounded(context, x, cy - 1.0, 2.0, 2.0, 1.0);
+            }
+            Some(level) if *level < timeline::SILENT => {
+                set_source(context, palette.dim);
+                rounded(context, x, cy - 1.0, 2.0, 2.0, 1.0);
+            }
+            Some(level) => {
+                set_source(context, if bright { palette.bar } else { palette.dim });
+                let bar = 4.0 + level * 22.0;
+                rounded(context, x, cy - bar / 2.0, 2.0, bar, 1.0);
+            }
         }
         context.fill()?;
     }
@@ -461,7 +528,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
         context.set_source_rgb(ar, ag, ab);
         rounded(
             context,
-            STRIP_X + head as f64 * STEP - 1.5,
+            STRIP_X + head * STEP - 1.5,
             cy - 17.0,
             2.0,
             34.0,
@@ -477,7 +544,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     context.set_font_size(9.0);
     for sketch in pill.timeline.sketches() {
         let (start, _) = pill.timeline.span(sketch);
-        let x = STRIP_X + start as f64 * STEP + 5.0;
+        let x = STRIP_X + start * STEP + 5.0;
         let y = cy - 15.0;
         context.set_source_rgb(ar, ag, ab);
         context.arc(x, y, 6.5, 0.0, std::f64::consts::TAU);
@@ -502,7 +569,8 @@ fn sync_animation(
     tick: &Rc<RefCell<Option<gtk::TickCallbackId>>>,
 ) {
     let animate = drawing.settings().is_gtk_enable_animations()
-        && state.borrow().phase == Phase::Transcribing;
+        && (state.borrow().phase == Phase::Transcribing
+            || state.borrow().morph_progress().is_some());
     if !animate {
         if let Some(id) = tick.borrow_mut().take() {
             id.remove();
@@ -511,8 +579,11 @@ fn sync_animation(
         let state = state.clone();
         *tick.borrow_mut() = Some(drawing.add_tick_callback(move |drawing, clock| {
             let seconds = clock.frame_time() as f64 / 1_000_000.0;
-            state.borrow_mut().spin = (seconds * 5.0) % std::f64::consts::TAU;
+            let mut pill = state.borrow_mut();
+            pill.spin = (seconds * 5.0) % std::f64::consts::TAU;
+            drop(pill);
             drawing.queue_draw();
+            // `sync_animation` removes this callback once nothing moves.
             gtk::glib::ControlFlow::Continue
         }));
     }
@@ -573,6 +644,8 @@ impl RecordingOverlay {
             hovered: false,
             levels: None,
             last_draw: None,
+            morph_from: None,
+            morph_started: None,
         }));
         let tick = Rc::new(RefCell::new(None));
         let drawing = gtk::DrawingArea::new();
@@ -596,40 +669,29 @@ impl RecordingOverlay {
         main.set_size_request(WIDTH, ROW);
         main.put(&primary, 0.0, 0.0);
 
-        let secondary = gtk::Label::new(None);
-        secondary.add_css_class("koett-pill-secondary");
-        secondary.set_hexpand(true);
-        secondary.set_ellipsize(gtk::pango::EllipsizeMode::End);
         let cancel = pill_button("Cancel");
         cancel.set_tooltip_text(Some("Discard this dictation"));
         let pause = pill_button("Pause");
-        let paste = pill_button("Paste again");
         let copy = pill_button("Copy");
+        copy.set_size_request(64, 28);
+        main.put(&copy, f64::from(WIDTH - 14 - 64), 10.0);
         let history = pill_button("History");
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        row.set_size_request(-1, ACTIONS);
-        row.set_margin_start(14);
-        row.set_margin_end(12);
-        row.set_margin_top(8);
+        row.set_size_request(-1, 28);
         for widget in [
-            paste.upcast_ref::<gtk::Widget>(),
-            cancel.upcast_ref(),
+            cancel.upcast_ref::<gtk::Widget>(),
             pause.upcast_ref(),
-            secondary.upcast_ref(),
-            copy.upcast_ref(),
             history.upcast_ref(),
         ] {
             row.append(widget);
         }
         row.set_visible(false);
+        // Hover actions replace the strip inside the same 48 px row.
+        main.put(&row, 38.0, 10.0);
 
-        let rows = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        rows.set_valign(gtk::Align::End);
-        rows.append(&row);
-        rows.append(&main);
         let overlay = gtk::Overlay::new();
         overlay.set_child(Some(&drawing));
-        overlay.add_overlay(&rows);
+        overlay.add_overlay(&main);
 
         cancel.connect_clicked({
             let actions = actions.clone();
@@ -645,25 +707,27 @@ impl RecordingOverlay {
                 }
             }
         });
-        paste.connect_clicked({
-            let actions = actions.clone();
-            move |_| {
-                let _ = actions.send(super::TrayAction::Recovery("paste-last".into()));
-            }
-        });
         history.connect_clicked({
             let actions = actions.clone();
             move |_| {
                 let _ = actions.send(super::TrayAction::OpenTranscripts);
             }
         });
-        copy.connect_clicked(move |button| {
-            if let Some(text) = latest.borrow().as_ref() {
-                match super::feedback::copy_transcript(&button.clipboard(), text) {
-                    Ok(()) => button.set_label("Copied"),
-                    Err(error) => {
-                        button.set_label("Copy failed");
-                        eprintln!("Copy transcript: {error}");
+        let acted = Rc::new(std::cell::Cell::new(false));
+        copy.connect_clicked({
+            let latest = latest.clone();
+            let acted = acted.clone();
+            move |button| {
+                if let Some(text) = latest.borrow().as_ref() {
+                    match super::feedback::copy_transcript(&button.clipboard(), text) {
+                        Ok(()) => {
+                            button.set_label("Copied");
+                            acted.set(true);
+                        }
+                        Err(error) => {
+                            button.set_label("Copy failed");
+                            eprintln!("Copy transcript: {error}");
+                        }
                     }
                 }
             }
@@ -674,6 +738,10 @@ impl RecordingOverlay {
             let state = state.clone();
             move |_, _, _| state.borrow_mut().hovered = true
         });
+        motion.connect_motion({
+            let state = state.clone();
+            move |_, _, _| state.borrow_mut().hovered = true
+        });
         motion.connect_leave({
             let state = state.clone();
             move |_| state.borrow_mut().hovered = false
@@ -681,6 +749,7 @@ impl RecordingOverlay {
         window.add_controller(motion);
 
         let layout = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        layout.add_css_class("koett-pill-body");
         layout.append(&overlay);
         let warning = gtk::Label::new(None);
         warning.add_css_class("koett-feedback");
@@ -692,12 +761,13 @@ impl RecordingOverlay {
             drawing,
             primary,
             row,
-            secondary,
             cancel,
             pause,
-            paste,
             copy,
             history,
+            latest,
+            acted,
+            body: layout,
             warning,
             state,
             tick,
@@ -716,6 +786,20 @@ impl RecordingOverlay {
     /// Keeps Done and recovery up while the pointer rests on the pill.
     pub fn hovered(&self) -> bool {
         self.state.borrow().hovered
+    }
+
+    /// True once after Copy succeeded on a finished pill: it was acted on.
+    pub fn take_acted(&self) -> bool {
+        self.acted.replace(false)
+    }
+
+    /// Fades the finished pill out (250 ms); the caller hides it after.
+    pub fn fade(&self, out: bool) {
+        if out {
+            self.body.add_css_class("koett-pill-fade");
+        } else {
+            self.body.remove_css_class("koett-pill-fade");
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -748,6 +832,23 @@ impl RecordingOverlay {
             pill.duration_ms = u64::try_from(begin.elapsed().as_millis()).unwrap_or(u64::MAX);
         }
         pill.started = started;
+        if pill.phase != phase {
+            // A surface that unmaps may never see its leave event; motion over
+            // the pill sets this again.
+            pill.hovered = false;
+        }
+        if pill.phase == Phase::Transcribing
+            && matches!(phase, Phase::Done | Phase::Recovery)
+            && !reduced
+        {
+            pill.morph_from = Some(Phase::Transcribing);
+            pill.morph_started = Some(Instant::now());
+            self.body.add_css_class("koett-pill-morph");
+        } else if pill.phase != phase {
+            pill.morph_from = None;
+            pill.morph_started = None;
+            self.body.remove_css_class("koett-pill-morph");
+        }
         pill.phase = phase;
         pill.dark = dark;
         pill.levels = levels.cloned();
@@ -761,7 +862,9 @@ impl RecordingOverlay {
             }
         }
         let elapsed_ms = started.map_or(pill.duration_ms, |started| {
-            u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX)
+            u64::try_from(started.elapsed().as_millis())
+                .unwrap_or(u64::MAX)
+                .saturating_mul(time_scale())
         });
         if recording {
             let rms = levels.map_or(0.0, |levels| levels.current().0);
@@ -773,10 +876,11 @@ impl RecordingOverlay {
             (0, 0)
         };
         let actions = shows_actions(phase, pill.hovered);
-        let height = if actions { ROW + ACTIONS } else { ROW };
+        let height = ROW;
         pill.actions = actions;
-        let strip = !pill.timeline.columns().is_empty()
-            && matches!(phase, Phase::Recording | Phase::Transcribing | Phase::Done);
+        let strip = !pill.timeline.is_empty()
+            && matches!(phase, Phase::Recording | Phase::Transcribing)
+            && !actions;
         let redraw = !reduced
             || !recording
             || pill
@@ -802,53 +906,46 @@ impl RecordingOverlay {
 
         let text = match phase {
             Phase::Recording => clock(elapsed_ms),
-            Phase::Transcribing if strip => progress_label(progress.0, progress.1),
+            Phase::Transcribing if strip || actions => progress_label(progress.0, progress.1),
             Phase::Transcribing => state.to_string(),
             Phase::Recovery => "Not pasted · text saved".into(),
-            Phase::Media => media_preview.unwrap_or("Media transcript").into(),
-            Phase::Done | Phase::Hidden => String::new(),
+            Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
+            Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
+            Phase::Hidden => String::new(),
         };
         self.primary.set_text(&text);
-        if strip {
+        if strip || actions {
             self.primary.set_xalign(1.0);
             self.primary.set_size_request(48, ROW);
             if let Some(main) = self.primary.parent().and_downcast::<gtk::Fixed>() {
                 main.move_(&self.primary, 238.0, 0.0);
             }
         } else {
+            let finished = matches!(phase, Phase::Done | Phase::Recovery | Phase::Media);
             self.primary.set_xalign(0.0);
-            self.primary.set_size_request(246, ROW);
+            // Finished rows leave room for Copy on the right.
+            self.primary
+                .set_size_request(if finished { 166 } else { 246 }, ROW);
             if let Some(main) = self.primary.parent().and_downcast::<gtk::Fixed>() {
                 main.move_(&self.primary, 40.0, 0.0);
             }
         }
-        self.primary.set_max_width_chars(if strip { 6 } else { 34 });
+        self.primary
+            .set_max_width_chars(if strip || actions { 6 } else { 22 });
+        if !matches!(phase, Phase::Done) {
+            self.fade(false);
+        }
 
         self.row.set_visible(actions);
         self.cancel.set_visible(phase == Phase::Recording);
         self.pause.set_visible(phase == Phase::Recording);
         self.pause
             .set_label(if paused { "Resume" } else { "Pause" });
-        self.paste.set_visible(phase == Phase::Recovery);
         self.copy.set_visible(matches!(
             phase,
             Phase::Done | Phase::Recovery | Phase::Media
         ));
-        self.history.set_visible(phase != Phase::Hidden);
-        let secondary = match phase {
-            Phase::Recording => model_label(
-                &super::menu_preferences::ACTIVE
-                    .read()
-                    .map(|a| a.clone())
-                    .unwrap_or_default(),
-            ),
-            Phase::Done => format!("Done · {}", clock(elapsed_ms)),
-            Phase::Media => "Media transcript".into(),
-            _ => String::new(),
-        };
-        self.secondary.set_text(&secondary);
-        self.secondary
-            .set_xalign(if phase == Phase::Recording { 1.0 } else { 0.0 });
+        self.history.set_visible(phase == Phase::Recording);
 
         self.warning.set_visible(warning.is_some() && recording);
         self.warning
@@ -913,7 +1010,8 @@ mod tests {
         assert!(shows_actions(Phase::Recording, true));
         assert!(!shows_actions(Phase::Transcribing, true));
         for phase in [Phase::Done, Phase::Recovery, Phase::Media] {
-            assert!(shows_actions(phase, false));
+            assert!(!shows_actions(phase, false));
+            assert!(!shows_actions(phase, true), "finished: Copy only");
         }
         assert!(!shows_actions(Phase::Hidden, true));
     }
@@ -927,9 +1025,8 @@ mod tests {
         assert_eq!(progress_label(1, 1), "");
         assert_eq!(progress_label(3, 5), "3/5");
         assert_eq!(progress_label(9, 5), "5/5");
-        assert_eq!(model_label("parakeet-tdt-0.6b-v3-int8"), "Parakeet v3");
-        assert_eq!(model_label("sherpa-onnx-nemotron-streaming"), "Nemotron");
-        assert_eq!(model_label("parakeet-tdt-ctc-110m-int8"), "Parakeet 110M");
-        assert_eq!(model_label("custom"), "custom");
+        assert_eq!(result_preview("  Hello\n  there  "), "Hello there");
+        let long = "å".repeat(200);
+        assert_eq!(result_preview(&long).chars().count(), 96);
     }
 }

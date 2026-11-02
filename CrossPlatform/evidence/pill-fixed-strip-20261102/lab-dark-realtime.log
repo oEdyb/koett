@@ -1,0 +1,13 @@
+Captured recording-0m01s
+Captured recording-0m05s
+Captured recording-0m15s
+Captured recording-0m17s
+Captured recording-0m30s
+Captured done
+Captured done-copied
+{
+  "checks": [
+    "scale 1: captured pill at [1.0, 5.0, 15.0, 17.0, 30.0] s; done row has Copy only; delivered 392 chars; Copy exact"
+  ],
+  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-fixed-strip-20261102/dark-realtime"
+}

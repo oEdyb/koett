@@ -5,21 +5,41 @@ lives in `CrossPlatform/evidence/pill-timeline-20261102/`.
 
 ## States (Linux)
 
-| State | Size | Shows | Actions |
-| --- | --- | --- | --- |
-| Hidden | none | Nothing; idle has no on-screen nub | none |
-| Recording | 300×48 | Coral dot, whole-session strip, `m:ss` | Hover adds a row: Cancel, Pause/Resume, model name, History |
-| Drawing | 300×48 | Coral 2 px ring, pen glyph, live band | As recording |
-| Paused | 300×48 | Two-bar pause glyph; strip adds silence | Hover: Resume |
-| Transcribing | 300×48 | Spinner, playhead at decoded/planned, `3/5` | None (pointer-transparent) |
-| Done | 300×88 | Check, final strip, `Done · m:ss` | Copy, History; stays 10 s, longer while hovered |
-| Not pasted | 300×88 | Warning glyph, `Not pasted · text saved` | Paste again, Copy, History |
+Revised 2026-11-02 after Olle tried the Mac pill. Every state is exactly
+300×48; nothing ever grows wider or taller.
 
-The strip has 64 columns of 2 px bars with 1 px gaps. Each column covers 250 ms
-and the strip halves its resolution each time it fills. Columns under the
-silence threshold draw as dots. Each sketch band spans start→end; a live band
-is outlined and fills when finished. Reduced motion stops the spinner and
-redraws the strip once per second.
+| State | Shows | Actions | Leaves |
+| --- | --- | --- | --- |
+| Hidden | Nothing | none | — |
+| Recording | Coral dot, full-width strip, `m:ss` | Hover swaps the strip for Cancel, Pause/Resume and History inside the same row | Stop or Cancel |
+| Drawing | Coral 2 px ring, pen glyph, live band | As recording | Shift released |
+| Paused | Two-bar pause glyph; the strip records silence | Hover: Resume | Resume |
+| Transcribing | Spinner, playhead at decoded/planned, `3/5` | None (pointer-transparent) | Result |
+| Done | Transcript mark, one-line result, Copy on the right | Copy | Morphs in from the decoding pill (240 ms), fades out after 1.75 s (250 ms fade); held while hovered, then 1 s after the pointer leaves |
+| Not pasted | Warning glyph, `Not pasted · text saved`, Copy | Copy | Never times out; closes 1.5 s after Copy succeeds, or at the next dictation |
+
+After a successful paste, the decoding pill morphs in place into Done (240 ms:
+the old content slides 8 px left and fades out while the new content slides in),
+at the same size and position. Wayland pastes asynchronously, so Ready arrives
+before the paste outcome: the decoding pill holds for up to 1 s until the outcome
+arrives, so the pill never unmaps and remaps between the two.
+
+The strip is always 64 columns (2 px bars, 1 px gaps), full width from the
+first frame. For the first 16 s each column is a fixed 250 ms slot, and the
+not-yet-recorded rest is a faint dotted track. After 16 s the whole dictation is
+resampled into the same 64 columns every frame, so it compresses continuously:
+no jump, and the strip never grows. Levels are stored at 250 ms resolution in at
+most 4,096 buckets (pairs merge beyond that, invisibly). Columns under the
+silence threshold draw as dots. Reduced motion stops the spinner and redraws the
+strip once per second.
+
+Lab evidence runs the debug build against Koett's packaged GTK runtime
+(4.24.1 + upstream `21d3eb76`). The host's unpatched 4.24.1 can abort in AT-SPI
+`GetChildAtIndex` when an accessibility client walks windows while one hides.
+
+Linux recordings stop at 10 minutes (engine limit). The lab shows the 20:00 strip
+with the debug-only `KOETT_DEBUG_PILL_TIME_SCALE=4`, which runs only the pill's
+clock four times faster, using real audio.
 
 ## Sketch-event interface
 
