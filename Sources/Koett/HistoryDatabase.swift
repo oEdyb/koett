@@ -21,7 +21,15 @@ final class HistoryDatabase {
         // Create privately before SQLite opens it (also protects journal/WAL inheritance).
         let descriptor = url.path.withCString { open($0, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR) }
         if descriptor >= 0 { close(descriptor) }
-        else if errno != EEXIST { throw HistoryFailure(message: "Could not create history database.") }
+        else {
+            guard errno == EEXIST else { throw HistoryFailure(message: "Could not create history database.") }
+            let file = try FileHandle(forReadingFrom: url)
+            defer { try? file.close() }
+            let header = try file.read(upToCount: 16) ?? Data()
+            guard header.isEmpty || header == Data("SQLite format 3\0".utf8) else {
+                throw HistoryFailure(message: "History is not a SQLite database. Original bytes were retained.")
+            }
+        }
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         var handle: OpaquePointer?
         let status = sqlite3_open_v2(url.path, &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil)

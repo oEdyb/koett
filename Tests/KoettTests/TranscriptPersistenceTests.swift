@@ -248,6 +248,32 @@ final class TranscriptPersistenceTests: XCTestCase {
         XCTAssertEqual(try recovery.load(XCTUnwrap(outcome.recoveryURL)).text, record.text)
     }
 
+    func testEmptyHistoryDatabaseCanBeInitialized() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
+        try Data().write(to: history.databaseURL)
+        let record = TranscriptRecord(text: "Saved after empty database.", model: "test")
+        XCTAssertTrue(try history.append(record))
+        XCTAssertEqual(try history.get(record.id)?.text, record.text)
+        XCTAssertEqual(try history.page().count, 1)
+    }
+
+    func testNonDatabaseHistoryBytesSurviveEveryStoreEntryPoint() throws {
+        for bytes in [Data([0xFF]), Data("SQLite format 3".utf8), Data(repeating: 0xFF, count: 100)] {
+            let root = try temporaryDirectory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let history = TranscriptStore(fileURL: root.appendingPathComponent("History.sqlite3"))
+            try bytes.write(to: history.databaseURL)
+            XCTAssertThrowsError(try history.prepare())
+            XCTAssertThrowsError(try history.page())
+            XCTAssertThrowsError(try history.get("missing"))
+            XCTAssertThrowsError(try history.legacyFragmentCount())
+            XCTAssertThrowsError(try history.append("New text", model: "test"))
+            XCTAssertEqual(try Data(contentsOf: history.databaseURL), bytes)
+        }
+    }
+
     func testEmptyCleanedTextPreservesRawTextAndDoesNotReplaceLastTranscript() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

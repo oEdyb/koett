@@ -83,7 +83,7 @@ final class DictationLifecycleTests: XCTestCase {
         controller.recordingOverlay.stop()
     }
 
-    func testTerminationRetriesAndProtectsMemoryOnlyTranscript() throws {
+    func testTerminationRetriesAndProtectsMemoryOnlyTranscript() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("koett-quit-test-\(UUID())")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -99,9 +99,23 @@ final class DictationLifecycleTests: XCTestCase {
         XCTAssertFalse(controller.beginRelaunch(to: .parakeet))
         XCTAssertFalse(controller.isRelaunching)
         XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Text in memory · Save failed · Copy Unsaved Transcripts"))
+        let failedSave = expectation(description: "Initial queued save and recovery finished")
+        persistence.recoverInBackground { _ in failedSave.fulfill() }
+        await fulfillment(of: [failedSave], timeout: 10)
+        XCTAssertTrue(persistence.hasVolatileTranscripts)
         try FileManager.default.removeItem(at: blocked)
+        XCTAssertEqual(controller.prepareTermination(), .terminateCancel)
+        let retriedSave = expectation(description: "Termination retry finished")
+        persistence.recoverInBackground { _ in retriedSave.fulfill() }
+        await fulfillment(of: [retriedSave], timeout: 10)
+        XCTAssertFalse(persistence.hasVolatileTranscripts)
+        XCTAssertNil(persistence.unsavedTranscriptText)
+        XCTAssertTrue(try persistence.recovery.pendingFiles().isEmpty)
         XCTAssertEqual(controller.prepareTermination(), .terminateNow)
-        XCTAssertTrue(try String(contentsOf: history.fileURL, encoding: .utf8).contains("Keep this completed transcript."))
+        let rows = try history.page()
+        XCTAssertEqual(rows.count, 1)
+        let row = try XCTUnwrap(rows.first)
+        XCTAssertEqual(try history.get(row.id)?.text, "Keep this completed transcript.")
         controller.recordingOverlay.stop()
     }
 
