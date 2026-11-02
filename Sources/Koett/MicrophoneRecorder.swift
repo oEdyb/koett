@@ -64,6 +64,7 @@ final class MicrophoneFileSink: Sendable {
     private let powerBits = Atomic<UInt32>(Float(-160).bitPattern)
     private let droppedFrames = Atomic<Int>(0)
     private let paused = Atomic<Bool>(false)
+    static let writeBufferBytes: UInt32 = 4 << 20
 
     var isPaused: Bool {
         get { paused.load(ordering: .acquiring) }
@@ -96,6 +97,9 @@ final class MicrophoneFileSink: Sendable {
         do {
             var client = inputFormat.streamDescription.pointee
             try Self.check(ExtAudioFileSetProperty(file, kExtAudioFileProperty_ClientDataFormat, UInt32(MemoryLayout<AudioStreamBasicDescription>.size), &client))
+            // The default 64 KB buffer overflows when the writer thread stalls for about one second.
+            var bufferBytes = Self.writeBufferBytes
+            try Self.check(ExtAudioFileSetProperty(file, kExtAudioFileProperty_IOBufferSizeBytes, UInt32(MemoryLayout<UInt32>.size), &bufferBytes))
             try Self.check(ExtAudioFileWriteAsync(file, 0, nil))
         } catch {
             ExtAudioFileDispose(file)
