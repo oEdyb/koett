@@ -8,13 +8,22 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 
 - Settings › Text: **Draw on screen while dictating**, off by default, and
   **Draw key**: Shift (default), Ctrl or Alt.
+- **Keep typing while recording** (opt-in): Koett reads the draw key from the
+  keyboard devices, so the overlay never takes keyboard focus and typing keeps
+  working during a dictation. It checks only Shift/Ctrl/Alt/Super state
+  (`EVIOCGKEY`, ~60×/s), never reads key events, and opens the devices only
+  while a dictation with drawing records. Settings shows the access status and
+  copies a one-time udev rule (`uaccess` for keyboards). Without access Koett
+  falls back to the focused overlay and says so.
 - While a dictation records, a transparent overlay covers every monitor. Hold
   the draw key and move the pointer to leave red (#ff3b30) ink. Without the key,
   clicks pass through to the apps underneath. Ctrl+Z removes the last stroke of
   a sketch that has not been captured yet.
-- Strokes on one monitor form one sketch. A sketch closes 0.7 s after the key is
-  released (or at 12 strokes / 20 s, or when recording stops); that monitor is
-  captured with the ink visible, then the ink fades 1.5 s after the pen lifted.
+- One draw-key hold is one sketch, as in Scrawl: releasing the key closes it
+  and the next hold always starts a new sketch, on the same monitor or another,
+  so a long dictation can mix talking and many separate sketches. Moving to
+  another monitor during one hold starts a sketch there. A closed sketch's
+  monitor is captured with the ink visible; the ink fades 1.5 s after release.
   Captures are serialized per monitor: while one is pending, only that sketch's
   ink is shown there (other and newer ink reappears after it), so an image never
   contains another sketch's strokes. The screenshot starts only once GDK reports
@@ -62,10 +71,11 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 | GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected |
 | X11 | no layer-shell | — | Unavailable; dictation unaffected |
 
-- The overlay takes exclusive keyboard focus while recording (Wayland exposes no
-  global key state). Typing into another app during a recording is blocked while
-  the feature is on (see the proposal below); compositor and portal shortcuts
-  still work. Focus returns
+- Without keyboard access (or with **Keep typing** off) the overlay takes
+  exclusive keyboard focus while recording, since Wayland exposes no global key
+  state; typing into other apps is then paused during the recording. Ctrl+Z
+  undo needs that focused mode. Device mode reads every keyboard present at
+  recording start; one plugged in mid-recording is seen from the next one. Focus returns
   to the previous window when recording stops, before paste.
 - The ink (and the recording pill when the ink is near it) is part of the
   captured image.
@@ -125,7 +135,10 @@ That blocks typing into other apps while dictating with drawing on. Options:
 | B. Compositor trigger | A desktop shortcut starts draw mode; only then does the overlay take focus. It sees the key release itself and gives focus back | Press-to-start: niri binds fire on press (no release action, to our knowledge), e.g. `Mod+Shift+D { spawn "koett" "draw"; }`; draw mode ends when Shift is released or with Esc | The GlobalShortcuts portal reports press **and** release, so a true hold works; KDE does not allow a bare Shift binding, so it is a chord (e.g. Ctrl+Alt+D) | Not bare Shift: one extra key or chord per sketch; typing never blocked |
 | C. Read keyboard devices (evdev) | Koett reads `/dev/input` key state directly | Works, true bare-Shift hold | Works | Needs the `input` group or a udev rule, which would let Koett read every keystroke system-wide; plan.md rules this out as a default |
 
-Recommendation: make **B the default** and keep **A as an opt-in** ("Shift
+**Decision (Olle, 2026-11-02): maximum UX — bare Shift, many separate sketches
+per dictation, typing never blocked. Built as C (device state, opt-in with
+guided setup) with A as the fallback.** Original recommendation, kept for the
+record: make **B the default** and keep **A as an opt-in** ("Shift
 anywhere — blocks typing while recording"). On niri, bind one key to
 `koett draw`; draw mode starts focused, Shift-move draws as now, and focus
 returns on release or Esc. On KDE, register a portal hold shortcut. Offer C

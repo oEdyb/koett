@@ -646,6 +646,10 @@ fn build_window(
                     asking,
                     paused,
                 );
+                if let Some(message) = sketch.take_notice() {
+                    notice = Some(message);
+                    notice_until = Some(Instant::now() + Duration::from_secs(12));
+                }
             }
             if let Some(overlay) = &overlay {
                 overlay.update(

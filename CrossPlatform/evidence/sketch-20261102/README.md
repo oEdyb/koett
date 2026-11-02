@@ -37,3 +37,19 @@ After the PR #6 review fixes:
 10. `10-presentation-gated-capture.png`: captures start only after GDK reports
     wp_presentation feedback for the frame showing only that sketch's ink; the
     log has no timeout fallback ("without presentation feedback") entries.
+
+Device mode (draw key read from keyboard state, no overlay focus):
+
+11. `11-device-mode-typing-while-drawing.png`: after the first Shift hold drew a
+    circle, "typed while recording" went into Chrome mid-dictation; Chrome kept
+    focus (active title bar).
+12. `12-device-mode-three-holds-three-sketches.png`: three separate holds gave
+    three sketches (1356×1151 sheet) and bullets #1–#3, each linked to its own
+    clause; pill bands 1, 2, 3.
+
+Shift came from `lab-grabbed-shift.py`: a uinput keyboard grabbed with
+EVIOCGRAB before any key is sent, so the host compositor never received the
+key; Koett saw it only through EVIOCGKEY key state. The pointer moved through
+KWin fake input without key events (`lab-gesture 0 …`).
+Not covered in the lab: the "access denied" fallback (unit-tested decision;
+focus mode itself is the verified PR #6 path).

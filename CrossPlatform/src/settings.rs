@@ -65,6 +65,9 @@ pub struct Settings {
     /// Off by default: drawing takes keyboard focus while recording.
     pub draw_while_dictating: bool,
     pub draw_key: DrawKey,
+    /// Opt-in: read only modifier state from keyboard devices while recording
+    /// so drawing needs no keyboard focus and typing keeps working.
+    pub draw_key_from_keyboard: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -85,6 +88,7 @@ impl Default for Settings {
             paste_shortcut: PasteShortcut::default(),
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
+            draw_key_from_keyboard: false,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -256,6 +260,9 @@ impl Settings {
         }
         if self.draw_key != opened.draw_key {
             merged.draw_key = self.draw_key;
+        }
+        if self.draw_key_from_keyboard != opened.draw_key_from_keyboard {
+            merged.draw_key_from_keyboard = self.draw_key_from_keyboard;
         }
         merged
     }
@@ -443,6 +450,10 @@ mod tests {
     fn drawing_is_off_with_shift_for_existing_settings() {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert!(!settings.draw_while_dictating);
+        assert!(
+            !settings.draw_key_from_keyboard,
+            "keyboard access is opt-in"
+        );
         assert_eq!(settings.draw_key, DrawKey::Shift);
         let chosen: Settings =
             serde_json::from_str(r#"{"draw_while_dictating":true,"draw_key":"alt"}"#).unwrap();

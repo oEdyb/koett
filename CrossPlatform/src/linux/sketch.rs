@@ -16,17 +16,15 @@ use std::{cell::RefCell, rc::Rc};
 
 mod capture;
 mod frames;
+pub mod keys;
 pub mod sheet;
 
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
 const INK_WIDTH: f64 = 5.0;
-const CAPTURE_AFTER: Duration = Duration::from_millis(700);
 const FADE_AFTER: Duration = Duration::from_millis(1500);
 const FADE_FOR: Duration = Duration::from_millis(400);
 /// Matches the pill timeline's cap (`timeline::MAX_SKETCHES`, 256 per dictation).
 const MAX_SKETCHES: usize = 256;
-const GROUP_STROKES: usize = 12;
-const GROUP_SPAN: Duration = Duration::from_secs(20);
 
 pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
 #[cfg(test)]
@@ -117,7 +115,18 @@ struct Group {
     /// Frame that painted this queued sketch with other ink hidden.
     painted: std::cell::Cell<Option<i64>>,
     lifted: Option<Instant>,
+    /// Set when the draw key is released: one hold is one sketch.
+    closed: bool,
     phase: Phase,
+}
+
+/// The sketch that movement on `surface` continues: only one still being
+/// drawn there in the current hold. A released hold never continues, so the
+/// next hold always starts a separate sketch.
+fn continuing(groups: &[Group], surface: usize) -> Option<usize> {
+    groups.iter().position(|group| {
+        group.surface == surface && group.phase == Phase::Drawing && !group.closed
+    })
 }
 
 /// While a sketch on a monitor is being captured, only its ink is shown there,
@@ -162,6 +171,8 @@ struct Session {
     stroking: Option<u64>,
     finishing: bool,
     results: CaptureResults,
+    /// Device mode (no keyboard focus); `None` means the overlay holds focus.
+    keyboards: Option<keys::Keyboards>,
 }
 
 impl Session {
@@ -199,10 +210,33 @@ impl Session {
         }
     }
 
+    /// Ends the current hold: its sketch closes and is captured; the next hold
+    /// starts a new sketch, on this monitor or another.
     fn release(&mut self) {
         self.held = false;
         self.lift();
+        for group in &mut self.groups {
+            group.closed = true;
+        }
         self.set_input(false);
+    }
+
+    fn press(&mut self) {
+        self.held = true;
+        self.set_input(true);
+    }
+
+    /// Device mode: follows the draw key from keyboard modifier state.
+    fn poll_keys(&mut self) {
+        let Some(keyboards) = &self.keyboards else {
+            return;
+        };
+        let draws = !self.finishing && keyboards.modifiers().draws(self.key);
+        match (draws, self.held) {
+            (true, false) => self.press(),
+            (false, true) => self.release(),
+            _ => {}
+        }
     }
 
     fn point(&mut self, surface: usize, x: f64, y: f64) {
@@ -215,12 +249,7 @@ impl Session {
             Some(index) => index,
             None => {
                 self.lift();
-                let open = self.groups.iter().position(|group| {
-                    group.surface == surface
-                        && group.phase == Phase::Drawing
-                        && group.strokes.len() < GROUP_STROKES
-                        && now.duration_since(group.start) < GROUP_SPAN
-                });
+                let open = continuing(&self.groups, surface);
                 if open.is_none() && self.groups.len() >= MAX_SKETCHES {
                     return;
                 }
@@ -235,6 +264,7 @@ impl Session {
                         audio_start: self.clock.at(self.started, now),
                         painted: std::cell::Cell::new(None),
                         lifted: None,
+                        closed: false,
                         phase: Phase::Drawing,
                     });
                     self.groups.len() - 1
@@ -302,6 +332,7 @@ impl Session {
 
     /// One timer step. Returns false once a finishing session is complete.
     fn tick(&mut self) -> bool {
+        self.poll_keys();
         let now = Instant::now();
         let results = std::mem::take(
             &mut *self
@@ -332,16 +363,13 @@ impl Session {
         }
         for index in 0..self.groups.len() {
             let group = &self.groups[index];
-            let idle = group
-                .lifted
-                .is_some_and(|lifted| now >= lifted + CAPTURE_AFTER);
             let surface_busy = self
                 .groups
                 .iter()
                 .any(|other| other.surface == group.surface && other.phase.busy());
             if group.phase == Phase::Drawing
                 && self.stroking != Some(group.id)
-                && (idle || self.finishing)
+                && (group.closed || self.finishing)
                 && !surface_busy
             {
                 let surface = group.surface;
@@ -470,6 +498,14 @@ pub struct SketchOverlay {
     styled: std::cell::Cell<bool>,
     /// Last recording id the overlay decided on, so settings load once.
     decided: std::cell::Cell<u64>,
+    notice: RefCell<Option<String>>,
+}
+
+fn fallback_notice(access: keys::Access) -> String {
+    match access {
+        keys::Access::Denied => "Drawing: keyboard access not set up, so typing is paused while recording. Settings › Text shows the one-time setup.".into(),
+        keys::Access::NoKeyboards => "Drawing: no keyboard found to read Shift from; typing is paused while recording.".into(),
+    }
 }
 
 impl SketchOverlay {
@@ -483,6 +519,7 @@ impl SketchOverlay {
             session: Rc::new(RefCell::new(None)),
             styled: std::cell::Cell::new(false),
             decided: std::cell::Cell::new(0),
+            notice: RefCell::new(None),
         })
     }
 
@@ -504,13 +541,25 @@ impl SketchOverlay {
                 let settings = crate::settings::Settings::load().unwrap_or_default();
                 if settings.draw_while_dictating {
                     drop(current);
-                    self.open(application, started, id, settings.draw_key);
+                    let keyboards = settings
+                        .draw_key_from_keyboard
+                        .then(keys::Keyboards::open)
+                        .and_then(|result| {
+                            result
+                                .inspect_err(|access| {
+                                    *self.notice.borrow_mut() = Some(fallback_notice(*access));
+                                })
+                                .ok()
+                        });
+                    self.open(application, started, id, settings.draw_key, keyboards);
                 }
             }
             (Some(session), Some(_)) => session.clock.observe(paused, Instant::now()),
             (Some(session), None) if !session.finishing => {
                 session.finishing = true;
                 session.release();
+                // Close keyboard devices as soon as recording ends.
+                session.keyboards = None;
                 if let Some(first) = session.surfaces.first()
                     && let Err(error) = self.layer.set_keyboard(&first.window, 0)
                 {
@@ -519,6 +568,11 @@ impl SketchOverlay {
             }
             _ => {}
         }
+    }
+
+    /// A one-time message for the main window (e.g. the focus fallback).
+    pub fn take_notice(&self) -> Option<String> {
+        self.notice.borrow_mut().take()
     }
 
     fn style(&self) {
@@ -536,7 +590,15 @@ impl SketchOverlay {
         }
     }
 
-    fn open(&self, application: &gtk::Application, started: Instant, recording: u64, key: DrawKey) {
+    fn open(
+        &self,
+        application: &gtk::Application,
+        started: Instant,
+        recording: u64,
+        key: DrawKey,
+        keyboards: Option<keys::Keyboards>,
+    ) {
+        let focus = keyboards.is_none();
         let Some(display) = gdk::Display::default() else {
             return;
         };
@@ -571,7 +633,7 @@ impl SketchOverlay {
                 .title("Koett sketch")
                 .decorated(false)
                 .build();
-            if let Err(error) = self.layer.cover(&window, monitor, index == 0) {
+            if let Err(error) = self.layer.cover(&window, monitor, focus && index == 0) {
                 eprintln!("Sketch overlay unavailable: {error}");
                 window.destroy();
                 continue;
@@ -634,7 +696,7 @@ impl SketchOverlay {
                 }
             });
             area.add_controller(motion);
-            if index == 0 {
+            if focus && index == 0 {
                 window.add_controller(self.keys());
                 // A missed key release must not leave clicks blocked.
                 window.connect_is_active_notify({
@@ -685,8 +747,10 @@ impl SketchOverlay {
             stroking: None,
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
+            keyboards,
         });
-        glib::timeout_add_local(Duration::from_millis(33), {
+        // 16 ms: device mode polls the draw key on this tick.
+        glib::timeout_add_local(Duration::from_millis(16), {
             let session = self.session.clone();
             move || {
                 let Ok(mut current) = session.try_borrow_mut() else {
@@ -723,8 +787,7 @@ impl SketchOverlay {
                 if key_matches(session.key, keyval)
                     && !state.intersects(other_modifiers(session.key))
                 {
-                    session.held = true;
-                    session.set_input(true);
+                    session.press();
                 } else if keyval.to_lower() == gdk::Key::z
                     && state.contains(gdk::ModifierType::CONTROL_MASK)
                 {
@@ -775,6 +838,7 @@ mod tests {
             audio_start: Duration::ZERO,
             painted: std::cell::Cell::new(None),
             lifted: Some(now),
+            closed: false,
             phase: Phase::Capturing,
         };
         assert_eq!(group.alpha(now + Duration::from_secs(5)), 1.0);
@@ -794,6 +858,7 @@ mod tests {
             audio_start: Duration::ZERO,
             painted: std::cell::Cell::new(None),
             lifted: None,
+            closed: false,
             phase,
         }
     }
@@ -825,6 +890,26 @@ mod tests {
             idle.iter().filter(|group| visible(&idle, 0, group)).count(),
             2
         );
+    }
+
+    #[test]
+    fn each_hold_is_a_separate_sketch_on_any_monitor() {
+        let mut groups = vec![group(1, 0, Phase::Drawing)];
+        assert_eq!(continuing(&groups, 0), Some(0), "same hold, same monitor");
+        assert_eq!(
+            continuing(&groups, 1),
+            None,
+            "another monitor gets its own sketch"
+        );
+        groups[0].closed = true; // draw key released
+        assert_eq!(
+            continuing(&groups, 0),
+            None,
+            "next hold starts a new sketch"
+        );
+        groups.push(group(2, 1, Phase::Drawing));
+        groups[1].closed = true;
+        assert_eq!(continuing(&groups, 1), None);
     }
 
     #[test]

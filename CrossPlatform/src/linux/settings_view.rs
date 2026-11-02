@@ -423,6 +423,60 @@ Media: open Koett → Transcribe media",
         move |draw| draw_key.set_sensitive(draw.is_active())
     });
     row(&text, "Draw key", &draw_key);
+    let from_keyboard = gtk::CheckButton::with_label(
+        "_Keep typing while recording (read the draw key from the keyboard)",
+    );
+    from_keyboard.set_use_underline(true);
+    from_keyboard.set_active(settings.draw_key_from_keyboard);
+    text.append(&from_keyboard);
+    let keyboard_help = gtk::Label::new(Some(
+        "Koett then checks only whether Shift, Ctrl, Alt or Super is held, about 60 times a second, and only while a dictation with drawing records. It never reads other keys. Linux grants this per keyboard device, so the one-time setup below lets any app you run read keyboards; skip it to keep the overlay focused instead (typing paused while recording).",
+    ));
+    keyboard_help.set_wrap(true);
+    keyboard_help.set_xalign(0.0);
+    keyboard_help.add_css_class("koett-setting-help");
+    text.append(&keyboard_help);
+    let access = gtk::Label::new(Some(match super::sketch::keys::Keyboards::open() {
+        Ok(_) => "Keyboard access: ready.",
+        Err(super::sketch::keys::Access::Denied) => {
+            "Keyboard access: not set up. Run the setup command once in a terminal, then reopen Settings."
+        }
+        Err(super::sketch::keys::Access::NoKeyboards) => "Keyboard access: no keyboard found.",
+    }));
+    access.set_wrap(true);
+    access.set_xalign(0.0);
+    text.append(&access);
+    let setup = gtk::Button::with_label("Copy setup command");
+    setup.set_halign(gtk::Align::Start);
+    setup.set_tooltip_text(Some(super::sketch::keys::SETUP_COMMAND));
+    setup.connect_clicked(|button| {
+        button
+            .clipboard()
+            .set_text(super::sketch::keys::SETUP_COMMAND);
+        button.set_label("Copied · paste into a terminal");
+    });
+    text.append(&setup);
+    for widget in [
+        from_keyboard.upcast_ref::<gtk::Widget>(),
+        keyboard_help.upcast_ref(),
+        access.upcast_ref(),
+        setup.upcast_ref(),
+    ] {
+        widget.set_sensitive(draw.is_active());
+    }
+    draw.connect_toggled({
+        let widgets = [
+            from_keyboard.clone().upcast::<gtk::Widget>(),
+            keyboard_help.clone().upcast(),
+            access.clone().upcast(),
+            setup.clone().upcast(),
+        ];
+        move |draw| {
+            for widget in &widgets {
+                widget.set_sensitive(draw.is_active());
+            }
+        }
+    });
     let replacements_title = gtk::Label::new(Some("Word replacements"));
     replacements_title.set_xalign(0.0);
     replacements_title.add_css_class("heading");
@@ -530,6 +584,7 @@ Media: open Koett → Transcribe media",
             };
             updated.pause_media = pause_media.is_active();
             updated.draw_while_dictating = draw.is_active();
+            updated.draw_key_from_keyboard = from_keyboard.is_active();
             updated.draw_key = match draw_key.active_id().as_deref() {
                 Some("control") => DrawKey::Control,
                 Some("alt") => DrawKey::Alt,

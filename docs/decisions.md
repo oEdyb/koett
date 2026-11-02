@@ -88,3 +88,14 @@ the Screenshot portal) and otherwise through the non-interactive Screenshot port
 are pasted sequentially, because a single clipboard offer with both types makes
 each app choose only one of them. GNOME and X11 lack layer-shell and keep normal
 dictation. Details, limits and the Mac to-do: docs/draw-while-dictating.md.
+
+## 2026-11-02: bare Shift via keyboard state, one hold per sketch
+
+Olle chose maximum UX over the compositor-shortcut option: bare Shift, each
+hold one separate sketch (release ends it), many sketches per dictation, and
+typing never blocked. Wayland clients cannot see Shift without focus, so the
+opt-in "Keep typing" mode reads only modifier bits from keyboard devices with
+EVIOCGKEY while a drawing dictation records; it never reads key events. Access
+comes from a one-time udev `uaccess` rule that Settings copies; without it the
+focused overlay remains the fallback and Koett says so. This grants keyboard
+read access to the user's session, which is why it is opt-in, not default.
