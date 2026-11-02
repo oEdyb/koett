@@ -61,21 +61,43 @@ impl ParakeetTranscriber {
         Ok(())
     }
 
-    pub(super) fn decode_text(&self, sample_rate: i32, samples: &[f32]) -> Result<String, String> {
+    /// Text plus word times of the plain stream, `offset` seconds into the
+    /// recording. Dictionary adoption may change some words of the text.
+    pub(super) fn decode_timed_text(
+        &self,
+        sample_rate: i32,
+        samples: &[f32],
+        offset: f32,
+    ) -> Result<(String, Vec<crate::annotation::TimedWord>), String> {
+        let duration = samples.len() as f32 / sample_rate.max(1) as f32;
         let plain = self.recognizer.create_stream();
         plain.accept_waveform(sample_rate, samples);
-        let Some(bias) = &self.bias else {
-            self.recognizer.decode(&plain);
-            return text(&plain);
+        let biased = self.bias.as_ref().map(|bias| {
+            let stream = self.recognizer.create_stream_with_hotwords(&bias.hotwords);
+            stream.accept_waveform(sample_rate, samples);
+            (bias, stream)
+        });
+        match &biased {
+            None => self.recognizer.decode(&plain),
+            Some((_, stream)) => self.recognizer.decode_multiple_streams(&[&plain, stream]),
+        }
+        let result = plain
+            .get_result()
+            .ok_or_else(|| "sherpa-onnx returned no transcript".to_string())?;
+        let words = super::timed_words(
+            &result.text,
+            &result.tokens,
+            result.timestamps.as_deref(),
+            offset,
+            duration,
+        );
+        let text = match &biased {
+            None => result.text,
+            Some((bias, stream)) => {
+                dictionary::adopt_terms(&result.text, &text(stream)?, &bias.dictionary)
+            }
         };
-        let biased = self.recognizer.create_stream_with_hotwords(&bias.hotwords);
-        biased.accept_waveform(sample_rate, samples);
-        self.recognizer.decode_multiple_streams(&[&plain, &biased]);
-        Ok(dictionary::adopt_terms(
-            &text(&plain)?,
-            &text(&biased)?,
-            &bias.dictionary,
-        ))
+        Ok((text, words))
     }
 }
 
