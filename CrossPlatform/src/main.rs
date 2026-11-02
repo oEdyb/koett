@@ -55,7 +55,18 @@ fn run() -> Result<(), String> {
     }
 
     let arguments = parse_arguments()?;
-    let mut transcriber = ParakeetTranscriber::load(&arguments.model_directory, arguments.threads)?;
+    // KOETT_DICTIONARY names a dictionary text file (`Term = heard as`), as the app uses it.
+    let dictionary = match env::var_os("KOETT_DICTIONARY") {
+        Some(path) => koett_engine::dictionary::parse_text(
+            &std::fs::read_to_string(&path).map_err(|error| error.to_string())?,
+        )?,
+        None => Vec::new(),
+    };
+    let mut transcriber = ParakeetTranscriber::load_with_dictionary(
+        &arguments.model_directory,
+        arguments.threads,
+        &dictionary,
+    )?;
     eprintln!(
         "model_load_ms={:.1}",
         transcriber.model_load().as_secs_f64() * 1_000.0
@@ -70,7 +81,9 @@ fn run() -> Result<(), String> {
         Input::Wavs(wavs) => {
             for wav in wavs {
                 let audio = AudioRecording::read_wav(&wav)?;
-                print_result(&wav.display().to_string(), transcriber.transcribe(&audio)?);
+                let mut result = transcriber.transcribe(&audio)?;
+                result.text = koett_engine::dictionary::apply(&result.text, &dictionary);
+                print_result(&wav.display().to_string(), result);
             }
         }
     }

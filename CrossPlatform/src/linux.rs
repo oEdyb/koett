@@ -875,6 +875,7 @@ fn run_x11(
                 settings.recording_mode = updated.recording_mode;
                 settings.microphone = updated.microphone;
                 settings.replacements = updated.replacements;
+                settings.dictionary = updated.dictionary;
                 settings.start_at_login = updated.start_at_login;
                 settings.pause_media = updated.pause_media;
                 settings.paste_shortcut = updated.paste_shortcut;
@@ -2123,17 +2124,20 @@ fn completed_text(
     last_known: &Settings,
 ) -> (String, Option<String>) {
     match loaded {
-        Ok(settings) => (
-            crate::replacements::apply(raw, &settings.replacements),
-            None,
-        ),
+        Ok(settings) => (own_words(raw, &settings), None),
         Err(error) => (
-            crate::replacements::apply(raw, &last_known.replacements),
+            own_words(raw, last_known),
             Some(format!(
                 "Settings unavailable; using last valid replacements: {error}"
             )),
         ),
     }
+}
+
+/// Dictionary spelling first, then the user's literal replacements.
+fn own_words(raw: &str, settings: &Settings) -> String {
+    let spelled = crate::dictionary::apply(raw, &settings.dictionary);
+    crate::replacements::apply(&spelled, &settings.replacements)
 }
 
 fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {

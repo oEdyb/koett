@@ -6,6 +6,12 @@
 
 use serde::{Deserialize, Serialize};
 
+mod correct;
+mod merge;
+
+pub use correct::apply;
+pub use merge::adopt_terms;
+
 pub const MAX_ENTRIES: usize = 2_000;
 pub const MAX_TERM_CHARS: usize = 80;
 
