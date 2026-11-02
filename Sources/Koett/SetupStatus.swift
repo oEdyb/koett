@@ -8,6 +8,7 @@ enum StartupErrorCode: Int, Sendable {
 enum SetupStatus: Equatable, Sendable {
     case checkingMicrophone
     case checkingAccessibility
+    case waitingForPermission(String)
     case checkingModel(String)
     case downloading(model: String, percent: Int)
     case loadingModel(String)
@@ -43,6 +44,8 @@ enum SetupStatus: Equatable, Sendable {
             return "Checking Microphone…"
         case .checkingAccessibility:
             return "Checking Accessibility…"
+        case .waitingForPermission(let name):
+            return "Waiting for \(name) Access"
         case .checkingModel(let model):
             return "Checking \(model)…"
         case .downloading(let model, let percent):

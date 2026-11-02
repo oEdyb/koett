@@ -82,8 +82,8 @@ extension KoettController {
         guard state == .ready else { return }
         drawWhileDictating.toggle()
         UserDefaults.standard.set(drawWhileDictating, forKey: DrawKey.enabledDefaultsKey)
-        if drawWhileDictating && !CGPreflightScreenCaptureAccess() {
-            _ = CGRequestScreenCaptureAccess()
+        if drawWhileDictating && !permissionsWindow.model.center.isGranted(.screenRecording) {
+            showPermissions()
         }
         rebuildMenu()
     }
@@ -143,6 +143,13 @@ extension KoettController {
         let sheet = SketchSheet.contactSheet(frames.map(\.image)).flatMap(SketchSheet.png)
         if sheet == nil { fputs("Warning: contact sheet could not be drawn\n", stderr) }
         return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count)
+    }
+
+    /// Called after delivery, so the window never takes focus before Command-V.
+    func showPermissionsIfSketchesNeededScreen() {
+        guard sketchOverlay.takeFailedCaptures() > 0,
+              !permissionsWindow.model.center.isGranted(.screenRecording) else { return }
+        showPermissions()
     }
 
     /// Scrawl order: the numbered sheet first, then the matching text.
