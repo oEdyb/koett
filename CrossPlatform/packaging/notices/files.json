@@ -7,6 +7,11 @@
       "bytes": 251229
     },
     {
+      "path": "data/scowl/Copyright",
+      "sha256": "283326a422e29c510e2ba6805518c418ce3c35ed1fadc3eec83d2da4f6c5a055",
+      "bytes": 11758
+    },
+    {
       "path": "models/CC-BY-4.0.html",
       "sha256": "58230517b7895aa219ff46a6ed63e67057a1582fb9ea054b16728a8c13525650",
       "bytes": 48742

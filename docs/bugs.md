@@ -137,3 +137,15 @@ Shortcut failures now use a nonfatal notice, preserving the engine phase and
 the shared tray/window action mapping. Regression coverage exercises unavailable
 and invalid shortcuts during both capture and ASR. Internal UI control messages
 also no longer leak into the tray's displayed phase.
+
+## 2026-11-02: dictionary adoption rewrote neighbouring words
+
+Codex review of PR #8. Adoption took a whole differing biased span if it
+contained any term, so "Send Superbase invoices" became "Send Supabase receipts",
+and hotword-boosted homophones turned "the cloud" into "Claude". The spelling
+pass also matched `C++` by its letters alone, writing `C++++`, and missed
+decomposed "Göteborg"; imports with 50,000 forms took 1.8 s on the UI thread.
+Adoption now requires the biased span to be exactly one term, places it over
+the closest plain words only, and keeps plain words that are all common English.
+Punctuated terms match literally, keys are NFC, and imports are capped with set
+deduplication. The benchmark gained a lost-words metric; it fell from 6 to 1.

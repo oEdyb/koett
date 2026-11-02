@@ -1279,6 +1279,7 @@ dependencies = [
  "gdk4-wayland",
  "global-hotkey",
  "gtk4",
+ "icu_normalizer",
  "ksni",
  "libc",
  "libloading",

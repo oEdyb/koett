@@ -4,16 +4,22 @@
 //! tends to produce instead. Entries live in `Settings.dictionary` and travel as
 //! plain text, one entry per line: `Term` or `Term = heard as, other form`.
 
+use std::collections::{HashMap, HashSet};
+
 use serde::{Deserialize, Serialize};
 
+mod common;
 mod correct;
 mod merge;
 
+pub use common::is_common;
 pub use correct::apply;
 pub use merge::adopt_terms;
 
 pub const MAX_ENTRIES: usize = 2_000;
 pub const MAX_TERM_CHARS: usize = 80;
+pub const MAX_FORMS_PER_TERM: usize = 32;
+pub const MAX_FORMS: usize = 4_000;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
@@ -31,9 +37,13 @@ impl DictionaryEntry {
     }
 }
 
-/// Trim, drop empty forms and merge entries that repeat a term.
+/// Trim, drop empty forms and merge entries that repeat a term. Fails fast at
+/// the size limits, so a huge import cannot stall the Settings window.
 pub fn normalize(entries: Vec<DictionaryEntry>) -> Result<Vec<DictionaryEntry>, String> {
     let mut result: Vec<DictionaryEntry> = Vec::new();
+    let mut positions: HashMap<String, usize> = HashMap::new();
+    let mut seen: HashSet<(usize, String)> = HashSet::new();
+    let mut forms = 0;
     for entry in entries {
         let term = clean(&entry.term);
         if term.is_empty() {
@@ -42,14 +52,14 @@ pub fn normalize(entries: Vec<DictionaryEntry>) -> Result<Vec<DictionaryEntry>, 
             }
             continue;
         }
-        if term.chars().count() > MAX_TERM_CHARS {
-            return Err(format!(
-                "\"{term}\" is longer than {MAX_TERM_CHARS} characters."
-            ));
-        }
-        let index = match result.iter().position(|known| known.term == term) {
-            Some(index) => index,
+        check_length(&term)?;
+        let index = match positions.get(&term) {
+            Some(&index) => index,
             None => {
+                if result.len() == MAX_ENTRIES {
+                    return Err(format!("The dictionary holds at most {MAX_ENTRIES} words."));
+                }
+                positions.insert(term.clone(), result.len());
                 result.push(DictionaryEntry {
                     term,
                     sounds_like: Vec::new(),
@@ -59,23 +69,35 @@ pub fn normalize(entries: Vec<DictionaryEntry>) -> Result<Vec<DictionaryEntry>, 
         };
         for form in entry.sounds_like.iter().map(|form| clean(form)) {
             let known = &mut result[index];
-            if form.is_empty() || form == known.term || known.sounds_like.contains(&form) {
+            if form.is_empty() || form == known.term || !seen.insert((index, form.clone())) {
                 continue;
             }
-            if form.chars().count() > MAX_TERM_CHARS {
+            check_length(&form)?;
+            if known.sounds_like.len() == MAX_FORMS_PER_TERM {
                 return Err(format!(
-                    "\"{form}\" is longer than {MAX_TERM_CHARS} characters."
+                    "\"{}\" has more than {MAX_FORMS_PER_TERM} \"sounds like\" forms.",
+                    known.term
+                ));
+            }
+            forms += 1;
+            if forms > MAX_FORMS {
+                return Err(format!(
+                    "The dictionary holds at most {MAX_FORMS} \"sounds like\" forms."
                 ));
             }
             known.sounds_like.push(form);
         }
     }
-    if result.len() > MAX_ENTRIES {
+    Ok(result)
+}
+
+fn check_length(value: &str) -> Result<(), String> {
+    if value.chars().count() > MAX_TERM_CHARS {
         return Err(format!(
-            "The dictionary holds at most {MAX_ENTRIES} entries."
+            "\"{value}\" is longer than {MAX_TERM_CHARS} characters."
         ));
     }
-    Ok(result)
+    Ok(())
 }
 
 /// Parse the plain-text exchange format. Blank lines and `#` comments are ignored.

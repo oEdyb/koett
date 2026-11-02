@@ -13023,6 +13023,7 @@
         "pkg:cargo/gdk4-wayland@0.11.5",
         "pkg:cargo/global-hotkey@0.8.0",
         "pkg:cargo/gtk4@0.11.5",
+        "pkg:cargo/icu_normalizer@2.3.0",
         "pkg:cargo/ksni@0.3.6",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/libloading@0.9.0",
@@ -14621,19 +14622,19 @@
   ],
   "inputs": [
     {
-      "bytes": 83294,
+      "bytes": 83313,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "d71b99e4e008fcb587f5e7ae8febddf41d1570d8b8980b189d53c4c3487115bf"
+      "sha256": "b8fac7693a784fa6954e2851fec7b54d92739aa844fb49e0136f2bb88412d436"
     },
     {
-      "bytes": 2449,
+      "bytes": 2545,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "a6da6bf0d85f619c4272e6225d357c85d99220510719699e5d8821b297cd61c4"
+      "sha256": "83d927170b8b93f9e1f69f1d97fff119de508dfc56b6d985315c0658fb08a903"
     },
     {
-      "bytes": 5167,
+      "bytes": 5428,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "8699a189592d47fa0b032fa00901a600b7071ff9910aff09417ced39fce60913"
+      "sha256": "f457fdb3911183e87803371ec6f0a8bfbb16a172b2b69bde529daccc1d70fcf8"
     },
     {
       "bytes": 9465,

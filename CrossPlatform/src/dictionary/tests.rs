@@ -66,3 +66,35 @@ fn merge_keeps_existing_order_and_adds_new_forms() {
         ]
     );
 }
+
+#[test]
+fn import_caps_forms_per_word_quickly() {
+    let forms: Vec<String> = (0..50_000).map(|n| format!("form {n}")).collect();
+    let text = format!("Groq = {}", forms.join(", "));
+    let started = std::time::Instant::now();
+    let error = parse_text(&text).unwrap_err();
+    assert!(error.contains("more than 32"), "{error}");
+    assert!(started.elapsed() < std::time::Duration::from_millis(500));
+}
+
+#[test]
+fn import_caps_total_forms_and_words() {
+    let many_forms: String = (0..200)
+        .map(|word| {
+            let forms: Vec<String> = (0..30).map(|n| format!("w{word} f{n}")).collect();
+            format!("Word{word} = {}\n", forms.join(", "))
+        })
+        .collect();
+    assert!(parse_text(&many_forms).unwrap_err().contains("4000"));
+    let many_words: String = (0..=MAX_ENTRIES).map(|n| format!("Word{n}\n")).collect();
+    assert!(parse_text(&many_words).unwrap_err().contains("2000"));
+}
+
+#[test]
+fn repeated_forms_are_deduplicated() {
+    let text = "Groq = grok, grok, grock\nGroq = grok";
+    assert_eq!(
+        parse_text(text).unwrap(),
+        vec![DictionaryEntry::new("Groq", &["grok", "grock"])]
+    );
+}
