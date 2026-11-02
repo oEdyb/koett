@@ -309,3 +309,6 @@
   once, and precedes literal replacements.
 - Never write derived files (the hotword `bpe.vocab`) into model folders.
 - Dictionary edits apply to the next dictation without restarting Koett.
+- Fix a word stores corrections apart from history and never edits history text.
+  Learned suggestions reach the dictionary only through an explicit Add; forms
+  made of common words are labelled and need "Add anyway".

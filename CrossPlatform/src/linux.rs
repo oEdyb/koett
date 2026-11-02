@@ -342,6 +342,7 @@ mod browser_media;
 mod control;
 mod dictionary_view;
 mod feedback;
+mod fix_word_view;
 mod formatting_view;
 mod history_view;
 mod input_preview;

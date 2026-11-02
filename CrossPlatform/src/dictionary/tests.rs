@@ -98,3 +98,14 @@ fn repeated_forms_are_deduplicated() {
         vec![DictionaryEntry::new("Groq", &["grok", "grock"])]
     );
 }
+
+#[test]
+fn add_form_creates_or_extends_entries_and_covers_reports_them() {
+    let entries = add_form(&[], "Groq", "Grok").unwrap();
+    assert_eq!(entries, vec![DictionaryEntry::new("Groq", &["Grok"])]);
+    assert!(covers(&entries, "Groq", "grok"));
+    let entries = add_form(&entries, "Koett", "koett").unwrap();
+    assert_eq!(entries[1], DictionaryEntry::new("Koett", &[]));
+    assert!(covers(&entries, "Koett", "KOETT"));
+    assert!(!covers(&entries, "Koett", "coat"));
+}

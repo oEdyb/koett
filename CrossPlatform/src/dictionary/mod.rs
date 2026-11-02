@@ -141,6 +141,39 @@ pub fn merge(
     normalize(existing.iter().cloned().chain(imported).collect())
 }
 
+/// The dictionary already writes `term` when Koett hears `heard`.
+pub fn covers(entries: &[DictionaryEntry], term: &str, heard: &str) -> bool {
+    let heard_key = correct::key(heard);
+    entries.iter().any(|entry| {
+        entry.term == term
+            && (correct::key(&entry.term) == heard_key
+                || entry
+                    .sounds_like
+                    .iter()
+                    .any(|form| correct::key(form) == heard_key))
+    })
+}
+
+/// Add `term` with `heard` as a sounds-like form (none for a spelling-only fix).
+pub fn add_form(
+    entries: &[DictionaryEntry],
+    term: &str,
+    heard: &str,
+) -> Result<Vec<DictionaryEntry>, String> {
+    let forms = if correct::key(heard) == correct::key(term) {
+        Vec::new()
+    } else {
+        vec![heard.to_string()]
+    };
+    merge(
+        entries,
+        vec![DictionaryEntry {
+            term: term.to_string(),
+            sounds_like: forms,
+        }],
+    )
+}
+
 fn clean(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
