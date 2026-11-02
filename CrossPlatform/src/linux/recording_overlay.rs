@@ -160,6 +160,12 @@ const ROW: i32 = 48;
 /// Left edge of the strip; the glyph sits in the 44 px before it.
 const STRIP_X: f64 = 44.0;
 const STEP: f64 = 3.0;
+/// Right-hand result buttons (Mac: right edge at width − 11, 6 px apart,
+/// each as wide as its title plus 16 px).
+const COPY_W: i32 = 48;
+const COPY_X: f64 = (WIDTH - 11 - COPY_W) as f64;
+const PASTE_W: i32 = 52;
+const PASTE_X: f64 = COPY_X - 6.0 - PASTE_W as f64;
 
 /// What the pill shows. Derived from engine state each UI tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -197,10 +203,20 @@ pub(super) fn phase(
     }
 }
 
-/// Only recording has actions, shown on hover in place of the strip inside
-/// the same 48 px row. Finished states are one row with Copy on the right.
+/// Recording and transcribing show actions on hover, in place of the strip
+/// inside the same 48 px row (as on Mac). Finished states have their own
+/// buttons on the right.
 pub(super) fn shows_actions(phase: Phase, hovered: bool) -> bool {
-    phase == Phase::Recording && hovered
+    matches!(phase, Phase::Recording | Phase::Transcribing) && hovered
+}
+
+/// What the user did on a finished pill.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Acted {
+    /// Copy succeeded: close after 1 s, even while hovered.
+    Copied,
+    /// Paste (Not pasted): close now; the paste runs from the tray action.
+    Pasted,
 }
 
 /// One-line result for the finished pill: whitespace collapsed, bounded.
@@ -238,10 +254,11 @@ pub(super) fn clock(milliseconds: u64) -> String {
     format!("{}:{:02}", seconds / 60, seconds % 60)
 }
 
-/// "3/5" once the final decode plan is known and has more than one step.
+/// "NN%" once the engine reports a real decode plan; nothing otherwise.
 pub(super) fn progress_label(done: u32, planned: u32) -> String {
-    if planned > 1 {
-        format!("{}/{planned}", done.min(planned))
+    if planned > 0 {
+        let percent = (f64::from(done.min(planned)) * 100.0 / f64::from(planned)).round();
+        format!("{percent}%")
     } else {
         String::new()
     }
@@ -287,10 +304,14 @@ struct Pill {
     hovered: bool,
     levels: Option<crate::audio::AudioLevels>,
     last_draw: Option<Instant>,
+    last_sample: Option<Instant>,
     /// Content being morphed away from, and when the morph began.
     morph_from: Option<Phase>,
     morph_started: Option<Instant>,
 }
+
+/// Meter sampling interval while recording (30 Hz, as on Mac).
+const SAMPLE: std::time::Duration = std::time::Duration::from_millis(33);
 
 /// Same-size content morph between states, as on the Mac.
 const MORPH: std::time::Duration = std::time::Duration::from_millis(240);
@@ -312,9 +333,10 @@ pub struct RecordingOverlay {
     cancel: gtk::Button,
     pause: gtk::Button,
     copy: gtk::Button,
+    paste: gtk::Button,
     history: gtk::Button,
     latest: Rc<RefCell<Option<String>>>,
-    acted: Rc<std::cell::Cell<bool>>,
+    acted: Rc<std::cell::Cell<Option<Acted>>>,
     body: gtk::Box,
     warning: gtk::Label,
     state: Rc<RefCell<Pill>>,
@@ -477,17 +499,23 @@ fn paint_body(
     if !strip {
         return Ok(());
     }
-    let columns = pill.timeline.columns();
-    let (decoded, planned) = pill.progress;
-    let head = (phase == Phase::Transcribing && planned > 0).then(|| {
-        pill.timeline
-            .decode_head(f64::from(decoded) / f64::from(planned))
-    });
-    for sketch in pill.timeline.sketches() {
-        let (start, end) = pill.timeline.span(sketch);
-        let x = STRIP_X + start * STEP - 1.0;
-        let width = ((end - start) * STEP + 3.0).max(4.0);
-        rounded(context, x, cy - 15.0, width, 30.0, 3.0);
+    let transcribing = phase == Phase::Transcribing;
+    let x_of = |unit: f64| STRIP_X + unit * STEP;
+    let bands: Vec<_> = pill
+        .timeline
+        .sketches()
+        .iter()
+        .filter_map(|sketch| pill.timeline.band(sketch).map(|band| (*sketch, band)))
+        .collect();
+    for (sketch, (start, end)) in &bands {
+        rounded(
+            context,
+            x_of(*start) - 1.0,
+            cy - 15.0,
+            (end - start) * STEP + 1.0,
+            30.0,
+            3.0,
+        );
         set_source(context, palette.band);
         if sketch.live {
             context.fill_preserve()?;
@@ -498,42 +526,29 @@ fn paint_body(
             context.fill()?;
         }
     }
-    let (tr, tg, tb, ta) = palette.dim;
-    for (index, column) in columns.iter().enumerate() {
-        let x = STRIP_X + index as f64 * STEP;
-        let bright = match head {
-            Some(head) => (index as f64) < head,
-            None => phase != Phase::Transcribing,
-        };
-        match column {
-            // Not recorded yet: a faint track, so the strip is full width
-            // from the first frame and never grows.
-            None => {
-                context.set_source_rgba(tr, tg, tb, ta * 0.45);
-                rounded(context, x, cy - 1.0, 2.0, 2.0, 1.0);
+    // Rolling window: bars slide left by elapsed time and fade out over the
+    // left six columns. Time before the start is dim silence dots.
+    const FADE: f64 = 6.0;
+    for bar in pill.timeline.bars() {
+        let alpha = ((bar.x + 1.0) / FADE).clamp(0.0, 1.0);
+        let left = x_of(bar.x);
+        match bar.level {
+            Some(level) if level >= timeline::SILENT => {
+                let (r, g, b, a) = if transcribing {
+                    palette.dim
+                } else {
+                    palette.bar
+                };
+                context.set_source_rgba(r, g, b, a * alpha);
+                let height = 4.0 + level * 22.0;
+                rounded(context, left, cy - height / 2.0, 2.0, height, 1.0);
             }
-            Some(level) if *level < timeline::SILENT => {
-                set_source(context, palette.dim);
-                rounded(context, x, cy - 1.0, 2.0, 2.0, 1.0);
-            }
-            Some(level) => {
-                set_source(context, if bright { palette.bar } else { palette.dim });
-                let bar = 4.0 + level * 22.0;
-                rounded(context, x, cy - bar / 2.0, 2.0, bar, 1.0);
+            _ => {
+                let (r, g, b, a) = palette.dim;
+                context.set_source_rgba(r, g, b, a * alpha);
+                rounded(context, left, cy - 1.0, 2.0, 2.0, 1.0);
             }
         }
-        context.fill()?;
-    }
-    if let Some(head) = head {
-        context.set_source_rgb(ar, ag, ab);
-        rounded(
-            context,
-            STRIP_X + head * STEP - 1.5,
-            cy - 17.0,
-            2.0,
-            34.0,
-            1.0,
-        );
         context.fill()?;
     }
     context.select_font_face(
@@ -542,9 +557,8 @@ fn paint_body(
         gtk::cairo::FontWeight::Bold,
     );
     context.set_font_size(9.0);
-    for sketch in pill.timeline.sketches() {
-        let (start, _) = pill.timeline.span(sketch);
-        let x = STRIP_X + start * STEP + 5.0;
+    for (sketch, (start, _)) in &bands {
+        let x = (x_of(*start) + 5.0).max(STRIP_X + 6.5);
         let y = cy - 15.0;
         context.set_source_rgb(ar, ag, ab);
         context.arc(x, y, 6.5, 0.0, std::f64::consts::TAU);
@@ -568,9 +582,9 @@ fn sync_animation(
     state: &Rc<RefCell<Pill>>,
     tick: &Rc<RefCell<Option<gtk::TickCallbackId>>>,
 ) {
-    let animate = drawing.settings().is_gtk_enable_animations()
-        && (state.borrow().phase == Phase::Transcribing
-            || state.borrow().morph_progress().is_some());
+    let animate = (drawing.settings().is_gtk_enable_animations()
+        && matches!(state.borrow().phase, Phase::Recording | Phase::Transcribing))
+        || state.borrow().morph_progress().is_some();
     if !animate {
         if let Some(id) = tick.borrow_mut().take() {
             id.remove();
@@ -581,6 +595,22 @@ fn sync_animation(
             let seconds = clock.frame_time() as f64 / 1_000_000.0;
             let mut pill = state.borrow_mut();
             pill.spin = (seconds * 5.0) % std::f64::consts::TAU;
+            // Recording: sample the meter at 30 Hz, silence included, so the
+            // strip slides left at a constant rate (Mac meter timer).
+            if pill.phase == Phase::Recording
+                && let Some(started) = pill.started
+                && pill.last_sample.is_none_or(|last| last.elapsed() >= SAMPLE)
+            {
+                let elapsed = u64::try_from(started.elapsed().as_millis())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(time_scale());
+                let rms = pill
+                    .levels
+                    .as_ref()
+                    .map_or(0.0, |levels| levels.current().0);
+                pill.timeline.push(elapsed, rms);
+                pill.last_sample = Some(Instant::now());
+            }
             drop(pill);
             drawing.queue_draw();
             // `sync_animation` removes this callback once nothing moves.
@@ -644,6 +674,7 @@ impl RecordingOverlay {
             hovered: false,
             levels: None,
             last_draw: None,
+            last_sample: None,
             morph_from: None,
             morph_started: None,
         }));
@@ -672,9 +703,14 @@ impl RecordingOverlay {
         let cancel = pill_button("Cancel");
         cancel.set_tooltip_text(Some("Discard this dictation"));
         let pause = pill_button("Pause");
+        // Right-hand result buttons, as on Mac: Copy at the right edge, Paste
+        // (Not pasted only) to its left.
         let copy = pill_button("Copy");
-        copy.set_size_request(64, 28);
-        main.put(&copy, f64::from(WIDTH - 14 - 64), 10.0);
+        copy.set_size_request(COPY_W, 28);
+        main.put(&copy, COPY_X, 10.0);
+        let paste = pill_button("Paste");
+        paste.set_size_request(PASTE_W, 28);
+        main.put(&paste, PASTE_X, 10.0);
         let history = pill_button("History");
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         row.set_size_request(-1, 28);
@@ -687,7 +723,7 @@ impl RecordingOverlay {
         }
         row.set_visible(false);
         // Hover actions replace the strip inside the same 48 px row.
-        main.put(&row, 38.0, 10.0);
+        main.put(&row, 40.0, 10.0);
 
         let overlay = gtk::Overlay::new();
         overlay.set_child(Some(&drawing));
@@ -713,7 +749,15 @@ impl RecordingOverlay {
                 let _ = actions.send(super::TrayAction::OpenTranscripts);
             }
         });
-        let acted = Rc::new(std::cell::Cell::new(false));
+        let acted = Rc::new(std::cell::Cell::new(None));
+        paste.connect_clicked({
+            let actions = actions.clone();
+            let acted = acted.clone();
+            move |_| {
+                acted.set(Some(Acted::Pasted));
+                let _ = actions.send(super::TrayAction::Recovery("paste-last".into()));
+            }
+        });
         copy.connect_clicked({
             let latest = latest.clone();
             let acted = acted.clone();
@@ -722,7 +766,7 @@ impl RecordingOverlay {
                     match super::feedback::copy_transcript(&button.clipboard(), text) {
                         Ok(()) => {
                             button.set_label("Copied");
-                            acted.set(true);
+                            acted.set(Some(Acted::Copied));
                         }
                         Err(error) => {
                             button.set_label("Copy failed");
@@ -764,6 +808,7 @@ impl RecordingOverlay {
             cancel,
             pause,
             copy,
+            paste,
             history,
             latest,
             acted,
@@ -788,9 +833,9 @@ impl RecordingOverlay {
         self.state.borrow().hovered
     }
 
-    /// True once after Copy succeeded on a finished pill: it was acted on.
-    pub fn take_acted(&self) -> bool {
-        self.acted.replace(false)
+    /// Copy or Paste on a finished pill, reported once.
+    pub fn take_acted(&self) -> Option<Acted> {
+        self.acted.replace(None)
     }
 
     /// Fades the finished pill out (250 ms); the caller hides it after.
@@ -820,10 +865,12 @@ impl RecordingOverlay {
         let mut pill = self.state.borrow_mut();
         if pill.phase != phase && matches!(phase, Phase::Done | Phase::Recovery | Phase::Media) {
             self.copy.set_label("Copy");
+            self.acted.set(None);
         }
         if started.is_some() && pill.started != started {
             pill.timeline.reset();
             pill.last_draw = None;
+            pill.last_sample = None;
             crate::sketch::set_recording_start(started);
         } else if started.is_none() && pill.started.is_some() {
             crate::sketch::set_recording_start(None);
@@ -908,7 +955,7 @@ impl RecordingOverlay {
             Phase::Recording => clock(elapsed_ms),
             Phase::Transcribing if strip || actions => progress_label(progress.0, progress.1),
             Phase::Transcribing => state.to_string(),
-            Phase::Recovery => "Not pasted · text saved".into(),
+            Phase::Recovery => "Not pasted · saved".into(),
             Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
             Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
             Phase::Hidden => String::new(),
@@ -921,13 +968,17 @@ impl RecordingOverlay {
                 main.move_(&self.primary, 238.0, 0.0);
             }
         } else {
-            let finished = matches!(phase, Phase::Done | Phase::Recovery | Phase::Media);
             self.primary.set_xalign(0.0);
-            // Finished rows leave room for Copy on the right.
-            self.primary
-                .set_size_request(if finished { 166 } else { 246 }, ROW);
+            // Finished rows start at the strip's edge and stop 10 px before
+            // their right-hand buttons (Mac `resultRect`).
+            let (x, width) = match phase {
+                Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
+                Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
+                _ => (40.0, 246),
+            };
+            self.primary.set_size_request(width, ROW);
             if let Some(main) = self.primary.parent().and_downcast::<gtk::Fixed>() {
-                main.move_(&self.primary, 40.0, 0.0);
+                main.move_(&self.primary, x, 0.0);
             }
         }
         self.primary
@@ -937,7 +988,8 @@ impl RecordingOverlay {
         }
 
         self.row.set_visible(actions);
-        self.cancel.set_visible(phase == Phase::Recording);
+        self.cancel
+            .set_visible(matches!(phase, Phase::Recording | Phase::Transcribing));
         self.pause.set_visible(phase == Phase::Recording);
         self.pause
             .set_label(if paused { "Resume" } else { "Pause" });
@@ -945,7 +997,9 @@ impl RecordingOverlay {
             phase,
             Phase::Done | Phase::Recovery | Phase::Media
         ));
-        self.history.set_visible(phase == Phase::Recording);
+        self.paste.set_visible(phase == Phase::Recovery);
+        self.history
+            .set_visible(matches!(phase, Phase::Recording | Phase::Transcribing));
 
         self.warning.set_visible(warning.is_some() && recording);
         self.warning
@@ -953,11 +1007,11 @@ impl RecordingOverlay {
         self.drawing.set_content_height(height);
         self.window.set_default_size(WIDTH, height);
 
-        // Recording: the pill itself takes the pointer (for hover actions) but
-        // never keyboard focus. Decoding stays pointer-transparent.
+        // States with buttons take the pointer (hover actions while recording
+        // or transcribing); the pill never takes keyboard focus.
         let target = matches!(
             phase,
-            Phase::Recording | Phase::Done | Phase::Recovery | Phase::Media
+            Phase::Recording | Phase::Transcribing | Phase::Done | Phase::Recovery | Phase::Media
         );
         self.window.set_can_target(target);
         let visible = phase != Phase::Hidden;
@@ -1008,10 +1062,14 @@ mod tests {
     fn actions_row_needs_hover_only_while_recording() {
         assert!(!shows_actions(Phase::Recording, false));
         assert!(shows_actions(Phase::Recording, true));
-        assert!(!shows_actions(Phase::Transcribing, true));
+        assert!(!shows_actions(Phase::Transcribing, false));
+        assert!(shows_actions(Phase::Transcribing, true));
         for phase in [Phase::Done, Phase::Recovery, Phase::Media] {
             assert!(!shows_actions(phase, false));
-            assert!(!shows_actions(phase, true), "finished: Copy only");
+            assert!(
+                !shows_actions(phase, true),
+                "finished rows: own buttons only"
+            );
         }
         assert!(!shows_actions(Phase::Hidden, true));
     }
@@ -1021,10 +1079,11 @@ mod tests {
         assert_eq!(clock(0), "0:00");
         assert_eq!(clock(62_999), "1:02");
         assert_eq!(clock(600_000), "10:00");
-        assert_eq!(progress_label(0, 0), "");
-        assert_eq!(progress_label(1, 1), "");
-        assert_eq!(progress_label(3, 5), "3/5");
-        assert_eq!(progress_label(9, 5), "5/5");
+        assert_eq!(progress_label(0, 0), "", "no plan, no number");
+        assert_eq!(progress_label(0, 1), "0%");
+        assert_eq!(progress_label(1, 1), "100%");
+        assert_eq!(progress_label(3, 5), "60%");
+        assert_eq!(progress_label(9, 5), "100%");
         assert_eq!(result_preview("  Hello\n  there  "), "Hello there");
         let long = "å".repeat(200);
         assert_eq!(result_preview(&long).chars().count(), 96);

@@ -260,6 +260,7 @@ app.connect('activate',activate);app.run([])
     control('stop')
     wait(lambda: len(rows()) > count, 'second result persisted', timeout=180)
     wait(lambda: find('Copy', pill_window(), 'button'), 'recovery row')
+    assert find('Paste', pill_window(), 'button'), 'not pasted offers Paste, as on Mac'
     capture('recovery')
     time.sleep(6.0)
     assert find('Copy', pill_window(), 'button'), 'not pasted stays until acted on'
@@ -268,7 +269,7 @@ app.connect('activate',activate);app.run([])
     wait(lambda: find('Copied', pill_window(), 'button'), 'recovery Copied')
     assert subprocess.check_output(['wl-paste', '--no-newline']).decode() == rows()[-1][0]
     wait(lambda: not find('Koett recording'), 'recovery closes after Copy', timeout=5)
-    checks.append('not pasted: same-height row with Copy; stays 6 s untouched; Copy is exact and closes it')
+    checks.append('not pasted: same-height row with Paste and Copy; stays 6 s untouched; Copy is exact and closes it')
     focus('Pill typing target')
 
     # Cancel discards: no transcript, no paste.

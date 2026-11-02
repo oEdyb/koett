@@ -1,0 +1,10 @@
+Captured recording-0m00s
+Captured recording-0m30s
+Captured done
+Captured done-copied
+{
+  "checks": [
+    "scale 1: captured pill at [0.4, 30.0] s; done row has Copy only; delivered 392 chars; Copy exact"
+  ],
+  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-rolling-20261103/dark-realtime"
+}
