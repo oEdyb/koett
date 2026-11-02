@@ -18,7 +18,7 @@ final class SketchDrawTests: XCTestCase {
         frames.discard(1)
         XCTAssertFalse(frames.push(1, frame(2)), "late capture of a cancelled dictation")
         frames.begin(2)
-        let taken = await frames.take(2, timeout: .zero)
+        let taken = frames.take(2)
         XCTAssertTrue(taken.isEmpty)
     }
 
@@ -28,9 +28,9 @@ final class SketchDrawTests: XCTestCase {
         frames.push(1, frame(1))
         frames.begin(2)
         XCTAssertFalse(frames.push(1, frame(2)))
-        let stale = await frames.take(1, timeout: .zero)
+        let stale = frames.take(1)
         XCTAssertTrue(stale.isEmpty)
-        let current = await frames.take(2, timeout: .zero)
+        let current = frames.take(2)
         XCTAssertTrue(current.isEmpty)
     }
 
@@ -45,10 +45,12 @@ final class SketchDrawTests: XCTestCase {
             frames.setOpen(7, false)
         }
         let started = ContinuousClock.now
-        let taken = await frames.take(7, timeout: .seconds(5))
+        let finished = await frames.wait(7, timeout: .seconds(5))
+        XCTAssertTrue(finished)
+        let taken = frames.take(7)
         XCTAssertEqual(taken.map(\.order), [1, 2])
         XCTAssertLessThan(ContinuousClock.now - started, .seconds(2))
-        let again = await frames.take(7, timeout: .zero)
+        let again = frames.take(7)
         XCTAssertTrue(again.isEmpty)
     }
 
@@ -57,7 +59,8 @@ final class SketchDrawTests: XCTestCase {
         frames.begin(3)
         frames.setOpen(3, true)
         let started = ContinuousClock.now
-        _ = await frames.take(3, timeout: .milliseconds(100))
+        let finished = await frames.wait(3, timeout: .milliseconds(100))
+        XCTAssertFalse(finished)
         XCTAssertLessThan(ContinuousClock.now - started, .seconds(1))
     }
 
@@ -126,7 +129,7 @@ final class SketchDrawTests: XCTestCase {
             let captured = board.captured(group.id)!
             frames.push(1, SketchFrame(order: captured.id, start: captured.audioStart, image: solid(2, 2, 0)))
         }
-        let pasted = await frames.take(1, timeout: .zero).map(\.order)
+        let pasted = frames.take(1).map(\.order)
         let pill = board.events().compactMap { update -> UInt64? in
             guard case .upsert(let event) = update else { return nil }
             return board.groups.sorted { $0.id < $1.id }[Int(event.index) - 1].id
@@ -155,6 +158,37 @@ final class SketchDrawTests: XCTestCase {
         XCTAssertTrue(board.isCapturing)
         _ = board.captured(ready[1].id)
         XCTAssertFalse(board.isCapturing)
+    }
+
+    func testTimedOutCapturesAreDroppedFromThePillLikeTheSheet() {
+        var board = SketchBoard(startedAt: 0)
+        draw(&board, screen: 0, from: 0, at: 1, audio: 1)
+        draw(&board, screen: 0, from: 0, at: 2, audio: 2)
+        draw(&board, screen: 0, from: 0, at: 3, audio: 3)
+        _ = board.finish(now: 4)
+        let ready = board.takeReadyForCapture()
+        _ = board.captured(ready[1].id)
+        var timeline = PillTimeline()
+        for case .upsert(let event) in board.events() { timeline.apply(event) }
+        for update in board.abandonPending() {
+            switch update {
+            case .upsert(let event): timeline.apply(event)
+            case .removed(let index): timeline.remove(index: index)
+            }
+        }
+        XCTAssertEqual(timeline.sketches.map(\.index), [1], "the one pasted sketch is #1 on the pill too")
+        XCTAssertEqual(timeline.sketches.map(\.startMs), [2_000])
+        XCTAssertFalse(board.isCapturing)
+        XCTAssertNil(board.captured(ready[0].id), "a late capture of a dropped sketch is ignored")
+    }
+
+    func testReleasedInkStaysAnimatedUntilItHasFaded() {
+        var board = SketchBoard(startedAt: 0)
+        draw(&board, screen: 0, from: 0, at: 1, audio: 1)
+        let released = 1.2
+        XCTAssertTrue(board.hasFadingInk(at: released + 0.1), "still visible before the fade starts")
+        XCTAssertTrue(board.hasFadingInk(at: released + 1.7))
+        XCTAssertFalse(board.hasFadingInk(at: released + 2))
     }
 
     func testPillAcceptsLateChangesOnlyForItsOwnDictation() throws {

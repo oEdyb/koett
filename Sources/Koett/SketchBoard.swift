@@ -139,10 +139,21 @@ struct SketchBoard {
         return events() + [.removed(index: freed)]
     }
 
+    /// Delivery stopped waiting: sketches without a capture are removed so the
+    /// pill numbers the same sketches the sheet shows.
+    mutating func abandonPending() -> [SketchUpdate] {
+        let before = groups.count
+        groups.removeAll { $0.phase != .captured }
+        guard groups.count < before else { return [] }
+        let freed = (groups.count + 1)...before
+        return events() + freed.map { .removed(index: UInt32($0)) }
+    }
+
     var isCapturing: Bool { groups.contains { $0.phase != .captured } }
 
-    func isFading(at now: TimeInterval) -> Bool {
-        groups.contains { let alpha = $0.alpha(at: now); return alpha > 0 && alpha < 1 }
+    /// True while released ink is still visible, including the pause before it fades.
+    func hasFadingInk(at now: TimeInterval) -> Bool {
+        groups.contains { $0.closed && $0.lifted != nil && $0.alpha(at: now) > 0 }
     }
 
     /// Every sketch numbered by creation order, on the pill's wall clock.

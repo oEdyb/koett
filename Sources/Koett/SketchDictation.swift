@@ -89,7 +89,11 @@ extension KoettController {
         words: [TimedWord],
         session: UInt64
     ) async -> SketchedDictation {
-        let frames = await sketchFrames.take(session, timeout: Self.sketchCaptureWait)
+        if await !sketchFrames.wait(session, timeout: Self.sketchCaptureWait) {
+            fputs("Warning: sketch captures timed out; pasting the finished ones\n", stderr)
+            sketchOverlay.abandonPendingCaptures(session)
+        }
+        let frames = sketchFrames.take(session)
         guard !frames.isEmpty else {
             return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
         }

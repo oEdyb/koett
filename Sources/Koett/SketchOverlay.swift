@@ -97,6 +97,7 @@ final class SketchOverlay {
             setAcceptsPointer(false)
             redraw()
             startCaptures()
+            startTicker()
         }
     }
 
@@ -117,7 +118,7 @@ final class SketchOverlay {
                     surfaces[index].view.needsDisplay = true
                 }
             }
-        } else if board.isFading(at: Self.now) {
+        } else if board.hasFadingInk(at: Self.now) {
             redraw()
         } else {
             redraw()
@@ -170,6 +171,15 @@ final class SketchOverlay {
         }
         self.board = board
         redraw()
+        closeIfDone()
+    }
+
+    /// Delivery gave up waiting: pending captures are dropped and renumbered,
+    /// and their late results are ignored.
+    func abandonPendingCaptures(_ sessionID: UInt64) {
+        guard var board, let session, session.id == sessionID else { return }
+        publish(board.abandonPending())
+        self.board = board
         closeIfDone()
     }
 

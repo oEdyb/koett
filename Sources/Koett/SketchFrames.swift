@@ -46,13 +46,18 @@ final class SketchFrames {
         return true
     }
 
-    /// Waits (bounded) for the overlay to finish capturing, then takes the
-    /// dictation's frames in creation order. Empty when nothing was drawn.
-    func take(_ session: UInt64, timeout: Duration) async -> [SketchFrame] {
+    /// Waits (bounded) for the overlay to finish capturing. Returns false when
+    /// captures are still open at the deadline.
+    func wait(_ session: UInt64, timeout: Duration) async -> Bool {
         let deadline = ContinuousClock.now + timeout
         while self.session == session, open, ContinuousClock.now < deadline {
             try? await Task.sleep(for: .milliseconds(20))
         }
+        return !(self.session == session && open)
+    }
+
+    /// Takes the dictation's frames in creation order. Empty when nothing was drawn.
+    func take(_ session: UInt64) -> [SketchFrame] {
         guard self.session == session else { return [] }
         let taken = frames.sorted { $0.order < $1.order }
         frames.removeAll()
