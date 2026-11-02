@@ -122,3 +122,21 @@ fn summary_without_timing_keeps_the_whole_transcript_on_the_first_keyframe() {
 fn plain_dictation_is_unchanged_without_keyframes() {
     assert_eq!(keyframe_summary("Just text.", &[], &[]), "Just text.");
 }
+
+#[test]
+fn cleanup_that_adds_an_opening_keeps_it_with_the_first_sketch() {
+    let words = timed(&[("hello", 0.5)]);
+    assert_eq!(
+        keyframe_summary("Dear team hello", &words, &[1.0]),
+        "- #1 (0:01) “Dear team hello”"
+    );
+}
+
+#[test]
+fn cleanup_that_adds_a_closing_keeps_it_with_the_last_sketch() {
+    let words = timed(&[("fix", 0.0), ("this.", 0.3), ("and", 5.0), ("that.", 5.3)]);
+    assert_eq!(
+        keyframe_summary("Fix this. And that. Thanks!", &words, &[0.1, 5.1]),
+        "- #1 (0:00) “Fix this.”\n- #2 (0:05) “And that. Thanks!”"
+    );
+}

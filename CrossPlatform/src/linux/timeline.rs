@@ -90,6 +90,11 @@ impl Timeline {
         true
     }
 
+    /// Drops an undone sketch's band.
+    pub fn remove(&mut self, index: u32) {
+        self.sketches.retain(|sketch| sketch.index != index);
+    }
+
     pub fn sketches(&self) -> &[SketchEvent] {
         &self.sketches
     }
@@ -174,6 +179,16 @@ mod tests {
         timeline.reset();
         assert!(timeline.columns().is_empty());
         assert_eq!(timeline.ms_per_column(), BASE_MS);
+    }
+
+    #[test]
+    fn removed_sketch_drops_only_its_band() {
+        let mut timeline = Timeline::default();
+        timeline.apply(sketch(1, 1_000, 2_000, false));
+        timeline.apply(sketch(2, 3_000, 4_000, false));
+        timeline.remove(2);
+        timeline.remove(7);
+        assert_eq!(timeline.sketches(), [sketch(1, 1_000, 2_000, false)]);
     }
 
     #[test]

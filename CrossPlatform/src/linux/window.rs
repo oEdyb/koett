@@ -349,6 +349,7 @@ fn build_window(
     let sketch = super::sketch::SketchOverlay::new();
     let sketch_application = application.clone();
     let mut asking_until = None::<Instant>;
+    let mut sketch_recording = 0_u64;
     let mut recording_started = None::<Instant>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
@@ -559,6 +560,8 @@ fn build_window(
                         let recording = message.starts_with("Recording");
                         if recording && recording_started.is_none() {
                             recording_started = Some(Instant::now());
+                            // Scope sketches to this recording, even with drawing off.
+                            sketch_recording = super::sketch::begin_recording();
                             done_until = None;
                             feedback = super::feedback::CaptureFeedback::default();
                             recovery_until = None;
@@ -568,6 +571,10 @@ fn build_window(
                         if !recording {
                             if recording_started.is_some() {
                                 asking_until = None;
+                                // Cancelled or failed: no transcript will claim them.
+                                if !message.starts_with("Transcribing") {
+                                    super::sketch::discard_recording();
+                                }
                             }
                             recording_started = None;
                         }
@@ -630,7 +637,15 @@ fn build_window(
             }
             if let Some(sketch) = &sketch {
                 let asking = asking_until.is_some_and(|until| Instant::now() < until);
-                sketch.update(&sketch_application, recording_started, asking);
+                let paused = audio_levels
+                    .as_ref()
+                    .is_some_and(crate::audio::AudioLevels::paused);
+                sketch.update(
+                    &sketch_application,
+                    recording_started.map(|started| (started, sketch_recording)),
+                    asking,
+                    paused,
+                );
             }
             if let Some(overlay) = &overlay {
                 overlay.update(

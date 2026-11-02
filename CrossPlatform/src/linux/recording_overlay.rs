@@ -752,8 +752,11 @@ impl RecordingOverlay {
         pill.dark = dark;
         pill.levels = levels.cloned();
         pill.paused = recording && levels.is_some_and(crate::audio::AudioLevels::paused);
-        for event in crate::sketch::drain() {
-            pill.timeline.apply(event);
+        for update in crate::sketch::drain() {
+            match update {
+                crate::sketch::SketchUpdate::Upsert(event) => pill.timeline.apply(event),
+                crate::sketch::SketchUpdate::Removed { index } => pill.timeline.remove(index),
+            }
         }
         let elapsed_ms = started.map_or(pill.duration_ms, |started| {
             u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX)

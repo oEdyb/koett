@@ -10,11 +10,12 @@
 //! when recording stops, before any paste.
 use crate::settings::DrawKey;
 use gtk4::{self as gtk, gdk, glib, prelude::*};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::{cell::RefCell, rc::Rc};
 
 mod capture;
+mod frames;
 pub mod sheet;
 
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
@@ -25,46 +26,60 @@ const FADE_FOR: Duration = Duration::from_millis(400);
 const GROUP_STROKES: usize = 12;
 const GROUP_SPAN: Duration = Duration::from_secs(20);
 
-/// A captured sketch: start seconds on the recording clock and the monitor PNG.
-pub struct Keyframe {
-    pub start: f32,
-    pub png: Vec<u8>,
+pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
+
+/// Delay between hiding other ink and starting a capture, so the compositor
+/// has presented the frame that shows only the sketch being captured.
+const CAPTURE_SETTLE: Duration = Duration::from_millis(60);
+
+/// Pill timeline position: wall time since the recording started, matching
+/// `koett_engine::sketch::elapsed_ms`, so it includes paused spans.
+fn pill_ms(started: Instant, at: Instant) -> u64 {
+    u64::try_from(at.saturating_duration_since(started).as_millis()).unwrap_or(u64::MAX)
 }
 
-struct Shared {
-    open: bool,
-    frames: Vec<Keyframe>,
+/// Maps wall time to the captured-audio clock: paused audio is discarded at
+/// the capture callback, so paused spans must not advance sketch times.
+#[derive(Default)]
+struct AudioClock {
+    paused_total: Duration,
+    paused_since: Option<Instant>,
 }
 
-static SHARED: Mutex<Shared> = Mutex::new(Shared {
-    open: false,
-    frames: Vec::new(),
-});
-static CLOSED: Condvar = Condvar::new();
+impl AudioClock {
+    fn observe(&mut self, paused: bool, now: Instant) {
+        match (paused, self.paused_since) {
+            (true, None) => self.paused_since = Some(now),
+            (false, Some(since)) => {
+                self.paused_total += now.saturating_duration_since(since);
+                self.paused_since = None;
+            }
+            _ => {}
+        }
+    }
 
-fn shared() -> std::sync::MutexGuard<'static, Shared> {
-    SHARED
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-}
-
-/// Waits (bounded) for the overlay to finish its captures, then returns the
-/// keyframes of the last recording in time order. Empty when nothing was drawn.
-pub fn take_keyframes(timeout: Duration) -> Vec<Keyframe> {
-    let guard = shared();
-    let (mut guard, _) = CLOSED
-        .wait_timeout_while(guard, timeout, |state| state.open)
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let mut frames = std::mem::take(&mut guard.frames);
-    frames.sort_by(|a, b| a.start.total_cmp(&b.start));
-    frames
+    fn at(&self, started: Instant, at: Instant) -> Duration {
+        let open = self
+            .paused_since
+            .map_or(Duration::ZERO, |since| at.saturating_duration_since(since));
+        at.saturating_duration_since(started)
+            .saturating_sub(self.paused_total + open)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
     Drawing,
+    /// Other ink on its monitor is hidden; capture starts after it settles.
+    Queued(Instant),
     Capturing,
     Captured,
+}
+
+impl Phase {
+    fn busy(self) -> bool {
+        matches!(self, Self::Queued(_) | Self::Capturing)
+    }
 }
 
 struct Group {
@@ -73,8 +88,19 @@ struct Group {
     strokes: Vec<Vec<(f64, f64)>>,
     start: Instant,
     end: Instant,
+    /// Start on the captured-audio clock, used to link speech.
+    audio_start: Duration,
     lifted: Option<Instant>,
     phase: Phase,
+}
+
+/// While a sketch on a monitor is being captured, only its ink is shown there,
+/// so the capture cannot include another sketch's strokes.
+fn visible(groups: &[Group], surface: usize, group: &Group) -> bool {
+    let busy = groups
+        .iter()
+        .find(|other| other.surface == surface && other.phase.busy());
+    group.surface == surface && busy.is_none_or(|busy| busy.id == group.id)
 }
 
 impl Group {
@@ -99,7 +125,9 @@ struct Surface {
 type CaptureResults = Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>;
 
 struct Session {
+    recording: u64,
     started: Instant,
+    clock: AudioClock,
     key: DrawKey,
     surfaces: Vec<Surface>,
     groups: Vec<Group>,
@@ -111,10 +139,6 @@ struct Session {
 }
 
 impl Session {
-    fn seconds(&self, at: Instant) -> f32 {
-        at.saturating_duration_since(self.started).as_secs_f32()
-    }
-
     fn set_input(&self, accept: bool) {
         for surface in &self.surfaces {
             if let Some(native) = surface.window.surface() {
@@ -179,6 +203,7 @@ impl Session {
                         strokes: Vec::new(),
                         start: now,
                         end: now,
+                        audio_start: self.clock.at(self.started, now),
                         lifted: None,
                         phase: Phase::Drawing,
                     });
@@ -208,27 +233,35 @@ impl Session {
         {
             self.groups[index].strokes.pop();
             if self.groups[index].strokes.is_empty() {
-                self.groups.remove(index);
+                self.drop_group(index);
+            } else {
+                self.publish();
             }
-            self.publish();
             self.redraw();
         }
     }
 
+    /// Removes a sketch; later numbers shift down, so the pill gets the
+    /// renumbered list and loses the now-unused highest number.
+    fn drop_group(&mut self, index: usize) {
+        let before = self.groups.len();
+        self.groups.remove(index);
+        self.publish();
+        crate::sketch::remove(u32::try_from(before).unwrap_or(u32::MAX));
+    }
+
     /// Republishes every sketch to the recording pill's timeline. Numbers
     /// follow start order, matching the pasted contact sheet and bullets.
+    /// Times are pill (wall-clock) times, which include pauses; speech
+    /// linking uses `audio_start` instead.
     fn publish(&self) {
         let mut groups: Vec<&Group> = self.groups.iter().collect();
         groups.sort_by_key(|group| group.start);
-        let millis = |at: Instant| {
-            u64::try_from(at.saturating_duration_since(self.started).as_millis())
-                .unwrap_or(u64::MAX)
-        };
         for (index, group) in groups.into_iter().enumerate() {
             crate::sketch::publish(crate::sketch::SketchEvent {
                 index: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                start_ms: millis(group.start),
-                end_ms: millis(group.end),
+                start_ms: pill_ms(self.started, group.start),
+                end_ms: pill_ms(self.started, group.end),
                 live: self.stroking == Some(group.id),
             });
         }
@@ -250,27 +283,40 @@ impl Session {
             match result {
                 Ok(png) => {
                     self.groups[index].phase = Phase::Captured;
-                    let group = &self.groups[index];
                     let frame = Keyframe {
-                        start: self.seconds(group.start),
+                        start: self.groups[index].audio_start.as_secs_f32(),
                         png,
                     };
-                    shared().frames.push(frame);
+                    frames::push(self.recording, frame);
                 }
                 Err(error) => {
                     eprintln!("Sketch capture failed: {error}");
-                    self.groups.remove(index);
+                    self.drop_group(index);
                 }
             }
+            self.redraw();
         }
         for index in 0..self.groups.len() {
             let group = &self.groups[index];
             let idle = group
                 .lifted
                 .is_some_and(|lifted| now >= lifted + CAPTURE_AFTER);
+            let surface_busy = self
+                .groups
+                .iter()
+                .any(|other| other.surface == group.surface && other.phase.busy());
             if group.phase == Phase::Drawing
                 && self.stroking != Some(group.id)
                 && (idle || self.finishing)
+                && !surface_busy
+            {
+                let surface = group.surface;
+                self.groups[index].phase = Phase::Queued(now);
+                self.surfaces[surface].area.queue_draw();
+                continue;
+            }
+            if let Phase::Queued(since) = group.phase
+                && now >= since + CAPTURE_SETTLE
             {
                 let (id, target) = (group.id, self.surfaces[group.surface].target.clone());
                 let strokes = group.strokes.clone();
@@ -311,7 +357,7 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
     for group in session
         .groups
         .iter()
-        .filter(|group| group.surface == surface)
+        .filter(|group| visible(&session.groups, surface, group))
     {
         let alpha = group.alpha(now);
         if alpha <= 0.0 {
@@ -365,6 +411,8 @@ pub struct SketchOverlay {
     layer: super::recording_overlay::LayerShell,
     session: SessionCell,
     styled: std::cell::Cell<bool>,
+    /// Last recording id the overlay decided on, so settings load once.
+    decided: std::cell::Cell<u64>,
 }
 
 impl SketchOverlay {
@@ -377,23 +425,32 @@ impl SketchOverlay {
             layer,
             session: Rc::new(RefCell::new(None)),
             styled: std::cell::Cell::new(false),
+            decided: std::cell::Cell::new(0),
         })
     }
 
-    /// Call on every UI poll. Opens the overlay when a dictation recording
-    /// starts with drawing enabled; finishes it when the recording ends.
-    pub fn update(&self, application: &gtk::Application, recording: Option<Instant>, ask: bool) {
+    /// Call on every UI poll with the active recording (its start and the id
+    /// from [`begin_recording`]). Opens the overlay once per dictation when
+    /// drawing is enabled; finishes it when the recording ends.
+    pub fn update(
+        &self,
+        application: &gtk::Application,
+        recording: Option<(Instant, u64)>,
+        ask: bool,
+        paused: bool,
+    ) {
         let Ok(mut current) = self.session.try_borrow_mut() else {
             return;
         };
         match (current.as_mut(), recording) {
-            (None, Some(started)) if !ask => {
+            (None, Some((started, id))) if !ask && self.decided.replace(id) != id => {
                 let settings = crate::settings::Settings::load().unwrap_or_default();
                 if settings.draw_while_dictating {
                     drop(current);
-                    self.open(application, started, settings.draw_key);
+                    self.open(application, started, id, settings.draw_key);
                 }
             }
+            (Some(session), Some(_)) => session.clock.observe(paused, Instant::now()),
             (Some(session), None) if !session.finishing => {
                 session.finishing = true;
                 session.release();
@@ -422,7 +479,7 @@ impl SketchOverlay {
         }
     }
 
-    fn open(&self, application: &gtk::Application, started: Instant, key: DrawKey) {
+    fn open(&self, application: &gtk::Application, started: Instant, recording: u64, key: DrawKey) {
         let Some(display) = gdk::Display::default() else {
             return;
         };
@@ -547,16 +604,14 @@ impl SketchOverlay {
         if surfaces.is_empty() {
             return;
         }
-        {
-            let mut state = shared();
-            state.open = true;
-            state.frames.clear();
-        }
+        frames::set_open(recording, true);
         for surface in &surfaces {
             surface.window.present();
         }
         *self.session.borrow_mut() = Some(Session {
+            recording,
             started,
+            clock: AudioClock::default(),
             key,
             surfaces,
             groups: Vec::new(),
@@ -579,9 +634,8 @@ impl SketchOverlay {
                     for surface in done.surfaces {
                         surface.window.destroy();
                     }
+                    frames::set_open(done.recording, false);
                 }
-                shared().open = false;
-                CLOSED.notify_all();
                 glib::ControlFlow::Break
             }
         });
@@ -653,6 +707,7 @@ mod tests {
             strokes: Vec::new(),
             start: now,
             end: now,
+            audio_start: Duration::ZERO,
             lifted: Some(now),
             phase: Phase::Capturing,
         };
@@ -662,29 +717,61 @@ mod tests {
         assert_eq!(group.alpha(now + FADE_AFTER + FADE_FOR), 0.0);
     }
 
-    #[test]
-    fn take_keyframes_returns_time_order_and_waits_only_while_open() {
-        {
-            let mut state = shared();
-            state.open = false;
-            state.frames = vec![
-                Keyframe {
-                    start: 2.0,
-                    png: vec![2],
-                },
-                Keyframe {
-                    start: 1.0,
-                    png: vec![1],
-                },
-            ];
+    fn group(id: u64, surface: usize, phase: Phase) -> Group {
+        let now = Instant::now();
+        Group {
+            id,
+            surface,
+            strokes: vec![vec![(1.0, 1.0)]],
+            start: now,
+            end: now,
+            audio_start: Duration::ZERO,
+            lifted: None,
+            phase,
         }
-        let started = Instant::now();
-        let frames = take_keyframes(Duration::from_secs(5));
-        assert!(started.elapsed() < Duration::from_secs(1));
+    }
+
+    #[test]
+    fn a_capture_shows_only_its_own_ink_on_that_monitor() {
+        let now = Instant::now();
+        let groups = [
+            group(1, 0, Phase::Captured),
+            group(2, 0, Phase::Queued(now)),
+            group(3, 0, Phase::Drawing),
+            group(4, 1, Phase::Drawing),
+        ];
+        let shown = |surface| {
+            groups
+                .iter()
+                .filter(|group| visible(&groups, surface, group))
+                .map(|group| group.id)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(
-            frames.iter().map(|frame| frame.png[0]).collect::<Vec<_>>(),
-            [1, 2]
+            shown(0),
+            [2],
+            "older fading ink and the next sketch stay hidden"
         );
-        assert!(take_keyframes(Duration::ZERO).is_empty());
+        assert_eq!(shown(1), [4], "other monitors are unaffected");
+        let idle = [group(1, 0, Phase::Captured), group(3, 0, Phase::Drawing)];
+        assert_eq!(
+            idle.iter().filter(|group| visible(&idle, 0, group)).count(),
+            2
+        );
+    }
+
+    #[test]
+    fn paused_time_does_not_advance_the_sketch_clock() {
+        let started = Instant::now();
+        let mut clock = AudioClock::default();
+        clock.observe(false, started + Duration::from_secs(1));
+        clock.observe(true, started + Duration::from_secs(5));
+        let during = started + Duration::from_secs(20);
+        assert_eq!(clock.at(started, during), Duration::from_secs(5));
+        clock.observe(false, started + Duration::from_secs(35));
+        let after = started + Duration::from_secs(37);
+        assert_eq!(clock.at(started, after), Duration::from_secs(7));
+        // The pill places the same sketch on wall time, pauses included.
+        assert_eq!(pill_ms(started, after), 37_000);
     }
 }

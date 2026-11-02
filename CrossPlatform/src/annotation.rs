@@ -256,6 +256,10 @@ fn aligned_boundaries(words: &[TimedWord], output: &[&str]) -> Option<Vec<usize>
             *boundary = b + (k - a) * (d - b) / (c - a).max(1);
         }
     }
+    // Words added before the first or after the last match belong to the
+    // first and last keyframe; interpolation from a pin must not drop them.
+    boundaries[0] = 0;
+    boundaries[n] = m;
     Some(boundaries)
 }
 

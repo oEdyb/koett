@@ -15,6 +15,15 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Strokes on one monitor form one sketch. A sketch closes 0.7 s after the key is
   released (or at 12 strokes / 20 s, or when recording stops); that monitor is
   captured with the ink visible, then the ink fades 1.5 s after the pen lifted.
+  Captures are serialized per monitor: while one is pending, only that sketch's
+  ink is shown there (other and newer ink reappears after it), so an image never
+  contains another sketch's strokes.
+- Sketch times for speech linking use the captured-audio clock: paused spans are
+  excluded, matching the transcript's word times. The pill's bands use its own
+  wall clock (`koett_engine::sketch::elapsed_ms`), which includes pauses.
+- Frames are scoped to one recording. Every recording start, with drawing on or
+  off, starts a new scope; a cancelled or failed recording discards its frames,
+  and captures finishing after their recording ended are rejected.
 - Recognizer word timestamps link speech to sketches: each sketch owns the words
   from the start of the clause in progress when it began until the next sketch;
   words before the first sketch belong to it. Clauses break at `, . ; : ? ! …`
@@ -35,8 +44,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Every sketch change is published to `crate::sketch` as
   `{index, start_ms, end_ms, live}` on the pill's dictation clock, numbered like
   the pasted sheet and text; the Timeline pill draws the numbered bands and its
-  own drawing cue from these events. An undone sketch's band stays on the pill
-  (the registry only upserts).
+  own drawing cue from these events. Undo or a failed capture republishes the
+  renumbered sketches and sends `Removed { index }` for the freed number.
 
 ## Desktop support and limits
 
@@ -50,7 +59,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 
 - The overlay takes exclusive keyboard focus while recording (Wayland exposes no
   global key state). Typing into another app during a recording is blocked while
-  the feature is on; compositor and portal shortcuts still work. Focus returns
+  the feature is on (see the proposal below); compositor and portal shortcuts
+  still work. Focus returns
   to the previous window when recording stops, before paste.
 - The ink (and the recording pill when the ink is near it) is part of the
   captured image.
@@ -97,3 +107,23 @@ base commit; each was compared on its own checks and against the lab flow above.
   was adopted on top of the verified capture-with-ink path. Clean-frame capture
   was not: it was never measured on a real capture, can race the first stroke,
   and the first frame can still contain the pill.
+
+## Proposal: drawing without blocking typing (for Olle, 2026-11-02)
+
+Today the overlay holds exclusive keyboard focus for the whole recording,
+because a Wayland client cannot see a bare Shift press unless it has focus.
+That blocks typing into other apps while dictating with drawing on. Options:
+
+| Option | How the draw key is seen | niri | KDE | Cost |
+|---|---|---|---|---|
+| A. Current | Overlay keeps keyboard focus all recording | Works | Works | Typing blocked while recording |
+| B. Compositor trigger | A desktop shortcut starts draw mode; only then does the overlay take focus. It sees the key release itself and gives focus back | Press-to-start: niri binds fire on press (no release action, to our knowledge), e.g. `Mod+Shift+D { spawn "koett" "draw"; }`; draw mode ends when Shift is released or with Esc | The GlobalShortcuts portal reports press **and** release, so a true hold works; KDE does not allow a bare Shift binding, so it is a chord (e.g. Ctrl+Alt+D) | Not bare Shift: one extra key or chord per sketch; typing never blocked |
+| C. Read keyboard devices (evdev) | Koett reads `/dev/input` key state directly | Works, true bare-Shift hold | Works | Needs the `input` group or a udev rule, which would let Koett read every keystroke system-wide; plan.md rules this out as a default |
+
+Recommendation: make **B the default** and keep **A as an opt-in** ("Shift
+anywhere — blocks typing while recording"). On niri, bind one key to
+`koett draw`; draw mode starts focused, Shift-move draws as now, and focus
+returns on release or Esc. On KDE, register a portal hold shortcut. Offer C
+only as a documented advanced setting, never by default. B needs one small
+control command and a per-desktop setup note, and removes the typing block
+without new privileges.

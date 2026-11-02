@@ -27,3 +27,10 @@ After rebasing onto main with the Timeline pill (PR #5):
 7. `07-ink-cropped-sheet-with-aligned-linking.png`: final branch (alignment
    linker + ink-aware crop). Tiles are cropped around each sketch's ink with at
    least 45% of the monitor as context; the pill is outside both crops.
+
+After the PR #6 review fixes:
+
+8. `08-review-fixes-two-sketch-regression.png`: two-sketch flow unchanged
+   (1600×457 sheet, two linked bullets, pill bands 1 and 2).
+9. `09-cancelled-sketch-not-pasted-later.png`: draw, `koett cancel`, turn
+   drawing off, dictate normally: only `text/plain` is pasted, no image.
