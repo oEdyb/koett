@@ -24,14 +24,18 @@ allowed, with no prompt.
 
 Switching identity (Developer ID, either Apple Development certificate, or
 ad-hoc) changes the requirement, and macOS then asks for every permission
-again. `install-macos.sh` refuses that switch unless
-`KOETT_ALLOW_SIGNATURE_CHANGE=1` is set.
+again. When the installed Koett is Apple-signed, `install-macos.sh` refuses a
+build with a different requirement unless `KOETT_ALLOW_SIGNATURE_CHANGE=1` is
+set. An ad-hoc install changes requirement on every build, so it is not
+guarded.
 
 ## What Koett asks for, and when
 
-- Microphone, Accessibility, Screen Recording: only from the permissions
-  window's Allow button, once. Startup and the menu check silently and open
-  System Settings instead of raising a second system prompt.
+- Microphone, Accessibility, Screen Recording: from the permissions window's
+  Allow button, once. Startup and the menu check silently and open System
+  Settings instead of raising a second system prompt. Drawing and Ask capture
+  the screen directly, so if Screen Recording was never granted, their first
+  capture raises the system prompt instead.
 - The permissions window polls status with `AVCaptureDevice`,
   `AXIsProcessTrusted` and `CGPreflightScreenCaptureAccess`. None of them
   prompt. Its ScreenCaptureKit probe runs only after Koett has asked and the

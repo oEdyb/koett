@@ -229,9 +229,11 @@
   `Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)`, notarized, and
   stapled.
 - Keep one stable signing identity. An ad-hoc or changing identity makes
-  macOS ask for every permission again after an update; the installer refuses
-  that change unless `KOETT_ALLOW_SIGNATURE_CHANGE=1`. Only the permissions
-  window's Allow button raises a system prompt. See
+  macOS ask for every permission again after an update; over an Apple-signed
+  install the installer refuses that change unless
+  `KOETT_ALLOW_SIGNATURE_CHANGE=1`. Startup and menus never raise a system
+  prompt; the permissions window's Allow button does, and so does a first
+  drawing or Ask capture before Screen Recording is granted. See
   [Mac permission prompts](mac-permissions.md).
 
 ### Recording feedback accessibility
