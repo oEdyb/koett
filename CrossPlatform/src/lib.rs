@@ -1,4 +1,5 @@
 pub mod audio;
+pub mod corrections;
 pub mod dictionary;
 pub mod formatting;
 pub mod history;

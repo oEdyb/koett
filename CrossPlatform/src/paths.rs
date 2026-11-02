@@ -24,6 +24,11 @@ pub fn history_file() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Transcripts.md"))
 }
 
+/// Corrections made with "Fix a word", kept apart from the shared history database.
+pub fn corrections_file() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("Corrections.json"))
+}
+
 pub fn failed_transcripts_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Failed Transcripts"))
 }

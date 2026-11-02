@@ -157,10 +157,14 @@ impl HistoryView {
         let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         let copy = gtk::Button::with_label("Copy");
         let export = gtk::Button::with_label("Export…");
+        let fix = gtk::Button::with_label("Fix a word…");
+        fix.set_tooltip_text(Some("Correct this transcript and teach Koett your words"));
         copy.set_sensitive(false);
         export.set_sensitive(false);
+        fix.set_sensitive(false);
         buttons.append(&copy);
         buttons.append(&export);
+        buttons.append(&fix);
         toolbar.append(&buttons);
         workspace.append(&detail);
         let notice = gtk::Label::new(None);
@@ -255,6 +259,7 @@ impl HistoryView {
             let selected = selected.clone();
             let copy = copy.clone();
             let export = export.clone();
+            let fix = fix.clone();
             let text = text.clone();
             let meta = meta.clone();
             let transcript_heading = transcript_heading.clone();
@@ -270,6 +275,7 @@ impl HistoryView {
                     selected.borrow_mut().take();
                     copy.set_sensitive(false);
                     export.set_sensitive(false);
+                    fix.set_sensitive(false);
                     text.buffer().set_text("");
                     meta.set_text("");
                     transcript_heading.set_text(&timestamp(summary.created_at_ms));
@@ -329,6 +335,15 @@ impl HistoryView {
                         std::time::Duration::from_secs(2),
                         move || button.set_label("Copy"),
                     );
+                }
+            }
+        });
+        fix.connect_clicked({
+            let selected = selected.clone();
+            let window = window.clone();
+            move |_| {
+                if let Some(record) = selected.borrow().as_ref() {
+                    super::fix_word_view::show(&window, record);
                 }
             }
         });
@@ -517,6 +532,8 @@ impl HistoryView {
                             text.buffer().set_text(&record.text);
                             copy.set_sensitive(true);
                             export.set_sensitive(true);
+                            // Imported archives may not be one recording each.
+                            fix.set_sensitive(!record.id.starts_with("archive-"));
                             *selected.borrow_mut() = Some(record);
                         }
                         Reply::Record(Err(error)) => {

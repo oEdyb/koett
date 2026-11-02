@@ -77,10 +77,16 @@ checks: `scripts/test_linux_dictionary.py` (Settings page, and with `--model`
 a real dictation that turns "Superbase" into "Supabase" after Save, no restart);
 an ignored model test in `transcription/hotwords.rs` (Phebe → Phoebe and back).
 
-Next on Linux: a "Fix a word" action on history entries that stores the
-correction separately (history shares the Swift schema and import provenance),
-runs the learner, and offers suggestions for explicit acceptance into the
-dictionary. Never apply learned forms without that acceptance.
+**Fix a word** (Linux, `linux/fix_word_view.rs`, `corrections/`): History →
+select an entry → Fix a word…. Olle edits what Koett wrote and saves. The
+correction goes to `~/.local/share/koett/Corrections.json`, keyed by entry ID,
+with the original snapshot; history text and the shared history database stay
+untouched, and saving the original again removes the correction. The learner
+(from the `learning-correction-loop` prototype) aligns every saved correction and
+proposes "Write Groq when Koett hears Grok". Each suggestion needs an explicit
+Add or Dismiss; dismissals persist. A form made only of common English words
+(the SCOWL list) shows a warning and the button reads "Add anyway". Imported
+archive entries cannot be fixed, since one archive entry may not be one recording.
 
 Remaining misses are words Parakeet hears as ordinary English ("all" for Olle,
 "code"/"coat" for Koett, "Jakob" for Yakob, "Quinn" for Qwen). Hotwords cannot
@@ -108,6 +114,9 @@ The Mac app has no dictionary yet. Port in this order:
    `rescore(text:tokenTimings:audioSamples:)` after the TDT transcript. Keep the
    session loaded; fall back to the raw transcript on `nil` or error. Load the
    CTC models only when the dictionary is non-empty.
-5. Measure before shipping: run `Benchmarks/Dictionary` clips through the Mac
+5. Fix a word: the same per-entry correction file (same JSON shape), a Swift
+   port of `corrections/learn.rs`, and a History action with explicit
+   Add/Dismiss. Never apply learned forms automatically.
+6. Measure before shipping: run `Benchmarks/Dictionary` clips through the Mac
    path and require 0 false terms on the negatives, as on Linux. Then run the
    Swift test suite and the release build checks in `AGENTS.md`.

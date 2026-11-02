@@ -7,6 +7,9 @@ Start the lab first; its owner stops it. Only synthetic words and temporary
 config/data directories are used. Checks add, save, reopen, export and import.
 With --model, also dictates the clip through the private lab microphone twice:
 without the term, then after saving it, and checks the stored transcript.
+With --fix-word, corrects a synthetic history entry and reviews the suggestions:
+nothing is added automatically, everyday forms need "Add anyway", and
+imported-archive entries cannot be fixed.
 """
 from __future__ import annotations
 
@@ -47,6 +50,7 @@ def arguments():
     parser.add_argument("--clip", type=Path)
     parser.add_argument("--term", default="Supabase")
     parser.add_argument("--heard", default="Superbase")
+    parser.add_argument("--fix-word", action="store_true")
     parser.add_argument("--inside-session", action="store_true", help=argparse.SUPPRESS)
     return parser.parse_args()
 
@@ -114,6 +118,24 @@ def private_microphone(output):
     os.environ["PULSE_SOURCE"] = source
 
 
+FIX_ORIGINAL = "Synthetic fix fixture: ask Grok about all of it."
+FIX_CORRECTED = "Synthetic fix fixture: ask Groq about Olle of it."
+
+
+def seed_history(output):
+    import sqlite3
+    database = output / "data/koett/History.sqlite3"
+    database.parent.mkdir(parents=True, exist_ok=True)
+    schema = Path(__file__).resolve().parents[2] / "Sources/Koett/Resources/History/schema.sql"
+    with sqlite3.connect(database) as connection:
+        connection.executescript(schema.read_text())
+        for id_, age, text in [("fixture-fix-native", 0, FIX_ORIGINAL),
+                               ("archive-fixture-fix", 60_000, "Synthetic imported archive entry.")]:
+            connection.execute(
+                "INSERT INTO transcripts(id,created_at_ms,model,text,raw_text) VALUES(?,?,?,?,NULL)",
+                (id_, 1_793_000_000_000 - age, "Synthetic UI fixture", text))
+
+
 def main():
     args = arguments()
     output = (args.output or Path(tempfile.mkdtemp(prefix="koett-dictionary-test-"))).resolve()
@@ -124,6 +146,8 @@ def main():
         if args.model:
             extra = ["--model", str(args.model.resolve()), "--clip", str(args.clip.resolve()),
                      "--term", args.term, "--heard", args.heard]
+        if args.fix_word:
+            extra.append("--fix-word")
         return subprocess.call([lab, "run", args.lab, "--", "/usr/bin/python3", str(Path(__file__).resolve()),
                                 "--inside-session", "--lab", args.lab, "--binary", str(args.binary.resolve()),
                                 "--output", str(output), *extra])
@@ -143,6 +167,10 @@ def main():
     }))
     if args.model:
         private_microphone(output)
+    if args.fix_word:
+        config.write_text(json.dumps({"start_at_login": False,
+                                      "model_directory": str(output / "missing-model")}))
+        seed_history(output)
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi
@@ -234,8 +262,62 @@ def main():
         with sqlite3.connect(database) as connection:
             return connection.execute("SELECT text FROM transcripts ORDER BY created_at_ms DESC LIMIT 1").fetchone()[0]
 
+    def label_with(fragment, root):
+        return next((node for node in walk(root) if role(node) == "label" and fragment in node.get_name()), None)
+
+    def fix_word():
+        corrections = output / "data/koett/Corrections.json"
+        history = wait(lambda: next((n for n in walk(application()) if role(n) == "list"), None), "history list")
+        fix = wait(lambda: find("Fix a word…", "button"), "Fix a word button")
+        assert history.get_selection_iface().select_child(1)
+        wait(lambda: not fix.get_state_set().contains(Atspi.StateType.SENSITIVE), "archive entries cannot be fixed")
+        assert history.get_selection_iface().select_child(0)
+        wait(lambda: fix.get_state_set().contains(Atspi.StateType.SENSITIVE), "native entry can be fixed")
+        results.append("Fix a word is enabled for native entries and disabled for imported archives")
+        press("Fix a word…")
+        dialog = wait(lambda: find("Fix a word", "frame"), "Fix a word window")
+        said = wait(lambda: find("What you said", "text", dialog), "editable correction")
+        assert text(said) == FIX_ORIGINAL
+        wait(lambda: label_with("No suggestions yet", dialog), "empty suggestions")
+        assert said.get_editable_text_iface().set_text_contents(FIX_CORRECTED)
+        press("Save correction", dialog)
+        wait(lambda: corrections.exists() and json.loads(corrections.read_text())["entries"], "correction saved")
+        saved = json.loads(corrections.read_text())["entries"][0]
+        assert (saved["id"], saved["original"], saved["corrected"]) == ("fixture-fix-native", FIX_ORIGINAL, FIX_CORRECTED)
+        wait(lambda: label_with("Write “Groq” when Koett hears “Grok”", dialog), "Grok suggestion")
+        everyday = wait(lambda: label_with("Write “Olle” when Koett hears “all”", dialog), "all suggestion")
+        assert label_with("“all” is an everyday word", dialog)
+        assert find("Add anyway", "button", dialog) and find("Add to dictionary", "button", dialog)
+        assert json.loads(config.read_text()).get("dictionary", []) == [], "nothing is added automatically"
+        screenshot("fix-word-suggestions.png")
+        results.append("saving a correction stores it apart from history and only proposes Grok→Groq and all→Olle")
+        press("Add to dictionary", dialog)
+        wait(lambda: json.loads(config.read_text()).get("dictionary") == [{"term": "Groq", "sounds_like": ["Grok"]}], "Groq added")
+        wait(lambda: label_with("Write “Groq”", dialog) is None, "added suggestion leaves the list")
+        assert everyday
+        press("Dismiss", dialog)
+        wait(lambda: json.loads(corrections.read_text())["dismissed"] == [{"heard": "all", "term": "Olle"}], "dismissal saved")
+        wait(lambda: label_with("No suggestions yet", dialog), "list empty after review")
+        assert json.loads(config.read_text())["dictionary"] == [{"term": "Groq", "sounds_like": ["Grok"]}]
+        results.append("Add puts one form in the dictionary; Dismiss keeps the everyday all→Olle out")
+        wait(lambda: dialog.get_state_set().contains(Atspi.StateType.ACTIVE), "Fix a word focused")
+        subprocess.run([INPUT, "key", "1"], check=True)  # Esc
+        wait(lambda: find("Fix a word", "frame") is None, "Fix a word closed")
+        results.append("Esc closes Fix a word")
+        press("Fix a word…")
+        dialog = wait(lambda: find("Fix a word", "frame"), "reopened Fix a word")
+        wait(lambda: text(find("What you said", "text", dialog)) == FIX_CORRECTED, "correction reopens")
+        wait(lambda: label_with("No suggestions yet", dialog), "reviewed suggestions stay gone")
+        screenshot("fix-word-reopened.png")
+        results.append("reopening shows the saved correction and no reviewed suggestions")
+
     try:
         wait(application, "accessible Koett", timeout=30)
+        if args.fix_word:
+            fix_word()
+            print(json.dumps({"checks": results, "artifacts": str(output)}, indent=2))
+            (output / "results.json").write_text(json.dumps(results, indent=2))
+            return 0
         if args.model:
             before = dictate()
             assert args.term not in before and args.heard in before, before
