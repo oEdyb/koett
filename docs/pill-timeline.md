@@ -64,37 +64,29 @@ The lab uses it to draw bands before draw mode exists.
 - Short Parakeet dictations: 1.
 - Nemotron: never set, so the pill shows only the spinner.
 
-## Mac (Swift) to-do
+## Mac (Swift)
 
-Build this on the MacBook in `Sources/Koett/RecordingOverlay.swift`, matching the Linux
-behaviour above:
+Built on 2026-11-02 in `Sources/Koett/PillTimeline.swift`, `PillView.swift`,
+`PillButton.swift`, `PillPalette.swift`, `RecordingOverlay.swift` and
+`EscapeKeyMonitor.swift`. It matches the Linux states above, with these
+Mac-specific choices:
 
-1. Replace the 17-bar rolling meter with a `Timeline` model (64 columns, 250 ms
-   base, pairwise max compression, silence threshold 0.08 on the existing dB
-   mapping). Port the Rust unit tests in `CrossPlatform/src/linux/timeline.rs`
-   to XCTest.
-2. Resize `RecordingOverlayController.fullSize` to 300×48. Done and recovery
-   use 300×88, with the action row above the strip. Keep the panel's bottom
-   edge fixed when it grows.
-3. Hover row: track mouse-entered on the panel and set `ignoresMouseEvents =
-   false` while recording. The panel is already `.nonactivatingPanel`. Add
-   Cancel, Pause/Resume and History buttons; keep the panel from ever
-   becoming key.
-4. Cancel: add a `DictationSession.cancel()` that stops `MicrophoneRecorder`,
-   drops its file and skips transcription, paste and history. Esc: a local
-   plus global `NSEvent` monitor for keyCode 53, installed only while
-   recording. It needs no extra permission beyond the existing Accessibility
-   access, and it must not consume Esc for other apps.
-5. Pause: gate `MicrophoneRecorder`'s write path with an atomic flag; keep
-   the meter at 0 while paused.
-6. Decode progress: Parakeet on the Mac goes through FluidAudio/CoreML. Find
-   out whether it exposes chunk progress. If not, show only the spinner, as
-   Nemotron does on Linux; never fake a fraction.
-7. Sketch events: mirror `SketchEvent` as a Swift struct with the same
-   fields and upsert rule, fed by the Mac draw mode.
-8. Light/dark: follow `NSApp.effectiveAppearance` with the palette in
-   `recording_overlay.rs` (`DARK`/`LIGHT`). Today the Mac pill is dark-only.
-9. Done state: after a successful paste, show `Done · m:ss` with Copy and History
-   for 10 s, extended while hovered. This replaces the current text result row.
-10. Keep `RecordingOverlayFormat` reduced-motion behaviour: a static strip
-    redrawn once per second.
+- `PillTimeline` is the Swift port of `timeline.rs`, with the same tests in
+  `PillTimelineTests`. The meter is sampled at 30 Hz even under Reduce Motion;
+  only the redraw drops to 1 Hz.
+- `SketchEvent` mirrors the Rust struct (`index`, `startMs`, `endMs`, `live`)
+  and upserts by index. A future Mac draw mode calls
+  `recordingOverlay.publishSketch(_:)` with times from `sketchElapsedMs`; it
+  returns false when no dictation records or the event is malformed.
+- Decode progress: FluidAudio 0.15.6 exposes `AsrManager.transcriptionProgressStream`
+  only for audio longer than one model window (240,000 samples, 15 s). Koett
+  subscribes only then and moves the playhead from those fractions. The
+  fraction counts dispatched chunks of the silence-trimmed audio, so it can run
+  up to one worker batch ahead of finished decoding. Shorter dictations and
+  Nemotron show the spinner only.
+- Pause is available for Parakeet only. Nemotron streams live audio to its
+  adapter, so the button is hidden there rather than transcribing paused audio.
+- `PillPanel` returns false for `canBecomeKey` and `canBecomeMain`.
+- `swift test` renders every state in both appearances when
+  `KOETT_PILL_SNAPSHOT_DIR` is set (`PillSnapshotTests`). The 2026-11-02
+  renders are in `docs/evidence/mac-pill-timeline-20261102/`.

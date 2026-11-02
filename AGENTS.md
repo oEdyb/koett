@@ -148,7 +148,13 @@ Dictation and all audio transcription stay local.
 - `Sources/Koett/MediaSession.swift`: focused browser-media transcription workflow.
 - `Sources/Koett/NemotronStreamingAdapter.swift`: experimental live adapter and
   bounded ordered audio store.
-- `Sources/Koett/RecordingOverlay.swift`: nonactivating live meter and timer.
+- `Sources/Koett/RecordingOverlay.swift`: nonactivating pill controller:
+  recording, transcribing, done, not-pasted and media states.
+- `Sources/Koett/PillTimeline.swift`, `PillView.swift`, `PillButton.swift`,
+  `PillPalette.swift`: whole-dictation timeline model, drawing, hover row and
+  light/dark palette (see `docs/pill-timeline.md`).
+- `Sources/Koett/EscapeKeyMonitor.swift`: Esc-to-cancel, installed only while
+  recording.
 - `Sources/Koett/ShortcutBinding.swift`: shortcut matching, persistence values,
   labels, and the small shortcut recorder.
 - `Sources/Koett/BrowserMedia.swift`: focused browser URL and temporary media

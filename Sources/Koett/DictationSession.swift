@@ -53,7 +53,11 @@ extension KoettController {
 
         state = .recording
         if let recorder {
-            recordingOverlay.start(recorder: recorder)
+            recordingOverlay.start(recorder: recorder, controls: RecordingControls(
+                modelName: speechEngine.displayName,
+                canPause: nemotronRecorder == nil,
+                cancel: { [weak self] in self?.cancelDictation() }
+            ))
         }
         play(startSound)
         print("RECORDING")
@@ -115,6 +119,30 @@ extension KoettController {
         state = .ready
         fputs("Error: \(error.localizedDescription)\n", stderr)
         return true
+    }
+
+    /// Discards the current dictation: nothing is transcribed, pasted or saved.
+    func cancelDictation() {
+        guard state == .recording else { return }
+        recordingOverlay.stop()
+        let live = nemotronRecorder
+        nemotronRecorder = nil
+        recorder?.stop()
+        recorder = nil
+        if let recordingURL { cleanup(recordingURL) }
+        recordingURL = nil
+        print("CANCELLED")
+        guard let live else {
+            state = .ready
+            return
+        }
+        state = .transcribing
+        let capture = try? live.stop()
+        Task { @MainActor [weak self] in
+            _ = try? await capture?.processingTask.value
+            await self?.nemotronAdapter?.cancel()
+            self?.state = .ready
+        }
     }
 
     func stopRecording(releaseEventTimestamp: TimeInterval) {
@@ -207,6 +235,7 @@ extension KoettController {
 
     private func transcribe(_ url: URL, releaseEventTimestamp: TimeInterval) async {
         var transcriptionCompleted = false
+        var deliveredText: String?
         defer {
             if transcriptionCompleted {
                 cleanup(url)
@@ -217,7 +246,12 @@ extension KoettController {
 
         do {
             let transcriptionStartedAt = ProcessInfo.processInfo.systemUptime
-            let result = try await DictationTranscriber.transcribe(url, using: manager, detector: speechDetector)
+            let result = try await DictationTranscriber.transcribe(
+                url,
+                using: manager,
+                detector: speechDetector,
+                onProgress: decodeProgressHandler
+            )
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -238,7 +272,9 @@ extension KoettController {
                 return
             }
 
+            deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
+            recordingOverlay.showDone(text: prepared.text)
             print("PASTE POSTED (\(prepared.text.count) characters)")
             print(String(
                 format: "LATENCY release-to-ASR-start %.1fms | ASR %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
@@ -250,13 +286,7 @@ extension KoettController {
             ))
         } catch {
             if transcriptionCompleted {
-                recordingOverlay.showError(
-                    DictationFailurePresentation.message(
-                        error: error.localizedDescription,
-                        transcriptionCompleted: true,
-                        audioSaved: false
-                    )
-                )
+                showDeliveryFailure(error, text: deliveredText)
             } else {
                 preserveFailedRecording(url)
             }
@@ -341,6 +371,7 @@ extension KoettController {
             return
         }
 
+        var deliveredText: String?
         do {
             let prepared = await prepareDictation(
                 rawText,
@@ -352,7 +383,9 @@ extension KoettController {
                 print("S1-mini removed filler-only text. Clipboard unchanged.")
                 return
             }
+            deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
+            recordingOverlay.showDone(text: prepared.text)
             print("PASTE POSTED (\(prepared.text.count) characters)")
             print(String(
                 format: "LATENCY Nemotron release-to-finish-start %.1fms | finish %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
@@ -363,13 +396,7 @@ extension KoettController {
                 (pastePostedAt - releaseEventTimestamp) * 1_000
             ))
         } catch {
-            recordingOverlay.showError(
-                DictationFailurePresentation.message(
-                    error: error.localizedDescription,
-                    transcriptionCompleted: true,
-                    audioSaved: false
-                )
-            )
+            showDeliveryFailure(error, text: deliveredText)
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
     }
@@ -379,9 +406,15 @@ extension KoettController {
         releaseEventTimestamp: TimeInterval
     ) async -> Bool {
         var transcriptionCompleted = false
+        var deliveredText: String?
         do {
             let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
-            let result = try await DictationTranscriber.transcribe(url, using: manager, detector: speechDetector)
+            let result = try await DictationTranscriber.transcribe(
+                url,
+                using: manager,
+                detector: speechDetector,
+                onProgress: decodeProgressHandler
+            )
             transcriptionCompleted = true
             let asrReadyAt = ProcessInfo.processInfo.systemUptime
             let rawText = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -400,7 +433,9 @@ extension KoettController {
                 print("S1-mini removed filler-only text. Clipboard unchanged.")
                 return true
             }
+            deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
+            recordingOverlay.showDone(text: prepared.text)
             print("PASTE POSTED by Parakeet recovery (\(prepared.text.count) characters)")
             print(String(
                 format: "LATENCY recovery-start %.1fms | recovery-ASR %.1fms | cleanup %.1fms | delivery %.1fms | release-to-paste-post %.1fms",
@@ -413,17 +448,23 @@ extension KoettController {
             return true
         } catch {
             if transcriptionCompleted {
-                recordingOverlay.showError(
-                    DictationFailurePresentation.message(
-                        error: error.localizedDescription,
-                        transcriptionCompleted: true,
-                        audioSaved: false
-                    )
-                )
+                showDeliveryFailure(error, text: deliveredText)
             }
             fputs("Error: Parakeet recovery failed: \(error.localizedDescription)\n", stderr)
             return transcriptionCompleted
         }
+    }
+
+    /// Text that was saved but not pasted gets the Not pasted pill with Paste again.
+    private func showDeliveryFailure(_ error: Error, text: String?) {
+        if let text, recordingOverlay.showNotPasted(text: text) { return }
+        recordingOverlay.showError(
+            DictationFailurePresentation.message(
+                error: error.localizedDescription,
+                transcriptionCompleted: true,
+                audioSaved: false
+            )
+        )
     }
 
     private func prepareDictation(
@@ -486,6 +527,13 @@ extension KoettController {
             rawText: transcript.rawText,
             keepAsLast: true
         )
+    }
+
+    private var decodeProgressHandler: @Sendable (Double) -> Void {
+        let overlay = recordingOverlay
+        return { fraction in
+            Task { @MainActor in overlay.setDecodeProgress(fraction) }
+        }
     }
 
     func play(_ player: AVAudioPlayer) {

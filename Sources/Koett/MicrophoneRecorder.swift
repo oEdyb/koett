@@ -12,6 +12,11 @@ final class MicrophoneRecorder {
 
     var currentTime: TimeInterval { sink.duration }
     var averagePower: Float { sink.averagePower }
+    /// While paused, microphone buffers are dropped before they reach the file.
+    var isPaused: Bool {
+        get { sink.isPaused }
+        set { sink.isPaused = newValue }
+    }
     var recordingError: Error? { input.error ?? sink.error }
 
     convenience init(url: URL, device: MicrophoneDevice) throws {
@@ -58,6 +63,15 @@ final class MicrophoneFileSink: Sendable {
     private let frames = Atomic<Int>(0)
     private let powerBits = Atomic<UInt32>(Float(-160).bitPattern)
     private let droppedFrames = Atomic<Int>(0)
+    private let paused = Atomic<Bool>(false)
+
+    var isPaused: Bool {
+        get { paused.load(ordering: .acquiring) }
+        set {
+            paused.store(newValue, ordering: .releasing)
+            if newValue { powerBits.store(Float(-160).bitPattern, ordering: .relaxed) }
+        }
+    }
 
     var duration: TimeInterval { Double(frames.load(ordering: .relaxed)) / sampleRate }
     var averagePower: Float { Float(bitPattern: powerBits.load(ordering: .relaxed)) }
@@ -91,6 +105,7 @@ final class MicrophoneFileSink: Sendable {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {
+        guard !paused.load(ordering: .acquiring) else { return }
         let accepted = state.withLockIfAvailable { state -> Bool in
             guard let file = state.file, state.error == nil else { return true }
             do {
