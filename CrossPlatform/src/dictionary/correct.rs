@@ -8,6 +8,15 @@ use super::DictionaryEntry;
 
 const MAX_SPAN_WORDS: usize = 4;
 
+/// A key to find and the term to write. Terms match across any word split
+/// ("sherpa onnx"); a sounds-like form only with its own word count, so the
+/// form "Superbase" leaves an ordinary "super base" alone.
+struct Target<'a> {
+    key: String,
+    words: Option<usize>,
+    term: &'a str,
+}
+
 /// One word: its byte range in the text and its lowercase alphanumeric key.
 struct Word {
     start: usize,
@@ -41,34 +50,45 @@ pub fn apply(text: &str, entries: &[DictionaryEntry]) -> String {
 
 /// True when the text spells any dictionary term (not just a "sounds like" form).
 pub(super) fn contains_term(text: &str, entries: &[DictionaryEntry]) -> bool {
-    let targets: Vec<(String, &str)> = entries
+    let targets: Vec<Target> = entries
         .iter()
-        .map(|entry| (key(&entry.term), entry.term.as_str()))
-        .filter(|(key, _)| !key.is_empty())
+        .map(|entry| Target {
+            key: key(&entry.term),
+            words: None,
+            term: &entry.term,
+        })
+        .filter(|target| !target.key.is_empty())
         .collect();
     let words = words(text);
     (0..words.len()).any(|index| longest_match(text, &words[index..], &targets).is_some())
 }
 
-/// (normalized key, written term), longest keys first so longer phrases win.
-fn targets(entries: &[DictionaryEntry]) -> Vec<(String, &str)> {
-    let mut targets: Vec<(String, &str)> = entries
+/// Every term and form, longest keys first so longer phrases win.
+fn targets(entries: &[DictionaryEntry]) -> Vec<Target<'_>> {
+    let mut targets: Vec<Target> = entries
         .iter()
         .flat_map(|entry| {
-            std::iter::once(&entry.term)
-                .chain(&entry.sounds_like)
-                .map(move |form| (key(form), entry.term.as_str()))
+            let term = Target {
+                key: key(&entry.term),
+                words: None,
+                term: &entry.term,
+            };
+            std::iter::once(term).chain(entry.sounds_like.iter().map(|form| Target {
+                key: key(form),
+                words: Some(words(form).len()),
+                term: &entry.term,
+            }))
         })
-        .filter(|(key, _)| !key.is_empty())
+        .filter(|target| !target.key.is_empty())
         .collect();
-    targets.sort_by_key(|(key, _)| std::cmp::Reverse(key.len()));
+    targets.sort_by_key(|target| std::cmp::Reverse(target.key.len()));
     targets
 }
 
 fn longest_match<'a>(
     text: &str,
     words: &[Word],
-    targets: &[(String, &'a str)],
+    targets: &[Target<'a>],
 ) -> Option<(usize, &'a str)> {
     let mut joined = String::new();
     let mut best = None;
@@ -77,8 +97,11 @@ fn longest_match<'a>(
             break;
         }
         joined.push_str(&words[count - 1].key);
-        if let Some((_, term)) = targets.iter().find(|(key, _)| *key == joined) {
-            best = Some((count, *term));
+        if let Some(target) = targets
+            .iter()
+            .find(|target| target.key == joined && target.words.is_none_or(|words| words == count))
+        {
+            best = Some((count, target.term));
         }
     }
     best
@@ -140,8 +163,23 @@ mod tests {
     fn sounds_like_forms_write_the_term() {
         let entries = [entry("Supabase", &["super base"]), entry("Groq", &["grok"])];
         assert_eq!(
-            apply("Superbase and Grok, then super-base!", &entries),
+            apply("Super base and Grok, then super-base!", &entries),
             "Supabase and Groq, then Supabase!"
+        );
+    }
+
+    #[test]
+    fn sounds_like_forms_keep_their_word_count() {
+        let entries = [
+            entry("Supabase", &["Superbase"]),
+            entry("Fortnox", &["four knocks"]),
+        ];
+        assert_eq!(
+            apply(
+                "The super base price; Superbase pays via four knocks.",
+                &entries
+            ),
+            "The super base price; Supabase pays via Fortnox."
         );
     }
 

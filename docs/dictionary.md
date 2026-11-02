@@ -18,7 +18,9 @@ like" forms (what Koett writes instead). Linux ships it; the Mac to-do is below.
    decode.
 3. **Spelling pass** (`CrossPlatform/src/dictionary/correct.rs`). Completed
    dictation rewrites spans of up to four words that match a term or a sounds-like
-   form, ignoring case, spaces and hyphens but not punctuation. One pass, no
+   form, ignoring case and hyphens but not punctuation. Terms also match across
+   spaces ("sherpa onnx"); a form only matches spans with its own word count, so
+   the form "Superbase" leaves "the super base price" alone. One pass, no
    cascades. Literal replacements run afterwards.
 
 An empty dictionary keeps the original single greedy decode. CTC models
@@ -47,6 +49,14 @@ speech is cleaner than a microphone; treat numbers as relative.
 | Hotwords, score 3 / score 4 | 73% / 76% | 23 / 72 | — | — | 22 / 57 |
 | **Shipped: plain + biased, adopt terms** | **73% (118/162)** | **0** | **6.6%** | **0.16%** | **0** |
 | Shipped + one-edit fuzzy matching | 75% | 3 | 6.3% | 0.49% | 3 |
+| **Shipped + accepted learned sounds-like forms** | **81% (131/162)** | **0** | **5.3%** | **0.16%** | **0** |
+
+Learning loop (approach c, prototype on branch `learning-correction-loop`):
+corrections from one voice, aligned word by word, suggested 26 forms with no
+junk from the near-miss sentences. Accepting them all automatically breaks
+ordinary speech (`all → Olle`, `coat → Koett`). Accepting all but ordinary
+English words (all, coat, Jakob, Matthias, "open code") gives the last row; on
+the two voices it never learned from, recall goes 74% → 81% with 0 false terms.
 
 Parakeet v3 baseline: 36% recall. Latency, release build, 2 threads, clips of
 3–4 s: greedy median 96 ms, dictionary 188 ms (two streams). Most audio is
@@ -54,6 +64,11 @@ decoded while recording, so only the last segment adds to the wait. Integration
 checks: `scripts/test_linux_dictionary.py` (Settings page, and with `--model`
 a real dictation that turns "Superbase" into "Supabase" after Save, no restart);
 an ignored model test in `transcription/hotwords.rs` (Phebe → Phoebe and back).
+
+Next on Linux: a "Fix a word" action on history entries that stores the
+correction separately (history shares the Swift schema and import provenance),
+runs the learner, and offers suggestions for explicit acceptance into the
+dictionary. Never apply learned forms without that acceptance.
 
 Remaining misses are words Parakeet hears as ordinary English ("all" for Olle,
 "code"/"coat" for Koett, "Jakob" for Yakob, "Quinn" for Qwen). Hotwords cannot
