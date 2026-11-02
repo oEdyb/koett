@@ -154,6 +154,7 @@ final class SketchLinkingTests: XCTestCase {
         let lines = try String(contentsOf: fixture, encoding: .utf8).split(separator: "\n")
         func text(_ hex: Substring) -> String {
             var bytes: [UInt8] = []
+            let hex = hex.dropFirst()
             var index = hex.startIndex
             while index < hex.endIndex {
                 let next = hex.index(index, offsetBy: 2)
@@ -186,7 +187,7 @@ final class SketchLinkingTests: XCTestCase {
             case "estimate":
                 estimated.append(TimedWord(text: text(parts[1]), start: float(parts[2]), end: float(parts[3])))
             case "span":
-                let raw = parts.count > 3 ? text(parts[3]) : ""
+                let raw = text(parts[3])
                 XCTAssertEqual(SketchLinking.estimateWords(raw, start: float(parts[1]), end: float(parts[2])), estimated)
             default:
                 XCTFail("unknown line \(parts[0])")

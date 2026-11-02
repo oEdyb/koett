@@ -31,7 +31,8 @@ const VOCABULARY: &[&str] = &[
 const FILLERS: &[&str] = &["um", "uh", "like", "you know,"];
 
 fn hex(text: &str) -> String {
-    text.bytes().map(|byte| format!("{byte:02x}")).collect()
+    let bytes: String = text.bytes().map(|byte| format!("{byte:02x}")).collect();
+    format!("x{bytes}")
 }
 
 fn main() {
