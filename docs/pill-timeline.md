@@ -74,16 +74,23 @@ Built on 2026-11-02 in `Sources/Koett/PillTimeline.swift`, `PillView.swift`,
 `EscapeKeyMonitor.swift`. It matches the Linux states above, with these
 Mac-specific choices:
 
-- `PillTimeline` is the Swift port of `timeline.rs`, with the same tests in
-  `PillTimelineTests`. The meter is sampled at 30 Hz even under Reduce Motion;
-  only the redraw drops to 1 Hz.
+- Since 2026-11-02 evening, after a live test where the strip visibly grew
+  and then compressed, the Mac strip is no longer a whole-dictation timeline. `PillTimeline` is a fixed 64-column
+  window of 150 ms columns (9.6 s). Time before the start draws as silence
+  dots, so the strip is full width from the first frame. Columns slide left by
+  elapsed time with sub-column precision and fade out over the left six
+  columns; nothing is ever compressed, so there is no jump at any length.
+  Memory holds 66 columns. The meter is sampled at 30 Hz even under Reduce
+  Motion; only the redraw drops to 1 Hz.
+- Done and media results are one 300×48 row with Copy on the right, as before
+  the timeline. Not pasted keeps its 300×88 action row.
 - `SketchEvent` mirrors the Rust struct (`index`, `startMs`, `endMs`, `live`)
   and upserts by index. Mac draw mode sends `SketchUpdate`s through
   `recordingOverlay.applySketch(_:session:)`, which accepts changes for the
   pill's own dictation until the next one starts.
 - Decode progress: FluidAudio 0.15.6 exposes `AsrManager.transcriptionProgressStream`
   only for audio longer than one model window (240,000 samples, 15 s). Koett
-  subscribes only then and moves the playhead from those fractions. The
+  subscribes only then and shows the fraction as a percentage on the right. The
   fraction counts dispatched chunks of the silence-trimmed audio, so it can run
   up to one worker batch ahead of finished decoding. Shorter dictations and
   Nemotron show the spinner only.
@@ -92,4 +99,6 @@ Mac-specific choices:
 - `PillPanel` returns false for `canBecomeKey` and `canBecomeMain`.
 - `swift test` renders every state in both appearances when
   `KOETT_PILL_SNAPSHOT_DIR` is set (`PillSnapshotTests`). The 2026-11-02
-  renders are in `docs/evidence/mac-pill-timeline-20261102/`.
+  renders are in `docs/evidence/mac-pill-timeline-20261102/`; the fixed-width
+  renders (0:05, 1:00, 5:00, 20:00, Done) are in
+  `docs/evidence/mac-pill-fixed-width-20261102/`.

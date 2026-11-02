@@ -26,53 +26,68 @@ final class PillTimelineTests: XCTestCase {
         XCTAssertTrue(timeline.levels.allSatisfy { (0...1).contains($0) })
     }
 
+    func testStripIsFullWidthFromTheFirstFrame() {
+        var timeline = PillTimeline()
+        timeline.push(elapsedMs: 0, level: 1)
+        let bars = timeline.bars().filter { $0.x >= 0 }
+        XCTAssertEqual(bars.count, PillTimeline.columnCount)
+        XCTAssertEqual(bars.filter { $0.level == nil }.count, PillTimeline.columnCount - 1, "time before the start draws as silence")
+        XCTAssertEqual(bars.last?.x ?? 0, Double(PillTimeline.columnCount - 1), accuracy: 1e-9)
+        XCTAssertGreaterThan(bars.last?.level ?? 0, PillTimeline.silentLevel)
+    }
+
     func testColumnsFollowTimeAndKeepGapsAsSilence() {
         var timeline = PillTimeline()
         timeline.push(elapsedMs: 0, level: 1)
         timeline.push(elapsedMs: 100, level: 1)
-        XCTAssertEqual(timeline.levels.count, 1)
-        timeline.push(elapsedMs: 1_000, level: 0)
-        XCTAssertEqual(timeline.levels.count, 5)
-        XCTAssertEqual(Array(timeline.levels[1..<4]), [0, 0, 0])
-        XCTAssertGreaterThan(timeline.levels[0], PillTimeline.silentLevel)
+        timeline.push(elapsedMs: 750, level: 0)
+        let recorded = timeline.bars().compactMap(\.level)
+        XCTAssertEqual(recorded.count, 6)
+        XCTAssertGreaterThan(recorded[0], PillTimeline.silentLevel)
+        XCTAssertEqual(Array(recorded[1...3]), [0, 0, 0])
     }
 
-    func testStripHalvesResolutionWhenFullAndKeepsPeaks() {
+    func testTwentyMinutesLooksLikeFiveSecondsAndMemoryStaysBounded() {
         var timeline = PillTimeline()
-        for step in 0..<UInt64(PillTimeline.columnCount) {
-            timeline.push(elapsedMs: step * PillTimeline.baseMs, level: step == 5 ? 1 : 0)
+        var previous: [PillTimeline.Bar] = []
+        for step in 0...36_000 {
+            let ms = UInt64(step) * 1_000 / 30
+            timeline.push(elapsedMs: ms, level: 0.5)
+            let bars = timeline.bars()
+            if !step.isMultiple(of: 50) { continue }
+            XCTAssertLessThanOrEqual(bars.first?.x ?? 99, 0, "the strip always reaches its left edge")
+            XCTAssertGreaterThanOrEqual(bars.last?.x ?? 0, Double(PillTimeline.columnCount - 2), "and its right edge")
+            if step.isMultiple(of: 997) { previous = bars }
         }
-        XCTAssertEqual(timeline.levels.count, PillTimeline.columnCount)
-        timeline.push(elapsedMs: UInt64(PillTimeline.columnCount) * PillTimeline.baseMs, level: 0)
-        XCTAssertEqual(timeline.msPerColumn, PillTimeline.baseMs * 2)
-        XCTAssertEqual(timeline.levels.count, PillTimeline.columnCount / 2 + 1)
-        XCTAssertGreaterThan(timeline.levels[2], PillTimeline.silentLevel, "peak from column 5 survives")
-        timeline.push(elapsedMs: 600_000, level: 0.5)
-        XCTAssertLessThanOrEqual(timeline.levels.count, PillTimeline.columnCount)
-        timeline.reset()
-        XCTAssertTrue(timeline.isEmpty)
-        XCTAssertEqual(timeline.msPerColumn, PillTimeline.baseMs)
+        XCTAssertLessThanOrEqual(timeline.levels.count, PillTimeline.columnCount + 2)
+        XCTAssertFalse(previous.isEmpty)
+        XCTAssertTrue(timeline.bars().allSatisfy { $0.level != nil }, "no pre-start dots after the window fills")
     }
 
-    func testSketchEventsUpsertAndMapToBands() {
+    func testBarsSlideSmoothlyWithoutRebinning() {
         var timeline = PillTimeline()
-        timeline.push(elapsedMs: 15_750, level: 0.2)
-        timeline.apply(sketch(2, 9_000, 9_500, live: true))
-        timeline.apply(sketch(1, 1_000, 3_000, live: false))
-        XCTAssertTrue(timeline.isDrawing)
-        timeline.apply(sketch(2, 9_000, 11_000, live: false))
-        XCTAssertFalse(timeline.isDrawing)
-        XCTAssertEqual(timeline.sketches.map(\.index), [1, 2])
-        XCTAssertEqual(timeline.span(of: timeline.sketches[0]), 4...12)
-        XCTAssertEqual(timeline.span(of: timeline.sketches[1]), 36...44)
-        timeline.push(elapsedMs: 20_000, level: 0.2)
-        XCTAssertEqual(timeline.span(of: timeline.sketches[1]), 18...22)
-        let late = sketch(3, 900_000, 999_000, live: true)
-        let last = PillTimeline.columnCount - 1
-        XCTAssertEqual(timeline.span(of: late), last...last)
-        XCTAssertFalse(sketch(0, 1, 2, live: true).isValid)
-        XCTAssertFalse(sketch(1, 5, 2, live: true).isValid)
-        XCTAssertTrue(sketch(1, 2, 2, live: false).isValid)
+        for step in 0...600 { timeline.push(elapsedMs: UInt64(step) * 33, level: step == 450 ? 1 : 0) }
+        func peakX() -> Double? {
+            timeline.bars().first { ($0.level ?? 0) > PillTimeline.silentLevel }?.x
+        }
+        let before = try? XCTUnwrap(peakX())
+        timeline.push(elapsedMs: 600 * 33 + 50, level: 0)
+        let after = try? XCTUnwrap(peakX())
+        XCTAssertNotNil(before)
+        XCTAssertEqual((before ?? 0) - (after ?? 0), 50.0 / Double(PillTimeline.columnMs), accuracy: 1e-9, "a peak moves left by elapsed time only")
+    }
+
+    func testSketchBandsSlideWithTheStripAndLeaveOnTheLeft() {
+        var timeline = PillTimeline()
+        timeline.push(elapsedMs: 15_000, level: 0.2)
+        let recent = sketch(1, 12_000, 13_500, live: false)
+        let old = sketch(2, 1_000, 2_000, live: false)
+        let band = try? XCTUnwrap(timeline.band(of: recent))
+        XCTAssertEqual(band?.lowerBound ?? 0, 63 - 20, accuracy: 1e-9)
+        XCTAssertEqual(band?.upperBound ?? 0, 63 - 10 + 1, accuracy: 1e-9)
+        XCTAssertNil(timeline.band(of: old))
+        let live = sketch(3, 14_000, 15_000, live: true)
+        XCTAssertEqual(timeline.band(of: live)?.upperBound ?? 0, Double(PillTimeline.columnCount), accuracy: 1e-9)
     }
 
     func testSketchStorageIsBoundedButKeptIndicesStillUpdate() {
@@ -89,14 +104,4 @@ final class PillTimelineTests: XCTestCase {
         XCTAssertTrue(timeline.apply(sketch(999, 0, 1, live: false)))
     }
 
-    func testDecodeHeadIsBoundedByRecordedColumns() {
-        var timeline = PillTimeline()
-        XCTAssertEqual(timeline.decodeHead(fraction: 0.5), 0)
-        timeline.push(elapsedMs: 9_750, level: 0.3)
-        XCTAssertEqual(timeline.levels.count, 40)
-        XCTAssertEqual(timeline.decodeHead(fraction: 0), 0)
-        XCTAssertEqual(timeline.decodeHead(fraction: 0.5), 20)
-        XCTAssertEqual(timeline.decodeHead(fraction: 2), 40)
-        XCTAssertEqual(timeline.decodeHead(fraction: .nan), 0)
-    }
 }

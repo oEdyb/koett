@@ -19,14 +19,17 @@
   `CGEventSource.keyState` check: that check returned `false` during real Right
   Option down events on this Mac.
 - Tink and Basso sounds mark recording start and stop.
-- After the stop sound, the same pill keeps the dimmed timeline with a spinner
-  until the text is pasted or an error replaces it. A too-short recording shows
-  nothing. A successful paste shows `Done · m:ss` with Copy and History for ten
+- After the stop sound, the same pill keeps the frozen, dimmed strip with a
+  spinner until the text is pasted or an error replaces it. A too-short
+  recording shows nothing. A successful paste shows one 300×48 row: the coral
+  mark, a one-line transcript preview and **Copy** on the right, for ten
   seconds, longer while hovered. A delivery failure after a save shows
   `Not pasted · text saved` with Paste again, Copy and History.
-- A nonactivating bottom-center 300×48 pill shows the whole dictation as a
-  64-column timeline of real microphone levels (see `docs/pill-timeline.md`)
-  and elapsed wall time. It stays above apps without taking keyboard focus and
+- A nonactivating bottom-center 300×48 pill shows a fixed-width strip of the
+  last 9.6 seconds of real microphone levels (64 columns of 150 ms; see
+  `docs/pill-timeline.md`) and elapsed wall time. The strip is full width from
+  the first frame and slides left continuously; it never grows or re-bins, so
+  20 minutes looks like 5 seconds. It stays above apps without taking keyboard focus and
   follows the system light or dark appearance.
 - Hovering a dictation pill adds a row above it, so the bottom edge stays put:
   Cancel, Pause/Resume (Parakeet only), the model name and History. Cancel
@@ -124,9 +127,9 @@
   `~/Library/Application Support/Koett/Media Transcripts/` with its source URL,
   title, and transcript. If that save fails, shared transcript recovery retains
   the text, title, and source URL; the pill reports the fallback or storage warning.
-- The existing pill shows fetch and transcription progress. The 300×88 result
+- The existing pill shows fetch and transcription progress. The 300×48 result
   shows Koett's coral waveform mark, one normalized transcript preview line
-  with a trailing ellipsis, and **Copy** and **History** buttons. Copy shows
+  with a trailing ellipsis, and a **Copy** button on the right. Copy shows
   **Copied** and the pill closes 1.5 seconds later. The result pill closes by
   itself after ten seconds, longer while hovered; the menu keeps the latest
   result.
