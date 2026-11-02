@@ -103,8 +103,9 @@ final class RecordingOverlayController: NSObject {
         pillView.onHoverChange = { [weak self] in self?.layoutPanel() }
         pillView.pauseButton.action = { [weak self] in self?.togglePause() }
         pillView.historyButton.action = { [weak self] in
-            self?.hide()
-            self?.onOpenHistory?()
+            guard let self else { return }
+            if !isTrackingRecording { hide() }
+            onOpenHistory?()
         }
         pillView.copyButton.action = { [weak self] in self?.copyResult() }
         pillView.pasteButton.action = { [weak self] in

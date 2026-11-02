@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 @testable import Koett
 import XCTest
 
@@ -85,6 +86,35 @@ final class RecordingOverlayTests: XCTestCase {
         controller.setDecodeProgress(.nan)
         XCTAssertEqual(controller.pillView.content, .transcribing(fraction: 0.6))
         controller.stop()
+    }
+
+    func testHistoryKeepsTheRecordingPillAndClosesTheDonePill() throws {
+        let controller = RecordingOverlayController()
+        var opened = 0
+        controller.onOpenHistory = { opened += 1 }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-pill-\(UUID()).wav")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let recorder = try MicrophoneRecorder(
+            url: url,
+            device: MicrophoneDevice(id: 1, uid: "fake", name: "Fake"),
+            input: SilentCapture()
+        )
+        controller.start(recorder: recorder, controls: RecordingControls(modelName: "Parakeet v2", canPause: true, cancel: {}))
+        controller.pillView.historyButton.action?()
+        XCTAssertEqual(opened, 1)
+        XCTAssertTrue(controller.isTrackingRecording)
+        XCTAssertNotNil(controller.sketchElapsedMs)
+        XCTAssertTrue(controller.publishSketch(SketchEvent(index: 1, startMs: 0, endMs: 10, live: true)))
+        controller.pillView.pauseButton.action?()
+        XCTAssertTrue(recorder.isPaused)
+        XCTAssertEqual(controller.pillView.content, .recording(paused: true))
+        controller.stop()
+        recorder.stop()
+        controller.showTranscribing()
+        controller.showDone(text: "Hi")
+        controller.pillView.historyButton.action?()
+        XCTAssertEqual(opened, 2)
+        XCTAssertNil(controller.sketchElapsedMs)
     }
 
     func testSketchesNeedAnActiveDictation() {
@@ -200,4 +230,12 @@ final class RecordingOverlayTests: XCTestCase {
         value=\(value)
         """
     }
+}
+
+@MainActor
+private final class SilentCapture: MicrophoneCapturing {
+    let format = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)!
+    var error: Error?
+    func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {}
+    func stop() {}
 }
