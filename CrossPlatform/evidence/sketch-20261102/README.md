@@ -17,3 +17,10 @@ Shift was held through KDE's fake-input protocol with `lab-gesture.c`.
 
 Focus returned to Chrome after each recording (active title bar; paste landed).
 Not covered: multiple monitors, niri/grim on hardware, Sway/Hyprland, GNOME/X11.
+
+After rebasing onto main with the Timeline pill (PR #5):
+
+5. `05-timeline-pill-numbered-bands.png`: the pill shows bands 1 and 2 at the
+   sketch moments, published through `koett_engine::sketch`.
+6. `06-rebased-on-timeline-pill-pasted.png`: same two-sketch paste (1600×457
+   sheet, then two linked bullets); pill shows Done.
