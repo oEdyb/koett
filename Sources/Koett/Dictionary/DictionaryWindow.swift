@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -43,9 +44,14 @@ final class DictionaryEditorModel: ObservableObject {
     @Published private(set) var boosting = VocabularyBooster.Status.off
     private let store: DictionaryStore
     private var pendingSave: Task<Void, Never>?
+    private var saving = false
+    private var storeChanges: AnyCancellable?
 
     init(store: DictionaryStore, booster: VocabularyBooster) {
         self.store = store
+        storeChanges = store.$entries.dropFirst().sink { [weak self] entries in
+            Task { @MainActor [weak self] in self?.storeChanged(entries) }
+        }
         let handler: @Sendable (VocabularyBooster.Status) -> Void = { [weak self] status in
             let model = self
             Task { @MainActor in model?.boosting = status }
@@ -57,6 +63,7 @@ final class DictionaryEditorModel: ObservableObject {
         pendingSave?.cancel()
         rows = store.entries.map { Row(term: $0.term, forms: $0.soundsLike.joined(separator: ", ")) }
         pendingSave?.cancel()
+        pendingSave = nil
         error = nil
     }
 
@@ -69,21 +76,40 @@ final class DictionaryEditorModel: ObservableObject {
         saveNow()
     }
 
-    func saveNow() {
+    private var rowEntries: [DictionaryEntry] {
+        rows.map { DictionaryEntry($0.term, soundsLike: $0.forms.split(separator: ",").map(String.init)) }
+    }
+
+    @discardableResult
+    func saveNow() -> Bool {
         pendingSave?.cancel()
+        pendingSave = nil
+        saving = true
+        defer { saving = false }
         do {
-            try store.save(rows.map {
-                DictionaryEntry($0.term, soundsLike: $0.forms.split(separator: ",").map(String.init))
-            })
+            try store.save(rowEntries)
             error = nil
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 
+    /// Another window (Fix a word) changed the dictionary: show it, keeping
+    /// edits that have not been saved yet.
+    private func storeChanged(_ entries: [DictionaryEntry]) {
+        guard !saving else { return }
+        guard pendingSave != nil, let merged = try? KoettDictionary.merge(rowEntries, entries) else {
+            reload()
+            return
+        }
+        rows = merged.map { Row(term: $0.term, forms: $0.soundsLike.joined(separator: ", ")) }
+    }
+
     func importText(_ text: String) {
+        guard saveNow() else { return }
         do {
-            saveNow()
             try store.save(KoettDictionary.merge(store.entries, KoettDictionary.parseText(text)))
             reload()
         } catch {

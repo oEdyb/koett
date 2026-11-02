@@ -554,8 +554,7 @@ extension KoettController {
         _ heardText: String,
         model: String
     ) async -> PreparedDictation {
-        let dictionary = dictionaryStore.entries
-        let rawText = DictionarySpelling.apply(heardText, entries: dictionary)
+        let rawText = DictionarySpelling.apply(heardText, entries: dictionaryStore.entries)
         guard s1MiniEnabled,
               let cleaner = s1MiniCleaner else {
             return PreparedDictation(text: rawText, model: model, rawText: nil)
@@ -569,7 +568,7 @@ extension KoettController {
                 context: s1MiniContext
             )
             return PreparedDictation(
-                text: DictionarySpelling.apply(cleaned, entries: dictionary),
+                text: cleaned,
                 model: "\(model) + S1-mini by Superwhisper "
                     + "(\(s1MiniStyle.displayName), "
                     + "\(s1MiniStructure.displayName), "
