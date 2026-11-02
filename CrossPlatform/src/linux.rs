@@ -1497,6 +1497,7 @@ mod queued_capture_tests {
         crate::transcription::Transcript {
             raw: None,
             text: text.into(),
+            words: Vec::new(),
             audio_duration: Duration::from_secs(1),
             transcription: Duration::from_millis(10),
         }
@@ -1534,7 +1535,7 @@ mod queued_capture_tests {
         let mut delivered = Vec::new();
         let mut notices = Vec::new();
         app.poll(
-            |_, text, _, _| {
+            |_, text, _, _, _| {
                 delivered.push(text.to_string());
                 Ok(())
             },
@@ -1555,7 +1556,7 @@ mod queued_capture_tests {
             })
             .unwrap();
         app.poll(
-            |_, text, _, _| {
+            |_, text, _, _, _| {
                 delivered.push(text.to_string());
                 Ok(())
             },
@@ -1564,6 +1565,44 @@ mod queued_capture_tests {
             |_| {},
         );
         assert_eq!(delivered, ["kept words"]);
+    }
+
+    #[test]
+    fn cancelled_session_drops_its_sketches_through_the_session_check() {
+        let _guard = runtime_test_guard();
+        let _frames = sketch::FRAMES_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (engine, _received, updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        let session = app.engine.begin_test_session();
+        let recording = sketch::begin_recording();
+        let frame = sketch::Keyframe {
+            order: 1,
+            start: 0.5,
+            png: vec![1],
+        };
+        assert!(sketch::push_frame(recording, frame));
+        // Cancel lands while decoding; only the session check sees it.
+        app.engine.cancel_dictation();
+        updates
+            .send(EngineUpdate::TranscriptReady {
+                model: "test".into(),
+                transcript: transcript("discarded words"),
+                session,
+            })
+            .unwrap();
+        app.poll(|_, _, _, _, _| Ok(()), |_| {}, |_| {}, |_| {});
+        assert!(sketch::take_keyframes(Duration::ZERO).is_empty());
+        let late = sketch::Keyframe {
+            order: 2,
+            start: 1.0,
+            png: vec![2],
+        };
+        assert!(
+            !sketch::push_frame(recording, late),
+            "late capture after cancel"
+        );
     }
 
     #[test]
@@ -1701,6 +1740,8 @@ impl LinuxEngine {
     fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
         if matches!(command, EngineCommand::Cancel) {
             self.engine.cancel_dictation();
+            // Sketches of a cancelled dictation are never pasted later.
+            sketch::discard_recording();
         }
         if matches!(command, EngineCommand::CancelAsk) {
             self.engine.cancel_ask();
@@ -1829,6 +1870,7 @@ impl LinuxEngine {
                     // save a dictation the user discarded.
                     if self.engine.dictation_cancelled(session) {
                         self.paste_target = None;
+                        sketch::discard_recording();
                         status_changed("@notice:Dictation cancelled");
                         continue;
                     }

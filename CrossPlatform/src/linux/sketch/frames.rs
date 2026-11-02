@@ -83,7 +83,7 @@ pub fn take(timeout: Duration) -> Vec<Keyframe> {
 }
 
 #[cfg(test)]
-pub(super) static TEST_LOCK: Mutex<()> = Mutex::new(());
+pub(crate) static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 #[cfg(test)]
 mod tests {

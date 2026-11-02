@@ -23,10 +23,14 @@ const INK_WIDTH: f64 = 5.0;
 const CAPTURE_AFTER: Duration = Duration::from_millis(700);
 const FADE_AFTER: Duration = Duration::from_millis(1500);
 const FADE_FOR: Duration = Duration::from_millis(400);
+/// Matches the pill timeline's cap (`timeline::MAX_SKETCHES`, 256 per dictation).
+const MAX_SKETCHES: usize = 256;
 const GROUP_STROKES: usize = 12;
 const GROUP_SPAN: Duration = Duration::from_secs(20);
 
 pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
+#[cfg(test)]
+pub(crate) use frames::{TEST_LOCK as FRAMES_TEST_LOCK, push as push_frame};
 
 /// Longest wait for presentation feedback before capturing anyway (for a
 /// compositor without wp_presentation, or a surface it never presents).
@@ -217,6 +221,9 @@ impl Session {
                         && group.strokes.len() < GROUP_STROKES
                         && now.duration_since(group.start) < GROUP_SPAN
                 });
+                if open.is_none() && self.groups.len() >= MAX_SKETCHES {
+                    return;
+                }
                 let index = open.unwrap_or_else(|| {
                     self.next_id += 1;
                     self.groups.push(Group {
