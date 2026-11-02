@@ -340,6 +340,7 @@ mod ask_settings;
 mod ask_view;
 mod browser_media;
 mod control;
+mod dictionary_view;
 mod feedback;
 mod formatting_view;
 mod history_view;

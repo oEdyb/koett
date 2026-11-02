@@ -45,6 +45,7 @@ pub fn show(
         ("audio", "Microphone"),
         ("shortcuts", "Recording & shortcuts"),
         ("text", "Text & replacements"),
+        ("dictionary", "Dictionary"),
         ("general", "Koett"),
         ("ask", "Ask"),
     ] {
@@ -89,6 +90,12 @@ pub fn show(
         }
     });
     let text = section(&stack, "text", "Text");
+    let dictionary_page = section(&stack, "dictionary", "Dictionary");
+    let dictionary = super::dictionary_view::DictionaryEditor::build(
+        &dictionary_page,
+        &window,
+        &settings.dictionary,
+    );
     let general = section(&stack, "general", "General");
     let ask = section(&stack, "ask", "Ask");
     super::ask_settings::build(&ask);
@@ -477,6 +484,14 @@ Media: open Koett → Transcribe media",
                 });
             }
             updated.replacements = rules;
+            updated.dictionary = match dictionary.entries() {
+                Ok(entries) => entries,
+                Err(message) => {
+                    error.set_text(&message);
+                    stack.set_visible_child_name("dictionary");
+                    return;
+                }
+            };
             updated.paste_shortcut = match paste.active_id().as_deref() {
                 Some("ctrl_v") => PasteShortcut::CtrlV,
                 Some("ctrl_shift_v") => PasteShortcut::CtrlShiftV,

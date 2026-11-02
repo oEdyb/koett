@@ -49,6 +49,7 @@ pub struct Settings {
     pub microphone: Option<String>,
     pub recording_mode: RecordingMode,
     pub replacements: Vec<crate::replacements::Replacement>,
+    pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
     pub paste_shortcut: PasteShortcut,
     pub selected_model: crate::model::LocalModel,
@@ -66,6 +67,7 @@ impl Default for Settings {
             microphone: None,
             recording_mode: RecordingMode::Toggle,
             replacements: Vec::new(),
+            dictionary: Vec::new(),
             pause_media: false,
             paste_shortcut: PasteShortcut::default(),
             selected_model: crate::model::LocalModel::default(),
@@ -224,6 +226,9 @@ impl Settings {
         }
         if self.replacements != opened.replacements {
             merged.replacements = self.replacements;
+        }
+        if self.dictionary != opened.dictionary {
+            merged.dictionary = self.dictionary;
         }
         if self.pause_media != opened.pause_media {
             merged.pause_media = self.pause_media;
@@ -507,6 +512,42 @@ mod tests {
             assert_eq!(Settings::load_from(&path).unwrap().shortcut, chord);
         }
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn dictionary_survives_save_and_old_files_load_empty() {
+        use crate::dictionary::DictionaryEntry;
+        let path = temporary_file("dictionary");
+        fs::write(&path, br#"{"shortcut":"Alt+K"}"#).unwrap();
+        assert!(Settings::load_from(&path).unwrap().dictionary.is_empty());
+        let settings = Settings {
+            dictionary: vec![DictionaryEntry::new("Koett", &["cot"])],
+            ..Settings::default()
+        };
+        settings.save_to(&path).unwrap();
+        assert_eq!(
+            Settings::load_from(&path).unwrap().dictionary,
+            settings.dictionary
+        );
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn editor_merge_keeps_dictionary_saved_elsewhere_when_unchanged() {
+        use crate::dictionary::DictionaryEntry;
+        let opened = Settings::default();
+        let current = Settings {
+            dictionary: vec![DictionaryEntry::new("Hogia", &[])],
+            ..Settings::default()
+        };
+        let edited = Settings {
+            recording_mode: super::RecordingMode::Hold,
+            ..opened.clone()
+        };
+        assert_eq!(
+            edited.merge_editor(&opened, current.clone()).dictionary,
+            current.dictionary
+        );
     }
 
     #[test]
