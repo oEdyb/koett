@@ -70,6 +70,7 @@ final class DictationLifecycleTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
         let backup = try makeBackup(url)
         try controller.startNemotronRecording(live: live) { (backup, url) }
+        controller.beginDictationSession()
         controller.state = .recording
         XCTAssertTrue(controller.escapeMonitor.isActive)
         let lastTranscript = controller.lastTranscript
@@ -87,6 +88,82 @@ final class DictationLifecycleTests: XCTestCase {
         XCTAssertFalse(controller.recordingOverlay.isShowingTranscribing)
         controller.cancelDictation()
         XCTAssertEqual(controller.state, .ready)
+    }
+
+    func testCancelAfterStopDiscardsTheTranscriptionAndItsAudio() async throws {
+        let (controller, url, failed) = try startParakeetDictation()
+        defer { try? FileManager.default.removeItem(at: failed) }
+        let lastTranscript = controller.lastTranscript
+        controller.stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime)
+        XCTAssertEqual(controller.state, .transcribing)
+        XCTAssertTrue(controller.escapeMonitor.isActive, "Esc still cancels while transcribing")
+        XCTAssertTrue(controller.recordingOverlay.isShowingTranscribing)
+        controller.cancelDictation()
+        XCTAssertFalse(controller.escapeMonitor.isActive)
+        XCTAssertFalse(controller.recordingOverlay.isShowingTranscribing)
+        for _ in 0..<300 where controller.state != .ready { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(controller.state, .ready)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertFalse(FailedRecordingStore(directoryURL: failed).hasRecordings)
+        XCTAssertNil(controller.recordingOverlay.latestOutcome)
+        XCTAssertEqual(controller.lastTranscript, lastTranscript)
+        controller.recordingOverlay.stop()
+    }
+
+    func testFailedTranscriptionWithoutCancelStillKeepsItsAudio() async throws {
+        let (controller, url, failed) = try startParakeetDictation()
+        defer { try? FileManager.default.removeItem(at: failed) }
+        controller.stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime)
+        for _ in 0..<300 where controller.state != .ready { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(controller.state, .ready)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertTrue(FailedRecordingStore(directoryURL: failed).hasRecordings)
+        XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Dictation failed · Audio saved"))
+        controller.recordingOverlay.stop()
+    }
+
+    func testCancelOnlyAppliesToItsOwnSessionAndEndsAtDelivery() throws {
+        let controller = try makeController()
+        let first = controller.beginDictationSession()
+        controller.state = .transcribing
+        controller.cancelDictation(first)
+        XCTAssertNil(controller.activeDictationID)
+        XCTAssertFalse(controller.claimDelivery(first), "a cancelled session never pastes or saves")
+
+        let second = controller.beginDictationSession()
+        controller.cancelDictation(first)
+        XCTAssertEqual(controller.activeDictationID, second, "a stale Cancel does not touch the next dictation")
+        XCTAssertTrue(controller.escapeMonitor.isActive)
+        XCTAssertTrue(controller.claimDelivery(second))
+        XCTAssertFalse(controller.escapeMonitor.isActive, "Esc stops applying once delivery starts")
+        controller.cancelDictation()
+        XCTAssertFalse(controller.claimDelivery(second))
+        controller.state = .ready
+        XCTAssertNil(controller.activeDictationID)
+    }
+
+    private func startParakeetDictation() throws -> (KoettController, URL, URL) {
+        let name = "koett-lifecycle-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defaults.removePersistentDomain(forName: name)
+        let failed = FileManager.default.temporaryDirectory.appendingPathComponent("koett-failed-\(UUID())")
+        let controller = try KoettController(
+            defaults: defaults,
+            speechEngine: .parakeet,
+            failedRecordingStore: FailedRecordingStore(directoryURL: failed)
+        )
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-parakeet-test-\(UUID()).wav")
+        let input = FakeCapture()
+        let recorder = try MicrophoneRecorder(url: url, device: MicrophoneDevice(id: 1, uid: "fake", name: "Fake"), input: input)
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: input.format, frameCapacity: 16_000))
+        buffer.frameLength = 16_000
+        buffer.floatChannelData![0].initialize(repeating: 0.1, count: 16_000)
+        input.onAudio?(buffer)
+        controller.recorder = recorder
+        controller.recordingURL = url
+        controller.beginDictationSession()
+        controller.state = .recording
+        return (controller, url, failed)
     }
 
     func testDroppingAnActiveLiveCaptureStopsInputAndProcessing() async throws {
@@ -243,9 +320,12 @@ private final class FakeCapture: MicrophoneCapturing {
     var starts = 0
     var stops = 0
 
+    var onAudio: (@Sendable (AVAudioPCMBuffer) -> Void)?
+
     func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
         if let startError { throw startError }
         starts += 1
+        self.onAudio = onAudio
     }
 
     func stop() { stops += 1 }

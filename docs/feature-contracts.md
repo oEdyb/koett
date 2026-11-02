@@ -29,10 +29,13 @@
   and elapsed wall time. It stays above apps without taking keyboard focus and
   follows the system light or dark appearance.
 - Hovering a dictation pill adds a row above it, so the bottom edge stays put:
-  Cancel, Pause/Resume (Parakeet only), the model name and History. Esc also
-  cancels while recording; its monitor exists only during recording and never
-  consumes Esc. Cancel saves, pastes and transcribes nothing and deletes the
-  audio. Pause drops microphone buffers before the file, so paused time is not
+  Cancel, Pause/Resume (Parakeet only), the model name and History. Cancel
+  stays on the transcribing pill. Esc also cancels; its monitor exists only
+  while a dictation records or transcribes and never consumes Esc. Each
+  dictation has its own session ID, so a stale Cancel never touches the next
+  one. Cancel applies until the moment of delivery: the session is checked
+  right before pasting or saving, and a cancelled one pastes, saves and keeps
+  nothing, including its audio. Pause drops microphone buffers before the file, so paused time is not
   transcribed. Ask recordings get no hover row.
 - The Microphone submenu selects a persistent Core Audio device UID for dictation
   and Ask. System Default resolves the current macOS input at recording start.

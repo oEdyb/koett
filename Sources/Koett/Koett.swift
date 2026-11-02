@@ -75,10 +75,18 @@ final class KoettController: NSObject {
             if state != oldValue {
                 rebuildMenu()
                 refreshMicrophoneMonitorTarget()
-                escapeMonitor.isActive = state == .recording
+                if state == .ready { activeDictationID = nil }
+                refreshEscapeMonitor()
             }
         }
     }
+    /// The dictation that Cancel and Esc still apply to. Cleared once its text
+    /// is delivered or saved, when it is cancelled, and when Koett returns to ready.
+    var activeDictationID: UInt64? {
+        didSet { refreshEscapeMonitor() }
+    }
+    var lastDictationID: UInt64 = 0
+    var dictationTask: Task<Void, Never>?
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]

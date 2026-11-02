@@ -104,7 +104,10 @@ final class RecordingOverlayController: NSObject {
         pillView.pauseButton.action = { [weak self] in self?.togglePause() }
         pillView.historyButton.action = { [weak self] in
             guard let self else { return }
-            if !isTrackingRecording { hide() }
+            switch pillView.content {
+            case .done, .notPasted, .media: hide()
+            default: break
+            }
             onOpenHistory?()
         }
         pillView.copyButton.action = { [weak self] in self?.copyResult() }
@@ -223,8 +226,7 @@ final class RecordingOverlayController: NSObject {
     /// or the event is malformed.
     @discardableResult
     func publishSketch(_ event: SketchEvent) -> Bool {
-        guard event.isValid, isTrackingRecording else { return false }
-        pillView.timeline.apply(event)
+        guard event.isValid, isTrackingRecording, pillView.timeline.apply(event) else { return false }
         pillView.needsDisplay = true
         return true
     }

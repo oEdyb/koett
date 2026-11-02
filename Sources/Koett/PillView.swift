@@ -71,17 +71,17 @@ final class PillView: NSView {
 
     var showsActions: Bool {
         switch content {
-        case .recording: hasRecordingControls && hovered
+        case .recording, .transcribing: hasRecordingControls && hovered
         case .done, .notPasted, .media: true
-        case .transcribing, .status, .progress: false
+        case .status, .progress: false
         }
     }
 
     var acceptsMouse: Bool {
         switch content {
-        case .recording: hasRecordingControls
+        case .recording, .transcribing: hasRecordingControls
         case .done, .notPasted, .media: true
-        case .transcribing, .status, .progress: false
+        case .status, .progress: false
         }
     }
 
@@ -148,7 +148,8 @@ final class PillView: NSView {
         case .done, .notPasted, .media: true
         default: false
         }
-        cancelButton.isHidden = !(actions && recording)
+        let transcribing = if case .transcribing = content { true } else { false }
+        cancelButton.isHidden = !(actions && (recording || transcribing))
         pauseButton.isHidden = !(actions && recording && canPause)
         pauseButton.title = paused ? "Resume" : "Pause"
         pasteButton.isHidden = !(actions && notPasted)

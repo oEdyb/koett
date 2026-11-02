@@ -144,6 +144,14 @@ final class RecordingOverlayTests: XCTestCase {
         view.setHovered(false)
         XCTAssertFalse(view.showsActions)
         view.content = .transcribing(fraction: nil)
+        XCTAssertTrue(view.acceptsMouse, "Cancel stays reachable while transcribing")
+        view.setHovered(true)
+        view.frame.size.height = view.preferredHeight
+        XCTAssertFalse(view.cancelButton.isHidden)
+        XCTAssertTrue(view.pauseButton.isHidden)
+        view.hasRecordingControls = false
+        XCTAssertFalse(view.acceptsMouse)
+        view.content = .status("Finding media…")
         XCTAssertFalse(view.acceptsMouse)
     }
 

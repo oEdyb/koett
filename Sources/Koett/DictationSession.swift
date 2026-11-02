@@ -53,10 +53,11 @@ extension KoettController {
 
         state = .recording
         if let recorder {
+            let session = beginDictationSession()
             recordingOverlay.start(recorder: recorder, controls: RecordingControls(
                 modelName: speechEngine.displayName,
                 canPause: nemotronRecorder == nil,
-                cancel: { [weak self] in self?.cancelDictation() }
+                cancel: { [weak self] in self?.cancelDictation(session) }
             ))
         }
         play(startSound)
@@ -121,9 +122,57 @@ extension KoettController {
         return true
     }
 
-    /// Discards the current dictation: nothing is transcribed, pasted or saved.
-    func cancelDictation() {
-        guard state == .recording else { return }
+    @discardableResult
+    func beginDictationSession() -> UInt64 {
+        lastDictationID &+= 1
+        activeDictationID = lastDictationID
+        return lastDictationID
+    }
+
+    func refreshEscapeMonitor() {
+        escapeMonitor.isActive = activeDictationID != nil
+            && (state == .recording || state == .transcribing)
+    }
+
+    /// Discards a dictation while it records or transcribes: nothing is pasted or
+    /// saved and its audio is deleted. `session` nil means the active one.
+    func cancelDictation(_ session: UInt64? = nil) {
+        guard let active = activeDictationID, session == nil || session == active else { return }
+        switch state {
+        case .recording:
+            activeDictationID = nil
+            discardRecording()
+        case .transcribing:
+            activeDictationID = nil
+            recordingOverlay.stop()
+            dictationTask?.cancel()
+            print("CANCELLED")
+        default:
+            return
+        }
+    }
+
+    /// The last point where Cancel applies. Returns false when the session was
+    /// cancelled; otherwise the session can no longer be cancelled.
+    func claimDelivery(_ session: UInt64) -> Bool {
+        guard activeDictationID == session else {
+            print("CANCELLED before delivery. Nothing pasted or saved.")
+            return false
+        }
+        activeDictationID = nil
+        return true
+    }
+
+    /// Keeps failed audio for recovery unless the user cancelled the dictation.
+    private func retainFailedAudio(_ url: URL, session: UInt64) {
+        if activeDictationID == session {
+            preserveFailedRecording(url)
+        } else {
+            cleanup(url)
+        }
+    }
+
+    private func discardRecording() {
         recordingOverlay.stop()
         let live = nemotronRecorder
         nemotronRecorder = nil
@@ -147,15 +196,16 @@ extension KoettController {
 
     func stopRecording(releaseEventTimestamp: TimeInterval) {
         recordingOverlay.stop()
+        let session = activeDictationID ?? beginDictationSession()
         switch speechEngine {
         case .parakeet:
-            stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp)
+            stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp, session: session)
         case .nemotron:
-            stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp)
+            stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp, session: session)
         }
     }
 
-    private func stopParakeetRecording(releaseEventTimestamp: TimeInterval) {
+    private func stopParakeetRecording(releaseEventTimestamp: TimeInterval, session: UInt64) {
         guard let recorder, let url = recordingURL else { return }
         let duration = recorder.currentTime
         recorder.stop()
@@ -174,12 +224,12 @@ extension KoettController {
         }
 
         recordingOverlay.showTranscribing()
-        Task { @MainActor [weak self] in
-            await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp)
+        dictationTask = Task { @MainActor [weak self] in
+            await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp, session: session)
         }
     }
 
-    private func stopNemotronRecording(releaseEventTimestamp: TimeInterval) {
+    private func stopNemotronRecording(releaseEventTimestamp: TimeInterval, session: UInt64) {
         guard let nemotronRecorder,
               let recoveryRecorder = recorder,
               let recoveryURL = recordingURL else { return }
@@ -197,13 +247,14 @@ extension KoettController {
             print("TRANSCRIBING")
             recordingOverlay.showTranscribing()
 
-            Task { @MainActor [weak self] in
+            dictationTask = Task { @MainActor [weak self] in
                 await self?.finishNemotron(
                     pendingCapture,
                     recoveryURL: recoveryURL,
                     duration: max(duration, pendingCapture.store.duration),
                     recoveryError: recoveryRecorder.recordingError,
-                    releaseEventTimestamp: releaseEventTimestamp
+                    releaseEventTimestamp: releaseEventTimestamp,
+                    session: session
                 )
             }
         } catch {
@@ -216,16 +267,17 @@ extension KoettController {
                 "Warning: Nemotron stop failed; using Parakeet recovery: \(error.localizedDescription)\n",
                 stderr
             )
-            Task { @MainActor [weak self] in
+            dictationTask = Task { @MainActor [weak self] in
                 guard let self else { return }
                 let transcriptionCompleted = await self.transcribeRecoveryFile(
                     recoveryURL,
-                    releaseEventTimestamp: releaseEventTimestamp
+                    releaseEventTimestamp: releaseEventTimestamp,
+                    session: session
                 )
                 if transcriptionCompleted {
                     self.cleanup(recoveryURL)
                 } else {
-                    self.preserveFailedRecording(recoveryURL)
+                    self.retainFailedAudio(recoveryURL, session: session)
                 }
                 self.recordingOverlay.endTranscribing()
                 self.state = .ready
@@ -233,7 +285,7 @@ extension KoettController {
         }
     }
 
-    private func transcribe(_ url: URL, releaseEventTimestamp: TimeInterval) async {
+    private func transcribe(_ url: URL, releaseEventTimestamp: TimeInterval, session: UInt64) async {
         var transcriptionCompleted = false
         var deliveredText: String?
         defer {
@@ -267,11 +319,13 @@ extension KoettController {
             )
             let textReadyAt = ProcessInfo.processInfo.systemUptime
             guard !prepared.text.isEmpty else {
+                guard claimDelivery(session) else { return }
                 try saveTranscript(prepared)
                 print("S1-mini removed filler-only text. Clipboard unchanged.")
                 return
             }
 
+            guard claimDelivery(session) else { return }
             deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
             recordingOverlay.showDone(text: prepared.text)
@@ -288,7 +342,7 @@ extension KoettController {
             if transcriptionCompleted {
                 showDeliveryFailure(error, text: deliveredText)
             } else {
-                preserveFailedRecording(url)
+                retainFailedAudio(url, session: session)
             }
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
@@ -299,14 +353,15 @@ extension KoettController {
         recoveryURL: URL,
         duration: TimeInterval,
         recoveryError: Error?,
-        releaseEventTimestamp: TimeInterval
+        releaseEventTimestamp: TimeInterval,
+        session: UInt64
     ) async {
         defer {
             recordingOverlay.endTranscribing()
             state = .ready
         }
         guard let nemotronAdapter else {
-            preserveFailedRecording(recoveryURL)
+            retainFailedAudio(recoveryURL, session: session)
             return
         }
 
@@ -320,7 +375,7 @@ extension KoettController {
             }
             await nemotronAdapter.cancel()
             if captureError != nil || pendingCapture.store.droppedFrames > 0 {
-                preserveFailedRecording(recoveryURL)
+                retainFailedAudio(recoveryURL, session: session)
                 return
             }
             cleanup(recoveryURL)
@@ -349,17 +404,18 @@ extension KoettController {
             await nemotronAdapter.cancel()
             if let recoveryError {
                 fputs("Warning: Backup recording failed: \(recoveryError.localizedDescription)\n", stderr)
-                preserveFailedRecording(recoveryURL)
+                retainFailedAudio(recoveryURL, session: session)
                 return
             }
             let transcriptionCompleted = await transcribeRecoveryFile(
                 recoveryURL,
-                releaseEventTimestamp: releaseEventTimestamp
+                releaseEventTimestamp: releaseEventTimestamp,
+                session: session
             )
             if transcriptionCompleted {
                 cleanup(recoveryURL)
             } else {
-                preserveFailedRecording(recoveryURL)
+                retainFailedAudio(recoveryURL, session: session)
             }
             return
         }
@@ -379,10 +435,12 @@ extension KoettController {
             )
             let textReadyAt = ProcessInfo.processInfo.systemUptime
             guard !prepared.text.isEmpty else {
+                guard claimDelivery(session) else { return }
                 try saveTranscript(prepared)
                 print("S1-mini removed filler-only text. Clipboard unchanged.")
                 return
             }
+            guard claimDelivery(session) else { return }
             deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
             recordingOverlay.showDone(text: prepared.text)
@@ -403,10 +461,12 @@ extension KoettController {
 
     private func transcribeRecoveryFile(
         _ url: URL,
-        releaseEventTimestamp: TimeInterval
+        releaseEventTimestamp: TimeInterval,
+        session: UInt64
     ) async -> Bool {
         var transcriptionCompleted = false
         var deliveredText: String?
+        guard activeDictationID == session else { return false }
         do {
             let fallbackStartedAt = ProcessInfo.processInfo.systemUptime
             let result = try await DictationTranscriber.transcribe(
@@ -429,10 +489,12 @@ extension KoettController {
             )
             let textReadyAt = ProcessInfo.processInfo.systemUptime
             guard !prepared.text.isEmpty else {
+                guard claimDelivery(session) else { return true }
                 try saveTranscript(prepared)
                 print("S1-mini removed filler-only text. Clipboard unchanged.")
                 return true
             }
+            guard claimDelivery(session) else { return true }
             deliveredText = prepared.text
             let pastePostedAt = try deliver(prepared)
             recordingOverlay.showDone(text: prepared.text)
