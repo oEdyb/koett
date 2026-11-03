@@ -67,6 +67,15 @@ struct RecordingControls {
 
 /// A panel that shows above every app but never becomes key or main.
 final class PillPanel: NSPanel {
+    /// Shared by the pill and the ink panels: on every Space and over fullscreen apps.
+    static let overlayBehavior: NSWindow.CollectionBehavior = [
+        .canJoinAllSpaces,
+        .canJoinAllApplications,
+        .fullScreenAuxiliary,
+        .stationary,
+        .ignoresCycle,
+    ]
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }
@@ -232,6 +241,13 @@ final class RecordingOverlayController: NSObject {
         latestOutcome = .result(message)
         onLatestOutcomeChange?()
         dismiss(after: Self.mediaDisplayDuration)
+    }
+
+    /// The text landed but sketches did not. Uses the error row instead of Done,
+    /// only while the pill still shows this dictation.
+    func showSketchWarning(_ text: String) {
+        guard isShowingTranscribing else { return }
+        showError(text)
     }
 
     /// Shows an error in the same 48 px row. One that holds text or audio to
@@ -476,13 +492,7 @@ final class RecordingOverlayController: NSObject {
         panel.ignoresMouseEvents = true
         panel.acceptsMouseMovedEvents = true
         panel.level = .screenSaver
-        panel.collectionBehavior = [
-            .canJoinAllSpaces,
-            .canJoinAllApplications,
-            .fullScreenAuxiliary,
-            .stationary,
-            .ignoresCycle,
-        ]
+        panel.collectionBehavior = PillPanel.overlayBehavior
         panel.animationBehavior = .none
         panel.isReleasedWhenClosed = false
         panel.contentView = pillView

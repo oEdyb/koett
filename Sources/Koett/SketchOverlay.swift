@@ -17,14 +17,54 @@ final class SketchOverlay {
         let onUpdate: (SketchUpdate) -> Void
     }
 
+    struct Display: Equatable {
+        let id: CGDirectDisplayID
+        let frame: CGRect
+        let scale: CGFloat
+    }
+
+    /// The system calls the overlay makes, replaceable so tests run without
+    /// showing windows or asking for Screen Recording.
+    struct Environment {
+        var displays: @MainActor () -> [Display]
+        var capture: @MainActor (CGDirectDisplayID, CGFloat) async throws -> CGImage
+        var modifiers: @MainActor () -> NSEvent.ModifierFlags
+        var pointer: @MainActor () -> CGPoint
+        var showPanel: @MainActor (NSPanel) -> Void
+
+        @MainActor static var live: Environment {
+            Environment(
+                displays: {
+                    NSScreen.screens.compactMap { screen in
+                        SketchCapture.displayID(of: screen).map {
+                            Display(id: $0, frame: screen.frame, scale: screen.backingScaleFactor)
+                        }
+                    }
+                },
+                capture: { try await SketchCapture.still(displayID: $0, scale: $1) },
+                modifiers: { NSEvent.modifierFlags },
+                pointer: { NSEvent.mouseLocation },
+                showPanel: { $0.orderFrontRegardless() }
+            )
+        }
+    }
+
+    /// One display's panel. Sketches refer to surfaces by index, so a display
+    /// change retires surfaces instead of removing them.
     private struct Surface {
         let panel: NSPanel
         let view: SketchInkView
         let frame: CGRect
         let displayID: CGDirectDisplayID
         let scale: CGFloat
+        /// Top of the main display when this surface was made, for global points.
+        let mainTop: CGFloat
+        var active = true
     }
 
+    private let environment: Environment
+    private var layout: [Display] = []
+    private var displayObserver: NSObjectProtocol?
     private var session: Session?
     private var board: SketchBoard?
     private var surfaces: [Surface] = []
@@ -33,6 +73,10 @@ final class SketchOverlay {
     private(set) var failedCaptures = 0
 
     var isActive: Bool { session != nil }
+
+    init(environment: Environment = .live) {
+        self.environment = environment
+    }
 
     /// Failed captures since the last call (read once, after delivery).
     func takeFailedCaptures() -> Int {
@@ -46,9 +90,12 @@ final class SketchOverlay {
         board = SketchBoard(startedAt: startedAt)
         failedCaptures = 0
         session.frames.setOpen(session.id, true)
-        surfaces = NSScreen.screens.enumerated().compactMap { index, screen in
-            guard let displayID = SketchCapture.displayID(of: screen) else { return nil }
-            return makeSurface(screen: screen, index: index, displayID: displayID)
+        layout = environment.displays()
+        addSurfaces(for: layout)
+        displayObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.displaysChanged() }
         }
         let handler: (NSEvent) -> Void = { [weak self] _ in
             MainActor.assumeIsolated { self?.followKey() }
@@ -89,11 +136,33 @@ final class SketchOverlay {
         session = nil
     }
 
+    /// A monitor came or went, or the arrangement or resolution changed. Open
+    /// sketches close and are captured from the panels they were drawn on, then
+    /// every display gets a new panel. An unchanged layout keeps the hold going:
+    /// this notification also fires for changes that move no display.
+    func displaysChanged() {
+        guard var board, !board.finishing else { return }
+        let current = environment.displays()
+        guard current != layout else { return }
+        layout = current
+        publish(board.release(now: Self.now))
+        self.board = board
+        setAcceptsPointer(false)
+        startCaptures()
+        for index in surfaces.indices {
+            surfaces[index].active = false
+            surfaces[index].panel.orderOut(nil)
+        }
+        addSurfaces(for: current)
+        followKey()
+        startTicker()
+    }
+
     // MARK: Input
 
     private func followKey() {
         guard var board, let session, !board.finishing else { return }
-        let draws = session.key.draws(NSEvent.modifierFlags)
+        let draws = session.key.draws(environment.modifiers())
         if draws && !board.held {
             board.press()
             self.board = board
@@ -109,12 +178,12 @@ final class SketchOverlay {
         }
     }
 
-    private func tick() {
+    func tick() {
         followKey()
         guard var board, let session else { return stopTicker() }
         if board.held {
-            let location = NSEvent.mouseLocation
-            if let index = surfaces.firstIndex(where: { NSMouseInRect(location, $0.frame, false) }) {
+            let location = environment.pointer()
+            if let index = surfaces.firstIndex(where: { $0.active && NSMouseInRect(location, $0.frame, false) }) {
                 let frame = surfaces[index].frame
                 let point = CGPoint(x: location.x - frame.minX, y: frame.maxY - location.y)
                 let updates = board.point(
@@ -157,19 +226,19 @@ final class SketchOverlay {
         guard var board, let session else { return }
         let ready = board.takeReadyForCapture()
         self.board = board
-        let mainTop = NSScreen.screens.first?.frame.maxY ?? 0
         for group in ready where group.screen < surfaces.count {
             let surface = surfaces[group.screen]
             let logical = surface.frame.size
             let includeSelection = session.includeSelection
+            let capture = environment.capture
             let global = group.pin.map {
-                CGPoint(x: surface.frame.minX + $0.x, y: mainTop - surface.frame.maxY + $0.y)
+                CGPoint(x: surface.frame.minX + $0.x, y: surface.mainTop - surface.frame.maxY + $0.y)
             }
             Task { @MainActor [weak self] in
                 async let context = global.asyncMap { await PinContextReader.read(at: $0, includeSelection: includeSelection) }
                 let result: Result<(CGImage, PinContext?), Error>
                 do {
-                    let still = try await SketchCapture.still(displayID: surface.displayID, scale: surface.scale)
+                    let still = try await capture(surface.displayID, surface.scale)
                     guard let frame = SketchSheet.keyframe(
                         screen: still, logical: logical, strokes: group.strokes, pin: group.pin
                     ) else {
@@ -211,6 +280,7 @@ final class SketchOverlay {
     /// and their late results are ignored.
     func abandonPendingCaptures(_ sessionID: UInt64) {
         guard var board, let session, session.id == sessionID else { return }
+        failedCaptures += board.groups.count { $0.phase != .captured }
         publish(board.abandonPending())
         self.board = board
         closeIfDone()
@@ -250,11 +320,20 @@ final class SketchOverlay {
     private func removeMonitors() {
         monitors.forEach(NSEvent.removeMonitor)
         monitors = []
+        if let displayObserver { NotificationCenter.default.removeObserver(displayObserver) }
+        displayObserver = nil
     }
 
-    private func makeSurface(screen: NSScreen, index: Int, displayID: CGDirectDisplayID) -> Surface {
+    private func addSurfaces(for displays: [Display]) {
+        let mainTop = displays.first?.frame.maxY ?? 0
+        for display in displays {
+            surfaces.append(makeSurface(display: display, index: surfaces.count, mainTop: mainTop))
+        }
+    }
+
+    private func makeSurface(display: Display, index: Int, mainTop: CGFloat) -> Surface {
         let panel = PillPanel(
-            contentRect: screen.frame,
+            contentRect: display.frame,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -266,9 +345,10 @@ final class SketchOverlay {
         panel.ignoresMouseEvents = true
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        panel.collectionBehavior = PillPanel.overlayBehavior
+        panel.animationBehavior = .none
         panel.setAccessibilityElement(false)
-        let view = SketchInkView(frame: CGRect(origin: .zero, size: screen.frame.size))
+        let view = SketchInkView(frame: CGRect(origin: .zero, size: display.frame.size))
         view.groups = { [weak self] in
             guard let board = self?.board else { return [] }
             return board.groups.filter { $0.screen == index }
@@ -277,9 +357,11 @@ final class SketchOverlay {
             self?.mouse(down: down, screen: index, at: point, clickCount: clickCount)
         }
         panel.contentView = view
-        panel.setFrame(screen.frame, display: false)
-        panel.orderFrontRegardless()
-        return Surface(panel: panel, view: view, frame: screen.frame, displayID: displayID, scale: screen.backingScaleFactor)
+        panel.setFrame(display.frame, display: false)
+        environment.showPanel(panel)
+        return Surface(
+            panel: panel, view: view, frame: display.frame, displayID: display.id, scale: display.scale, mainTop: mainTop
+        )
     }
 
     private static var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
