@@ -1,3 +1,5 @@
 [2026-11-02 16:03] PR #6 is open and linked: https://github.com/oEdyb/koett/pull/6. CI is running and both sub-agents are still working. Once they report, I'll compare their approaches with mine on the same checks, fold
 [2026-11-02 16:06] I've built draw-while-dictating for Linux, verified it end to end in the private lab and pushed it as PR #6. It is **not merged yet**: CI on the final commit is still pending, and as a delegated sub-a
 [2026-11-02 16:08] I fixed the `supply-chain` failure on PR #6 and pushed it as `b9c9db1`, without changing any policy. I haven't merged. - the five supply-chain test scripts - the inventory `--check` 
+[2026-11-03 02:04] CI checks are still running on PR #28. I'll merge and install as soon as they finish. 
+[2026-11-03 02:14] CI is still running the Linux (x86_64, arm64) and Windows builds. Merge and install follow once they're green. 

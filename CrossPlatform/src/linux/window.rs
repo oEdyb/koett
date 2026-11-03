@@ -68,34 +68,17 @@ fn build_window(
     let settings_button = gtk::Button::from_icon_name("preferences-system-symbolic");
     settings_button.set_tooltip_text(Some("Settings"));
     super::menu::set_accessible_label(settings_button.upcast_ref(), "Settings");
-    super::menu_preferences::attach(application, actions.clone());
+    super::menu_preferences::attach(application);
     header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
     window.set_titlebar(Some(&header));
 
     let formatting = Rc::new(super::formatting_view::FormattingView::new(actions.clone()));
-    formatting
-        .button
-        .set_icon_name("format-text-italic-symbolic");
-    formatting.button.set_tooltip_text(Some("Formatting"));
-    super::menu::set_accessible_label(formatting.button.upcast_ref(), "Formatting");
-    header.pack_end(&formatting.button);
-    let formatting_action = gtk::gio::SimpleAction::new("formatting", None);
-    formatting_action.connect_activate({
-        let formatting = formatting.clone();
-        move |_, _| formatting.button.popup()
+    let models = Rc::new(super::models_view::ModelsView::new(actions.clone()));
+    let panels = Rc::new(super::settings_view::Panels {
+        models: models.clone(),
+        formatting: formatting.clone(),
     });
-    application.add_action(&formatting_action);
-    let models = Rc::new(super::models_view::ModelsView::new(
-        &window,
-        actions.clone(),
-    ));
-    let model_action = gtk::gio::SimpleAction::new("models", None);
-    model_action.connect_activate({
-        let models = models.clone();
-        move |_, _| models.show()
-    });
-    application.add_action(&model_action);
     let layout = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let history = Rc::new(HistoryView::new(&window, actions.clone()));
     history.record_button.set_sensitive(false);
@@ -203,9 +186,16 @@ fn build_window(
     settings.connect_activate({
         let window = window.clone();
         let settings_saved = settings_saved.clone();
-        move |_, _| super::settings_view::show(&window, settings_saved.clone(), None)
+        let panels = panels.clone();
+        move |_, _| super::settings_view::show(&window, &panels, settings_saved.clone(), None, None)
     });
     application.add_action(&settings);
+    let about = gtk::gio::SimpleAction::new("about", None);
+    about.connect_activate({
+        let window = window.clone();
+        move |_, _| super::settings_view::about_dialog(window.upcast_ref())
+    });
+    application.add_action(&about);
     application.set_accels_for_action("app.settings", &["<Control>comma"]);
     settings_button.set_action_name(Some("app.settings"));
     let show_history = gtk::gio::SimpleAction::new("history", None);
@@ -419,7 +409,13 @@ fn build_window(
                         // Map the parent without requesting activation. The
                         // one-use token belongs to Settings, not History.
                         window.set_visible(true);
-                        super::settings_view::show(&window, settings_saved.clone(), Some(&token));
+                        super::settings_view::show(
+                            &window,
+                            &panels,
+                            settings_saved.clone(),
+                            Some(&token),
+                            None,
+                        );
                     }
                     Update::MediaCommand(copy, reply) => {
                         let value = match latest_media.borrow().as_ref() {
@@ -526,27 +522,26 @@ fn build_window(
                     Update::Status(message)
                         if matches!(message.as_str(), "@models" | "@formatting" | "@about") =>
                     {
-                        if message == "@models" {
-                            models.show();
-                        } else if message == "@formatting" {
-                            formatting.button.popup();
+                        if message == "@about" {
+                            super::settings_view::about_dialog(window.upcast_ref());
                         } else {
-                            gtk::AboutDialog::builder()
-                                .transient_for(&window)
-                                .modal(true)
-                                .program_name("Koett")
-                                .version(env!("CARGO_PKG_VERSION"))
-                                .license_type(gtk::License::Apache20)
-                                .build()
-                                .present();
+                            window.present();
+                            super::settings_view::show(
+                                &window,
+                                &panels,
+                                settings_saved.clone(),
+                                None,
+                                Some("model"),
+                            );
                         }
                     }
                     Update::Status(message) if message == "@settings" => {
                         window.present();
                         let parent = window.clone();
                         let saved = settings_saved.clone();
+                        let panels = panels.clone();
                         gtk::glib::idle_add_local_once(move || {
-                            super::settings_view::show(&parent, saved, None);
+                            super::settings_view::show(&parent, &panels, saved, None, None);
                         });
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),

@@ -51,6 +51,7 @@ pub fn build(column: &gtk::Box) {
     column.append(&caption);
     column.append(&key);
     let save = gtk::Button::with_label("Save Ask configuration");
+    save.set_halign(gtk::Align::Start);
     column.append(&save);
     let result = gtk::Label::new(None);
     result.set_wrap(true);
@@ -126,6 +127,7 @@ fn speech_controls(column: &gtk::Box) {
     super::menu::set_accessible_label(key.upcast_ref(), "Cartesia key");
     column.append(&key);
     let save = gtk::Button::with_label("Save speech configuration");
+    save.set_halign(gtk::Align::Start);
     column.append(&save);
     let result = gtk::Label::new(None);
     result.set_wrap(true);

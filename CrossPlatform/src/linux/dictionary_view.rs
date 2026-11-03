@@ -18,10 +18,6 @@ pub struct DictionaryEditor {
 
 impl DictionaryEditor {
     pub fn build(page: &gtk::Box, window: &gtk::Window, entries: &[DictionaryEntry]) -> Self {
-        let title = gtk::Label::new(Some("Dictionary"));
-        title.set_xalign(0.0);
-        title.add_css_class("heading");
-        page.append(&title);
         let help = gtk::Label::new(Some(
             "Names, products and jargon Koett should always spell your way. Under \
              Sounds like, add what Koett writes instead, separated by commas.",
