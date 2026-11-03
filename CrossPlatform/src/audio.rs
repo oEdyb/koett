@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, I24, Sample, SampleFormat, SizedSample, U24};
@@ -113,8 +113,6 @@ pub struct MicrophoneRecorder {
     collector: Option<thread::JoinHandle<Vec<f32>>>,
     stop_collector: Arc<AtomicBool>,
     sample_rate: i32,
-    started: Instant,
-    maximum_duration: Duration,
     overflowed: Arc<AtomicBool>,
     stream_error: Arc<Mutex<Option<String>>>,
     levels: AudioLevels,
@@ -319,8 +317,6 @@ impl MicrophoneRecorder {
             collector: Some(collector),
             stop_collector,
             sample_rate: sample_rate as i32,
-            started: Instant::now(),
-            maximum_duration,
             overflowed,
             stream_error,
             levels,
@@ -364,8 +360,6 @@ impl MicrophoneRecorder {
             ))
         } else if self.overflowed.load(Ordering::Relaxed) {
             Some("Audio buffer overflowed; recording may be incomplete".into())
-        } else if self.started.elapsed() > self.maximum_duration + Duration::from_millis(250) {
-            Some("Recording exceeded the ten-minute limit".into())
         } else {
             None
         };

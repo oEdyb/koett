@@ -355,6 +355,8 @@ fn build_window(
     let mut notice = None::<String>;
     let mut recovery_until = None::<Instant>;
     let mut notice_until = None::<Instant>;
+    let mut pill_message = None::<(String, Instant)>;
+    let mut stopped_at_limit = false;
     let mut feedback = super::feedback::CaptureFeedback::default();
     let mut audio_levels = None::<crate::audio::AudioLevels>;
     gtk::glib::timeout_add_local(Duration::from_millis(80), {
@@ -442,7 +444,15 @@ fn build_window(
                     Update::Shortcut(label) => shortcut.set_text(&label),
                     Update::Delivered => {
                         settling_until = None;
-                        done_until = Some(Instant::now() + DONE_DURATION);
+                        if std::mem::take(&mut stopped_at_limit) {
+                            done_until = None;
+                            pill_message = Some((
+                                crate::runtime::LIMIT_NOTICE.to_string(),
+                                Instant::now() + PILL_MESSAGE_DURATION,
+                            ));
+                        } else {
+                            done_until = Some(Instant::now() + DONE_DURATION);
+                        }
                         done_fading = None;
                     }
                     Update::DeliveryFailed => {
@@ -547,6 +557,9 @@ fn build_window(
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
                         let phase = message.trim_start_matches("@notice:");
+                        if phase == crate::runtime::LIMIT_NOTICE {
+                            stopped_at_limit = true;
+                        }
                         if phase == "Dictation cancelled" {
                             settling_until = None;
                         }
@@ -562,6 +575,12 @@ fn build_window(
                         notice_until = Some(Instant::now() + Duration::from_secs(8));
                     }
                     Update::Status(message) => {
+                        if message.starts_with("Error: ") && message != state {
+                            pill_message = Some((
+                                super::recording_overlay::error_row(&message).to_string(),
+                                Instant::now() + PILL_MESSAGE_DURATION,
+                            ));
+                        }
                         if media_result && !message.starts_with("Ready") {
                             media_result = false;
                             recovery_until = None;
@@ -588,6 +607,8 @@ fn build_window(
                             recovery_until = None;
                             notice = None;
                             notice_until = None;
+                            pill_message = None;
+                            stopped_at_limit = false;
                         }
                         if !recording {
                             if recording_started.is_some() {
@@ -613,6 +634,12 @@ fn build_window(
             if notice_until.is_some_and(|until| Instant::now() >= until) {
                 notice = None;
                 notice_until = None;
+            }
+            if pill_message
+                .as_ref()
+                .is_some_and(|(_, until)| Instant::now() >= *until)
+            {
+                pill_message = None;
             }
             let pill_hovered = overlay.as_ref().is_some_and(|overlay| overlay.hovered());
             // Mac: Copy shows "Copied" and closes after 1 s even while hovered;
@@ -729,6 +756,7 @@ fn build_window(
                         None
                     }
                     .as_deref(),
+                    pill_message.as_ref().map(|(text, _)| text.as_str()),
                 );
             }
             status.set_text(
@@ -755,6 +783,7 @@ fn build_window(
 }
 
 /// Done stays this long after a successful paste, unless hovered.
+const PILL_MESSAGE_DURATION: Duration = Duration::from_secs(5);
 const DONE_DURATION: Duration = Duration::from_millis(1_750);
 /// Longest wait for a paste outcome after decoding before the pill hides.
 const SETTLE: Duration = Duration::from_millis(1_000);

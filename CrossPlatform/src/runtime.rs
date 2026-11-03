@@ -448,7 +448,7 @@ fn run(
                 ),
             ) {
                 Ok(command) => command,
-                Err(RecvTimeoutError::Timeout) => EngineCommand::Toggle,
+                Err(RecvTimeoutError::Timeout) => recording_limit_reached(&updates),
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         } else {
@@ -1112,6 +1112,13 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
         .expect("an error can recover");
 }
 
+pub const LIMIT_NOTICE: &str = "Stopped at the 10-minute limit";
+
+fn recording_limit_reached(updates: &Sender<EngineUpdate>) -> EngineCommand {
+    let _ = updates.send(EngineUpdate::Notice(LIMIT_NOTICE.to_string()));
+    EngineCommand::Toggle
+}
+
 fn send_status(updates: &Sender<EngineUpdate>, status: &AppStatus) {
     let _ = updates.send(EngineUpdate::Status(status.clone()));
 }
@@ -1149,6 +1156,19 @@ type MediaOperation = (
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn recording_limit_stops_the_recording_and_says_why() {
+        let (updates, received) = std::sync::mpsc::channel();
+        assert!(matches!(
+            super::recording_limit_reached(&updates),
+            super::EngineCommand::Toggle
+        ));
+        assert!(matches!(
+            received.try_recv(),
+            Ok(super::EngineUpdate::Notice(message)) if message == super::LIMIT_NOTICE
+        ));
+    }
+
     use std::path::Path;
 
     use super::{begin_model_switch, model_name};
