@@ -45,6 +45,7 @@ final class KoettController: NSObject {
     var historyWindow: HistoryWindowController?
     var dictionaryWindow: DictionaryWindowController?
     let dictionaryStore: DictionaryStore
+    let replacementStore: ReplacementStore
     let vocabularyBooster = VocabularyBooster()
     let recordingOverlay = RecordingOverlayController()
     let assistantPanel = AssistantPanelController()
@@ -135,6 +136,7 @@ final class KoettController: NSObject {
         self.speechEngine = speechEngine
         microphoneSelection = MicrophoneSelection(defaults: defaults)
         dictionaryStore = DictionaryStore(defaults: defaults)
+        replacementStore = ReplacementStore(defaults: defaults)
         nemotronAdapter = speechEngine == .nemotron
             ? NemotronStreamingAdapter()
             : nil
@@ -665,7 +667,9 @@ final class KoettController: NSObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if dictionaryWindow == nil {
-                dictionaryWindow = DictionaryWindowController(store: dictionaryStore, booster: vocabularyBooster)
+                dictionaryWindow = DictionaryWindowController(
+                    store: dictionaryStore, replacements: replacementStore, booster: vocabularyBooster
+                )
             }
             dictionaryWindow?.show()
         }

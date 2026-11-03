@@ -32,7 +32,7 @@ final class DictionarySnapshotTests: XCTestCase {
         let record = TranscriptRecord(id: "b", text: "all will review", model: "Parakeet v2")
 
         for (appearanceName, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
-            let controller = DictionaryWindowController(store: store, booster: VocabularyBooster())
+            let controller = DictionaryWindowController(store: store, replacements: ReplacementStore(defaults: defaults), booster: VocabularyBooster())
             controller.show()
             controller.window.appearance = NSAppearance(named: appearance)
             try await Task.sleep(for: .milliseconds(300))

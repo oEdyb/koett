@@ -104,6 +104,29 @@ final class SketchPinTests: XCTestCase {
         XCTAssertEqual(updates.count, 2)
     }
 
+    func testTravelBetweenPinsLeavesNoInk() {
+        var board = held()
+        click(&board, at: p(10), time: 101)
+        _ = board.point(screen: 0, p(100), now: 101.5, audio: 2)
+        _ = board.point(screen: 0, p(300), now: 101.6, audio: 2)
+        click(&board, at: p(400), time: 102)
+        XCTAssertEqual(board.groups.map(\.pin), [p(10), p(400)])
+    }
+
+    func testCurvedDrawingAfterPinSurvivesClick() {
+        var board = held()
+        click(&board, at: p(10), time: 101)
+        _ = board.point(screen: 0, p(100), now: 101.5, audio: 2)
+        _ = board.point(screen: 0, p(200), now: 101.6, audio: 2)
+        _ = board.point(screen: 0, p(200, 110), now: 101.7, audio: 2)
+        _ = board.point(screen: 0, p(100, 110), now: 101.8, audio: 2)
+        _ = board.point(screen: 0, p(100, 20), now: 101.9, audio: 2)
+        _ = board.mouseDown(screen: 0, p(100, 20), now: 102, audio: 2, clickCount: 1)
+        _ = board.mouseUp(now: 102.1)
+        XCTAssertEqual(board.groups.count, 2)
+        XCTAssertNil(board.groups[1].pin)
+    }
+
     func testBareShiftTapDropsNothing() {
         var board = held()
         _ = board.release(now: 101)

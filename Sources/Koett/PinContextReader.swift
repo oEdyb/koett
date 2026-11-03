@@ -10,6 +10,8 @@ enum PinContextReader {
     private static let parentDepth = 40
     private static let searchNodes = 4_000
     private static let searchSeconds: TimeInterval = 0.6
+    private static let treeBuildAttempts = 3
+    private static let treeBuildPause: useconds_t = 100_000
 
     /// `point` is in global top-left coordinates, as Core Graphics and AX use.
     static func read(at point: CGPoint, includeSelection: Bool) async -> PinContext? {
@@ -26,10 +28,13 @@ enum PinContextReader {
         var context = PinContext(app: NSRunningApplication(processIdentifier: pid)?.localizedName)
         var webArea = describe(app: app, at: point, into: &context)
         // Chromium and Electron build their web tree only once an assistive
-        // app asks for it; native apps reject the attribute and are not retried.
+        // app asks for it, and asynchronously; native apps reject the attribute.
         if webArea == nil,
            AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue) == .success {
-            webArea = describe(app: app, at: point, into: &context)
+            for _ in 0..<treeBuildAttempts where webArea == nil {
+                usleep(treeBuildPause)
+                webArea = describe(app: app, at: point, into: &context)
+            }
         }
         if let webArea, context.url.flatMap(PinContext.youTubeVideoID) != nil {
             context.videoSeconds = youTubeSeconds(in: webArea)
@@ -41,7 +46,8 @@ enum PinContextReader {
     }
 
     /// Fills title, page URL, link and image from the element under the point
-    /// and its ancestors. Returns the page's web area, if any.
+    /// and its ancestors. Returns the outermost web area: an iframe under the
+    /// click is also a web area, but the pin should name the page in the tab.
     private static func describe(app: AXUIElement, at point: CGPoint, into context: inout PinContext) -> AXUIElement? {
         var hit: AXUIElement?
         guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &hit) == .success else {
@@ -59,11 +65,9 @@ enum PinContextReader {
                     context.image = url(current) ?? string(current, kAXDescriptionAttribute)
                 }
             case "AXWebArea":
-                if webArea == nil {
-                    webArea = current
-                    context.url = url(current)
-                    context.title = string(current, kAXTitleAttribute) ?? context.title
-                }
+                webArea = current
+                context.url = url(current) ?? context.url
+                context.title = string(current, kAXTitleAttribute) ?? context.title
             case "AXWindow":
                 if context.title == nil { context.title = string(current, kAXTitleAttribute) }
                 return webArea
@@ -88,7 +92,7 @@ enum PinContextReader {
                let classes = attribute(node, "AXDOMClassList") as? [String],
                classes.contains("ytp-progress-bar"),
                let value = attribute(node, kAXValueAttribute) as? NSNumber,
-               value.doubleValue.isFinite, value.doubleValue >= 0 {
+               value.doubleValue.isFinite, value.doubleValue >= 0, value.doubleValue < 1e9 {
                 return Int(value.doubleValue)
             }
             if let children = attribute(node, kAXChildrenAttribute) as? [AXUIElement] {
@@ -123,6 +127,8 @@ enum PinContextReader {
     }
 
     private static func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
+        // The timeout belongs to one element, not to its children or parents.
+        AXUIElementSetMessagingTimeout(element, messagingTimeout)
         var value: AnyObject?
         return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil
     }

@@ -119,8 +119,10 @@ Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
    The rescored text then goes through the same term adoption as Linux.
    Rescorer floor: string similarity 0.70 for Parakeet v2 (the Mac app's model)
    and 0.85 for Parakeet v3; acoustic rescue pass off (`BoostTuning.forModel`).
-3. **Spelling pass** in `DictationSession.prepareDictation`, before and after the
-   optional S1-mini cleanup. Nemotron gets the spelling pass only.
+3. **Spelling pass** in `DictationSession.prepareDictation`, once, before the
+   optional S1-mini cleanup. Nemotron gets the spelling pass only. Literal
+   replacements (`Replacements.swift`, the Replacements tab) run last, on the
+   final text.
 4. **Fix a word**: History → Fix a Word…, `~/Library/Application Support/Koett/Corrections.json`
    (same JSON shape, 0600), explicit Add or Dismiss, everyday-word warning.
 

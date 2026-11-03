@@ -27,6 +27,7 @@ struct SketchBoard {
     /// and is dropped for the pin; longer ink makes the click part of the drawing.
     static let pinJitterInk: CGFloat = 12
     static let pinPulse: TimeInterval = 0.45
+    static let pinAimStraightness: CGFloat = 1.3
 
     enum Phase: Equatable { case drawing, capturing, captured }
 
@@ -63,6 +64,7 @@ struct SketchBoard {
     private var holdOrigin: (screen: Int, point: CGPoint, time: TimeInterval, audio: Float)?
     /// Ink travelled in the current hold.
     private var holdInk: CGFloat = 0
+    private var pinnedInHold = false
     private var pressing: Press?
 
     private struct Press {
@@ -83,6 +85,7 @@ struct SketchBoard {
         held = true
         holdOrigin = nil
         holdInk = 0
+        pinnedInHold = false
         pressing = nil
     }
 
@@ -156,7 +159,7 @@ struct SketchBoard {
         screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float, clickCount: Int
     ) -> [SketchUpdate] {
         guard held, !finishing else { return [] }
-        guard holdInk < Self.pinJitterInk else {
+        guard holdInk < Self.pinJitterInk || (pinnedInHold && isAimingInk) else {
             pressing = nil
             return []
         }
@@ -193,7 +196,17 @@ struct SketchBoard {
         group.closed = true
         group.lifted = now
         groups.append(group)
+        pinnedInHold = true
         return events()
+    }
+
+    /// After a pin in the same hold, a nearly straight line is the pointer
+    /// travelling to the next pin; a curved path is a drawing and stays.
+    private var isAimingInk: Bool {
+        let open = groups.filter { !$0.closed && $0.pin == nil }
+        guard open.count == 1, open[0].strokes.count == 1,
+              let first = open[0].strokes[0].first, let last = open[0].strokes[0].last else { return false }
+        return holdInk <= hypot(last.x - first.x, last.y - first.y) * Self.pinAimStraightness
     }
 
     /// Closed sketches that should be captured now; they move to `.capturing`.
