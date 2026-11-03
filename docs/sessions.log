@@ -3,3 +3,4 @@
 [2026-11-02 16:08] I fixed the `supply-chain` failure on PR #6 and pushed it as `b9c9db1`, without changing any policy. I haven't merged. - the five supply-chain test scripts - the inventory `--check` 
 [2026-11-03 02:04] CI checks are still running on PR #28. I'll merge and install as soon as they finish. 
 [2026-11-03 02:14] CI is still running the Linux (x86_64, arm64) and Windows builds. Merge and install follow once they're green. 
+[2026-11-03 21:40] Noted: it's 21:40 local, 20 minutes before the cutoff. I'm waiting for the three agents already running and won't start new ones, before or after 22:00. 
