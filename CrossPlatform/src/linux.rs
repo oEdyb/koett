@@ -106,6 +106,7 @@ enum TrayAction {
 }
 
 enum TrayUpdate {
+    CopyResult(String),
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
@@ -507,6 +508,9 @@ pub fn run() -> Result<(), String> {
                     Err(_) => break,
                 };
                 match update {
+                    TrayUpdate::CopyResult(text) => {
+                        let _ = worker_ui.send(window::Update::CopyResult(text));
+                    }
                     TrayUpdate::Levels(levels) => {
                         let _ = worker_ui.send(window::Update::Levels(levels));
                     }
@@ -782,7 +786,13 @@ fn run_x11(
                 }
                 cache_completed(tray, &final_text);
                 let delivered = output.deliver(&final_text, target, paste_shortcut);
-                report_delivery(tray, &delivered);
+                if sheet.is_some() {
+                tokio::time::sleep(Duration::from_millis(700)).await;
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::CopyResult(text.clone()));
+                }
+            }
+            report_delivery(tray, &delivered);
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
@@ -1286,17 +1296,36 @@ async fn run_wayland(
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = Some(output::PASTE_NOW);
-                            match &output {
+                            if let Some(png) = feedback::sketch_for(&text) {
+                                match &output {
+                                    Some(output) => { let _ = output.deliver_image(&png, now).await; }
+                                    None => { let _ = output::deliver_image(&png, now); }
+                                }
+                            }
+                            let result = match &output {
                                 Some(output) => {
                                     output.deliver(&text, now, settings.paste_shortcut).await
                                 }
                                 None => output::deliver(&text, now, settings.paste_shortcut),
+                            };
+                            if feedback::sketch_for(&text).is_some() {
+                                tokio::time::sleep(Duration::from_millis(700)).await;
+                                if let Some(tray) = tray {
+                                    let _ = tray.sender.send(TrayUpdate::CopyResult(text));
+                                }
                             }
+                            result
                         }
                         Err(error) => Err(error),
                     };
                     if let Err(error) = pasted {
                         update_tray_status(tray, &format!("@notice:{error}"));
+                    }
+                }
+                TrayAction::Recovery(command) if command == "copy-last"
+                    && recovery::last_text().ok().is_some_and(|text| feedback::sketch_for(&text).is_some()) => {
+                    if let (Some(tray), Ok(text)) = (tray, recovery::last_text()) {
+                        let _ = tray.sender.send(TrayUpdate::CopyResult(text));
                     }
                 }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
@@ -1377,6 +1406,7 @@ async fn run_wayland(
             } else {
                 original.as_deref().unwrap_or(&formatted)
             };
+            feedback::remember_sketch(&text, sheet.as_deref());
             cache_completed(tray, &text);
             if let Some(png) = &sheet {
                 // Scrawl order: the numbered sheet first, then the matching text.
