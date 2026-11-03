@@ -1386,6 +1386,19 @@ async fn run_wayland(
     }
 }
 
+const STILL_PREPARING: &str = "@notice:Koett is still getting ready";
+
+fn capture_unavailable(status: &AppStatus, command: &EngineCommand) -> bool {
+    matches!(status, AppStatus::Starting | AppStatus::Error(_))
+        && matches!(
+            command,
+            EngineCommand::Start
+                | EngineCommand::Toggle
+                | EngineCommand::Ask
+                | EngineCommand::AskStart
+        )
+}
+
 fn capture_requested(status: &AppStatus, command: &EngineCommand) -> bool {
     *status == AppStatus::Ready
         && matches!(
@@ -1423,6 +1436,72 @@ mod queued_capture_tests {
             app.poll(|_, _, _, _, _| Ok(()), |_| {}, |_| {}, |_| {});
             assert!(!app.quit_busy());
         }
+    }
+
+    fn statuses_after(status: AppStatus, command: EngineCommand) -> Vec<String> {
+        let (engine, _received, _updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        app.status = status;
+        app.command(command, || None);
+        let mut seen = Vec::new();
+        for _ in 0..2 {
+            app.poll(
+                |_, _, _, _, _| Ok(()),
+                |status| seen.push(status.to_string()),
+                |_| {},
+                |_| {},
+            );
+        }
+        seen
+    }
+
+    #[test]
+    fn capture_before_ready_opens_the_window_and_says_why() {
+        let _guard = runtime_test_guard();
+        for command in [
+            EngineCommand::Start,
+            EngineCommand::Toggle,
+            EngineCommand::Ask,
+            EngineCommand::AskStart,
+        ] {
+            assert_eq!(
+                statuses_after(AppStatus::Starting, command),
+                ["@show", STILL_PREPARING]
+            );
+        }
+    }
+
+    #[test]
+    fn toggle_before_ready_gives_the_same_feedback() {
+        let _guard = runtime_test_guard();
+        let (engine, _received, _updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        app.toggle(|| None);
+        let mut seen = Vec::new();
+        app.poll(
+            |_, _, _, _, _| Ok(()),
+            |status| seen.push(status.to_string()),
+            |_| {},
+            |_| {},
+        );
+        assert_eq!(seen, ["@show", STILL_PREPARING]);
+    }
+
+    #[test]
+    fn capture_after_a_failed_setup_opens_the_window_with_the_error() {
+        let _guard = runtime_test_guard();
+        assert_eq!(
+            statuses_after(AppStatus::Error("no network".into()), EngineCommand::Toggle),
+            ["@show"]
+        );
+    }
+
+    #[test]
+    fn ready_capture_and_stop_while_preparing_stay_quiet() {
+        let _guard = runtime_test_guard();
+        assert!(statuses_after(AppStatus::Ready, EngineCommand::Start).is_empty());
+        assert!(statuses_after(AppStatus::Starting, EngineCommand::Stop).is_empty());
+        assert!(statuses_after(AppStatus::Transcribing, EngineCommand::Toggle).is_empty());
     }
 
     fn transcript(text: &str) -> crate::transcription::Transcript {
@@ -1559,6 +1638,7 @@ struct LinuxEngine {
     configuration_pending: bool,
     capture_pending: bool,
     capture_is_ask: bool,
+    capture_refused: bool,
 }
 
 impl LinuxEngine {
@@ -1570,6 +1650,7 @@ impl LinuxEngine {
             configuration_pending: false,
             capture_pending: false,
             capture_is_ask: false,
+            capture_refused: false,
         }
     }
 
@@ -1660,12 +1741,6 @@ impl LinuxEngine {
     }
 
     fn toggle(&mut self, focused_window: impl FnOnce() -> Option<u32>) {
-        if self.status != AppStatus::Ready
-            && self.status != AppStatus::Recording
-            && !matches!(self.status, AppStatus::Error(_))
-        {
-            return;
-        }
         self.command(EngineCommand::Toggle, focused_window);
     }
 
@@ -1702,6 +1777,7 @@ impl LinuxEngine {
             return;
         }
 
+        self.capture_refused |= capture_unavailable(&self.status, &command);
         if self.status != AppStatus::Ready
             && self.status != AppStatus::Recording
             && !matches!(self.status, AppStatus::Error(_))
@@ -1754,6 +1830,12 @@ impl LinuxEngine {
         mut recording_started: impl FnMut(crate::audio::AudioLevels),
         mut prepare_ask: impl FnMut(Sender<()>),
     ) {
+        if std::mem::take(&mut self.capture_refused) {
+            status_changed("@show");
+            if self.status == AppStatus::Starting {
+                status_changed(STILL_PREPARING);
+            }
+        }
         let mut interaction_error = None;
         while let Ok(update) = self.engine.updates.try_recv() {
             match update {
