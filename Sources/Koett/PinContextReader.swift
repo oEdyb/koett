@@ -40,7 +40,7 @@ enum PinContextReader {
             }
         }
         if includeSelection, let window = hit.window {
-            context.selection = selectedText(app: app, window: window)
+            context.selection = selectedText(app: app, window: window, deadline: deadline)
         }
         if let webArea = hit.webArea, context.url.flatMap(PinContext.youTubeVideoID) != nil {
             context.videoSeconds = youTubeSeconds(in: webArea, deadline: deadline)
@@ -113,16 +113,17 @@ enum PinContextReader {
 
     /// The selection only when it belongs to the clicked window: another window
     /// of the app may hold a private draft. An unanswered secure check counts as secure.
-    private static func selectedText(app: AXUIElement, window: AXUIElement) -> String? {
-        guard let focused = element(attribute(app, kAXFocusedUIElementAttribute)),
-              let owner = windowContaining(focused), CFEqual(owner, window), !mayBeSecure(focused) else { return nil }
+    private static func selectedText(app: AXUIElement, window: AXUIElement, deadline: TimeInterval) -> String? {
+        guard !expired(deadline), let focused = element(attribute(app, kAXFocusedUIElementAttribute)),
+              let owner = windowContaining(focused, deadline: deadline), CFEqual(owner, window),
+              !expired(deadline), !mayBeSecure(focused) else { return nil }
         return string(focused, kAXSelectedTextAttribute)
     }
 
-    private static func windowContaining(_ start: AXUIElement) -> AXUIElement? {
+    private static func windowContaining(_ start: AXUIElement, deadline: TimeInterval) -> AXUIElement? {
         if let window = element(attribute(start, kAXWindowAttribute)) { return window }
         var current: AXUIElement? = start
-        for _ in 0..<parentDepth {
+        for _ in 0..<parentDepth where !expired(deadline) {
             guard let node = current else { return nil }
             if string(node, kAXRoleAttribute) == kAXWindowRole as String { return node }
             current = element(attribute(node, kAXParentAttribute))

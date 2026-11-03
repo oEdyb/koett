@@ -168,6 +168,8 @@ final class S1MiniCleaner {
     private let tokenizeTimeout: TimeInterval
     private var serverProcess: Process?
     private var restart: Task<Void, Never>?
+    private var restartID = 0
+    private var stopping: Process?
 
     init(port: Int = 18_181, session: URLSession = .shared, tokenizeTimeout: TimeInterval = 5) {
         self.port = port
@@ -191,6 +193,9 @@ final class S1MiniCleaner {
 
         let executable = try Self.serverExecutableURL()
         let model = try await prepareModel(progressHandler: progressHandler)
+        try await waitForStoppedServer()
+        try Task.checkCancellation()
+        if serverProcess?.isRunning == true { return }
         let process = Process()
         process.executableURL = executable
         process.arguments = [
@@ -225,7 +230,7 @@ final class S1MiniCleaner {
         do {
             try await waitUntilReady()
         } catch {
-            stop()
+            if serverProcess === process { stop() }
             throw error
         }
     }
@@ -253,18 +258,34 @@ final class S1MiniCleaner {
     /// A stopped or hung server never holds up a paste; the next dictation finds it ready.
     private func restartInBackground() {
         guard restart == nil else { return }
+        restartID += 1
+        let id = restartID
         restart = Task { [weak self] in
             do {
                 try await self?.prepare()
+            } catch is CancellationError {
             } catch {
                 fputs("Warning: S1-mini could not restart: \(error.localizedDescription)\n", stderr)
             }
-            await self?.finishRestart()
+            self?.finishRestart(id)
         }
     }
 
-    private func finishRestart() {
-        restart = nil
+    private func finishRestart(_ id: Int) {
+        if id == restartID { restart = nil }
+    }
+
+    /// The old server holds the port until it exits; a hung one gets SIGKILL.
+    private func waitForStoppedServer() async throws {
+        guard let old = stopping else { return }
+        for _ in 0..<40 where old.isRunning {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        if old.isRunning {
+            kill(old.processIdentifier, SIGKILL)
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        stopping = nil
     }
 
     private func complete(
@@ -300,9 +321,12 @@ final class S1MiniCleaner {
     }
 
     func stop() {
+        restart?.cancel()
+        restart = nil
         guard let serverProcess else { return }
         if serverProcess.isRunning {
             serverProcess.terminate()
+            stopping = serverProcess
         }
         self.serverProcess = nil
     }

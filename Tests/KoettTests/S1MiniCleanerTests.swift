@@ -65,6 +65,7 @@ final class S1MiniCleanerTests: XCTestCase {
         try hung.run()
         defer { if hung.isRunning { hung.terminate() } }
         cleaner.adoptServerForTesting(hung)
+        defer { cleaner.stop() }
 
         let started = ContinuousClock.now
         do {
