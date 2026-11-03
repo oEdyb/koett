@@ -1459,6 +1459,19 @@ mod queued_capture_tests {
     }
 
     #[test]
+    fn a_double_tap_on_stop_does_not_start_a_new_recording() {
+        let _guard = runtime_test_guard();
+        let (engine, received, _updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        app.status = AppStatus::Recording;
+        app.toggle(|| None);
+        app.toggle(|| None);
+        app.command(EngineCommand::Start, || None);
+        assert!(matches!(received.try_recv(), Ok(EngineCommand::Toggle)));
+        assert!(received.try_recv().is_err());
+    }
+
+    #[test]
     fn capture_before_ready_opens_the_window_and_says_why() {
         let _guard = runtime_test_guard();
         for command in [
@@ -1642,6 +1655,7 @@ struct LinuxEngine {
     capture_pending: bool,
     capture_is_ask: bool,
     capture_refused: bool,
+    stop_sent: bool,
 }
 
 impl LinuxEngine {
@@ -1654,6 +1668,7 @@ impl LinuxEngine {
             capture_pending: false,
             capture_is_ask: false,
             capture_refused: false,
+            stop_sent: false,
         }
     }
 
@@ -1758,6 +1773,14 @@ impl LinuxEngine {
             let _ = self.engine.commands.send(command);
             return;
         }
+        if self.stop_sent
+            && matches!(
+                command,
+                EngineCommand::Toggle | EngineCommand::Start | EngineCommand::Stop
+            )
+        {
+            return;
+        }
         let is_ask = matches!(
             command,
             EngineCommand::Ask | EngineCommand::AskStart | EngineCommand::AskStop
@@ -1805,6 +1828,8 @@ impl LinuxEngine {
             self.capture_pending = true;
             QUIT_BUSY.store(true, std::sync::atomic::Ordering::Release);
         }
+        self.stop_sent |= self.status == AppStatus::Recording
+            && matches!(command, EngineCommand::Toggle | EngineCommand::Stop);
         if self.engine.commands.send(command).is_err() {
             match Settings::load() {
                 Ok(settings) => {
@@ -1867,6 +1892,7 @@ impl LinuxEngine {
                 }
                 EngineUpdate::Status(status) => {
                     self.configuration_pending = false;
+                    self.stop_sent = false;
                     self.status = status;
                     self.capture_pending = false;
                     QUIT_BUSY.store(
