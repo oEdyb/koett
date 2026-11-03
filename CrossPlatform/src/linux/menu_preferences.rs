@@ -55,6 +55,8 @@ pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
                 Some(id.into())
             };
             Settings::update(|settings| settings.microphone = microphone)?;
+        } else if let Some(path) = command.strip_prefix("menu-dictionary-import ") {
+            return import_dictionary(std::path::Path::new(path));
         } else if let Some(value) = command.strip_prefix("menu-login ") {
             let enabled = match value {
                 "on" => true,
@@ -78,6 +80,18 @@ pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
         Ok(serde_json::json!({"ok":true}))
     })();
     result.unwrap_or_else(|message: String| error(&message))
+}
+
+fn import_dictionary(path: &std::path::Path) -> Result<serde_json::Value, String> {
+    if !path.is_absolute() {
+        return Err("Give the dictionary file as an absolute path".into());
+    }
+    let imported = crate::dictionary::read_import(path)?;
+    let mut edit = Settings::edit()?;
+    edit.settings.dictionary = crate::dictionary::merge(&edit.settings.dictionary, imported)?;
+    let entries = edit.settings.dictionary.len();
+    edit.commit()?;
+    Ok(serde_json::json!({"ok":true,"entries":entries}))
 }
 
 pub(super) fn login_registered() -> bool {
@@ -173,6 +187,11 @@ pub(super) fn start_inputs() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn dictionary_import_needs_an_absolute_path() {
+        let error = import_dictionary(std::path::Path::new("seed.txt")).unwrap_err();
+        assert!(error.contains("absolute"));
+    }
     #[test]
     fn pending_capture_rejects_model_and_formatting_changes() {
         let _guard = super::super::runtime_test_guard();

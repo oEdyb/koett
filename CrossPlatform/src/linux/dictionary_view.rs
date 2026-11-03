@@ -5,8 +5,6 @@ use gtk4::{self as gtk, prelude::*};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-const MAX_IMPORT_BYTES: u64 = 1024 * 1024;
-
 type Rows = Rc<RefCell<Vec<(gtk::Entry, gtk::Entry, gtk::Box)>>>;
 
 /// The dictionary editor inside the Settings window; `entries` reads its current rows.
@@ -126,7 +124,7 @@ impl DictionaryEditor {
         let editor = self.clone();
         let notice = notice.clone();
         run(dialog, move |path| {
-            let result = read_import(&path).and_then(|imported| {
+            let result = dictionary::read_import(&path).and_then(|imported| {
                 let count = imported.len();
                 let merged = dictionary::merge(&editor.entries()?, imported)?;
                 editor.replace_all(&merged);
@@ -221,15 +219,4 @@ fn run(dialog: gtk::FileChooserNative, on_path: impl Fn(std::path::PathBuf) + 's
         hold.borrow_mut().take();
     });
     dialog.show();
-}
-
-fn read_import(path: &std::path::Path) -> Result<Vec<DictionaryEntry>, String> {
-    let size = std::fs::metadata(path)
-        .map_err(|error| error.to_string())?
-        .len();
-    if size > MAX_IMPORT_BYTES {
-        return Err("the file is larger than 1 MB".into());
-    }
-    let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
-    dictionary::parse_text(&text)
 }

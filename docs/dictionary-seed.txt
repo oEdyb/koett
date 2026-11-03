@@ -1,0 +1,25 @@
+# Koett starter dictionary, shared by Linux and the Mac.
+# Import it from Settings > Dictionary, or on Linux with:
+#   koett menu-dictionary-import /absolute/path/to/dictionary-seed.txt
+# A form rewrites every match, so forms must be words that never mean anything
+# else in dictation. Never add `Scrawl = scroll`: it was wrong in 8 of 14 real cases.
+Koett = coet, coets
+Claude = clawed
+Opus
+ChatGPT = chat GPT
+Scrawl
+Qwen = Quen, Qen
+GitHub = Gitub
+Kimi = Kimmy
+Codex
+Sonnet
+Anthropic
+OpenAI
+T3 Code
+MCP
+QMD
+Gemma
+Obsidian
+TikTok
+Parakeet
+Klippt

@@ -109,3 +109,66 @@ fn add_form_creates_or_extends_entries_and_covers_reports_them() {
     assert!(covers(&entries, "Koett", "KOETT"));
     assert!(!covers(&entries, "Koett", "coat"));
 }
+
+const SEED: &str = include_str!("../../../docs/dictionary-seed.txt");
+
+#[test]
+fn seed_fixes_the_mined_mishearings() {
+    let seed = parse_text(SEED).unwrap();
+    assert_eq!(
+        apply(
+            "coet and coets on Gitub, clawed, chat GPT, Quen and Kimmy",
+            &seed
+        ),
+        "Koett and Koett on GitHub, Claude, ChatGPT, Qwen and Kimi"
+    );
+}
+
+#[test]
+fn seed_leaves_real_scrolling_alone() {
+    let seed = parse_text(SEED).unwrap();
+    assert_eq!(apply("scroll down the page", &seed), "scroll down the page");
+}
+
+#[test]
+fn seed_keeps_real_word_forms_out() {
+    let seed = parse_text(SEED).unwrap();
+    for form in ["scroll", "poets", "coat", "cloud"] {
+        assert!(
+            !seed
+                .iter()
+                .flat_map(|entry| &entry.sounds_like)
+                .any(|known| known.eq_ignore_ascii_case(form)),
+            "{form}"
+        );
+    }
+}
+
+#[test]
+fn import_merges_with_existing_entries() {
+    let path = std::env::temp_dir().join(format!("koett-import-{}.txt", std::process::id()));
+    std::fs::write(&path, "Koett = coet\nScrawl\n").unwrap();
+    let imported = read_import(&path).unwrap();
+    std::fs::remove_file(&path).unwrap();
+    let existing = vec![
+        DictionaryEntry::new("Hogia", &["hoggia"]),
+        DictionaryEntry::new("Koett", &["coets"]),
+    ];
+    assert_eq!(
+        merge(&existing, imported).unwrap(),
+        vec![
+            DictionaryEntry::new("Hogia", &["hoggia"]),
+            DictionaryEntry::new("Koett", &["coets", "coet"]),
+            DictionaryEntry::new("Scrawl", &[]),
+        ]
+    );
+}
+
+#[test]
+fn import_refuses_files_over_one_megabyte() {
+    let path = std::env::temp_dir().join(format!("koett-large-{}.txt", std::process::id()));
+    std::fs::write(&path, vec![b'a'; 1024 * 1024 + 1]).unwrap();
+    let result = read_import(&path);
+    std::fs::remove_file(&path).unwrap();
+    assert!(result.unwrap_err().contains("larger than 1 MB"));
+}
