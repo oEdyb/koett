@@ -2,6 +2,22 @@ use crate::{history::recovery, paths};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+/// The menu and the pill's Paste send a keystroke; `operation` only copies.
+pub fn presses_paste(command: &str) -> bool {
+    command == "paste-last"
+}
+
+pub fn last_text() -> Result<String, String> {
+    recovery::last().ok_or_else(|| "Last Transcript is unavailable".to_string())
+}
+
+#[cfg(test)]
+#[test]
+fn paste_last_presses_paste_and_copy_last_does_not() {
+    assert!(presses_paste("paste-last"));
+    assert!(!presses_paste("copy-last"));
+}
+
 pub fn operation(command: &str) -> Result<serde_json::Value, String> {
     match command {
         "recovery-status" => {

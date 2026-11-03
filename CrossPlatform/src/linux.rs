@@ -684,6 +684,14 @@ fn run_x11(
                 TrayAction::OpenSettings => {
                     update_tray_status(tray, "@settings");
                 }
+                TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    let target = output.focused_window();
+                    let pasted = recovery::last_text()
+                        .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
+                    if let Err(error) = pasted {
+                        update_tray_status(tray, &format!("@notice:{error}"));
+                    }
+                }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
                     Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
                     Ok(value) if command == "recovery-status" => update_tray_status(
@@ -1274,6 +1282,23 @@ async fn run_wayland(
                 TrayAction::Cancel => app.command(EngineCommand::Cancel, || None),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => update_tray_status(tray, "@settings"),
+                TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    let pasted = match recovery::last_text() {
+                        Ok(text) => {
+                            let now = Some(output::PASTE_NOW);
+                            match &output {
+                                Some(output) => {
+                                    output.deliver(&text, now, settings.paste_shortcut).await
+                                }
+                                None => output::deliver(&text, now, settings.paste_shortcut),
+                            }
+                        }
+                        Err(error) => Err(error),
+                    };
+                    if let Err(error) = pasted {
+                        update_tray_status(tray, &format!("@notice:{error}"));
+                    }
+                }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
                     Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
                     Ok(value) if command == "recovery-status" => update_tray_status(
