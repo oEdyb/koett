@@ -86,6 +86,8 @@ final class KoettController: NSObject {
                 refreshMicrophoneMonitorTarget()
                 if state == .ready { activeDictationID = nil }
                 refreshEscapeMonitor()
+                refreshCaptureWatch()
+                if state == .ready { startQueuedDictation() }
             }
         }
     }
@@ -96,6 +98,11 @@ final class KoettController: NSObject {
     }
     var lastDictationID: UInt64 = 0
     var dictationTask: Task<Void, Never>?
+    var captureWatch: Timer?
+    var queuedDictationStartAt: TimeInterval?
+    var lastDictationStopAt: TimeInterval = 0
+    static let stopBounceWindow: TimeInterval = 0.3
+    static let queuedStartLifetime: TimeInterval = 5
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
@@ -108,6 +115,7 @@ final class KoettController: NSObject {
     private var modifierEventTap: CFMachPort?
     private var modifierEventSource: CFRunLoopSource?
     private var keyMonitor: Any?
+    private var mouseMonitor: Any?
     var statusItem: NSStatusItem?
     var isPreparing = false
     var isRelaunching = false
@@ -457,6 +465,14 @@ final class KoettController: NSObject {
             throw Self.failure("macOS could not install the key shortcut monitor.")
         }
 
+        // A click while the modifier is down is Option-click, not a tap. Unlike key
+        // events, mouse events need no Accessibility trust to monitor.
+        mouseMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in self?.noteModifierInterruption() }
+        }
+
         CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
         modifierEventTap = eventTap
         modifierEventSource = eventSource
@@ -473,11 +489,13 @@ final class KoettController: NSObject {
     private func recoverModifierEventTap() {
         enableModifierEventTap()
 
+        // keyState alone can read false for a held Right Option; flags report the device key.
+        let flags = UInt(CGEventSource.flagsState(.combinedSessionState).rawValue)
         let keyState: (UInt16) -> Bool = { keyCode in
             CGEventSource.keyState(
                 .combinedSessionState,
                 key: CGKeyCode(keyCode)
-            )
+            ) || ModifierShortcutState.flagsReportKeyDown(keyCode: keyCode, modifierFlags: flags)
         }
         let dictationIsHeld = dictationModifierState.resync(
             binding: dictationShortcut,
@@ -505,7 +523,13 @@ final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    private func handleShortcutEvent(
+    func noteModifierInterruption() {
+        dictationModifierState.noteKeyDown()
+        mediaModifierState.noteKeyDown()
+        assistantModifierState.noteKeyDown()
+    }
+
+    func handleShortcutEvent(
         type: NSEvent.EventType,
         keyCode: UInt16,
         modifierFlags: UInt,
@@ -515,10 +539,9 @@ final class KoettController: NSObject {
     ) {
         guard !isCapturingShortcut else { return }
 
-        if type == .keyDown, !isRepeat {
-            dictationModifierState.noteKeyDown()
-            mediaModifierState.noteKeyDown()
-            assistantModifierState.noteKeyDown()
+        // A press or release during a drag is part of that drag, not a tap.
+        if (type == .keyDown && !isRepeat) || (type == .flagsChanged && NSEvent.pressedMouseButtons != 0) {
+            noteModifierInterruption()
         }
 
         let assistantModifierTransition = assistantModifierState.update(

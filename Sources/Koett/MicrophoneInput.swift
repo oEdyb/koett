@@ -8,12 +8,20 @@ import Synchronization
 protocol MicrophoneCapturing: AnyObject {
     var format: AVAudioFormat { get }
     var error: Error? { get }
+    /// False once the device stopped running or changed format under the recording.
+    var isConnected: Bool { get }
     func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws
     func stop()
 }
 
+extension MicrophoneCapturing {
+    var isConnected: Bool { true }
+}
+
 @MainActor
 final class MicrophoneInput: MicrophoneCapturing {
+    nonisolated static let stoppedMessage = "Microphone stopped · Audio saved"
+
     let format: AVAudioFormat
     private let unit: AudioUnit
     private let device: MicrophoneDevice
@@ -23,8 +31,11 @@ final class MicrophoneInput: MicrophoneCapturing {
 
     var error: Error? {
         let status = callbackState?.errorStatus.load(ordering: .acquiring) ?? noErr
-        return status == noErr ? nil : MicrophoneDevices.failure("Microphone capture failed (\(status)).")
+        guard status != noErr else { return nil }
+        return NSError(domain: "Koett.Microphone", code: Int(status), userInfo: [NSLocalizedDescriptionKey: Self.stoppedMessage])
     }
+
+    var isConnected: Bool { !started || connectionIsValid() }
 
     init(device: MicrophoneDevice) throws {
         self.device = device
@@ -52,7 +63,7 @@ final class MicrophoneInput: MicrophoneCapturing {
             var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
             try Self.check(AudioUnitGetProperty(newUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 1, &hardware, &size))
             guard hardware.mSampleRate > 0, hardware.mChannelsPerFrame > 0,
-                  let format = AVAudioFormat(standardFormatWithSampleRate: hardware.mSampleRate, channels: hardware.mChannelsPerFrame) else {
+                  let format = Self.clientFormat(sampleRate: hardware.mSampleRate, channels: hardware.mChannelsPerFrame) else {
                 throw MicrophoneDevices.failure("The microphone has no supported audio format.")
             }
             var client = format.streamDescription.pointee
@@ -62,6 +73,17 @@ final class MicrophoneInput: MicrophoneCapturing {
         } catch {
             AudioComponentInstanceDispose(newUnit)
             throw error
+        }
+    }
+
+    /// The plain channel-count initializer returns nil above two channels, which
+    /// made every larger audio interface unusable.
+    nonisolated static func clientFormat(sampleRate: Double, channels: UInt32) -> AVAudioFormat? {
+        guard channels > 2 else {
+            return AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: channels)
+        }
+        return AVAudioChannelLayout(layoutTag: kAudioChannelLayoutTag_DiscreteInOrder | channels).map {
+            AVAudioFormat(standardFormatWithSampleRate: sampleRate, channelLayout: $0)
         }
     }
 

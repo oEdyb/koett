@@ -13,7 +13,14 @@
   prefix conflict because recording starts on modifier-down.
 - A narrow active Core Graphics event tap receives modifier changes. AppKit
   receives ordinary key-down and key-up events. If macOS disables the event
-  tap, Koett resyncs the physical modifier state before it continues.
+  tap, Koett resyncs the physical modifier state before it continues; that resync
+  counts a key as held if either `keyState` or the session's device flags say so.
+- A mouse press while the modifier is down, or a modifier change during a drag,
+  is Option-click or Option-drag, not a tap. The mouse monitor needs no extra
+  permission.
+- A tap while the previous dictation finishes queues the next start. It is
+  ignored within 0.3 s of Stop (key bounce), cleared by Cancel, and dropped if
+  the previous result takes more than 5 s to finish. Toggle mode only.
 - Modifier-only shortcuts use the event's device-specific left/right flag as
   their primary state. Do not replace this with a second
   `CGEventSource.keyState` check: that check returned `false` during real Right
@@ -53,6 +60,13 @@
   No available input is shown explicitly and recording fails visibly.
   A lost active input stops the current recording and retains its audio; fallback
   applies to the next session and never mixes devices inside one recording.
+  The same stop applies, polled four times a second, to a render or file-write
+  failure at once, to a changed format or stopped device after 2 s, and to no
+  audio for 5 s while not paused. A failed Nemotron backup file alone does not
+  stop a healthy live capture. Stopping with no frames after a second or more
+  shows `No audio from microphone` instead of the silent too-short path.
+  Multichannel inputs are mixed to mono from the channels carrying signal, so a
+  microphone on any interface input is recorded and metered.
   Device choice does not change the macOS default. Both Nemotron capture and its
   recovery WAV use the same resolved device and fresh hardware format.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after
