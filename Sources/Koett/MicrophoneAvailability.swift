@@ -68,8 +68,9 @@ extension KoettController {
             return
         }
         guard captureWatch == nil else { return }
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.checkActiveCapture() }
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            MainActor.assumeIsolated { self.checkActiveCapture() }
         }
         RunLoop.main.add(timer, forMode: .common)
         captureWatch = timer

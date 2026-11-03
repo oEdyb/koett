@@ -1,5 +1,58 @@
 # Video demo checklist
 
+## Mac
+
+### Demo-safe path
+
+1. Use the installed Apple Silicon app with Parakeet v2, Raw formatting and Toggle
+   mode. Wait for Ready before the first take; keep heavy builds stopped.
+2. Try the intended microphone and target app before filming. Tap either Option,
+   speak, tap again, and wait for the result before starting the next dictation.
+   Taps during transcription are ignored; they never queue a late recording.
+3. Keep the cursor in the same target until text appears. Use a plain text editor
+   for the first take. Never demonstrate a command that could run accidentally.
+4. Keep filmed takes short. A lost microphone stops recording and preserves audio
+   in Failed Recordings. Reconnect it, check the menu selection, then start a new
+   recording. No frames after a second shows No audio in the same 48 px pill;
+   silent audio arriving from a working microphone is normal and stays quiet.
+5. If delivery fails, use Copy/Paste Last Transcript or History. Check the text
+   actually arrived; a posted Command-V is not proof the target consumed it.
+6. Import the shared 20-term seed while Koett is quit. Import merges existing
+   terms. Never add `scroll` as a form of Scrawl: ordinary scrolling must survive.
+
+### Rough edges
+
+- **Force quit or crash during recording:** no automatic recording recovery exists
+  on this branch. A temporary WAV may be unfinalized or incomplete. Normal Quit
+  refuses while recording or processing; stop and wait before quitting.
+- **Long dictation:** 10- and 30-minute synthetic WAV probes exercise local ASR,
+  not 40 minutes of live microphone capture. Beyond 15 minutes the URL path
+  currently skips dictionary boosting, silence trimming and progress callbacks.
+  The spinner can look stuck. Avoid that path in a filmed demo.
+- **Focus and paste:** do not switch apps during transcription. Command-V posting
+  cannot establish receipt, and the current Mac delivery has no target receipt.
+  History and the last transcript are the recovery path.
+- **Experimental Nemotron:** channel mixing is covered through the live audio
+  store, but real multichannel hardware and end-to-end streaming recognition
+  remain unverified. Use Parakeet v2 on camera.
+- **Optional features:** S1-mini, Ask, media transcription and multi-monitor drawing
+  need their own preflight if shown. Do not turn them on just before the take.
+- **Permissions:** keep the stable installed signing identity. Do not reset access
+  or launch a differently signed build before filming.
+
+### 2-minute check before recording
+
+1. Open the menu: Ready, Parakeet v2, Raw, Toggle, intended microphone.
+2. In the app being filmed, dictate one sentence including Koett and Claude.
+   Check first/last words, a single paste, and the saved History entry.
+3. Tap Right Option once to start and once to stop a second short sentence.
+   Option-click elsewhere once and confirm it does not start recording.
+4. Copy the last transcript once. If drawing is part of the video, draw one mark
+   on the actual display and check its pasted image in a harmless draft.
+5. Leave the cursor in the destination, close menus, wait for Ready, and film.
+
+Measurements and limits: [Mac microphone hardening evidence](mac-mic-readiness.md).
+
 ## Linux
 
 Written for Olle's desktop: niri, two monitors, Parakeet v2, toggle mode. Other

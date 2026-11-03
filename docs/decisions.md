@@ -190,3 +190,11 @@ the runtime paths. It now uses `$PREFIX/bin/koett`, and launching a fixed versio
 repairs a stale entry. No re-exec guard: a stale entry runs the old binary, so new
 code in it would never run.
 
+
+## 2026-11-04: Mac recording starts only from a fresh ready-state tap
+
+A tap during transcription is ignored. A queued start could turn the microphone
+on several seconds later, after the user had moved on. Removing the queue keeps
+one tap tied to an immediate action. The existing shortcut event tap also observes
+mouse presses, so Option-click and Option-drag do not masquerade as plain taps;
+this uses the app's existing Accessibility grant.

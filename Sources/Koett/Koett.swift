@@ -461,7 +461,6 @@ final class KoettController: NSObject {
             throw Self.failure("macOS could not install the key shortcut monitor.")
         }
 
-
         CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
         modifierEventTap = eventTap
         modifierEventSource = eventSource
@@ -484,7 +483,6 @@ final class KoettController: NSObject {
     }
 
     func resyncModifierState(modifierFlags flags: UInt, isKeyDown: (UInt16) -> Bool) {
-
         // keyState alone can read false for a held Right Option; flags report the device key.
         let keyState: (UInt16) -> Bool = { keyCode in
             isKeyDown(keyCode) || ModifierShortcutState.flagsReportKeyDown(keyCode: keyCode, modifierFlags: flags)
