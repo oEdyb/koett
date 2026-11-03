@@ -88,9 +88,14 @@ available recovery. A missing optional portal/tray cannot make the app unusable.
 Do not steal focus when a background dictation finishes. Opening history/settings
 must not paste into those windows by accident; guard target focus or offer copy.
 
-Settings: Audio (microphone and live meter), Shortcuts (mode and shortcut), Text
-(paste shortcut and replacement pairs), General (launch at login, pause media).
-Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
+Settings is the one place for every Linux preference (2026-11-03, after Olle: "gather
+all the settings to one place"). A sidebar lists pages in the Mac menu's order, most
+used first: Dictation (microphone and live meter, recording mode, paste shortcut,
+pause media), Model & formatting (speech model download/switch, Raw/S1-mini and its
+controls; these apply right away), Draw on screen (the switch, then its draw key and
+Keep typing while recording, then that option's one-time keyboard setup, each nested
+and disabled until its parent is on), Shortcuts, Words (dictionary and replacements),
+Ask About Screen, and General (start at login, About). Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
 workflow. Changes show validation near the control and persist predictably. The microphone
 selection has one labeled live input-level meter for the selected option. Switching
 options clears the old reading and previews the new device; unavailable inputs
@@ -162,16 +167,17 @@ errors. No model picker or automatic personal-replacement learning in this pass.
 Tray activation opens History. Recording is an explicit Record/Stop action;
 Starting and Transcribing disable capture, while actual engine failures show
 Retry. Internal control messages and shortcut notices never replace the phase.
-Keep the tray focused on recording, Settings, History and Quit. Shortcut and
-login preferences remain in Settings.
+The tray and the header Menu carry quick actions only: Record, Ask About Screen,
+Transcribe media, History, Copy/Paste last transcript, Recovery, Settings… and
+Quit. No preference lives in a menu; `koett menu-*` commands remain the agent
+surface for the same values, and `menu-open models|formatting` opens Settings on
+the Model & formatting page.
 
 The visible Settings button remains in the header beside a compact native Menu.
-Group History/Copy last transcript, Settings, and Hide window/Quit. Copy last
-stays disabled until a completed result exists. Reuse the same Settings and Copy
-actions as the visible controls. Ctrl+, opens or reuses Settings, Ctrl+F focuses
-search and Ctrl+Q quits. Hiding the window leaves dictation available through the
-shortcut and tray. Menus use native theme/keyboard behavior and accessible labels
-on GTK4.6 as well as current GTK. No new settings values or model changes.
+Copy last stays disabled until a completed result exists. Ctrl+, opens or reuses
+Settings, Ctrl+F focuses search and Ctrl+Q quits. Hiding the window leaves
+dictation available through the shortcut and tray. Before/after captures:
+`CrossPlatform/evidence/settings-unified-20261103/`.
 
 ## Shared history contract
 

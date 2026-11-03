@@ -1,17 +1,32 @@
 use crate::replacements::Replacement;
 use crate::settings::{DrawKey, PasteShortcut, RecordingMode, Settings};
 use gtk4::{self as gtk, prelude::*};
+use std::rc::Rc;
 
-pub fn show(
+const STACK_NAME: &str = "koett-settings-pages";
+
+pub(super) struct Panels {
+    pub models: Rc<super::models_view::ModelsView>,
+    pub formatting: Rc<super::formatting_view::FormattingView>,
+}
+
+pub(super) fn show(
     parent: &gtk::ApplicationWindow,
-    on_saved: std::rc::Rc<dyn Fn(&Settings)>,
+    panels: &Panels,
+    on_saved: Rc<dyn Fn(&Settings)>,
     token: Option<&str>,
+    page: Option<&str>,
 ) {
     if let Some(window) = parent.application().and_then(|app| {
         app.windows()
             .into_iter()
             .find(|window| window.title().as_deref() == Some("Settings"))
     }) {
+        if let Some(page) = page
+            && let Some(stack) = find_stack(window.upcast_ref())
+        {
+            stack.set_visible_child_name(page);
+        }
         super::window::present(&window, token);
         return;
     }
@@ -26,8 +41,8 @@ pub fn show(
         .title("Settings")
         .transient_for(parent)
         .modal(true)
-        .default_width(420)
-        .default_height(380)
+        .default_width(760)
+        .default_height(600)
         .build();
     window.add_css_class("koett-window");
     window.set_application(parent.application().as_ref());
@@ -38,39 +53,42 @@ pub fn show(
     header.set_title_widget(Some(&title));
     window.set_titlebar(Some(&header));
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let body = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    body.set_vexpand(true);
     let stack = gtk::Stack::new();
-    stack.set_vexpand(true);
-    let navigation = gtk::ComboBoxText::new();
-    for (id, label) in [
-        ("audio", "Microphone"),
-        ("shortcuts", "Recording & shortcuts"),
-        ("text", "Text & replacements"),
-        ("dictionary", "Dictionary"),
-        ("general", "Koett"),
-        ("ask", "Ask"),
-    ] {
-        navigation.append(Some(id), label);
-    }
+    stack.set_widget_name(STACK_NAME);
+    stack.set_hexpand(true);
+    let navigation = gtk::StackSidebar::new();
+    navigation.set_stack(&stack);
+    navigation.add_css_class("koett-settings-sidebar");
+    navigation.set_size_request(184, -1);
     super::menu::set_accessible_label(navigation.upcast_ref(), "Settings section");
-    navigation.set_active_id(Some("audio"));
-    navigation.set_margin_start(16);
-    navigation.set_margin_end(16);
-    navigation.set_margin_top(12);
-    navigation.connect_changed({
-        let stack = stack.clone();
-        move |choice| {
-            if let Some(id) = choice.active_id() {
-                stack.set_visible_child_name(&id);
-            }
-        }
-    });
-    outer.append(&navigation);
-    outer.append(&stack);
-    let audio = section(&stack, "audio", "Audio");
-    let shortcuts = section(&stack, "shortcuts", "Shortcuts");
+    body.append(&navigation);
+    body.append(&gtk::Separator::new(gtk::Orientation::Vertical));
+    body.append(&stack);
+    outer.append(&body);
+    let dictation = section(&stack, "audio", "Dictation");
+    let model = section(&stack, "model", "Model & formatting");
+    let draw_page = section(&stack, "draw", "Draw on screen");
+    let shortcuts_page = section(&stack, "shortcuts", "Shortcuts");
+    let words = section(&stack, "words", "Words");
+    let ask = section(&stack, "ask", "Ask About Screen");
+    let general = section(&stack, "general", "General");
+    let microphone = group(&dictation, "Microphone");
+    let recording = group(&dictation, "Recording");
+    let applies = gtk::Label::new(Some("Changes on this page apply right away."));
+    applies.set_xalign(0.0);
+    applies.set_wrap(true);
+    applies.add_css_class("koett-setting-help");
+    model.append(&applies);
+    adopt(&panels.models.root, &group(&model, "Speech model"));
+    adopt(&panels.formatting.root, &group(&model, "Formatting"));
+    let shortcuts = group(&shortcuts_page, "Recording shortcuts");
     let shortcut_error = gtk::Label::new(None);
     shortcut_error.set_wrap(true);
+    shortcut_error.set_xalign(0.0);
     shortcut_error.set_selectable(true);
+    shortcut_error.add_css_class("error");
     shortcuts.append(&shortcut_error);
     gtk::glib::timeout_add_local(std::time::Duration::from_millis(250), {
         let label = shortcut_error.downgrade();
@@ -89,17 +107,14 @@ pub fn show(
             gtk::glib::ControlFlow::Continue
         }
     });
-    let text = section(&stack, "text", "Text");
-    let dictionary_page = section(&stack, "dictionary", "Dictionary");
     let dictionary = super::dictionary_view::DictionaryEditor::build(
-        &dictionary_page,
+        &group(&words, "Dictionary"),
         &window,
         &settings.dictionary,
     );
-    let general = section(&stack, "general", "General");
-    let ask = section(&stack, "ask", "Ask");
-    super::ask_settings::build(&ask);
-    stack.set_visible_child_name("audio");
+    let replacements = group(&words, "Replacements");
+    super::ask_settings::build(&group(&ask, "Assistant"));
+    stack.set_visible_child_name(page.unwrap_or("audio"));
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     footer.add_css_class("koett-settings-footer");
     outer.append(&footer);
@@ -156,8 +171,8 @@ pub fn show(
             gtk::glib::ControlFlow::Break
         }
     });
-    row(&audio, "Microphone", &input);
-    super::input_preview::attach(&window, &input, &audio, &stack);
+    row(&microphone, "Microphone", &input);
+    super::input_preview::attach(&window, &input, &microphone, &stack);
     let mode = gtk::ComboBoxText::new();
     mode.append(Some("toggle"), "Toggle");
     mode.append(Some("hold"), "Hold to record");
@@ -166,22 +181,22 @@ pub fn show(
     } else {
         "toggle"
     }));
-    row(&shortcuts, "Recording mode", &mode);
+    row(&recording, "Recording mode", &mode);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
     let ask_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.ask_shortcut.clone()));
     let media_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.media_shortcut.clone()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     for (label, shortcut, default) in [
         ("Dictation", shortcut.clone(), "Ctrl+Shift+Space"),
-        ("Ask", ask_shortcut.clone(), "Ctrl+Alt+Space"),
-        ("Media", media_shortcut.clone(), "Ctrl+Shift+T"),
+        ("Ask About Screen", ask_shortcut.clone(), "Ctrl+Alt+Space"),
+        ("Transcribe media", media_shortcut.clone(), "Ctrl+Shift+T"),
     ] {
         if wayland {
             let trigger = gtk::Label::new(None);
             row(&shortcuts, label, &trigger);
             let id = match label {
                 "Dictation" => super::SHORTCUT_ID,
-                "Ask" => "ask",
+                "Ask About Screen" => "ask",
                 _ => "media",
             };
             let enabled = !shortcut.borrow().is_empty();
@@ -205,10 +220,22 @@ pub fn show(
                 }
             });
         } else {
-            let button = gtk::Button::with_label(&shortcut.borrow());
-            row(&shortcuts, label, &button);
+            let current = shortcut.borrow().clone();
+            let button = gtk::Button::with_label(if current.is_empty() {
+                "Disabled"
+            } else {
+                &current
+            });
+            button.set_hexpand(true);
+            let line = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            line.append(&button);
+            row_for(&shortcuts, label, &line, &button);
             let capture_error = gtk::Label::new(None);
             capture_error.set_wrap(true);
+            capture_error.set_xalign(0.0);
+            capture_error.add_css_class("error");
+            capture_error.set_visible(false);
+            capture_error.connect_label_notify(|error| error.set_visible(!error.text().is_empty()));
             shortcuts.append(&capture_error);
             let capturing = std::rc::Rc::new(std::cell::Cell::new(false));
             let capture_generation = std::rc::Rc::new(std::cell::Cell::new(0));
@@ -333,7 +360,6 @@ pub fn show(
             });
             button.add_controller(keys);
             {
-                let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
                 for (title, value) in [("Clear", ""), ("Reset", default)] {
                     let reset = gtk::Button::with_label(title);
                     let shortcut = shortcut.clone();
@@ -345,9 +371,12 @@ pub fn show(
                         *shortcut.borrow_mut() = value.to_string();
                         button.set_label(if value.is_empty() { "Disabled" } else { value });
                     });
-                    actions.append(&reset);
+                    super::menu::set_accessible_label(
+                        reset.upcast_ref(),
+                        &format!("{title} {label} shortcut"),
+                    );
+                    line.append(&reset);
                 }
-                shortcuts.append(&actions);
             }
         }
     }
@@ -367,7 +396,7 @@ pub fn show(
                 }
             });
         });
-        let setup = gtk::Expander::new(Some("Compositor shortcut setup"));
+        let setup = gtk::Expander::new(Some("Set up shortcuts in your desktop instead"));
         let instructions = gtk::Label::new(Some(
             "Bind these commands in your desktop shortcut settings.
 
@@ -396,18 +425,22 @@ Media: open Koett → Transcribe media",
         PasteShortcut::CtrlV => "ctrl_v",
         PasteShortcut::CtrlShiftV => "ctrl_shift_v",
     }));
-    row(&text, "Paste shortcut", &paste);
+    row(&recording, "Paste shortcut", &paste);
+    let pause_media = gtk::CheckButton::with_label("_Pause media while recording");
+    pause_media.set_use_underline(true);
+    pause_media.set_active(settings.pause_media);
+    recording.append(&pause_media);
+    let drawing = group(&draw_page, "Drawing");
     let draw = gtk::CheckButton::with_label("_Draw on screen while dictating");
     draw.set_use_underline(true);
     draw.set_active(settings.draw_while_dictating);
-    text.append(&draw);
-    let draw_help = gtk::Label::new(Some(
-        "Hold the draw key and move the pointer to sketch on any screen. Sketches paste as one numbered image, then the text linked to each number. Needs KDE, niri, Sway or Hyprland; KDE asks once for screenshot permission.",
+    drawing.append(&draw);
+    drawing.append(&help(
+        "Hold the draw key and move the pointer to sketch. Sketches paste as one numbered image, then your text. Works on KDE, niri, Sway and Hyprland; KDE asks once for screenshot permission.",
     ));
-    draw_help.set_wrap(true);
-    draw_help.set_xalign(0.0);
-    draw_help.add_css_class("koett-setting-help");
-    text.append(&draw_help);
+    let draw_options = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    draw_options.add_css_class("koett-setting-nested");
+    drawing.append(&draw_options);
     let draw_key = gtk::ComboBoxText::new();
     draw_key.append(Some("shift"), "Shift");
     draw_key.append(Some("control"), "Ctrl");
@@ -417,86 +450,71 @@ Media: open Koett → Transcribe media",
         DrawKey::Control => "control",
         DrawKey::Alt => "alt",
     }));
-    draw_key.set_sensitive(draw.is_active());
-    draw.connect_toggled({
-        let draw_key = draw_key.clone();
-        move |draw| draw_key.set_sensitive(draw.is_active())
-    });
-    row(&text, "Draw key", &draw_key);
-    let from_keyboard = gtk::CheckButton::with_label(
-        "_Keep typing while recording (read the draw key from the keyboard)",
-    );
+    row(&draw_options, "Draw key", &draw_key);
+    let from_keyboard = gtk::CheckButton::with_label("_Keep typing while recording");
     from_keyboard.set_use_underline(true);
     from_keyboard.set_active(settings.draw_key_from_keyboard);
-    text.append(&from_keyboard);
-    let keyboard_help = gtk::Label::new(Some(
-        "While a dictation with drawing records, Koett samples which keys are held about 60 times a second (Linux reports all keys at once), uses only Shift, Ctrl, Alt and Super, stores nothing and wipes each sample. It never reads typed text or key events. The one-time setup gives your user read-only access to keyboards, which any app you run could then use. Without it, the overlay keeps keyboard focus instead and typing pauses while recording.",
+    draw_options.append(&from_keyboard);
+    let keyboard_options = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    keyboard_options.add_css_class("koett-setting-nested");
+    draw_options.append(&keyboard_options);
+    keyboard_options.append(&help(
+        "Koett reads only which of Shift, Ctrl, Alt and Super are held, and only while a drawing dictation records. It never reads typed text. Without this, typing pauses while you record.",
     ));
-    keyboard_help.set_wrap(true);
-    keyboard_help.set_xalign(0.0);
-    keyboard_help.add_css_class("koett-setting-help");
-    text.append(&keyboard_help);
-    let access = gtk::Label::new(Some(&match super::sketch::keys::Keyboards::open() {
-        Ok(keyboards) if keyboards.unreadable() > 0 => format!(
-            "Keyboard access: partial. {} keyboard(s) can't be read; run the setup command, then log out and back in.",
-            keyboards.unreadable()
+    let (access_text, access_ready) = match super::sketch::keys::Keyboards::open() {
+        Ok(keyboards) if keyboards.unreadable() > 0 => (
+            format!(
+                "Keyboard access: partial. {} keyboard(s) can't be read. Run the setup command, then log out and back in.",
+                keyboards.unreadable()
+            ),
+            false,
         ),
-        Ok(_) => "Keyboard access: ready.".to_string(),
-        Err(super::sketch::keys::Access::Denied) => {
-            "Keyboard access: not set up. Run the setup command once in a terminal, then log out and back in.".to_string()
-        }
+        Ok(_) => ("Keyboard access: ready.".to_string(), true),
+        Err(super::sketch::keys::Access::Denied) => (
+            "Keyboard access: needs a one-time setup. Run the setup command in a terminal, then log out and back in. It gives your user read-only access to keyboards, which other apps you run could also use.".to_string(),
+            false,
+        ),
         Err(super::sketch::keys::Access::NoKeyboards) => {
-            "Keyboard access: no keyboard found.".to_string()
+            ("Keyboard access: no keyboard found.".to_string(), false)
         }
-    }));
+    };
+    let access = gtk::Label::new(Some(&access_text));
     access.set_wrap(true);
     access.set_xalign(0.0);
-    text.append(&access);
+    keyboard_options.append(&access);
     let setup = gtk::Button::with_label("Copy setup command");
     setup.set_halign(gtk::Align::Start);
     setup.set_tooltip_text(Some(super::sketch::keys::SETUP_COMMAND));
+    setup.set_visible(!access_ready);
     setup.connect_clicked(|button| {
         button
             .clipboard()
             .set_text(super::sketch::keys::SETUP_COMMAND);
         button.set_label("Copied · paste into a terminal");
     });
-    text.append(&setup);
-    for widget in [
-        from_keyboard.upcast_ref::<gtk::Widget>(),
-        keyboard_help.upcast_ref(),
-        access.upcast_ref(),
-        setup.upcast_ref(),
-    ] {
-        widget.set_sensitive(draw.is_active());
-    }
-    draw.connect_toggled({
-        let widgets = [
-            from_keyboard.clone().upcast::<gtk::Widget>(),
-            keyboard_help.clone().upcast(),
-            access.clone().upcast(),
-            setup.clone().upcast(),
-        ];
-        move |draw| {
-            for widget in &widgets {
-                widget.set_sensitive(draw.is_active());
-            }
+    keyboard_options.append(&setup);
+    let sync_draw = {
+        let draw = draw.clone();
+        let from_keyboard = from_keyboard.clone();
+        let draw_options = draw_options.clone();
+        let keyboard_options = keyboard_options.clone();
+        move || {
+            draw_options.set_sensitive(draw.is_active());
+            keyboard_options.set_sensitive(draw.is_active() && from_keyboard.is_active());
         }
-    });
-    let replacements_title = gtk::Label::new(Some("Word replacements"));
-    replacements_title.set_xalign(0.0);
-    replacements_title.add_css_class("heading");
-    text.append(&replacements_title);
-    let explanation = gtk::Label::new(Some(
+    };
+    sync_draw();
+    let sync_draw = Rc::new(sync_draw);
+    for check in [&draw, &from_keyboard] {
+        let sync_draw = sync_draw.clone();
+        check.connect_toggled(move |_| sync_draw());
+    }
+    replacements.append(&help(
         "Case-sensitive phrases. Longest match wins; replacements run once.",
     ));
-    explanation.set_wrap(true);
-    explanation.set_xalign(0.0);
-    explanation.add_css_class("koett-setting-help");
-    text.append(&explanation);
     let pairs = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    text.append(&pairs);
-    let entries = std::rc::Rc::new(std::cell::RefCell::new(Vec::<(
+    replacements.append(&pairs);
+    let entries = Rc::new(std::cell::RefCell::new(Vec::<(
         gtk::Entry,
         gtk::Entry,
         gtk::Box,
@@ -506,23 +524,31 @@ Media: open Koett → Transcribe media",
     }
     let add = gtk::Button::with_label("Add replacement");
     add.set_halign(gtk::Align::Start);
-    text.append(&add);
+    replacements.append(&add);
     add.connect_clicked({
         let entries = entries.clone();
         let pairs = pairs.clone();
         move |_| add_pair(&pairs, &entries, "", "")
     });
-    let login = gtk::CheckButton::with_label("_Launch at login");
+    let behavior = group(&general, "Startup");
+    let login = gtk::CheckButton::with_label("_Start at login");
     login.set_use_underline(true);
     login.set_active(settings.start_at_login);
-    let behavior = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    behavior.add_css_class("koett-setting-row");
-    general.append(&behavior);
     behavior.append(&login);
-    let pause_media = gtk::CheckButton::with_label("_Pause media while recording");
-    pause_media.set_use_underline(true);
-    pause_media.set_active(settings.pause_media);
-    behavior.append(&pause_media);
+    let about = group(&general, "About");
+    let version = gtk::Label::new(Some(&format!("Koett {}", env!("CARGO_PKG_VERSION"))));
+    version.set_xalign(0.0);
+    version.set_hexpand(true);
+    let about_button = gtk::Button::with_label("About Koett…");
+    about_button.connect_clicked({
+        let window = window.clone();
+        move |_| about_dialog(window.upcast_ref())
+    });
+    let about_line = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    about_line.add_css_class("koett-setting-row");
+    about_line.append(&version);
+    about_line.append(&about_button);
+    about.append(&about_line);
     let error = gtk::Label::new(None);
     error.set_wrap(true);
     error.set_hexpand(true);
@@ -560,7 +586,7 @@ Media: open Koett → Transcribe media",
                 }
                 if phrase.text().trim().is_empty() {
                     error.set_text("Enter a phrase or remove the empty replacement.");
-                    stack.set_visible_child_name("text");
+                    stack.set_visible_child_name("words");
                     phrase.grab_focus();
                     return;
                 }
@@ -574,7 +600,7 @@ Media: open Koett → Transcribe media",
                 Ok(entries) => entries,
                 Err(message) => {
                     error.set_text(&message);
-                    stack.set_visible_child_name("dictionary");
+                    stack.set_visible_child_name("words");
                     return;
                 }
             };
@@ -583,7 +609,7 @@ Media: open Koett → Transcribe media",
                 Some("ctrl_shift_v") => PasteShortcut::CtrlShiftV,
                 _ => {
                     error.set_text("Choose a paste shortcut.");
-                    stack.set_visible_child_name("text");
+                    stack.set_visible_child_name("audio");
                     paste.grab_focus();
                     return;
                 }
@@ -628,9 +654,13 @@ Media: open Koett → Transcribe media",
     super::window::present(&window, token);
 }
 fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
-    let layout = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    let layout = gtk::Box::new(gtk::Orientation::Vertical, 8);
     layout.add_css_class("koett-settings-page");
     layout.set_valign(gtk::Align::Start);
+    let heading = gtk::Label::new(Some(title));
+    heading.set_xalign(0.0);
+    heading.add_css_class("koett-settings-heading");
+    layout.append(&heading);
     let scroll = gtk::ScrolledWindow::builder()
         .child(&layout)
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -638,14 +668,74 @@ fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
     stack.add_titled(&scroll, Some(name), title);
     layout
 }
-fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
-    let title = gtk::Label::new(Some(label));
-    title.set_xalign(1.0);
-    title.set_width_chars(12);
-    if !widget.as_ref().is::<gtk::Label>() {
-        title.set_mnemonic_widget(Some(widget));
-    }
 
+fn group(page: &gtk::Box, title: &str) -> gtk::Box {
+    let heading = gtk::Label::new(Some(title));
+    heading.set_xalign(0.0);
+    heading.add_css_class("koett-settings-group-title");
+    page.append(&heading);
+    let group = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    group.add_css_class("koett-settings-group");
+    page.append(&group);
+    group
+}
+
+fn help(text: &str) -> gtk::Label {
+    let label = gtk::Label::new(Some(text));
+    label.set_wrap(true);
+    label.set_xalign(0.0);
+    label.add_css_class("koett-setting-help");
+    label
+}
+
+fn adopt(panel: &gtk::Box, into: &gtk::Box) {
+    if let Some(parent) = panel.parent().and_downcast::<gtk::Box>() {
+        parent.remove(panel);
+    }
+    into.append(panel);
+}
+
+fn find_stack(widget: &gtk::Widget) -> Option<gtk::Stack> {
+    if widget.widget_name() == STACK_NAME {
+        return widget.clone().downcast().ok();
+    }
+    let mut child = widget.first_child();
+    while let Some(widget) = child {
+        if let Some(stack) = find_stack(&widget) {
+            return Some(stack);
+        }
+        child = widget.next_sibling();
+    }
+    None
+}
+
+pub(super) fn about_dialog(parent: &gtk::Window) {
+    gtk::AboutDialog::builder()
+        .transient_for(parent)
+        .modal(true)
+        .program_name("Koett")
+        .version(env!("CARGO_PKG_VERSION"))
+        .license_type(gtk::License::Apache20)
+        .build()
+        .present();
+}
+
+fn row(layout: &gtk::Box, label: &str, widget: &impl IsA<gtk::Widget>) {
+    row_for(layout, label, widget, widget);
+}
+
+fn row_for(
+    layout: &gtk::Box,
+    label: &str,
+    widget: &impl IsA<gtk::Widget>,
+    target: &impl IsA<gtk::Widget>,
+) {
+    let title = gtk::Label::new(Some(label));
+    title.set_xalign(0.0);
+    title.set_width_chars(16);
+    if !target.as_ref().is::<gtk::Label>() {
+        title.set_mnemonic_widget(Some(target));
+    }
     let group = gtk::Box::new(gtk::Orientation::Horizontal, 16);
     group.add_css_class("koett-setting-row");
     title.add_css_class("koett-setting-label");

@@ -3,7 +3,7 @@ use gtk4::{self as gtk, prelude::*};
 use std::sync::mpsc::Sender;
 
 pub(super) struct FormattingView {
-    pub button: gtk::MenuButton,
+    pub root: gtk::Box,
     controls: gtk::Grid,
     output: gtk::ToggleButton,
     raw: gtk::ToggleButton,
@@ -18,26 +18,10 @@ pub(super) struct FormattingView {
 }
 impl FormattingView {
     pub fn new(actions: Sender<super::TrayAction>) -> Self {
-        let button = gtk::MenuButton::builder().label("Formatting").build();
-        let popover = gtk::Popover::new();
-        popover.add_css_class("koett-formatting");
-        let body = gtk::Box::new(gtk::Orientation::Vertical, 10);
-        for set in [
-            gtk::Widget::set_margin_start,
-            gtk::Widget::set_margin_end,
-            gtk::Widget::set_margin_top,
-            gtk::Widget::set_margin_bottom,
-        ] {
-            set(body.upcast_ref(), 16);
-        }
-        body.set_size_request(268, 158);
-        let title = gtk::Label::new(Some("Formatting"));
-        title.set_xalign(0.0);
-        title.add_css_class("heading");
-        body.append(&title);
+        let body = gtk::Box::new(gtk::Orientation::Vertical, 8);
         let grid = gtk::Grid::builder()
             .row_spacing(8)
-            .column_spacing(12)
+            .column_spacing(16)
             .build();
         let output = gtk::ToggleButton::with_label("S1-mini");
         let raw = gtk::ToggleButton::with_label("Raw");
@@ -49,7 +33,8 @@ impl FormattingView {
         segments.append(&raw);
         segments.append(&output);
         let label = gtk::Label::new(Some("Output"));
-        label.set_halign(gtk::Align::End);
+        label.set_halign(gtk::Align::Start);
+        label.set_hexpand(true);
         grid.attach(&label, 0, 0, 1, 1);
         grid.attach(&segments, 1, 0, 1, 1);
         let mut controls = Vec::new();
@@ -65,7 +50,8 @@ impl FormattingView {
         .enumerate()
         {
             let label = gtk::Label::new(Some(name));
-            label.set_halign(gtk::Align::End);
+            label.set_halign(gtk::Align::Start);
+            label.set_hexpand(true);
             let control = gtk::ComboBoxText::new();
             control.set_size_request(160, -1);
             for choice in *choices {
@@ -89,10 +75,8 @@ impl FormattingView {
             crate::formatting::CANCELLED.store(true, std::sync::atomic::Ordering::Release)
         });
         body.append(&cancel);
-        popover.set_child(Some(&body));
-        button.set_popover(Some(&popover));
         let view = Self {
-            button,
+            root: body,
             controls: grid,
             output: output.clone(),
             raw,

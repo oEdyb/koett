@@ -44,11 +44,7 @@ pub(super) fn button() -> gtk::MenuButton {
     for (title, items) in [
         (
             "Ask",
-            &[
-                ("Ask", "app.ask"),
-                ("Cancel Ask", "app.cancel-ask"),
-                ("Settings…", "app.settings"),
-            ][..],
+            &[("Ask", "app.ask"), ("Cancel Ask", "app.cancel-ask")][..],
         ),
         (
             "Transcripts",
@@ -91,88 +87,9 @@ pub(super) fn button() -> gtk::MenuButton {
         model.append_submenu(Some(title), &submenu);
     }
     let preferences = gtk::gio::Menu::new();
-    let models = gtk::gio::Menu::new();
-    for model in crate::model::LocalModel::ALL {
-        models.append(
-            Some(model.label()),
-            Some(&format!("app.menu-model::{}", model.id())),
-        );
-    }
-    preferences.append_submenu(Some("Model…"), &models);
-    gtk::glib::timeout_add_local(std::time::Duration::from_millis(500), {
-        let preferences = preferences.clone();
-        let mut previous = String::new();
-        move || {
-            let label = super::menu_preferences::active_label();
-            if previous == label {
-                return gtk::glib::ControlFlow::Continue;
-            }
-            previous = label;
-            preferences.remove(0);
-            preferences.insert_submenu(
-                0,
-                Some(&format!(
-                    "Model: {}…",
-                    super::menu_preferences::active_label()
-                )),
-                &models,
-            );
-            gtk::glib::ControlFlow::Continue
-        }
-    });
-    let format = gtk::gio::Menu::new();
-    format.append(Some("Raw"), Some("app.menu-format::raw"));
-    format.append(Some("S1-mini"), Some("app.menu-format::s1-mini"));
-    format.append(Some("Formatting controls…"), Some("app.formatting"));
-    preferences.append_submenu(Some("Formatting…"), &format);
-
-    let microphones = gtk::gio::Menu::new();
-    preferences.append_submenu(Some("Microphone"), &microphones);
-    let mut previous = String::new();
-    gtk::glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
-        let inputs = super::menu_preferences::INPUTS.read().ok();
-        let selected = crate::settings::Settings::load()
-            .ok()
-            .and_then(|s| s.microphone);
-        let signature = format!("{inputs:?}{selected:?}");
-        if signature != previous {
-            previous = signature;
-            microphones.remove_all();
-            let append = |label: &str, id: &str| {
-                let item = gtk::gio::MenuItem::new(Some(label), None);
-                item.set_action_and_target_value(
-                    Some("app.menu-microphone"),
-                    Some(&id.to_variant()),
-                );
-                microphones.append_item(&item);
-            };
-            append("System default", "default");
-            if let Some(inputs) = inputs.as_deref() {
-                match inputs {
-                    Ok(inputs) => {
-                        for input in inputs {
-                            append(&input.label, &input.id);
-                        }
-                        if let Some(selected) = &selected
-                            && !inputs.iter().any(|d| &d.id == selected)
-                        {
-                            append("Saved microphone unavailable", selected);
-                        }
-                    }
-                    Err(message) => microphones.append(Some(message), None),
-                }
-            }
-        }
-        gtk::glib::ControlFlow::Continue
-    });
-    let mode = gtk::gio::Menu::new();
-    mode.append(Some("Toggle"), Some("app.menu-mode::toggle"));
-    mode.append(Some("Hold"), Some("app.menu-mode::hold"));
-    preferences.append_submenu(Some("Recording mode"), &mode);
-    preferences.append(Some("Start at login"), Some("app.menu-login"));
-    preferences.append(Some("Settings / Shortcuts…"), Some("app.settings"));
-    model.append_submenu(Some("Preferences"), &preferences);
-    model.append(Some("About Koett…"), Some("app.menu-about"));
+    preferences.append(Some("Settings…"), Some("app.settings"));
+    preferences.append(Some("About Koett…"), Some("app.about"));
+    model.append_section(None, &preferences);
     let section = gtk::gio::Menu::new();
     section.append(Some("Hide window"), Some("app.hide"));
     section.append(Some("Quit Koett"), Some("app.quit"));

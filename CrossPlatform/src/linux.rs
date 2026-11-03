@@ -176,10 +176,22 @@ impl ksni::Tray for LinuxTray {
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
-        use ksni::menu::{MenuItem, StandardItem};
+        use ksni::menu::{MenuItem, StandardItem, SubMenu};
 
+        fn send(label: &str, enabled: bool, action: TrayAction) -> MenuItem<LinuxTray> {
+            StandardItem {
+                label: label.into(),
+                enabled,
+                activate: Box::new(move |tray: &mut LinuxTray| {
+                    let _ = tray.action_sender.send(action.clone());
+                }),
+                ..Default::default()
+            }
+            .into()
+        }
         let recording = menu::recording_action(&self.status);
-
+        let (ask_label, asking) = menu_preferences::ask_state();
+        let last = history::recovery::last_available();
         let mut items = vec![
             StandardItem {
                 label: self.status.clone(),
@@ -188,128 +200,58 @@ impl ksni::Tray for LinuxTray {
             }
             .into(),
             MenuItem::Separator,
-            StandardItem {
-                label: recording.label.to_string(),
-                enabled: recording.enabled
+            send(
+                recording.label,
+                recording.enabled
                     && !(self.status == "Ready"
                         && QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::Toggle);
-                }),
+                TrayAction::Toggle,
+            ),
+            send(
+                if asking {
+                    ask_label
+                } else {
+                    "Ask About Screen"
+                },
+                true,
+                TrayAction::Ask,
+            ),
+        ];
+        if asking {
+            items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
+        }
+        items.extend([
+            send("Transcribe media…", true, TrayAction::OpenMedia),
+            MenuItem::Separator,
+            send("History", true, TrayAction::OpenTranscripts),
+            send(
+                "Copy last transcript",
+                last,
+                TrayAction::Recovery("copy-last".into()),
+            ),
+            send(
+                "Paste last transcript",
+                last,
+                TrayAction::Recovery("paste-last".into()),
+            ),
+            SubMenu {
+                label: "Recovery".into(),
+                submenu: [
+                    ("Copy unsaved transcripts", "copy-unsaved"),
+                    ("Retry Save", "retry-unsaved"),
+                    ("Media transcripts…", "media-transcripts"),
+                    ("Failed transcripts…", "failed-transcripts"),
+                    ("Failed recordings…", "failed-recordings"),
+                    ("Recovery status", "recovery-status"),
+                ]
+                .into_iter()
+                .map(|(label, command)| send(label, true, TrayAction::Recovery(command.into())))
+                .collect(),
                 ..Default::default()
             }
             .into(),
-            StandardItem {
-                label: "Transcribe media…".into(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::OpenMedia);
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Settings".to_string(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::OpenSettings);
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "History".to_string(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray.action_sender.send(TrayAction::OpenTranscripts);
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Copy last transcript".into(),
-                enabled: history::recovery::last_available(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("copy-last".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Paste last transcript".into(),
-                enabled: history::recovery::last_available(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("paste-last".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Copy unsaved transcripts".into(),
-                enabled: true,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("copy-unsaved".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Retry Save".into(),
-                enabled: true,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("retry-unsaved".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Media transcripts…".into(),
-                enabled: true,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("media-transcripts".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Failed transcripts…".into(),
-                enabled: true,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("failed-transcripts".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Failed recordings…".into(),
-                enabled: true,
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("failed-recordings".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
-            StandardItem {
-                label: "Recovery status".into(),
-                activate: Box::new(|tray: &mut Self| {
-                    let _ = tray
-                        .action_sender
-                        .send(TrayAction::Recovery("recovery-status".into()));
-                }),
-                ..Default::default()
-            }
-            .into(),
+            MenuItem::Separator,
+            send("Settings…", true, TrayAction::OpenSettings),
             MenuItem::Separator,
             StandardItem {
                 label: "Quit Koett".to_string(),
@@ -320,18 +262,7 @@ impl ksni::Tray for LinuxTray {
                 ..Default::default()
             }
             .into(),
-        ];
-        let recovery = items.drain(8..14).collect();
-        items.insert(
-            7,
-            ksni::menu::SubMenu {
-                label: "Recovery".into(),
-                submenu: recovery,
-                ..Default::default()
-            }
-            .into(),
-        );
-        items.splice(3..3, menu_preferences::tray(&self.action_sender));
+        ]);
         items
     }
 }
@@ -2537,7 +2468,8 @@ mod menu_tests {
         for (label, expected) in [
             ("Record", TrayAction::Toggle),
             ("History", TrayAction::OpenTranscripts),
-            ("Settings", TrayAction::OpenSettings),
+            ("Ask About Screen", TrayAction::Ask),
+            ("Settings…", TrayAction::OpenSettings),
             ("Quit Koett", TrayAction::Quit),
         ] {
             let item = tray
@@ -2559,6 +2491,55 @@ mod menu_tests {
             (item.activate)(&mut tray);
             assert_eq!(receiver.recv().unwrap(), expected);
         }
+    }
+
+    #[test]
+    fn tray_keeps_quick_actions_and_links_preferences_to_settings() {
+        let _guard = runtime_test_guard();
+        let (action_sender, _) = mpsc::channel();
+        let tray = LinuxTray {
+            action_sender,
+            status: "Ready".into(),
+        };
+        fn labels(items: Vec<ksni::MenuItem<LinuxTray>>, into: &mut Vec<String>) {
+            for item in items {
+                match item {
+                    ksni::MenuItem::Standard(item) => into.push(item.label),
+                    ksni::MenuItem::Checkmark(item) => into.push(item.label),
+                    ksni::MenuItem::RadioGroup(group) => {
+                        into.extend(group.options.into_iter().map(|option| option.label))
+                    }
+                    ksni::MenuItem::SubMenu(menu) => {
+                        into.push(menu.label);
+                        labels(menu.submenu, into);
+                    }
+                    ksni::MenuItem::Separator => {}
+                }
+            }
+        }
+        let mut found = Vec::new();
+        labels(tray.menu(), &mut found);
+        assert_eq!(
+            found.iter().filter(|label| *label == "Settings…").count(),
+            1
+        );
+        for preference in [
+            "Toggle",
+            "Hold",
+            "System default",
+            "Start at login",
+            "Raw",
+            "S1-mini",
+            "Formatting…",
+            "Recording mode",
+            "Microphone",
+        ] {
+            assert!(
+                !found.iter().any(|label| label == preference),
+                "{preference}"
+            );
+        }
+        assert!(!found.iter().any(|label| label.starts_with("Model")));
     }
 
     fn find_menu_action(

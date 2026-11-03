@@ -2,7 +2,7 @@ use gtk4::{self as gtk, prelude::*};
 use std::sync::mpsc::Sender;
 
 pub(super) struct ModelsView {
-    window: gtk::Window,
+    pub root: gtk::Box,
     active: gtk::Label,
     status: gtk::Label,
     progress: gtk::ProgressBar,
@@ -14,31 +14,12 @@ pub(super) struct ModelsView {
 }
 
 impl ModelsView {
-    pub fn new(parent: &gtk::ApplicationWindow, actions: Sender<super::TrayAction>) -> Self {
-        let window = gtk::Window::builder()
-            .title("Local models")
-            .transient_for(parent)
-            .application(&parent.application().expect("application"))
-            .default_width(380)
-            .default_height(400)
-            .hide_on_close(true)
-            .build();
-        window.add_css_class("koett-window");
-        let header = gtk::HeaderBar::new();
-        header.set_title_widget(Some(&gtk::Label::new(Some("Koett · Local models"))));
-        window.set_titlebar(Some(&header));
-        let content = gtk::Box::new(gtk::Orientation::Vertical, 10);
-        {
-            let margin = &content;
-            margin.set_margin_start(16);
-            margin.set_margin_end(16);
-            margin.set_margin_top(16);
-            margin.set_margin_bottom(16);
-        }
+    pub fn new(actions: Sender<super::TrayAction>) -> Self {
+        let root = gtk::Box::new(gtk::Orientation::Vertical, 8);
         let active = gtk::Label::new(Some("Loading active model…"));
         active.set_wrap(true);
         active.set_xalign(0.0);
-        content.append(&active);
+        active.add_css_class("koett-setting-help");
         let mut choices = Vec::new();
         for model in crate::model::LocalModel::ALL {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
@@ -59,36 +40,15 @@ impl ModelsView {
             button.connect_clicked(move |_| {
                 let _ = sender.send(super::TrayAction::SwitchModel(model));
             });
-            content.append(&row);
+            root.append(&row);
             choices.push(button);
         }
-        let provenance = gtk::LinkButton::with_label(
-            "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-transducer/nemo-transducer-models.html",
-            "NVIDIA · sherpa-onnx · CC BY 4.0",
-        );
-        if let Some(label) = provenance.child().and_downcast::<gtk::Label>() {
-            label.set_wrap(true);
-            label.set_max_width_chars(32);
-        }
-        content.append(&provenance);
-        let nemotron_license = gtk::LinkButton::with_label(
-            "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b",
-            "Nemotron · NVIDIA Open Model License",
-        );
-        if let Some(label) = nemotron_license.child().and_downcast::<gtk::Label>() {
-            label.set_wrap(true);
-            label.set_max_width_chars(32);
-        }
-        content.append(&nemotron_license);
-        let sizes = gtk::Label::new(Some(
-            "Downloads: 110M 105 MB · v2 483 MB · v3 488 MB · Nemotron 464 MB + v2 backup",
-        ));
-        sizes.set_wrap(true);
-        sizes.set_xalign(0.0);
-        content.append(&sizes);
+        root.append(&active);
         let status = gtk::Label::new(None);
         status.set_wrap(true);
         status.set_xalign(0.0);
+        status.set_visible(false);
+        status.connect_label_notify(|status| status.set_visible(!status.text().is_empty()));
         let progress = gtk::ProgressBar::new();
         progress.set_show_text(true);
         progress.set_visible(false);
@@ -97,50 +57,52 @@ impl ModelsView {
         notice.set_wrap(true);
         notice.set_xalign(0.0);
         notice.add_css_class("error");
+        notice.set_visible(false);
+        notice.connect_label_notify(|notice| notice.set_visible(!notice.text().is_empty()));
         let cancel = gtk::Button::with_label("Cancel model setup");
-        cancel.set_sensitive(false);
+        cancel.set_halign(gtk::Align::Start);
+        cancel.set_visible(false);
         cancel.connect_clicked(|_| {
             crate::model::SWITCH_CANCELLED.store(true, std::sync::atomic::Ordering::Release)
         });
-
-        let scroll = gtk::ScrolledWindow::builder()
-            .child(&content)
-            .hscrollbar_policy(gtk::PolicyType::Never)
-            .build();
-        scroll.set_vexpand(true);
-        let outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        outer.append(&scroll);
         for widget in [
             status.upcast_ref::<gtk::Widget>(),
             progress.upcast_ref(),
             notice.upcast_ref(),
+            cancel.upcast_ref(),
         ] {
-            widget.set_margin_start(16);
-            widget.set_margin_end(16);
-            widget.set_margin_top(8);
-            outer.append(widget);
+            root.append(widget);
         }
-        cancel.set_margin_start(16);
-        cancel.set_margin_end(16);
-        cancel.set_margin_top(8);
-        cancel.set_margin_bottom(16);
-        outer.append(&cancel);
-        window.set_child(Some(&outer));
-        let keys = gtk::EventControllerKey::new();
-        keys.connect_key_pressed({
-            let window = window.clone();
-            move |_, key, _, _| {
-                if key == gtk::gdk::Key::Escape {
-                    window.close();
-                    gtk::glib::Propagation::Stop
-                } else {
-                    gtk::glib::Propagation::Proceed
-                }
+        let details = gtk::Expander::new(Some("Downloads and licenses"));
+        let links = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let sizes = gtk::Label::new(Some(
+            "110M 105 MB · v2 483 MB · v3 488 MB · Nemotron 464 MB + v2 backup",
+        ));
+        sizes.set_wrap(true);
+        sizes.set_xalign(0.0);
+        sizes.add_css_class("koett-setting-help");
+        links.append(&sizes);
+        for (url, label) in [
+            (
+                "https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-transducer/nemo-transducer-models.html",
+                "NVIDIA · sherpa-onnx · CC BY 4.0",
+            ),
+            (
+                "https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b",
+                "Nemotron · NVIDIA Open Model License",
+            ),
+        ] {
+            let link = gtk::LinkButton::with_label(url, label);
+            link.set_halign(gtk::Align::Start);
+            if let Some(label) = link.child().and_downcast::<gtk::Label>() {
+                label.set_wrap(true);
             }
-        });
-        window.add_controller(keys);
+            links.append(&link);
+        }
+        details.set_child(Some(&links));
+        root.append(&details);
         Self {
-            window,
+            root,
             active,
             status,
             progress,
@@ -150,9 +112,6 @@ impl ModelsView {
             selected: Default::default(),
             ready: Default::default(),
         }
-    }
-    pub fn show(&self) {
-        self.window.present();
     }
     pub fn active(&self, name: &str) {
         let label = if name.starts_with("sherpa-onnx-nemotron-speech-streaming") {
@@ -201,8 +160,11 @@ impl ModelsView {
         }
     }
     pub fn update(&self, message: &str) {
+        let about_models = message.to_ascii_lowercase().contains("model");
         if let Some(notice) = message.strip_prefix("@notice:") {
-            self.notice.set_text(notice);
+            if about_models {
+                self.notice.set_text(notice);
+            }
             return;
         }
         if message == "Starting…" {
@@ -218,12 +180,14 @@ impl ModelsView {
                 .set_fraction(f64::from(percent.min(100)) / 100.0);
             self.progress.set_text(Some(&format!("{percent}%")));
             self.status.set_text("Downloading model…");
-        } else {
+        } else if about_models || message.starts_with("Error") {
             self.status.set_text(message);
+        } else {
+            self.status.set_text("");
         }
         self.ready.set(message == "Ready");
         self.refresh_choices();
         self.cancel
-            .set_sensitive(message.contains("model") || message.starts_with("Starting"));
+            .set_visible(about_models || message.starts_with("Starting"));
     }
 }
