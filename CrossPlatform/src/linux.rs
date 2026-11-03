@@ -449,6 +449,12 @@ pub fn run() -> Result<(), String> {
         crate::media_transcription::validate_url(&source)?;
         command = format!("media {source}");
     }
+    if matches!(command.as_str(), "show" | "--background")
+        && let Ok(settings) = Settings::load()
+        && let Err(error) = set_start_at_login(settings.start_at_login)
+    {
+        eprintln!("Launch at login: {error}");
+    }
     if control::send(&command).is_ok() {
         if command.starts_with("ask") {
             println!("{{\"ok\":true,\"accepted\":true}}");
@@ -461,9 +467,6 @@ pub fn run() -> Result<(), String> {
     recording_overlay::prepare()?;
     let instance = single_instance()?;
     let settings = Settings::load()?;
-    if let Err(error) = set_start_at_login(settings.start_at_login) {
-        eprintln!("Launch at login: {error}");
-    }
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
     control::listen(actions.clone(), ui.clone())?;
@@ -2266,6 +2269,36 @@ fn set_start_at_login(enabled: bool) -> Result<(), String> {
         .ok_or_else(|| "could not find the Linux config directory".to_string())?
         .config_dir()
         .join("autostart");
+    let executable = std::env::current_exe()
+        .map_err(|error| format!("could not find the Koett executable: {error}"))?;
+    sync_autostart_entry(&config, &executable, enabled)
+}
+
+fn autostart_target(executable: &std::path::Path) -> std::path::PathBuf {
+    let Some(root) = executable
+        .parent()
+        .filter(|directory| directory.file_name() == Some(std::ffi::OsStr::new("libexec")))
+        .and_then(std::path::Path::parent)
+    else {
+        return executable.to_path_buf();
+    };
+    let launcher = root.join("koett");
+    if !launcher.is_file() {
+        return executable.to_path_buf();
+    }
+    let stable = root
+        .ancestors()
+        .nth(4)
+        .map(|prefix| prefix.join("bin").join("koett"))
+        .filter(|stable| stable.canonicalize().ok() == launcher.canonicalize().ok());
+    stable.unwrap_or(launcher)
+}
+
+fn sync_autostart_entry(
+    config: &std::path::Path,
+    executable: &std::path::Path,
+    enabled: bool,
+) -> Result<(), String> {
     let file = config.join(format!("{APP_ID}.desktop"));
     if !enabled {
         return match std::fs::remove_file(&file) {
@@ -2274,15 +2307,17 @@ fn set_start_at_login(enabled: bool) -> Result<(), String> {
             Err(error) => Err(format!("could not remove {}: {error}", file.display())),
         };
     }
-    std::fs::create_dir_all(&config)
-        .map_err(|error| format!("could not create {}: {error}", config.display()))?;
-    let executable = std::env::current_exe()
-        .map_err(|error| format!("could not find the Koett executable: {error}"))?;
+    let target = autostart_target(executable);
     let desktop = format!(
         "[Desktop Entry]\nType=Application\nName=Koett\nExec=\"{}\" --background\nTryExec={}\nTerminal=false\n",
-        executable.display(),
-        executable.display()
+        target.display(),
+        target.display()
     );
+    if std::fs::read_to_string(&file).is_ok_and(|current| current == desktop) {
+        return Ok(());
+    }
+    std::fs::create_dir_all(config)
+        .map_err(|error| format!("could not create {}: {error}", config.display()))?;
     std::fs::write(&file, desktop)
         .map_err(|error| format!("could not write {}: {error}", file.display()))
 }
@@ -2691,5 +2726,113 @@ mod menu_tests {
         }
         tray.update_status("Ready".into());
         assert_eq!(tray.status, "Ready");
+    }
+}
+
+#[cfg(test)]
+mod autostart_tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+
+    fn temporary(name: &str) -> PathBuf {
+        let directory =
+            std::env::temp_dir().join(format!("koett-autostart-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        directory
+    }
+
+    fn package(prefix: &Path, version: &str) -> PathBuf {
+        let root = prefix.join("lib/koett/versions").join(version);
+        std::fs::create_dir_all(root.join("libexec")).unwrap();
+        std::fs::write(root.join("koett"), "launcher").unwrap();
+        std::fs::write(root.join("libexec/koett"), "binary").unwrap();
+        root
+    }
+
+    fn publish(prefix: &Path, root: &Path) {
+        std::fs::create_dir_all(prefix.join("bin")).unwrap();
+        std::os::unix::fs::symlink(root.join("koett"), prefix.join("bin/koett")).unwrap();
+    }
+
+    #[test]
+    fn published_version_starts_through_the_stable_launcher() {
+        let prefix = temporary("published");
+        let root = package(&prefix, "new");
+        publish(&prefix, &root);
+        assert_eq!(
+            autostart_target(&root.join("libexec/koett")),
+            prefix.join("bin/koett")
+        );
+    }
+
+    #[test]
+    fn unpublished_version_starts_through_its_own_launcher() {
+        let prefix = temporary("unpublished");
+        let old = package(&prefix, "old");
+        let new = package(&prefix, "new");
+        publish(&prefix, &new);
+        assert_eq!(
+            autostart_target(&old.join("libexec/koett")),
+            old.join("koett")
+        );
+    }
+
+    #[test]
+    fn unpackaged_binary_starts_itself() {
+        let directory = temporary("unpackaged");
+        let release = directory.join("target/release/koett");
+        assert_eq!(autostart_target(&release), release);
+        let bare = directory.join("libexec/koett");
+        assert_eq!(autostart_target(&bare), bare);
+    }
+
+    #[test]
+    fn stale_entry_is_repaired_once() {
+        let prefix = temporary("stale");
+        let root = package(&prefix, "new");
+        publish(&prefix, &root);
+        let config = prefix.join("autostart");
+        std::fs::create_dir_all(&config).unwrap();
+        let file = config.join(format!("{APP_ID}.desktop"));
+        let stale = prefix.join("lib/koett/versions/old/libexec/koett");
+        std::fs::write(
+            &file,
+            format!(
+                "[Desktop Entry]\nExec=\"{0}\" --background\nTryExec={0}\n",
+                stale.display()
+            ),
+        )
+        .unwrap();
+        let binary = root.join("libexec/koett");
+        sync_autostart_entry(&config, &binary, true).unwrap();
+        let repaired = std::fs::read_to_string(&file).unwrap();
+        let launcher = prefix.join("bin/koett");
+        assert!(repaired.contains(&format!("Exec=\"{}\" --background\n", launcher.display())));
+        assert!(repaired.contains(&format!("TryExec={}\n", launcher.display())));
+        assert!(!repaired.contains("libexec"));
+        std::fs::remove_dir_all(root.join("libexec")).unwrap();
+        std::fs::create_dir_all(root.join("libexec")).unwrap();
+        std::fs::write(root.join("libexec/koett"), "binary").unwrap();
+        let written = std::fs::metadata(&file).unwrap().modified().unwrap();
+        sync_autostart_entry(&config, &binary, true).unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), repaired);
+        assert_eq!(
+            std::fs::metadata(&file).unwrap().modified().unwrap(),
+            written
+        );
+    }
+
+    #[test]
+    fn disabled_autostart_stays_off() {
+        let prefix = temporary("disabled");
+        let root = package(&prefix, "new");
+        let config = prefix.join("autostart");
+        let binary = root.join("libexec/koett");
+        sync_autostart_entry(&config, &binary, false).unwrap();
+        assert!(!config.exists());
+        sync_autostart_entry(&config, &binary, true).unwrap();
+        sync_autostart_entry(&config, &binary, false).unwrap();
+        assert!(!config.join(format!("{APP_ID}.desktop")).exists());
     }
 }
