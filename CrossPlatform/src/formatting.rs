@@ -70,12 +70,23 @@ pub fn request(raw: &str, settings: Formatting, tokens: usize) -> Value {
     ],"temperature":0,"max_tokens":(tokens as f64 * 1.3).ceil() as usize + 32,"cache_prompt":true,"chat_template_kwargs":{"enable_thinking":false}})
 }
 
+const TOKENIZE_BUDGET: Duration = Duration::from_secs(2);
+const CLEANUP_BASE: Duration = Duration::from_secs(3);
+const CLEANUP_PER_TOKEN: Duration = Duration::from_millis(40);
+const CLEANUP_LIMIT: Duration = Duration::from_secs(20);
+
+/// A paste waits on this, so it stays short; raw text is the safe result when it runs out.
+fn cleanup_budget(tokens: usize) -> Duration {
+    (CLEANUP_BASE + CLEANUP_PER_TOKEN * tokens as u32).min(CLEANUP_LIMIT)
+}
+
 pub struct Cleaner {
     child: Child,
     endpoint: String,
     key: String,
     pub(crate) keepalive: Option<std::sync::mpsc::Sender<()>>,
     pub(crate) supervisor: Option<std::thread::JoinHandle<()>>,
+    stalled: bool,
 }
 impl Drop for Cleaner {
     fn drop(&mut self) {
@@ -251,6 +262,7 @@ impl Cleaner {
             key,
             keepalive: None,
             supervisor: None,
+            stalled: false,
         };
         let started = Instant::now();
         while started.elapsed() < Duration::from_secs(30) {
@@ -295,22 +307,45 @@ impl Cleaner {
         serde_json::from_str(&text).map_err(|e| e.to_string())
     }
     pub fn clean(&mut self, raw: &str, settings: Formatting) -> Result<String, String> {
+        self.clean_within(raw, settings, cleanup_budget)
+    }
+    /// True once the server failed to answer in time; it stays stuck, so stop using it.
+    pub fn stalled(&self) -> bool {
+        self.stalled
+    }
+    fn clean_within(
+        &mut self,
+        raw: &str,
+        settings: Formatting,
+        budget: fn(usize) -> Duration,
+    ) -> Result<String, String> {
         self.alive()?;
-        let tokens = self.post(
+        let tokens = self.timed_post(
             "tokenize",
             json!({"content":raw,"add_special":false}),
-            Duration::from_secs(5),
+            TOKENIZE_BUDGET.min(budget(0)),
         )?;
         let count = tokens["tokens"].as_array().ok_or("Missing tokens")?.len();
         if count > 1000 {
             return Err("S1-mini input exceeds 1000 tokens".into());
         }
-        let result = self.post(
+        let result = self.timed_post(
             "v1/chat/completions",
             request(raw, settings, count),
-            Duration::from_secs(180),
+            budget(count),
         )?;
         final_text(&result)
+    }
+    fn timed_post(&mut self, path: &str, body: Value, budget: Duration) -> Result<Value, String> {
+        let started = Instant::now();
+        self.post(path, body, budget).map_err(|error| {
+            if started.elapsed() >= budget {
+                self.stalled = true;
+                format!("S1-mini did not answer within {} s", budget.as_secs_f32())
+            } else {
+                error
+            }
+        })
     }
 }
 #[cfg(target_os = "linux")]
@@ -431,6 +466,7 @@ mod lifecycle_tests {
             key: "fixture".into(),
             keepalive: None,
             supervisor: None,
+            stalled: false,
         };
         assert_eq!(
             cleaner
@@ -450,6 +486,7 @@ mod lifecycle_tests {
             key: "fixture".into(),
             keepalive: None,
             supervisor: None,
+            stalled: false,
         };
         cleaner.child.wait().unwrap();
         assert!(
@@ -459,6 +496,58 @@ mod lifecycle_tests {
                 .contains("stopped")
         );
     }
+    fn stalling_cleaner() -> (Cleaner, std::thread::JoinHandle<()>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let child = Command::new("sleep").arg("30").spawn().unwrap();
+        let cleaner = Cleaner {
+            child,
+            endpoint: format!("http://{address}"),
+            key: "fixture".into(),
+            keepalive: None,
+            supervisor: None,
+            stalled: false,
+        };
+        let server = std::thread::spawn(move || {
+            let (mut tokenize, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 4096];
+            let _ = tokenize.read(&mut request);
+            let body = r#"{"tokens":[1,2,3]}"#;
+            let _ = write!(
+                tokenize,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            drop(tokenize);
+            let (_hung, _) = listener.accept().unwrap();
+            std::thread::sleep(Duration::from_millis(600));
+        });
+        (cleaner, server)
+    }
+
+    #[test]
+    fn hung_server_gives_up_within_the_budget_and_is_marked_stalled() {
+        let (mut cleaner, server) = stalling_cleaner();
+        let started = Instant::now();
+        let error = cleaner
+            .clean_within("Keep 42", Formatting::default(), |_| {
+                Duration::from_millis(200)
+            })
+            .unwrap_err();
+        assert!(error.contains("did not answer"), "{error}");
+        assert!(cleaner.stalled());
+        assert!(started.elapsed() < Duration::from_millis(590));
+        drop(cleaner);
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn cleanup_budget_never_holds_a_paste_past_twenty_seconds() {
+        assert_eq!(cleanup_budget(0), Duration::from_secs(3));
+        assert_eq!(cleanup_budget(100), Duration::from_secs(7));
+        assert_eq!(cleanup_budget(1000), Duration::from_secs(20));
+    }
+
     #[test]
     fn stalled_http_request_has_a_bounded_timeout_and_drop_reaps_child() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -470,6 +559,7 @@ mod lifecycle_tests {
             key: "fixture".into(),
             keepalive: None,
             supervisor: None,
+            stalled: false,
         };
         let server = std::thread::spawn(move || {
             let (_stream, _) = listener.accept().unwrap();

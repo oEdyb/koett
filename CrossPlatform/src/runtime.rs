@@ -903,9 +903,9 @@ fn run(
                         }
                         if settings.formatting.enabled
                             && !transcript.text.is_empty()
-                            && let Some(cleaner) = cleaner.as_mut()
+                            && let Some(active) = cleaner.as_mut()
                         {
-                            match cleaner.clean(&transcript.text, settings.formatting) {
+                            match active.clean(&transcript.text, settings.formatting) {
                                 Ok(text) => {
                                     transcript.raw =
                                         Some(std::mem::replace(&mut transcript.text, text));
@@ -913,6 +913,9 @@ fn run(
                                 Err(error) => {
                                     let _ = updates
                                         .send(EngineUpdate::Notice(format!("Raw active: {error}")));
+                                    if active.stalled() {
+                                        cleaner = None;
+                                    }
                                 }
                             }
                         }
