@@ -45,6 +45,24 @@ Dictionary page to add, edit, remove, import and export (`linux/dictionary_view.
 Parakeet ships no `bpe.vocab`; Koett derives one from `tokens.txt` into
 `~/.cache/koett/Hotwords/`, never into the verified model folder.
 
+## Starter list
+
+[`docs/dictionary-seed.txt`](dictionary-seed.txt) is the shared starter list, in
+the exchange format, for both platforms. Import it from Settings > Dictionary; on
+Linux, `koett menu-dictionary-import /absolute/path` does the same in the running
+app and keeps existing entries.
+
+Koett = coet, coets · Claude = clawed · Opus · ChatGPT = chat GPT · Scrawl ·
+Qwen = Quen, Qen · GitHub = Gitub · Kimi = Kimmy · Codex · Sonnet · Anthropic ·
+OpenAI · T3 Code · MCP · QMD · Gemma · Obsidian · TikTok · Parakeet · Klippt
+
+Forms come from counting recurring non-dictionary words in Olle's local Linux
+History (717 transcripts): Gitub 12 next to GitHub 11, Quen 25, Qen 23, Kimmy 7.
+No transcript text is in this repo. A form rewrites every match, so it must never
+be a word with another meaning. `Claude = clawed` is Olle's own choice, and
+`Scrawl = scroll`, `Koett = coat` and `Claude = cloud` stay out: "scroll" meant real
+scrolling in 8 of 14 cases. People's names stay out of this public file.
+
 ## Evidence
 
 Shared benchmark in `Benchmarks/Dictionary/`: 30 terms, 40 sentences using them,

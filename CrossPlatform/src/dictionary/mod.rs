@@ -120,6 +120,19 @@ pub fn parse_text(text: &str) -> Result<Vec<DictionaryEntry>, String> {
     normalize(entries)
 }
 
+const MAX_IMPORT_BYTES: u64 = 1024 * 1024;
+
+pub fn read_import(path: &std::path::Path) -> Result<Vec<DictionaryEntry>, String> {
+    let size = std::fs::metadata(path)
+        .map_err(|error| error.to_string())?
+        .len();
+    if size > MAX_IMPORT_BYTES {
+        return Err("the file is larger than 1 MB".into());
+    }
+    let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
+    parse_text(&text)
+}
+
 pub fn to_text(entries: &[DictionaryEntry]) -> String {
     let mut text = String::from("# Koett dictionary: Term = sounds like, other form\n");
     for entry in entries {
