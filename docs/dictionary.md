@@ -103,6 +103,33 @@ Remaining misses are words Parakeet hears as ordinary English ("all" for Olle,
 "code"/"coat" for Koett, "Jakob" for Yakob, "Quinn" for Qwen). Hotwords cannot
 safely override real words; a sounds-like form can, at the user's choice.
 
+## Seed list
+
+Exchange format, for Dictionary → Import or `koett --import-dictionary FILE`. Project
+and tool names Olle says often; the forms are mishearings found in his Mac History
+(398 entries, mined locally). Never add `scroll` as a form of Scrawl: it was the real
+word in 8 of 14 cases. Keep `Koett = coat` out for the same reason.
+
+```text
+Koett = coet, coets
+Claude = clawed
+Opus
+ChatGPT = chat GPT
+Scrawl
+Codex
+Kimi = Kimmy
+Qwen = Quen
+Karpathy = Karpothy
+Wispr Flow = Whisperflow, whisper flow
+Excalidraw = Excaladra, Excala
+Nemotron
+Parakeet
+OpenClaw
+QMD
+Klippt
+Olle Dyberg
+```
+
 ## How it works on the Mac
 
 Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
@@ -119,11 +146,15 @@ Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
    The rescored text then goes through the same term adoption as Linux.
    Rescorer floor: string similarity 0.70 for Parakeet v2 (the Mac app's model)
    and 0.85 for Parakeet v3; acoustic rescue pass off (`BoostTuning.forModel`).
-3. **Spelling pass** in `DictationSession.prepareDictation`, once, before the
-   optional S1-mini cleanup. Nemotron gets the spelling pass only. Literal
+3. **Spelling pass** in `DictationSession.prepareDictation`, before the optional
+   S1-mini cleanup, so the cleaner sees the right word, and on its output, because
+   it can break a term again. Nemotron gets the spelling pass only. Literal
    replacements (`Replacements.swift`, the Replacements tab) run last, on the
    final text.
-4. **Fix a word**: History → Fix a Word…, `~/Library/Application Support/Koett/Corrections.json`
+4. **Import for agents**: `koett --import-dictionary FILE` merges the exchange
+   format through the same store as the window. It refuses while Koett is running,
+   since the running app would overwrite the change.
+5. **Fix a word**: History → Fix a Word…, `~/Library/Application Support/Koett/Corrections.json`
    (same JSON shape, 0600), explicit Add or Dismiss, everyday-word warning.
 
 `Tests/KoettTests/Dictionary/Fixtures/parity.json` holds the Rust output for

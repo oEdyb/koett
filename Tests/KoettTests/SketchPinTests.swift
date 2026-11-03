@@ -113,6 +113,36 @@ final class SketchPinTests: XCTestCase {
         XCTAssertEqual(board.groups.map(\.pin), [p(10), p(400)])
     }
 
+    func testTravelAcrossScreensBetweenPinsLeavesNoInk() {
+        var board = held()
+        click(&board, at: p(10), time: 101)
+        _ = board.point(screen: 0, p(100), now: 101.5, audio: 2)
+        _ = board.point(screen: 0, p(300), now: 101.6, audio: 2)
+        _ = board.point(screen: 1, p(10), now: 101.7, audio: 2)
+        _ = board.point(screen: 1, p(100), now: 101.8, audio: 2)
+        _ = board.mouseDown(screen: 1, p(100), now: 102, audio: 2, clickCount: 1)
+        _ = board.mouseUp(now: 102.1)
+        XCTAssertEqual(board.groups.map(\.pin), [p(10), p(100)])
+        XCTAssertEqual(board.groups.map(\.screen), [0, 1])
+    }
+
+    func testStraightDragAfterPinSurvivesClick() {
+        var board = held()
+        click(&board, at: p(10), time: 101)
+        _ = board.mouseDown(screen: 0, p(100), now: 102, audio: 2, clickCount: 1)
+        _ = board.point(screen: 0, p(200), now: 102.1, audio: 2)
+        _ = board.point(screen: 0, p(300), now: 102.2, audio: 2)
+        _ = board.mouseUp(now: 102.3)
+        _ = board.mouseDown(screen: 0, p(600), now: 103, audio: 2, clickCount: 1)
+        _ = board.mouseUp(now: 103.1)
+        XCTAssertEqual(board.groups.count, 2)
+        XCTAssertNil(board.groups[1].pin)
+    }
+
+    func testContextDropsControlCharacters() {
+        XCTAssertEqual(PinContext.clean("a\u{1B}[201~b\tc", limit: 100), "a[201~bc")
+    }
+
     func testCurvedDrawingAfterPinSurvivesClick() {
         var board = held()
         click(&board, at: p(10), time: 101)

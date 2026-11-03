@@ -165,11 +165,23 @@ final class S1MiniCleaner {
 
     private let port: Int
     private let session: URLSession
+    private let tokenizeTimeout: TimeInterval
     private var serverProcess: Process?
+    private var restart: Task<Void, Never>?
 
-    init(port: Int = 18_181, session: URLSession = .shared) {
+    init(port: Int = 18_181, session: URLSession = .shared, tokenizeTimeout: TimeInterval = 5) {
         self.port = port
         self.session = session
+        self.tokenizeTimeout = tokenizeTimeout
+    }
+
+    /// Dictation waits at most this long for cleanup before pasting raw text.
+    static func completionTimeout(inputTokens: Int) -> TimeInterval {
+        min(20, 3 + 0.04 * TimeInterval(inputTokens))
+    }
+
+    func adoptServerForTesting(_ process: Process) {
+        serverProcess = process
     }
 
     func prepare(
@@ -225,10 +237,44 @@ final class S1MiniCleaner {
         context: S1MiniContext
     ) async throws -> String {
         guard !transcript.isEmpty else { return "" }
-        try await prepare()
+        guard serverProcess?.isRunning == true else {
+            restartInBackground()
+            throw Self.failure("S1-mini is not running.")
+        }
+        do {
+            return try await complete(transcript, style: style, structure: structure, context: context)
+        } catch let error as URLError where error.code == .timedOut {
+            stop()
+            restartInBackground()
+            throw error
+        }
+    }
 
+    /// A stopped or hung server never holds up a paste; the next dictation finds it ready.
+    private func restartInBackground() {
+        guard restart == nil else { return }
+        restart = Task { [weak self] in
+            do {
+                try await self?.prepare()
+            } catch {
+                fputs("Warning: S1-mini could not restart: \(error.localizedDescription)\n", stderr)
+            }
+            await self?.finishRestart()
+        }
+    }
+
+    private func finishRestart() {
+        restart = nil
+    }
+
+    private func complete(
+        _ transcript: String,
+        style: S1MiniStyle,
+        structure: S1MiniStructure,
+        context: S1MiniContext
+    ) async throws -> String {
         let tokenRequest = TokenizeRequest(content: transcript)
-        let tokenData = try await request(path: "tokenize", body: tokenRequest)
+        let tokenData = try await request(path: "tokenize", body: tokenRequest, timeout: tokenizeTimeout)
         let inputTokens = try JSONDecoder().decode(TokenizeResponse.self, from: tokenData)
             .tokens.count
         let completionRequest = S1MiniCompletionRequest(
@@ -241,7 +287,7 @@ final class S1MiniCleaner {
         let completionData = try await request(
             path: "v1/chat/completions",
             body: completionRequest,
-            timeout: 180
+            timeout: Self.completionTimeout(inputTokens: inputTokens)
         )
         let response = try JSONDecoder().decode(
             CompletionResponse.self,

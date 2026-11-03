@@ -252,6 +252,11 @@ extension KoettController {
         transcribeItem.isEnabled = state == .ready
         transcribeItem.toolTip = "Works with one public media item that yt-dlp can access without login."
         menu.addItem(transcribeItem)
+        menu.addItem(menuItem(
+            title: "Open Media Transcripts",
+            action: #selector(openMediaTranscripts),
+            selected: false
+        ))
         menu.addItem(.separator())
         if let latestOutcome = recordingOverlay.latestOutcome {
             let latestItem = NSMenuItem(

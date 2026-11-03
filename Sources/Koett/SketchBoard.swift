@@ -65,6 +65,8 @@ struct SketchBoard {
     /// Ink travelled in the current hold.
     private var holdInk: CGFloat = 0
     private var pinnedInHold = false
+    /// The open ink started from a press drag, so it is a deliberate drawing.
+    private var inkFromPress = false
     private var pressing: Press?
 
     private struct Press {
@@ -86,6 +88,7 @@ struct SketchBoard {
         holdOrigin = nil
         holdInk = 0
         pinnedInHold = false
+        inkFromPress = false
         pressing = nil
     }
 
@@ -114,6 +117,7 @@ struct SketchBoard {
             guard press.screen == screen,
                   hypot(point.x - press.point.x, point.y - press.point.y) >= Self.pinSlop else { return [] }
             pressing = nil
+            inkFromPress = true
             holdOrigin = (press.screen, press.point, press.time, press.audio)
         }
         if let current = stroking.flatMap(position(of:)), groups[current].screen == screen {
@@ -172,6 +176,7 @@ struct SketchBoard {
             updates = events() + freed.map { .removed(index: UInt32($0)) }
         }
         holdInk = 0
+        inkFromPress = false
         holdOrigin = nil
         pressing = Press(screen: screen, point: point, time: now, audio: audio, pins: clickCount <= 1)
         return updates
@@ -200,13 +205,20 @@ struct SketchBoard {
         return events()
     }
 
-    /// After a pin in the same hold, a nearly straight line is the pointer
-    /// travelling to the next pin; a curved path is a drawing and stays.
+    /// After a pin in the same hold, nearly straight hover ink is the pointer
+    /// travelling to the next pin, on one screen or across several. A curve or
+    /// a press drag is a drawing and stays.
     private var isAimingInk: Bool {
         let open = groups.filter { !$0.closed && $0.pin == nil }
-        guard open.count == 1, open[0].strokes.count == 1,
-              let first = open[0].strokes[0].first, let last = open[0].strokes[0].last else { return false }
-        return holdInk <= hypot(last.x - first.x, last.y - first.y) * Self.pinAimStraightness
+        guard !inkFromPress, !open.isEmpty else { return false }
+        return open.allSatisfy { group in
+            guard group.strokes.count == 1, let first = group.strokes[0].first, let last = group.strokes[0].last else {
+                return false
+            }
+            let path = zip(group.strokes[0], group.strokes[0].dropFirst())
+                .reduce(CGFloat(0)) { $0 + hypot($1.1.x - $1.0.x, $1.1.y - $1.0.y) }
+            return path <= hypot(last.x - first.x, last.y - first.y) * Self.pinAimStraightness
+        }
     }
 
     /// Closed sketches that should be captured now; they move to `.capturing`.

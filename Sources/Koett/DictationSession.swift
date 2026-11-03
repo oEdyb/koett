@@ -570,7 +570,7 @@ extension KoettController {
                 context: s1MiniContext
             )
             return PreparedDictation(
-                text: replacementStore.apply(cleaned),
+                text: replacementStore.apply(DictionarySpelling.apply(cleaned, entries: dictionaryStore.entries)),
                 model: "\(model) + S1-mini by Superwhisper "
                     + "(\(s1MiniStyle.displayName), "
                     + "\(s1MiniStructure.displayName), "
