@@ -1,0 +1,19 @@
+{
+  "machine": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "fixtures": {
+    "short": {
+      "sha256": "d8ef9a9f622bab126c1ff92516c900bf20ea792acc7ac542198c4257d3595a80",
+      "bytes": 669468
+    },
+    "600": {
+      "sha256": "5ddcdf3a005ddf8ac66cc9a55d342c159571f675ec9ea78518aeca8d7181b376",
+      "bytes": 38400092
+    },
+    "1800": {
+      "sha256": "b4bbf2120f40174bcfeed8d1a9e0a3cd06994854c9debea2dde2c2f22f2615b4",
+      "bytes": 115200092
+    }
+  },
+  "recipe": "say -v Samantha: This is an isolated recording for the local voice input demonstration. The microphone should preserve the first word and the final word. We are measuring the time needed to turn speech into text. Convert to mono 16 kHz Float32 WAV with ffmpeg; stream_loop -1 to exact 600 and 1800 seconds."
+}

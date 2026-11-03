@@ -1,0 +1,11 @@
+{
+  "command": "swift test --filter MicrophoneLifecycleTests.testOptionClickIsNotATap|MicrophoneLifecycleTests.testRightOptionResyncKeepsHoldRecordingWhenKeyStateMissesIt|MicrophoneChannelTests.testNemotronHearsEachInterfaceInputWithoutAttenuatingUnusedChannels",
+  "mutantExit": 1,
+  "tests": 3,
+  "failedTests": [
+    "testOptionClickIsNotATap",
+    "testRightOptionResyncKeepsHoldRecordingWhenKeyStateMissesIt",
+    "testNemotronHearsEachInterfaceInputWithoutAttenuatingUnusedChannels"
+  ],
+  "method": "Temporarily remove mouse handling and device-flag fallback; restore original all-channel Nemotron averaging. Restore sources in finally. Fixed focused suite: 23 tests, 0 failures."
+}

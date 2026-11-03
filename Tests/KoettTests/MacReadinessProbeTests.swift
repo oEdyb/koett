@@ -57,6 +57,30 @@ final class MacReadinessProbeTests: XCTestCase {
         XCTAssertEqual(process.terminationReason, .uncaughtSignal)
     }
 
+    func testTenAndThirtyMinuteCaptureFilesKeepEveryFrame() async throws {
+        guard let path = ProcessInfo.processInfo.environment["KOETT_READINESS_LAB"] else {
+            throw XCTSkip("Set KOETT_READINESS_LAB for accelerated long-capture verification.")
+        }
+        let root = URL(fileURLWithPath: path)
+        let format = AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1_600)!
+        buffer.frameLength = 1_600
+        buffer.floatChannelData![0].initialize(repeating: 0.2, count: 1_600)
+        for seconds in [600, 1_800] {
+            let url = root.appendingPathComponent("capture-\(seconds).wav")
+            let sink = try MicrophoneFileSink(url: url, inputFormat: format)
+            for _ in 0..<(seconds * 10) {
+                sink.append(buffer)
+                try await Task.sleep(for: .milliseconds(1))
+            }
+            sink.close()
+            XCTAssertNil(sink.error)
+            let file = try AVAudioFile(forReading: url)
+            XCTAssertEqual(file.length, Int64(seconds * 16_000))
+            XCTAssertEqual(sink.duration, Double(seconds), accuracy: 1e-9)
+        }
+    }
+
     func testIsolatedModelStartupAndLongAudio() async throws {
         guard let path = ProcessInfo.processInfo.environment["KOETT_READINESS_LAB"] else {
             throw XCTSkip("Set KOETT_READINESS_LAB to a folder containing short.wav, 600.wav and 1800.wav.")
