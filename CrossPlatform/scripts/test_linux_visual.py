@@ -106,20 +106,16 @@ def find(name, root=None, role=None):
         and node.get_state_set().contains(Atspi.StateType.SHOWING)), None)
 
 
+PAGES = ['Dictation', 'Model & formatting', 'Draw on screen', 'Shortcuts', 'Words', 'Ask About Screen', 'General']
+
+
 def click(name, root=None):
-    if name in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
-        combo = wait(lambda: find('Settings section', root, 'combo box'), 'Settings selector')
-        kwin(f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === "Settings") {{ w.frameGeometry={{x:400,y:140,width:540,height:460}}; workspace.activeWindow=w; }}')
-        rect = combo.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
-        input_tool = str(Path.home() / '.local/share/agent-lab/input')
-        subprocess.run([input_tool, 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
-        subprocess.run([input_tool, 'click'], check=True)
-        keys('key', 102)
-        for _ in range(['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General'].index(name)):
-            keys('key', 108)
-        keys('key', 28)
+    if name in PAGES:
+        sidebar = wait(lambda: next((n for n in walk(root) if n.get_role_name() == 'list'
+                                     and any(c.get_name() == PAGES[0] for c in walk(n))), None), 'Settings sidebar')
+        assert sidebar.get_selection_iface().select_child(PAGES.index(name)), name
         time.sleep(0.4)
-        return combo
+        return sidebar
     node = wait(lambda: find(name, root), name)
     assert node.get_action_iface().do_action(0)
     time.sleep(0.2)
@@ -228,17 +224,17 @@ try:
     resize('Koett', 960, 680)
     control('settings')
     settings = wait(lambda: find('Settings', role='frame'), 'Settings')
-    for section in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
+    for section in PAGES:
         click(section, settings)
         assert find('Save', settings)
-        if section != 'Audio':
-            wait(lambda: not current_streams(), 'hidden Audio releases input')
-        capture('settings-' + section.lower())
+        if section != 'Dictation':
+            wait(lambda: not current_streams(), 'hidden Dictation page releases input')
+        capture('settings-' + section.lower().replace(' & ', '-').replace(' ', '-'))
     resize('Settings', 500, 460)
-    for section in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
+    for section in PAGES:
         click(section, settings)
         assert find('Save', settings)
-        capture('settings-' + section.lower() + '-narrow')
+        capture('settings-' + section.lower().replace(' & ', '-').replace(' ', '-') + '-narrow')
     click('Close', settings)
     wait(lambda: not find('Settings', role='frame'), 'Settings closed')
     wait(lambda: not current_streams(), 'Settings close releases input')
@@ -251,7 +247,11 @@ try:
     wait(lambda: any('Selected microphone unavailable' in n.get_name() for n in walk(settings)), 'explicit unavailable input')
     resize('Settings', 540, 460)
     capture('settings-long-input')
-    click('Text', settings)
+    click('Model & formatting', settings)
+    wait(lambda: any(n.get_name() == 'Output' for n in walk(settings)), 'reopened Settings has formatting controls')
+    assert process.poll() is None, 'reopening Settings must not crash under an accessibility client'
+    checks.append('close and reopen Settings under an accessibility client: model and formatting panels work, no crash')
+    click('Words', settings)
     capture('settings-long-rules')
     phrases = [n for n in walk(settings) if n.get_name() == 'Phrase' and 'EditableText' in n.get_interfaces()]
     assert len(phrases) == 16
@@ -263,6 +263,8 @@ try:
         time.sleep(0.05)
     phrases[0].clear_cache()
     assert phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED)
+    assert find('Words', settings, 'label'), 'Tab stays on the chosen Settings page'
+    checks.append('Tab from the Settings sidebar reaches the chosen page instead of walking to the last page')
     keys('key', *([15] * 48))
     wait(lambda: find('Add replacement', settings), 'keyboard scrolls to last replacement')
     assert find('Save', settings)

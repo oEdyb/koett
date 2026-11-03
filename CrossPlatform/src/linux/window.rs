@@ -73,8 +73,10 @@ fn build_window(
     header.pack_end(&settings_button);
     window.set_titlebar(Some(&header));
 
-    let formatting = Rc::new(super::formatting_view::FormattingView::new(actions.clone()));
-    let models = Rc::new(super::models_view::ModelsView::new(actions.clone()));
+    let formatting = Rc::new(super::formatting_view::FormattingPanel::new(
+        actions.clone(),
+    ));
+    let models = Rc::new(super::models_view::ModelsPanel::new(actions.clone()));
     let panels = Rc::new(super::settings_view::Panels {
         models: models.clone(),
         formatting: formatting.clone(),

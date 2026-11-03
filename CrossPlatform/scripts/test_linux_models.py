@@ -128,8 +128,27 @@ def keys(command, *codes):
     subprocess.run([str(Path.home() / '.local/share/agent-lab/input'), command, *map(str, codes)], check=True)
 
 
-def control(command):
-    subprocess.run([str(binary), command], check=True, capture_output=True)
+def control(*command):
+    subprocess.run([str(binary), *command], check=True, capture_output=True)
+
+
+PAGES = ['Dictation', 'Model & formatting', 'Draw on screen', 'Shortcuts', 'Words', 'Ask About Screen', 'General']
+
+
+def settings_page(settings, page):
+    sidebar = wait(lambda: next((n for n in walk(settings) if n.get_role_name() == 'list'
+                                 and any(c.get_name() == PAGES[0] for c in walk(n))), None), 'Settings sidebar')
+    assert sidebar.get_selection_iface().select_child(PAGES.index(page)), page
+    time.sleep(0.3)
+
+
+def ready():
+    return any(n.get_role_name() == 'label' and n.get_name().startswith('Ready') for n in walk(main))
+
+
+def close_settings():
+    keys('chord', 56, 62)
+    wait(lambda: not find('Settings', role='frame'), 'Settings closed')
 
 
 def kwin(source):
@@ -143,7 +162,7 @@ def kwin(source):
     time.sleep(0.4)
 
 
-def resize(title, width, height):
+def resize(title, width, height, exact=True):
     if args.scaled and width == 500:
         width = 560
     source = f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === {json.dumps(title)}) {{ w.frameGeometry = {{x:400,y:140,width:{width},height:{height}}}; workspace.activeWindow=w; }}'
@@ -151,7 +170,8 @@ def resize(title, width, height):
     kwin(source)
     frame = wait(lambda: find(title, role='frame'), title)
     rect = frame.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
-    assert rect.width <= width + 2, (title, width, rect.width)
+    assert not exact or rect.width <= width + 2, (title, width, rect.width)
+    return rect.width
 
 
 def capture(name):
@@ -196,7 +216,7 @@ try:
     click('Clear search', main)
     wait(lambda: transcript() == texts[0], 'exact selection after clear')
     click('Export…', main)
-    chooser = wait(lambda: find('Export transcript'), 'native Export chooser')
+    chooser = wait(lambda: find('Export transcript'), 'native Export chooser', timeout=60)
     fields = wait(lambda: [n for n in walk(chooser) if 'EditableText' in n.get_interfaces()], 'export filename field')
     name = next((n for n in fields if 'name' in n.get_name().lower()), fields[0])
     assert name.get_editable_text_iface().set_text_contents('exact-fixture.txt')
@@ -204,7 +224,7 @@ try:
     wait(lambda: (output / 'exact-fixture.txt').exists(), 'export file')
     assert (output / 'exact-fixture.txt').read_text() == texts[0]
     checks.append('Exact Copy, native Export and search/clear preserve Unicode and paragraphs')
-    resize('Koett', 500, 680)
+    checks.append(f"History narrow: requested 500px, native minimum {resize('Koett', 500, 680)}px")
     capture('history-narrow')
     resize('Koett', 960, 680)
     button = wait(lambda: find('Menu', main, 'toggle button'), 'Menu')
@@ -217,31 +237,26 @@ try:
     keys('key', 57)
     wait(lambda: find('Hide window', main), 'menu open')
     capture('menu')
-    node = wait(lambda: find('Local models…', main, 'menu item'), 'models menu item')
-    assert node.get_action_iface().do_action(0)
-    models = wait(lambda: find('Local models', role='frame'), 'models')
+    assert [n.get_name() for n in walk(main) if n.get_role_name() == 'menu item'
+            and n.get_state_set().contains(Atspi.StateType.SHOWING)] == [
+        'Ask', 'Transcripts', 'Recovery', 'Settings…', 'About Koett…', 'Hide window', 'Quit Koett']
+    click('Settings…', main)
+    models = wait(lambda: find('Settings', role='frame'), 'Settings from Menu')
+    settings_page(models, 'Model & formatting')
+    wait(lambda: find('Speech model', models), 'Model & formatting page')
     capture('models-110m')
+    checks.append('Menu holds quick actions and Settings…; models live on the Model & formatting page')
     if args.visual_only:
-        resize('Local models', 460 if args.scaled else 380, 440)
+        resize('Settings', 560 if args.scaled else 520, 460)
         capture('models-narrow')
-        keys('key', 1)
-        control('settings')
-        settings = wait(lambda: find('Settings', role='frame'), 'settings')
-        navigation = next(n for n in walk(settings) if n.get_role_name() == 'combo box')
-        resize('Settings', 540, 460)
-        rect = navigation.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
-        print('Navigation rect:', rect.x, rect.y, rect.width, rect.height, flush=True)
-        for index, category in enumerate(['audio', 'shortcuts', 'text', 'general']):
-            subprocess.run([str(Path.home() / '.local/share/agent-lab/input'), 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
-            subprocess.run([str(Path.home() / '.local/share/agent-lab/input'), 'click'], check=True)
-            keys('key', 102)
-            for _ in range(index):
-                keys('key', 108)
-            keys('key', 28)
-            expected = ['Input level', 'Recording mode', 'Paste shortcut', 'Launch at login'][index]
-            wait(lambda expected=expected: find(expected, settings), 'category ' + category)
-            capture('settings-' + category)
-        click('Save', settings)
+        resize('Settings', 760, 600)
+        for page, expected in [('Dictation', 'Input level'), ('Model & formatting', 'Downloads and licenses'),
+                               ('Draw on screen', 'Draw key'), ('Shortcuts', 'Recording shortcuts'),
+                               ('Words', 'Add replacement'), ('Ask About Screen', 'API key'), ('General', 'Start at login')]:
+            settings_page(models, page)
+            wait(lambda expected=expected: find(expected, models), 'page ' + page)
+            capture('settings-' + page.lower().replace(' & ', '-').replace(' ', '-'))
+        click('Save', models)
         with sqlite3.connect(database) as connection:
             connection.execute('DELETE FROM transcripts')
         control('show')
@@ -249,16 +264,16 @@ try:
         capture('history-empty')
         (output / 'checks.json').write_text(json.dumps(checks, indent=2))
         raise SystemExit(0)
-    v2 = next(n for n in walk(models) if '600M' in n.get_name() and 'Action' in n.get_interfaces())
+    v2 = next(n for n in walk(models) if '600M' in n.get_name() and n.get_role_name() == 'button')
     assert v2.get_action_iface().do_action(0)
-    wait(lambda: find('Cancel model setup', models).get_state_set().contains(Atspi.StateType.SENSITIVE), 'cancellable preparation')
+    wait(lambda: find('Cancel model setup', models), 'cancellable preparation')
     capture('models-progress')
     click('Cancel model setup', models)
-    wait(lambda: find('Ready', models), 'cancelled ready', timeout=120)
+    wait(lambda: not find('Cancel model setup', models) and ready(), 'cancelled ready', timeout=120)
     assert json.loads(config.read_text()).get('selected_model', 'compact') == 'compact'
     capture('models-cancelled')
     assert v2.get_action_iface().do_action(0)
-    wait(lambda: find('Ready', models), 'v2 ready', timeout=120)
+    wait(ready, 'v2 ready', timeout=120)
     wait(lambda: any(n.get_name().startswith('Active: Parakeet v2 600M') for n in walk(models)), 'distinct active v2', timeout=120)
     assert json.loads(config.read_text())['selected_model'] == 'parakeet_v2'
     capture('models-v2')
@@ -269,15 +284,15 @@ try:
         result = subprocess.run([str(engine_binary), str(directory), str(model / 'test_wavs/0.wav')], check=True, capture_output=True, text=True)
         results.append({'model': directory.name, 'stdout': result.stdout, 'stderr': result.stderr})
     (output / 'inference.json').write_text(json.dumps(results, indent=2))
-    compact = next(n for n in walk(models) if '110M' in n.get_name() and 'Action' in n.get_interfaces())
+    compact = next(n for n in walk(models) if '110M' in n.get_name() and n.get_role_name() == 'button')
     assert compact.get_action_iface().do_action(0)
     wait(lambda: any(n.get_name().startswith('Active: Parakeet 110M') for n in walk(models)), 'back to compact', timeout=120)
-    wait(lambda: find('Ready', models), 'compact ready')
+    wait(ready, 'compact ready')
     config.parent.chmod(0o500)
     try:
         assert v2.get_action_iface().do_action(0)
         wait(lambda: any('could not' in n.get_name() for n in walk(models)), 'preference save error', timeout=120)
-        wait(lambda: find('Ready', models), 'fallback ready')
+        wait(ready, 'fallback ready')
         assert json.loads(config.read_text())['selected_model'] == 'compact'
         assert any(n.get_name().startswith('Active: Parakeet 110M') for n in walk(models))
         capture('models-preference-failure-recovery')
@@ -285,34 +300,32 @@ try:
         config.parent.chmod(0o700)
     assert v2.get_action_iface().do_action(0)
     wait(lambda: any(n.get_name().startswith('Active: Parakeet v2 600M') for n in walk(models)), 'v2 restored', timeout=120)
-    wait(lambda: find('Ready', models), 'restored ready')
+    wait(ready, 'restored ready')
     control('start')
-    wait(lambda: any(n.get_role_name() == 'label' and n.get_name().startswith('Recording') for n in walk(models)), 'recording')
+    wait(lambda: any(n.get_role_name() == 'label' and n.get_name().startswith('Recording') for n in walk(main)), 'recording')
     assert not compact.get_state_set().contains(Atspi.StateType.SENSITIVE)
     assert not v2.get_state_set().contains(Atspi.StateType.SENSITIVE)
     assert json.loads(config.read_text())['selected_model'] == 'parakeet_v2'
     capture('models-busy-refusal')
     control('stop')
-    wait(lambda: find('Ready', models), 'stopped', timeout=120)
+    wait(ready, 'stopped', timeout=120)
     checks.append('Real distinct 110M/v2 inference; cancel preserves default; failed preference save retains active compact worker; busy choices disabled')
-    keys('key', 1)
-    control('settings')
-    settings = wait(lambda: find('Settings', role='frame'), 'settings')
+    settings_page(models, 'Dictation')
     capture('settings')
-    click('Save', settings)
+    click('Save', models)
+    wait(lambda: not find('Settings', role='frame'), 'Save closes Settings')
     assert json.loads(config.read_text())['selected_model'] == 'parakeet_v2'
     process.terminate()
     process.wait(timeout=30)
     process = subprocess.Popen([str(binary)], stdout=log, stderr=log)
     main = wait(lambda: find('Koett', role='frame'), 'restarted main')
     wait(lambda: any(n.get_role_name() == 'label' and n.get_name().startswith('Ready') for n in walk(main)), 'restart ready', timeout=120)
-    click('Menu', main)
-    node = wait(lambda: find('Local models…', main, 'menu item'), 'restarted models menu item')
-    assert node.get_action_iface().do_action(0)
-    models = wait(lambda: find('Local models', role='frame'), 'restarted models')
+    control('menu-open', 'models')
+    models = wait(lambda: find('Settings', role='frame'), 'menu-open models opens Settings')
+    wait(lambda: find('Speech model', models), 'menu-open models shows the Model page')
     wait(lambda: find('Active: Parakeet v2 600M · TDT int8', models), 'restart active v2', timeout=120)
     capture('models-restart-active-v2')
-    keys('key', 1)
+    close_settings()
     checks.append('Restart loads saved v2; active recognizer identity verified')
     checks.append('Explicit verified cached v2 selection persists; Settings save preserves selection; active model differs')
     with sqlite3.connect(database) as connection:

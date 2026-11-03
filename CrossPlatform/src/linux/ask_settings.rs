@@ -1,9 +1,16 @@
 use gtk4::{self as gtk, prelude::*};
 pub fn build(column: &gtk::Box) {
     let configuration = crate::assistant::Configuration::load().unwrap_or_default();
-    let enabled = gtk::CheckButton::with_label("Enable cloud Ask with one screen image");
+    let enabled = gtk::CheckButton::with_label("Enable cloud Ask");
     enabled.set_active(configuration.enabled);
     column.append(&enabled);
+    let note = gtk::Label::new(Some(
+        "Sends your question and one screen image to the provider you choose.",
+    ));
+    note.set_wrap(true);
+    note.set_xalign(0.0);
+    note.add_css_class("koett-setting-help");
+    column.append(&note);
     let provider = gtk::ComboBoxText::new();
     for (id, label) in [
         ("groq", "Groq"),

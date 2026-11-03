@@ -6,8 +6,8 @@ use std::rc::Rc;
 const STACK_NAME: &str = "koett-settings-pages";
 
 pub(super) struct Panels {
-    pub models: Rc<super::models_view::ModelsView>,
-    pub formatting: Rc<super::formatting_view::FormattingView>,
+    pub models: Rc<super::models_view::ModelsPanel>,
+    pub formatting: Rc<super::formatting_view::FormattingPanel>,
 }
 
 pub(super) fn show(
@@ -61,7 +61,6 @@ pub(super) fn show(
     let navigation = gtk::StackSidebar::new();
     navigation.set_stack(&stack);
     navigation.add_css_class("koett-settings-sidebar");
-    navigation.set_size_request(184, -1);
     super::menu::set_accessible_label(navigation.upcast_ref(), "Settings section");
     body.append(&navigation);
     body.append(&gtk::Separator::new(gtk::Orientation::Vertical));
@@ -81,8 +80,8 @@ pub(super) fn show(
     applies.set_wrap(true);
     applies.add_css_class("koett-setting-help");
     model.append(&applies);
-    adopt(&panels.models.root, &group(&model, "Speech model"));
-    adopt(&panels.formatting.root, &group(&model, "Formatting"));
+    group(&model, "Speech model").append(&panels.models.build());
+    group(&model, "Formatting").append(&panels.formatting.build());
     let shortcuts = group(&shortcuts_page, "Recording shortcuts");
     let shortcut_error = gtk::Label::new(None);
     shortcut_error.set_wrap(true);
@@ -118,6 +117,7 @@ pub(super) fn show(
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     footer.add_css_class("koett-settings-footer");
     outer.append(&footer);
+    tab_past_sidebar(&navigation, &stack, &header, &footer);
     window.set_child(Some(&outer));
     let input = gtk::ComboBoxText::new();
     for cell in input.cells() {
@@ -396,7 +396,7 @@ pub(super) fn show(
                 }
             });
         });
-        let setup = gtk::Expander::new(Some("Set up shortcuts in your desktop instead"));
+        let setup = gtk::Expander::new(Some("Use desktop shortcuts instead"));
         let instructions = gtk::Label::new(Some(
             "Bind these commands in your desktop shortcut settings.
 
@@ -660,6 +660,39 @@ fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
     layout
 }
 
+// GtkListBox moves row by row on Tab and the sidebar selects the row it reaches,
+// so without this Tab walks every page and always lands on the last one.
+fn tab_past_sidebar(
+    sidebar: &gtk::StackSidebar,
+    stack: &gtk::Stack,
+    header: &gtk::HeaderBar,
+    footer: &gtk::Box,
+) {
+    let keys = gtk::EventControllerKey::new();
+    keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let stack = stack.clone();
+    let header = header.clone();
+    let footer = footer.clone();
+    keys.connect_key_pressed(move |_, key, _, modifiers| {
+        if !matches!(
+            key,
+            gtk::gdk::Key::Tab | gtk::gdk::Key::KP_Tab | gtk::gdk::Key::ISO_Left_Tab
+        ) {
+            return gtk::glib::Propagation::Proceed;
+        }
+        if modifiers.contains(gtk::gdk::ModifierType::SHIFT_MASK) {
+            header.child_focus(gtk::DirectionType::TabBackward);
+        } else if !stack
+            .visible_child()
+            .is_some_and(|page| page.child_focus(gtk::DirectionType::TabForward))
+        {
+            footer.child_focus(gtk::DirectionType::TabForward);
+        }
+        gtk::glib::Propagation::Stop
+    });
+    sidebar.add_controller(keys);
+}
+
 fn group(page: &gtk::Box, title: &str) -> gtk::Box {
     let heading = gtk::Label::new(Some(title));
     heading.set_xalign(0.0);
@@ -677,13 +710,6 @@ fn help(text: &str) -> gtk::Label {
     label.set_xalign(0.0);
     label.add_css_class("koett-setting-help");
     label
-}
-
-fn adopt(panel: &gtk::Box, into: &gtk::Box) {
-    if let Some(parent) = panel.parent().and_downcast::<gtk::Box>() {
-        parent.remove(panel);
-    }
-    into.append(panel);
 }
 
 fn find_stack(widget: &gtk::Widget) -> Option<gtk::Stack> {
@@ -723,7 +749,7 @@ fn row_for(
 ) {
     let title = gtk::Label::new(Some(label));
     title.set_xalign(0.0);
-    title.set_width_chars(16);
+    title.set_width_chars(12);
     if !target.as_ref().is::<gtk::Label>() {
         title.set_mnemonic_widget(Some(target));
     }
