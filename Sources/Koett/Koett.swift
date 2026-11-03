@@ -305,10 +305,7 @@ final class KoettController: NSObject {
             print("Ready with \(engineName). Use the menu-bar icon to change the mode or shortcut.")
         } catch {
             startupErrorMessage = error.localizedDescription
-            let nsError = error as NSError
-            startupErrorCode = nsError.domain == "Koett"
-                ? StartupErrorCode(rawValue: nsError.code)
-                : nil
+            startupErrorCode = StartupErrorCode(setupError: error)
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
 
@@ -320,13 +317,18 @@ final class KoettController: NSObject {
             }
             recoverTranscripts()
         } else {
-            let message = SetupStatus.shortError(
-                code: startupErrorCode,
-                message: startupErrorMessage ?? ""
-            )
-            recordingOverlay.showError(message)
-            rebuildMenu()
+            presentSetupFailure()
         }
+    }
+
+    /// No shortcut works until setup succeeds, so the pill waits to be clicked.
+    func presentSetupFailure() {
+        let message = SetupStatus.failurePill(
+            code: startupErrorCode,
+            message: startupErrorMessage ?? ""
+        )
+        recordingOverlay.showError(message, keepUntilClicked: true)
+        rebuildMenu()
     }
 
     func setSetupStatus(_ status: SetupStatus, showOverlay: Bool = true) {
@@ -424,14 +426,14 @@ final class KoettController: NSObject {
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            throw Self.failure("macOS could not install the modifier shortcut monitor.")
+            throw Self.shortcutMonitorFailure("macOS could not install the modifier shortcut monitor.")
         }
         guard let eventSource = CFMachPortCreateRunLoopSource(
             kCFAllocatorDefault,
             eventTap,
             0
         ) else {
-            throw Self.failure("macOS could not start the modifier shortcut monitor.")
+            throw Self.shortcutMonitorFailure("macOS could not start the modifier shortcut monitor.")
         }
 
         let newKeyMonitor = NSEvent.addGlobalMonitorForEvents(
@@ -454,7 +456,7 @@ final class KoettController: NSObject {
         }
 
         guard let newKeyMonitor else {
-            throw Self.failure("macOS could not install the key shortcut monitor.")
+            throw Self.shortcutMonitorFailure("macOS could not install the key shortcut monitor.")
         }
 
         CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
@@ -939,6 +941,10 @@ final class KoettController: NSObject {
 
     static func failure(_ message: String, code: Int = 1) -> NSError {
         NSError(domain: "Koett", code: code, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    static func shortcutMonitorFailure(_ message: String) -> NSError {
+        failure(message, code: StartupErrorCode.shortcutMonitor.rawValue)
     }
 
     private static func loadShortcut(

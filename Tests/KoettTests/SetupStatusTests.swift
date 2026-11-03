@@ -8,6 +8,51 @@ final class SetupStatusTests: XCTestCase {
         XCTAssertEqual(SetupStatus.ready.overlayTitle, "Koett is ready")
     }
 
+    @MainActor
+    func testShortcutMonitorFailureHasItsOwnCodeAndMessage() {
+        let code = StartupErrorCode(setupError: KoettController.shortcutMonitorFailure("Long details"))
+        XCTAssertEqual(code, .shortcutMonitor)
+        XCTAssertEqual(SetupStatus.shortError(code: code, message: "Long details"), "Shortcut setup failed")
+        XCTAssertNil(StartupErrorCode(setupError: URLError(.notConnectedToInternet)))
+    }
+
+    @MainActor
+    func testFailedSetupKeepsItsPillAndMenuWayOutUntilClicked() throws {
+        let controller = try makeController()
+        controller.startupErrorMessage = "The Internet connection appears to be offline."
+        controller.presentSetupFailure()
+        defer { controller.recordingOverlay.stop() }
+
+        XCTAssertTrue(controller.recordingOverlay.isPresented)
+        XCTAssertFalse(controller.recordingOverlay.willDismissByItself)
+        XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Model setup failed · See menu"))
+        XCTAssertNotNil(controller.makeMenu().item(withTitle: "Retry Setup"))
+    }
+
+    @MainActor
+    func testShortcutFailureMenuOffersAccessibilitySettingsAndRetry() throws {
+        let controller = try makeController()
+        controller.startupErrorMessage = "macOS could not install the modifier shortcut monitor."
+        controller.startupErrorCode = .shortcutMonitor
+        let menu = controller.makeMenu()
+        XCTAssertNotNil(menu.item(withTitle: "Shortcut setup failed"))
+        XCTAssertNotNil(menu.item(withTitle: "Open Accessibility Settings"))
+        XCTAssertNotNil(menu.item(withTitle: "Retry Setup"))
+    }
+
+    @MainActor
+    private func makeController() throws -> KoettController {
+        let name = "koett-setup-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        addTeardownBlock { UserDefaults(suiteName: name)?.removePersistentDomain(forName: name) }
+        return try KoettController(
+            defaults: defaults,
+            speechEngine: .parakeet,
+            availableMicrophones: { [] },
+            defaultMicrophoneID: { 0 }
+        )
+    }
+
     func testNormalizesFluidAudioDownloadProgress() {
         XCTAssertEqual(
             SetupStatus.fluidAudioDownload(model: "Parakeet v2", fraction: 0.0),

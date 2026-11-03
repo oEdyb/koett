@@ -3,6 +3,10 @@ import Foundation
 
 extension KoettController {
     func rebuildMenu() {
+        statusItem?.menu = makeMenu()
+    }
+
+    func makeMenu() -> NSMenu {
         let menu = NSMenu()
         menu.delegate = self
         let historyItem = menuItem(title: "History…", action: #selector(openTranscripts), selected: false)
@@ -42,7 +46,7 @@ extension KoettController {
                     selected: false
                 ))
             }
-            if startupErrorCode == .accessibility {
+            if startupErrorCode == .accessibility || startupErrorCode == .shortcutMonitor {
                 menu.addItem(menuItem(
                     title: "Open Accessibility Settings",
                     action: #selector(openAccessibilitySettings),
@@ -314,7 +318,7 @@ extension KoettController {
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
-        statusItem?.menu = menu
+        return menu
     }
 
     static var versionLabel: String {

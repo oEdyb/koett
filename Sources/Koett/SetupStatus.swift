@@ -3,6 +3,13 @@ import Foundation
 enum StartupErrorCode: Int, Sendable {
     case microphone = 2
     case accessibility = 3
+    case shortcutMonitor = 4
+
+    init?(setupError: Error) {
+        let error = setupError as NSError
+        guard error.domain == "Koett" else { return nil }
+        self.init(rawValue: error.code)
+    }
 }
 
 enum SetupStatus: Equatable, Sendable {
@@ -33,9 +40,16 @@ enum SetupStatus: Equatable, Sendable {
             return "Microphone access is off"
         case .accessibility:
             return "Accessibility access is off"
+        case .shortcutMonitor:
+            return "Shortcut setup failed"
         case nil:
             return "Model setup failed"
         }
+    }
+
+    /// The pill stays up after setup fails, so it names where the way out is.
+    static func failurePill(code: StartupErrorCode?, message: String) -> String {
+        "\(shortError(code: code, message: message)) · See menu"
     }
 
     var menuTitle: String {

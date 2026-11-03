@@ -92,6 +92,7 @@ final class RecordingOverlayController: NSObject {
     private var timer: Timer?
     private var lastRedraw: TimeInterval = 0
     private var dismissWorkItem: DispatchWorkItem?
+    var willDismissByItself: Bool { dismissWorkItem != nil }
     /// Set when a dismiss came due while hovered; the pill leaves once the pointer does.
     private var dismissOnExit = false
     private var morphTimer: Timer?

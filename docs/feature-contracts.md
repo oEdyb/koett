@@ -218,6 +218,9 @@
 - First run uses the existing pill and menu to show permission checks, exact
   model download percentages, model load, warm-up, ready state, and short
   errors. Permission errors include direct System Settings actions and Retry.
+  A failed setup keeps its pill until clicked, because no shortcut works yet,
+  and the menu keeps Retry Setup. A shortcut-monitor failure has its own code
+  and message, separate from model setup.
 - `install-macos.sh` builds and verifies a staged release app before it stops
   the installed app. It then makes an atomic same-volume replacement, verifies
   the final signature, keeps the existing Login Item registered, and launches
