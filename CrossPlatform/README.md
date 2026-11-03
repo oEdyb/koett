@@ -49,7 +49,9 @@ Wayland uses the desktop's GlobalShortcuts and RemoteDesktop portals when
 available. Otherwise bind `koett toggle` in your compositor; hold mode uses
 `koett start` and `koett stop` with press/release bindings. Koett does not require
 an input group or privileged keyboard daemon. On niri/wlroots, install
-`wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported. X11
+`wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported.
+Automatic paste needs a focus check, which only niri and X11 offer here. Elsewhere
+Koett copies the text and shows Not pasted, with Paste to send it to the focused app. X11
 uses native global shortcuts and XTest.
 
 Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
