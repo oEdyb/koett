@@ -55,6 +55,21 @@ final class PermissionsTests: XCTestCase {
         XCTAssertFalse(center.asked(.accessibility))
     }
 
+    func testRowOffersAllowAgainAfterAGrantWasReset() throws {
+        let name = "koett-permissions-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        addTeardownBlock { UserDefaults(suiteName: name)?.removePersistentDomain(forName: name) }
+        var granted = false
+        let center = PermissionCenter(defaults: defaults, systemGrant: { _ in granted })
+        defaults.set(true, forKey: PermissionKind.accessibility.askedDefaultsKey)
+        XCTAssertEqual(center.row(.accessibility).action, .openSettings)
+
+        granted = true
+        XCTAssertTrue(center.row(.accessibility).allowed)
+        granted = false
+        XCTAssertEqual(center.row(.accessibility).action, .allow)
+    }
+
     /// Writes the window in each state when KOETT_PERMISSIONS_SNAPSHOT_DIR is set.
     func testRenderPermissionStates() throws {
         guard let directory = ProcessInfo.processInfo.environment["KOETT_PERMISSIONS_SNAPSHOT_DIR"] else {

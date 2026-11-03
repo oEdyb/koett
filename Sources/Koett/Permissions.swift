@@ -102,11 +102,24 @@ struct PermissionRow: Equatable, Sendable {
 @MainActor
 final class PermissionCenter {
     private let defaults: UserDefaults
+    private let systemGrant: (PermissionKind) -> Bool
     private(set) var screenProbeSucceeded = false
     private var probing = false
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        systemGrant: @escaping (PermissionKind) -> Bool = PermissionCenter.liveSystemGrant
+    ) {
         self.defaults = defaults
+        self.systemGrant = systemGrant
+    }
+
+    nonisolated static func liveSystemGrant(_ kind: PermissionKind) -> Bool {
+        switch kind {
+        case .microphone: AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        case .accessibility: AXIsProcessTrusted()
+        case .screenRecording: CGPreflightScreenCaptureAccess()
+        }
     }
 
     func asked(_ kind: PermissionKind) -> Bool {
@@ -114,11 +127,7 @@ final class PermissionCenter {
     }
 
     func isGranted(_ kind: PermissionKind) -> Bool {
-        switch kind {
-        case .microphone: AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
-        case .accessibility: AXIsProcessTrusted()
-        case .screenRecording: CGPreflightScreenCaptureAccess() || screenProbeSucceeded
-        }
+        systemGrant(kind) || (kind == .screenRecording && screenProbeSucceeded)
     }
 
     var requiredGranted: Bool {
@@ -127,8 +136,11 @@ final class PermissionCenter {
 
     var allGranted: Bool { PermissionKind.allCases.allSatisfy(isGranted) }
 
+    /// A grant ends the question, so `tccutil reset` or a clean TCC database
+    /// later gets Allow again, which is what lists Koett in System Settings.
     func row(_ kind: PermissionKind) -> PermissionRow {
-        PermissionRow.make(
+        if systemGrant(kind) { defaults.removeObject(forKey: kind.askedDefaultsKey) }
+        return PermissionRow.make(
             kind,
             microphone: AVCaptureDevice.authorizationStatus(for: .audio),
             granted: isGranted(kind),

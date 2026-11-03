@@ -236,7 +236,8 @@
   install the installer refuses that change unless
   `KOETT_ALLOW_SIGNATURE_CHANGE=1`. Startup and menus never raise a system
   prompt; the permissions window's Allow button does, and so does a first
-  drawing or Ask capture before Screen Recording is granted. See
+  drawing or Ask capture before Screen Recording is granted. An observed grant
+  clears the row's asked flag, so a later `tccutil reset` offers Allow again. See
   [Mac permission prompts](mac-permissions.md).
 
 ### Recording feedback accessibility

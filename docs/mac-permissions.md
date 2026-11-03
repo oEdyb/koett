@@ -32,8 +32,13 @@ guarded.
 ## What Koett asks for, and when
 
 - Microphone, Accessibility, Screen Recording: from the permissions window's
-  Allow button, once. Startup and the menu check silently and open System
-  Settings instead of raising a second system prompt. Drawing and Ask capture
+  Allow button, once per grant. Startup and the menu check silently and open
+  System Settings instead of raising a second system prompt. When the window
+  sees a grant it clears `permissionAsked.<kind>`, so a later `tccutil reset`
+  or a revoked grant shows Allow, which re-lists Koett. A reset before the new
+  build has seen the grant keeps Open Settings; to rehearse a clean first run
+  also run `defaults delete com.olledyberg.Koett permissionAsked.accessibility`
+  and the same for `permissionAsked.screenRecording`. Drawing and Ask capture
   the screen directly, so if Screen Recording was never granted, their first
   capture raises the system prompt instead.
 - The permissions window polls status with `AVCaptureDevice`,
