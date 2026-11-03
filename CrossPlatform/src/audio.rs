@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::mpsc::{self, Receiver, SyncSender};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -136,14 +136,14 @@ impl MicrophoneRecorder {
     pub fn start_streaming_with_device(
         microphone: Option<&str>,
     ) -> Result<(Self, Receiver<Vec<f32>>), String> {
-        let (sender, receiver) = mpsc::sync_channel(64);
+        let (sender, receiver) = mpsc::channel();
         let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
         Ok((recorder, receiver))
     }
 
     fn start_inner(
         maximum_duration: Duration,
-        audio_chunks: Option<SyncSender<Vec<f32>>>,
+        audio_chunks: Option<Sender<Vec<f32>>>,
         microphone: Option<&str>,
     ) -> Result<Self, String> {
         if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
@@ -307,12 +307,9 @@ impl MicrophoneRecorder {
             .play()
             .map_err(|error| format!("could not start the microphone: {error}"))?;
         let collector_stop = stop_collector.clone();
-        let collector_overflow = overflowed.clone();
         let collector = thread::Builder::new()
             .name("koett-audio-collector".to_string())
-            .spawn(move || {
-                collect_samples(consumer, collector_stop, audio_chunks, collector_overflow)
-            })
+            .spawn(move || collect_samples(consumer, collector_stop, audio_chunks))
             .map_err(|error| format!("could not start the microphone collector: {error}"))?;
 
         Ok(Self {
@@ -402,8 +399,7 @@ pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, 
 fn collect_samples(
     mut consumer: ringbuf::HeapCons<f32>,
     stop: Arc<AtomicBool>,
-    mut audio_chunks: Option<SyncSender<Vec<f32>>>,
-    overflowed: Arc<AtomicBool>,
+    mut audio_chunks: Option<Sender<Vec<f32>>>,
 ) -> Vec<f32> {
     let mut samples = Vec::new();
     let mut chunk = [0.0_f32; 2_048];
@@ -412,9 +408,8 @@ fn collect_samples(
         samples.extend_from_slice(&chunk[..count]);
         if count > 0
             && let Some(sender) = &audio_chunks
-            && sender.try_send(chunk[..count].to_vec()).is_err()
+            && sender.send(chunk[..count].to_vec()).is_err()
         {
-            overflowed.store(true, Ordering::Release);
             audio_chunks = None;
         }
         if stop.load(Ordering::Acquire) && consumer.is_empty() {
@@ -648,19 +643,15 @@ mod tests {
     }
 
     #[test]
-    fn streaming_queue_overflow_preserves_captured_audio() {
-        let (mut producer, consumer) = HeapRb::<f32>::new(4).split();
-        producer.push_slice(&[0.1, 0.2, 0.3]);
-        let (sender, _receiver) = mpsc::sync_channel(0);
-        let overflow = Arc::new(AtomicBool::new(false));
-        let audio = collect_samples(
-            consumer,
-            Arc::new(AtomicBool::new(true)),
-            Some(sender),
-            overflow.clone(),
-        );
-        assert_eq!(audio, vec![0.1, 0.2, 0.3]);
-        assert!(overflow.load(std::sync::atomic::Ordering::Acquire));
+    fn slow_live_decoder_loses_no_chunks() {
+        let input = vec![0.25; 2_048 * 100];
+        let (mut producer, consumer) = HeapRb::<f32>::new(input.len()).split();
+        producer.push_slice(&input);
+        let (sender, receiver) = mpsc::channel();
+        let recorded = collect_samples(consumer, Arc::new(AtomicBool::new(true)), Some(sender));
+        let forwarded: Vec<f32> = receiver.try_iter().flatten().collect();
+        assert_eq!(recorded, input);
+        assert_eq!(forwarded, input);
     }
 
     #[test]
@@ -668,14 +659,9 @@ mod tests {
         let (mut producer, consumer) = HeapRb::<f32>::new(4).split();
         producer.push_slice(&[0.1, 0.2, 0.3]);
         let stop = Arc::new(AtomicBool::new(true));
-        let (sender, receiver) = mpsc::sync_channel(64);
+        let (sender, receiver) = mpsc::channel();
 
-        let recorded = collect_samples(
-            consumer,
-            stop,
-            Some(sender),
-            Arc::new(AtomicBool::new(false)),
-        );
+        let recorded = collect_samples(consumer, stop, Some(sender));
         let forwarded = receiver.recv().unwrap();
 
         assert_eq!(
