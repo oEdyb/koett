@@ -67,6 +67,10 @@
   Command-V. Koett does not show live partial dictation text.
 - Successful paste is posted before transcript storage begins. Clipboard or
   paste failure still saves the final result once and never starts ASR recovery.
+- `CGEvent.post` reports nothing, so Koett does not post Command-V and reports
+  `Not pasted · saved` when Accessibility is gone, or when Koett is the active
+  app without one of its own text fields focused. It never reads focus in other
+  apps, so a paste the target ignores still shows the done pill.
 - Koett has no account or telemetry.
 
 ### Local speech engines
@@ -297,8 +301,9 @@
   on launch. Unsaved Ask or media text can also populate this memory fallback.
   These actions run no ASR and create no history rows. An empty cleaned result
   keeps the prior Last Transcript; its raw text stays in shared recovery.
-- Paste Last writes the clipboard first. If Command-V cannot be created, the
-  text stays on the clipboard. Menu actions wait for AppKit menu tracking to
+- Paste Last writes the clipboard first. If Command-V cannot be created or
+  has no target, the text stays on the clipboard and the pill returns to
+  `Not pasted · saved` with **Paste** and **Copy**. Menu actions wait for AppKit menu tracking to
   end, then run on the next main-loop turn so the status menu does not own the
   event target.
 - This path follows Apple's current

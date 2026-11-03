@@ -634,6 +634,10 @@ extension KoettController {
 
     /// Posts V with `flags` (Command for text; Control for images in terminals).
     func postPasteKey(flags: CGEventFlags) -> Bool {
+        PasteTargetGate().post { sendPasteKey(flags: flags) }
+    }
+
+    private func sendPasteKey(flags: CGEventFlags) -> Bool {
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(
                   keyboardEventSource: source,

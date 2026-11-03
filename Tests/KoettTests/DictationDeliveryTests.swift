@@ -69,6 +69,53 @@ final class DictationDeliveryTests: XCTestCase {
         }
     }
 
+    func testLostAccessibilityReportsNotPastedAndStillSaves() {
+        var keyPosted = false
+        var saves = 0
+        let gate = PasteTargetGate(
+            isTrusted: { false },
+            koettIsActive: { false },
+            koettTextFieldHasFocus: { false }
+        )
+        XCTAssertThrowsError(try DictationDelivery.deliver(
+            "Recover me.",
+            writeToClipboard: { _ in true },
+            postPaste: { gate.post { keyPosted = true; return true } },
+            persist: { saves += 1; return savedOutcome() }
+        ))
+        XCTAssertFalse(keyPosted)
+        XCTAssertEqual(saves, 1)
+    }
+
+    func testActiveKoettWithoutTextFieldReportsNotPasted() {
+        var keyPosted = false
+        let gate = PasteTargetGate(
+            isTrusted: { true },
+            koettIsActive: { true },
+            koettTextFieldHasFocus: { false }
+        )
+        XCTAssertFalse(gate.post { keyPosted = true; return true })
+        XCTAssertFalse(keyPosted)
+    }
+
+    func testPasteIsPostedToOtherAppsAndKoettTextFields() {
+        var posts = 0
+        let otherApp = PasteTargetGate(
+            isTrusted: { true },
+            koettIsActive: { false },
+            koettTextFieldHasFocus: { false }
+        )
+        let koettField = PasteTargetGate(
+            isTrusted: { true },
+            koettIsActive: { true },
+            koettTextFieldHasFocus: { true }
+        )
+        XCTAssertTrue(otherApp.post { posts += 1; return true })
+        XCTAssertTrue(koettField.post { posts += 1; return true })
+        XCTAssertFalse(otherApp.post { posts += 1; return false })
+        XCTAssertEqual(posts, 3)
+    }
+
     private func savedOutcome() -> TranscriptPersistence.Outcome {
         TranscriptPersistence.Outcome(
             historySaved: true,
