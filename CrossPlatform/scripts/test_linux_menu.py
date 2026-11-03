@@ -85,20 +85,16 @@ def find(name, root=None, role=None):
     return None
 
 
+PAGES = ['Dictation', 'Model & formatting', 'Draw on screen', 'Shortcuts', 'Words', 'Ask About Screen', 'General']
+
+
 def click(name, root=None):
-    if name in ['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General']:
-        combo = wait(lambda: find('Settings section', root, 'combo box'), 'Settings selector')
-        kwin(f'for (const w of workspace.windowList()) if (w.pid === {process.pid} && w.caption === "Settings") {{ w.frameGeometry={{x:400,y:140,width:540,height:460}}; workspace.activeWindow=w; }}')
-        rect = combo.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
-        input_tool = str(Path.home() / '.local/share/agent-lab/input')
-        subprocess.run([input_tool, 'move', str(400 + rect.x + 50), str(140 + rect.y + rect.height // 2)], check=True)
-        subprocess.run([input_tool, 'click'], check=True)
-        keys('key', 102)
-        for _ in range(['Audio', 'Shortcuts', 'Text', 'Dictionary', 'General'].index(name)):
-            keys('key', 108)
-        keys('key', 28)
+    if name in PAGES:
+        sidebar = wait(lambda: next((n for n in walk(root) if n.get_role_name() == 'list'
+                                     and any(c.get_name() == PAGES[0] for c in walk(n))), None), 'Settings sidebar')
+        assert sidebar.get_selection_iface().select_child(PAGES.index(name)), name
         time.sleep(0.4)
-        return combo
+        return sidebar
     node = wait(lambda: find(name, root), name)
     assert node.get_action_iface().do_action(0), name
     time.sleep(0.2)
@@ -190,6 +186,20 @@ def click_menu(label):
     time.sleep(0.2)
 
 
+def close_menu():
+    for _ in range(3):
+        keys('key', 1)
+        time.sleep(0.2)
+        if not find('Hide window', main) and not find('Copy last transcript', main, 'menu item'):
+            return
+    raise AssertionError('Escape closes menu')
+
+
+TOP_MENU = ['Ask', 'Transcripts', 'Recovery', 'Settings…', 'About Koett…', 'Hide window', 'Quit Koett']
+TRAY = ['Ready', 'Record', 'Ask About Screen', 'Transcribe media…', 'History', 'Copy last transcript',
+        'Paste last transcript', 'Recovery', 'Settings…', 'Quit Koett']
+
+
 def tray_items():
     _, layout = tray_menu.GetLayout(0, -1, [])
     return [(int(child[0]), dict(child[1])) for child in layout[2]]
@@ -228,18 +238,21 @@ try:
     tray = dbus.Interface(bus.get_object(service, '/StatusNotifierItem'), 'org.kde.StatusNotifierItem')
     tray_menu = dbus.Interface(bus.get_object(service, '/MenuBar'), 'com.canonical.dbusmenu')
     tray_phase('Record', True)
-    assert [str(props['label']) for _, props in tray_items() if 'label' in props] == ['Ready', 'Record', 'Settings', 'History', 'Quit Koett']
+    assert [str(props['label']) for _, props in tray_items() if 'label' in props] == TRAY
+    checks.append('real tray holds quick actions and one Settings… link, no preferences')
     kwin('for (const w of workspace.stackingOrder) if (w.caption === "Koett") { w.frameGeometry={x:200,y:100,width:960,height:680}; workspace.activeWindow=w; }')
     menu_open()
     normal_extents = main.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
-    copy = menu_item('Copy last transcript')
-    menu_names = [n.get_name() for n in walk(main) if n.get_role_name() == 'menu item']
-    assert menu_names == ['History', 'Copy last transcript', 'Local models…', 'Settings…', 'Hide window', 'Quit Koett'], menu_names
-    assert not copy.get_state_set().contains(Atspi.StateType.SENSITIVE)
-    assert all(menu_item(name).get_name() for name in ['History', 'Local models…', 'Settings…', 'Hide window', 'Quit Koett'])
+    menu_names = [n.get_name() for n in walk(main) if n.get_role_name() == 'menu item'
+                  and n.get_state_set().contains(Atspi.StateType.SHOWING)]
+    assert menu_names == TOP_MENU, menu_names
     capture('menu-empty-normal')
-    keys('key', 1)
-    wait(lambda: not find('Hide window', main), 'Escape closes menu')
+    click_menu('Transcripts')
+    copy = menu_item('Copy last transcript')
+    assert not copy.get_state_set().contains(Atspi.StateType.SENSITIVE)
+    assert all(menu_item(name).get_name() for name in ['Transcribe media…', 'History', 'Paste last transcript'])
+    capture('menu-transcripts-empty')
+    close_menu()
     checks.append('native keyboard menu has named items; Copy last disabled before a result; Escape closes')
     keys('chord', 29, 33)
     search = next(n for n in walk(main) if n.get_role_name() == 'entry' and n.get_state_set().contains(Atspi.StateType.FOCUSED))
@@ -247,15 +260,15 @@ try:
     keys('chord', 29, 51)
     settings = wait(lambda: find('Settings', role='frame'), 'Ctrl+, Settings')
     wait(lambda: len(streams()) == 1, 'Settings microphone preview captures')
-    click('Text', settings)
-    wait(lambda: not streams(), 'Text releases microphone preview')
+    click('Words', settings)
+    wait(lambda: not streams(), 'Words releases microphone preview')
     click('Add replacement', settings)
     phrase = wait(lambda: find('Phrase', settings, 'text'), 'Phrase entry')
     assert phrase.get_editable_text_iface().set_text_contents('unsaved-menu-draft')
     keys('chord', 29, 51)
     assert len([n for n in walk(Atspi.get_desktop(0)) if n.get_name() == 'Settings' and n.get_role_name() == 'frame']) == 1
     assert Atspi.Text.get_text(phrase, 0, -1) == 'unsaved-menu-draft'
-    tray_action('Settings')
+    tray_action('Settings…')
     assert Atspi.Text.get_text(phrase, 0, -1) == 'unsaved-menu-draft'
     capture('settings-reused-draft')
     keys('chord', 56, 62)
@@ -272,6 +285,7 @@ try:
     wait(lambda: not find('Settings', role='frame'), 'close header Settings')
     checks.append('Ctrl+F focuses search; Ctrl+, and real tray Settings reuse drafts; native menu and visible header open Settings')
     menu_open()
+    click_menu('Transcripts')
     click_menu('History')
     wait(lambda: not find('Hide window', main), 'History closes menu')
     menu_open()
@@ -369,6 +383,7 @@ app.connect('activate',activate);app.run([])
     kwin('for (const w of workspace.stackingOrder) if (w.caption === "Koett") workspace.activeWindow=w;')
     keys('key', 15)
     menu_open()
+    click_menu('Transcripts')
     copy = menu_item('Copy last transcript')
     assert copy.get_state_set().contains(Atspi.StateType.SENSITIVE)
     capture('menu-completed-narrow')

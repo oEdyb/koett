@@ -1,8 +1,46 @@
 use gtk4::{self as gtk, prelude::*};
 use std::sync::mpsc::Sender;
 
-pub(super) struct ModelsView {
-    pub root: gtk::Box,
+/// Settings builds new widgets each time it opens: moving widgets between
+/// windows breaks their accessibility contexts and crashes GTK's AT-SPI code.
+/// `state` follows the engine while no Settings window exists.
+pub(super) struct ModelsPanel {
+    actions: Sender<super::TrayAction>,
+    state: ModelsView,
+    current: std::cell::RefCell<Option<ModelsView>>,
+}
+
+impl ModelsPanel {
+    pub fn new(actions: Sender<super::TrayAction>) -> Self {
+        Self {
+            state: ModelsView::new(actions.clone()),
+            actions,
+            current: Default::default(),
+        }
+    }
+    pub fn build(&self) -> gtk::Box {
+        let view = ModelsView::new(self.actions.clone());
+        view.copy_from(&self.state);
+        let root = view.root.clone();
+        *self.current.borrow_mut() = Some(view);
+        root
+    }
+    pub fn active(&self, name: &str) {
+        self.state.active(name);
+        if let Some(view) = self.current.borrow().as_ref() {
+            view.active(name);
+        }
+    }
+    pub fn update(&self, message: &str) {
+        self.state.update(message);
+        if let Some(view) = self.current.borrow().as_ref() {
+            view.update(message);
+        }
+    }
+}
+
+struct ModelsView {
+    root: gtk::Box,
     active: gtk::Label,
     status: gtk::Label,
     progress: gtk::ProgressBar,
@@ -11,6 +49,7 @@ pub(super) struct ModelsView {
     cancel: gtk::Button,
     selected: std::cell::Cell<Option<crate::model::LocalModel>>,
     ready: std::cell::Cell<bool>,
+    switching: std::cell::Cell<bool>,
 }
 
 impl ModelsView {
@@ -111,7 +150,23 @@ impl ModelsView {
             cancel,
             selected: Default::default(),
             ready: Default::default(),
+            switching: Default::default(),
         }
+    }
+    fn copy_from(&self, other: &Self) {
+        self.active.set_text(&other.active.text());
+        self.active
+            .set_tooltip_text(other.active.tooltip_text().as_deref());
+        self.status.set_text(&other.status.text());
+        self.notice.set_text(&other.notice.text());
+        self.progress.set_visible(other.progress.is_visible());
+        self.progress.set_fraction(other.progress.fraction());
+        self.progress.set_text(other.progress.text().as_deref());
+        self.cancel.set_visible(other.cancel.is_visible());
+        self.selected.set(other.selected.get());
+        self.ready.set(other.ready.get());
+        self.switching.set(other.switching.get());
+        self.refresh_choices();
     }
     pub fn active(&self, name: &str) {
         let label = if name.starts_with("sherpa-onnx-nemotron-speech-streaming") {
@@ -162,7 +217,7 @@ impl ModelsView {
     pub fn update(&self, message: &str) {
         let about_models = message.to_ascii_lowercase().contains("model");
         if let Some(notice) = message.strip_prefix("@notice:") {
-            if about_models {
+            if about_models || self.switching.get() {
                 self.notice.set_text(notice);
             }
             return;
@@ -170,6 +225,8 @@ impl ModelsView {
         if message == "Starting…" {
             self.notice.set_text("");
         }
+        self.switching
+            .set(about_models || message.starts_with("Starting"));
         let percent = message
             .strip_prefix("Downloading model… ")
             .and_then(|value| value.strip_suffix('%'))
@@ -180,14 +237,13 @@ impl ModelsView {
                 .set_fraction(f64::from(percent.min(100)) / 100.0);
             self.progress.set_text(Some(&format!("{percent}%")));
             self.status.set_text("Downloading model…");
-        } else if about_models || message.starts_with("Error") {
+        } else if self.switching.get() || message.starts_with("Error") {
             self.status.set_text(message);
         } else {
             self.status.set_text("");
         }
         self.ready.set(message == "Ready");
         self.refresh_choices();
-        self.cancel
-            .set_visible(about_models || message.starts_with("Starting"));
+        self.cancel.set_visible(self.switching.get());
     }
 }
