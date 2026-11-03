@@ -4,3 +4,5 @@
 [2026-11-03 02:04] CI checks are still running on PR #28. I'll merge and install as soon as they finish. 
 [2026-11-03 02:14] CI is still running the Linux (x86_64, arm64) and Windows builds. Merge and install follow once they're green. 
 [2026-11-03 21:40] Noted: it's 21:40 local, 20 minutes before the cutoff. I'm waiting for the three agents already running and won't start new ones, before or after 22:00. 
+[2026-11-03 21:43] I checked the cleanup agent's filler finding against the local history. Parakeet v2 writes "um/uh" at 2.46% of words and 110M at 0.60%, though those ran on different days. I'm still waiting on the oth
+[2026-11-03 21:44] One to go, the model comparison. Vocabulary is back: non-word forms are safe, but a blanket `scroll → Scrawl` would be wrong in 8 of the 14 "scroll" hits. 
