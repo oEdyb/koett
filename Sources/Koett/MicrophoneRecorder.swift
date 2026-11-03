@@ -64,7 +64,15 @@ final class MicrophoneFileSink: Sendable {
     private let powerBits = Atomic<UInt32>(Float(-160).bitPattern)
     private let droppedFrames = Atomic<Int>(0)
     private let paused = Atomic<Bool>(false)
-    static let writeBufferBytes: UInt32 = 4 << 20
+    /// ExtAudioFile reaches disk each time this much client audio has queued, so a
+    /// crash loses at most this long. Measured at 48 kHz: a 10 s writer stall still
+    /// records cleanly and a 20 s stall overflows; 64 KB overflowed at about 1 s.
+    static let writeBufferSeconds = 5.5
+
+    static func writeBufferBytes(for format: AVAudioFormat) -> UInt32 {
+        UInt32(format.sampleRate * Double(format.channelCount)
+            * Double(MemoryLayout<Float32>.size) * writeBufferSeconds)
+    }
 
     var isPaused: Bool {
         get { paused.load(ordering: .acquiring) }
@@ -97,8 +105,7 @@ final class MicrophoneFileSink: Sendable {
         do {
             var client = inputFormat.streamDescription.pointee
             try Self.check(ExtAudioFileSetProperty(file, kExtAudioFileProperty_ClientDataFormat, UInt32(MemoryLayout<AudioStreamBasicDescription>.size), &client))
-            // The default 64 KB buffer overflows when the writer thread stalls for about one second.
-            var bufferBytes = Self.writeBufferBytes
+            var bufferBytes = Self.writeBufferBytes(for: inputFormat)
             try Self.check(ExtAudioFileSetProperty(file, kExtAudioFileProperty_IOBufferSizeBytes, UInt32(MemoryLayout<UInt32>.size), &bufferBytes))
             try Self.check(ExtAudioFileWriteAsync(file, 0, nil))
         } catch {
