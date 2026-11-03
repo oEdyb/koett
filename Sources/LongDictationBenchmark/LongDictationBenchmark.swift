@@ -21,6 +21,10 @@ struct LongDictationBenchmark {
             try PreparationBenchmark.run(arguments: Array(arguments.dropFirst()))
             return
         }
+        if arguments.first == "--measure", arguments.count == 2 {
+            try await MeasureBenchmark.run(path: arguments[1])
+            return
+        }
         guard arguments.count >= 2 else {
             throw NSError(domain: "Benchmark", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: long-dictation-benchmark <results.json> <16k mono WAV>..."])
         }
