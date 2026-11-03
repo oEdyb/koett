@@ -2,23 +2,81 @@
 //! `tile_pos_in_workspace_view` empty for tiled windows, so positions cannot
 //! locate one; `PickWindow` asks the compositor instead. A pick finishes on the
 //! next click, which the virtual pointer supplies, so the user sees nothing.
+//!
+//! The overlay blocks a pick while it accepts input, and without the overlay a
+//! click that beats the pick lands in the app. So the click waits for proof the
+//! pick is running: its pointer grab sends the overlay a pointer leave. Only
+//! then does the overlay open its input region. See [`PickGate`].
 use super::wl_click::VirtualPointer;
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::path::Path;
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-/// Sent after this long from the request, in case an earlier click arrived
-/// before the compositor had started the pick.
-const CLICKS_AT: [Duration; 3] = [
-    Duration::from_millis(25),
-    Duration::from_millis(120),
-    Duration::from_millis(240),
-];
-const PICK_DEADLINE: Duration = Duration::from_millis(500);
+const IDLE: u8 = 0;
+const WAITING: u8 = 1;
+const GRABBED: u8 = 2;
+const OPEN: u8 = 3;
+
+/// How the pick and the overlay take turns; shared with the UI thread.
+#[derive(Default)]
+pub struct PickGate(AtomicU8);
+
+impl PickGate {
+    /// UI thread, before the reader starts: the overlay keeps accepting input.
+    pub fn begin(&self) {
+        self.0.store(WAITING, Ordering::SeqCst);
+    }
+
+    pub fn finish(&self) {
+        self.0.store(IDLE, Ordering::SeqCst);
+    }
+
+    pub fn busy(&self) -> bool {
+        self.0.load(Ordering::SeqCst) != IDLE
+    }
+
+    /// The overlay lost the pointer; a pick that is waiting takes this as its grab.
+    pub fn pointer_left(&self) {
+        let _ = self
+            .0
+            .compare_exchange(WAITING, GRABBED, Ordering::SeqCst, Ordering::SeqCst);
+    }
+
+    /// The pointer came back, so that leave was the user crossing monitors.
+    pub fn pointer_entered(&self) {
+        let _ = self
+            .0
+            .compare_exchange(GRABBED, WAITING, Ordering::SeqCst, Ordering::SeqCst);
+    }
+
+    /// Whether the overlay must let the click through to the compositor.
+    pub fn wants_open(&self) -> bool {
+        matches!(self.0.load(Ordering::SeqCst), GRABBED | OPEN)
+    }
+
+    /// The overlay has asked for an empty input region.
+    pub fn opened(&self) {
+        let _ = self
+            .0
+            .compare_exchange(GRABBED, OPEN, Ordering::SeqCst, Ordering::SeqCst);
+    }
+
+    fn is_open(&self) -> bool {
+        self.0.load(Ordering::SeqCst) == OPEN
+    }
+}
+
+const GRAB_DEADLINE: Duration = Duration::from_millis(200);
+/// The empty input region reaches the compositor with the overlay's next frame.
+const REGION_SETTLES: Duration = Duration::from_millis(40);
+const ANSWER_DEADLINE: Duration = Duration::from_millis(150);
+const POLL: Duration = Duration::from_millis(4);
 const WINDOWS_TIMEOUT: Duration = Duration::from_millis(200);
+const REQUEST_TIMEOUT: Duration = Duration::from_millis(600);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct NiriWindow {
@@ -105,40 +163,44 @@ fn last_focused(socket: &Path) -> Option<u64> {
     parse_last_focused(&reply)
 }
 
-/// Clicks on schedule until the pick is answered. `None` when it never is.
-fn pick(socket: &Path, pointer: &mut VirtualPointer) -> Option<String> {
-    let reader = request(socket, "PickWindow", PICK_DEADLINE).ok()?;
-    let started = Instant::now();
+/// Clicks once the pick is proven to be running. When it never proves itself,
+/// the overlay still accepts input, so the cleanup clicks can reach no app.
+fn pick(socket: &Path, pointer: &mut VirtualPointer, gate: &PickGate) -> Option<String> {
+    let reader = request(socket, "PickWindow", REQUEST_TIMEOUT).ok()?;
     let (sender, answer) = mpsc::channel();
     std::thread::spawn(move || {
         let _ = sender.send(read_reply(reader));
     });
-    for click_at in CLICKS_AT {
-        let wait = click_at.saturating_sub(started.elapsed());
-        match answer.recv_timeout(wait) {
-            Ok(reply) => return reply.ok(),
-            Err(mpsc::RecvTimeoutError::Disconnected) => return None,
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
+    let started = Instant::now();
+    while !gate.is_open() {
+        if started.elapsed() >= GRAB_DEADLINE {
+            eprintln!("Pin window lookup: niri did not start the pick");
+            let _ = pointer.click();
+            let _ = answer.recv_timeout(ANSWER_DEADLINE);
+            let _ = pointer.click();
+            return None;
         }
-        if let Err(error) = pointer.click() {
-            eprintln!("Pin window lookup: {error}");
-        }
+        std::thread::sleep(POLL);
     }
-    answer
-        .recv_timeout(PICK_DEADLINE.saturating_sub(started.elapsed()))
-        .ok()?
-        .ok()
+    std::thread::sleep(REGION_SETTLES);
+    if let Err(error) = pointer.click() {
+        eprintln!("Pin window lookup: {error}");
+        return None;
+    }
+    answer.recv_timeout(ANSWER_DEADLINE).ok()?.ok()
 }
 
 /// The window under the pointer, or `None` outside niri, without virtual
 /// pointer support, or over no window. Never starts a pick it could not finish.
-pub fn window_at_pointer() -> Option<NiriWindow> {
+pub fn window_at_pointer(gate: &PickGate) -> Option<NiriWindow> {
     let socket = std::env::var_os("NIRI_SOCKET")?;
     let socket = Path::new(&socket);
     let mut pointer = VirtualPointer::connect()
         .inspect_err(|error| eprintln!("Pin window lookup unavailable: {error}"))
         .ok()?;
-    let mut window = parse_picked(&pick(socket, &mut pointer)?)?;
+    let reply = pick(socket, &mut pointer, gate);
+    gate.finish();
+    let mut window = parse_picked(&reply?)?;
     window.last_focused = last_focused(socket) == Some(window.id);
     Some(window)
 }
@@ -146,6 +208,33 @@ pub fn window_at_pointer() -> Option<NiriWindow> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_gate_opens_only_after_the_pick_took_the_pointer() {
+        let gate = PickGate::default();
+        gate.begin();
+        assert!(gate.busy() && !gate.wants_open());
+        gate.opened();
+        assert!(!gate.wants_open(), "no leave yet");
+        gate.pointer_left();
+        assert!(gate.wants_open());
+        gate.pointer_entered();
+        assert!(!gate.wants_open(), "the user crossed monitors");
+        gate.pointer_left();
+        gate.opened();
+        assert!(gate.is_open());
+        gate.pointer_entered();
+        assert!(gate.is_open(), "an open gate stays open until finished");
+        gate.finish();
+        assert!(!gate.busy());
+    }
+
+    #[test]
+    fn an_idle_gate_ignores_pointer_crossings() {
+        let gate = PickGate::default();
+        gate.pointer_left();
+        assert!(!gate.busy() && !gate.wants_open());
+    }
 
     const WINDOW: &str = r#"{
         "id": 100, "title": "New Tab - Google Chrome", "app_id": "Google-chrome",

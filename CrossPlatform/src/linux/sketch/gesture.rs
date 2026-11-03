@@ -34,7 +34,10 @@ pub(super) struct Mark {
 pub(super) enum Motion {
     Ignore,
     /// Add `to` to the current stroke, first starting one at `from` when set.
-    Ink { from: Option<Mark>, to: Point },
+    Ink {
+        from: Option<Mark>,
+        to: Point,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

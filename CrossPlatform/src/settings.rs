@@ -68,6 +68,8 @@ pub struct Settings {
     /// Opt-in: read only modifier state from keyboard devices while recording
     /// so drawing needs no keyboard focus and typing keeps working.
     pub draw_key_from_keyboard: bool,
+    /// On by default: a pin also reads the selected text, capped at 500 characters.
+    pub pin_selected_text: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -89,6 +91,7 @@ impl Default for Settings {
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
             draw_key_from_keyboard: false,
+            pin_selected_text: true,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -263,6 +266,9 @@ impl Settings {
         }
         if self.draw_key_from_keyboard != opened.draw_key_from_keyboard {
             merged.draw_key_from_keyboard = self.draw_key_from_keyboard;
+        }
+        if self.pin_selected_text != opened.pin_selected_text {
+            merged.pin_selected_text = self.pin_selected_text;
         }
         merged
     }

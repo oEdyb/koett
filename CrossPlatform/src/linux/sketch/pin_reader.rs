@@ -2,7 +2,7 @@
 //! then the page, the element under the pointer and the selection through
 //! AT-SPI, then PRIMARY as the selection fallback. Every failure degrades to
 //! the fields already known, so a pin on any window has at least app and title.
-use super::niri_pick::{self, NiriWindow};
+use super::niri_pick::{self, NiriWindow, PickGate};
 use crate::pin_context::PinContext;
 use ashpd::zbus::{
     self, Connection,
@@ -46,9 +46,13 @@ const COORDS_WINDOW: u32 = 1;
 
 /// Blocking; call on a worker thread. `surface_point` is the click in the
 /// overlay's monitor-local coordinates.
-pub fn read(include_selection: bool, surface_point: (f64, f64)) -> Option<PinContext> {
+pub fn read(
+    include_selection: bool,
+    surface_point: (f64, f64),
+    gate: &PickGate,
+) -> Option<PinContext> {
     let deadline = Instant::now() + TOTAL;
-    let window = niri_pick::window_at_pointer()?;
+    let window = niri_pick::window_at_pointer(gate)?;
     if is_own_window(&window.app_id, window.pid) {
         return None;
     }
@@ -66,11 +70,7 @@ pub fn read(include_selection: bool, surface_point: (f64, f64)) -> Option<PinCon
         context.title = Some(title);
     }
     context.selection = found.selection;
-    if include_selection
-        && context.selection.is_none()
-        && window.last_focused
-        && !found.password
-    {
+    if include_selection && context.selection.is_none() && window.last_focused && !found.password {
         context.selection = primary_selection(remaining(deadline).min(PRIMARY));
     }
     Some(context)
@@ -260,7 +260,7 @@ where
             body,
         )
         .await?;
-    Ok(reply.body().deserialize()?)
+    reply.body().deserialize()
 }
 
 async fn property(bus: &Connection, object: &Object, name: &str) -> zbus::Result<OwnedValue> {
@@ -340,8 +340,7 @@ async fn scan_frame(
         }
         let object_role = role(bus, &object).await.unwrap_or(0);
         let focused = has_state(&state, STATE_FOCUSED);
-        if object_role == ROLE_PASSWORD
-            && (focused || selected_text(bus, &object).await.is_some())
+        if object_role == ROLE_PASSWORD && (focused || selected_text(bus, &object).await.is_some())
         {
             found.password = true;
         }
@@ -416,11 +415,15 @@ async fn selected_text(bus: &Connection, object: &Object) -> Option<String> {
     if count < 1 {
         return None;
     }
-    let (start, end): (i32, i32) = call(bus, object, TEXT, "GetSelection", &(0_i32,)).await.ok()?;
+    let (start, end): (i32, i32) = call(bus, object, TEXT, "GetSelection", &(0_i32,))
+        .await
+        .ok()?;
     if start >= end {
         return None;
     }
-    let text: String = call(bus, object, TEXT, "GetText", &(start, end)).await.ok()?;
+    let text: String = call(bus, object, TEXT, "GetText", &(start, end))
+        .await
+        .ok()?;
     selection_text(&text)
 }
 
@@ -492,10 +495,7 @@ mod tests {
 
     #[test]
     fn selection_drops_embedded_object_markers() {
-        assert_eq!(
-            selection_text("\u{FFFC} hello ").as_deref(),
-            Some("hello")
-        );
+        assert_eq!(selection_text("\u{FFFC} hello ").as_deref(), Some("hello"));
         assert_eq!(selection_text("\u{FFFC}\u{FFFC}"), None);
     }
 
@@ -509,7 +509,10 @@ mod tests {
 
     #[test]
     fn window_point_subtracts_tile_and_offset() {
-        assert_eq!(window_point((110.4, 60.0), (100.0, 40.0), (0.0, 10.0)), (10, 10));
+        assert_eq!(
+            window_point((110.4, 60.0), (100.0, 40.0), (0.0, 10.0)),
+            (10, 10)
+        );
     }
 
     #[test]

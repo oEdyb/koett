@@ -1513,6 +1513,7 @@ mod queued_capture_tests {
             order: 1,
             start: 0.5,
             png: vec![1],
+            context: None,
         };
         assert!(sketch::push_frame(recording, frame));
         // Cancel lands while decoding; only the session check sees it.
@@ -1530,6 +1531,7 @@ mod queued_capture_tests {
             order: 2,
             start: 1.0,
             png: vec![2],
+            context: None,
         };
         assert!(
             !sketch::push_frame(recording, late),
@@ -2298,7 +2300,9 @@ fn sketch_delivery(
         return (spoken.to_owned(), None);
     }
     let anchors: Vec<f32> = sketches.iter().map(|frame| frame.start).collect();
-    let text = crate::annotation::keyframe_summary(spoken, words, &anchors);
+    let summary = crate::annotation::keyframe_summary(spoken, words, &anchors);
+    let contexts: Vec<_> = sketches.iter().map(|frame| frame.context.clone()).collect();
+    let text = crate::pin_context::annotate(&summary, &contexts);
     let frames: Vec<Vec<u8>> = sketches.iter().map(|frame| frame.png.clone()).collect();
     match sketch::sheet::contact_sheet(&frames) {
         Ok(png) => (text, Some(png)),
