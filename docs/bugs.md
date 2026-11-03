@@ -181,3 +181,14 @@ Olle's niri desktop while dictating. Focus is now used only as an explicit opt-i
 by default the draw key comes from keyboard devices, or drawing stays off with a
 hint. Losing every keyboard mid-recording no longer takes focus either. Regression
 test: `a_recording_never_takes_the_keyboard_unless_opted_in`.
+
+## 2026-11-04: Linux demo hardening
+
+A lab run pointed `KOETT_MODEL_DIR` at Olle's real v2 folder, and Koett quarantined
+it and installed 110M there; it was restored after a hash check. Labs must copy
+models first. Fixed in the app: the pill's Paste only copied; no microphone with the
+window closed showed nothing; the 10-minute stop gave no reason and a late stop
+re-decoded everything; a double-tap on Stop started a new recording; a slow live
+decoder raised a false overflow warning; a press before ready did nothing; S1-mini
+could hold a paste for 180 s. Each has a regression test.
+

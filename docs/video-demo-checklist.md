@@ -7,8 +7,8 @@ desktops behave differently; see Rough edges.
 
 ### Demo-safe path
 
-1. Before filming, stop heavy jobs. Stop-to-paste slows sharply under load: 12 s for
-   a 63 s clip at load 97, against under 1 s for a 7 s clip at load about 10.
+1. Before filming, stop heavy jobs. Delay grows sharply under load: 0.6 s for a 7 s
+   clip at load about 2, but up to 3 s at load 90 and 12 s for a 63 s clip at load 97.
 2. Keep Parakeet v2. 110M sometimes glues a repeated fragment onto a word
    ("likeike"); v2 almost never does.
 3. Dictate into one app you have already tried today. Set Paste shortcut to match:
@@ -32,12 +32,15 @@ desktops behave differently; see Rough edges.
   cases.
 - **One paste shortcut for all apps:** Ctrl+V does nothing useful in a terminal.
 - **Cancel:** use the pill's hover Cancel or `koett cancel`. Esc does nothing on
-  Wayland, and while drawing it can be swallowed.
+  Wayland.
 - **Monitors:** a monitor plugged in during a recording gets no drawing overlay
   until the next dictation.
 - **Just after launch:** the model takes a few seconds to load. A press then opens
   the window with "Koett is still getting ready".
 - **`koett paste-last`:** the command copies; only the pill and menu press paste.
+- **Dictionary cost:** a 7 s clip took 0.60 s from stop to saved, against 0.32 s with
+  an empty dictionary (6 runs each, load about 2). Memory settles at about 1.2 GB
+  against 1.06 GB, and peaks near 2 GB when the dictionary loads.
 
 ### 2-minute check before recording
 

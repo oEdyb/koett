@@ -175,3 +175,18 @@ part of the 2026-11-02 decision). Order: devices when readable; focused overlay
 only if the user ticks the new last-resort option; otherwise drawing stays off
 with a one-line hint. No privileges are added: without existing device access
 nothing is read until the user runs the setup command Settings copies.
+
+## 2026-11-04: Linux pastes automatically only where it can check the target
+
+Olle's decision: a wrong-app paste is worse than a clipboard-only result. Niri and
+X11 report the focused window, so they keep automatic paste with a focus check.
+KDE, GNOME and other Wayland desktops can't, so they copy and show Not pasted, and
+pressing Paste sends the text to the app focused at that moment.
+
+## 2026-11-04: autostart goes through the launcher
+
+The autostart entry pointed at the raw binary, which skipped the patched GTK and
+the runtime paths. It now uses `$PREFIX/bin/koett`, and launching a fixed version
+repairs a stale entry. No re-exec guard: a stale entry runs the old binary, so new
+code in it would never run.
+
