@@ -29,10 +29,10 @@ rewrite the working Mac app or add a cross-platform shell.
   sherpa-onnx `v1.13.5` from pinned source with TTS disabled and patches only
   the Rust native link boundary. Preserve that worktree. Do not clean, reset,
   rebase, or regenerate its evidence before reading its own `AGENTS.md`.
-- The installed `/Applications/Koett.app` was built from `1f04616` on
-  2026-10-28 with `install-macos.sh`, UUID `12499F0D-6D3A-347C-9500-7A5C8D4DAFAA`,
-  Apple Development signature, `parakeet-v2` selected, S1-mini off. Its
-  internal version is `0.1.1`, but it is not the public notarized binary.
+- The installed `/Applications/Koett.app` is built with `install-macos.sh`, which
+  stamps its source commit: `plutil -extract KoettSourceCommit raw
+  /Applications/Koett.app/Contents/Info.plist`. Apple Development signature,
+  `parakeet-v2` selected. It is not the public notarized binary.
 - The `koett-transcribe` CLI is installed as a symlink at
   `~/.local/bin/koett-transcribe` into this checkout; see
   `docs/transcribe-cli.md`.
@@ -183,6 +183,9 @@ Dictation and all audio transcription stay local.
   `CrossPlatform/src/dictionary/`), CTC vocabulary boosting, the editor window,
   and Fix a word. See `docs/dictionary.md`; `DictionaryParityTests` keep Mac and
   Linux output identical.
+- `Sources/Koett/Replacements.swift`: literal phrase replacements (port of
+  `CrossPlatform/src/replacements.rs`), edited in the Dictionary window.
+- `docs/feature-parity.md`: Mac and Linux feature status, one row per feature.
 - `Sources/Koett/HistoryWindow.swift`: native searchable history, Copy and Export.
 - `Tests/KoettTests/`: shortcut, storage, media, renderer, client, TTS-buffer,
   live-audio, and S1-mini request tests.

@@ -96,4 +96,19 @@ final class DictionarySpellingTests: XCTestCase {
     func testEmptyDictionaryReturnsTextUnchanged() {
         XCTAssertEqual(apply(" keep  this ", []), " keep  this ")
     }
+
+    func testSeedListFixesMishearingsAndNeverTouchesScroll() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let doc = try String(contentsOf: root.appendingPathComponent("docs/dictionary.md"), encoding: .utf8)
+        let section = try XCTUnwrap(doc.components(separatedBy: "## Seed list").last)
+        let block = try XCTUnwrap(section.components(separatedBy: "```").dropFirst().first)
+        let seed = try KoettDictionary.parseText(block.replacingOccurrences(of: "text\n", with: ""))
+        XCTAssertEqual(
+            DictionarySpelling.apply("I asked clawed about coet and chat GPT.", entries: seed),
+            "I asked Claude about Koett and ChatGPT."
+        )
+        XCTAssertEqual(DictionarySpelling.apply("Please scroll down.", entries: seed), "Please scroll down.")
+        XCTAssertFalse(seed.contains { $0.soundsLike.contains { $0.lowercased() == "scroll" } })
+    }
 }

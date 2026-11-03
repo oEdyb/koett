@@ -5,12 +5,40 @@ import ServiceManagement
 @main
 private struct Koett {
     @MainActor
+    private static func importDictionary(path: String?) throws {
+        guard let path else { throw NSError(domain: "Koett", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "--import-dictionary needs a file.",
+        ]) }
+        let own = ProcessInfo.processInfo.processIdentifier
+        let running = NSWorkspace.shared.runningApplications.contains {
+            $0.bundleIdentifier == Bundle.main.bundleIdentifier && $0.processIdentifier != own
+        }
+        guard !running else { throw NSError(domain: "Koett", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "Quit Koett first; the running app would overwrite the dictionary.",
+        ]) }
+        let store = DictionaryStore(defaults: .standard)
+        let text = try String(contentsOfFile: path, encoding: .utf8)
+        try store.save(KoettDictionary.merge(store.entries, KoettDictionary.parseText(text)))
+        print(KoettDictionary.toText(store.entries))
+    }
+
+    @MainActor
     static func main() {
         let arguments = CommandLine.arguments.dropFirst()
 
         if arguments.contains("--register-login") {
             do {
                 try registerLoginItem()
+            } catch {
+                fputs("Error: \(error.localizedDescription)\n", stderr)
+                exit(EXIT_FAILURE)
+            }
+            return
+        }
+
+        if let flag = arguments.firstIndex(of: "--import-dictionary") {
+            do {
+                try importDictionary(path: arguments.dropFirst(flag - arguments.startIndex + 1).first)
             } catch {
                 fputs("Error: \(error.localizedDescription)\n", stderr)
                 exit(EXIT_FAILURE)
@@ -78,6 +106,7 @@ private struct Koett {
 
         if arguments.contains("--help") {
             print("Usage: koett [--parakeet | --nemotron]")
+            print("       koett --import-dictionary FILE   (while Koett is quit)")
             print("Command-line model flags override the saved model for this launch.")
             print("Use the menu-bar icon to choose the model, mode, and shortcut.")
             return

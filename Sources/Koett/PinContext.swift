@@ -65,8 +65,9 @@ struct PinContext: Equatable, Sendable {
     /// One line, trimmed, capped with an ellipsis; nil when empty.
     static func clean(_ text: String?, limit: Int) -> String? {
         guard let text else { return nil }
-        let line = text.split(whereSeparator: \.isNewline).joined(separator: " ")
-            .trimmingCharacters(in: .whitespaces)
+        let joined = text.split(whereSeparator: \.isNewline).joined(separator: " ")
+        let printable = joined.unicodeScalars.filter { $0.properties.generalCategory != .control }
+        let line = String(String.UnicodeScalarView(printable)).trimmingCharacters(in: .whitespaces)
         guard !line.isEmpty else { return nil }
         return line.count > limit ? String(line.prefix(limit)) + "…" : line
     }

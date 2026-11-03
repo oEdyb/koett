@@ -62,6 +62,11 @@ fi
 mkdir -p "$stage_app/Contents/MacOS" "$stage_app/Contents/Resources"
 cp ".build/release/koett" "$stage_app/Contents/MacOS/koett"
 cp "Packaging/Info.plist" "$stage_app/Contents/Info.plist"
+source_commit=$(git -C "$project_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)
+if [[ -n "$(git -C "$project_dir" status --porcelain 2>/dev/null)" ]]; then
+    source_commit="$source_commit-dirty"
+fi
+plutil -insert KoettSourceCommit -string "$source_commit" "$stage_app/Contents/Info.plist"
 ditto "$resource_bundle" \
     "$stage_app/Contents/Resources/Koett_Koett.bundle"
 

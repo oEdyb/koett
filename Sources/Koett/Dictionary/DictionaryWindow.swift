@@ -7,9 +7,11 @@ import UniformTypeIdentifiers
 final class DictionaryWindowController {
     let window: NSWindow
     private let model: DictionaryEditorModel
+    private let replacements: ReplacementEditorModel
 
-    init(store: DictionaryStore, booster: VocabularyBooster) {
+    init(store: DictionaryStore, replacements: ReplacementStore, booster: VocabularyBooster) {
         model = DictionaryEditorModel(store: store, booster: booster)
+        self.replacements = ReplacementEditorModel(store: replacements)
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -18,12 +20,13 @@ final class DictionaryWindowController {
         window.title = "Koett — Dictionary"
         window.minSize = NSSize(width: 420, height: 300)
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: DictionaryView(model: model))
+        window.contentView = NSHostingView(rootView: DictionaryTabs(words: model, replacements: self.replacements))
         window.center()
     }
 
     func show() {
         model.reload()
+        replacements.reload()
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
@@ -239,5 +242,18 @@ private struct DictionaryView: View {
                 }
             }
         }
+    }
+}
+
+private struct DictionaryTabs: View {
+    let words: DictionaryEditorModel
+    let replacements: ReplacementEditorModel
+
+    var body: some View {
+        TabView {
+            DictionaryView(model: words).tabItem { Text("Words") }
+            ReplacementsView(model: replacements).tabItem { Text("Replacements") }
+        }
+        .padding(.top, 8)
     }
 }

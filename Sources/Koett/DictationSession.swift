@@ -559,7 +559,7 @@ extension KoettController {
         let rawText = DictionarySpelling.apply(heardText, entries: dictionaryStore.entries)
         guard s1MiniEnabled,
               let cleaner = s1MiniCleaner else {
-            return PreparedDictation(text: rawText, model: model, rawText: nil)
+            return PreparedDictation(text: replacementStore.apply(rawText), model: model, rawText: nil)
         }
 
         do {
@@ -570,7 +570,7 @@ extension KoettController {
                 context: s1MiniContext
             )
             return PreparedDictation(
-                text: cleaned,
+                text: replacementStore.apply(DictionarySpelling.apply(cleaned, entries: dictionaryStore.entries)),
                 model: "\(model) + S1-mini by Superwhisper "
                     + "(\(s1MiniStyle.displayName), "
                     + "\(s1MiniStructure.displayName), "
@@ -582,7 +582,7 @@ extension KoettController {
                 "Warning: S1-mini cleanup failed; pasting raw text: \(error.localizedDescription)\n",
                 stderr
             )
-            return PreparedDictation(text: rawText, model: model, rawText: nil)
+            return PreparedDictation(text: replacementStore.apply(rawText), model: model, rawText: nil)
         }
     }
 

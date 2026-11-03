@@ -27,6 +27,7 @@ struct SketchBoard {
     /// and is dropped for the pin; longer ink makes the click part of the drawing.
     static let pinJitterInk: CGFloat = 12
     static let pinPulse: TimeInterval = 0.45
+    static let pinAimStraightness: CGFloat = 1.3
 
     enum Phase: Equatable { case drawing, capturing, captured }
 
@@ -63,6 +64,9 @@ struct SketchBoard {
     private var holdOrigin: (screen: Int, point: CGPoint, time: TimeInterval, audio: Float)?
     /// Ink travelled in the current hold.
     private var holdInk: CGFloat = 0
+    private var pinnedInHold = false
+    /// The open ink started from a press drag, so it is a deliberate drawing.
+    private var inkFromPress = false
     private var pressing: Press?
 
     private struct Press {
@@ -83,6 +87,8 @@ struct SketchBoard {
         held = true
         holdOrigin = nil
         holdInk = 0
+        pinnedInHold = false
+        inkFromPress = false
         pressing = nil
     }
 
@@ -111,6 +117,7 @@ struct SketchBoard {
             guard press.screen == screen,
                   hypot(point.x - press.point.x, point.y - press.point.y) >= Self.pinSlop else { return [] }
             pressing = nil
+            inkFromPress = true
             holdOrigin = (press.screen, press.point, press.time, press.audio)
         }
         if let current = stroking.flatMap(position(of:)), groups[current].screen == screen {
@@ -156,7 +163,7 @@ struct SketchBoard {
         screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float, clickCount: Int
     ) -> [SketchUpdate] {
         guard held, !finishing else { return [] }
-        guard holdInk < Self.pinJitterInk else {
+        guard holdInk < Self.pinJitterInk || (pinnedInHold && isAimingInk) else {
             pressing = nil
             return []
         }
@@ -169,6 +176,7 @@ struct SketchBoard {
             updates = events() + freed.map { .removed(index: UInt32($0)) }
         }
         holdInk = 0
+        inkFromPress = false
         holdOrigin = nil
         pressing = Press(screen: screen, point: point, time: now, audio: audio, pins: clickCount <= 1)
         return updates
@@ -193,7 +201,24 @@ struct SketchBoard {
         group.closed = true
         group.lifted = now
         groups.append(group)
+        pinnedInHold = true
         return events()
+    }
+
+    /// After a pin in the same hold, nearly straight hover ink is the pointer
+    /// travelling to the next pin, on one screen or across several. A curve or
+    /// a press drag is a drawing and stays.
+    private var isAimingInk: Bool {
+        let open = groups.filter { !$0.closed && $0.pin == nil }
+        guard !inkFromPress, !open.isEmpty else { return false }
+        return open.allSatisfy { group in
+            guard group.strokes.count == 1, let first = group.strokes[0].first, let last = group.strokes[0].last else {
+                return false
+            }
+            let path = zip(group.strokes[0], group.strokes[0].dropFirst())
+                .reduce(CGFloat(0)) { $0 + hypot($1.1.x - $1.0.x, $1.1.y - $1.0.y) }
+            return path <= hypot(last.x - first.x, last.y - first.y) * Self.pinAimStraightness
+        }
     }
 
     /// Closed sketches that should be captured now; they move to `.capturing`.
