@@ -57,3 +57,12 @@ focus mode itself is the verified PR #6 path).
     after recording started; the rescan picked it up, three holds gave three
     sketches (#3 after speech ended is `marked`), and typing still reached
     Chrome.
+
+Typing never blocked (2026-11-03, drawing on, no opt-in, lab `koett-typing`):
+
+14. `14-no-focus-default-typing-and-drawing.png`: text typed during the recording
+    landed in Chrome, which kept focus; a Shift hold still draws (pencil, band 1).
+15. `15-capital-tap-does-not-draw.png`: a 40 ms Shift tap plus pointer movement
+    left no ink and no band.
+16. `16-no-key-access-types-and-draw-off.png`: keyboards hidden with bubblewrap:
+    Shift + movement drew nothing, typing still reached Chrome.

@@ -5,9 +5,11 @@
 //! monitor is then captured with the ink still visible, and the ink fades.
 //! Delivery turns the captures into one numbered contact sheet.
 //!
-//! The overlay holds exclusive keyboard focus during recording so it can see
-//! the draw key (Wayland gives no global key state). It drops focus and input
-//! when recording stops, before any paste.
+//! A recording never blocks typing by default: Wayland gives no global key
+//! state, so the draw key is read from keyboard devices (see `keys`) and the
+//! overlay stays without keyboard focus. Only a user who opted in lets the
+//! overlay hold focus when keyboards can't be read; otherwise drawing stays off
+//! for that dictation with a one-line hint.
 use crate::settings::DrawKey;
 use gtk4::{self as gtk, gdk, glib, prelude::*};
 use std::sync::{Arc, Mutex};
@@ -25,6 +27,11 @@ const FADE_AFTER: Duration = Duration::from_millis(1500);
 const FADE_FOR: Duration = Duration::from_millis(400);
 /// Matches the pill timeline's cap (`timeline::MAX_SKETCHES`, 256 per dictation).
 const MAX_SKETCHES: usize = 256;
+/// A draw-key hold shorter than this does nothing, so typing a capital letter
+/// during a dictation neither blocks clicks nor flashes the crosshair.
+const DRAW_ARM: Duration = Duration::from_millis(120);
+/// Ink smaller than this (logical px) is a resting hand, not a sketch.
+const MIN_INK: f64 = 12.0;
 /// How often device mode looks for added or removed keyboards.
 const KEYBOARD_RESCAN: Duration = Duration::from_secs(2);
 
@@ -175,6 +182,12 @@ struct Session {
     results: CaptureResults,
     /// Device mode (no keyboard focus); `None` means the overlay holds focus.
     keyboards: Option<keys::Keyboards>,
+    /// The user allows focus as a last resort if every keyboard is lost.
+    may_take_keyboard: bool,
+    /// When the draw key alone went down, before the hold arms drawing.
+    key_down_since: Option<Instant>,
+    /// Keyboards were reported lost; cleared when one answers again.
+    keyboards_lost: bool,
     rescanned: Option<Instant>,
     reported_unreadable: usize,
     notices: Vec<String>,
@@ -247,27 +260,44 @@ impl Session {
             let unreadable = keyboards.unreadable();
             if unreadable > self.reported_unreadable {
                 self.notices.push(format!(
-                    "Drawing: {unreadable} keyboard(s) can't be read, so Shift on them won't draw. Settings › Text has the setup."
+                    "Drawing: {unreadable} keyboard(s) can't be read, so Shift on them won't draw. Settings › Draw on screen has the setup."
                 ));
             }
             self.reported_unreadable = unreadable;
         }
-        let draws = !self.finishing && keyboards.modifiers().draws(self.key);
+        let down = !self.finishing && keyboards.modifiers().draws(self.key);
         if keyboards.is_empty() {
-            // Every handle failed: fall back to the focused overlay.
-            self.keyboards = None;
-            for surface in &self.surfaces {
-                if let Err(error) = self.layer.set_keyboard(&surface.window, 1) {
-                    eprintln!("Sketch keyboard focus failed: {error}");
+            if self.may_take_keyboard {
+                self.keyboards = None;
+                for surface in &self.surfaces {
+                    if let Err(error) = self.layer.set_keyboard(&surface.window, 1) {
+                        eprintln!("Sketch keyboard focus failed: {error}");
+                    }
                 }
+                self.notices.push(
+                    "Drawing: keyboards can't be read, so typing is paused for the rest of this recording."
+                        .into(),
+                );
+                return;
             }
-            self.notices.push(
-                "Drawing: keyboard access was lost, so typing is paused for the rest of this recording."
-                    .into(),
-            );
-            return;
+            // Keep rescanning: a replugged keyboard draws again; typing is untouched.
+            if !self.keyboards_lost {
+                self.keyboards_lost = true;
+                self.notices.push(
+                    "Drawing: keyboards can't be read right now, so the draw key won't draw."
+                        .into(),
+                );
+            }
+        } else {
+            self.keyboards_lost = false;
         }
-        match (draws, self.held) {
+        let now = Instant::now();
+        self.key_down_since = if down {
+            self.key_down_since.or(Some(now))
+        } else {
+            None
+        };
+        match (armed(self.key_down_since, now), self.held) {
             (true, false) => self.press(),
             (false, true) => self.release(),
             _ => {}
@@ -396,6 +426,15 @@ impl Session {
             }
             self.redraw();
         }
+        while let Some(index) = self.groups.iter().position(|group| {
+            group.phase == Phase::Drawing
+                && self.stroking != Some(group.id)
+                && (group.closed || self.finishing)
+                && accidental(&group.strokes)
+        }) {
+            self.drop_group(index);
+            self.redraw();
+        }
         for index in 0..self.groups.len() {
             let group = &self.groups[index];
             let surface_busy = self
@@ -500,6 +539,44 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
     }
 }
 
+/// Whether a held draw key has lasted long enough to start drawing.
+fn armed(down_since: Option<Instant>, now: Instant) -> bool {
+    down_since.is_some_and(|since| now.saturating_duration_since(since) >= DRAW_ARM)
+}
+
+/// Whether strokes are too small to be a deliberate sketch.
+fn accidental(strokes: &[Vec<(f64, f64)>]) -> bool {
+    let mut points = strokes.iter().flatten();
+    let Some(&(x, y)) = points.next() else {
+        return true;
+    };
+    let (mut left, mut right, mut top, mut bottom) = (x, x, y, y);
+    for &(x, y) in points {
+        (left, right) = (left.min(x), right.max(x));
+        (top, bottom) = (top.min(y), bottom.max(y));
+    }
+    (right - left).max(bottom - top) < MIN_INK
+}
+
+/// How one dictation's overlay sees the draw key.
+#[derive(Debug)]
+enum DrawInput<K> {
+    /// Keyboard state from devices: no focus, typing keeps working.
+    Devices(K),
+    /// The user opted in to pausing typing when devices can't be read.
+    Focus,
+    /// Drawing stays off for this dictation; the keyboard is never taken.
+    Off,
+}
+
+fn draw_input<K>(access: Result<K, keys::Access>, may_take_keyboard: bool) -> DrawInput<K> {
+    match access {
+        Ok(keyboards) => DrawInput::Devices(keyboards),
+        Err(_) if may_take_keyboard => DrawInput::Focus,
+        Err(_) => DrawInput::Off,
+    }
+}
+
 /// Whether each monitor's overlay asks for exclusive keyboard focus. In
 /// focused mode every overlay asks: compositors grant it per output (niri only
 /// on its active output), so asking on the first monitor alone left Shift
@@ -542,12 +619,18 @@ pub struct SketchOverlay {
     /// Last recording id the overlay decided on, so settings load once.
     decided: std::cell::Cell<u64>,
     notice: RefCell<Option<String>>,
+    hinted: std::cell::Cell<bool>,
 }
 
-fn fallback_notice(access: keys::Access) -> String {
-    match access {
-        keys::Access::Denied => "Drawing: keyboard access not set up, so typing is paused while recording. Settings › Text shows the one-time setup.".into(),
-        keys::Access::NoKeyboards => "Drawing: no keyboard found to read Shift from; typing is paused while recording.".into(),
+fn unavailable_hint(access: keys::Access, focus: bool) -> &'static str {
+    match (access, focus) {
+        (keys::Access::Denied, false) => {
+            "Drawing is off: Koett needs keyboard access to see the draw key. Settings › Draw on screen has a one-line setup."
+        }
+        (keys::Access::NoKeyboards, false) => {
+            "Drawing is off: no keyboard found to read the draw key from."
+        }
+        (_, true) => "Drawing: keyboards can't be read, so typing is paused while recording.",
     }
 }
 
@@ -563,6 +646,7 @@ impl SketchOverlay {
             styled: std::cell::Cell::new(false),
             decided: std::cell::Cell::new(0),
             notice: RefCell::new(None),
+            hinted: std::cell::Cell::new(false),
         })
     }
 
@@ -584,17 +668,26 @@ impl SketchOverlay {
                 let settings = crate::settings::Settings::load().unwrap_or_default();
                 if settings.draw_while_dictating {
                     drop(current);
-                    let keyboards = settings
-                        .draw_key_from_keyboard
-                        .then(keys::Keyboards::open)
-                        .and_then(|result| {
-                            result
-                                .inspect_err(|access| {
-                                    *self.notice.borrow_mut() = Some(fallback_notice(*access));
-                                })
-                                .ok()
-                        });
-                    self.open(application, started, id, settings.draw_key, keyboards);
+                    let access = keys::Keyboards::open();
+                    let failure = access.as_ref().err().copied();
+                    let may_take = settings.draw_may_take_keyboard;
+                    let input = draw_input(access, may_take);
+                    if let Some(failure) = failure {
+                        self.hint(unavailable_hint(failure, may_take));
+                    }
+                    let keyboards = match input {
+                        DrawInput::Devices(keyboards) => Some(keyboards),
+                        DrawInput::Focus => None,
+                        DrawInput::Off => return,
+                    };
+                    self.open(
+                        application,
+                        started,
+                        id,
+                        settings.draw_key,
+                        keyboards,
+                        may_take,
+                    );
                 }
             }
             (Some(session), Some(_)) => {
@@ -616,6 +709,21 @@ impl SketchOverlay {
                 }
             }
             _ => {}
+        }
+    }
+
+    /// Tells the user why drawing is limited: in the main window every time,
+    /// and as a desktop notification once per run, since the window is usually
+    /// hidden while dictating.
+    fn hint(&self, message: &'static str) {
+        *self.notice.borrow_mut() = Some(message.to_owned());
+        if !self.hinted.replace(true) {
+            let _ = std::process::Command::new("notify-send")
+                .args(["--app-name=Koett", "Koett", message])
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
         }
     }
 
@@ -646,6 +754,7 @@ impl SketchOverlay {
         recording: u64,
         key: DrawKey,
         keyboards: Option<keys::Keyboards>,
+        may_take_keyboard: bool,
     ) {
         let focus = keyboards.is_none();
         let Some(display) = gdk::Display::default() else {
@@ -805,6 +914,9 @@ impl SketchOverlay {
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
             keyboards,
+            may_take_keyboard,
+            key_down_since: None,
+            keyboards_lost: false,
             rescanned: None,
             reported_unreadable: 0,
             notices: Vec::new(),
@@ -951,6 +1063,45 @@ mod tests {
             idle.iter().filter(|group| visible(&idle, 0, group)).count(),
             2
         );
+    }
+
+    #[test]
+    fn a_recording_never_takes_the_keyboard_unless_opted_in() {
+        // Olle's bug: drawing on, no opt-in, two monitors, and typing died.
+        let readable = draw_input(Ok(()), false);
+        assert!(matches!(readable, DrawInput::Devices(())));
+        let opted_in_but_readable = draw_input(Ok(()), true);
+        assert!(
+            matches!(opted_in_but_readable, DrawInput::Devices(())),
+            "devices win even with the opt-in, so typing keeps working"
+        );
+        for access in [keys::Access::Denied, keys::Access::NoKeyboards] {
+            assert!(matches!(
+                draw_input::<()>(Err(access), false),
+                DrawInput::Off
+            ));
+            assert!(matches!(
+                draw_input::<()>(Err(access), true),
+                DrawInput::Focus
+            ));
+        }
+        assert_eq!(keyboard_modes(false, 2), [false, false]);
+    }
+
+    #[test]
+    fn typing_a_capital_does_not_arm_drawing() {
+        let now = Instant::now();
+        assert!(!armed(None, now));
+        assert!(!armed(Some(now), now + Duration::from_millis(60)));
+        assert!(armed(Some(now), now + DRAW_ARM));
+    }
+
+    #[test]
+    fn a_resting_hand_is_not_a_sketch() {
+        assert!(accidental(&[]));
+        assert!(accidental(&[vec![(100.0, 100.0), (104.0, 103.0)]]));
+        assert!(!accidental(&[vec![(100.0, 100.0), (100.0, 140.0)]]));
+        assert!(!accidental(&[vec![(0.0, 0.0)], vec![(30.0, 0.0)]]));
     }
 
     #[test]

@@ -172,3 +172,12 @@ Every monitor's overlay now asks for exclusive focus and listens for the key;
 release and the device-mode fallback apply to all of them. Regression test:
 `focused_mode_asks_for_keyboard_focus_on_every_monitor`. Device mode ("Keep
 typing") did not depend on focus and was unaffected.
+
+## 2026-11-03: recording blocked typing
+
+With drawing on, the overlay held exclusive keyboard focus for the whole
+recording, and #27 extended that to every monitor, so nothing could be typed on
+Olle's niri desktop while dictating. Focus is now used only as an explicit opt-in;
+by default the draw key comes from keyboard devices, or drawing stays off with a
+hint. Losing every keyboard mid-recording no longer takes focus either. Regression
+test: `a_recording_never_takes_the_keyboard_unless_opted_in`.

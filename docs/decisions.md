@@ -163,3 +163,15 @@ pasted, shows `NN%` instead of a decode playhead while transcribing, allows
 hover Cancel/History while transcribing, and uses the Mac close timings (Copy
 1 s even while hovered, 0.8 s after the pointer leaves). The Mac pill
 (`344d11f`) is the reference; where Linux differs, Linux changes.
+
+## 2026-11-03: a recording never takes the keyboard by default
+
+Olle: "when I'm recording my voice with coet, it turns off my keyboard... I
+can't type", and the standing rule "maximum UX": he talks and types at once.
+With drawing on and the old opt-in device mode off, the overlay held exclusive
+focus for every recording. Turning drawing on is now the opt-in for sampling
+held keys, which replaces the separate "Keep typing" toggle (supersedes that
+part of the 2026-11-02 decision). Order: devices when readable; focused overlay
+only if the user ticks the new last-resort option; otherwise drawing stays off
+with a one-line hint. No privileges are added: without existing device access
+nothing is read until the user runs the setup command Settings copies.

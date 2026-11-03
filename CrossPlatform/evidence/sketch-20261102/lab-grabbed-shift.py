@@ -25,7 +25,15 @@ while node is None and time.time() < deadline:
     events = [n for n in os.listdir(path) if n.startswith("event")] if os.path.isdir(path) else []
     node = f"/dev/input/{events[0]}" if events else None
     time.sleep(0.05)
-grab = os.open(node, os.O_RDONLY)
+deadline = time.time() + 5
+while True:  # udev applies permissions just after the node appears
+    try:
+        grab = os.open(node, os.O_RDONLY)
+        break
+    except PermissionError:
+        if time.time() > deadline:
+            raise
+        time.sleep(0.05)
 fcntl.ioctl(grab, EVIOCGRAB, 1)
 print("grabbed", node, flush=True)
 

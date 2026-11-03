@@ -8,17 +8,22 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 
 - Settings › Text: **Draw on screen while dictating**, off by default, and
   **Draw key**: Shift (default), Ctrl or Alt.
-- **Keep typing while recording** (opt-in): Koett reads the draw key from the
-  keyboard devices, so the overlay never takes keyboard focus and typing keeps
-  working during a dictation. About 60 times a second it samples which keys are
-  held (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly
-  contains every held key), uses only Shift/Ctrl/Alt/Super, stores nothing and
-  wipes the sample with volatile writes. It never reads key events or typed
-  text, and opens keyboards only while a dictation with drawing records.
-  Keyboards are found through sysfs capabilities and rescanned every 2 s, so
-  hot-plugged ones join; unplugged handles are dropped. Unreadable keyboards
-  are reported; if every handle is lost, the overlay takes focus for the rest
-  of that recording and says so.
+- A recording never blocks typing by default. Koett reads the draw key from the
+  keyboard devices whenever they're readable, so the overlay never takes
+  keyboard focus. About 60 times a second it samples which keys are held
+  (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly contains
+  every held key), uses only Shift/Ctrl/Alt/Super, stores nothing and wipes the
+  sample with volatile writes. It never reads key events or typed text, and
+  opens keyboards only while a dictation with drawing records. Keyboards are
+  found through sysfs capabilities and rescanned every 2 s, so hot-plugged ones
+  join and unplugged handles are dropped; unreadable ones are reported.
+- A draw-key hold under 120 ms does nothing, so typing a capital letter neither
+  blocks clicks nor flashes the crosshair, and ink under 12 px is dropped as a
+  resting hand rather than becoming a sketch.
+- If keyboards can't be read, drawing stays off for that dictation with a
+  one-line hint (main window, plus one desktop notification per run). Only the
+  opt-in "If keys can't be read, let drawing take the keyboard" uses the focused
+  overlay, which pauses typing while recording; Ctrl+Z undo needs that mode.
 - Setup (Settings copies it): a `koett-keyboard` group, the user added to it,
   and a udev rule that adds a **read-only** ACL for that group on keyboard
   devices (owner and the `input` group unchanged). Log out and back in once.
@@ -83,12 +88,6 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 | GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected |
 | X11 | no layer-shell | — | Unavailable; dictation unaffected |
 
-- Without keyboard access (or with **Keep typing** off) the overlay takes
-  exclusive keyboard focus while recording, since Wayland exposes no global key
-  state; typing into other apps is then paused during the recording. Ctrl+Z
-  undo needs that focused mode. Device mode reads every keyboard present at
-  recording start; one plugged in mid-recording is seen from the next one. Focus returns
-  to the previous window when recording stops, before paste.
 - The ink (and the recording pill when the ink is near it) is part of the
   captured image.
 - Multi-monitor: one overlay and one capture per monitor; portal images that
