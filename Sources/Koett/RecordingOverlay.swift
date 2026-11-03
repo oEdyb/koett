@@ -224,6 +224,15 @@ final class RecordingOverlayController: NSObject {
         return true
     }
 
+    /// A failed Paste or Paste Last keeps the buttons so the text stays one click away.
+    func showNotPastedAfterRetry(text: String) {
+        sketchSession = nil
+        pillView.timeline.reset()
+        resultText = text
+        show(.notPasted)
+        recordFailure("Not pasted · text saved")
+    }
+
     func showResult(_ text: String, message: String) {
         sketchSession = nil
         pillView.timeline.reset()

@@ -101,7 +101,11 @@ extension KoettController: NSMenuDelegate {
                 recordingOverlay.showTransientStatus("Last transcript pasted")
             }
         } catch {
-            recordingOverlay.showError(error.localizedDescription)
+            if case .paste(let text) = action {
+                recordingOverlay.showNotPastedAfterRetry(text: text)
+            } else {
+                recordingOverlay.showError(error.localizedDescription)
+            }
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
     }

@@ -124,6 +124,16 @@ final class RecordingOverlayTests: XCTestCase {
         XCTAssertFalse(controller.isPresented)
     }
 
+    func testFailedPasteRetryKeepsPasteAndCopyUntilClicked() async throws {
+        let controller = RecordingOverlayController()
+        controller.showNotPastedAfterRetry(text: "Hello")
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertTrue(controller.isPresented)
+        XCTAssertFalse(controller.pillView.pasteButton.isHidden)
+        XCTAssertFalse(controller.pillView.copyButton.isHidden)
+        XCTAssertEqual(controller.latestOutcome, .failure("Not pasted · text saved"))
+    }
+
     func testEveryStateIsOneRowAndItsButtonsFitInside() {
         let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
         view.hasRecordingControls = true
