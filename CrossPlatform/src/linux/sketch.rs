@@ -256,10 +256,10 @@ impl Session {
         if keyboards.is_empty() {
             // Every handle failed: fall back to the focused overlay.
             self.keyboards = None;
-            if let Some(first) = self.surfaces.first()
-                && let Err(error) = self.layer.set_keyboard(&first.window, 1)
-            {
-                eprintln!("Sketch keyboard focus failed: {error}");
+            for surface in &self.surfaces {
+                if let Err(error) = self.layer.set_keyboard(&surface.window, 1) {
+                    eprintln!("Sketch keyboard focus failed: {error}");
+                }
             }
             self.notices.push(
                 "Drawing: keyboard access was lost, so typing is paused for the rest of this recording."
@@ -500,6 +500,14 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
     }
 }
 
+/// Whether each monitor's overlay asks for exclusive keyboard focus. In
+/// focused mode every overlay asks: compositors grant it per output (niri only
+/// on its active output), so asking on the first monitor alone left Shift
+/// unseen whenever the user worked on another one.
+fn keyboard_modes(focus_mode: bool, monitors: usize) -> Vec<bool> {
+    vec![focus_mode; monitors]
+}
+
 fn key_matches(key: DrawKey, keyval: gdk::Key) -> bool {
     match key {
         DrawKey::Shift => matches!(keyval, gdk::Key::Shift_L | gdk::Key::Shift_R),
@@ -601,10 +609,10 @@ impl SketchOverlay {
                 session.release();
                 // Close keyboard devices as soon as recording ends.
                 session.keyboards = None;
-                if let Some(first) = session.surfaces.first()
-                    && let Err(error) = self.layer.set_keyboard(&first.window, 0)
-                {
-                    eprintln!("Sketch keyboard release failed: {error}");
+                for surface in &session.surfaces {
+                    if let Err(error) = self.layer.set_keyboard(&surface.window, 0) {
+                        eprintln!("Sketch keyboard release failed: {error}");
+                    }
                 }
             }
             _ => {}
@@ -668,13 +676,14 @@ impl SketchOverlay {
                     })
                 });
         let mut surfaces = Vec::new();
+        let modes = keyboard_modes(focus, monitors.len());
         for (index, monitor) in monitors.iter().enumerate() {
             let window = gtk::Window::builder()
                 .application(application)
                 .title("Koett sketch")
                 .decorated(false)
                 .build();
-            if let Err(error) = self.layer.cover(&window, monitor, focus && index == 0) {
+            if let Err(error) = self.layer.cover(&window, monitor, modes[index]) {
                 eprintln!("Sketch overlay unavailable: {error}");
                 window.destroy();
                 continue;
@@ -737,9 +746,10 @@ impl SketchOverlay {
                 }
             });
             area.add_controller(motion);
-            // Device mode can fall back to focus mid-recording, so the key
-            // controller is always present; without focus it receives nothing.
-            if index == 0 {
+            // Every monitor's overlay listens: the compositor focuses the one on
+            // its active output. Device mode can fall back to focus
+            // mid-recording, so the controller is always present.
+            {
                 window.add_controller(self.keys());
                 // A missed key release must not leave clicks blocked.
                 window.connect_is_active_notify({
@@ -750,6 +760,10 @@ impl SketchOverlay {
                             && let Ok(mut session) = session.try_borrow_mut()
                             && let Some(session) = session.as_mut()
                             && session.held
+                            && !session
+                                .surfaces
+                                .iter()
+                                .any(|surface| surface.window.is_active())
                         {
                             session.release();
                         }
@@ -936,6 +950,19 @@ mod tests {
         assert_eq!(
             idle.iter().filter(|group| visible(&idle, 0, group)).count(),
             2
+        );
+    }
+
+    #[test]
+    fn focused_mode_asks_for_keyboard_focus_on_every_monitor() {
+        // Olle's niri: overlay on DP-1 and DP-3, active output DP-3. Only the
+        // active output's exclusive surface gets keys, so all must ask.
+        assert_eq!(keyboard_modes(true, 2), [true, true]);
+        assert_eq!(keyboard_modes(true, 1), [true]);
+        assert_eq!(
+            keyboard_modes(false, 2),
+            [false, false],
+            "device mode never takes focus"
         );
     }
 

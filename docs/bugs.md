@@ -161,3 +161,14 @@ wrote Corrections.json 0644, stripped term symbols while learning ("c sharp" →
 and dismissals without bound, relearned on every refresh, and dropped focus
 after Add or Dismiss. All fixed with a regression test each; a Swedish
 common-word list and an inflection guard (parakeets ≠ Parakeet) were added.
+
+## 2026-11-03: drawing never started on a second monitor (niri)
+
+Olle held Shift on his niri desktop and nothing drew. The focused overlay asked
+for exclusive keyboard focus only on the first monitor GDK listed (DP-1), but
+niri grants exclusive layer-shell focus only on its active output (DP-3, where
+he worked), so the overlay never saw Shift. The private lab had one output.
+Every monitor's overlay now asks for exclusive focus and listens for the key;
+release and the device-mode fallback apply to all of them. Regression test:
+`focused_mode_asks_for_keyboard_focus_on_every_monitor`. Device mode ("Keep
+typing") did not depend on focus and was unaffected.
