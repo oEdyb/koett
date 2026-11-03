@@ -1,0 +1,182 @@
+[
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.09600170829799026,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.09843050001654774,
+        "words": 33
+      },
+      {
+        "asrSeconds": 2.0406680000014603,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 2.040921041625552,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 5.6659969167085364,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 5.6668079167138785,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.26583300007041544,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "before",
+    "pair": 0,
+    "revision": "ee6f87b"
+  },
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.12029308336786926,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.12315366661641747,
+        "words": 33
+      },
+      {
+        "asrSeconds": 2.6310766666429117,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 2.631412583286874,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 6.935355499968864,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 6.935756374965422,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.2694371666293591,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "after",
+    "pair": 0,
+    "revision": "9830dfa"
+  },
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.10668816673569381,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.10923287505283952,
+        "words": 33
+      },
+      {
+        "asrSeconds": 2.5877158333314583,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 2.5880666667362675,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 6.788362541701645,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 6.7887213750509545,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.26955779164563864,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "after",
+    "pair": 1,
+    "revision": "9830dfa"
+  },
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.10685350000858307,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.10942824999801815,
+        "words": 33
+      },
+      {
+        "asrSeconds": 2.741274291649461,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 2.7417630832642317,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 6.708401000010781,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 6.708813333301805,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.26074887497816235,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "before",
+    "pair": 1,
+    "revision": "ee6f87b"
+  },
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.12434958340600133,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.127322708372958,
+        "words": 33
+      },
+      {
+        "asrSeconds": 3.1474441250320524,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 3.1482768750283867,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 8.088477249955758,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 8.091198916663416,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.2955001250375062,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "before",
+    "pair": 2,
+    "revision": "ee6f87b"
+  },
+  {
+    "measurements": [
+      {
+        "asrSeconds": 0.13035300001502037,
+        "audioSeconds": 10.459,
+        "fixture": "short",
+        "stopToDeliverySeamSeconds": 0.133082416607067,
+        "words": 33
+      },
+      {
+        "asrSeconds": 2.788499291636981,
+        "audioSeconds": 600,
+        "fixture": "600",
+        "stopToDeliverySeamSeconds": 2.7888446249999106,
+        "words": 1892
+      },
+      {
+        "asrSeconds": 6.731469250051305,
+        "audioSeconds": 1800,
+        "fixture": "1800",
+        "stopToDeliverySeamSeconds": 6.732106124982238,
+        "words": 5680
+      }
+    ],
+    "modelStartupSeconds": 0.305896291625686,
+    "scope": "Cached model startup plus warm ASR through private clipboard delivery seam; no real key event, target consumption, microphone, dictionary or S1-mini.",
+    "label": "after",
+    "pair": 2,
+    "revision": "9830dfa"
+  }
+]

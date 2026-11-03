@@ -1,0 +1,43 @@
+{
+  "fullSuite": {
+    "command": "KOETT_READINESS_LAB=/tmp/koett-mic-lab KOETT_PILL_SNAPSHOT_DIR=/tmp/koett-mic-pill swift test",
+    "tests": 382,
+    "skipped": 5,
+    "failures": 0,
+    "seconds": 102.549
+  },
+  "focused": {
+    "tests": 23,
+    "failures": 0
+  },
+  "acceleratedLongCapture": {
+    "seconds": 50.393,
+    "expectedFrames": [
+      9600000,
+      28800000
+    ],
+    "passed": true
+  },
+  "snapshots": {
+    "count": 40,
+    "inspected": true
+  },
+  "dictionary": {
+    "before": 17,
+    "after": 26,
+    "seedTerms": 20,
+    "priorTermsAndFormsPreserved": true,
+    "scrollAliasAdded": false
+  },
+  "releaseBuild": {
+    "command": "swift build -c release",
+    "exit": 0,
+    "seconds": 68.87
+  },
+  "packaging": {
+    "zsh -n install-macos.sh": 0,
+    "plutil -lint Packaging/Info.plist": 0,
+    "plutil -lint Packaging/Koett.entitlements": 0,
+    "git diff --check": 0
+  }
+}

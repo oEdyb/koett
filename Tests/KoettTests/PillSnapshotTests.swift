@@ -42,6 +42,7 @@ final class PillSnapshotTests: XCTestCase {
             ("not-pasted", .notPasted, PillTimeline(), false, 11),
             ("media", .media(preview: "Today we are looking at what local models can do"), PillTimeline(), false, 11),
             ("status", .status("Transcribing locally…"), PillTimeline(), false, 11),
+            ("no-audio", .error("No audio from microphone"), PillTimeline(), false, 11),
             ("error", .error("Dictation failed · Audio saved"), PillTimeline(), false, 11),
         ]
         let morphStates: [(String, PillContent, PillTimeline, Bool, TimeInterval, CGFloat?)] = morphFrames.enumerated().map { index, morph in

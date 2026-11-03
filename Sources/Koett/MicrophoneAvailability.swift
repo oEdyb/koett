@@ -57,8 +57,36 @@ extension KoettController {
               let recorder, recorder.isRecording,
               !devices.contains(where: { $0.id == recorder.device.id && $0.uid == recorder.device.uid }) else { return }
         recorder.markUnavailable()
+        stopAfterCaptureFailure()
+    }
+
+    /// Starts or ends the poll that notices a dead input while a session records.
+    func refreshCaptureWatch() {
+        guard state == .recording || state == .assistantRecording else {
+            captureWatch?.invalidate()
+            captureWatch = nil
+            return
+        }
+        guard captureWatch == nil else { return }
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            MainActor.assumeIsolated { self.checkActiveCapture() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        captureWatch = timer
+    }
+
+    func checkActiveCapture() {
+        guard state == .recording || state == .assistantRecording, let recorder else { return }
+        // A failed Nemotron backup file must not end a healthy live transcript.
+        guard recorder.captureHasFailed() || (nemotronRecorder == nil && recorder.fileHasFailed) else { return }
+        stopAfterCaptureFailure()
+    }
+
+    private func stopAfterCaptureFailure() {
         nemotronRecorder?.markUnavailable()
         if state == .recording {
+            play(stopSound)
             stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime)
         } else {
             toggleAssistant()

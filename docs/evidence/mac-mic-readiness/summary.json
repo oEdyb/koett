@@ -1,0 +1,49 @@
+{
+  "before": {
+    "modelStartupSeconds": 0.26583300007041544,
+    "short": {
+      "asrSeconds": 0.10685350000858307,
+      "stopToDeliverySeamSeconds": 0.10942824999801815
+    },
+    "600": {
+      "asrSeconds": 2.741274291649461,
+      "stopToDeliverySeamSeconds": 2.7417630832642317
+    },
+    "1800": {
+      "asrSeconds": 6.708401000010781,
+      "stopToDeliverySeamSeconds": 6.708813333301805
+    }
+  },
+  "after": {
+    "modelStartupSeconds": 0.26955779164563864,
+    "short": {
+      "asrSeconds": 0.12029308336786926,
+      "stopToDeliverySeamSeconds": 0.12315366661641747
+    },
+    "600": {
+      "asrSeconds": 2.6310766666429117,
+      "stopToDeliverySeamSeconds": 2.631412583286874
+    },
+    "1800": {
+      "asrSeconds": 6.788362541701645,
+      "stopToDeliverySeamSeconds": 6.7887213750509545
+    }
+  },
+  "transcriptParity": {
+    "short": {
+      "identical": true,
+      "sha256": "625e27bbc4abd1c164ae1d50dcfed408bf4caacea31267ac3a58a7affab604eb",
+      "words": 33
+    },
+    "600": {
+      "identical": true,
+      "sha256": "a3bc3ed67e13e212ba01ebc68e33ac1fabc1d34a439fabc5097cbbf8940f9276",
+      "words": 1892
+    },
+    "1800": {
+      "identical": true,
+      "sha256": "f1b85efbaabfab3a99dcaeecd425a2ffcbf6311c735e229d0cba278f13c39566",
+      "words": 5680
+    }
+  }
+}

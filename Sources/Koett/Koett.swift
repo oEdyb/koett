@@ -87,6 +87,7 @@ final class KoettController: NSObject {
                 refreshMicrophoneMonitorTarget()
                 if state == .ready { activeDictationID = nil }
                 refreshEscapeMonitor()
+                refreshCaptureWatch()
             }
         }
     }
@@ -97,6 +98,7 @@ final class KoettController: NSObject {
     }
     var lastDictationID: UInt64 = 0
     var dictationTask: Task<Void, Never>?
+    var captureWatch: Timer?
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
@@ -379,7 +381,7 @@ final class KoettController: NSObject {
     func installHotkey() throws {
         guard modifierEventTap == nil, keyMonitor == nil else { return }
 
-        let eventMask = CGEventMask(1) << CGEventType.flagsChanged.rawValue
+        let eventMask = Self.shortcutEventMask
         guard let eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -400,7 +402,7 @@ final class KoettController: NSObject {
                     return Unmanaged.passUnretained(event)
                 }
 
-                guard type == .flagsChanged else {
+                guard let eventType = NSEvent.EventType(rawValue: UInt(type.rawValue)) else {
                     return Unmanaged.passUnretained(event)
                 }
                 let keyCode = UInt16(
@@ -414,7 +416,7 @@ final class KoettController: NSObject {
                 let eventTimestamp = TimeInterval(event.timestamp) / 1_000_000_000
                 DispatchQueue.main.async {
                     controller.handleShortcutEvent(
-                        type: .flagsChanged,
+                        type: eventType,
                         keyCode: keyCode,
                         modifierFlags: modifierFlags,
                         eventTimestamp: eventTimestamp,
@@ -474,12 +476,16 @@ final class KoettController: NSObject {
 
     private func recoverModifierEventTap() {
         enableModifierEventTap()
+        resyncModifierState(
+            modifierFlags: UInt(CGEventSource.flagsState(.combinedSessionState).rawValue),
+            isKeyDown: { CGEventSource.keyState(.combinedSessionState, key: CGKeyCode($0)) }
+        )
+    }
 
+    func resyncModifierState(modifierFlags flags: UInt, isKeyDown: (UInt16) -> Bool) {
+        // keyState alone can read false for a held Right Option; flags report the device key.
         let keyState: (UInt16) -> Bool = { keyCode in
-            CGEventSource.keyState(
-                .combinedSessionState,
-                key: CGKeyCode(keyCode)
-            )
+            isKeyDown(keyCode) || ModifierShortcutState.flagsReportKeyDown(keyCode: keyCode, modifierFlags: flags)
         }
         let dictationIsHeld = dictationModifierState.resync(
             binding: dictationShortcut,
@@ -507,7 +513,16 @@ final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    private func handleShortcutEvent(
+    static let shortcutEventMask: CGEventMask = [CGEventType.flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown]
+        .reduce(0) { $0 | (CGEventMask(1) << $1.rawValue) }
+
+    func noteModifierInterruption() {
+        dictationModifierState.noteKeyDown()
+        mediaModifierState.noteKeyDown()
+        assistantModifierState.noteKeyDown()
+    }
+
+    func handleShortcutEvent(
         type: NSEvent.EventType,
         keyCode: UInt16,
         modifierFlags: UInt,
@@ -516,11 +531,14 @@ final class KoettController: NSObject {
         modifierKeyIsDown: Bool? = nil
     ) {
         guard !isCapturingShortcut else { return }
+        if type == .leftMouseDown || type == .rightMouseDown || type == .otherMouseDown {
+            noteModifierInterruption()
+            return
+        }
 
-        if type == .keyDown, !isRepeat {
-            dictationModifierState.noteKeyDown()
-            mediaModifierState.noteKeyDown()
-            assistantModifierState.noteKeyDown()
+        // A press or release during a drag is part of that drag, not a tap.
+        if (type == .keyDown && !isRepeat) || (type == .flagsChanged && NSEvent.pressedMouseButtons != 0) {
+            noteModifierInterruption()
         }
 
         let assistantModifierTransition = assistantModifierState.update(

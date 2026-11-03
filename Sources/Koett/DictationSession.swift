@@ -18,7 +18,7 @@ extension KoettController {
             startRecordingIfReady()
         case .recording:
             stopRecording(releaseEventTimestamp: eventTimestamp)
-        case .loading, .transcribing, .media, .assistantRecording, .assistantWorking:
+        case .transcribing, .loading, .media, .assistantRecording, .assistantWorking:
             return
         }
     }
@@ -116,10 +116,11 @@ extension KoettController {
 
     func handleMicrophoneFailure(_ recorder: MicrophoneRecorder, url: URL) -> Bool {
         guard let error = recorder.recordingError else { return false }
-        preserveFailedRecording(url)
-        recordingOverlay.showError(error.localizedDescription)
+        if preserveFailedRecording(url) != nil {
+            recordingOverlay.showError(error.localizedDescription, keepUntilClicked: true)
+        }
         state = .ready
-        fputs("Error: \(error.localizedDescription)\n", stderr)
+        fputs("Error: \(error.localizedDescription) [\((error as NSError).code)]\n", stderr)
         return true
     }
 
@@ -224,6 +225,7 @@ extension KoettController {
             discardSketches(session)
             cleanup(url)
             state = .ready
+            if recorder.heardNothing { recordingOverlay.showError("No audio from microphone") }
             print("Ignored: recording was too short.")
             return
         }
