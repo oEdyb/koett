@@ -272,7 +272,7 @@ extension KoettController {
             action: #selector(copyLastTranscript),
             selected: false
         )
-        copyLastItem.isEnabled = state == .ready && lastTranscript != nil
+        copyLastItem.isEnabled = canCopyLastTranscript
         menu.addItem(copyLastItem)
         let pasteLastItem = menuItem(
             title: "Paste Last Transcript",

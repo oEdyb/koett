@@ -297,7 +297,9 @@
   atomic write to `Last Transcript.txt`. A failed write leaves Copy Last and Paste
   Last usable in the current process and shows a storage warning.
 - Copy Last and Paste Last use the latest in-memory text, restored from the file
-  on launch. Unsaved Ask or media text can also populate this memory fallback.
+  on launch. Copy Last also works during setup and after setup fails; only a
+  running session blocks it. Paste Last needs a ready app. Unsaved Ask or media
+  text can also populate this memory fallback.
   These actions run no ASR and create no history rows. An empty cleaned result
   keeps the prior Last Transcript; its raw text stays in shared recovery.
 - Paste Last writes the clipboard first. If Command-V cannot be created, the

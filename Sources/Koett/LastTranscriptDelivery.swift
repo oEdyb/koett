@@ -57,8 +57,14 @@ struct LastTranscriptMenuActionQueue {
 }
 
 extension KoettController: NSMenuDelegate {
+    /// Works while setup downloads or after it failed. A running session keeps
+    /// its pill, which a copy confirmation would replace.
+    var canCopyLastTranscript: Bool {
+        lastTranscript != nil && (state == .ready || state == .loading)
+    }
+
     @objc func copyLastTranscript() {
-        guard state == .ready, let lastTranscript else { return }
+        guard canCopyLastTranscript, let lastTranscript else { return }
         lastTranscriptMenuActions.queue(.copy(lastTranscript))
     }
 
@@ -73,10 +79,10 @@ extension KoettController: NSMenuDelegate {
         performLastTranscriptAction(.paste(lastTranscript))
     }
 
+    /// Download progress rebuilds the menu while it is open, so the closing menu
+    /// may no longer be the status item's current one.
     func menuDidClose(_ menu: NSMenu) {
-        guard menu === statusItem?.menu,
-              let action = lastTranscriptMenuActions.takeAfterMenuDidClose()
-        else { return }
+        guard let action = lastTranscriptMenuActions.takeAfterMenuDidClose() else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.performLastTranscriptAction(action)
@@ -89,13 +95,13 @@ extension KoettController: NSMenuDelegate {
             case .copy(let text):
                 try LastTranscriptDelivery.copy(
                     text,
-                    writeToClipboard: writeToGeneralPasteboard
+                    writeToClipboard: writeLastTranscriptToClipboard
                 )
                 recordingOverlay.showTransientStatus("Last transcript copied")
             case .paste(let text):
                 try LastTranscriptDelivery.paste(
                     text,
-                    writeToClipboard: writeToGeneralPasteboard,
+                    writeToClipboard: writeLastTranscriptToClipboard,
                     postPaste: pasteAtCursor
                 )
                 recordingOverlay.showTransientStatus("Last transcript pasted")
@@ -104,11 +110,5 @@ extension KoettController: NSMenuDelegate {
             recordingOverlay.showError(error.localizedDescription)
             fputs("Error: \(error.localizedDescription)\n", stderr)
         }
-    }
-
-    private func writeToGeneralPasteboard(_ text: String) -> Bool {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        return pasteboard.setString(text, forType: .string)
     }
 }
