@@ -296,6 +296,10 @@ struct ModifierShortcutState {
         chordUsed = false
     }
 
+    static func flagsReportKeyDown(keyCode: UInt16, modifierFlags: UInt) -> Bool {
+        eventReportsKeyDown(keyCode: keyCode, modifierFlags: modifierFlags) == true
+    }
+
     private static func eventReportsKeyDown(
         keyCode: UInt16,
         modifierFlags: UInt

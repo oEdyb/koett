@@ -17,10 +17,27 @@ extension KoettController {
         case .ready:
             startRecordingIfReady()
         case .recording:
+            lastDictationStopAt = eventTimestamp
             stopRecording(releaseEventTimestamp: eventTimestamp)
-        case .loading, .transcribing, .media, .assistantRecording, .assistantWorking:
+        case .transcribing:
+            queueDictationStart(eventTimestamp: eventTimestamp)
+        case .loading, .media, .assistantRecording, .assistantWorking:
             return
         }
+    }
+
+    /// A tap while the last dictation finishes means "start the next one".
+    /// Ignores a key bounce right after Stop; a late result drops the request.
+    private func queueDictationStart(eventTimestamp: TimeInterval) {
+        guard eventTimestamp - lastDictationStopAt >= Self.stopBounceWindow else { return }
+        queuedDictationStartAt = eventTimestamp
+    }
+
+    func startQueuedDictation() {
+        guard let queuedAt = queuedDictationStartAt else { return }
+        queuedDictationStartAt = nil
+        guard ProcessInfo.processInfo.systemUptime - queuedAt <= Self.queuedStartLifetime else { return }
+        DispatchQueue.main.async { [weak self] in self?.startRecordingIfReady() }
     }
 
     func startRecordingIfReady() {
@@ -116,10 +133,11 @@ extension KoettController {
 
     func handleMicrophoneFailure(_ recorder: MicrophoneRecorder, url: URL) -> Bool {
         guard let error = recorder.recordingError else { return false }
-        preserveFailedRecording(url)
-        recordingOverlay.showError(error.localizedDescription)
+        if preserveFailedRecording(url) != nil {
+            recordingOverlay.showError(error.localizedDescription, keepUntilClicked: true)
+        }
         state = .ready
-        fputs("Error: \(error.localizedDescription)\n", stderr)
+        fputs("Error: \(error.localizedDescription) [\((error as NSError).code)]\n", stderr)
         return true
     }
 
@@ -139,6 +157,7 @@ extension KoettController {
     /// saved and its audio is deleted. `session` nil means the active one.
     func cancelDictation(_ session: UInt64? = nil) {
         guard let active = activeDictationID, session == nil || session == active else { return }
+        queuedDictationStartAt = nil
         switch state {
         case .recording:
             activeDictationID = nil
@@ -224,6 +243,7 @@ extension KoettController {
             discardSketches(session)
             cleanup(url)
             state = .ready
+            if recorder.heardNothing { recordingOverlay.showError("No audio from microphone") }
             print("Ignored: recording was too short.")
             return
         }
