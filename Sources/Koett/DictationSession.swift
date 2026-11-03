@@ -101,8 +101,7 @@ extension KoettController {
 
     func startFileRecording(device: MicrophoneDevice? = nil) throws -> (MicrophoneRecorder, URL) {
         let device = try device ?? selectedMicrophone()
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("koett-\(UUID().uuidString).wav")
+        let url = OrphanedRecordings.recordingURL(in: FileManager.default.temporaryDirectory)
         do {
             let recorder = try MicrophoneRecorder(url: url, device: device)
             watchMicrophone(deviceID: device.id)
@@ -552,7 +551,7 @@ extension KoettController {
         )
     }
 
-    private func prepareDictation(
+    func prepareDictation(
         _ heardText: String,
         model: String
     ) async -> PreparedDictation {
@@ -615,7 +614,7 @@ extension KoettController {
         )
     }
 
-    private var decodeProgressHandler: @Sendable (Double) -> Void {
+    var decodeProgressHandler:@Sendable (Double) -> Void {
         let overlay = recordingOverlay
         return { fraction in
             Task { @MainActor in overlay.setDecodeProgress(fraction) }
@@ -664,7 +663,7 @@ extension KoettController {
     }
 
     @discardableResult
-    private func preserveFailedRecording(_ url: URL) -> URL? {
+    func preserveFailedRecording(_ url: URL) -> URL? {
         do {
             let savedURL = try failedRecordingStore.preserve(url)
             recordingOverlay.showError("Dictation failed · Audio saved", keepUntilClicked: true)

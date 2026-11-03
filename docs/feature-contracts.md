@@ -56,7 +56,9 @@
   Device choice does not change the macOS default. Both Nemotron capture and its
   recovery WAV use the same resolved device and fresh hardware format.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after
-  transcription or recovery.
+  transcription or recovery. If Koett dies while recording or transcribing, the
+  file stays in the temporary folder until the next launch recovers it (see
+  Transcript persistence and recovery).
 - If local ASR fails, Koett moves the WAV to
   `~/Library/Application Support/Koett/Failed Recordings/`, shows a visible
   failure, and adds **Open Failed Recordings** to the menu. Successful ASR still
@@ -287,6 +289,26 @@
   records retry before exit; if they still lack durable history or recovery files,
   Koett rejects exit with a visible warning. New sessions cannot start while a
   model relaunch is pending.
+- A crash, SIGKILL or SIGTERM cannot be rejected. Recordings are named
+  `koett-<pid>-<uuid>.wav`, and ExtAudioFile reaches disk every 5.5 s of audio, so
+  such a death loses at most the last 5.5 s; a shorter recording can lose all of it.
+  Measured on 2026-11-03 at 48 kHz: SIGKILL after 90 s left 87.3 s, and a 10 s
+  writer stall recorded cleanly while a 20 s stall overflowed.
+- After Parakeet is ready, startup adopts files whose pid is dead or its own. A
+  live pid is another instance's recording and is left alone, as are old-format
+  names. An adopted file is renamed `koett-recovering-<pid>-<uuid>.wav` first, so
+  one instance owns it and a file found already in that state, whose recovery never
+  finished, is preserved instead of transcribed again. Koett stays `.transcribing`
+  while it repairs the WAV sizes from the file size and runs the warmed model.
+- Text is saved once through the shared path above as the Last Transcript, the
+  audio is deleted, and the newest text gets the sticky `Not pasted · saved`
+  pill with **Paste** and **Copy**. Recovery never pastes or touches the clipboard. Ask recordings recover the
+  same way, as saved text.
+- No speech, an empty file, or under 0.25 s is deleted quietly. An ASR failure, an
+  unrepairable file, or passing the deadline (the longer of 120 s and the
+  recording's length) moves the audio to Failed Recordings with the sticky failure
+  pill. Text with no durable copy keeps its audio for the next launch. Recovery
+  always ends in `.ready`, and it is skipped when startup fails.
 
 ### Last transcript recovery
 

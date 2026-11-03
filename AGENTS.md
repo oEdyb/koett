@@ -96,7 +96,7 @@ Before changing dictation, speech engines, transcription, Ask, packaging, or fee
 | Failed ASR audio | `~/Library/Application Support/Koett/Failed Recordings/` |
 | Failed history writes | `~/Library/Application Support/Koett/Failed Transcripts/` |
 | Provider and Cartesia keys | macOS Keychain |
-| Microphone and media audio | Temporary; deleted after processing |
+| Microphone and media audio | Temporary; deleted after processing, or recovered on the next launch after a crash |
 | Ask screen image | Memory only; never saved |
 
 Only the final Ask question and one screen image go to the selected assistant
@@ -135,6 +135,8 @@ Dictation and all audio transcription stay local.
   paste delivery, and Nemotron recovery.
 - `Sources/Koett/SetupStatus.swift`: small first-run status and download-progress
   presentation model.
+- `Sources/Koett/OrphanedRecordings.swift`: startup recovery of recordings left by
+  a crash, including WAV header repair.
 - `Sources/Koett/FailedRecordingStore.swift`: collision-safe failed-ASR audio
   recovery folder.
 - `Sources/Koett/FailedTranscriptStore.swift`: fallback storage for completed

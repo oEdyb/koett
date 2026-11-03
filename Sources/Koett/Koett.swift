@@ -319,6 +319,7 @@ final class KoettController: NSObject {
                 recordingOverlay.showError(startupNoticeMessage)
             }
             recoverTranscripts()
+            recoverOrphanedRecordings()
         } else {
             let message = SetupStatus.shortError(
                 code: startupErrorCode,
