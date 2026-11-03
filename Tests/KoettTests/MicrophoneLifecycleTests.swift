@@ -165,28 +165,18 @@ final class MicrophoneLifecycleTests: XCTestCase {
         XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Microphone unavailable · See menu"))
     }
 
-    func testOptionClickIsNotATap() async throws {
-        let controller = try idleController()
-        var callback: (@Sendable (NSEvent) -> Void)?
-        controller.installMouseMonitor { mask, handler in
-            XCTAssertTrue(mask.contains(.leftMouseDown))
-            XCTAssertTrue(mask.contains(.rightMouseDown))
-            XCTAssertTrue(mask.contains(.otherMouseDown))
-            callback = handler
-            return nil
+    func testOptionClickIsNotATap() throws {
+        for (cgType, type) in [(CGEventType.leftMouseDown, NSEvent.EventType.leftMouseDown), (.rightMouseDown, .rightMouseDown), (.otherMouseDown, .otherMouseDown)] {
+            XCTAssertNotEqual(KoettController.shortcutEventMask & (CGEventMask(1) << cgType.rawValue), 0)
+            let controller = try idleController()
+            optionDown(controller)
+            controller.handleShortcutEvent(type: type, keyCode: 0, modifierFlags: downFlags,
+                                           eventTimestamp: 0, isRepeat: false)
+            optionUp(controller)
+            XCTAssertNil(controller.recordingOverlay.latestOutcome)
+            tapOption(controller)
+            XCTAssertNotNil(controller.recordingOverlay.latestOutcome)
         }
-        optionDown(controller)
-        let click = try XCTUnwrap(NSEvent.mouseEvent(
-            with: .leftMouseDown, location: .zero, modifierFlags: .option,
-            timestamp: 0, windowNumber: 0, context: nil, eventNumber: 1,
-            clickCount: 1, pressure: 1
-        ))
-        try XCTUnwrap(callback)(click)
-        try await settle()
-        optionUp(controller)
-        XCTAssertNil(controller.recordingOverlay.latestOutcome)
-        tapOption(controller)
-        XCTAssertNotNil(controller.recordingOverlay.latestOutcome)
     }
 
     func testResyncTrustsDeviceFlagsWhenKeyStateMissesRightOption() {

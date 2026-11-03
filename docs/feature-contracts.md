@@ -11,12 +11,12 @@
 - In Toggle mode, a plain modifier tap controls dictation and a
   modifier-plus-key chord can control another feature. Hold mode rejects that
   prefix conflict because recording starts on modifier-down.
-- A narrow active Core Graphics event tap receives modifier changes. AppKit
+- One active Core Graphics event tap receives modifier changes and mouse presses. AppKit
   receives ordinary key-down and key-up events. If macOS disables the event
   tap, Koett resyncs the physical modifier state before it continues; that resync
   counts a key as held if either `keyState` or the session's device flags say so.
 - A mouse press while the modifier is down, or a modifier change during a drag,
-  is Option-click or Option-drag, not a tap. The mouse monitor needs no extra
+  is Option-click or Option-drag, not a tap. The existing event tap needs no extra
   permission.
 - A tap while transcribing is ignored. A new recording requires a new tap after
   the prior result completes; recording never starts from a queued tap.

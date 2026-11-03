@@ -111,7 +111,6 @@ final class KoettController: NSObject {
     private var modifierEventTap: CFMachPort?
     private var modifierEventSource: CFRunLoopSource?
     private var keyMonitor: Any?
-    private var mouseMonitor: Any?
     var statusItem: NSStatusItem?
     var isPreparing = false
     var isRelaunching = false
@@ -382,7 +381,7 @@ final class KoettController: NSObject {
     func installHotkey() throws {
         guard modifierEventTap == nil, keyMonitor == nil else { return }
 
-        let eventMask = CGEventMask(1) << CGEventType.flagsChanged.rawValue
+        let eventMask = Self.shortcutEventMask
         guard let eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -403,7 +402,7 @@ final class KoettController: NSObject {
                     return Unmanaged.passUnretained(event)
                 }
 
-                guard type == .flagsChanged else {
+                guard let eventType = NSEvent.EventType(rawValue: UInt(type.rawValue)) else {
                     return Unmanaged.passUnretained(event)
                 }
                 let keyCode = UInt16(
@@ -417,7 +416,7 @@ final class KoettController: NSObject {
                 let eventTimestamp = TimeInterval(event.timestamp) / 1_000_000_000
                 DispatchQueue.main.async {
                     controller.handleShortcutEvent(
-                        type: .flagsChanged,
+                        type: eventType,
                         keyCode: keyCode,
                         modifierFlags: modifierFlags,
                         eventTimestamp: eventTimestamp,
@@ -462,7 +461,6 @@ final class KoettController: NSObject {
             throw Self.failure("macOS could not install the key shortcut monitor.")
         }
 
-        installMouseMonitor()
 
         CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
         modifierEventTap = eventTap
@@ -517,19 +515,8 @@ final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    func installMouseMonitor(
-        register: (NSEvent.EventTypeMask, @escaping @Sendable (NSEvent) -> Void) -> Any? = {
-            NSEvent.addGlobalMonitorForEvents(matching: $0, handler: $1)
-        }
-    ) {
-        mouseMonitor = register([.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in self?.handleMousePress() }
-        }
-    }
-
-    func handleMousePress() {
-        noteModifierInterruption()
-    }
+    static let shortcutEventMask: CGEventMask = [CGEventType.flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown]
+        .reduce(0) { $0 | (CGEventMask(1) << $1.rawValue) }
 
     func noteModifierInterruption() {
         dictationModifierState.noteKeyDown()
@@ -546,6 +533,10 @@ final class KoettController: NSObject {
         modifierKeyIsDown: Bool? = nil
     ) {
         guard !isCapturingShortcut else { return }
+        if type == .leftMouseDown || type == .rightMouseDown || type == .otherMouseDown {
+            noteModifierInterruption()
+            return
+        }
 
         // A press or release during a drag is part of that drag, not a tap.
         if (type == .keyDown && !isRepeat) || (type == .flagsChanged && NSEvent.pressedMouseButtons != 0) {
