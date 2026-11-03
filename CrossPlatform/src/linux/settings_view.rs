@@ -451,15 +451,8 @@ Media: open Koett → Transcribe media",
         DrawKey::Alt => "alt",
     }));
     row(&draw_options, "Draw key", &draw_key);
-    let from_keyboard = gtk::CheckButton::with_label("_Keep typing while recording");
-    from_keyboard.set_use_underline(true);
-    from_keyboard.set_active(settings.draw_key_from_keyboard);
-    draw_options.append(&from_keyboard);
-    let keyboard_options = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    keyboard_options.add_css_class("koett-setting-nested");
-    draw_options.append(&keyboard_options);
-    keyboard_options.append(&help(
-        "Koett reads only which of Shift, Ctrl, Alt and Super are held, and only while a drawing dictation records. It never reads typed text. Without this, typing pauses while you record.",
+    draw_options.append(&help(
+        "Typing keeps working while you record. To see the draw key, Koett checks which of Shift, Ctrl, Alt and Super are held, only while a drawing dictation records. It never reads typed text.",
     ));
     let (access_text, access_ready) = match super::sketch::keys::Keyboards::open() {
         Ok(keyboards) if keyboards.unreadable() > 0 => (
@@ -471,7 +464,7 @@ Media: open Koett → Transcribe media",
         ),
         Ok(_) => ("Keyboard access: ready.".to_string(), true),
         Err(super::sketch::keys::Access::Denied) => (
-            "Keyboard access: needs a one-time setup. Run the setup command in a terminal, then log out and back in. It gives your user read-only access to keyboards, which other apps you run could also use.".to_string(),
+            "Keyboard access: needs a one-time setup, and drawing stays off until then. Run the setup command in a terminal, then log out and back in. It gives your user read-only access to keyboards, which other apps you run could also use.".to_string(),
             false,
         ),
         Err(super::sketch::keys::Access::NoKeyboards) => {
@@ -481,7 +474,7 @@ Media: open Koett → Transcribe media",
     let access = gtk::Label::new(Some(&access_text));
     access.set_wrap(true);
     access.set_xalign(0.0);
-    keyboard_options.append(&access);
+    draw_options.append(&access);
     let setup = gtk::Button::with_label("Copy setup command");
     setup.set_halign(gtk::Align::Start);
     setup.set_tooltip_text(Some(super::sketch::keys::SETUP_COMMAND));
@@ -492,23 +485,21 @@ Media: open Koett → Transcribe media",
             .set_text(super::sketch::keys::SETUP_COMMAND);
         button.set_label("Copied · paste into a terminal");
     });
-    keyboard_options.append(&setup);
+    draw_options.append(&setup);
+    let may_take = gtk::CheckButton::with_label(
+        "_If keys can't be read, let drawing take the keyboard (typing pauses while recording)",
+    );
+    may_take.set_use_underline(true);
+    may_take.set_active(settings.draw_may_take_keyboard);
+    may_take.set_visible(!access_ready);
+    draw_options.append(&may_take);
     let sync_draw = {
         let draw = draw.clone();
-        let from_keyboard = from_keyboard.clone();
         let draw_options = draw_options.clone();
-        let keyboard_options = keyboard_options.clone();
-        move || {
-            draw_options.set_sensitive(draw.is_active());
-            keyboard_options.set_sensitive(draw.is_active() && from_keyboard.is_active());
-        }
+        move || draw_options.set_sensitive(draw.is_active())
     };
     sync_draw();
-    let sync_draw = Rc::new(sync_draw);
-    for check in [&draw, &from_keyboard] {
-        let sync_draw = sync_draw.clone();
-        check.connect_toggled(move |_| sync_draw());
-    }
+    draw.connect_toggled(move |_| sync_draw());
     replacements.append(&help(
         "Case-sensitive phrases. Longest match wins; replacements run once.",
     ));
@@ -616,7 +607,7 @@ Media: open Koett → Transcribe media",
             };
             updated.pause_media = pause_media.is_active();
             updated.draw_while_dictating = draw.is_active();
-            updated.draw_key_from_keyboard = from_keyboard.is_active();
+            updated.draw_may_take_keyboard = may_take.is_active();
             updated.draw_key = match draw_key.active_id().as_deref() {
                 Some("control") => DrawKey::Control,
                 Some("alt") => DrawKey::Alt,

@@ -65,9 +65,9 @@ pub struct Settings {
     /// Off by default: drawing takes keyboard focus while recording.
     pub draw_while_dictating: bool,
     pub draw_key: DrawKey,
-    /// Opt-in: read only modifier state from keyboard devices while recording
-    /// so drawing needs no keyboard focus and typing keeps working.
-    pub draw_key_from_keyboard: bool,
+    /// Opt-in last resort: when keyboards can't be read, let the drawing overlay
+    /// hold keyboard focus while recording, which pauses typing elsewhere.
+    pub draw_may_take_keyboard: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -88,7 +88,7 @@ impl Default for Settings {
             paste_shortcut: PasteShortcut::default(),
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
-            draw_key_from_keyboard: false,
+            draw_may_take_keyboard: false,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -261,8 +261,8 @@ impl Settings {
         if self.draw_key != opened.draw_key {
             merged.draw_key = self.draw_key;
         }
-        if self.draw_key_from_keyboard != opened.draw_key_from_keyboard {
-            merged.draw_key_from_keyboard = self.draw_key_from_keyboard;
+        if self.draw_may_take_keyboard != opened.draw_may_take_keyboard {
+            merged.draw_may_take_keyboard = self.draw_may_take_keyboard;
         }
         merged
     }
@@ -451,9 +451,12 @@ mod tests {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert!(!settings.draw_while_dictating);
         assert!(
-            !settings.draw_key_from_keyboard,
-            "keyboard access is opt-in"
+            !settings.draw_may_take_keyboard,
+            "a recording never takes the keyboard by default"
         );
+        // An old stored value of the removed "Keep typing" toggle cannot opt in.
+        let old: Settings = serde_json::from_str(r#"{"draw_key_from_keyboard":false}"#).unwrap();
+        assert!(!old.draw_may_take_keyboard);
         assert_eq!(settings.draw_key, DrawKey::Shift);
         let chosen: Settings =
             serde_json::from_str(r#"{"draw_while_dictating":true,"draw_key":"alt"}"#).unwrap();
