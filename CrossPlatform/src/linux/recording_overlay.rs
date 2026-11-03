@@ -176,6 +176,22 @@ pub(super) enum Phase {
     Done,
     Recovery,
     Media,
+    Message,
+}
+
+/// One short pill row for an engine error; the window keeps the full text.
+pub(super) fn error_row(status: &str) -> &'static str {
+    let error = status
+        .strip_prefix("Error: ")
+        .unwrap_or(status)
+        .to_lowercase();
+    if error.contains("microphone") || error.contains("input device") {
+        "Microphone couldn't start"
+    } else if error.contains("download") {
+        "Model download failed"
+    } else {
+        "Dictation failed"
+    }
 }
 
 pub(super) fn phase(
@@ -184,6 +200,7 @@ pub(super) fn phase(
     recovering: bool,
     done: bool,
     media: bool,
+    message: bool,
 ) -> Phase {
     let transcribing = state.starts_with("Transcribing")
         || state.starts_with("Fetching")
@@ -196,6 +213,8 @@ pub(super) fn phase(
         Phase::Media
     } else if recovering {
         Phase::Recovery
+    } else if message {
+        Phase::Message
     } else if done {
         Phase::Done
     } else {
@@ -465,7 +484,7 @@ fn paint_body(
             context.arc(23.0, cy, 6.0, pill.spin, pill.spin + 1.6);
             context.stroke()?;
         }
-        Phase::Recovery => {
+        Phase::Recovery | Phase::Message => {
             context.set_line_width(1.8);
             context.move_to(23.0, cy - 7.0);
             context.line_to(30.0, cy + 6.0);
@@ -857,9 +876,17 @@ impl RecordingOverlay {
         recovering: bool,
         done: bool,
         media_preview: Option<&str>,
+        message: Option<&str>,
     ) {
         let recording = started.is_some();
-        let phase = phase(state, recording, recovering, done, media_preview.is_some());
+        let phase = phase(
+            state,
+            recording,
+            recovering,
+            done,
+            media_preview.is_some(),
+            message.is_some(),
+        );
         let (dark, _) = super::theme::appearance(&self.window.settings(), self.window.upcast_ref());
         let reduced = !self.drawing.settings().is_gtk_enable_animations();
         let mut pill = self.state.borrow_mut();
@@ -958,6 +985,7 @@ impl RecordingOverlay {
             Phase::Recovery => "Not pasted · saved".into(),
             Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
             Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
+            Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
         };
         self.primary.set_text(&text);
@@ -974,6 +1002,7 @@ impl RecordingOverlay {
             let (x, width) = match phase {
                 Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
                 Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
+                Phase::Message => (44.0, WIDTH - 44 - 16),
                 _ => (40.0, 246),
             };
             self.primary.set_size_request(width, ROW);
@@ -981,8 +1010,11 @@ impl RecordingOverlay {
                 main.move_(&self.primary, x, 0.0);
             }
         }
-        self.primary
-            .set_max_width_chars(if strip || actions { 6 } else { 22 });
+        self.primary.set_max_width_chars(match phase {
+            _ if strip || actions => 6,
+            Phase::Message => 36,
+            _ => 22,
+        });
         if !matches!(phase, Phase::Done) {
             self.fade(false);
         }
@@ -1036,26 +1068,69 @@ impl RecordingOverlay {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_message_shows_with_the_window_closed_and_replaces_done() {
+        use super::{Phase, phase};
+        assert_eq!(
+            phase("Error: no mic", false, false, false, false, true),
+            Phase::Message
+        );
+        assert_eq!(
+            phase("Ready", false, false, true, false, true),
+            Phase::Message
+        );
+    }
+
+    #[test]
+    fn missing_microphone_has_a_short_row() {
+        assert_eq!(
+            super::error_row("Error: could not start the microphone: no device"),
+            "Microphone couldn't start"
+        );
+        assert_eq!(
+            super::error_row("Error: Microphone unavailable: USB. Choose another input"),
+            "Microphone couldn't start"
+        );
+    }
+
+    #[test]
+    fn other_errors_have_a_short_row() {
+        assert_eq!(
+            super::error_row("Error: could not download the Koett speech model: io"),
+            "Model download failed"
+        );
+        assert_eq!(super::error_row("Error: anything"), "Dictation failed");
+    }
+
     use super::*;
 
     #[test]
     fn phases_follow_engine_state_with_recording_first() {
         assert_eq!(
-            phase("Recording…", true, true, true, false),
+            phase("Recording…", true, true, true, false, true),
             Phase::Recording
         );
         assert_eq!(
-            phase("Transcribing…", false, true, true, false),
+            phase("Transcribing…", false, true, true, false, true),
             Phase::Transcribing
         );
         assert_eq!(
-            phase("Fetching audio…", false, false, false, false),
+            phase("Fetching audio…", false, false, false, false, false),
             Phase::Transcribing
         );
-        assert_eq!(phase("Ready", false, true, true, true), Phase::Media);
-        assert_eq!(phase("Ready", false, true, true, false), Phase::Recovery);
-        assert_eq!(phase("Ready", false, false, true, false), Phase::Done);
-        assert_eq!(phase("Ready", false, false, false, false), Phase::Hidden);
+        assert_eq!(phase("Ready", false, true, true, true, false), Phase::Media);
+        assert_eq!(
+            phase("Ready", false, true, true, false, true),
+            Phase::Recovery
+        );
+        assert_eq!(
+            phase("Ready", false, false, true, false, false),
+            Phase::Done
+        );
+        assert_eq!(
+            phase("Ready", false, false, false, false, false),
+            Phase::Hidden
+        );
     }
 
     #[test]
