@@ -18,9 +18,8 @@
 - A mouse press while the modifier is down, or a modifier change during a drag,
   is Option-click or Option-drag, not a tap. The mouse monitor needs no extra
   permission.
-- A tap while the previous dictation finishes queues the next start. It is
-  ignored within 0.3 s of Stop (key bounce), cleared by Cancel, and dropped if
-  the previous result takes more than 5 s to finish. Toggle mode only.
+- A tap while transcribing is ignored. A new recording requires a new tap after
+  the prior result completes; recording never starts from a queued tap.
 - Modifier-only shortcuts use the event's device-specific left/right flag as
   their primary state. Do not replace this with a second
   `CGEventSource.keyState` check: that check returned `false` during real Right

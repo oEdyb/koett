@@ -88,7 +88,6 @@ final class KoettController: NSObject {
                 if state == .ready { activeDictationID = nil }
                 refreshEscapeMonitor()
                 refreshCaptureWatch()
-                if state == .ready { startQueuedDictation() }
             }
         }
     }
@@ -100,10 +99,6 @@ final class KoettController: NSObject {
     var lastDictationID: UInt64 = 0
     var dictationTask: Task<Void, Never>?
     var captureWatch: Timer?
-    var queuedDictationStartAt: TimeInterval?
-    var lastDictationStopAt: TimeInterval = 0
-    static let stopBounceWindow: TimeInterval = 0.3
-    static let queuedStartLifetime: TimeInterval = 5
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
@@ -467,13 +462,7 @@ final class KoettController: NSObject {
             throw Self.failure("macOS could not install the key shortcut monitor.")
         }
 
-        // A click while the modifier is down is Option-click, not a tap. Unlike key
-        // events, mouse events need no Accessibility trust to monitor.
-        mouseMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
-        ) { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in self?.noteModifierInterruption() }
-        }
+        installMouseMonitor()
 
         CFRunLoopAddSource(CFRunLoopGetMain(), eventSource, .commonModes)
         modifierEventTap = eventTap
@@ -490,14 +479,17 @@ final class KoettController: NSObject {
 
     private func recoverModifierEventTap() {
         enableModifierEventTap()
+        resyncModifierState(
+            modifierFlags: UInt(CGEventSource.flagsState(.combinedSessionState).rawValue),
+            isKeyDown: { CGEventSource.keyState(.combinedSessionState, key: CGKeyCode($0)) }
+        )
+    }
+
+    func resyncModifierState(modifierFlags flags: UInt, isKeyDown: (UInt16) -> Bool) {
 
         // keyState alone can read false for a held Right Option; flags report the device key.
-        let flags = UInt(CGEventSource.flagsState(.combinedSessionState).rawValue)
         let keyState: (UInt16) -> Bool = { keyCode in
-            CGEventSource.keyState(
-                .combinedSessionState,
-                key: CGKeyCode(keyCode)
-            ) || ModifierShortcutState.flagsReportKeyDown(keyCode: keyCode, modifierFlags: flags)
+            isKeyDown(keyCode) || ModifierShortcutState.flagsReportKeyDown(keyCode: keyCode, modifierFlags: flags)
         }
         let dictationIsHeld = dictationModifierState.resync(
             binding: dictationShortcut,
@@ -523,6 +515,20 @@ final class KoettController: NSObject {
         item.button?.toolTip = "Koett"
         statusItem = item
         rebuildMenu()
+    }
+
+    func installMouseMonitor(
+        register: (NSEvent.EventTypeMask, @escaping @Sendable (NSEvent) -> Void) -> Any? = {
+            NSEvent.addGlobalMonitorForEvents(matching: $0, handler: $1)
+        }
+    ) {
+        mouseMonitor = register([.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in self?.handleMousePress() }
+        }
+    }
+
+    func handleMousePress() {
+        noteModifierInterruption()
     }
 
     func noteModifierInterruption() {

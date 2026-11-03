@@ -130,6 +130,8 @@ final class MicrophoneLifecycleTests: XCTestCase {
         XCTAssertEqual(controller.state, .ready)
         XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("No audio from microphone"))
         XCTAssertTrue(controller.recordingOverlay.isPresented)
+        XCTAssertEqual(controller.recordingOverlay.pillView.preferredHeight, 48)
+        XCTAssertEqual(controller.recordingOverlay.pillView.content, .error("No audio from microphone"))
     }
 
     func testQuickTapAndPausedStopStaySilent() throws {
@@ -163,14 +165,28 @@ final class MicrophoneLifecycleTests: XCTestCase {
         XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Microphone unavailable · See menu"))
     }
 
-    func testOptionClickIsNotATap() throws {
+    func testOptionClickIsNotATap() async throws {
         let controller = try idleController()
+        var callback: (@Sendable (NSEvent) -> Void)?
+        controller.installMouseMonitor { mask, handler in
+            XCTAssertTrue(mask.contains(.leftMouseDown))
+            XCTAssertTrue(mask.contains(.rightMouseDown))
+            XCTAssertTrue(mask.contains(.otherMouseDown))
+            callback = handler
+            return nil
+        }
         optionDown(controller)
-        controller.noteModifierInterruption()
+        let click = try XCTUnwrap(NSEvent.mouseEvent(
+            with: .leftMouseDown, location: .zero, modifierFlags: .option,
+            timestamp: 0, windowNumber: 0, context: nil, eventNumber: 1,
+            clickCount: 1, pressure: 1
+        ))
+        try XCTUnwrap(callback)(click)
+        try await settle()
         optionUp(controller)
         XCTAssertNil(controller.recordingOverlay.latestOutcome)
         tapOption(controller)
-        XCTAssertNotNil(controller.recordingOverlay.latestOutcome, "The next plain tap works")
+        XCTAssertNotNil(controller.recordingOverlay.latestOutcome)
     }
 
     func testResyncTrustsDeviceFlagsWhenKeyStateMissesRightOption() {
@@ -184,45 +200,26 @@ final class MicrophoneLifecycleTests: XCTestCase {
         XCTAssertFalse(ModifierShortcutState.flagsReportKeyDown(keyCode: 61, modifierFlags: 0))
     }
 
-    func testTapWhileTranscribingStartsTheNextDictation() async throws {
+    func testTapWhileTranscribingNeverStartsALateRecording() async throws {
         let controller = try idleController()
         controller.state = .transcribing
-        controller.toggleRecording(eventTimestamp: ProcessInfo.processInfo.systemUptime)
-        XCTAssertNil(controller.recordingOverlay.latestOutcome)
-        controller.state = .ready
-        try await settle()
-        XCTAssertEqual(controller.recordingOverlay.latestOutcome, .failure("Microphone unavailable · See menu"), "The queued start ran")
-    }
-
-    func testBounceAfterStopDoesNotQueue() async throws {
-        let controller = try idleController()
-        let now = ProcessInfo.processInfo.systemUptime
-        controller.lastDictationStopAt = now
-        controller.state = .transcribing
-        controller.toggleRecording(eventTimestamp: now + 0.1)
+        tapOption(controller)
         controller.state = .ready
         try await settle()
         XCTAssertNil(controller.recordingOverlay.latestOutcome)
     }
 
-    func testCancelClearsAQueuedStart() async throws {
-        let controller = try idleController()
-        controller.beginDictationSession()
-        controller.state = .transcribing
-        controller.toggleRecording(eventTimestamp: ProcessInfo.processInfo.systemUptime)
+    func testRightOptionResyncKeepsHoldRecordingWhenKeyStateMissesIt() throws {
+        let (controller, _, _, _) = try recording()
+        controller.recordingMode = .hold
+        controller.resyncModifierState(
+            modifierFlags: UInt(NX_DEVICERALTKEYMASK) | NSEvent.ModifierFlags.option.rawValue,
+            isKeyDown: { _ in false }
+        )
+        XCTAssertEqual(controller.state, .recording)
+        controller.resyncModifierState(modifierFlags: 0, isKeyDown: { _ in false })
+        XCTAssertEqual(controller.state, .transcribing)
         controller.cancelDictation()
-        controller.state = .ready
-        try await settle()
-        XCTAssertNil(controller.recordingOverlay.latestOutcome)
-    }
-
-    func testStaleQueuedStartIsDropped() async throws {
-        let controller = try idleController()
-        controller.state = .transcribing
-        controller.toggleRecording(eventTimestamp: ProcessInfo.processInfo.systemUptime - KoettController.queuedStartLifetime - 1)
-        controller.state = .ready
-        try await settle()
-        XCTAssertNil(controller.recordingOverlay.latestOutcome)
     }
 
     func testRapidStartStopCancelLeavesNothingBehind() throws {

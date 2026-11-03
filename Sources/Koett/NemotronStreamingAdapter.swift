@@ -148,11 +148,22 @@ final class LiveAudioStore: Sendable {
                 }
             } else {
                 for frame in 0..<framesToCopy {
-                    var mixedSample: Float = 0
-                    for channel in 0..<channelCount {
-                        mixedSample += input[channel][frame]
+                    state.samples[state.frameCount + frame] = 0
+                }
+                var liveChannels: Float = 0
+                for channel in 0..<channelCount {
+                    var power: Float = 0
+                    for frame in 0..<framesToCopy { power += input[channel][frame] * input[channel][frame] }
+                    guard power / Float(framesToCopy) > 1e-8 else { continue }
+                    liveChannels += 1
+                    for frame in 0..<framesToCopy {
+                        state.samples[state.frameCount + frame] += input[channel][frame]
                     }
-                    state.samples[state.frameCount + frame] = mixedSample / Float(channelCount)
+                }
+                if liveChannels > 1 {
+                    for frame in 0..<framesToCopy {
+                        state.samples[state.frameCount + frame] /= liveChannels
+                    }
                 }
             }
 
