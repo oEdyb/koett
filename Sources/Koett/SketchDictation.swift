@@ -9,6 +9,48 @@ struct SketchedDictation {
     let frameCount: Int
 }
 
+/// The pill message when sketches did not arrive with the text.
+enum SketchDeliveryNotice {
+    static func message(failedCaptures: Int, sheet: SheetPasteResult?) -> String? {
+        switch sheet {
+        case .notPasted, .unread:
+            return "Sketches not pasted"
+        case .read, nil:
+            switch failedCaptures {
+            case ...0: return nil
+            case 1: return "1 sketch not captured"
+            default: return "\(failedCaptures) sketches not captured"
+            }
+        }
+    }
+}
+
+/// Asks for Screen Recording after sketches failed without it. The window
+/// activates Koett, so it waits until the paste has landed, skips a dictation
+/// in progress, and opens once per launch.
+@MainActor
+final class SketchPermissionPrompt {
+    static let delay: Duration = .seconds(2)
+    private var shown = false
+
+    @discardableResult
+    func request(
+        failedCaptures: Int,
+        isGranted: @escaping @MainActor () -> Bool,
+        isIdle: @escaping @MainActor () -> Bool,
+        sleep: @escaping @MainActor (Duration) async -> Void = { try? await Task.sleep(for: $0) },
+        show: @escaping @MainActor () -> Void
+    ) -> Task<Void, Never>? {
+        guard failedCaptures > 0, !shown, !isGranted() else { return nil }
+        return Task { @MainActor in
+            await sleep(Self.delay)
+            guard !shown, !isGranted(), isIdle() else { return }
+            shown = true
+            show()
+        }
+    }
+}
+
 extension KoettController {
     static let sketchCaptureWait: Duration = .seconds(8)
 
@@ -159,20 +201,33 @@ extension KoettController {
         return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count)
     }
 
-    /// Called after delivery, so the window never takes focus before Command-V.
-    func showPermissionsIfSketchesNeededScreen() {
-        guard sketchOverlay.takeFailedCaptures() > 0,
-              !permissionsWindow.model.center.isGranted(.screenRecording) else { return }
-        showPermissions()
+    /// Called after delivery; the prompt itself waits for the paste to land.
+    func promptForScreenRecordingIfSketchesFailed() {
+        sketchPermissionPrompt.request(
+            failedCaptures: sketchOverlay.takeFailedCaptures(),
+            isGranted: { [weak self] in self?.permissionsWindow.model.center.isGranted(.screenRecording) ?? true },
+            isIdle: { [weak self] in self?.state == .ready },
+            show: { [weak self] in self?.showPermissions() }
+        )
     }
 
     /// Scrawl order: the numbered sheet first, then the matching text.
-    func pasteSketchSheet(_ sketched: SketchedDictation) async {
-        guard let sheet = sketched.sheet else { return }
+    /// Returns nil when the dictation has no sketches.
+    func pasteSketchSheet(_ sketched: SketchedDictation) async -> SheetPasteResult? {
+        guard sketched.frameCount > 0 else { return nil }
+        guard let sheet = sketched.sheet else { return .notPasted }
         let target = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         let chord = SketchPasteChord.forApp(target, overrides: SketchPasteChord.overrides(in: .standard))
-        let pasted = await SketchPaste.paste(png: sheet) { postPasteKey(flags: chord.flags) }
-        if !pasted { fputs("Warning: contact sheet not pasted\n", stderr) }
-        print("SKETCHES PASTED (\(sketched.frameCount)) with \(chord.displayName) into \(target ?? "unknown app")")
+        let result = await SketchPaste.paste(png: sheet) { postPasteKey(flags: chord.flags) }
+        for key in chord.closingKeys(after: result) where !postKey(key, flags: []) {
+            fputs("Warning: could not post the key that closes quoted insert\n", stderr)
+        }
+        let summary = "(\(sketched.frameCount)) with \(chord.displayName) into \(target ?? "unknown app")"
+        switch result {
+        case .read: print("SKETCHES READ \(summary)")
+        case .unread: fputs("Warning: sketches not read \(summary)\n", stderr)
+        case .notPasted: fputs("Warning: sketches not pasted \(summary)\n", stderr)
+        }
+        return result
     }
 }

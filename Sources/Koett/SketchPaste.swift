@@ -1,34 +1,54 @@
 import AppKit
 import Synchronization
 
+/// What happened to the contact sheet.
+enum SheetPasteResult: Equatable, Sendable {
+    /// Not on the clipboard, the paste key could not be posted, or no sheet was drawn.
+    case notPasted
+    /// The paste key went out but nothing read the image before the timeout.
+    case unread
+    /// Something read the image: the target or a clipboard manager, which look the same.
+    case read
+}
+
 /// Pastes the contact sheet before the text. The image is offered lazily, so
-/// Koett sees when the target actually reads it, then waits a short settle
-/// before the clipboard switches to text (Linux portal path: 1.5 s, 160 ms).
+/// Koett sees when it is read, then holds it a little longer before the
+/// clipboard switches to text (Linux portal path: 1.5 s, 160 ms).
 @MainActor
 enum SketchPaste {
     static let readTimeout: Duration = .milliseconds(1_500)
     static let afterRead: Duration = .milliseconds(160)
+    /// The first read may be a clipboard manager, or a terminal agent's first
+    /// helper process, so the image stays this long after the paste key anyway.
+    static let minimumHold: Duration = .milliseconds(600)
 
-    /// Returns false when the image could not be put on the clipboard or pasted.
     static func paste(
         png: Data,
         pasteboard: NSPasteboard = .general,
         postPaste: () -> Bool
-    ) async -> Bool {
+    ) async -> SheetPasteResult {
         let provider = SketchImageProvider(png: png)
         let item = NSPasteboardItem()
-        guard item.setDataProvider(provider, forTypes: [.png, .tiff]) else { return false }
+        guard item.setDataProvider(provider, forTypes: [.png, .tiff]) else { return .notPasted }
         pasteboard.clearContents()
-        guard pasteboard.writeObjects([item]) else { return false }
+        guard pasteboard.writeObjects([item]) else { return .notPasted }
         let posted = ContinuousClock.now
-        guard postPaste() else { return false }
+        guard postPaste() else { return .notPasted }
         let deadline = posted + readTimeout
+        var readAt: ContinuousClock.Instant?
         while ContinuousClock.now < deadline {
-            if let readAt = provider.readAt, readAt >= posted { break }
+            if let time = provider.readAt, time >= posted {
+                readAt = time
+                break
+            }
             try? await Task.sleep(for: .milliseconds(10))
         }
-        try? await Task.sleep(for: afterRead)
-        return true
+        guard let readAt else {
+            try? await Task.sleep(for: afterRead)
+            return .unread
+        }
+        try? await Task.sleep(until: max(readAt + afterRead, posted + minimumHold))
+        return .read
     }
 }
 

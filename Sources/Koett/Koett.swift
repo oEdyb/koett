@@ -67,6 +67,7 @@ final class KoettController: NSObject {
     var pinSelectedText: Bool
     let sketchFrames = SketchFrames()
     let sketchOverlay = SketchOverlay()
+    let sketchPermissionPrompt = SketchPermissionPrompt()
     lazy var permissionsWindow = makePermissionsWindow()
     var s1MiniStyle: S1MiniStyle
     var s1MiniStructure: S1MiniStructure

@@ -37,6 +37,25 @@ enum SketchPasteChord: Equatable, Sendable {
         }
     }
 
+    /// Keys posted after the sheet, before the text. In a plain shell Control-V
+    /// is quoted insert: it swallows the next byte, which would be the ESC opening
+    /// the bracketed paste, so the text's newlines would run as commands. Space
+    /// closes quoted insert. Backspace removes that space only when nothing read
+    /// the image: after a read the reader may be an agent still inserting its
+    /// image, where Backspace could delete it. A read does not rule out a shell,
+    /// because a clipboard manager's read looks the same, so Space always goes out.
+    func closingKeys(after result: SheetPasteResult) -> [CGKeyCode] {
+        guard self == .control else { return [] }
+        switch result {
+        case .notPasted: return []
+        case .read: return [Self.spaceKey]
+        case .unread: return [Self.spaceKey, Self.backspaceKey]
+        }
+    }
+
+    static let spaceKey: CGKeyCode = 49
+    static let backspaceKey: CGKeyCode = 51
+
     static func isTerminal(_ bundleID: String?) -> Bool {
         bundleID.map(terminals.contains) ?? false
     }

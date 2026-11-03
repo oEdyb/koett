@@ -509,7 +509,7 @@ extension KoettController {
         session: UInt64,
         deliveredText: inout String?
     ) async throws -> Completion {
-        defer { showPermissionsIfSketchesNeededScreen() }
+        defer { promptForScreenRecordingIfSketchesFailed() }
         let prepared = rawText.isEmpty
             ? PreparedDictation(text: "", model: model, rawText: nil)
             : await prepareDictation(rawText, model: model)
@@ -533,9 +533,13 @@ extension KoettController {
         guard claimDelivery(session) else { return .finished }
         let final = PreparedDictation(text: sketched.text, model: prepared.model, rawText: sketched.rawText)
         deliveredText = final.text
-        await pasteSketchSheet(sketched)
+        let sheet = await pasteSketchSheet(sketched)
         let pastePostedAt = try deliver(final)
-        recordingOverlay.showDone(text: final.text)
+        if let warning = SketchDeliveryNotice.message(failedCaptures: sketchOverlay.failedCaptures, sheet: sheet) {
+            recordingOverlay.showSketchWarning(warning)
+        } else {
+            recordingOverlay.showDone(text: final.text)
+        }
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
@@ -634,15 +638,19 @@ extension KoettController {
 
     /// Posts V with `flags` (Command for text; Control for images in terminals).
     func postPasteKey(flags: CGEventFlags) -> Bool {
+        postKey(9, flags: flags)
+    }
+
+    func postKey(_ virtualKey: CGKeyCode, flags: CGEventFlags) -> Bool {
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(
                   keyboardEventSource: source,
-                  virtualKey: 9,
+                  virtualKey: virtualKey,
                   keyDown: true
               ),
               let keyUp = CGEvent(
                   keyboardEventSource: source,
-                  virtualKey: 9,
+                  virtualKey: virtualKey,
                   keyDown: false
               ) else {
             return false
