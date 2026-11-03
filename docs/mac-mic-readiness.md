@@ -79,4 +79,7 @@ capture and off-screen visual probes. The isolated long-capture test passed
 in 50.393 seconds; both files contained the exact expected frame counts.
 The deliberately disabled-fix run failed all three named regression tests;
 restoring the fixes passed the 23-test focused suite. Sources were restored
-before the final full run. No delegate review was started, as requested.
+before the final full run. No independent review was run.
+
+Final `swift build -c release` passed in 68.87 seconds. `git diff --check`,
+`zsh -n install-macos.sh`, and both packaging plist checks passed.

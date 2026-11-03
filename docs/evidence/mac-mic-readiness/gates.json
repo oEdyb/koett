@@ -28,5 +28,16 @@
     "seedTerms": 20,
     "priorTermsAndFormsPreserved": true,
     "scrollAliasAdded": false
+  },
+  "releaseBuild": {
+    "command": "swift build -c release",
+    "exit": 0,
+    "seconds": 68.87
+  },
+  "packaging": {
+    "zsh -n install-macos.sh": 0,
+    "plutil -lint Packaging/Info.plist": 0,
+    "plutil -lint Packaging/Koett.entitlements": 0,
+    "git diff --check": 0
   }
 }
