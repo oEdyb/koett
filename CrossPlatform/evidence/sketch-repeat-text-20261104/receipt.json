@@ -1,0 +1,34 @@
+{
+  "baseline_source": "8970c156a5b39b9b0a9e341e1d8c648b1dd515ad",
+  "candidate_source": "e66315f",
+  "scope": "Repeat manual paste only. KWin automatic focus guard remained enabled and produced Not pasted; the unchanged automatic key sequence was not retested.",
+  "model_copy": "/home/olle/.cache/koett-repeat-text/model-copy",
+  "model_copy_is_symlink": false,
+  "expected_text_sha256": "c69af4c556ef8379ec2e90e691d20f22ed2c9a903f31a8a79d34e4b3da204aef",
+  "before": {
+    "clipboard_types": [
+      "image/png"
+    ],
+    "t3_transcript_copies": 0,
+    "t3_images": 1,
+    "chrome_transcript_copies": 0,
+    "chrome_images": 2
+  },
+  "after": {
+    "clipboard_types": [
+      "text/plain;charset=utf-8",
+      "text/plain",
+      "text/plain;charset=utf-8",
+      "TEXT",
+      "STRING",
+      "UTF8_STRING"
+    ],
+    "t3_transcript_copies": 2,
+    "t3_images": 0,
+    "chrome_transcript_copies": 2,
+    "chrome_images": 0,
+    "kitty_exact_copies": 2,
+    "explicit_sketch_copy_attaches_image_without_removing_text": true
+  },
+  "sent_messages": 0
+}
