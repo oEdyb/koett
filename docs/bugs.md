@@ -229,3 +229,12 @@ bounded and two windows still can not look like the same target. Also from the a
 display change dropped a pin whose image was taken while its context was still being read,
 under a notice saying captured images are kept, and the X11 Esc grab retried on every loop
 when it failed.
+
+## 2026-11-05: an emptied dictation wiped the clipboard, and X11 pasted with no focus
+
+Found in the audit of the Linux parity PRs. A replacement rule that removes a whole
+dictation got past the empty check, which looked at the text before replacements, so
+Koett cleared the clipboard, pressed paste and saved a blank history row. On X11 the
+focus guard compared raw focus values, so None and PointerRoot matched themselves and
+Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
+private lab with real speech. Regression tests are in `linux.rs`.

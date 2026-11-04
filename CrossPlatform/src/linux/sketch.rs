@@ -34,6 +34,13 @@ mod wl_click;
 pub(super) static CAN_UNDO: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+/// Draw lock is on: the pill shows the pencil and Esc ends the lock, not the dictation.
+pub(super) static DRAW_LOCKED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+/// Esc arrived while locked; the session ends the lock on its next tick. Only the
+/// Esc monitor decides, so one press can't both unlock and cancel.
+pub(super) static ESCAPE_UNLOCK: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
 const INK_WIDTH: f64 = 5.0;
 const FADE_AFTER: Duration = Duration::from_millis(1500);
@@ -246,6 +253,13 @@ struct Session {
     next_id: u64,
     held: bool,
     protecting: bool,
+    /// Draw lock: the mouse draws until toggled off, across any number of strokes.
+    locked: bool,
+    /// Draw lock: the left button is down, so movement is ink.
+    lock_down: bool,
+    lock_chord: Option<keys::LockChord>,
+    lock_gate: keys::PressGate,
+    undo_gate: keys::PressGate,
     stroking: Option<u64>,
     finishing: bool,
     results: CaptureResults,
@@ -326,7 +340,7 @@ impl Session {
             .surfaces
             .iter()
             .any(|surface| surface.window.is_active());
-        if self.keyboards.is_some() || !self.held || active {
+        if self.keyboards.is_some() || !self.held || active || self.locked {
             self.inactive_since = None;
             return;
         }
@@ -376,6 +390,8 @@ impl Session {
     /// Ends the current hold: its sketch closes and is captured; the next hold
     /// starts a new sketch, on this monitor or another.
     fn release(&mut self) {
+        self.set_locked(false);
+        self.lock_down = false;
         if let Some(pin) = self.gesture.release(Instant::now()) {
             self.drop_pin(pin);
         }
@@ -388,6 +404,35 @@ impl Session {
         self.sync_input();
     }
 
+    fn set_locked(&mut self, locked: bool) {
+        self.locked = locked;
+        DRAW_LOCKED.store(locked, std::sync::atomic::Ordering::Release);
+        ESCAPE_UNLOCK.store(false, std::sync::atomic::Ordering::Release);
+    }
+
+    /// Draw lock on: the overlay takes the mouse and every stroke joins one sketch
+    /// per monitor. Off: those sketches close and are captured. Keyboard focus is
+    /// never involved, so typing keeps working.
+    fn toggle_lock(&mut self) {
+        if self.layout_invalid || self.finishing {
+            return;
+        }
+        if self.locked {
+            self.release();
+            // A draw key still down must be released before it can draw.
+            self.gate = keys::DrawGate::default();
+            return;
+        }
+        if self.protecting {
+            self.release();
+        }
+        self.gesture = gesture::PinGesture::default();
+        self.set_locked(true);
+        self.protect_clicks();
+        self.held = true;
+        self.set_input(self.input);
+    }
+
     fn protect_clicks(&mut self) {
         if !self.protecting {
             self.protecting = true;
@@ -397,7 +442,7 @@ impl Session {
     }
 
     fn press(&mut self) {
-        if self.layout_invalid || self.finishing {
+        if self.layout_invalid || self.finishing || self.locked {
             return;
         }
         self.gate.moved(Instant::now());
@@ -415,6 +460,16 @@ impl Session {
             return;
         }
         let now = Instant::now();
+        if self.locked {
+            self.lock_down = pressed;
+            if pressed {
+                self.point(surface, point.0, point.1, now);
+            } else {
+                // The sketch stays open: the next stroke joins it.
+                self.lift();
+            }
+            return;
+        }
         self.gate.moved(now);
         if !pressed {
             if let Some(pin) = self.gesture.button_up(now) {
@@ -490,6 +545,12 @@ impl Session {
             return;
         }
         let now = Instant::now();
+        if self.locked {
+            if self.lock_down {
+                self.point(surface, point.0, point.1, now);
+            }
+            return;
+        }
         if let gesture::Motion::Ink { from, to } = self.gesture.motion(surface, point, now)
             && self.held
         {
@@ -520,7 +581,28 @@ impl Session {
             }
             self.reported_unreadable = unreadable;
         }
-        let (held, others) = keyboards.modifiers().for_key(self.key);
+        let chord = self.lock_chord;
+        let z = self.locked.then_some(keys::KEY_Z);
+        let (state, [chord_down, z_down]) = keyboards.sample([chord.map(|chord| chord.code), z]);
+        let empty = keyboards.is_empty();
+        if chord.is_some_and(|chord| self.lock_gate.pressed(chord.matches(state, chord_down))) {
+            self.toggle_lock();
+        }
+        if self.locked {
+            if empty {
+                // Nothing could toggle it off, so give the pointer back.
+                self.toggle_lock();
+                self.notices
+                    .push("Drawing: keyboards can't be read, so draw lock ended.".into());
+            } else if self.undo_gate.pressed(keys::is_undo(state, z_down)) {
+                self.undo();
+            }
+            return;
+        }
+        let Some(keyboards) = self.keyboards.as_mut() else {
+            return;
+        };
+        let (held, others) = state.for_key(self.key);
         let held = held && !self.finishing;
         if keyboards.is_empty() {
             if self.may_take_keyboard {
@@ -709,6 +791,8 @@ impl Session {
             return;
         }
         self.layout_invalid = true;
+        self.set_locked(false);
+        self.lock_down = false;
         self.held = false;
         self.protecting = false;
         self.stroking = None;
@@ -737,8 +821,15 @@ impl Session {
         }
         // Focused mode has no key state to sample: a missed release must not
         // leave clicks blocked once the pointer has stopped drawing.
-        if self.keyboards.is_none() && self.held && self.gate.expired(Instant::now()) {
+        if self.keyboards.is_none()
+            && self.held
+            && !self.locked
+            && self.gate.expired(Instant::now())
+        {
             self.release();
+        }
+        if ESCAPE_UNLOCK.swap(false, std::sync::atomic::Ordering::AcqRel) && self.locked {
+            self.toggle_lock();
         }
         let now = Instant::now();
         self.watch_focus(now);
@@ -1117,7 +1208,17 @@ impl SketchOverlay {
     pub fn status(&self) -> serde_json::Value {
         let session = self.session.borrow();
         let session = session.as_ref().filter(|session| !session.finishing);
-        serde_json::json!({"ok":true,"active":session.is_some(),"display_count":session.map_or(0, |session| session.surfaces.len()),"displays":session.map(|session| session.surfaces.iter().map(|surface| serde_json::json!({"connector":surface.target.connector,"bounds":surface.target.monitor,"desktop":surface.target.desktop})).collect::<Vec<_>>()).unwrap_or_default(),"display_change_pending":session.is_some_and(|session| session.layout_invalid || session.layout.changed()),"display_generation":session.map_or(0, |session| session.display_generation),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
+        serde_json::json!({"ok":true,"active":session.is_some(),"display_count":session.map_or(0, |session| session.surfaces.len()),"displays":session.map(|session| session.surfaces.iter().map(|surface| serde_json::json!({"connector":surface.target.connector,"bounds":surface.target.monitor,"desktop":surface.target.desktop})).collect::<Vec<_>>()).unwrap_or_default(),"display_change_pending":session.is_some_and(|session| session.layout_invalid || session.layout.changed()),"display_generation":session.map_or(0, |session| session.display_generation),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty()),"locked":session.is_some_and(|session| session.locked)})
+    }
+
+    /// Toggles draw lock; false when no drawing session can take it.
+    pub fn toggle_lock(&self) -> bool {
+        self.session
+            .borrow_mut()
+            .as_mut()
+            .filter(|session| !session.finishing && !session.layout_invalid)
+            .map(Session::toggle_lock)
+            .is_some()
     }
 
     pub fn can_undo(&self) -> bool {
@@ -1274,13 +1375,17 @@ impl SketchOverlay {
                         _ => return glib::Propagation::Proceed,
                     };
                     if let Some(button) = event.downcast_ref::<gdk::ButtonEvent>()
-                        && button.button() == gdk::BUTTON_PRIMARY
                         && let Some(point) = event.position()
                         && let Some(session) = session.upgrade()
                         && let Ok(mut session) = session.try_borrow_mut()
                         && let Some(session) = session.as_mut()
                     {
-                        session.button(surface, pressed, point);
+                        match button.button() {
+                            gdk::BUTTON_PRIMARY => session.button(surface, pressed, point),
+                            // Undo that reaches no app, unlike Ctrl+Z in device mode.
+                            gdk::BUTTON_SECONDARY if pressed && session.locked => session.undo(),
+                            _ => {}
+                        }
                     }
                     glib::Propagation::Proceed
                 }
@@ -1343,6 +1448,13 @@ impl SketchOverlay {
             next_id: 0,
             held: false,
             protecting: false,
+            locked: false,
+            lock_down: false,
+            lock_chord: settings
+                .effective_draw_lock()
+                .and_then(keys::LockChord::parse),
+            lock_gate: keys::PressGate::default(),
+            undo_gate: keys::PressGate::default(),
             stroking: None,
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
@@ -1374,6 +1486,7 @@ impl SketchOverlay {
                     return glib::ControlFlow::Continue;
                 }
                 if let Some(done) = current.take() {
+                    DRAW_LOCKED.store(false, std::sync::atomic::Ordering::Release);
                     for surface in done.surfaces {
                         surface.window.destroy();
                     }
@@ -1388,7 +1501,7 @@ impl SketchOverlay {
         let keys = gtk::EventControllerKey::new();
         keys.connect_key_pressed({
             let session = Rc::downgrade(&self.session);
-            move |_, keyval, _, state| {
+            move |_, keyval, keycode, state| {
                 let Some(session) = session.upgrade() else {
                     return glib::Propagation::Proceed;
                 };
@@ -1398,7 +1511,20 @@ impl SketchOverlay {
                 let Some(session) = session.as_mut().filter(|session| !session.finishing) else {
                     return glib::Propagation::Proceed;
                 };
-                if key_matches(session.key, keyval)
+                let held = keys::Modifiers {
+                    control: state.contains(gdk::ModifierType::CONTROL_MASK),
+                    alt: state.contains(gdk::ModifierType::ALT_MASK),
+                    shift: state.contains(gdk::ModifierType::SHIFT_MASK),
+                    meta: state.contains(gdk::ModifierType::SUPER_MASK),
+                    ..keys::Modifiers::default()
+                };
+                // GDK keycodes are evdev codes plus 8.
+                let chord = session
+                    .lock_chord
+                    .is_some_and(|chord| chord.matches(held, chord.code + 8 == keycode as usize));
+                if chord || (session.locked && keyval == gdk::Key::Escape) {
+                    session.toggle_lock();
+                } else if key_matches(session.key, keyval)
                     && !state.intersects(other_modifiers(session.key))
                 {
                     session.press();
@@ -1417,6 +1543,7 @@ impl SketchOverlay {
                     && let Ok(mut session) = session.try_borrow_mut()
                     && let Some(session) = session.as_mut()
                     && key_matches(session.key, keyval)
+                    && !session.locked
                 {
                     session.release();
                 }

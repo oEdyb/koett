@@ -334,14 +334,16 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "draw-lock"
         )
     }) {
         let response = control::request(&command)?;
         println!("{response}");
-        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
-            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
-                == false
+        if matches!(
+            command.as_str(),
+            "drawing-status" | "undo-drawing" | "draw-lock"
+        ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+            == false
         {
             std::process::exit(1);
         }
@@ -837,6 +839,10 @@ fn run_x11(
                 if let Some(warning) = warning {
                     update_tray_status(tray, &format!("@notice:{warning}"));
                 }
+                if nothing_to_deliver(&final_text, false) {
+                    update_tray_status(tray, "@silence");
+                    return Ok(());
+                }
                 cache_completed(tray, &final_text);
                 let delivered = output.deliver(&final_text, target, paste_shortcut);
                 report_delivery(tray, &delivered);
@@ -1317,7 +1323,12 @@ async fn run_wayland(
             }
         }
         if escape.poll(app.status == AppStatus::Recording) {
-            app.command(EngineCommand::Cancel, || None);
+            if sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire) {
+                // Esc leaves draw lock and keeps the sketch; a second Esc cancels.
+                sketch::ESCAPE_UNLOCK.store(true, std::sync::atomic::Ordering::Release);
+            } else {
+                app.command(EngineCommand::Cancel, || None);
+            }
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             let (action, paste_request) = match action {
@@ -1500,7 +1511,7 @@ async fn run_wayland(
             }
             let sketches = sketch::take_keyframes(Duration::from_secs(8));
             let (text, sheet) = sketch_delivery(&spoken, &words, &sketches);
-            if formatted.trim().is_empty() && text.trim().is_empty() {
+            if nothing_to_deliver(&text, sheet.is_some()) {
                 update_tray_status(tray, "@silence");
                 continue;
             }
@@ -2301,12 +2312,8 @@ impl X11Output {
         if output::WINDOW_ACTIVE.load(std::sync::atomic::Ordering::Acquire) {
             return None;
         }
-        self.connection
-            .get_input_focus()
-            .ok()?
-            .reply()
-            .ok()
-            .map(|reply| reply.focus)
+        let focus = self.connection.get_input_focus().ok()?.reply().ok()?.focus;
+        recovery::x11_window(focus)
     }
 
     fn deliver(
@@ -2843,6 +2850,12 @@ fn own_words(raw: &str, settings: &Settings) -> String {
     crate::replacements::apply(raw, &settings.replacements)
 }
 
+/// A replacement rule can empty a dictation after the engine saw real speech. Treat
+/// that as silence: delivering it would clear the clipboard and press paste.
+fn nothing_to_deliver(text: &str, has_image: bool) -> bool {
+    text.trim().is_empty() && !has_image
+}
+
 /// Pasted text and optional contact sheet for a dictation with sketches.
 fn sketch_delivery(
     spoken: &str,
@@ -2909,6 +2922,32 @@ fn delivery_results(
 #[cfg(test)]
 mod delivery_tests {
     use super::*;
+    #[test]
+    fn an_emptied_dictation_delivers_nothing_unless_it_has_an_image() {
+        let rules = [crate::replacements::Replacement {
+            phrase: "um".into(),
+            replacement: String::new(),
+        }];
+        let emptied = crate::replacements::apply("um", &rules);
+        assert!(nothing_to_deliver(&emptied, false));
+        assert!(nothing_to_deliver(" \n", false));
+        assert!(!nothing_to_deliver(&emptied, true));
+        assert!(!nothing_to_deliver("kept", false));
+    }
+
+    #[test]
+    fn x11_focus_without_a_window_never_passes_the_paste_guard() {
+        // None (0) and PointerRoot (1) would match themselves, and the key would go
+        // to whichever window is under the pointer at paste time.
+        for focus in [0, 1] {
+            let seen = recovery::x11_window(focus);
+            assert_eq!(seen, None);
+            assert!(require_x11_target(seen, seen).is_err());
+        }
+        let window = recovery::x11_window(42);
+        assert_eq!(require_x11_target(window, window), Ok(()));
+    }
+
     #[test]
     fn x11_focus_guard_preserves_clipboard_only_recovery() {
         assert_eq!(require_x11_target(Some(42), Some(42)), Ok(()));
