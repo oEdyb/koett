@@ -329,7 +329,7 @@ pub(super) fn reduced_motion() -> bool {
     !enabled.as_bool()
 }
 
-fn light_theme() -> bool {
+pub(super) fn light_theme() -> bool {
     use windows::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_DWORD, RegGetValueW};
     let mut value = 0_u32;
     let mut size = 4_u32;

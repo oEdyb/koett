@@ -1,6 +1,7 @@
 mod desktop;
 mod meter;
 mod pill;
+mod pill_buttons;
 mod pill_state;
 
 use std::cell::RefCell;
@@ -90,11 +91,13 @@ static APP: AtomicPtr<RefCell<WindowsApp>> = AtomicPtr::new(ptr::null_mut());
 struct WindowsApp {
     hwnd: HWND,
     engine: Option<EngineHandle>,
+    desktop_lab: bool,
     settings: Settings,
     status: AppStatus,
     paste_target: Option<HWND>,
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
+    pill_buttons: Option<pill_buttons::Buttons>,
     meter: meter::Meter,
     pill_state: pill_state::State,
     clock: Instant,
@@ -120,15 +123,22 @@ pub fn run() -> Result<(), String> {
     let startup_warning: Option<String> = None;
     history::recovery::initialize_last()?;
     let restored_last = history::recovery::last().unwrap_or_default();
-    let engine = runtime::start(settings.clone());
+    let desktop_lab = std::env::args().any(|argument| argument == "--desktop-lab");
+    let engine = (!desktop_lab).then(|| runtime::start(settings.clone()));
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
-        engine: Some(engine),
+        engine,
+        desktop_lab,
         settings,
-        status: AppStatus::Starting,
+        status: if desktop_lab {
+            AppStatus::Ready
+        } else {
+            AppStatus::Starting
+        },
         paste_target: None,
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
+        pill_buttons: None,
         meter: meter::Meter::default(),
         pill_state: pill_state::State::default(),
         clock: Instant::now(),
@@ -280,6 +290,7 @@ unsafe fn run_message_loop(
         SetLayeredWindowAttributes(app.overlay, COLORREF::default(), 242, LWA_ALPHA)
             .map_err(|error| format!("could not style the Koett recording pill: {error}"))?;
     }
+    app.pill_buttons = Some(pill_buttons::Buttons::new(app.overlay)?);
     app.shortcut_window = unsafe {
         CreateWindowExW(
             WS_EX_TOOLWINDOW,
@@ -353,6 +364,14 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            0x8052 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.desktop_lab
+                {
+                    app.lab_phase(wparam.0);
+                }
+                return Default::default();
+            }
             windows::Win32::UI::WindowsAndMessaging::WM_COMMAND => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.handle_menu(wparam.0 & 0xffff);
@@ -430,6 +449,35 @@ unsafe extern "system" fn overlay_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_DRAWITEM {
+        if lparam.0 != 0 {
+            unsafe {
+                pill_buttons::draw(
+                    &*(lparam.0 as *const windows::Win32::UI::Controls::DRAWITEMSTRUCT),
+                );
+            }
+        }
+        return windows::Win32::Foundation::LRESULT(1);
+    }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_COMMAND {
+        let cell = APP.load(Ordering::Acquire);
+        if !cell.is_null()
+            && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
+        {
+            let x = match wparam.0 & 0xffff {
+                101 => 50,
+                102 => 120,
+                103 => 200,
+                104 => 260,
+                105 => 210,
+                _ => -1,
+            };
+            if x >= 0 {
+                app.pill_click(x);
+            }
+        }
+        return Default::default();
+    }
     if message == WM_MOUSEACTIVATE {
         return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
     }
@@ -487,7 +535,68 @@ unsafe extern "system" fn shortcut_proc(
 }
 
 impl WindowsApp {
+    fn lab_phase(&mut self, command: usize) {
+        use pill_state::Phase;
+        let now = self.clock.elapsed().as_millis() as u64;
+        let phase = match command {
+            1 => {
+                self.status = AppStatus::Recording;
+                self.paste_target = Some(unsafe { GetForegroundWindow() });
+                self.recording_started = Some(Instant::now());
+                self.meter = meter::Meter::default();
+                Phase::Recording
+            }
+            2 => {
+                self.status = AppStatus::Transcribing;
+                Phase::Transcribing
+            }
+            3 => {
+                self.status = AppStatus::Ready;
+                self.last_transcript = "Desktop lab result".into();
+                Phase::Done(self.last_transcript.clone())
+            }
+            4 => {
+                self.status = AppStatus::Ready;
+                self.last_transcript = "Desktop lab recovery".into();
+                Phase::NotPasted
+            }
+            5 => Phase::Error {
+                message: "Recording saved · retry from History".into(),
+                rescue: true,
+            },
+            6 => Phase::Error {
+                message: "Microphone unavailable".into(),
+                rescue: false,
+            },
+            7 => Phase::Hidden,
+            8 => {
+                desktop::open(true, self.hwnd);
+                return;
+            }
+            9 => {
+                let _ = open_history();
+                return;
+            }
+            10 => {
+                self.pill_state.paused = !self.pill_state.paused;
+                self.update_overlay();
+                return;
+            }
+            _ => return,
+        };
+        self.pill_state.set(phase, now);
+        self.update_overlay();
+    }
+
     fn toggle(&mut self) {
+        if self.desktop_lab {
+            self.lab_phase(if self.status == AppStatus::Recording {
+                2
+            } else {
+                1
+            });
+            return;
+        }
         if self.status != AppStatus::Ready
             && self.status != AppStatus::Recording
             && !matches!(self.status, AppStatus::Error(_))
@@ -607,6 +716,9 @@ impl WindowsApp {
     }
 
     fn update_overlay(&self) {
+        if let Some(buttons) = &self.pill_buttons {
+            buttons.sync(self.overlay, &self.pill_state);
+        }
         let opacity = self.pill_state.opacity(
             self.clock.elapsed().as_millis() as u64,
             pill::reduced_motion(),
