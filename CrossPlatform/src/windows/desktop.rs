@@ -155,15 +155,15 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
-            960,
-            680,
+            if settings { 560 } else { 960 },
+            if settings { 300 } else { 680 },
             None,
             None,
             Some(instance.into()),
             None,
         )
         .map_err(|e| e.to_string())?;
-        fit_window(hwnd, None);
+        fit_window(hwnd, None, settings);
         let mut window = Window {
             theme: super::native_theme::Theme::new()?,
             font: HFONT::default(),
@@ -633,7 +633,7 @@ impl Window {
         }
     }
 }
-fn fit_window(hwnd: HWND, suggested: Option<&RECT>) {
+fn fit_window(hwnd: HWND, suggested: Option<&RECT>, settings: bool) {
     unsafe {
         let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         let mut info = MONITORINFO {
@@ -646,11 +646,11 @@ fn fit_window(hwnd: HWND, suggested: Option<&RECT>) {
         let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd).max(96) as i32;
         let width = suggested
             .map(|r| r.right - r.left)
-            .unwrap_or(960 * dpi / 96)
+            .unwrap_or(if settings { 560 } else { 960 } * dpi / 96)
             .min(info.rcWork.right - info.rcWork.left);
         let height = suggested
             .map(|r| r.bottom - r.top)
-            .unwrap_or(680 * dpi / 96)
+            .unwrap_or(if settings { 300 } else { 680 } * dpi / 96)
             .min(info.rcWork.bottom - info.rcWork.top);
         let x = suggested
             .map(|r| r.left)
@@ -734,7 +734,7 @@ unsafe extern "system" fn proc(
                 WM_SIZE => window.layout(),
                 WM_DPICHANGED => {
                     let suggested = unsafe { &*(lparam.0 as *const RECT) };
-                    fit_window(hwnd, Some(suggested));
+                    fit_window(hwnd, Some(suggested), window.settings);
                     window.refresh_font();
                     window.layout();
                 }
