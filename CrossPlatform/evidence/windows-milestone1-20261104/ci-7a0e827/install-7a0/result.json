@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "result": {
+    "exe_sha256": "77C59A0A4E077A56D8C887EE4085B94FE595131BB776EF58421809979F9EBF84",
+    "pid": 8896,
+    "artifact": "7a0e827",
+    "steps": [
+      {
+        "step": "7a0-clean-launch-200",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131420
+        },
+        "focus": {
+          "hwnd": 65730,
+          "process": "explorer",
+          "pid": 4676
+        },
+        "visible": true
+      }
+    ],
+    "zip_sha256": "1F49185EBBEA51613BC6756766179B7C9E8740CEEF1FB49BB4054793A68CE743"
+  },
+  "id": "1793822482149281980"
+}
