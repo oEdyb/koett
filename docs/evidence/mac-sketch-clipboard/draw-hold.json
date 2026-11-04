@@ -1,0 +1,33 @@
+{
+  "fullSuite": {
+    "command": "swift test",
+    "tests": 396,
+    "skipped": 9,
+    "failures": 0,
+    "seconds": 34.036
+  },
+  "drawHoldTests": {
+    "pureGateTests": 7,
+    "productionOverlayTests": 1,
+    "screenPanelsCreated": 0
+  },
+  "mutation": {
+    "change": "Use the former stateless modifier-only decision",
+    "command": "swift test --filter DrawHoldGateTests",
+    "testsAtMutation": 6,
+    "exit": 1,
+    "assertionFailures": 16
+  },
+  "rules": [
+    "Draw key must be observed released in this recording",
+    "A chord, Function key or ordinary held key ends and spoils the hold",
+    "Releasing the other key cannot resume drawing; draw-key release is required",
+    "Existing Caps Lock behavior and 3 pt movement threshold remain"
+  ],
+  "input": "Modifier flags and key-down/up codes only; no typed characters or new permission requests",
+  "limits": [
+    "No physical phantom-Shift reproduction",
+    "Keyboard devices are not read or authenticated on macOS"
+  ],
+  "relationship": "Clipboard fix already merged in PR #46 before fresh-hold request; gating follows in PR #47."
+}

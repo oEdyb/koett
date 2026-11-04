@@ -305,3 +305,9 @@ AppKit contract: each copy creates a fresh
 [`NSPasteboardItem`](https://developer.apple.com/documentation/appkit/nspasteboarditem)
 with multiple representation types. Pasteboard items are not cached or reused;
 only the image bytes and text are retained for the next copy.
+
+Mac clipboard and draw-hold regression receipts live in
+[`docs/evidence/mac-sketch-clipboard`](evidence/mac-sketch-clipboard).
+The final full suite ran 396 tests with 9 intentional skips and zero failures.
+The production overlay is tested with an empty screen provider, so no panels or
+screen captures are created by the hold-transition regression.

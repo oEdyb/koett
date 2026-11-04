@@ -26,6 +26,7 @@ final class SketchOverlay {
         let scale: CGFloat
     }
 
+    private let screens: () -> [NSScreen]
     private var session: Session?
     private var board: SketchBoard?
     private var surfaces: [Surface] = []
@@ -35,6 +36,11 @@ final class SketchOverlay {
     private(set) var failedCaptures = 0
 
     var isActive: Bool { session != nil }
+    var isDrawing: Bool { board?.held == true }
+
+    init(screens: @escaping () -> [NSScreen] = { NSScreen.screens }) {
+        self.screens = screens
+    }
 
     /// Failed captures since the last call (read once, after delivery).
     func takeFailedCaptures() -> Int {
@@ -48,14 +54,13 @@ final class SketchOverlay {
         board = SketchBoard(startedAt: startedAt)
         failedCaptures = 0
         session.frames.setOpen(session.id, true)
-        surfaces = NSScreen.screens.enumerated().compactMap { index, screen in
+        surfaces = screens().enumerated().compactMap { index, screen in
             guard let displayID = SketchCapture.displayID(of: screen) else { return nil }
             return makeSurface(screen: screen, index: index, displayID: displayID)
         }
         let handler: (NSEvent) -> Void = { [weak self] event in
             MainActor.assumeIsolated {
-                self?.drawGate.noteKey(type: event.type, keyCode: event.keyCode)
-                self?.followKey(flags: event.modifierFlags)
+                self?.handleKeyEvent(event)
             }
         }
         let events: NSEvent.EventTypeMask = [.flagsChanged, .keyDown, .keyUp]
@@ -98,7 +103,12 @@ final class SketchOverlay {
 
     // MARK: Input
 
-    private func followKey(flags: NSEvent.ModifierFlags = NSEvent.modifierFlags) {
+    func handleKeyEvent(_ event: NSEvent) {
+        drawGate.noteKey(type: event.type, keyCode: event.keyCode)
+        followKey(flags: event.modifierFlags)
+    }
+
+    func followKey(flags: NSEvent.ModifierFlags = NSEvent.modifierFlags) {
         guard var board, let session, !board.finishing else { return }
         let draws = drawGate.draws(key: session.key, flags: flags)
         if draws && !board.held {

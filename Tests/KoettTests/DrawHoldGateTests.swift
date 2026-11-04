@@ -3,6 +3,36 @@ import AppKit
 import XCTest
 
 final class DrawHoldGateTests: XCTestCase {
+    @MainActor
+    func testOverlayDoesNotTakeThePointerAfterAChordOrTypingUntilFreshRelease() throws {
+        let overlay = SketchOverlay(screens: { [] })
+        defer { overlay.discard() }
+        overlay.start(SketchOverlay.Session(
+            id: 1, key: .shift, frames: SketchFrames(), audioClock: { 0 },
+            includeSelection: false, onUpdate: { _ in }
+        ), startedAt: ProcessInfo.processInfo.systemUptime)
+        overlay.followKey(flags: [])
+        overlay.followKey(flags: [.control, .shift])
+        overlay.followKey(flags: [.shift])
+        XCTAssertFalse(overlay.isDrawing, "Releasing Control must not engage the production overlay")
+        overlay.followKey(flags: [])
+        overlay.followKey(flags: [.shift])
+        XCTAssertTrue(overlay.isDrawing)
+        let down = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero,
+            modifierFlags: .shift, timestamp: 0, windowNumber: 0, context: nil,
+            characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: 0))
+        overlay.handleKeyEvent(down)
+        XCTAssertFalse(overlay.isDrawing, "Typing gives the pointer back immediately")
+        let up = try XCTUnwrap(NSEvent.keyEvent(with: .keyUp, location: .zero,
+            modifierFlags: .shift, timestamp: 0, windowNumber: 0, context: nil,
+            characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: 0))
+        overlay.handleKeyEvent(up)
+        XCTAssertFalse(overlay.isDrawing)
+        overlay.followKey(flags: [])
+        overlay.followKey(flags: [.shift])
+        XCTAssertTrue(overlay.isDrawing)
+    }
+
     func testReleasingControlFromControlShiftCannotStartDrawing() {
         var gate = DrawHoldGate()
         XCTAssertFalse(gate.draws(key: .shift, flags: []))
