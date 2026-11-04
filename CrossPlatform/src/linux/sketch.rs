@@ -238,6 +238,7 @@ struct Session {
     groups: Vec<Group>,
     next_id: u64,
     held: bool,
+    protecting: bool,
     stroking: Option<u64>,
     finishing: bool,
     results: CaptureResults,
@@ -274,7 +275,7 @@ impl Session {
             Some((surface, point)) if self.pick.wants_open() => {
                 PointerInput::ExceptPick(surface, point)
             }
-            _ if self.pick.busy() || self.held => PointerInput::Everywhere,
+            _ if self.pick.busy() || self.protecting => PointerInput::Everywhere,
             _ => PointerInput::Nowhere,
         };
         if wanted != self.input {
@@ -342,9 +343,9 @@ impl Session {
                 };
                 native.set_input_region(Some(&region));
             }
-            surface
-                .window
-                .set_cursor_from_name((input != PointerInput::Nowhere).then_some("crosshair"));
+            surface.window.set_cursor_from_name(
+                (input != PointerInput::Nowhere && self.held).then_some("crosshair"),
+            );
             // GDK applies a new input region with the next surface commit.
             surface.area.queue_draw();
         }
@@ -372,11 +373,20 @@ impl Session {
             self.drop_pin(pin);
         }
         self.held = false;
+        self.protecting = false;
         self.lift();
         for group in &mut self.groups {
             group.closed = true;
         }
         self.sync_input();
+    }
+
+    fn protect_clicks(&mut self) {
+        if !self.protecting {
+            self.protecting = true;
+            self.gesture.hold();
+            self.sync_input();
+        }
     }
 
     fn press(&mut self) {
@@ -387,9 +397,9 @@ impl Session {
         if self.held {
             return;
         }
+        self.protect_clicks();
         self.held = true;
-        self.gesture.hold();
-        self.sync_input();
+        self.set_input(self.input);
     }
 
     /// Raw left-button events while the overlay has the pointer.
@@ -473,7 +483,9 @@ impl Session {
             return;
         }
         let now = Instant::now();
-        if let gesture::Motion::Ink { from, to } = self.gesture.motion(surface, point, now) {
+        if let gesture::Motion::Ink { from, to } = self.gesture.motion(surface, point, now)
+            && self.held
+        {
             if let Some(from) = from {
                 self.point(surface, from.point.0, from.point.1, from.at);
             }
@@ -528,10 +540,17 @@ impl Session {
         } else {
             self.keyboards_lost = false;
         }
-        match (self.gate.update(held, others, Instant::now()), self.held) {
-            (true, false) => self.press(),
-            (false, true) => self.release(),
-            _ => {}
+        let drawing = self.gate.update(held, others, Instant::now());
+        if self.gate.protects_clicks() {
+            self.protect_clicks();
+            if drawing && !self.held {
+                self.press();
+            }
+        } else if self.protecting {
+            if held {
+                self.gesture = gesture::PinGesture::default();
+            }
+            self.release();
         }
     }
 
@@ -1201,7 +1220,7 @@ impl SketchOverlay {
                     let Some(session) = session.as_mut() else {
                         return;
                     };
-                    if !session.held || session.finishing {
+                    if !session.protecting || session.finishing {
                         return;
                     }
                     // Pointer events can carry stale modifier state (seen on
@@ -1314,6 +1333,7 @@ impl SketchOverlay {
             groups: Vec::new(),
             next_id: 0,
             held: false,
+            protecting: false,
             stroking: None,
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),

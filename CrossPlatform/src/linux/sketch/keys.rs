@@ -118,8 +118,8 @@ impl Modifiers {
     }
 }
 
-/// A draw-key hold under this does nothing, so typing a capital letter neither
-/// blocks clicks nor flashes the crosshair.
+/// Ink waits for a deliberate hold. Click protection starts before this delay,
+/// without taking keyboard focus or showing the drawing cursor.
 const DRAW_ARM: Duration = Duration::from_millis(120);
 /// A hold with no pointer movement for this long gives the pointer back and
 /// needs a real release first, so a stuck key cannot keep the screen covered.
@@ -159,6 +159,10 @@ impl DrawGate {
             self.active_at = Some(now);
         }
         drawing
+    }
+
+    pub fn protects_clicks(&self) -> bool {
+        !self.spoiled && self.down_since.is_some()
     }
 
     /// The pointer moved during the hold, so it is in use.
@@ -482,6 +486,43 @@ mod tests {
         samples.iter().fold(false, |_, (held, others, at)| {
             gate.update(*held, *others, start + Duration::from_millis(*at))
         })
+    }
+
+    #[test]
+    fn clean_shift_protects_clicks_before_ink_is_armed() {
+        let start = Instant::now();
+        let mut gate = DrawGate::default();
+        gate.update(false, false, start);
+        assert!(!gate.update(true, false, start + Duration::from_millis(1)));
+        assert!(gate.protects_clicks());
+        assert!(!gate.update(true, false, start + Duration::from_millis(60)));
+        assert!(gate.protects_clicks());
+        assert!(gate.update(true, false, start + Duration::from_millis(121)));
+        gate.update(false, false, start + Duration::from_millis(122));
+        assert!(!gate.protects_clicks());
+    }
+
+    #[test]
+    fn typing_cancels_early_click_protection_until_a_fresh_hold() {
+        let start = Instant::now();
+        let mut gate = DrawGate::default();
+        gate.update(false, false, start);
+        gate.update(true, false, start + Duration::from_millis(1));
+        assert!(gate.protects_clicks());
+        gate.update(true, true, start + Duration::from_millis(20));
+        assert!(!gate.protects_clicks());
+        gate.update(true, false, start + Duration::from_millis(400));
+        assert!(!gate.protects_clicks());
+        gate.update(false, false, start + Duration::from_millis(401));
+        gate.update(true, false, start + Duration::from_millis(402));
+        assert!(gate.protects_clicks());
+    }
+
+    #[test]
+    fn a_hold_already_down_on_start_does_not_protect_clicks() {
+        let mut gate = DrawGate::default();
+        gate.update(true, false, Instant::now());
+        assert!(!gate.protects_clicks());
     }
 
     #[test]
