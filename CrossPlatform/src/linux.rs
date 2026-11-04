@@ -292,6 +292,7 @@ mod media_view;
 mod menu;
 mod menu_preferences;
 mod models_view;
+mod monitor_layout;
 mod output;
 mod permissions_view;
 mod recording_overlay;

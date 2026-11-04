@@ -138,6 +138,20 @@ impl LayerShell {
         Ok(())
     }
 
+    fn choose_monitor(
+        &self,
+        window: &gtk::Window,
+        monitor: Option<&gtk::gdk::Monitor>,
+    ) -> Result<(), libloading::Error> {
+        type MonitorFn =
+            unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, *mut gtk::gdk::ffi::GdkMonitor);
+        unsafe {
+            let set_monitor = self.0.get::<MonitorFn>(b"gtk_layer_set_monitor\0")?;
+            set_monitor(window.to_glib_none().0, monitor.to_glib_none().0);
+        }
+        Ok(())
+    }
+
     /// Releases (0) or takes (1) exclusive keyboard focus on a layer window.
     pub(super) fn set_keyboard(
         &self,
@@ -366,7 +380,8 @@ pub struct RecordingOverlay {
     warning: gtk::Label,
     state: Rc<RefCell<Pill>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
-    _layer_shell: LayerShell,
+    layer_shell: LayerShell,
+    layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
 fn set_source(context: &gtk::cairo::Context, (r, g, b, a): (f64, f64, f64, f64)) {
@@ -841,7 +856,8 @@ impl RecordingOverlay {
             warning,
             state,
             tick,
-            _layer_shell: layer_shell,
+            layer_shell,
+            layout: RefCell::new(super::monitor_layout::MonitorLayout::new()),
         })
     }
 
@@ -884,6 +900,17 @@ impl RecordingOverlay {
         media_preview: Option<&str>,
         message: Option<&str>,
     ) {
+        if self.layout.borrow().changed() {
+            let layout = super::monitor_layout::MonitorLayout::new();
+            self.window.set_visible(false);
+            if let Err(error) = self
+                .layer_shell
+                .choose_monitor(&self.window, layout.monitors.first())
+            {
+                eprintln!("Recording overlay monitor change failed: {error}");
+            }
+            *self.layout.borrow_mut() = layout;
+        }
         let recording = started.is_some();
         let phase = phase(
             state,

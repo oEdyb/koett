@@ -228,6 +228,9 @@ type CaptureResults = Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>;
 
 struct Session {
     recording: u64,
+    layout: super::monitor_layout::MonitorLayout,
+    layout_invalid: bool,
+    display_generation: u64,
     started: Instant,
     clock: AudioClock,
     key: DrawKey,
@@ -376,6 +379,9 @@ impl Session {
     }
 
     fn press(&mut self) {
+        if self.layout_invalid || self.finishing {
+            return;
+        }
         self.gate.moved(Instant::now());
         if self.held {
             return;
@@ -387,6 +393,9 @@ impl Session {
 
     /// Raw left-button events while the overlay has the pointer.
     fn button(&mut self, surface: usize, pressed: bool, point: gesture::Point) {
+        if self.layout_invalid {
+            return;
+        }
         let now = Instant::now();
         self.gate.moved(now);
         if !pressed {
@@ -459,6 +468,9 @@ impl Session {
     }
 
     fn pointer_moved(&mut self, surface: usize, point: gesture::Point) {
+        if self.layout_invalid {
+            return;
+        }
         let now = Instant::now();
         if let gesture::Motion::Ink { from, to } = self.gesture.motion(surface, point, now) {
             if let Some(from) = from {
@@ -665,8 +677,34 @@ impl Session {
     }
 
     /// One timer step. Returns false once a finishing session is complete.
+    fn invalidate_layout(&mut self) {
+        if !self.layout.changed() || self.layout_invalid {
+            return;
+        }
+        self.layout_invalid = true;
+        self.held = false;
+        self.stroking = None;
+        self.gesture = gesture::PinGesture::default();
+        self.gate = keys::DrawGate::default();
+        let mut removed = false;
+        for index in (0..self.groups.len()).rev() {
+            if self.groups[index].phase != Phase::Captured {
+                self.drop_group(index);
+                removed = true;
+            }
+        }
+        if removed {
+            self.notices
+                .push("Display changed · unfinished drawings removed; captured images kept".into());
+        }
+        self.redraw();
+    }
+
     fn tick(&mut self) -> bool {
-        self.poll_keys();
+        self.invalidate_layout();
+        if !self.layout_invalid {
+            self.poll_keys();
+        }
         // Focused mode has no key state to sample: a missed release must not
         // leave clicks blocked once the pointer has stopped drawing.
         if self.keyboards.is_none() && self.held && self.gate.expired(Instant::now()) {
@@ -974,6 +1012,31 @@ impl SketchOverlay {
                 }
             }
             (Some(session), Some(_)) => {
+                session.invalidate_layout();
+                if session.layout_invalid && !session.pick.busy() {
+                    let layout = super::monitor_layout::MonitorLayout::new();
+                    let surfaces = self.make_surfaces(
+                        application,
+                        &layout.monitors,
+                        session.keyboards.is_none(),
+                    );
+                    for surface in std::mem::replace(&mut session.surfaces, surfaces) {
+                        surface.window.destroy();
+                    }
+                    for group in &mut session.groups {
+                        group.surface = usize::MAX;
+                    }
+                    session.last_pin = None;
+                    session.committing = None;
+                    session.input = PointerInput::Nowhere;
+                    session.layout = layout;
+                    session.layout_invalid = false;
+                    session.display_generation += 1;
+                    session.set_input(PointerInput::Nowhere);
+                    for surface in &session.surfaces {
+                        surface.window.present();
+                    }
+                }
                 session.clock.observe(paused, Instant::now());
                 if !session.notices.is_empty() {
                     *self.notice.borrow_mut() =
@@ -1013,7 +1076,7 @@ impl SketchOverlay {
     pub fn status(&self) -> serde_json::Value {
         let session = self.session.borrow();
         let session = session.as_ref().filter(|session| !session.finishing);
-        serde_json::json!({"ok":true,"active":session.is_some(),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
+        serde_json::json!({"ok":true,"active":session.is_some(),"display_count":session.map_or(0, |session| session.surfaces.len()),"display_change_pending":session.is_some_and(|session| session.layout_invalid || session.layout.changed()),"display_generation":session.map_or(0, |session| session.display_generation),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
     }
 
     pub fn can_undo(&self) -> bool {
@@ -1050,24 +1113,12 @@ impl SketchOverlay {
         }
     }
 
-    fn open(
+    fn make_surfaces(
         &self,
         application: &gtk::Application,
-        started: Instant,
-        recording: u64,
-        settings: &crate::settings::Settings,
-        keyboards: Option<keys::Keyboards>,
-    ) {
-        let focus = keyboards.is_none();
-        let Some(display) = gdk::Display::default() else {
-            return;
-        };
-        self.style();
-        let monitors: Vec<gdk::Monitor> = display
-            .monitors()
-            .iter::<gdk::Monitor>()
-            .filter_map(Result::ok)
-            .collect();
+        monitors: &[gdk::Monitor],
+        focus: bool,
+    ) -> Vec<Surface> {
         let rect = |monitor: &gdk::Monitor| {
             let area = monitor.geometry();
             (area.x(), area.y(), area.width(), area.height())
@@ -1216,6 +1267,21 @@ impl SketchOverlay {
                 },
             });
         }
+        surfaces
+    }
+
+    fn open(
+        &self,
+        application: &gtk::Application,
+        started: Instant,
+        recording: u64,
+        settings: &crate::settings::Settings,
+        keyboards: Option<keys::Keyboards>,
+    ) {
+        let focus = keyboards.is_none();
+        self.style();
+        let layout = super::monitor_layout::MonitorLayout::new();
+        let surfaces = self.make_surfaces(application, &layout.monitors, focus);
         if surfaces.is_empty() {
             return;
         }
@@ -1225,6 +1291,9 @@ impl SketchOverlay {
         }
         *self.session.borrow_mut() = Some(Session {
             recording,
+            layout,
+            layout_invalid: false,
+            display_generation: 0,
             started,
             clock: AudioClock::default(),
             key: settings.draw_key,
