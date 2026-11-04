@@ -148,11 +148,15 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
-            if bytes == b"drawing-status" || bytes == b"undo-drawing" {
+            if bytes == b"drawing-status" || bytes == b"undo-drawing" || bytes == b"draw-lock" {
                 let (tx, rx) = std::sync::mpsc::channel();
                 let expires = std::time::Instant::now() + std::time::Duration::from_secs(2);
                 let _ = ui.send(super::window::Update::DrawingCommand(
-                    bytes == b"undo-drawing",
+                    match bytes.as_slice() {
+                        b"undo-drawing" => super::window::DrawingRequest::Undo,
+                        b"draw-lock" => super::window::DrawingRequest::ToggleLock,
+                        _ => super::window::DrawingRequest::Status,
+                    },
                     tx,
                     expires,
                 ));

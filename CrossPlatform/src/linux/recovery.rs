@@ -126,6 +126,11 @@ fn capture_target() -> Option<u32> {
     use x11rb::protocol::xproto::ConnectionExt;
     let (connection, _) = x11rb::connect(None).ok()?;
     let focus = connection.get_input_focus().ok()?.reply().ok()?.focus;
+    x11_window(focus)
+}
+
+/// X11 reports no focus as 0 (None) or 1 (PointerRoot); neither is a window.
+pub(super) fn x11_window(focus: u32) -> Option<u32> {
     (focus > 1).then_some(focus)
 }
 #[cfg(test)]

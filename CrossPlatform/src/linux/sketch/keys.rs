@@ -3,9 +3,10 @@
 //!
 //! Privacy boundary: Koett never reads key events. While recording is active it samples each keyboard's held-key state (`EVIOCGKEY`).
 //! The kernel only reports all keys at once, so a sample briefly holds which
-//! keys are down; Koett uses only the Escape/Shift/Ctrl/Alt/Super bits and whether any
-//! other key is down, stores nothing, and wipes the sample with volatile writes
-//! right after each poll. Devices are opened only for that recording.
+//! keys are down; Koett uses only the Escape/Shift/Ctrl/Alt/Super bits, whether any
+//! other key is down, the draw-lock key the user chose and, while locked, Z. It
+//! stores nothing and wipes the sample with volatile writes right after each poll.
+//! Devices are opened only for that recording.
 //!
 //! Only physical keyboards count. `EVIOCGKEY` reports a device's state even
 //! when another process grabbed it, so a virtual device (uinput: ydotool, test
@@ -177,6 +178,83 @@ impl DrawGate {
             .is_some_and(|at| now.saturating_duration_since(at) >= HOLD_IDLE)
     }
 }
+
+/// The evdev code of a shortcut's key, which is its US-layout position: the same
+/// physical key the capture records, whatever layout is active.
+pub fn evdev_code(key: crate::shortcut::Key) -> Option<usize> {
+    use crate::shortcut::Key;
+    match key {
+        Key::Space => Some(57),
+        Key::Number(0) => Some(11),
+        Key::Number(number @ 1..=9) => Some(usize::from(number) + 1),
+        Key::Function(number @ 1..=10) => Some(usize::from(number) + 58),
+        Key::Function(11) => Some(87),
+        Key::Function(12) => Some(88),
+        Key::Letter(letter) => {
+            let letter = letter.to_ascii_lowercase();
+            [("qwertyuiop", 16), ("asdfghjkl", 30), ("zxcvbnm", 44)]
+                .iter()
+                .find_map(|(row, first)| row.find(letter).map(|index| first + index))
+        }
+        _ => None,
+    }
+}
+
+/// The draw-lock chord in the terms key state and GTK events report.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LockChord {
+    pub code: usize,
+    pub control: bool,
+    pub alt: bool,
+    pub shift: bool,
+    pub meta: bool,
+}
+
+impl LockChord {
+    pub fn parse(value: &str) -> Option<Self> {
+        let shortcut: crate::shortcut::Shortcut = value.parse().ok()?;
+        Some(Self {
+            code: evdev_code(shortcut.key)?,
+            control: shortcut.modifiers.control,
+            alt: shortcut.modifiers.alt,
+            shift: shortcut.modifiers.shift,
+            meta: shortcut.modifiers.super_key,
+        })
+    }
+
+    pub fn matches(self, keys: Modifiers, key_down: bool) -> bool {
+        key_down
+            && keys.control == self.control
+            && keys.alt == self.alt
+            && keys.shift == self.shift
+            && keys.meta == self.meta
+    }
+}
+
+/// Fires once per fresh press. A chord already down when recording starts does
+/// nothing until it has been seen up.
+#[derive(Debug, Default)]
+pub struct PressGate {
+    released: bool,
+}
+
+impl PressGate {
+    pub fn pressed(&mut self, down: bool) -> bool {
+        if !down {
+            self.released = true;
+            return false;
+        }
+        std::mem::take(&mut self.released)
+    }
+}
+
+/// Ctrl+Z exactly, for undo while locked.
+pub fn is_undo(keys: Modifiers, z_down: bool) -> bool {
+    z_down && keys.control && !keys.shift && !keys.alt && !keys.meta
+}
+
+/// Evdev code of Z, sampled only while locked.
+pub const KEY_Z: usize = 44;
 
 /// Why keyboard devices cannot be read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -358,7 +436,14 @@ impl Keyboards {
     /// Current modifiers across all keyboards. A handle that no longer
     /// answers (unplugged device) is dropped.
     pub fn modifiers(&mut self) -> Modifiers {
+        self.sample([None, None]).0
+    }
+
+    /// Modifiers, plus whether each of two named keys is down. Nothing else about
+    /// the sample leaves this function.
+    pub fn sample(&mut self, watched: [Option<usize>; 2]) -> (Modifiers, [bool; 2]) {
         let mut held = Modifiers::default();
+        let mut down = [false; 2];
         self.open.retain(|(_, file)| {
             let mut bits = [0_u8; KEY_BYTES];
             // SAFETY: EVIOCGKEY writes at most KEY_BYTES into the live buffer.
@@ -367,11 +452,14 @@ impl Keyboards {
             };
             if read >= 0 {
                 held = held.or(Modifiers::from_bits(&bits));
+                for (down, key) in down.iter_mut().zip(watched) {
+                    *down |= key.is_some_and(|key| bit(&bits, key));
+                }
             }
             wipe(&mut bits);
             read >= 0
         });
-        held
+        (held, down)
     }
 }
 
@@ -384,6 +472,57 @@ pub const SETUP_COMMAND: &str = "sudo groupadd -f koett-keyboard && sudo usermod
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lock_chord_reads_physical_keys_and_needs_exact_modifiers() {
+        let chord = LockChord::parse("Ctrl+Alt+D").unwrap();
+        assert_eq!(chord.code, 32, "KEY_D");
+        assert_eq!(LockChord::parse("Super+Z").unwrap().code, KEY_Z);
+        assert_eq!(LockChord::parse("Ctrl+Shift+Space").unwrap().code, 57);
+        assert_eq!(LockChord::parse("Ctrl+1").unwrap().code, 2);
+        assert_eq!(LockChord::parse("Ctrl+0").unwrap().code, 11);
+        assert_eq!(LockChord::parse("Ctrl+F11").unwrap().code, 87);
+        assert_eq!(LockChord::parse(""), None);
+        let mut keys = Modifiers {
+            control: true,
+            alt: true,
+            ..Modifiers::default()
+        };
+        assert!(chord.matches(keys, true));
+        assert!(!chord.matches(keys, false), "key up");
+        keys.shift = true;
+        assert!(!chord.matches(keys, true), "an extra modifier");
+    }
+
+    #[test]
+    fn a_press_fires_once_and_never_from_a_key_already_down() {
+        let mut gate = PressGate::default();
+        assert!(!gate.pressed(true), "down when recording started");
+        assert!(!gate.pressed(true));
+        assert!(!gate.pressed(false));
+        assert!(gate.pressed(true), "a fresh press");
+        assert!(!gate.pressed(true), "held or repeating");
+        assert!(!gate.pressed(false));
+        assert!(gate.pressed(true));
+    }
+
+    #[test]
+    fn undo_is_ctrl_z_and_nothing_else() {
+        let ctrl = Modifiers {
+            control: true,
+            ..Modifiers::default()
+        };
+        assert!(is_undo(ctrl, true));
+        assert!(!is_undo(ctrl, false));
+        assert!(!is_undo(Modifiers::default(), true), "typing z");
+        assert!(!is_undo(
+            Modifiers {
+                shift: true,
+                ..ctrl
+            },
+            true
+        ));
+    }
     use std::os::unix::fs::PermissionsExt as _;
 
     fn bits(keys: &[usize]) -> [u8; KEY_BYTES] {
