@@ -218,3 +218,12 @@ which ends the grab; and a window with nothing to draw gets no render node, so G
 the frame and the old pill stays on screen. The earlier lab passed because it never
 compared the pill to the pointer. Labs now assert one recording dot within 3 px of the
 pointer in a screenshot at each step, on niri and on two KWin outputs.
+
+## 2026-11-05: an emptied dictation wiped the clipboard, and X11 pasted with no focus
+
+Found in the audit of the Linux parity PRs. A replacement rule that removes a whole
+dictation got past the empty check, which looked at the text before replacements, so
+Koett cleared the clipboard, pressed paste and saved a blank history row. On X11 the
+focus guard compared raw focus values, so None and PointerRoot matched themselves and
+Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
+private lab with real speech. Regression tests are in `linux.rs`.
