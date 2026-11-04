@@ -45,3 +45,15 @@
   to paste-post and Wispr Flow at 481 ms median through its finished-processing
   state. The supported claim is only: “about four times faster than Wispr Flow
   in my test on my M5 Mac.” Do not claim universal superiority.
+
+### Linux host install — 2026-11-04
+
+Clean main `362b03d96cf232bdbddc94db7ed9e6a29793c9b3` (#61 + #64, including
+#54/#57) was installed as a private current-PC bundle. Its running executable
+matched candidate SHA-256 `a3695563544a919a6e82cad1a8e7c435a92bb3a7b2cfa5f644827d6390c12073`.
+Settings and saved-data hashes were unchanged by the installer. Existing GTK/llama
+runtime and previous version were retained; the transcription CLI link was updated.
+Activation waited for idle and used background launch. menu-status returned ok,
+busy false, the existing v2 selection and image-paste fields. Preflight passed;
+no new live dictation or permission-grant acceptance is claimed. The unmerged
+row-5 acoustic sidecar was not installed.
