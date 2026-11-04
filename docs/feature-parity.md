@@ -83,7 +83,7 @@ Evidence: `Sources/Koett/Sketch*.swift`, `DrawKey.swift`, `PinContext*.swift`; `
 | Open media transcripts | Yes | Yes | No action | Windows open folder/history action, shared filename/collision rules |
 | Vimeo anonymous fetch | Known 401 | Not reverified | No workflow | Track upstream extractor/auth restriction; user-supplied local file is alternative, never quietly import browser cookies |
 | `koett-transcribe` URL/file CLI | Yes | Yes, source installer; v2/v3 URL/file, JSON/text/cache | No equivalent product CLI | Linux uses existing wrapper + small Rust adapter; [fresh evidence](linux-cli-verification.md). Windows installer/entry remains open |
-| Control CLI / agent JSON | Dictionary import only | Yes | Engine harness, no equivalent app control | Add Mac/Windows local command endpoint + documented status/errors; avoid network listener |
+| Control CLI / agent JSON | Local user-only socket + JSON status/capture/recovery/media commands | Yes | Engine harness, no equivalent app control | Add Mac/Windows local command endpoint + documented status/errors; avoid network listener |
 | Ask text + one screenshot, providers/models/keys | Yes | Yes | No; assistant module Linux-gated | Share HTTP/SSE/session logic; Windows WGC + native panel/settings + Credential Manager |
 | Ask spoken replies / interrupt | Yes, Cartesia | Yes | No | Windows audio output adapter, stop on interruption, keys optional |
 | Ask Markdown/math/local renderer | Yes, installed-panel live check outstanding | Yes, not newly verified | No | Optional lazy WebView2 renderer on Windows; no browser process in dictation |
