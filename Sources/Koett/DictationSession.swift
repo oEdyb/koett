@@ -102,6 +102,7 @@ extension KoettController {
     }
 
     func startFileRecording(device: MicrophoneDevice? = nil) throws -> (MicrophoneRecorder, URL) {
+        microphonePreview?.suspend()
         let device = try device ?? selectedMicrophone()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("koett-\(UUID().uuidString).wav")
