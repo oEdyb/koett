@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "result": {
+    "startup": "\"C:\\Users\\KoettLab\\Koett892\\Koett-Windows-x86_64\\Koett.exe\"",
+    "processes": [
+      {
+        "Id": 4708,
+        "Path": "C:\\Users\\KoettLab\\Koett892\\Koett-Windows-x86_64\\Koett.exe"
+      }
+    ],
+    "focus": {
+      "hwnd": 66462,
+      "process": "ApplicationFrameHost",
+      "pid": 9476
+    }
+  },
+  "id": "1793816421658229679"
+}

@@ -1,0 +1,17 @@
+{
+  "step": "recording-composition-fix",
+  "rect": {
+    "left": 1130,
+    "bottom": 1524,
+    "top": 1476,
+    "right": 1430,
+    "dpi": 96,
+    "hwnd": 131570
+  },
+  "focus": {
+    "hwnd": 65752,
+    "process": "explorer",
+    "pid": 4904
+  },
+  "visible": true
+}
