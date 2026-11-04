@@ -447,7 +447,7 @@ fn build_window(
                                 serde_json::json!({"ok":false,"error":{"code":"no_drawing","message":"No drawing to undo in the current recording"}})
                             }
                         } else {
-                            sketch.as_ref().map_or_else(|| serde_json::json!({"ok":true,"active":false,"count":0,"can_undo":false}), |sketch| sketch.status())
+                            sketch.as_ref().map_or_else(|| serde_json::json!({"ok":true,"active":false,"count":0,"captured_count":0,"can_undo":false}), |sketch| sketch.status())
                         };
                         let _ = reply.send(value);
                     }

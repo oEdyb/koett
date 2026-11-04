@@ -330,8 +330,9 @@ pub fn run() -> Result<(), String> {
     }) {
         let response = control::request(&command)?;
         println!("{response}");
-        if serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
-            == false
+        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
+            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+                == false
         {
             std::process::exit(1);
         }

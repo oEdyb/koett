@@ -1013,7 +1013,7 @@ impl SketchOverlay {
     pub fn status(&self) -> serde_json::Value {
         let session = self.session.borrow();
         let session = session.as_ref().filter(|session| !session.finishing);
-        serde_json::json!({"ok":true,"active":session.is_some(),"count":session.map_or(0, |session| session.groups.len()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
+        serde_json::json!({"ok":true,"active":session.is_some(),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
     }
 
     pub fn can_undo(&self) -> bool {
