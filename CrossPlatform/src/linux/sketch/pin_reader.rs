@@ -142,6 +142,27 @@ fn read_screen(
     runtime.block_on(async {
         let read = async {
             let bus = accessibility_bus().await.ok()?;
+            if let Some(window) = super::kwin_context::at_point(point).await {
+                let local = (
+                    (point.0 - window.x).round() as i32,
+                    (point.1 - window.y).round() as i32,
+                );
+                if local.0 < 0
+                    || local.1 < 0
+                    || f64::from(local.0) >= window.width
+                    || f64::from(local.1) >= window.height
+                {
+                    return None;
+                }
+                context = Some(PinContext {
+                    app: Some(app_name(&window.app)),
+                    title: Some(window.title.clone()),
+                    ..Default::default()
+                });
+                let frame = frame_titled(&bus, &window.title).await.ok()??;
+                fill_frame(&bus, &frame, include_selection, Some(local), &mut found).await;
+                return Some(());
+            }
             let root = (
                 "org.a11y.atspi.Registry".to_owned(),
                 OwnedObjectPath::try_from(ROOT).ok()?,
@@ -516,10 +537,10 @@ async fn scan_frame(
             pending.extend(descendants.into_iter().take(MAX_CHILDREN));
         }
     }
-    if let (Some(url), Some(seconds)) = (&found.url, video) {
-        if let Some(timed) = video_time::timestamp(url, seconds) {
-            found.url = Some(timed);
-        }
+    if let (Some(url), Some(seconds)) = (&found.url, video)
+        && let Some(timed) = video_time::timestamp(url, seconds)
+    {
+        found.url = Some(timed);
     }
     scan
 }
@@ -666,6 +687,24 @@ async fn read_selection(bus: &Connection, scan: &Scan) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "requires isolated desktop with a YouTube browser fixture"]
+    fn private_youtube_pin() {
+        assert!(
+            std::env::var("AGENT_LAB_RUNTIME")
+                .is_ok_and(|path| path.contains("/agent-lab/koett-row3-sol"))
+        );
+        let context =
+            read_screen(false, (500.0, 500.0), Instant::now() + TOTAL).expect("fixture context");
+        println!("context={context:?}");
+        assert!(
+            context
+                .url
+                .as_deref()
+                .is_some_and(|url| url.contains("youtube.com/watch?v=") && url.contains("t="))
+        );
+    }
 
     #[test]
     fn app_names_read_like_apps() {
