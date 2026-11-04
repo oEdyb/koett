@@ -62,3 +62,9 @@ agent-lab stop koett-silence-sol
 The fixture refuses other lab runtimes, recreates only its own baseline/fixed
 scenario directories below target/silence-sol, and restores its private audio
 module after guarded Quit. The baseline binary is read-only and never installed.
+
+Rebased onto main `ff50dd5` after PR #68 merged: 386 tests passed, 17 ignored,
+plus native ABI check; formatting, clippy and release passed. The real silent
+capture baseline/fixed workflow passed again. The open-row document conflict
+retains merged first-run Permissions and the empty-result fix. MSVC still lacks
+`lib.exe`. No installation.
