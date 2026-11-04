@@ -219,14 +219,14 @@ final class RecordingOverlayController: NSObject {
     /// Replaces the transcribing pill when the text was saved but not pasted.
     /// Returns false when another message already replaced it.
     @discardableResult
-    func showNotPasted(text: String, png: Data? = nil) -> Bool {
+    func showNotPasted(text: String, png: Data? = nil, reason: String? = nil) -> Bool {
         guard isShowingTranscribing else { return false }
         resultText = text
         resultPNG = png
         let from = pillView.content
         show(.notPasted)
         startMorph(from: from)
-        recordFailure("Not pasted · text saved")
+        recordFailure(reason.map { "Not pasted · \($0) · Text saved" } ?? "Not pasted · text saved")
         return true
     }
 

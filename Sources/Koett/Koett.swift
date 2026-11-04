@@ -25,6 +25,12 @@ final class KoettController: NSObject {
         case toggle
     }
 
+    let pasteDiagnostics: PasteDiagnostics
+    lazy var pasteCoordinator = PasteCoordinator(
+        snapshot: { [weak self] in self?.pasteSnapshot() ?? PasteSnapshot(targetFailure: .noTarget) },
+        postEvent: { [weak self] in self?.postPasteEvent(flags: $0) ?? false },
+        record: { [weak self] in self?.pasteDiagnostics.record($0) }
+    )
     var controlRequested = false
     var controlServer: LocalControlServer?
     var automaticPasteTarget: PasteTarget?
@@ -125,11 +131,13 @@ final class KoettController: NSObject {
     init(
         defaults: UserDefaults,
         speechEngine: SpeechEngine,
+        pasteDiagnostics: PasteDiagnostics = PasteDiagnostics(),
         transcriptPersistence: TranscriptPersistence = TranscriptPersistence(),
         failedRecordingStore: FailedRecordingStore = FailedRecordingStore(),
         availableMicrophones: @escaping @MainActor () throws -> [MicrophoneDevice] = MicrophoneDevices.available,
         defaultMicrophoneID: @escaping @MainActor () throws -> AudioDeviceID = MicrophoneDevices.defaultInputID
     ) throws {
+        self.pasteDiagnostics = pasteDiagnostics
         self.transcriptPersistence = transcriptPersistence
         self.failedRecordingStore = failedRecordingStore
         self.microphoneDefaults = defaults

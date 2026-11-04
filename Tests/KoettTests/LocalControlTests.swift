@@ -12,14 +12,20 @@ final class LocalControlTests: XCTestCase {
     func testUserOnlySocketReturnsJSONAndRejectsSecondOwner() async throws {
         let url = socketURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let diagnostics = PasteDiagnostics()
+        let coordinator = PasteCoordinator(snapshot: { PasteSnapshot(access: false) },
+            postEvent: { _ in false }, record: diagnostics.record)
+        _ = await coordinator.prepare(stage: .dictation)
         let server = try LocalControlServer(url: url) { arguments in
-            .init(ok: arguments == ["status"], phase: "ready", model: "test")
+            .init(ok: arguments == ["status"], phase: "ready", model: "test", paste: diagnostics.latest)
         }
         defer { server.stop() }
         let reply = try await Task.detached { try LocalControlSocket.request(["status"], at: url) }.value
         XCTAssertTrue(reply.ok)
         XCTAssertEqual(reply.phase, "ready")
         XCTAssertEqual(reply.model, "test")
+        XCTAssertEqual(reply.paste?.reason, .accessibilityDenied)
+        XCTAssertNotNil(reply.paste?.at)
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
         XCTAssertThrowsError(try LocalControlServer(url: url) { _ in .failure("test", "test") })

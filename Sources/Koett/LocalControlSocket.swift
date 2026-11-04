@@ -8,6 +8,9 @@ struct ControlReply: Codable, Sendable {
     let model: String?
     var paused: Bool? = nil
     var error: Failure? = nil
+    var paste: PasteDiagnostic? = nil
+    var pasteLogError: String? = nil
+    var pasteAccessGranted: Bool? = nil
 
     static func failure(_ code: String, _ message: String) -> Self {
         .init(ok: false, phase: "unavailable", model: nil, error: .init(code: code, message: message))
@@ -83,7 +86,9 @@ enum LocalControlSocket {
         let data = try JSONEncoder().encode(arguments)
         guard data.count < 2_048 else { throw failure("Control command exceeds the size limit.") }
         try writeLine(data, to: descriptor)
-        return try JSONDecoder().decode(ControlReply.self, from: readLine(descriptor, limit: 4_096))
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(ControlReply.self, from: readLine(descriptor, limit: 4_096))
     }
 }
 
@@ -165,7 +170,9 @@ final class LocalControlServer {
                 let arguments = try JSONDecoder().decode([String].self, from: data)
                 reply = await handler(arguments)
             } catch { reply = .failure("invalid_request", "Send a JSON command array smaller than 2048 bytes.") }
-            if let encoded = try? JSONEncoder().encode(reply) { try? LocalControlSocket.writeLine(encoded, to: client) }
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            if let encoded = try? encoder.encode(reply) { try? LocalControlSocket.writeLine(encoded, to: client) }
             await self?.finishedRequest()
         }
     }
