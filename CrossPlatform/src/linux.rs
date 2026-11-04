@@ -2160,15 +2160,49 @@ struct ClipboardPayload {
 }
 
 impl ClipboardPayload {
-    fn offers(&self, mime_type: &str) -> bool {
-        if self.image {
-            mime_type == "image/png"
-                || self.text.is_some()
-                    && (mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8")
-        } else {
-            mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8"
+    fn bytes_for(&self, mime_type: &str) -> Option<&[u8]> {
+        match mime_type {
+            "image/png" if self.image => Some(&self.bytes),
+            "text/plain" | "text/plain;charset=utf-8" => {
+                if self.image {
+                    self.text.as_deref()
+                } else {
+                    Some(&self.bytes)
+                }
+            }
+            _ => None,
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
+    let sketch = ClipboardPayload {
+        image: true,
+        bytes: vec![137, 80, 78, 71],
+        text: Some(b"- #1 words".to_vec()),
+    };
+    assert_eq!(
+        sketch.bytes_for("image/png"),
+        Some([137, 80, 78, 71].as_slice())
+    );
+    assert_eq!(
+        sketch.bytes_for("text/plain"),
+        Some(b"- #1 words".as_slice())
+    );
+    assert_eq!(
+        sketch.bytes_for("text/plain;charset=utf-8"),
+        Some(b"- #1 words".as_slice())
+    );
+    assert_eq!(sketch.bytes_for("text/html"), None);
+    let plain = ClipboardPayload {
+        image: false,
+        bytes: b"plain".to_vec(),
+        text: None,
+    };
+    assert_eq!(plain.bytes_for("image/png"), None);
+    assert_eq!(plain.bytes_for("text/plain"), Some(b"plain".as_slice()));
 }
 
 async fn restore_sketch_clipboard(
@@ -2289,14 +2323,7 @@ impl WaylandOutput {
                 let bytes = transfer_payload
                     .read()
                     .ok()
-                    .filter(|payload| payload.offers(&mime_type))
-                    .map(|payload| {
-                        if payload.image && mime_type != "image/png" {
-                            payload.text.clone().unwrap_or_default()
-                        } else {
-                            payload.bytes.clone()
-                        }
-                    });
+                    .and_then(|payload| payload.bytes_for(&mime_type).map(<[u8]>::to_vec));
                 let success = match bytes {
                     Some(bytes) => match transfer_clipboard.selection_write(&session, serial).await
                     {

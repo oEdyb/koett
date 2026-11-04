@@ -70,9 +70,13 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   Without sketches dictation is unchanged.
 - After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
   700 ms), the clipboard offers the same sheet as `image/png` and bullets as
-  `text/plain` / `text/plain;charset=utf-8`. Ctrl+V can reuse the sketch;
-  plain-text targets can still read the bullets. Done and Not pasted **Copy**
-  use that same offer; Not pasted **Paste** replays image then text. The most
+  `text/plain` / `text/plain;charset=utf-8` on the portal path. Without the
+  clipboard portal, `wl-copy` leaves `image/png` selected instead: GTK cannot
+  reliably claim the clipboard automatically without a fresh focused input
+  event. Ctrl+V can reuse the sketch;
+  plain-text targets can read the bullets from the combined offer. Done and
+  Not pasted **Copy** offer both PNG and text using the button's input event;
+  Not pasted **Paste** replays image then text. The most
   recent sketch is retained in memory until another dictation completes.
   A failed image delivery keeps the result in Not pasted even if text succeeds.
 - History stores the bullet text, with the plain transcript as raw text. Images
@@ -182,10 +186,13 @@ Same output as Linux: one numbered contact sheet, then the same
 
 Before the repair the clipboard was PNG during the first paste, then text only
 after the bullet paste. Done/Not pasted Copy also wrote only text, and Paste
-recovery replayed only text. The final offer now includes both formats without
-changing either automatic paste or its focus checks. A combined offer was chosen
-over image-only so terminals retain usable text and image-aware targets can
-attach the sheet. Chrome's native contenteditable chooses the image; targets
+recovery replayed only text. The final portal offer now includes both formats without
+changing either automatic paste or its focus checks. The wl-copy fallback
+preserves the image instead; pill Copy offers both using its fresh input event.
+An unfocused GTK clipboard claim returned success but left text selected during
+the private full-app drawing test, so automatic restoration uses the existing
+portal or wl-copy backend. A combined offer is preferred where reliable so
+terminals retain usable text and image-aware targets can attach the sheet. Chrome's native contenteditable chooses the image; targets
 decide how much of a multi-format clipboard to insert.
 
 The native `sketch_clipboard_probe` example uses the production Copy helper.
