@@ -1,16 +1,16 @@
-# GNOME paste-target integration
+# GNOME integration
 
 This optional GNOME Shell 51 extension supplies a fresh focused-window identity
-to Koett's existing guarded paste path and per-app image chord selection. It
-never activates another window, changes focus, reads the clipboard or handles
-keyboard/pointer events. It is the first GNOME integration step; the recording
-pill, drawing/input surfaces, pointer context and capture integration remain open.
+to Koett's existing guarded paste path and per-app image chord selection.
+The identity query never activates another window, changes focus or reads
+the clipboard. The recording pill is described below; drawing/input surfaces,
+pointer context and capture integration remain open.
 
-The extension exports one bounded metadata operation on the Shell session bus.
+The identity endpoint returns bounded metadata on the Shell session bus.
 It compares the caller's Unix PID with the current owner of
 `com.olledyberg.Koett`, checks that owner again after resolving credentials, and
 returns no target during lock, overview or a Shell modal. Own windows and dock/
-desktop windows are excluded. No title, text, image or screenshot is transmitted.
+desktop windows are excluded. Its reply contains no title, text, image or screenshot.
 The Rust caller has a 250 ms deadline and a bounded worker queue; failed/busy/late
 queries never reuse cached focus. Window IDs are scoped to the unique Shell bus
 owner and mapped to tokens that are never recycled during the app process.

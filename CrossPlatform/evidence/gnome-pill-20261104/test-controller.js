@@ -1,0 +1,12 @@
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Shell from 'gi://Shell';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+export default class Test extends Extension {
+ enable() { this.object=Gio.DBusExportedObject.wrapJSObject(`<node><interface name="org.example.KoettTest"><method name="Shot"><arg type="s" direction="in"/><arg type="b" direction="out"/></method><method name="Read"><arg type="s" direction="out"/></method><method name="Action"><arg type="s" direction="in"/></method></interface></node>`,this);this.object.export(Gio.DBus.session,'/org/example/KoettTest'); }
+ disable() { this.object.unexport(); }
+ ShotAsync([path], invocation) { const stream=Gio.File.new_for_path(path).replace(null,false,Gio.FileCreateFlags.REPLACE_DESTINATION,null); new Shell.Screenshot().screenshot_area(0,0,1280,800,stream,(shot,result)=>{try {const [ok]=shot.screenshot_area_finish(result);stream.close(null);invocation.return_value(new GLib.Variant('(b)',[ok]));}catch(e){invocation.return_dbus_error('org.example.ShotError',String(e));}}); }
+ Read() { return JSON.stringify({pointer:global.get_pointer(),focus:global.display.focus_window?.get_gtk_application_id(),title:global.display.focus_window?.get_title(),overview:Main.overview.visible,modal:Main.modalCount,locked:Main.screenShield?.locked,windows:global.get_window_actors().map(a=>({app:a.meta_window.get_gtk_application_id(),title:a.meta_window.get_title(),pid:a.meta_window.get_pid(),type:a.meta_window.get_window_type(),rect:{x:a.meta_window.get_frame_rect().x,y:a.meta_window.get_frame_rect().y,width:a.meta_window.get_frame_rect().width,height:a.meta_window.get_frame_rect().height},above:a.meta_window.is_above(),fullscreen:a.meta_window.is_fullscreen()}))}); }
+ Action(value) { if(value==='overview')Main.overview.show();else if(value==='hide')Main.overview.hide();else if(value==='lock')Main.screenShield.activate(true);else if(value==='unlock')Main.screenShield.deactivate(true);else { const w=global.get_window_actors().map(a=>a.meta_window).find(w=>w.get_gtk_application_id()===value);w?.activate(global.get_current_time()); } }
+}

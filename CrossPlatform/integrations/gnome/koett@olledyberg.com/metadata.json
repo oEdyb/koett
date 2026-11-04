@@ -1,8 +1,10 @@
 {
   "uuid": "koett@olledyberg.com",
   "name": "Koett",
-  "description": "Checks the original paste window for Koett on GNOME Wayland.",
-  "shell-version": ["51"],
-  "version": 1,
+  "description": "Recording feedback and original-window checks for Koett on GNOME Wayland.",
+  "shell-version": [
+    "51"
+  ],
+  "version": 2,
   "url": "https://github.com/oEdyb/koett"
 }
