@@ -30,6 +30,9 @@ pub mod sheet;
 mod video_time;
 mod wl_click;
 
+pub(super) static CAN_UNDO: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
 const INK_WIDTH: f64 = 5.0;
 const FADE_AFTER: Duration = Duration::from_millis(1500);
@@ -584,11 +587,26 @@ impl Session {
         }
     }
 
+    fn undo_last(&mut self) -> bool {
+        if self.finishing || self.groups.is_empty() {
+            return false;
+        }
+        self.stroking = None;
+        self.gesture = gesture::PinGesture::default();
+        if self.held {
+            self.gesture.hold();
+        }
+        self.drop_group(self.groups.len() - 1);
+        self.redraw();
+        true
+    }
+
     /// Removes a sketch; later numbers shift down, so the pill gets the
     /// renumbered list and loses the now-unused highest number.
     fn drop_group(&mut self, index: usize) {
         let before = self.groups.len();
-        self.groups.remove(index);
+        let removed = self.groups.remove(index);
+        frames::remove(self.recording, removed.id);
         self.publish();
         crate::sketch::remove_for(self.started, u32::try_from(before).unwrap_or(u32::MAX));
     }
@@ -990,6 +1008,26 @@ impl SketchOverlay {
                 .stderr(std::process::Stdio::null())
                 .spawn();
         }
+    }
+
+    pub fn status(&self) -> serde_json::Value {
+        let session = self.session.borrow();
+        let session = session.as_ref().filter(|session| !session.finishing);
+        serde_json::json!({"ok":true,"active":session.is_some(),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
+    }
+
+    pub fn can_undo(&self) -> bool {
+        self.session
+            .borrow()
+            .as_ref()
+            .is_some_and(|session| !session.finishing && !session.groups.is_empty())
+    }
+
+    pub fn undo_last(&self) -> bool {
+        self.session
+            .borrow_mut()
+            .as_mut()
+            .is_some_and(Session::undo_last)
     }
 
     /// A one-time message for the main window (e.g. the focus fallback).

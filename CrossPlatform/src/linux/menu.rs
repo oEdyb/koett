@@ -55,6 +55,7 @@ pub(super) fn button() -> gtk::MenuButton {
                 ("Paste last transcript", "app.paste-last"),
             ][..],
         ),
+        ("Drawing", &[("Undo Last Drawing", "app.undo-drawing")][..]),
         (
             "Recovery",
             &[

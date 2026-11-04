@@ -53,7 +53,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 |---|---|---|---|---|
 | Drawing, hold key, pass-through otherwise | Yes | layer-shell; KWin evidence, not GNOME/X11 | No | Windows per-display HWNDs; Linux GNOME Shell integration and X11 overlay backend |
 | Bare Shift without interrupting capitals/chords | Yes, gesture guards | Opt-in evdev/keyboard setup; early clicks can pass through | No | Windows recording-scoped state observer + Mac fixture rules; Linux retain explicit permission explanation |
-| Undo ink | Recording-scoped Undo Last Drawing; removes pending/captured last frame | Ctrl+Z before capture | No | Add recording/drawing-scoped Mac/Windows undo; never consume ordinary editor undo outside that scope |
+| Undo ink | Recording-scoped Undo Last Drawing; removes pending/captured last frame | Recording-scoped Undo Last Drawing; pending/captured frames; Ctrl+Z still edits current ink in focus mode | No | Windows scoped undo; Linux [checks and limits](linux-drawing-undo-verification.md); no global editor-undo interception |
 | Multi-monitor / mixed DPI / hotplug | Per-screen capture; hardware parity not rechecked | Hardware multi-monitor unverified; new monitor waits until next recording | No | Real dual-monitor acceptance and add/remove during capture on all |
 | Word times, sketch linking, numbered contact sheet | Yes | Yes; some model times estimated | Shared data algorithms, no capture/UI | Windows compose intended ink onto captured background; keep timestamps and model approximation labels |
 | Shift-click pins + app/title | Yes | niri + KWin context; other AT-SPI providers need usable geometry | No | Windows UIA + HWND identity; Linux compositor adapters rather than guessed labels |
@@ -109,9 +109,12 @@ No ordinary product feature above is declared impossible across an entire OS. So
 
 [Row-4 checks and limits](linux-paste-permissions-verification.md): per-app image
 rules and the permissions surface. Row 5 merged in PR #65.
-Row 6 starts with [guarded CLI Paste Last](linux-last-paste-verification.md).
+Row 6 includes [guarded CLI Paste Last](linux-last-paste-verification.md),
+[first-visible-launch Permissions](linux-first-run-permissions-verification.md)
+and [recording-scoped drawing undo](linux-drawing-undo-verification.md).
 The remaining work is tracked in the [Linux open-row queue](linux-open-rows.md);
-no acceptance-only row is closed by this command change.
+real permission grants, non-niri targets, silence, long capture, monitor hotplug,
+provider/clipboard matrices and packaging remain open.
 After row 6, revisit these explicitly open integrations:
 
 - **Tiled niri pointer context:** stock IPC omits tiled window positions. Add a

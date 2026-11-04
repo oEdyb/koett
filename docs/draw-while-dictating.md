@@ -415,3 +415,19 @@ Mac clipboard and draw-hold regression receipts live in
 The final full suite ran 396 tests with 9 intentional skips and zero failures.
 The production overlay is tested with an empty screen provider, so no panels or
 screen captures are created by the hold-transition regression.
+
+
+## Linux Undo Last Drawing
+
+During a dictation, **Menu → Drawing → Undo Last Drawing** or the tray action
+removes the most recently created drawing or pin, even after its image was
+captured. The matching image is removed from delivery, its pill band disappears,
+and a late capture result cannot restore it. Undo can be repeated until empty.
+It is disabled after recording ends; cancelled/new recordings cannot inherit it.
+
+`koett drawing-status` reports active/count/captured_count/can_undo without image
+or context content. `koett undo-drawing` performs the same action, returning
+`drawing_removed` or a `no_drawing` error with exit status 1. An expired queued
+request makes no change. No global Ctrl+Z binding is added: ordinary editor undo
+stays with the editor. Existing focus-mode Ctrl+Z edits only current uncaptured
+ink. See [verification and desktop limits](linux-drawing-undo-verification.md).

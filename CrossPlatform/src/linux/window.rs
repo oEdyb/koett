@@ -7,6 +7,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
 pub enum Update {
+    DrawingCommand(bool, Sender<serde_json::Value>, Instant),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
@@ -367,7 +368,18 @@ fn build_window(
     // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
     // so it morphs straight into Done instead of hiding and remapping.
     let mut settling_until = None::<Instant>;
-    let sketch = super::sketch::SketchOverlay::new();
+    let sketch = super::sketch::SketchOverlay::new().map(Rc::new);
+    let undo_drawing = gtk::gio::SimpleAction::new("undo-drawing", None);
+    undo_drawing.set_enabled(false);
+    undo_drawing.connect_activate({
+        let sketch = sketch.clone();
+        move |_, _| {
+            if let Some(sketch) = &sketch {
+                sketch.undo_last();
+            }
+        }
+    });
+    application.add_action(&undo_drawing);
     let sketch_application = application.clone();
     let mut asking_until = None::<Instant>;
     let mut sketch_recording = 0_u64;
@@ -388,6 +400,14 @@ fn build_window(
             meter_label.set_visible(window.width() >= 650);
             for update in updates.try_iter() {
                 if let Update::Status(message) = &update {
+                    if message == "@undo-drawing" {
+                        if recording_started.is_some()
+                            && let Some(sketch) = &sketch
+                        {
+                            sketch.undo_last();
+                        }
+                        continue;
+                    }
                     if media_result
                         && (message.starts_with("@ask:")
                             || (message.starts_with("@notice:")
@@ -415,6 +435,22 @@ fn build_window(
                     }
                 }
                 match update {
+                    Update::DrawingCommand(undo, reply, expires) => {
+                        let value = if Instant::now() >= expires {
+                            serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
+                        } else if undo {
+                            if recording_started.is_some()
+                                && sketch.as_ref().is_some_and(|sketch| sketch.undo_last())
+                            {
+                                serde_json::json!({"ok":true,"status":"drawing_removed"})
+                            } else {
+                                serde_json::json!({"ok":false,"error":{"code":"no_drawing","message":"No drawing to undo in the current recording"}})
+                            }
+                        } else {
+                            sketch.as_ref().map_or_else(|| serde_json::json!({"ok":true,"active":false,"count":0,"captured_count":0,"can_undo":false}), |sketch| sketch.status())
+                        };
+                        let _ = reply.send(value);
+                    }
                     Update::PrepareAsk(ack) => {
                         // The next recording is an Ask question, not dictation.
                         asking_until = Some(Instant::now() + Duration::from_secs(20));
@@ -790,6 +826,10 @@ fn build_window(
                     notice_until = Some(Instant::now() + Duration::from_secs(12));
                 }
             }
+            let can_undo = recording_started.is_some()
+                && sketch.as_ref().is_some_and(|sketch| sketch.can_undo());
+            undo_drawing.set_enabled(can_undo);
+            super::sketch::CAN_UNDO.store(can_undo, std::sync::atomic::Ordering::Release);
             if let Some(overlay) = &overlay {
                 overlay.update(
                     if media_result && recovering {

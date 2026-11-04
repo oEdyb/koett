@@ -223,6 +223,11 @@ impl ksni::Tray for LinuxTray {
         }
         items.extend([
             send("Transcribe media…", true, TrayAction::OpenMedia),
+            send(
+                "Undo Last Drawing",
+                sketch::CAN_UNDO.load(std::sync::atomic::Ordering::Acquire),
+                TrayAction::Recovery("undo-drawing".into()),
+            ),
             MenuItem::Separator,
             send("History", true, TrayAction::OpenTranscripts),
             send(
@@ -317,11 +322,20 @@ pub fn run() -> Result<(), String> {
         }
         return Ok(());
     }
-    if let Some(command) = std::env::args()
-        .nth(1)
-        .filter(|c| matches!(c.as_str(), "permissions" | "permissions-status"))
-    {
-        println!("{}", control::request(&command)?);
+    if let Some(command) = std::env::args().nth(1).filter(|c| {
+        matches!(
+            c.as_str(),
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+        )
+    }) {
+        let response = control::request(&command)?;
+        println!("{response}");
+        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
+            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+                == false
+        {
+            std::process::exit(1);
+        }
         return Ok(());
     }
     if std::env::args().nth(1).as_deref() == Some("shortcuts-help") {
@@ -708,6 +722,9 @@ fn run_x11(
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => {
                     update_tray_status(tray, "@settings");
+                }
+                TrayAction::Recovery(command) if command == "undo-drawing" => {
+                    update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
                     let target = paste_request
@@ -1336,6 +1353,9 @@ async fn run_wayland(
                 TrayAction::Cancel => app.command(EngineCommand::Cancel, || None),
                 TrayAction::OpenTranscripts => update_tray_status(tray, "@show"),
                 TrayAction::OpenSettings => update_tray_status(tray, "@settings"),
+                TrayAction::Recovery(command) if command == "undo-drawing" => {
+                    update_tray_status(tray, "@undo-drawing");
+                }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
                     let pasted = match recovery::last_text() {
                         Ok(text) => {

@@ -135,6 +135,18 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
+            if bytes == b"drawing-status" || bytes == b"undo-drawing" {
+                let (tx, rx) = std::sync::mpsc::channel();
+                let expires = std::time::Instant::now() + std::time::Duration::from_secs(2);
+                let _ = ui.send(super::window::Update::DrawingCommand(
+                    bytes == b"undo-drawing",
+                    tx,
+                    expires,
+                ));
+                let value = rx.recv_timeout(std::time::Duration::from_secs(3)).unwrap_or_else(|_| serde_json::json!({"ok":false,"error":{"code":"ui_unavailable","message":"No drawing response; inspect drawing-status before retrying"}}));
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if bytes == b"permissions-status" {
                 let _ = stream.write_all(super::permissions_view::status().to_string().as_bytes());
                 continue;
