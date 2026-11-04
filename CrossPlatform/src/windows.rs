@@ -1,6 +1,7 @@
 mod desktop;
 mod meter;
 mod native_theme;
+mod paste_guard;
 mod pill;
 mod pill_buttons;
 mod pill_state;
@@ -51,14 +52,14 @@ use windows::Win32::UI::Shell::{
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
     DestroyWindow, DispatchMessageW, GetClientRect, GetCursorPos, GetForegroundWindow, GetMessageW,
-    HWND_TOPMOST, IDI_APPLICATION, KillTimer, LoadIconW, MA_NOACTIVATE, MF_CHECKED, MF_DISABLED,
-    MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage, RegisterClassExW,
-    RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, SWP_NOACTIVATE,
-    SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow, TPM_RETURNCMD,
-    TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE,
-    WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP, WM_MOUSEACTIVATE, WM_PAINT,
-    WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-    WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP,
+    GetWindowThreadProcessId, HWND_TOPMOST, IDI_APPLICATION, KillTimer, LoadIconW, MA_NOACTIVATE,
+    MF_CHECKED, MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage,
+    RegisterClassExW, RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL,
+    SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow,
+    TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
+    WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
+    WM_MOUSEACTIVATE, WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW,
+    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP,
 };
 use windows::core::{GUID, PCWSTR, w};
 
@@ -488,7 +489,7 @@ unsafe extern "system" fn overlay_proc(
                     .as_ref()
                     .is_some_and(|buttons| buttons.allows(wparam.0 & 0xffff))
             {
-                app.pill_click(x);
+                app.pill_click(x, true);
             }
         }
         return Default::default();
@@ -502,7 +503,7 @@ unsafe extern "system" fn overlay_proc(
             && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
         {
             let dpi = unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) }.max(96);
-            app.pill_click(((lparam.0 as u16 as i16) as i32) * 96 / dpi as i32);
+            app.pill_click(((lparam.0 as u16 as i16) as i32) * 96 / dpi as i32, false);
         }
         return Default::default();
     }
@@ -556,7 +557,7 @@ impl WindowsApp {
         let phase = match command {
             1 => {
                 self.status = AppStatus::Recording;
-                self.paste_target = Some(unsafe { GetForegroundWindow() });
+                self.paste_target = foreground_paste_target();
                 self.recording_started = Some(Instant::now());
                 self.meter = meter::Meter::default();
                 Phase::Recording
@@ -632,12 +633,7 @@ impl WindowsApp {
         {
             return;
         }
-        let focused = unsafe { GetForegroundWindow() };
-        let focused = (!focused.is_invalid()
-            && focused != self.hwnd
-            && focused != self.overlay
-            && focused != self.shortcut_window)
-            .then_some(focused);
+        let focused = foreground_paste_target();
         if self.status == AppStatus::Ready || matches!(self.status, AppStatus::Error(_)) {
             self.paste_target = focused;
         }
@@ -785,11 +781,11 @@ impl WindowsApp {
         }
     }
 
-    fn pill_click(&mut self, x: i32) {
+    fn pill_click(&mut self, x: i32, accessible: bool) {
         let now = self.clock.elapsed().as_millis() as u64;
         match &self.pill_state.phase {
             pill_state::Phase::Recording | pill_state::Phase::Transcribing
-                if self.pill_state.hovered =>
+                if self.pill_state.hovered || accessible =>
             {
                 if (40..100).contains(&x) {
                     if let Some(engine) = &self.engine {
@@ -819,9 +815,9 @@ impl WindowsApp {
                     }
                 } else if x >= 190 && matches!(self.pill_state.phase, pill_state::Phase::NotPasted)
                 {
-                    if self.paste_target == Some(unsafe { GetForegroundWindow() })
+                    if let Some(target) = self.paste_target
                         && copy_text(self.hwnd, &self.last_transcript).is_ok()
-                        && paste().is_ok()
+                        && paste(target).is_ok()
                     {
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
@@ -923,17 +919,13 @@ impl WindowsApp {
             self.update_overlay();
             return;
         }
-        let delivery_error = if let Err(error) = copy_text(self.hwnd, text) {
-            Some(error)
-        } else if self.paste_target == Some(unsafe { GetForegroundWindow() })
-            && let Err(error) = paste()
-        {
-            Some(format!("Copied. Automatic paste failed: {error}"))
-        } else if self.paste_target != Some(unsafe { GetForegroundWindow() }) {
-            Some("Focus changed. Transcript saved.".to_string())
-        } else {
-            None
-        };
+        let delivery_error = copy_text(self.hwnd, text)
+            .and_then(|()| {
+                self.paste_target
+                    .ok_or_else(|| "No external paste target. Transcript saved.".to_string())
+            })
+            .and_then(paste)
+            .err();
         self.last_transcript = text.to_string();
         let failed = delivery_error.is_some();
         let history_error = match history::append_transcript_with_raw_resilient(model, text, raw) {
@@ -1480,22 +1472,22 @@ unsafe fn write_open_clipboard(encoded: &[u16]) -> Result<(), String> {
     Ok(())
 }
 
-fn paste() -> Result<(), String> {
+fn external_paste_target(hwnd: HWND) -> Option<HWND> {
+    let mut pid = 0;
+    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+    (!hwnd.is_invalid() && pid != 0 && pid != std::process::id()).then_some(hwnd)
+}
+
+fn foreground_paste_target() -> Option<HWND> {
+    external_paste_target(unsafe { GetForegroundWindow() })
+}
+
+fn paste(expected: HWND) -> Result<(), String> {
     let modifiers_are_down = || {
         [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
             .into_iter()
             .any(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0)
     };
-    let deadline = Instant::now() + Duration::from_millis(500);
-    while modifiers_are_down() {
-        if Instant::now() >= deadline {
-            return Err(
-                "release the shortcut keys; the transcript is still on the clipboard".to_string(),
-            );
-        }
-        std::thread::sleep(Duration::from_millis(5));
-    }
-
     let keyboard = |key: VIRTUAL_KEY, flags: KEYBD_EVENT_FLAGS| INPUT {
         r#type: INPUT_KEYBOARD,
         Anonymous: INPUT_0 {
@@ -1512,12 +1504,22 @@ fn paste() -> Result<(), String> {
         keyboard(VIRTUAL_KEY(b'V' as u16), KEYEVENTF_KEYUP),
         keyboard(VK_CONTROL, KEYEVENTF_KEYUP),
     ];
-    let inserted = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
-    if inserted == inputs.len() as u32 {
-        Ok(())
-    } else {
-        Err("Windows blocked the paste; the transcript is still on the clipboard".to_string())
-    }
+    paste_guard::paste_when_ready(
+        expected,
+        modifiers_are_down,
+        foreground_paste_target,
+        || {
+            let inserted = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
+            if inserted == inputs.len() as u32 {
+                Ok(())
+            } else {
+                Err(
+                    "Windows blocked the paste; the transcript is still on the clipboard"
+                        .to_string(),
+                )
+            }
+        },
+    )
 }
 
 fn wide(value: &str) -> Vec<u16> {
@@ -1531,6 +1533,31 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::{MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT};
 
     use super::{Shortcut, tray_anchor, windows_shortcut};
+
+    #[test]
+    fn every_window_in_this_process_is_ineligible_for_paste() {
+        use super::*;
+        let hwnd = unsafe {
+            CreateWindowExW(
+                Default::default(),
+                w!("STATIC"),
+                w!("History search target"),
+                Default::default(),
+                0,
+                0,
+                100,
+                100,
+                None,
+                None,
+                None,
+                None,
+            )
+        }
+        .unwrap();
+        assert!(external_paste_target(hwnd).is_none());
+        assert!(external_paste_target(HWND::default()).is_none());
+        unsafe { windows::Win32::UI::WindowsAndMessaging::DestroyWindow(hwnd) }.unwrap();
+    }
 
     #[test]
     fn default_shortcut_maps_to_win32() {

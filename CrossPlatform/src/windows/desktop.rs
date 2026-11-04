@@ -1,5 +1,5 @@
 use crate::{
-    history::{HistoryStore, HistorySummary},
+    history::{HistoryCursor, HistoryStore, HistorySummary},
     settings::Settings,
 };
 use std::cell::RefCell;
@@ -24,17 +24,38 @@ const SEARCH: usize = 10;
 const LIST: usize = 11;
 const COPY: usize = 12;
 const EXPORT: usize = 13;
+const NEXT_PAGE: usize = 14;
 const SHORTCUT: usize = 20;
 const STARTUP: usize = 21;
 const SAVE: usize = 22;
 const CHANGE_SHORTCUT: usize = 23;
 enum Query {
-    Search(u64, String),
+    Search(u64, String, Option<HistoryCursor>),
     Get(u64, String),
 }
 enum Reply {
-    Rows(u64, Result<Vec<HistorySummary>, String>),
+    Rows(u64, Result<Page, String>),
     Text(u64, Result<String, String>),
+}
+struct Page {
+    rows: Vec<HistorySummary>,
+    next: Option<HistoryCursor>,
+}
+fn history_page(
+    store: &HistoryStore,
+    text: &str,
+    before: Option<&HistoryCursor>,
+) -> Result<Page, String> {
+    let rows = store.page(text, before, 50)?;
+    let last = rows.last().map(|row| HistoryCursor {
+        id: row.id.clone(),
+        created_at_ms: row.created_at_ms,
+    });
+    let next = match last {
+        Some(cursor) if !store.page(text, Some(&cursor), 1)?.is_empty() => Some(cursor),
+        _ => None,
+    };
+    Ok(Page { rows, next })
 }
 struct Window {
     theme: super::native_theme::Theme,
@@ -53,6 +74,9 @@ struct Window {
     query: mpsc::Sender<Query>,
     replies: mpsc::Receiver<Reply>,
     generation: u64,
+    page_generation: u64,
+    next_cursor: Option<HistoryCursor>,
+    page_pending: bool,
 }
 
 pub(super) fn open(settings: bool, owner: HWND) {
@@ -110,12 +134,12 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         let store = HistoryStore::open_default();
         for query in receive {
             let result = match query {
-                Query::Search(id, text) => Reply::Rows(
+                Query::Search(id, text, before) => Reply::Rows(
                     id,
                     store
                         .as_ref()
                         .map_err(Clone::clone)
-                        .and_then(|s| s.page(&text, None, 50)),
+                        .and_then(|s| history_page(s, &text, before.as_ref())),
                 ),
                 Query::Get(id, key) => Reply::Text(
                     id,
@@ -181,6 +205,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             query: send,
             replies,
             generation: 0,
+            page_generation: 0,
+            next_cursor: None,
+            page_pending: false,
         };
         (if settings {
             &SETTINGS_HWND
@@ -409,6 +436,13 @@ impl Window {
                 EXPORT,
                 [440, 32, 100, 32],
             )?;
+            self.control(
+                w!("BUTTON"),
+                "Load more",
+                WS_TABSTOP,
+                NEXT_PAGE,
+                [24, 580, 120, 32],
+            )?;
             self.search();
         }
         Ok(())
@@ -422,9 +456,26 @@ impl Window {
         }
         self.actions_enabled(false);
         self.generation += 1;
-        let _ = self
-            .query
-            .send(Query::Search(self.generation, read(self.search)));
+        self.next_cursor = None;
+        set(self.detail, "Searching…");
+        self.load_page(None);
+    }
+    fn load_page(&mut self, before: Option<HistoryCursor>) {
+        self.page_generation += 1;
+        self.page_pending = true;
+        self.page_enabled(false);
+        let _ = self.query.send(Query::Search(
+            self.page_generation,
+            read(self.search),
+            before,
+        ));
+    }
+    fn page_enabled(&self, enabled: bool) {
+        if let Ok(button) = unsafe { GetDlgItem(Some(self.hwnd), NEXT_PAGE as i32) } {
+            let _ = unsafe {
+                windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(button, enabled)
+            };
+        }
     }
     fn actions_enabled(&self, enabled: bool) {
         if self.settings {
@@ -461,42 +512,49 @@ impl Window {
         self.selection_changed();
         while let Ok(reply) = self.replies.try_recv() {
             match reply {
-                Reply::Rows(id, result) if id == self.generation => match result {
-                    Ok(rows) => {
-                        self.rows = rows;
-                        unsafe {
-                            SendMessageW(self.list, LB_RESETCONTENT, None, None);
-                        }
-                        for row in &self.rows {
-                            let label = super::wide(&format!(
-                                "{}  {}",
-                                timestamp(row.created_at_ms),
-                                row.preview.replace(['\n', '\r'], " ")
-                            ));
-                            unsafe {
-                                SendMessageW(
-                                    self.list,
-                                    LB_ADDSTRING,
-                                    None,
-                                    Some(LPARAM(label.as_ptr() as isize)),
+                Reply::Rows(id, result) if id == self.page_generation => {
+                    self.page_pending = false;
+                    match result {
+                        Ok(page) => {
+                            self.next_cursor = page.next;
+                            self.page_enabled(self.next_cursor.is_some());
+                            for row in &page.rows {
+                                let label = super::wide(&format!(
+                                    "{}  {}",
+                                    timestamp(row.created_at_ms),
+                                    row.preview.replace(['\n', '\r'], " ")
+                                ));
+                                unsafe {
+                                    SendMessageW(
+                                        self.list,
+                                        LB_ADDSTRING,
+                                        None,
+                                        Some(LPARAM(label.as_ptr() as isize)),
+                                    );
+                                }
+                            }
+                            self.rows.extend(page.rows);
+                            if self.selected_key.is_none() {
+                                set(
+                                    self.detail,
+                                    if self.rows.is_empty() {
+                                        if read(self.search).is_empty() {
+                                            "No transcripts yet"
+                                        } else {
+                                            "No matches"
+                                        }
+                                    } else {
+                                        "Select a transcript"
+                                    },
                                 );
                             }
                         }
-                        set(
-                            self.detail,
-                            if self.rows.is_empty() {
-                                if read(self.search).is_empty() {
-                                    "No transcripts yet"
-                                } else {
-                                    "No matches"
-                                }
-                            } else {
-                                "Select a transcript"
-                            },
-                        );
+                        Err(e) => {
+                            self.page_enabled(self.next_cursor.is_some());
+                            set(self.detail, &e);
+                        }
                     }
-                    Err(e) => set(self.detail, &e),
-                },
+                }
                 Reply::Text(id, result) if id == self.generation => match result {
                     Ok(text) => {
                         set(
@@ -520,6 +578,11 @@ impl Window {
         match id {
             SEARCH if notification == EN_CHANGE as u16 => self.search(),
             LIST if notification == LBN_SELCHANGE as u16 => self.selection_changed(),
+            NEXT_PAGE if !self.page_pending => {
+                if let Some(cursor) = self.next_cursor.clone() {
+                    self.load_page(Some(cursor));
+                }
+            }
             COPY => {
                 if let Some(text) = &self.selected_text
                     && let Err(e) = super::copy_text(self.hwnd, text)
@@ -589,8 +652,9 @@ impl Window {
                 r.right = r.right * 96 / dpi;
                 r.bottom = r.bottom * 96 / dpi;
                 let left = (r.right / 3).clamp(180, 320);
-                let height = (r.bottom - 112).max(80);
+                let height = (r.bottom - 160).max(80);
                 for (id, x, y, w, h) in [
+                    (NEXT_PAGE, 24, r.bottom - 56, 120, 32),
                     (COPY, left + 24, 32, 100, 32),
                     (EXPORT, left + 136, 32, 100, 32),
                     (24, left + 24, 66, (r.right - left - 48).max(80), 20),
@@ -800,4 +864,54 @@ fn timestamp(milliseconds: i64) -> String {
             .ok()
         })
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::history::HistoryRecord;
+
+    #[test]
+    fn history_pages_reach_all_rows_and_restart_for_new_search() {
+        let path = std::env::temp_dir().join(format!(
+            "koett-windows-pages-{}.sqlite3",
+            std::process::id()
+        ));
+        let store = HistoryStore::open(&path).unwrap();
+        for i in 0..110 {
+            store
+                .save(&HistoryRecord {
+                    id: format!("page-{i:03}"),
+                    created_at_ms: 100,
+                    model: "fixture".into(),
+                    text: format!("entry {i:03}"),
+                    raw_text: None,
+                })
+                .unwrap();
+        }
+        let mut cursor = None;
+        let mut ids = vec![];
+        let mut sizes = vec![];
+        loop {
+            let page = history_page(&store, "entry", cursor.as_ref()).unwrap();
+            sizes.push(page.rows.len());
+            ids.extend(page.rows.into_iter().map(|r| r.id));
+            cursor = page.next;
+            if cursor.is_none() {
+                break;
+            }
+        }
+        assert_eq!(sizes, [50, 50, 10]);
+        assert_eq!(ids.len(), 110);
+        assert_eq!(
+            ids.iter().collect::<std::collections::HashSet<_>>().len(),
+            110
+        );
+        let filtered = history_page(&store, "entry 003", None).unwrap();
+        assert_eq!(filtered.rows.len(), 1);
+        assert_eq!(filtered.rows[0].id, "page-003");
+        assert!(filtered.next.is_none());
+        drop(store);
+        std::fs::remove_file(path).unwrap();
+    }
 }

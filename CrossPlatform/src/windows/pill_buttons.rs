@@ -93,7 +93,7 @@ struct Snapshot {
 }
 impl Snapshot {
     fn new(state: &State) -> Self {
-        let active = matches!(state.phase, Phase::Recording | Phase::Transcribing) && state.hovered;
+        let active = matches!(state.phase, Phase::Recording | Phase::Transcribing);
         let mut mask = 0;
         for (index, action) in ACTIONS.iter().enumerate() {
             let show = match action.id {
@@ -249,7 +249,11 @@ mod tests {
         let mut state = State::default();
         assert_eq!(Snapshot::new(&state).mask, 0);
         state.set(Phase::Recording, 0);
+        assert!(!state.hovered);
+        assert_eq!(Snapshot::new(&state).mask, 0b00111);
         state.hover(true, 1);
+        assert_eq!(Snapshot::new(&state).mask, 0b00111);
+        state.hover(false, 2);
         assert_eq!(Snapshot::new(&state).mask, 0b00111);
         state.paused = true;
         assert_eq!(Snapshot::new(&state).label(1), "Resume");

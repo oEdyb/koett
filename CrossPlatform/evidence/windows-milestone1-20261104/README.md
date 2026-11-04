@@ -2,11 +2,15 @@
 
 ## Current checkpoint
 
-Milestone 1 is **complete** against the final agreed acceptance gate. The
-unmodified green CI artifact 23f8b75 passes exact UIA recovery Paste with no
-focus theft, UIA Pause/Resume/Cancel/Copy, hover/timing behavior, switched-target
-refusal and real mouse actions. See [the final retest](ci-23f8b75/README.md)
-for screenshots, foreground HWND/PID and exact artifact hashes.
+Independent review reopened four desktop issues after the initial M1 receipt:
+a delayed-paste focus race, Koett-owned targets, hover-gated UIA actions and
+History's first-page limit. Source fixes and regression tests are in progress;
+the rebuilt executable must be retested before merging or starting M2.
+
+The earlier unmodified green CI artifact 23f8b75 passed the original final gate:
+exact UIA recovery Paste with stable foreground, basic UIA actions, timing,
+changed-target refusal and mouse actions. See [that retest](ci-23f8b75/README.md).
+Those observations did not cover a focus switch during the modifier wait.
 
 Earlier e63e65a and 7a0e827 receipts cover the rest of the desktop matrix:
 visible 300×48 pill, typing focus, light/dark checkbox, native Settings and
