@@ -84,6 +84,23 @@ extension KoettController: NSMenuDelegate {
     }
 
     private func performLastTranscriptAction(_ action: PendingLastTranscriptAction) {
+        guard state == .ready else { return }
+        if case .paste(let text) = action, text == lastTranscript, let png = lastTranscriptImage {
+            state = .transcribing
+            recordingOverlay.showTranscribing()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer { self.state = .ready }
+                do {
+                    _ = try await self.deliverSketch(text: text, png: png)
+                    self.recordingOverlay.showDone(text: text, png: png)
+                } catch {
+                    self.recordingOverlay.showNotPasted(text: text, png: png)
+                    fputs("Error: \(error.localizedDescription)\n", stderr)
+                }
+            }
+            return
+        }
         do {
             switch action {
             case .copy(let text):
@@ -107,8 +124,6 @@ extension KoettController: NSMenuDelegate {
     }
 
     private func writeToGeneralPasteboard(_ text: String) -> Bool {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        return pasteboard.setString(text, forType: .string)
+        SketchClipboard(text: text, png: text == lastTranscript ? lastTranscriptImage : nil).write()
     }
 }
