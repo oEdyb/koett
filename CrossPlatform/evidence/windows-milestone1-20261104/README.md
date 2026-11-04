@@ -4,8 +4,10 @@
 
 Independent review reopened four desktop issues after the initial M1 receipt:
 a delayed-paste focus race, Koett-owned targets, hover-gated UIA actions and
-History's first-page limit. Source fixes and regression tests are in progress;
+History's first-page limit. Source fixes and regression tests are committed;
 the rebuilt executable must be retested before merging or starting M2.
+All four were reproduced on the old artifact in the real guest; see
+[review regressions](review-regressions/README.md).
 
 The earlier unmodified green CI artifact 23f8b75 passed the original final gate:
 exact UIA recovery Paste with stable foreground, basic UIA actions, timing,

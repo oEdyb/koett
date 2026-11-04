@@ -35,6 +35,11 @@ exact recovery Paste without focus theft, switched-target refusal and mouse
 actions. Dedicated virtual-action Narrator speech and retained-provider
 teardown were not exercised in that final retest; see its explicit scope in
 the milestone receipt. See the milestone evidence and scripts/windows-lab/checks.
+Applicable recording actions remain in the UIA tree without pointer hover.
+History uses native Load more navigation with a retained keyset cursor.
+Expected HWND and external-process eligibility are rechecked after modifier
+release immediately before paste input. The review-regressions check exercises
+the delayed switch, own-process Search, unhovered actions and 110 History rows.
 The test client returns failure on script errors, failed assertions or EOF.
 Paste checks clear only the isolated editor and require one exact insertion.
 
