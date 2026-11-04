@@ -30,6 +30,61 @@ enum SketchPaste {
         try? await Task.sleep(for: afterRead)
         return true
     }
+
+    static func deliver(
+        png: Data,
+        text: String,
+        pasteboard: NSPasteboard = .general,
+        postImage: () -> Bool,
+        postText: () -> Bool,
+        persist: () -> TranscriptPersistence.Outcome
+    ) async throws -> TimeInterval {
+        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: postImage)
+        let provider = SketchTextProvider(text: text)
+        var textGeneration: Int?
+        var textPostedAt: ContinuousClock.Instant?
+        let result: Result<TimeInterval, Error>
+        do {
+            result = .success(try DictationDelivery.deliver(
+                text,
+                writeToClipboard: { _ in
+                    let item = NSPasteboardItem()
+                    guard item.setDataProvider(provider, forTypes: [.string]) else { return false }
+                    pasteboard.clearContents()
+                    let written = pasteboard.writeObjects([item])
+                    textGeneration = pasteboard.changeCount
+                    return written
+                },
+                postPaste: {
+                    guard imagePosted else { return false }
+                    textPostedAt = .now
+                    let posted = postText()
+                    if !posted { textPostedAt = nil }
+                    return posted
+                },
+                persist: persist
+            ))
+        } catch {
+            result = .failure(error)
+        }
+        if let posted = textPostedAt {
+            let deadline = posted + readTimeout
+            while ContinuousClock.now < deadline, pasteboard.changeCount == textGeneration {
+                if let readAt = provider.readAt, readAt >= posted { break }
+                try? await Task.sleep(for: .milliseconds(10))
+            }
+            try? await Task.sleep(for: afterRead)
+        }
+        if pasteboard.changeCount == textGeneration {
+            guard SketchClipboard(text: text, png: png).write(to: pasteboard) else {
+                throw NSError(domain: "Koett.Sketch", code: 3, userInfo: [
+                    NSLocalizedDescriptionKey: "Image and text could not be kept on the clipboard. Use Copy to retry."
+                ])
+            }
+        }
+        return try result.get()
+    }
+
 }
 
 /// Supplies the sheet when a target reads it and remembers when that happened.
@@ -54,5 +109,19 @@ final class SketchImageProvider: NSObject, NSPasteboardItemDataProvider, Sendabl
         } else if type == .tiff, let tiff = NSBitmapImageRep(data: png)?.tiffRepresentation {
             item.setData(tiff, forType: .tiff)
         }
+    }
+}
+
+
+private final class SketchTextProvider: NSObject, NSPasteboardItemDataProvider, Sendable {
+    let text: String
+    private let read = Mutex<ContinuousClock.Instant?>(nil)
+    var readAt: ContinuousClock.Instant? { read.withLock { $0 } }
+
+    init(text: String) { self.text = text }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        read.withLock { $0 = ContinuousClock.now }
+        item.setString(text, forType: .string)
     }
 }

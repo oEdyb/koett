@@ -337,3 +337,13 @@
 - Fix a word stores corrections apart from history and never edits history text.
   Learned suggestions reach the dictionary only through an explicit Add; forms
   made of common words are labelled and need "Add anyway".
+
+### Drawing clipboard recovery
+
+- Drawing auto-paste sends image then text, waits for the text read with the
+  bounded existing settle policy, then leaves one PNG/TIFF/plain-text item.
+  Do not replace a newer clipboard owner when restoring it.
+- Done/Not pasted Copy and latest-transcript recovery keep the image and text
+  together in memory. A plain next result clears the image even for equal text.
+  Recovery Paste must not save a duplicate history entry. Images remain off disk;
+  after restart the existing last-transcript recovery is text-only.

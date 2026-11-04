@@ -6,26 +6,30 @@ extension KoettController {
         _ text: String,
         model: String,
         rawText: String? = nil,
-        keepAsLast: Bool = false
+        keepAsLast: Bool = false,
+        image: Data? = nil
     ) -> TranscriptPersistence.Outcome {
         let record = TranscriptRecord(text: text, model: model, rawText: rawText)
         if keepAsLast && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lastTranscript = text
+            lastTranscriptImage = image
         }
         let outcome = transcriptPersistence.enqueue(record, keepAsLast: keepAsLast) { [weak self] outcome in
             self?.presentTranscriptSaveOutcome(outcome)
             self?.assistantPanel.showStorageWarning(outcome.warning)
         }
-        presentTranscriptRecovery(record, outcome: outcome)
+        presentTranscriptRecovery(record, outcome: outcome, image: image)
         return outcome
     }
 
     func presentTranscriptRecovery(
         _ record: TranscriptRecord,
-        outcome: TranscriptPersistence.Outcome
+        outcome: TranscriptPersistence.Outcome,
+        image: Data? = nil
     ) {
         if !outcome.hasDurableCopy && !record.text.isEmpty {
             lastTranscript = record.text
+            lastTranscriptImage = image
         }
         presentTranscriptSaveOutcome(outcome)
     }

@@ -120,6 +120,7 @@ final class KoettController: NSObject {
     var setupStatus = SetupStatus.checkingMicrophone
     var startupNoticeMessage: String?
     var lastTranscript: String?
+    var lastTranscriptImage: Data?
     var lastTranscriptMenuActions = LastTranscriptMenuActionQueue()
 
     init(

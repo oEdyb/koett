@@ -100,6 +100,7 @@ final class RecordingOverlayController: NSObject {
     /// True from `show` until the pill is hidden or starts fading out.
     private(set) var isPresented = false
     private var resultText: String?
+    private var resultPNG: Data?
     private(set) var latestOutcome: RecordingOverlayOutcome?
     var isTrackingRecording: Bool { recorder?.isRecording == true }
     private(set) var isShowingTranscribing = false
@@ -122,7 +123,7 @@ final class RecordingOverlayController: NSObject {
             guard let self else { return }
             onOpenHistory?()
         }
-        pillView.copyButton.action = { [weak self] in self?.copyResult() }
+        pillView.copyButton.action = { [weak self] in self?.copyResult(to: .general) }
         pillView.pasteButton.action = { [weak self] in
             self?.hide()
             self?.onPasteAgain?()
@@ -202,10 +203,11 @@ final class RecordingOverlayController: NSObject {
 
     /// Morphs the transcribing pill, in place and at the same size, into the
     /// pasted result with Copy, then fades it out shortly after.
-    func showDone(text: String) {
+    func showDone(text: String, png: Data? = nil) {
         guard isShowingTranscribing else { return }
         let from = pillView.content
         resultText = text
+        resultPNG = png
         show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
         startMorph(from: from)
         dismiss(after: Self.doneDisplayDuration)
@@ -214,9 +216,10 @@ final class RecordingOverlayController: NSObject {
     /// Replaces the transcribing pill when the text was saved but not pasted.
     /// Returns false when another message already replaced it.
     @discardableResult
-    func showNotPasted(text: String) -> Bool {
+    func showNotPasted(text: String, png: Data? = nil) -> Bool {
         guard isShowingTranscribing else { return false }
         resultText = text
+        resultPNG = png
         let from = pillView.content
         show(.notPasted)
         startMorph(from: from)
@@ -228,6 +231,7 @@ final class RecordingOverlayController: NSObject {
         sketchSession = nil
         pillView.timeline.reset()
         resultText = text
+        resultPNG = nil
         show(.media(preview: message))
         latestOutcome = .result(message)
         onLatestOutcomeChange?()
@@ -308,6 +312,7 @@ final class RecordingOverlayController: NSObject {
         recorder = nil
         isShowingTranscribing = false
         resultText = nil
+        resultPNG = nil
         pillView.setHovered(false)
         panel.orderOut(nil)
         panel.alphaValue = 1
@@ -379,11 +384,9 @@ final class RecordingOverlayController: NSObject {
         pillView.content = .recording(paused: recorder.isPaused)
     }
 
-    private func copyResult() {
+    func copyResult(to pasteboard: NSPasteboard = .general) {
         guard let resultText else { return }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        if pasteboard.setString(resultText, forType: .string) {
+        if SketchClipboard(text: resultText, png: resultPNG).write(to: pasteboard) {
             pillView.copyTitle = "Copied"
             dismissOnExit = false
             dismiss(after: 1, holdWhileHovered: false)

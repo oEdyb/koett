@@ -1,0 +1,47 @@
+{
+  "fullSuite": {
+    "command": "swift test",
+    "tests": 388,
+    "skipped": 9,
+    "failures": 0,
+    "seconds": 35.328
+  },
+  "focusedWithNativeImageAndTextConsumers": {
+    "command": "swift test --filter SketchClipboardTests",
+    "tests": 6,
+    "failures": 0,
+    "seconds": 1.486
+  },
+  "mutation": {
+    "change": "Restore text-only final clipboard instead of PNG and text",
+    "test": "testAutomaticPasteLeavesOneItemWithExactImageAndTextForRepeatPaste",
+    "exit": 1,
+    "observed": "PNG and TIFF reads return nil; exact string remains"
+  },
+  "releaseBuild": {
+    "command": "swift build -c release",
+    "exit": 0,
+    "seconds": 47.38
+  },
+  "isolation": "Unique named native pasteboards; synthetic 3x3 PNG; disposable transcript store and defaults suite. No general pasteboard or personal history used.",
+  "verified": [
+    "One pasteboard item offers exact PNG, TIFF and Unicode text after auto image/text consumption",
+    "Native NSImage(pasteboard:) and plain NSTextView consumers accept their representations",
+    "Delayed text read finishes before combined restoration",
+    "Failed image/text posts retain both formats and persist once",
+    "A newer clipboard owner is not overwritten",
+    "Done and Not pasted Copy retain image/text",
+    "Plain next result with identical words clears old image"
+  ],
+  "limits": [
+    "No live external target-app keyboard paste test",
+    "No physical phantom Shift reproduction; code path audited",
+    "Images retained in memory only; restart recovery is text-only"
+  ],
+  "packaging": {
+    "installerSyntax": 0,
+    "Info.plist": 0,
+    "entitlements": 0,
+    "diffCheck": 0
+  }
+}

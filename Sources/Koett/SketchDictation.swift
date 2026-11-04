@@ -166,13 +166,21 @@ extension KoettController {
         showPermissions()
     }
 
-    /// Scrawl order: the numbered sheet first, then the matching text.
-    func pasteSketchSheet(_ sketched: SketchedDictation) async {
-        guard let sheet = sketched.sheet else { return }
+    func deliverSketch(
+        text: String,
+        png: Data,
+        pasteboard: NSPasteboard = .general,
+        persist: () -> TranscriptPersistence.Outcome = {
+            TranscriptPersistence.Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
+        }
+    ) async throws -> TimeInterval {
         let target = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         let chord = SketchPasteChord.forApp(target, overrides: SketchPasteChord.overrides(in: .standard))
-        let pasted = await SketchPaste.paste(png: sheet) { postPasteKey(flags: chord.flags) }
-        if !pasted { fputs("Warning: contact sheet not pasted\n", stderr) }
-        print("SKETCHES PASTED (\(sketched.frameCount)) with \(chord.displayName) into \(target ?? "unknown app")")
+        return try await SketchPaste.deliver(
+            png: png, text: text, pasteboard: pasteboard,
+            postImage: { self.postPasteKey(flags: chord.flags) },
+            postText: pasteAtCursor,
+            persist: persist
+        )
     }
 }

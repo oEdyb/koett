@@ -535,15 +535,21 @@ extension KoettController {
         guard claimDelivery(session) else { return .finished }
         let final = PreparedDictation(text: sketched.text, model: prepared.model, rawText: sketched.rawText)
         deliveredText = final.text
-        await pasteSketchSheet(sketched)
-        let pastePostedAt = try deliver(final)
-        recordingOverlay.showDone(text: final.text)
+        let pastePostedAt: TimeInterval
+        if let sheet = sketched.sheet {
+            pastePostedAt = try await deliverSketch(text: final.text, png: sheet) {
+                self.persistTranscript(final.text, model: final.model, rawText: final.rawText, keepAsLast: true, image: sheet)
+            }
+        } else {
+            pastePostedAt = try deliver(final)
+        }
+        recordingOverlay.showDone(text: final.text, png: sketched.sheet)
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
     /// Text that was saved but not pasted gets the Not pasted pill with Paste again.
     private func showDeliveryFailure(_ error: Error, text: String?) {
-        if let text, recordingOverlay.showNotPasted(text: text) { return }
+        if let text, recordingOverlay.showNotPasted(text: text, png: lastTranscript == text ? lastTranscriptImage : nil) { return }
         recordingOverlay.showError(
             DictationFailurePresentation.message(
                 error: error.localizedDescription,

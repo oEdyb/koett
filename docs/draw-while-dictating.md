@@ -260,3 +260,41 @@ returns on release or Esc. On KDE, register a portal hold shortcut. Offer C
 only as a documented advanced setting, never by default. B needs one small
 control command and a per-desktop setup note, and removes the typing block
 without new privileges.
+
+## Mac repeat paste and recovery — 2026-11-04
+
+Automatic delivery still sends the sheet first and the bullet text second. The
+text is now offered lazily too: after its read (1.5 s cap plus 160 ms settle),
+Koett restores **one pasteboard item containing PNG, TIFF and plain text**. Another
+Cmd+V can select the sketch; a text-only target selects the same exact bullets.
+If another application changes the clipboard during that wait, Koett leaves the
+newer content alone. Posting a paste event cannot prove a target consumed it.
+
+Done Copy, Not pasted Copy, Copy Last Transcript and Paste Last Transcript retain
+both formats for the latest drawing result. Recovery Paste replays image then
+text and restores the combined item without appending history again. The image
+stays in memory only, until another completed result replaces it or Koett quits;
+history and restart recovery remain text-only. A plain next result clears the
+old image even if its words happen to match. No pill size or visual changes.
+
+### Mac draw-key activation audit
+
+`SketchOverlay.start` calls `followKey` immediately and installs local/global
+`.flagsChanged` monitors. `followKey` reads `NSEvent.modifierFlags`; while drawing,
+the 120 Hz ticker reads that same value. `DrawKey.draws` requires the configured
+key to be the only Shift/Control/Option/Command modifier. With no modifiers it is
+false. The configured key can be Control or Option, and a shortcut conflict can
+select a different effective key; Shift is not always the active draw key.
+
+There is no fresh-down requirement: Shift already held when recording begins,
+or releasing Control while Shift remains down, can engage drawing without a new
+Shift press. macOS flags are not proof of a physical keyboard press. No Mac code
+posts Shift events. The Linux bug in PR #44 reads a grabbed virtual device through
+`EVIOCGKEY` even when its Shift never reaches the compositor. Mac does not read
+those devices and that specific cause does not apply. No draw-key behavior was
+changed by this clipboard fix; hardware phantom-Shift behavior was not reproduced.
+
+AppKit contract: each copy creates a fresh
+[`NSPasteboardItem`](https://developer.apple.com/documentation/appkit/nspasteboarditem)
+with multiple representation types. Pasteboard items are not cached or reused;
+only the image bytes and text are retained for the next copy.
