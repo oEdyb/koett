@@ -347,3 +347,8 @@
   together in memory. A plain next result clears the image even for equal text.
   Recovery Paste must not save a duplicate history entry. Images remain off disk;
   after restart the existing last-transcript recovery is text-only.
+
+- Drawing must observe its configured modifier up in the current recording
+  before accepting a hold. Other modifiers or ordinary keys end and spoil that
+  hold until the draw key is released. Dropping Control from Control-Shift must
+  never start drawing. Key events use codes and flags only, not typed characters.

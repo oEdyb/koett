@@ -2,8 +2,9 @@ import AppKit
 
 /// Draw and pin while dictating: one transparent, non-activating panel per
 /// screen. Holding the draw key makes the panels take the pointer: moving
-/// leaves red ink, clicking drops a pin. Otherwise clicks pass through. The key is read from modifier-flag events
-/// only, so the overlay never takes keyboard focus and typing keeps working.
+/// leaves red ink, clicking drops a pin. Otherwise clicks pass through. The key
+/// is read from modifier flags without taking keyboard focus. Key-down/up codes only interrupt a drawing
+/// hold; no typed characters are read.
 @MainActor
 final class SketchOverlay {
     struct Session {
@@ -29,6 +30,7 @@ final class SketchOverlay {
     private var board: SketchBoard?
     private var surfaces: [Surface] = []
     private var monitors: [Any] = []
+    private var drawGate = DrawHoldGate()
     private var ticker: Timer?
     private(set) var failedCaptures = 0
 
@@ -50,13 +52,17 @@ final class SketchOverlay {
             guard let displayID = SketchCapture.displayID(of: screen) else { return nil }
             return makeSurface(screen: screen, index: index, displayID: displayID)
         }
-        let handler: (NSEvent) -> Void = { [weak self] _ in
-            MainActor.assumeIsolated { self?.followKey() }
+        let handler: (NSEvent) -> Void = { [weak self] event in
+            MainActor.assumeIsolated {
+                self?.drawGate.noteKey(type: event.type, keyCode: event.keyCode)
+                self?.followKey(flags: event.modifierFlags)
+            }
         }
-        if let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged, handler: handler) {
+        let events: NSEvent.EventTypeMask = [.flagsChanged, .keyDown, .keyUp]
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: events, handler: handler) {
             monitors.append(global)
         }
-        if let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged, handler: { event in
+        if let local = NSEvent.addLocalMonitorForEvents(matching: events, handler: { event in
             handler(event)
             return event
         }) {
@@ -87,13 +93,14 @@ final class SketchOverlay {
         surfaces = []
         board = nil
         session = nil
+        drawGate = DrawHoldGate()
     }
 
     // MARK: Input
 
-    private func followKey() {
+    private func followKey(flags: NSEvent.ModifierFlags = NSEvent.modifierFlags) {
         guard var board, let session, !board.finishing else { return }
-        let draws = session.key.draws(NSEvent.modifierFlags)
+        let draws = drawGate.draws(key: session.key, flags: flags)
         if draws && !board.held {
             board.press()
             self.board = board
