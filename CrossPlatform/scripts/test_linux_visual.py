@@ -272,7 +272,7 @@ try:
     keys('move', 400 + rect.x + rect.width // 2, 140 + rect.y + rect.height // 2)
     keys('click')
     keys('key', 15)
-    wait(lambda: phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED), 'single Tab reaches chosen page')
+    wait(lambda: find('Add word', settings).get_state_set().contains(Atspi.StateType.FOCUSED), 'single Tab reaches chosen page')
     assert any(n.get_name() == 'Dictionary' for n in walk(settings)), 'Tab stays on the chosen Settings page'
     checks.append('Tab from the Settings sidebar reaches the chosen page instead of walking to the last page')
     keys('key', *([15] * 48))
