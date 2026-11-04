@@ -14693,6 +14693,7 @@
         "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/wayland-client@0.31.15",
         "pkg:cargo/wayland-protocols-wlr@0.3.12",
+        "pkg:cargo/windows-numerics@0.3.1",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",

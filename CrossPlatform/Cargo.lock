@@ -1306,6 +1306,7 @@ dependencies = [
  "wayland-client",
  "wayland-protocols-wlr",
  "windows",
+ "windows-numerics",
  "x11rb",
  "xkeysym",
 ]

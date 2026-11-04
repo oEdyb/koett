@@ -13273,6 +13273,7 @@
         "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/wayland-client@0.31.15",
         "pkg:cargo/wayland-protocols-wlr@0.3.12",
+        "pkg:cargo/windows-numerics@0.3.1",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",
@@ -14912,14 +14913,14 @@
   ],
   "inputs": [
     {
-      "bytes": 85446,
+      "bytes": 85467,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "546ff309b2392a43a0632c4389b4cbe8c48c1250b6193f9fce358769600244a8"
+      "sha256": "1c6ebf8b2618a725f216c486a389ba5fd94aa6da7a56dced1a867aeb3cf10b1c"
     },
     {
-      "bytes": 2693,
+      "bytes": 2989,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "17deede464af62113e73601691b62a6335128ff6a21c4cfde29f7b9f65d27312"
+      "sha256": "19747e69a3ca256bda836d5d0cbe469db701c73df2f1a1184ddd88c37a513c65"
     },
     {
       "bytes": 5621,

@@ -1,26 +1,59 @@
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Direct2D::{Common::*, *};
+use windows::Win32::Graphics::Direct3D::*;
+use windows::Win32::Graphics::Direct3D11::*;
+use windows::Win32::Graphics::DirectComposition::*;
 use windows::Win32::Graphics::DirectWrite::*;
 use windows::Win32::Graphics::Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM;
-use windows::Win32::Graphics::Gdi::HDC;
+use windows::Win32::Graphics::Dxgi::{Common::DXGI_ALPHA_MODE_PREMULTIPLIED, IDXGIDevice};
+use windows::core::Interface;
 use windows::core::w;
+use windows_numerics::Matrix3x2;
 
 pub(super) struct Renderer {
-    target: ID2D1DCRenderTarget,
+    device: IDCompositionDevice2,
+    _target: IDCompositionTarget,
+    visual: IDCompositionVisual2,
+    surface: IDCompositionSurface,
+    size: (u32, u32),
     text: IDWriteTextFormat,
 }
 
 impl Renderer {
-    pub fn new() -> windows::core::Result<Self> {
+    pub fn new(hwnd: HWND, size: (u32, u32)) -> windows::core::Result<Self> {
         unsafe {
-            let factory: ID2D1Factory = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, None)?;
-            let target = factory.CreateDCRenderTarget(&D2D1_RENDER_TARGET_PROPERTIES {
-                pixelFormat: D2D1_PIXEL_FORMAT {
-                    format: DXGI_FORMAT_B8G8R8A8_UNORM,
-                    alphaMode: D2D1_ALPHA_MODE_IGNORE,
-                },
-                ..Default::default()
-            })?;
+            let mut d3d = None;
+            let create = |driver, output: &mut Option<ID3D11Device>| {
+                D3D11CreateDevice(
+                    None,
+                    driver,
+                    Default::default(),
+                    D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                    None,
+                    D3D11_SDK_VERSION,
+                    Some(output),
+                    None,
+                    None,
+                )
+            };
+            create(D3D_DRIVER_TYPE_HARDWARE, &mut d3d)
+                .or_else(|_| create(D3D_DRIVER_TYPE_WARP, &mut d3d))?;
+            let dxgi: IDXGIDevice = d3d.ok_or_else(windows::core::Error::from_thread)?.cast()?;
+            let factory: ID2D1Factory1 =
+                D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, None)?;
+            let d2d = factory.CreateDevice(&dxgi)?;
+            let device: IDCompositionDevice2 = DCompositionCreateDevice2(&d2d)?;
+            let desktop: IDCompositionDesktopDevice = device.cast()?;
+            let target = desktop.CreateTargetForHwnd(hwnd, true)?;
+            let visual = device.CreateVisual()?;
+            let surface = device.CreateSurface(
+                size.0,
+                size.1,
+                DXGI_FORMAT_B8G8R8A8_UNORM,
+                DXGI_ALPHA_MODE_PREMULTIPLIED,
+            )?;
+            visual.SetContent(&surface)?;
+            target.SetRoot(&visual)?;
             let write: IDWriteFactory = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED)?;
             let text = write.CreateTextFormat(
                 w!("Consolas"),
@@ -33,81 +66,124 @@ impl Renderer {
             )?;
             text.SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING)?;
             text.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER)?;
-            Ok(Self { target, text })
+            Ok(Self {
+                device,
+                _target: target,
+                visual,
+                surface,
+                size,
+                text,
+            })
         }
     }
 
     pub fn paint(
-        &self,
+        &mut self,
         hwnd: HWND,
-        dc: HDC,
         bounds: RECT,
         bars: &[f32; 64],
         elapsed: u64,
         busy: bool,
     ) -> windows::core::Result<()> {
         unsafe {
-            self.target.BindDC(dc, &bounds)?;
-            let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) as f32;
-            self.target.SetDpi(dpi, dpi);
-            let light = light_theme();
-            let background = if light {
-                color(1.0, 1.0, 1.0)
-            } else {
-                color(0.075, 0.075, 0.08)
-            };
-            let coral = self.target.CreateSolidColorBrush(
-                &if light {
-                    color(0.85, 0.267, 0.227)
-                } else {
-                    color(1.0, 0.31, 0.26)
-                },
-                None,
-            )?;
-            let white = self.target.CreateSolidColorBrush(
-                &if light {
-                    color(0.11, 0.098, 0.09)
-                } else {
-                    color(1.0, 1.0, 1.0)
-                },
-                None,
-            )?;
-            self.target.BeginDraw();
-            self.target.Clear(Some(&background));
-            self.target.FillRoundedRectangle(
-                &D2D1_ROUNDED_RECT {
-                    rect: rect(19.0, 20.0, 27.0, 28.0),
-                    radiusX: 4.0,
-                    radiusY: 4.0,
-                },
-                &coral,
+            let size = (
+                (bounds.right - bounds.left) as u32,
+                (bounds.bottom - bounds.top) as u32,
             );
-            for (index, level) in bars.iter().enumerate() {
-                let height = 2.0 + level * 24.0;
-                let x = 44.0 + index as f32 * 3.0;
-                self.target.FillRoundedRectangle(
+            if self.size != size {
+                self.surface = self.device.CreateSurface(
+                    size.0,
+                    size.1,
+                    DXGI_FORMAT_B8G8R8A8_UNORM,
+                    DXGI_ALPHA_MODE_PREMULTIPLIED,
+                )?;
+                self.visual.SetContent(&self.surface)?;
+                self.size = size;
+            }
+            let mut offset = windows::Win32::Foundation::POINT::default();
+            let target: ID2D1DeviceContext = self.surface.BeginDraw(None, &mut offset)?;
+            let result = (|| -> windows::core::Result<()> {
+                let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) as f32;
+                target.SetDpi(dpi, dpi);
+                let light = light_theme();
+                let background = if light {
+                    color(1.0, 1.0, 1.0)
+                } else {
+                    color(0.075, 0.075, 0.08)
+                };
+                let coral = target.CreateSolidColorBrush(
+                    &if light {
+                        color(0.85, 0.267, 0.227)
+                    } else {
+                        color(1.0, 0.31, 0.26)
+                    },
+                    None,
+                )?;
+                let white = target.CreateSolidColorBrush(
+                    &if light {
+                        color(0.11, 0.098, 0.09)
+                    } else {
+                        color(1.0, 1.0, 1.0)
+                    },
+                    None,
+                )?;
+                target.SetTransform(&Matrix3x2 {
+                    M11: 1.0,
+                    M12: 0.0,
+                    M21: 0.0,
+                    M22: 1.0,
+                    M31: offset.x as f32 * 96.0 / dpi,
+                    M32: offset.y as f32 * 96.0 / dpi,
+                });
+                target.Clear(Some(&D2D1_COLOR_F::default()));
+                let fill = target.CreateSolidColorBrush(&background, None)?;
+                target.FillRoundedRectangle(
                     &D2D1_ROUNDED_RECT {
-                        rect: rect(x, 24.0 - height / 2.0, x + 2.0, 24.0 + height / 2.0),
-                        radiusX: 1.0,
-                        radiusY: 1.0,
+                        rect: rect(0.0, 0.0, 300.0, 48.0),
+                        radiusX: 23.0,
+                        radiusY: 23.0,
+                    },
+                    &fill,
+                );
+                target.FillRoundedRectangle(
+                    &D2D1_ROUNDED_RECT {
+                        rect: rect(19.0, 20.0, 27.0, 28.0),
+                        radiusX: 4.0,
+                        radiusY: 4.0,
                     },
                     &coral,
                 );
-            }
-            let label = if busy {
-                "…".to_string()
-            } else {
-                format!("{}:{:02}", elapsed / 60, elapsed % 60)
-            };
-            self.target.DrawText(
-                &label.encode_utf16().collect::<Vec<_>>(),
-                &self.text,
-                &rect(238.0, 0.0, 284.0, 48.0),
-                &white,
-                D2D1_DRAW_TEXT_OPTIONS_CLIP,
-                DWRITE_MEASURING_MODE_NATURAL,
-            );
-            self.target.EndDraw(None, None)
+                for (index, level) in bars.iter().enumerate() {
+                    let height = 2.0 + level * 24.0;
+                    let x = 44.0 + index as f32 * 3.0;
+                    target.FillRoundedRectangle(
+                        &D2D1_ROUNDED_RECT {
+                            rect: rect(x, 24.0 - height / 2.0, x + 2.0, 24.0 + height / 2.0),
+                            radiusX: 1.0,
+                            radiusY: 1.0,
+                        },
+                        &coral,
+                    );
+                }
+                let label = if busy {
+                    "…".to_string()
+                } else {
+                    format!("{}:{:02}", elapsed / 60, elapsed % 60)
+                };
+                target.DrawText(
+                    &label.encode_utf16().collect::<Vec<_>>(),
+                    &self.text,
+                    &rect(238.0, 0.0, 284.0, 48.0),
+                    &white,
+                    D2D1_DRAW_TEXT_OPTIONS_CLIP,
+                    DWRITE_MEASURING_MODE_NATURAL,
+                );
+                Ok(())
+            })();
+            let ended = self.surface.EndDraw();
+            result?;
+            ended?;
+            self.device.Commit()
         }
     }
 }

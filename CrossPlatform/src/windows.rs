@@ -245,7 +245,12 @@ unsafe fn run_message_loop(
     app.hwnd = hwnd;
     app.overlay = unsafe {
         CreateWindowExW(
-            WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+            WS_EX_TOOLWINDOW
+                | WS_EX_TOPMOST
+                | WS_EX_NOACTIVATE
+                | WS_EX_LAYERED
+                | WS_EX_TRANSPARENT
+                | windows::Win32::UI::WindowsAndMessaging::WS_EX_NOREDIRECTIONBITMAP,
             w!("KoettOverlayWindow"),
             w!("Koett Recording"),
             WS_POPUP,
@@ -890,14 +895,14 @@ unsafe fn position_overlay(overlay: HWND, target: HWND) {
 
 unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
     let mut paint = PAINTSTRUCT::default();
-    let dc = unsafe { BeginPaint(hwnd, &mut paint) };
+    let _dc = unsafe { BeginPaint(hwnd, &mut paint) };
     let mut bounds = RECT::default();
     if unsafe { GetClientRect(hwnd, &mut bounds) }.is_ok() {
         let mut renderer = app.pill_renderer.borrow_mut();
         if renderer.is_none() {
-            *renderer = pill::Renderer::new().ok();
+            *renderer = pill::Renderer::new(hwnd, (bounds.right as u32, bounds.bottom as u32)).ok();
         }
-        if let Some(current) = renderer.as_ref() {
+        if let Some(current) = renderer.as_mut() {
             let elapsed = app
                 .recording_started
                 .map(|s| s.elapsed().as_secs())
@@ -905,7 +910,6 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
             if current
                 .paint(
                     hwnd,
-                    dc,
                     bounds,
                     &app.meter.bars(),
                     elapsed,
