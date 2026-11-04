@@ -6,6 +6,7 @@ import atexit
 import json
 import os
 import sqlite3
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -40,6 +41,10 @@ config = output / 'config/koett/settings.json'
 config.parent.mkdir(parents=True)
 model = Path.home() / '.local/share/koett/models/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8'
 assert model.is_dir()
+fixture_model = output / 'models' / model.name
+shutil.copytree(model, fixture_model)
+model = fixture_model
+os.environ['KOETT_MODEL_DIR'] = str(model)
 config.write_text(json.dumps({'model_directory': str(model), 'start_at_login': False}))
 if args.scaled:
     os.environ['GDK_DEBUG'] = 'no-portals,default-settings'
@@ -263,7 +268,7 @@ try:
         time.sleep(0.05)
     phrases[0].clear_cache()
     assert phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED)
-    assert find('Words', settings, 'label'), 'Tab stays on the chosen Settings page'
+    assert any(n.get_name() == 'Dictionary' for n in walk(settings)), 'Tab stays on the chosen Settings page'
     checks.append('Tab from the Settings sidebar reaches the chosen page instead of walking to the last page')
     keys('key', *([15] * 48))
     wait(lambda: find('Add replacement', settings), 'keyboard scrolls to last replacement')

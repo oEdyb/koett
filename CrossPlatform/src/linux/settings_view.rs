@@ -681,7 +681,9 @@ fn tab_past_sidebar(
             return gtk::glib::Propagation::Proceed;
         }
         if modifiers.contains(gtk::gdk::ModifierType::SHIFT_MASK) {
-            header.child_focus(gtk::DirectionType::TabBackward);
+            if !header.child_focus(gtk::DirectionType::TabBackward) {
+                footer.child_focus(gtk::DirectionType::TabBackward);
+            }
         } else if !stack
             .visible_child()
             .is_some_and(|page| page.child_focus(gtk::DirectionType::TabForward))

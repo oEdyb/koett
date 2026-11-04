@@ -10,6 +10,7 @@ import atexit
 import json
 import os
 import sqlite3
+import shutil
 import subprocess
 import time
 import wave
@@ -35,6 +36,10 @@ output.mkdir(parents=True, exist_ok=False)
 binary = args.binary.resolve()
 model = Path.home() / '.local/share/koett/models/sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8'
 assert model.is_dir()
+fixture_model = output / 'models' / model.name
+shutil.copytree(model, fixture_model)
+model = fixture_model
+os.environ['KOETT_MODEL_DIR'] = str(model)
 os.environ.pop('NIRI_SOCKET', None)
 os.environ.pop('AT_SPI_BUS_ADDRESS', None)
 for kind in ['CONFIG', 'DATA', 'CACHE', 'STATE']:

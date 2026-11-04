@@ -1,9 +1,7 @@
 use gtk4::{self as gtk, prelude::*};
 use std::sync::mpsc::Sender;
 
-/// Settings builds new widgets each time it opens: moving widgets between
-/// windows breaks their accessibility contexts and crashes GTK's AT-SPI code.
-/// `state` follows the engine while no Settings window exists.
+/// State follows the engine while no Settings window exists.
 pub(super) struct ModelsPanel {
     actions: Sender<super::TrayAction>,
     state: ModelsView,
@@ -217,7 +215,7 @@ impl ModelsView {
     pub fn update(&self, message: &str) {
         let about_models = message.to_ascii_lowercase().contains("model");
         if let Some(notice) = message.strip_prefix("@notice:") {
-            if about_models || self.switching.get() {
+            if about_models && !notice.contains("S1-mini") {
                 self.notice.set_text(notice);
             }
             return;
@@ -226,7 +224,7 @@ impl ModelsView {
             self.notice.set_text("");
         }
         self.switching
-            .set(about_models || message.starts_with("Starting"));
+            .set(about_models && !message.contains("S1-mini"));
         let percent = message
             .strip_prefix("Downloading model… ")
             .and_then(|value| value.strip_suffix('%'))
@@ -237,7 +235,7 @@ impl ModelsView {
                 .set_fraction(f64::from(percent.min(100)) / 100.0);
             self.progress.set_text(Some(&format!("{percent}%")));
             self.status.set_text("Downloading model…");
-        } else if self.switching.get() || message.starts_with("Error") {
+        } else if self.switching.get() {
             self.status.set_text(message);
         } else {
             self.status.set_text("");

@@ -6,6 +6,7 @@ import atexit
 import json
 import os
 import sqlite3
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -44,7 +45,7 @@ model = Path.home() / '.local/share/koett/models/sherpa-onnx-nemo-parakeet_tdt_c
 assert model.is_dir()
 fixture_model = output / 'models' / model.name
 fixture_model.parent.mkdir()
-fixture_model.symlink_to(model, target_is_directory=True)
+shutil.copytree(model, fixture_model)
 os.environ['KOETT_MODEL_DIR'] = str(fixture_model)
 config.write_text(json.dumps({'start_at_login': False}))
 cache = output / 'cache/koett/model-evaluations'
