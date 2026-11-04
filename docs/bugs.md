@@ -206,3 +206,12 @@ keyboard map. A hold needs the key seen up first, so releasing Ctrl from
 Ctrl+Shift+Space or a key stuck at start can't draw; other keys end a hold, and a
 focused hold idle for 15 s is released. Regression tests are in `sketch/keys.rs`.
 Labs must name their device in `KOETT_TEST_DRAW_KEYBOARD`.
+
+## 2026-11-05: an emptied dictation wiped the clipboard, and X11 pasted with no focus
+
+Found in the audit of the Linux parity PRs. A replacement rule that removes a whole
+dictation got past the empty check, which looked at the text before replacements, so
+Koett cleared the clipboard, pressed paste and saved a blank history row. On X11 the
+focus guard compared raw focus values, so None and PointerRoot matched themselves and
+Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
+private lab with real speech. Regression tests are in `linux.rs`.
