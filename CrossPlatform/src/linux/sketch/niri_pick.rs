@@ -186,7 +186,7 @@ fn parse_window(value: &Value) -> Option<NiriWindow> {
     })
 }
 
-fn parse_picked(reply: &str) -> Option<NiriWindow> {
+pub(super) fn parse_picked(reply: &str) -> Option<NiriWindow> {
     let reply: Value = serde_json::from_str(reply).ok()?;
     parse_window(reply.get("Ok")?.get("PickedWindow")?)
 }

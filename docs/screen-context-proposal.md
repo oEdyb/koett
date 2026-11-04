@@ -173,13 +173,16 @@ rules and their tests. Differences, all measured on niri 26.04:
 - **Current context support:** KWin can supply read-only window geometry;
   YouTube time comes from the matched page's accessible seek slider. Other
   desktops need usable AT-SPI frame geometry. Stock niri tiled native Wayland
-  browser hits still lack reliable coordinates; those omit link/image metadata.
+  browser hits still lack reliable coordinates without the optional
+  [compositor adapter](linux-niri-geometry-verification.md); those omit link/image metadata.
   Apps without AT-SPI text still provide no selection.
   See [current checks and limits](linux-pin-context-verification.md). Chrome gives only app and title until its one-time setup,
   which Settings copies. That setup makes Chrome keep its accessibility tree on.
-- **Fast Shift-clicks pass through.** The overlay takes the pointer only once the
-  key has been held 120 ms (so typing a capital is never interrupted) and its
-  input region has been committed. A click sooner than that reaches the app.
+- **Very early Shift-clicks can pass through.** Click protection now starts on
+  the first clean key-state sample; the 120 ms delay only gates ink. A click
+  before the sample/input-region commit can still reach the app. Native
+  40–100 ms clicks pass; near-0/11 ms races remain measured and explicit in
+  [the current receipt](linux-early-shift-verification.md).
 
 Evidence: `CrossPlatform/evidence/pins-20261103/README.md`.
 

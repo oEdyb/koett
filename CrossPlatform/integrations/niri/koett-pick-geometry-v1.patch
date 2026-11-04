@@ -1,8 +1,8 @@
 diff --git a/niri-ipc/src/lib.rs b/niri-ipc/src/lib.rs
-index 0aa3cb4..e6c749b 100644
+index 0aa3cb4..0d26373 100644
 --- a/niri-ipc/src/lib.rs
 +++ b/niri-ipc/src/lib.rs
-@@ -1291,6 +1291,18 @@ pub enum Transform {
+@@ -1291,6 +1291,20 @@ pub enum Transform {
      Flipped270,
  }
  
@@ -16,12 +16,14 @@ index 0aa3cb4..e6c749b 100644
 +    pub point_in_buffer: (f64, f64),
 +    /// Visible window geometry relative to its buffer origin.
 +    pub bounds_in_buffer: (i32, i32, i32, i32),
++    /// Main surface tree bounds, including client-side shadow margins.
++    pub buffer_bounds: (i32, i32, i32, i32),
 +}
 +
  /// Toplevel window.
  #[derive(Serialize, Deserialize, Debug, Clone)]
  #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
-@@ -1326,6 +1338,9 @@ pub struct Window {
+@@ -1326,6 +1340,9 @@ pub struct Window {
      pub is_urgent: bool,
      /// Position- and size-related properties of the window.
      pub layout: WindowLayout,
@@ -91,7 +93,7 @@ index db71da6..53249c6 100644
      })
  }
 diff --git a/src/niri.rs b/src/niri.rs
-index ec40e01..e94467c 100644
+index ec40e01..321fa2e 100644
 --- a/src/niri.rs
 +++ b/src/niri.rs
 @@ -392,7 +392,8 @@ pub struct Niri {
@@ -104,7 +106,7 @@ index ec40e01..e94467c 100644
      pub pick_color: Option<async_channel::Sender<Option<niri_ipc::PickedColor>>>,
  
      pub debug_draw_opaque_regions: bool,
-@@ -3265,6 +3266,31 @@ impl Niri {
+@@ -3265,6 +3266,33 @@ impl Niri {
          Some(window)
      }
  
@@ -126,10 +128,12 @@ index ec40e01..e94467c 100644
 +        };
 +        let point = local - win_pos;
 +        let bounds = window.window.geometry();
++        let buffer = window.window.bbox();
 +        Some(niri_ipc::KoettPickGeometry {
 +            pointer_global: (pos.x, pos.y),
 +            point_in_buffer: (point.x, point.y),
 +            bounds_in_buffer: (bounds.loc.x, bounds.loc.y, bounds.size.w, bounds.size.h),
++            buffer_bounds: (buffer.loc.x, buffer.loc.y, buffer.size.w, buffer.size.h),
 +        })
 +    }
 +

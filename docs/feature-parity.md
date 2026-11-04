@@ -58,7 +58,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 | Word times, sketch linking, numbered contact sheet | Yes | Yes; some model times estimated | Shared data algorithms, no capture/UI | Windows compose intended ink onto captured background; keep timestamps and model approximation labels |
 | Shift-click pins + app/title | Yes | niri + KWin context; other AT-SPI providers need usable geometry | No | Windows UIA + HWND identity; Linux compositor adapters rather than guessed labels |
 | Browser URL / selection | Yes; no private-mode detection | Chrome setup required; provider-dependent AT-SPI selection | No | UIA first on Windows; optional browser native-messaging bridge on all for unavailable context |
-| Link/image under pointer, tiled windows | Yes via AX | niri floating + KWin; tiled uses provider geometry or omits hit | No | Windows ElementFromPoint; Linux compositor geometry adapter or browser integration |
+| Link/image under pointer, tiled windows | Yes via AX | KWin + stock niri floating; optional pinned niri adapter verifies tiled hits; stock tiled still omits hit ([receipt](linux-niri-geometry-verification.md)) | No | Windows ElementFromPoint; Linux compositor geometry adapter or browser integration |
 | YouTube timestamp link | Yes, Chrome AX player slider | AT-SPI player range on matched page; [checks/limits](linux-pin-context-verification.md) | No | Linux AT-SPI player range when matched to URL, else browser bridge; Windows UIA range + URL match, else bridge |
 | Password avoidance / bounded opt-in selection | Yes | Yes, provider-dependent | No context reader | Reject password/protected UI and stale cross-window context; no synthetic Copy |
 | Private/incognito URL exclusion | Automatic detection absent; explicit image-only pins omit all page details | Not established | No implementation | Explicit browser private-mode signal where available; absence must not imply privacy detection |
@@ -117,14 +117,17 @@ real permission grants, non-niri targets, silence, long capture, monitor hotplug
 provider/clipboard matrices and packaging remain open.
 After row 6, revisit these explicitly open integrations:
 
-- **Tiled niri pointer context:** stock IPC omits tiled window positions. Add a
-  trusted compositor geometry source or explicit browser integration; retain
-  image/window context when exact link/image coordinates cannot be proved.
+- **Tiled niri pointer context:** an optional pinned compositor patch now
+  supplies verified pick-time geometry. Native tiled link/image/scroll checks
+  pass; stock IPC remains unchanged. Adapter deployment, normal-session
+  packaging and physical mixed-DPI acceptance remain open. Retain image/window
+  context when exact link/image coordinates cannot be proved.
 - **GNOME drawing overlay:** implement a GNOME Shell-compatible overlay/input
   integration; layer-shell alone does not provide it. Verify pass-through,
   recording-scoped gestures, capture exclusion, cancellation and accessibility.
 
 Linux CTC dictionary bias: [real audio benchmark, setup and deadline limits](ctc-dictionary-benchmark.md).
 The optional sidecar requires local verified v2 files and can fall back on long
-chunks; Nemotron acoustic bias is still open. Row 6 remains next. Tiled niri
-geometry and GNOME overlays remain open for follow-up after row 6.
+chunks; Nemotron acoustic bias is still open. Remaining row-6 work stays in the
+open queue. Optional niri adapter deployment and GNOME overlay integration
+remain open.

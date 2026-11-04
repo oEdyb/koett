@@ -1,0 +1,179 @@
+{
+  "left": {
+    "frame_bounds": [
+      0,
+      0,
+      616,
+      768
+    ],
+    "frame_point": [
+      120,
+      182
+    ],
+    "image": null,
+    "link": null,
+    "point": [
+      120,
+      182
+    ],
+    "window": "Geometry Other"
+  },
+  "right": {
+    "frame_bounds": [
+      0,
+      0,
+      616,
+      768
+    ],
+    "frame_point": [
+      370,
+      182
+    ],
+    "image": null,
+    "link": null,
+    "point": [
+      370,
+      182
+    ],
+    "window": "Geometry Other"
+  },
+  "image": {
+    "frame_bounds": [
+      0,
+      0,
+      616,
+      768
+    ],
+    "frame_point": [
+      130,
+      347
+    ],
+    "image": "Native image fixture",
+    "link": null,
+    "point": [
+      130,
+      347
+    ],
+    "window": "Geometry Other"
+  },
+  "browser-left": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": [
+      170,
+      394
+    ],
+    "image": "Left coral image",
+    "link": "https://geometry.example/browser-left",
+    "point": [
+      154,
+      384
+    ],
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "browser-right": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": [
+      478,
+      394
+    ],
+    "image": "Right blue image",
+    "link": "https://geometry.example/browser-right",
+    "point": [
+      462,
+      384
+    ],
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "partly-offscreen": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": [
+      416,
+      394
+    ],
+    "image": "Right blue image",
+    "link": "https://geometry.example/browser-right",
+    "point": [
+      400,
+      384
+    ],
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "scroll": {
+    "before_origin": [
+      648.0,
+      16.0
+    ],
+    "after_origin": [
+      -300.0,
+      16.0
+    ]
+  },
+  "missing-adapter": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": null,
+    "image": null,
+    "link": null,
+    "point": null,
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "moved-pointer": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": null,
+    "image": null,
+    "link": null,
+    "point": null,
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "mismatched-frame": {
+    "frame_bounds": [
+      0,
+      0,
+      648,
+      810
+    ],
+    "frame_point": null,
+    "image": null,
+    "link": null,
+    "point": [
+      400,
+      384
+    ],
+    "window": "Niri Geometry Browser - Google Chrome"
+  },
+  "duplicate-title": {
+    "frame_bounds": null,
+    "frame_point": null,
+    "image": null,
+    "link": null,
+    "point": [
+      400,
+      384
+    ],
+    "window": "Niri Geometry Browser - Google Chrome"
+  }
+}

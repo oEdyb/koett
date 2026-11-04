@@ -6,8 +6,11 @@ when present and retains its existing stock-niri fallback when absent. It does
 not infer positions from column order, gaps, focused windows or animation targets.
 
 The snapshot comes from the compositor's input hit test before the pick releases
-its grab. It contains the global pointer, buffer-relative pointer and visible
-window bounds in logical coordinates. Only input-region hits carry geometry;
+its grab. It contains the global pointer, buffer-relative pointer, visible
+window geometry and full surface-tree bounds in logical coordinates. Koett
+matches the accessible frame size against the compositor's visible or buffer
+bounds and converts the origin accordingly. Unmatched sizes, out-of-bounds
+points and excessive pointer motion return no hit. Only input-region hits carry geometry;
 borders, overview activation hits and unavailable windows keep it absent. Normal
 window lists/event streams do not carry geometry or acquire per-frame updates.
 The existing pick/focus/shield behavior is retained.

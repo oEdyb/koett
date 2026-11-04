@@ -27,6 +27,10 @@ Windows/shared engine change. Main with #54/#57 was separately installed at
   niri still returns app/title and available page/selection/YouTube time; the image
   and pin bullet remain usable without fabricated pointer metadata.
 
+Follow-up: [the optional niri adapter](linux-niri-geometry-verification.md)
+adds verified tiled coordinates when the pinned compositor patch is used.
+The original checks below remain historical; stock niri is still unchanged.
+
 ## Stock niri limit, still open
 
 Installed niri: `26.04 (8ed0da4)`. Its scrolling layout populates

@@ -40,7 +40,9 @@ GNOME integration come next.
   text, plain editor and terminal; ownership/race/portal timing coverage.
 - **Media:** recheck anonymous Vimeo extraction; report upstream authentication
   failures, retain local-file alternative, never import browser cookies silently.
-- **Ask:** real installed-panel Markdown/math and spoken interruption; theme,
+- **Ask:** the installed host preflight reports rich rendering unavailable
+  (complete WebKitGTK helpers/runtime required); the plain-text fallback is active.
+  Real installed-panel Markdown/math and spoken interruption; theme,
   contrast, scaling, live preference changes and keyboard/screen-reader gates.
 - **Packaging:** clean-user install/update/offline/recovery acceptance with native
   runtime dependencies; source builds do not close this row.
@@ -53,30 +55,24 @@ a crash journal needs explicit retention/privacy behavior before implementation.
 
 ## Implementation still open before the deferred integrations
 
-<<<<<<< HEAD
 Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
 still need code. GNOME identity belongs with its deferred Shell integration.
-Layer-shell monitor refresh is implemented; the physical/portal/niri-pick
-hotplug cases above remain acceptance/integration work. The early-click gap
-while the Shift guard arms still needs code. Existing copy/manual paste and
-keyboard-access alternatives are fallbacks, not full parity. Early Shift clicks
-come next, then the deferred integrations.
+Layer-shell monitor refresh is implemented; physical/portal/niri-pick hotplug
+cases remain acceptance/integration work. Early click protection no longer
+waits for the ink delay, but the smaller keyboard-sample/surface-commit race
+remains explicit for compositor integration. Copy/manual paste and keyboard-
+access alternatives are fallbacks, not full parity.
 
-=======
-Row 6 is not acceptance-only: remaining Wayland identity/clipboard adapters
-still need code. Active monitor hotplug is implemented in PR #71, awaiting merge. KWin identity is implemented;
-GNOME identity belongs with its deferred Shell integration. Early-click
-protection no longer waits for the ink delay, but the smaller keyboard-sample/
-surface-commit gap remains explicit for compositor integration. Existing
-copy/manual paste and documented keyboard-access alternatives are fallbacks,
-not full parity.
->>>>>>> 1c60598 (Verify early draw-key clicks and preserve capital typing)
 
 ## Deferred until after row 6
 
-- **Tiled niri pointer context:** obtain trustworthy screen geometry or an explicit
-  browser integration. Stock IPC omits tiled origins; AT-SPI may return zero.
-  Never guess a link/image from invalid coordinates.
+- **Tiled niri pointer context:** the optional pinned compositor adapter now
+  provides verified pick-time coordinates, including CSD/scrolling bounds.
+  Native GTK image and native Wayland Chrome link/image checks pass, including
+  a partly off-screen tile and safe fallbacks. Stock niri still omits geometry;
+  adapter deployment, production compositor packaging, physical mixed-DPI and
+  overlay/capture/paste acceptance stay open. Never infer missing coordinates.
+  See [the adapter receipt](linux-niri-geometry-verification.md).
 - **GNOME drawing:** Shell-compatible overlay/input integration, recording-scoped
   gestures, pass-through, capture exclusion, cancellation and accessibility.
 - **X11 drawing:** overlay/input backend and equivalent capture/gesture gates;

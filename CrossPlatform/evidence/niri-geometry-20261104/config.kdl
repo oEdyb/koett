@@ -1,0 +1,7 @@
+input { keyboard { xkb { layout "us"; }; }; }
+layout {
+ gaps 16
+ default-column-width { proportion 0.5; }
+ focus-ring { off; }
+}
+animations { off; }
