@@ -38,6 +38,7 @@ final class SketchClipboardTests: XCTestCase {
             XCTAssertEqual(board.data(forType: .png), image)
             XCTAssertEqual(board.string(forType: .string), text)
             XCTAssertNotNil(board.data(forType: .tiff))
+            XCTAssertEqual(board.string(forType: .html), SketchClipboard.html(text: text, png: image))
         }
         XCTAssertNotNil(NSImage(pasteboard: board), "A native image consumer must still receive the sketch")
         let editor = NSTextView(frame: .zero)
@@ -101,6 +102,37 @@ final class SketchClipboardTests: XCTestCase {
             return board.setString("Copied elsewhere", forType: .string)
         }, persist: { self.noStorage })
         XCTAssertEqual(board.string(forType: .string), "Copied elsewhere")
+        XCTAssertNil(board.data(forType: .png))
+    }
+
+    func testHTMLContainsEmbeddedImageAndEscapedExactText() throws {
+        let image = try png()
+        let html = SketchClipboard.html(text: "<literal> & “Unicode”\nsecond line", png: image)
+        XCTAssertEqual(html, "<p><img alt=\"Koett sketch\" src=\"data:image/png;base64,\(image.base64EncodedString())\"></p><pre>&lt;literal&gt; &amp; “Unicode”\nsecond line</pre>")
+    }
+
+    func testNewCopyDuringImageStageSurvivesAndSavesOnce() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        var saves = 0
+        var textPosts = 0
+        do {
+            _ = try await SketchPaste.deliver(png: png(), text: "Old dictation", pasteboard: board, postImage: {
+                _ = board.data(forType: .png)
+                board.clearContents()
+                return board.setString("New user copy", forType: .string)
+            }, postText: {
+                textPosts += 1
+                return true
+            }, persist: {
+                saves += 1
+                return self.noStorage
+            })
+            XCTFail("Interrupted clipboard ownership must offer recovery")
+        } catch {}
+        XCTAssertEqual(saves, 1)
+        XCTAssertEqual(textPosts, 0)
+        XCTAssertEqual(board.string(forType: .string), "New user copy")
         XCTAssertNil(board.data(forType: .png))
     }
 
