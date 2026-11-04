@@ -7,7 +7,9 @@ final class MediaPauseTests: XCTestCase {
         for label in ["Play", "Play/Pause", "", "Resume", "Stop", "Toggle playback"] {
             XCTAssertFalse(MediaPausePolicy.canPause(bundleID: "com.spotify.client", role: kAXButtonRole, label: label, classes: []))
         }
-        XCTAssertTrue(MediaPausePolicy.canPause(bundleID: "com.spotify.client", role: kAXButtonRole, label: "Pause", classes: []))
+        for label in ["Pause", "pause", "PAUSE", "Pausa"] {
+            XCTAssertTrue(MediaPausePolicy.canPause(bundleID: "com.spotify.client", role: kAXButtonRole, label: label, classes: []))
+        }
         XCTAssertFalse(MediaPausePolicy.canPause(bundleID: "unknown", role: kAXButtonRole, label: "Pause", classes: []))
     }
 

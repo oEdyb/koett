@@ -7,7 +7,7 @@ struct MediaPausePolicy {
 
     static func canPause(bundleID: String, role: String?, label: String?, classes: [String]) -> Bool {
         guard role == kAXButtonRole,
-              let label, ["Pause", "Pause (k)", "Pause playback", "Pausa", "Pausa (k)"].contains(label) else { return false }
+              let label, ["pause", "pause (k)", "pause playback", "pausa", "pausa (k)"].contains(label.lowercased()) else { return false }
         return players.contains(bundleID)
             || (browsers.contains(bundleID) && classes.contains("ytp-play-button"))
     }
@@ -29,9 +29,10 @@ enum MediaPause {
                 remaining -= 1
                 guard !Task.isCancelled, ProcessInfo.processInfo.systemUptime < deadline else { return paused }
                 let role = attribute(element, kAXRoleAttribute) as? String
-                let label = attribute(element, kAXDescriptionAttribute) as? String
-                    ?? attribute(element, kAXTitleAttribute) as? String
-                let classes = attribute(element, "AXDOMClassList") as? [String] ?? []
+                let label = role == kAXButtonRole ? (attribute(element, kAXDescriptionAttribute) as? String
+                    ?? attribute(element, kAXTitleAttribute) as? String) : nil
+                let classes = role == kAXButtonRole && MediaPausePolicy.browsers.contains(bundleID)
+                    ? attribute(element, "AXDOMClassList") as? [String] ?? [] : []
                 if MediaPausePolicy.canPause(bundleID: bundleID, role: role, label: label, classes: classes),
                    attribute(element, kAXEnabledAttribute) as? Bool == true,
                    !Task.isCancelled,
@@ -69,7 +70,7 @@ extension KoettController {
             guard let id = app.bundleIdentifier,
                   MediaPausePolicy.players.contains(id) || MediaPausePolicy.browsers.contains(id) else { return nil }
             return (app.processIdentifier, id)
-        }
+        }.sorted { MediaPausePolicy.players.contains($0.1) && !MediaPausePolicy.players.contains($1.1) }
         mediaPauseTask = Task {
             let count = await MediaPause.pause(apps: apps)
             print("MEDIA PAUSE: \(count) supported player(s). Resume playback manually.")
