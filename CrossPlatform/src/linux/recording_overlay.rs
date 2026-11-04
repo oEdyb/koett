@@ -169,6 +169,38 @@ impl LayerShell {
     }
 }
 
+enum PillLayer {
+    Layer(LayerShell),
+    Gnome,
+}
+
+impl PillLayer {
+    fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        if super::gnome_pill::available() {
+            return Ok(Self::Gnome);
+        }
+        Ok(Self::Layer(LayerShell::load()?))
+    }
+
+    fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
+        match self {
+            Self::Layer(layer) => Ok(layer.configure(window)?),
+            Self::Gnome => super::gnome_pill::configure(window, None),
+        }
+    }
+
+    fn choose_monitor(
+        &self,
+        window: &gtk::Window,
+        monitor: Option<&gtk::gdk::Monitor>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        match self {
+            Self::Layer(layer) => Ok(layer.choose_monitor(window, monitor)?),
+            Self::Gnome => super::gnome_pill::configure(window, monitor),
+        }
+    }
+}
+
 const WIDTH: i32 = 300;
 /// Every state is exactly this tall; nothing ever grows.
 const ROW: i32 = 48;
@@ -381,7 +413,7 @@ pub struct RecordingOverlay {
     warning: gtk::Label,
     state: Rc<RefCell<Pill>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
-    layer_shell: LayerShell,
+    layer_shell: PillLayer,
     layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
@@ -674,7 +706,7 @@ impl RecordingOverlay {
         latest: Rc<RefCell<Option<String>>>,
         actions: std::sync::mpsc::Sender<super::TrayAction>,
     ) -> Option<Self> {
-        let layer_shell = match LayerShell::load() {
+        let layer_shell = match PillLayer::load() {
             Ok(shell) => shell,
             Err(error) => {
                 eprintln!("Recording overlay unavailable; using in-window feedback: {error}");

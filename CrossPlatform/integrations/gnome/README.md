@@ -34,3 +34,27 @@ extension removes the bus object immediately; the next focus check fails closed.
 Sources: [GNOME extension lifecycle](https://gjs.guide/extensions/overview/anatomy.html),
 [Shell 51.1 session/modal state](https://github.com/GNOME/gnome-shell/blob/51.1/js/ui/main.js),
 [Mutter stable window sequence](https://mutter.gnome.org/meta/method.Window.get_stable_sequence.html).
+
+## Recording pill
+
+The optional Shell 51 extension supplies a nonactivating recording pill for
+GNOME Wayland, using Koett's existing GTK renderer, timer, waveform, actions and
+rescue states. It positions only a registered Koett window as a Mutter dock;
+normal Koett windows and other applications are not changed. There is no strut
+or reserved desktop space. Exact logical monitor geometry is required.
+
+The GTK application process registers its random window title before mapping.
+The extension authenticates the caller PID against the current owner of
+`com.olledyberg.Koett`, checks that owner again, and matches the native window's
+PID/title before setting its dock type. Mapping is inhibited until that decision.
+Dock mouse interaction does not automatically focus the window. Keyboard focus
+stays in the editor; the renderer retains its normal pointer input regions.
+
+Only four registrations are allowed. App bus-owner loss and extension disable
+remove registered overlay windows; normal app windows stay. A missing extension
+retains normal-window recording feedback. After disabling/re-enabling the
+extension, restart Koett to recreate its pill. Monitor changes reposition it.
+
+
+Drawing/capture/pointer context remain open. The same explicitly enabled Shell
+extension supplies both focus checks and the recording pill.

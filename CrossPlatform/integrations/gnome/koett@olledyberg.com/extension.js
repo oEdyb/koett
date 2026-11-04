@@ -1,12 +1,15 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
+import {Pills} from './pills.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const APP = 'com.olledyberg.Koett';
 const PATH = '/org/gnome/Shell/Extensions/Koett';
 const XML = `<node><interface name="com.olledyberg.Koett.Gnome1">
+<method name="PillStatus"><arg type="s" direction="out"/></method>
+<method name="Pill"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Focus"><arg type="s" direction="out"/></method>
 </interface></node>`;
 
@@ -25,14 +28,32 @@ function busCall(method, parameters, signature) {
 export default class Koett extends Extension {
     enable() {
         this._enabled = true;
+        this._pills = new Pills();
         this._object = Gio.DBusExportedObject.wrapJSObject(XML, this);
         this._object.export(Gio.DBus.session, PATH);
     }
 
     disable() {
         this._enabled = false;
+        this._pills?.destroy();
+        this._pills = null;
         this._object?.unexport();
         this._object = null;
+    }
+
+    PillStatus() { return JSON.stringify({protocol: 1, pill: this._enabled}); }
+
+    async PillAsync([raw], invocation) {
+        let ok = false;
+        try {
+            const owner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const pid = name => busCall('GetConnectionUnixProcessID', new GLib.Variant('(s)', [name]), '(u)');
+            const [caller, app] = await Promise.all([pid(invocation.get_sender()), pid(owner)]);
+            const current = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            if (this._enabled && owner === current && caller === app)
+                ok = this._pills.register(JSON.parse(raw), app, owner);
+        } catch { }
+        invocation.return_value(new GLib.Variant('(s)', [JSON.stringify({ok})]));
     }
 
     async FocusAsync(_parameters, invocation) {
