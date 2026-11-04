@@ -11,13 +11,16 @@ Activate-LabEditor $target
 Start-Sleep -Milliseconds 200
 Set-LabPhase 1
 Set-LabPhase 4
+$originalTextBefore=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
 $original=Get-LabFocus
 Activate-LabEditor $second
 Start-Sleep -Milliseconds 200
 $switched=Get-LabFocus
+$secondTextBefore=[LabEdit]::Read([LabDriver]::GetWindow($second,5))
 $overlay=[LabDriver]::ByClass('KoettOverlayWindow')
 $null=Invoke-LabButton $overlay 'Paste'
 Start-Sleep -Milliseconds 250
 $text=[LabEdit]::Read([LabDriver]::GetWindow($second,5))
 $after=Get-LabFocus
-@{passed=($text-eq''-and$after.hwnd-eq$switched.hwnd);artifact=(Get-LabArtifact);original=$original;switched=$switched;after=$after;second_editor_text=$text;refused_new_target=($text-eq''-and$after.hwnd-eq$switched.hwnd);steps=@((Get-LabStep 'uia-changed-target-refused'),(Get-LabWindowStep 'second-editor-untouched' $second))}
+$originalTextAfter=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
+@{passed=($text-ceq$secondTextBefore-and$originalTextAfter-ceq$originalTextBefore-and$after.hwnd-eq$switched.hwnd);artifact=(Get-LabArtifact);original=$original;switched=$switched;after=$after;original_text_before=$originalTextBefore;original_text_after=$originalTextAfter;second_text_before=$secondTextBefore;second_editor_text=$text;refused_new_target=($text-ceq$secondTextBefore-and$originalTextAfter-ceq$originalTextBefore-and$after.hwnd-eq$switched.hwnd);steps=@((Get-LabStep 'uia-changed-target-refused'),(Get-LabWindowStep 'second-editor-untouched' $second))}

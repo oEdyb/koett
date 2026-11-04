@@ -1,7 +1,7 @@
 mod abi;
 mod provider;
 use super::pill_state::{Phase, State};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -12,13 +12,37 @@ use windows::Win32::{
 };
 
 // WM_GETOBJECT can re-enter while the app holds its state borrow during a UIA event.
-thread_local! { static REGISTERED: RefCell<Option<IRawElementProviderSimple>> = const { RefCell::new(None) }; }
+thread_local! { static REGISTERED: RefCell<Option<Registration>> = const { RefCell::new(None) }; }
+struct Registration {
+    provider: IRawElementProviderSimple,
+    surface: Arc<Surface>,
+}
 pub(super) fn object(hwnd: HWND, wparam: WPARAM, lparam: LPARAM) -> Option<LRESULT> {
-    REGISTERED.with(|slot| {
-        slot.borrow()
-            .as_ref()
-            .map(|provider| unsafe { UiaReturnRawElementProvider(hwnd, wparam, lparam, provider) })
-    })
+    let provider = REGISTERED.with(|slot| slot.borrow().as_ref().map(|r| r.provider.clone()));
+    provider.map(|provider| unsafe { UiaReturnRawElementProvider(hwnd, wparam, lparam, &provider) })
+}
+
+pub(super) fn destroyed(hwnd: HWND) {
+    let registered = REGISTERED.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        if slot.as_ref().is_some_and(|r| r.surface.hwnd() == hwnd) {
+            slot.take()
+        } else {
+            None
+        }
+    });
+    if let Some(registered) = registered {
+        registered.surface.alive.store(false, Ordering::Release);
+        unsafe {
+            let _ = UiaDisconnectProvider(&registered.provider);
+            UiaReturnRawElementProvider(
+                hwnd,
+                WPARAM(0),
+                LPARAM(0),
+                None::<&IRawElementProviderSimple>,
+            );
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -60,11 +84,12 @@ const ACTIONS: [Action; 5] = [
         width: 51,
     },
 ];
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Default, PartialEq)]
 struct Snapshot {
     mask: u8,
     paused: bool,
     copied: bool,
+    name: String,
 }
 impl Snapshot {
     fn new(state: &State) -> Self {
@@ -86,12 +111,25 @@ impl Snapshot {
             mask,
             paused: state.paused,
             copied: state.copied,
+            name: match &state.phase {
+                Phase::Hidden => "Koett".into(),
+                Phase::Recording if state.paused => "Koett Paused".into(),
+                Phase::Recording => "Koett Recording".into(),
+                Phase::Transcribing => "Koett Transcribing".into(),
+                Phase::Done(_) if state.copied => "Koett Copied".into(),
+                Phase::Done(preview) => format!(
+                    "Koett Done. {}",
+                    preview.chars().take(80).collect::<String>()
+                ),
+                Phase::NotPasted => "Koett Not pasted. Saved".into(),
+                Phase::Error { message, .. } => format!("Koett. {message}"),
+            },
         }
     }
-    fn visible(self, index: usize) -> bool {
+    fn visible(&self, index: usize) -> bool {
         self.mask & (1 << index) != 0
     }
-    fn label(self, index: usize) -> &'static str {
+    fn label(&self, index: usize) -> &'static str {
         match ACTIONS[index].id {
             102 if self.paused => "Resume",
             104 if self.copied => "Copied",
@@ -109,7 +147,10 @@ impl Surface {
         HWND(self.hwnd as *mut _)
     }
     fn snapshot(&self) -> Snapshot {
-        *self.snapshot.lock().unwrap_or_else(|e| e.into_inner())
+        self.snapshot
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
     fn available(&self) -> windows::core::Result<()> {
         if self.alive.load(Ordering::Acquire) && unsafe { IsWindow(Some(self.hwnd())) }.as_bool() {
@@ -124,6 +165,7 @@ impl Surface {
 pub(super) struct Buttons {
     provider: IRawElementProviderSimple,
     surface: Arc<Surface>,
+    key: Cell<Option<super::pill_state::PaintKey>>,
 }
 impl Buttons {
     pub fn new(parent: HWND) -> Result<Self, String> {
@@ -139,20 +181,35 @@ impl Buttons {
         }
         .into_simple()
         .map_err(|e| e.to_string())?;
-        REGISTERED.with(|slot| *slot.borrow_mut() = Some(provider.clone()));
-        Ok(Self { provider, surface })
+        REGISTERED.with(|slot| {
+            *slot.borrow_mut() = Some(Registration {
+                provider: provider.clone(),
+                surface: surface.clone(),
+            })
+        });
+        Ok(Self {
+            provider,
+            surface,
+            key: Cell::new(None),
+        })
     }
     pub fn sync(&self, _parent: HWND, state: &State) {
+        let key = state.paint_key();
+        if self.key.get() == Some(key) {
+            return;
+        }
+        self.key.set(Some(key));
         let next = Snapshot::new(state);
-        let changed = {
+        let (changed, announce) = {
             let mut current = self
                 .surface
                 .snapshot
                 .lock()
                 .unwrap_or_else(|e| e.into_inner());
             let changed = *current != next;
+            let announce = current.name != next.name && !matches!(state.phase, Phase::Hidden);
             *current = next;
-            changed
+            (changed, announce)
         };
         if changed {
             unsafe {
@@ -162,6 +219,11 @@ impl Buttons {
                     std::ptr::null_mut(),
                     0,
                 );
+            }
+        }
+        if announce {
+            unsafe {
+                let _ = UiaRaiseAutomationEvent(&self.provider, UIA_LiveRegionChangedEventId);
             }
         }
     }
@@ -176,18 +238,7 @@ impl Buttons {
 impl Drop for Buttons {
     fn drop(&mut self) {
         self.surface.alive.store(false, Ordering::Release);
-        REGISTERED.with(|slot| {
-            slot.borrow_mut().take();
-        });
-        unsafe {
-            let _ = UiaDisconnectProvider(&self.provider);
-            UiaReturnRawElementProvider(
-                self.surface.hwnd(),
-                WPARAM(0),
-                LPARAM(0),
-                None::<&IRawElementProviderSimple>,
-            );
-        }
+        destroyed(self.surface.hwnd());
     }
 }
 #[cfg(test)]

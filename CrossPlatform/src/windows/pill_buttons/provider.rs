@@ -117,7 +117,13 @@ impl Simple_Impl for Node_Impl {
             let snapshot = self.surface.snapshot();
             Ok(match id {
                 p if p == UIA_NamePropertyId => {
-                    VARIANT::from(self.index.map(|i| snapshot.label(i)).unwrap_or("Koett"))
+                    VARIANT::from(self.index.map(|i| snapshot.label(i)).unwrap_or(
+                        if snapshot.name.is_empty() {
+                            "Koett"
+                        } else {
+                            &snapshot.name
+                        },
+                    ))
                 }
                 p if p == UIA_AutomationIdPropertyId => VARIANT::from(
                     self.index
@@ -130,6 +136,9 @@ impl Simple_Impl for Node_Impl {
                 } else {
                     UIA_PaneControlTypeId.0
                 }),
+                p if p == UIA_LiveSettingPropertyId => {
+                    VARIANT::from(if self.index.is_none() { 1_i32 } else { 0_i32 })
+                }
                 p if p == UIA_IsControlElementPropertyId || p == UIA_IsContentElementPropertyId => {
                     VARIANT::from(true)
                 }

@@ -457,6 +457,13 @@ unsafe extern "system" fn overlay_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if matches!(
+        message,
+        windows::Win32::UI::WindowsAndMessaging::WM_DESTROY
+            | windows::Win32::UI::WindowsAndMessaging::WM_NCDESTROY
+    ) {
+        pill_buttons::destroyed(hwnd);
+    }
     if message == windows::Win32::UI::WindowsAndMessaging::WM_GETOBJECT
         && let Some(result) = pill_buttons::object(hwnd, wparam, lparam)
     {

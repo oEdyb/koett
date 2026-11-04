@@ -17,3 +17,5 @@ for line in f:
   print(json.dumps(concise(result))[:5000])
   if not result.get('ok') or (isinstance(result.get('result'),dict) and result['result'].get('passed') is False): sys.exit(1)
   break
+else:
+ raise SystemExit("Guest connection closed before a matching response")

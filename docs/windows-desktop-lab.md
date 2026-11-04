@@ -27,9 +27,15 @@ Test ordinary startup and tray behavior with a normal launch separately.
 The lab does not simulate speech recognition, delivery acknowledgments or save
 success. Use actual recordings and fault injection in Milestone 2 for those gates.
 
-Pill action controls are owner-drawn native Win32 BUTTONs, so standard Windows
-accessibility providers expose their labels and Invoke behavior. Their runtime
-Narrator behavior and focus preservation still require guest verification.
+The DirectComposition pill exposes virtual UIA Button/Invoke fragments with
+stable action IDs and a root that owns virtual focus. Native child BUTTONs
+were removed because UIA activated their HWNDs before Invoke, blocking guarded
+Paste. Settings and History retain native controls. The new provider, polite
+status announcements, cached-element teardown and switched-target refusal
+require a rebuilt executable guest regression; the isolated diagnostic alone
+is not a Koett pass. See the milestone evidence and scripts/windows-lab/checks.
+The test client returns failure on script errors, failed assertions or EOF.
+Paste checks clear only the isolated editor and require one exact insertion.
 
 ## Local guest
 

@@ -44,3 +44,41 @@ current tip text in Shell accessibility; adding it exposes the updated text.
 That source correction also awaits its rebuilt-artifact runtime check.
 Supply-chain outputs were regenerated for the explicit pinned windows-core
 macro dependency; policy remains unchanged.
+
+
+## Completed retest and remaining gate
+
+The verified typing editor retained HWND 262172 / PID 9036 for every typed
+character and fixture phase, and contains the typed phrase. A prior trial
+that did not activate that editor is excluded from the pass list.
+Pill geometry and compact native Settings both pass 100/150/200% scaling;
+the Settings screenshots were retaken with its HWND actually foreground.
+Narrator PID 2052 navigates the dark classic checkbox, Save and shortcut
+button with correct roles/names. A small guest-output audio excerpt and its
+approximate local ASR transcript accompany the keyboard JSON.
+
+The strengthened UIA regression reports `passed: false` on 7a0e827 and the
+host client exits 1. It records the tested executable hash. Future Paste
+checks clear only the isolated test editor first and require exactly one
+fixture insertion, preventing an earlier transcript from masking failure.
+The changed-target case also compares both editors before/after Invoke.
+
+Explorer restarted from PID 4676 to 3160 with Koett PID 8896 unchanged and
+the stable tray GUID registered. Current tooltip text remained suppressed
+without NIF_SHOWTIP; the separate native Shell diagnostic exposed updated
+text when that flag was set. The source correction remains unverified in
+an unmodified executable.
+
+The new provider includes polite status names, explicit nullable COM output
+initialization, retained-provider invalidation on window destruction, and
+an independent registry for reentrant WM_GETOBJECT. A revision counter
+prevents same-clock-tick phase changes from leaving stale accessibility or
+reduced-motion state. Six pure state tests pass; ABI/provider tests compile
+under all-target Windows Clippy but still need execution in Windows CI.
+Native Linux tests (389 passed, 17 ignored), strict Clippy and release build
+pass. Supply-chain outputs are current; policy is unchanged.
+
+The guest completed a full Windows shutdown and is off. The transfer server
+is stopped. M1 remains incomplete until the new linked executable passes
+UIA Invoke, exact recovery Paste, switched-target refusal, pointer/state
+regressions, virtual-action Narrator/status checks and tray-tooltip refresh.

@@ -1,0 +1,17 @@
+{
+  "step": "copied-hides-after-second",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 131420
+  },
+  "focus": {
+    "hwnd": 262172,
+    "process": "powershell",
+    "pid": 9036
+  },
+  "visible": false
+}

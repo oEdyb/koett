@@ -2,27 +2,33 @@
 
 ## Current checkpoint
 
-Milestone 1 remains **incomplete**. The unmodified CI artifact e63e65a has
-visible pill, typing-focus, pointer-action, native History Copy/Export,
-startup-off/on, Explorer/tray recovery, light theme, reduced-motion and
-100/150/200% runtime receipts. Scoped Narrator keyboard/name and recorded
-speech checks passed. See [artifact-specific evidence](ci-e63e65a/README.md).
+Milestone 1 remains **incomplete**. The green, unmodified CI artifact 7a0e827
+passes the corrected waveform, dark/light checkbox toggle, compact Settings,
+verified typing focus, visible states, reduced-motion visual checks, native
+Settings/pill geometry at 100/150/200%, and scoped dark-checkbox Narrator
+navigation. Earlier artifact receipts retain History Copy/Export and startup
+on/off across boots. See [the latest retest](ci-7a0e827/README.md).
 
-Real Windows found an invisible composition factory interface, incorrect
-waveform colors, unreadable dark checkbox text, oversized Settings, and
-UIA Invoke activation blocking guarded Paste. Source fixes are pushed.
-The latest color, dark checkbox, compact Settings, reduced-motion scheduling,
-tray tooltip refresh and accessible-action focus fixes require a new
-unmodified CI artifact regression pass. Do not mark this PR ready yet.
+**UIA Invoke still failed** in 7a0e827: activation moved focus to the pill and
+the original-target Paste guard refused. The earlier focus restoration was
+insufficient and is removed. Source now exposes virtual UIA fragments through
+the DirectComposition HWND. An isolated managed probe preserves foreground;
+the new Rust implementation has Windows all-target metadata Clippy evidence
+only and still requires its linked-executable test. Native Settings/History
+remain native. The tray standard-tooltip correction also needs that retest.
 
-The accessibility fix restores only the window displaced by activation of
-Koett's own pill. It does not activate the original recording target after
-an unrelated app switch. Paste still requires that original target to be
-foreground; retest switching targets before invoking Paste.
+Do not mark the PR ready until the rebuilt executable passes UIA exact Paste,
+changed-target refusal, pointer/state, Narrator/status, teardown and tray
+regressions. No original-target guard was relaxed. Root status names and a
+revision counter cover accessible announcements and same-tick transitions.
+Supply-chain outputs are current; six dependency tests and ten inventory tests
+pass without a policy bypass. Native Linux tests report 389 passed, 17 ignored;
+Clippy/release pass; six pure timing/state tests pass.
 
-The guest is powered off after testing. All Windows data is in the isolated
-KoettLab guest; host Koett installation/data were not touched. No spend,
-license purchase, privileged helper, platform release or Mac app change.
+The guest completed a full Windows shutdown. No QEMU process or transfer server
+is left running. Its disk remains private under ~/.cache/koett-windows; the
+host Koett installation/data, Mac app and Linux product code were untouched.
+No spend, license purchase, privileged helper, install or release was made.
 
 The remaining sections preserve earlier investigation evidence and failures;
 they are not the current pass list.

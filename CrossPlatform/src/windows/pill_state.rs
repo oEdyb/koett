@@ -10,7 +10,7 @@ pub enum Phase {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PaintKey {
-    changed: u64,
+    revision: u64,
     hovered: bool,
     paused: bool,
     copied: bool,
@@ -26,6 +26,7 @@ pub struct State {
     pub drawing: bool,
     pub media_result: bool,
     changed: u64,
+    revision: u64,
     left_hover: Option<u64>,
 }
 impl Default for State {
@@ -38,6 +39,7 @@ impl Default for State {
             drawing: false,
             media_result: false,
             changed: 0,
+            revision: 0,
             left_hover: None,
         }
     }
@@ -45,6 +47,7 @@ impl Default for State {
 impl State {
     pub fn set(&mut self, phase: Phase, now: u64) {
         self.phase = phase;
+        self.revision = self.revision.wrapping_add(1);
         self.changed = now;
         self.copied = false;
         self.drawing = false;
@@ -62,6 +65,7 @@ impl State {
     }
     pub fn copy(&mut self, now: u64) {
         self.copied = true;
+        self.revision = self.revision.wrapping_add(1);
         self.changed = now;
     }
     pub fn opacity(&self, now: u64, reduced: bool) -> f32 {
@@ -93,7 +97,7 @@ impl State {
     }
     pub fn paint_key(&self) -> PaintKey {
         PaintKey {
-            changed: self.changed,
+            revision: self.revision,
             hovered: self.hovered,
             paused: self.paused,
             copied: self.copied,
@@ -130,6 +134,18 @@ mod tests {
         let drawing = s.paint_key();
         s.copy(30);
         assert!(s.paint_key() != drawing);
+    }
+    #[test]
+    fn transitions_within_one_clock_tick_still_refresh_the_pill() {
+        let mut s = State::default();
+        s.set(Phase::Recording, 0);
+        let recording = s.paint_key();
+        s.set(Phase::Transcribing, 0);
+        assert!(s.paint_key() != recording);
+        s.set(Phase::Done("first".into()), 0);
+        let first = s.paint_key();
+        s.set(Phase::Done("second".into()), 0);
+        assert!(s.paint_key() != first);
     }
     #[test]
     fn done_leaves_at_two_seconds_including_fade() {

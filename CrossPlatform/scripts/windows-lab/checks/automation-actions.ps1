@@ -1,4 +1,9 @@
 $ErrorActionPreference='Stop'
+if(-not ('LabEdit' -as [type])){Add-Type @'
+using System;using System.Text;using System.Runtime.InteropServices;
+public class LabEdit { [DllImport("user32.dll",CharSet=CharSet.Unicode)]public static extern IntPtr SendMessage(IntPtr h,uint m,IntPtr w,StringBuilder s);public static string Read(IntPtr h){var s=new StringBuilder(4096);SendMessage(h,0xD,(IntPtr)4096,s);return s.ToString();}}
+'@
+}
 $targetCode='Add-Type -AssemblyName System.Windows.Forms;$f=New-Object Windows.Forms.Form;$f.Text="Koett Focus Target";$f.Width=700;$f.Height=300;$t=New-Object Windows.Forms.TextBox;$t.Multiline=$true;$t.Dock="Fill";$f.Controls.Add($t);$f.Add_Shown({$f.Activate();$t.Focus()});[void]$f.ShowDialog()'
 $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($targetCode))
 $target=[LabDriver]::ByTitle('Koett Focus Target')
@@ -38,6 +43,10 @@ $steps+=Get-LabStep 'done-copied'
 Start-Sleep -Milliseconds 1300
 $steps+=Get-LabStep 'copied-hides-after-second'
 Activate-LabEditor $target
+[Windows.Forms.SendKeys]::SendWait('^a{BACKSPACE}')
+Start-Sleep -Milliseconds 100
+$beforePasteText=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
+if($beforePasteText-ne''){throw 'The isolated editor did not clear before the Paste check'}
 Set-LabPhase 1
 Set-LabPhase 4
 Start-Sleep -Milliseconds 2500
@@ -45,11 +54,6 @@ $steps+=Get-LabStep 'not-pasted-persists'
 $beforePaste=Get-LabFocus
 $null=Invoke-LabButton $overlay 'Paste'
 Start-Sleep -Milliseconds 300
-if(-not ('LabEdit' -as [type])){Add-Type @'
-using System;using System.Text;using System.Runtime.InteropServices;
-public class LabEdit { [DllImport("user32.dll",CharSet=CharSet.Unicode)]public static extern IntPtr SendMessage(IntPtr h,uint m,IntPtr w,StringBuilder s);public static string Read(IntPtr h){var s=new StringBuilder(4096);SendMessage(h,0xD,(IntPtr)4096,s);return s.ToString();}}
-'@
-}
 $text=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
 $steps+=Get-LabStep 'not-pasted-retry'
-@{passed=($copied-eq'Desktop lab result'-and$text.Contains('Desktop lab recovery')-and@($steps|Where-Object {$_.focus.hwnd-ne$before.hwnd-or$_.focus.pid-ne$before.pid}).Count-eq0);artifact=(Get-LabArtifact);copied=$copied;pasted_editor_text=$text;before_paste=$beforePaste;steps=$steps}
+@{passed=($copied-eq'Desktop lab result'-and($text -ceq 'Desktop lab recovery')-and@($steps|Where-Object {$_.focus.hwnd-ne$before.hwnd-or$_.focus.pid-ne$before.pid}).Count-eq0);artifact=(Get-LabArtifact);copied=$copied;editor_text_before_paste=$beforePasteText;exact_insert=($text -ceq 'Desktop lab recovery');pasted_editor_text=$text;before_paste=$beforePaste;steps=$steps}
