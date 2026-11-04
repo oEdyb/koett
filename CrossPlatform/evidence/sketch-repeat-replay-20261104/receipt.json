@@ -1,0 +1,276 @@
+{
+  "scope": "Private KWin/compositor-key experiment. No production replay enabled. Extra prototype pastes were confined to private Chrome.",
+  "fixture": {
+    "copied_model": "/home/olle/.cache/koett-repeat-replay/model-copy",
+    "is_symlink": false,
+    "private_sketch_png_sha256": "8054d525afdefda90e8e88ef39a9739a5c0213e8e68aebc2e67833ecdb21ae67"
+  },
+  "intent": {
+    "chrome_paste": {
+      "reads": [
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792924074920
+        },
+        {
+          "bytes": 22257,
+          "event": "read",
+          "mime": "image/png",
+          "time_us": 1793792924075370
+        },
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792924075519
+        }
+      ],
+      "signals": [
+        {
+          "trusted": true,
+          "time_us": 1793792924074000,
+          "focused": true
+        }
+      ],
+      "pastes": [
+        {
+          "trusted": true,
+          "types": [
+            "text/plain",
+            "Files"
+          ]
+        }
+      ],
+      "images": 1,
+      "text": ""
+    },
+    "canceled_key_plus_background_reader": {
+      "reads": [
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792924757164
+        },
+        {
+          "bytes": 22257,
+          "event": "read",
+          "mime": "image/png",
+          "time_us": 1793792924789935
+        },
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792924790859
+        }
+      ],
+      "signals": [
+        {
+          "trusted": true,
+          "time_us": 1793792924757000,
+          "focused": true
+        }
+      ],
+      "browser_prefetch_before_manager": [
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792924757164
+        }
+      ],
+      "pastes": [],
+      "focused": true,
+      "images": 0,
+      "text": "",
+      "first_read_after_key_ms": 0.164
+    },
+    "background_reader_only": {
+      "reads": [
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792925115439
+        },
+        {
+          "bytes": 22257,
+          "event": "read",
+          "mime": "image/png",
+          "time_us": 1793792925116462
+        },
+        {
+          "bytes": 28,
+          "event": "read",
+          "mime": "text/plain;charset=utf-8",
+          "time_us": 1793792925117238
+        }
+      ],
+      "new_signals": 0,
+      "focused": true
+    },
+    "indistinguishable_mime_sequence": true,
+    "replay_injected": true,
+    "false_replay": {
+      "focused": true,
+      "owned": true,
+      "original_trusted_key": {
+        "trusted": true,
+        "time_us": 1793792925337000,
+        "focused": true
+      },
+      "original_paste_events": 0,
+      "after_replay_paste_events": 1,
+      "unexpected_images": 1,
+      "extra_paste_injected_in_private_lab": true
+    },
+    "first_format_inference_duplicate": {
+      "first_requested_mime": "text/plain;charset=utf-8",
+      "original_images": 1,
+      "images_after_replay_image_leg": 2,
+      "replay_text_leg_run": false
+    },
+    "focus_change": {
+      "same_browser_window": true,
+      "original_target_still_focused": false,
+      "new_target_id": "other",
+      "window_only_replay_injected_in_private_lab": true,
+      "unexpected_new_target_text": "Koett repeat clipboard probe"
+    }
+  },
+  "ownership": {
+    "detached": true,
+    "newer_copy_exact": true
+  },
+  "targets": {
+    "mixed": {
+      "t3": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792933416718
+          },
+          {
+            "bytes": 22257,
+            "event": "read",
+            "mime": "image/png",
+            "time_us": 1793792933418739
+          },
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792933418869
+          },
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792933420460
+          }
+        ],
+        "images": 1,
+        "text_occurrences": 0
+      },
+      "chrome": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792934771203
+          },
+          {
+            "bytes": 22257,
+            "event": "read",
+            "mime": "image/png",
+            "time_us": 1793792934771583
+          },
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792934771676
+          }
+        ],
+        "images": 1,
+        "text_occurrences": 0
+      },
+      "terminal": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792936727272
+          }
+        ],
+        "exact_text": true
+      },
+      "sent_messages": 0,
+      "replay_injected": false
+    },
+    "html": {
+      "t3": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792942533150
+          },
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792942536690
+          },
+          {
+            "bytes": 29771,
+            "event": "read",
+            "mime": "text/html",
+            "time_us": 1793792942537230
+          }
+        ],
+        "images": 0,
+        "text_occurrences": 1
+      },
+      "chrome": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792943921767
+          },
+          {
+            "bytes": 29771,
+            "event": "read",
+            "mime": "text/html",
+            "time_us": 1793792943922168
+          }
+        ],
+        "images": 1,
+        "text_occurrences": 1
+      },
+      "terminal": {
+        "reads": [
+          {
+            "bytes": 28,
+            "event": "read",
+            "mime": "text/plain;charset=utf-8",
+            "time_us": 1793792945877214
+          }
+        ],
+        "exact_text": true
+      },
+      "sent_messages": 0,
+      "replay_injected": false
+    }
+  }
+}
