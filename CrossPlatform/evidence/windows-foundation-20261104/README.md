@@ -21,15 +21,18 @@ clock. Render target recreated after drawing failure. Scale 300x48 DIP geometry
 and rounded region for the target monitor. Explicit WM_MOUSEACTIVATE rejection
 reinforces existing nonactivation styles. Keep capsule visible during transcription.
 Bounded 64-column measured-RMS meter, 150 ms columns, Mac dB mapping and smoothing.
+System light/dark palette selection and reduced-motion one-second redraws are wired
+(the 33 ms meter sampling continues); neither was inspected on Windows.
 Existing stable tray identity, Explorer restart handler and startup menu preserved.
 
 This is an intermediate renderer, not the finished approved composition pill.
-DirectComposition, sub-column scrolling, exact palette/theme, reduced-motion
-handling, hover/pause/cancel controls, done/recovery/error states and transitions,
+DirectComposition, sub-column scrolling, hover/pause/cancel controls, done/recovery/error states and transitions,
 and native Settings/History are still outstanding. No all-feature parity claim.
 
 ## Verification
 
+- linux-tests.log: native Linux suite: 370 passed, 14 ignored; isolation test
+  additionally passed. Uses existing pinned ASR-only native cache. No Linux UI run.
 - meter-tests.log: standalone Rust meter tests, 4 passed. Does not test Win32 rendering.
 - windows-clippy.log: all-targets Windows Rust metadata checking, warnings denied.
   DOCS_RS=1 skips sherpa native linking; LIBSQLITE3_SYS_USE_PKG_CONFIG=1 and

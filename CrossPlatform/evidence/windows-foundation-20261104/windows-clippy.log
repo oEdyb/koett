@@ -1,3 +1,3 @@
-Running as unit: run-p64287-i4255627.scope; invocation ID: 1c4c951083d44c3f97c8b2b8d03c0a64
-   Compiling koett-engine v0.2.0-linux.1 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.42s
+Running as unit: run-p75323-i4278227.scope; invocation ID: efaef0528884490083c47791a032e2b2
+    Checking koett-engine v0.2.0-linux.1 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.71s

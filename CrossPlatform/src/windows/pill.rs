@@ -50,13 +50,28 @@ impl Renderer {
             self.target.BindDC(dc, &bounds)?;
             let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) as f32;
             self.target.SetDpi(dpi, dpi);
-            let background = color(0.13, 0.12, 0.11);
-            let coral = self
-                .target
-                .CreateSolidColorBrush(&color(1.0, 0.49, 0.42), None)?;
-            let white = self
-                .target
-                .CreateSolidColorBrush(&color(0.98, 0.98, 0.97), None)?;
+            let light = light_theme();
+            let background = if light {
+                color(1.0, 1.0, 1.0)
+            } else {
+                color(0.075, 0.075, 0.08)
+            };
+            let coral = self.target.CreateSolidColorBrush(
+                &if light {
+                    color(0.85, 0.267, 0.227)
+                } else {
+                    color(1.0, 0.31, 0.26)
+                },
+                None,
+            )?;
+            let white = self.target.CreateSolidColorBrush(
+                &if light {
+                    color(0.11, 0.098, 0.09)
+                } else {
+                    color(1.0, 1.0, 1.0)
+                },
+                None,
+            )?;
             self.target.BeginDraw();
             self.target.Clear(Some(&background));
             self.target.FillRoundedRectangle(
@@ -106,4 +121,38 @@ fn rect(left: f32, top: f32, right: f32, bottom: f32) -> D2D_RECT_F {
         right,
         bottom,
     }
+}
+
+pub(super) fn reduced_motion() -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SPI_GETCLIENTAREAANIMATION, SystemParametersInfoW,
+    };
+    let mut enabled = windows::core::BOOL(1);
+    unsafe {
+        let _ = SystemParametersInfoW(
+            SPI_GETCLIENTAREAANIMATION,
+            0,
+            Some((&mut enabled as *mut windows::core::BOOL).cast()),
+            Default::default(),
+        );
+    }
+    !enabled.as_bool()
+}
+
+fn light_theme() -> bool {
+    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_DWORD, RegGetValueW};
+    let mut value = 0_u32;
+    let mut size = 4_u32;
+    unsafe {
+        let _ = RegGetValueW(
+            HKEY_CURRENT_USER,
+            w!("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"),
+            w!("AppsUseLightTheme"),
+            RRF_RT_REG_DWORD,
+            None,
+            Some((&mut value as *mut u32).cast()),
+            Some(&mut size),
+        );
+    }
+    value != 0
 }

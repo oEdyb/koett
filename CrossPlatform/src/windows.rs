@@ -90,6 +90,7 @@ struct WindowsApp {
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     meter: meter::Meter,
+    last_pill_redraw: Option<Instant>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
     levels: Option<AudioLevels>,
@@ -121,6 +122,7 @@ pub fn run() -> Result<(), String> {
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
         meter: meter::Meter::default(),
+        last_pill_redraw: None,
         shortcut_window: HWND::default(),
         registered_shortcut: None,
         levels: None,
@@ -356,8 +358,15 @@ unsafe extern "system" fn window_proc(
                             .map(|v| v.0)
                             .unwrap_or(0.0);
                         app.meter.sample(elapsed, rms);
-                        unsafe {
-                            let _ = InvalidateRect(Some(app.overlay), None, false);
+                        if !pill::reduced_motion()
+                            || app
+                                .last_pill_redraw
+                                .is_none_or(|t| t.elapsed() >= Duration::from_secs(1))
+                        {
+                            app.last_pill_redraw = Some(Instant::now());
+                            unsafe {
+                                let _ = InvalidateRect(Some(app.overlay), None, false);
+                            }
                         }
                     }
                 }
