@@ -333,14 +333,16 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "draw-lock"
         )
     }) {
         let response = control::request(&command)?;
         println!("{response}");
-        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
-            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
-                == false
+        if matches!(
+            command.as_str(),
+            "drawing-status" | "undo-drawing" | "draw-lock"
+        ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+            == false
         {
             std::process::exit(1);
         }
@@ -1315,7 +1317,12 @@ async fn run_wayland(
             }
         }
         if escape.poll(app.status == AppStatus::Recording) {
-            app.command(EngineCommand::Cancel, || None);
+            if sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire) {
+                // Esc leaves draw lock and keeps the sketch; a second Esc cancels.
+                sketch::ESCAPE_UNLOCK.store(true, std::sync::atomic::Ordering::Release);
+            } else {
+                app.command(EngineCommand::Cancel, || None);
+            }
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             let (action, paste_request) = match action {

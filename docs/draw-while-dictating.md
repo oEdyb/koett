@@ -13,8 +13,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   keyboard devices whenever they're readable, so the overlay never takes
   keyboard focus. About 60 times a second it samples which keys are held
   (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly contains
-  every held key), keeps only Shift/Ctrl/Alt/Super and a yes/no for "another key
-  is down", stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
+  every held key), keeps only Shift/Ctrl/Alt/Super, a yes/no for "another key
+  is down", the chosen draw-lock key and, while locked, Z, stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
   opens keyboards only while a dictation with drawing records. Keyboards are
   found through sysfs capabilities and rescanned every 2 s, so hot-plugged ones
   join and unplugged handles are dropped; unreadable ones are reported.
@@ -67,6 +67,23 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Frames are scoped to one recording. Every recording start, with drawing on or
   off, starts a new scope; a cancelled or failed recording discards its frames,
   and captures finishing after their recording ended are rejected.
+- **Draw lock** (Linux). `Ctrl+Alt+D`, set under Settings › Draw on screen, toggles
+  it while recording. `koett draw-lock` does the same, so a desktop keybinding can
+  run it and keep the key from reaching the focused app. While locked the mouse
+  draws only with the left button down, and lifting it doesn't end the sketch: every
+  stroke joins one sketch, so one image, per monitor touched. Clicks reach no app,
+  no pin is dropped, and typing keeps working because the overlay never takes
+  keyboard focus. The pill shows the pencil for the whole lock in its usual row and
+  stays clickable, so Stop and Cancel always work.
+- Toggling off, stopping the recording or pressing Esc captures the sketches. Esc
+  does not cancel while locked, because losing a dictation to a reflex is worse than
+  a second key press; the next Esc cancels as usual. A lock ends itself if every
+  keyboard disappears, since nothing else could toggle it off.
+- While locked, right-click and Ctrl+Z remove the last stroke. Koett samples key
+  state and doesn't consume keys, so the focused app also gets the Ctrl+Z; right-click
+  reaches no app. The lock key is a physical key position and the app sees it too. A
+  lock key equal to another Koett shortcut is rejected in Settings, and ignored if it
+  arrives that way as the default.
 - Recognizer word timestamps link speech to sketches: each sketch owns the words
   from the start of the clause in progress when it began until the next sketch;
   words before the first sketch belong to it. Clauses break at `, . ; : ? ! …`
