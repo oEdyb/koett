@@ -303,8 +303,14 @@ fn accessible(
     deadline: Instant,
 ) -> Found {
     let point = window
-        .tile_pos
-        .map(|tile| window_point(surface_point, tile, window.window_offset));
+        .geometry
+        .as_ref()
+        .and_then(|geometry| geometry.point(screen_point))
+        .or_else(|| {
+            window
+                .tile_pos
+                .map(|tile| window_point(surface_point, tile, window.window_offset))
+        });
     let limit = remaining(deadline).min(ACCESSIBILITY);
     let mut found = Found::default();
     let Ok(runtime) = tokio::runtime::Builder::new_current_thread()
