@@ -13,5 +13,6 @@
     "status": "blocked",
     "reason": "private_pairing_bootstrap_screen",
     "messages_sent": 0
-  }
+  },
+  "tested_source_commit": "e44099844b767314ee2c277b2ee7bd2bc3260c70"
 }

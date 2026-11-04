@@ -96,9 +96,9 @@ receipts are in `CrossPlatform/evidence/linux-paste-focus/`.
   synchronization timeout, focus restoration, held modifiers, final post checks,
   refused changed/remapped targets, explicit recovery binding, query timeout,
   bounded private logging and pending/recovery result messages.
-- On the rebased source, full Rust suite: 413 passed, 19 ignored. After the final
-  post-check change, Linux suite: 199 passed, 9 ignored. Clippy with warnings
-  denied, formatting and release build passed. All 44 supply-chain script tests,
+- After rebasing onto the draw-lock merge, full Rust suite: 420 passed,
+  19 ignored. Clippy with warnings denied, formatting and release build passed.
+  All 50 supply-chain script tests,
   inventory/SBOM validation and 700 notice files passed; policy unchanged.
 - Local Windows cross-check is unavailable: the ordinary check rejects the
   Linux ASR library receipt for a Windows target; the metadata-only attempt also

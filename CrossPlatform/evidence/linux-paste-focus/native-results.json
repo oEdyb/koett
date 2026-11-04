@@ -7,26 +7,26 @@
   ],
   "overlay_release": [
     {
-      "captured": 18,
-      "expected": 18,
+      "captured": 2,
+      "expected": 2,
       "focused_missing": true,
       "overlay_active": true
     },
     {
-      "elapsed_ms": 339,
+      "elapsed_ms": 345,
       "error": null,
       "ok": true
     }
   ],
   "overlay_held": [
     {
-      "captured": 18,
-      "expected": 18,
+      "captured": 2,
+      "expected": 2,
       "focused_missing": true,
       "overlay_active": true
     },
     {
-      "elapsed_ms": 1113,
+      "elapsed_ms": 1095,
       "error": "Not pasted \u00b7 saved. Use Paste or Copy",
       "ok": false
     }
@@ -43,5 +43,6 @@
       "ok": true
     }
   ],
-  "contents_logged": false
+  "contents_logged": false,
+  "tested_source_commit": "e44099844b767314ee2c277b2ee7bd2bc3260c70"
 }

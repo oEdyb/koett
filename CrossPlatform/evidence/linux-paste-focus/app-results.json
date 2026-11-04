@@ -3,5 +3,8 @@
   "changed_target_received_nothing": true,
   "recovery_inserted_once": true,
   "transcript_bytes": 121,
-  "contents_logged": false
+  "contents_logged": false,
+  "tested_source_commit": "e44099844b767314ee2c277b2ee7bd2bc3260c70",
+  "build": "release",
+  "binary_sha256": "942691d902b2f257400546f09ef731fc010a39446f84e2d1de757de5ad61d65a"
 }
