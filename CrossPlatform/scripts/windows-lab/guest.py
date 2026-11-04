@@ -1,7 +1,9 @@
 import base64,json,socket,sys,time
 from pathlib import Path
 s=socket.socket(socket.AF_UNIX);s.settimeout(180);s.connect(str(Path.home()/'.cache/koett-windows/serial.sock'))
-request={'id':str(time.time_ns()),'code':base64.b64encode(Path(sys.argv[1]).read_bytes()).decode()}
+script=Path(sys.argv[1]).read_bytes()
+if len(sys.argv)>3: script=Path(sys.argv[3]).read_bytes()+b'\n'+script
+request={'id':str(time.time_ns()),'code':base64.b64encode(script).decode()}
 s.sendall((json.dumps(request)+'\n').encode());f=s.makefile('r')
 for line in f:
  try: result=json.loads(line)

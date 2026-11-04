@@ -96,6 +96,7 @@ struct WindowsApp {
     status: AppStatus,
     paste_target: Option<HWND>,
     overlay: HWND,
+    overlay_previous_window: Cell<Option<HWND>>,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     last_render_error: Cell<Option<Instant>>,
     pill_buttons: Option<pill_buttons::Buttons>,
@@ -158,6 +159,7 @@ pub fn run() -> Result<(), String> {
         },
         paste_target: None,
         overlay: HWND::default(),
+        overlay_previous_window: Cell::new(None),
         pill_renderer: RefCell::new(None),
         last_render_error: Cell::new(None),
         pill_buttons: None,
@@ -486,6 +488,18 @@ unsafe extern "system" fn overlay_proc(
         }
         return Default::default();
     }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_ACTIVATE
+        && wparam.0 & 0xffff != windows::Win32::UI::WindowsAndMessaging::WA_INACTIVE as usize
+        && lparam.0 != 0
+    {
+        let cell = APP.load(Ordering::Acquire);
+        if !cell.is_null()
+            && let Ok(app) = unsafe { &*cell }.try_borrow()
+        {
+            app.overlay_previous_window
+                .set(Some(HWND(lparam.0 as *mut _)));
+        }
+    }
     if message == WM_MOUSEACTIVATE {
         return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
     }
@@ -779,6 +793,19 @@ impl WindowsApp {
     }
 
     fn pill_click(&mut self, x: i32) {
+        // Standard UI Automation Invoke can activate a native BUTTON even in a
+        // WS_EX_NOACTIVATE window. Return to the window it displaced before any
+        // action. Paste still checks that this is the original recording target.
+        // If the user switched apps, restoring that newer window cannot bypass
+        // the original-target guard.
+        unsafe {
+            if GetForegroundWindow() == self.overlay
+                && let Some(previous) = self.overlay_previous_window.get()
+                && previous != self.overlay
+            {
+                let _ = SetForegroundWindow(previous);
+            }
+        }
         let now = self.clock.elapsed().as_millis() as u64;
         match &self.pill_state.phase {
             pill_state::Phase::Recording | pill_state::Phase::Transcribing

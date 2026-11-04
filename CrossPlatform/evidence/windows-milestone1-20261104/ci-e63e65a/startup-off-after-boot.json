@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "result": {
+    "phase": "startup-off-after-full-boot",
+    "processes": [],
+    "registry": null,
+    "focus": {
+      "hwnd": 131190,
+      "process": "explorer",
+      "pid": 5012
+    }
+  },
+  "id": "1793819308614430972"
+}
