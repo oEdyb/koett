@@ -26,6 +26,15 @@ private struct Koett {
     static func main() {
         let arguments = CommandLine.arguments.dropFirst()
 
+        if let flag = arguments.firstIndex(of: "--control") {
+            let commands = Array(arguments.dropFirst(flag - arguments.startIndex + 1))
+            let reply: ControlReply
+            do { reply = try LocalControlSocket.request(commands) }
+            catch { reply = .failure("unavailable", error.localizedDescription) }
+            if let data = try? JSONEncoder().encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
+            exit(reply.ok ? EXIT_SUCCESS : EXIT_FAILURE)
+        }
+
         if arguments.contains("--register-login") {
             do {
                 try registerLoginItem()
@@ -106,6 +115,7 @@ private struct Koett {
 
         if arguments.contains("--help") {
             print("Usage: koett [--parakeet | --parakeet-v3 | --parakeet-110m | --nemotron]")
+            print("       koett --control COMMAND [ARG]   (local JSON control; status by default)")
             print("       koett --import-dictionary FILE   (while Koett is quit)")
             print("Command-line model flags override the saved model for this launch.")
             print("Use the menu-bar icon to choose the model, mode, and shortcut.")
@@ -174,6 +184,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller.installMenu()
+        controller.startLocalControl()
         print("Checking microphone and Accessibility access...")
         Task { @MainActor in
             await controller.start()
@@ -181,6 +192,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        controller.controlServer?.stop()
         controller.stopS1Mini()
     }
 

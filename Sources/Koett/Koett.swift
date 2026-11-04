@@ -25,6 +25,8 @@ final class KoettController: NSObject {
         case toggle
     }
 
+    var controlRequested = false
+    var controlServer: LocalControlServer?
     var automaticPasteTarget: PasteTarget?
     var mediaPauseTask: Task<Void, Never>?
     let speechEngine: SpeechEngine
@@ -79,6 +81,7 @@ final class KoettController: NSObject {
                 if state == .ready {
                     activeDictationID = nil
                     automaticPasteTarget = nil
+                    if controlRequested { startLocalControl() }
                 }
                 microphonePreview?.refresh()
                 refreshEscapeMonitor()

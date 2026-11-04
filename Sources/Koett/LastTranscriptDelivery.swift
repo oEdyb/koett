@@ -83,7 +83,7 @@ extension KoettController: NSMenuDelegate {
         }
     }
 
-    private func performLastTranscriptAction(_ action: PendingLastTranscriptAction) {
+    func performLastTranscriptAction(_ action: PendingLastTranscriptAction) {
         guard state == .ready else { return }
         if case .paste(let text) = action, text == lastTranscript, let png = lastTranscriptImage {
             automaticPasteTarget = PasteTarget.capture()
