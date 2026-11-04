@@ -414,6 +414,7 @@ pub struct RecordingOverlay {
     state: Rc<RefCell<Pill>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
     layer_shell: PillLayer,
+    closed: Rc<std::cell::Cell<bool>>,
     layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
@@ -726,6 +727,14 @@ impl RecordingOverlay {
             window.destroy();
             return None;
         }
+        let closed = Rc::new(std::cell::Cell::new(false));
+        window.connect_close_request({
+            let closed = closed.clone();
+            move |_| {
+                closed.set(true);
+                gtk::glib::Propagation::Proceed
+            }
+        });
         window.add_css_class("koett-pill");
         window.set_focusable(false);
         window.set_can_target(false);
@@ -890,6 +899,7 @@ impl RecordingOverlay {
             state,
             tick,
             layer_shell,
+            closed,
             layout: RefCell::new(super::monitor_layout::MonitorLayout::new()),
         })
     }
@@ -899,12 +909,14 @@ impl RecordingOverlay {
         if let Some(id) = self.tick.borrow_mut().take() {
             id.remove();
         }
-        self.window.destroy();
+        if !self.closed.replace(true) {
+            self.window.destroy();
+        }
     }
 
     /// Keeps Done and recovery up while the pointer rests on the pill.
     pub fn hovered(&self) -> bool {
-        self.state.borrow().hovered
+        !self.closed.get() && self.state.borrow().hovered
     }
 
     /// Copy or Paste on a finished pill, reported once.
@@ -933,6 +945,9 @@ impl RecordingOverlay {
         media_preview: Option<&str>,
         message: Option<&str>,
     ) {
+        if self.closed.get() {
+            return;
+        }
         if self.layout.borrow().changed() {
             let layout = super::monitor_layout::MonitorLayout::new();
             let previous = self

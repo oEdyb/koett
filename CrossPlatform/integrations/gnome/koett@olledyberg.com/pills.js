@@ -54,7 +54,8 @@ export class Pills {
     }
 
     _createdWindow(window) {
-        if (![...this._entries.values()].some(e => e.pid === window.get_pid())) return;
+        if (window.get_window_type() !== Meta.WindowType.NORMAL ||
+            ![...this._entries.values()].some(e => e.pid === window.get_pid())) return;
         window.inhibit_mapped();
         const check = () => {
             const title = window.get_title();
@@ -64,16 +65,20 @@ export class Pills {
                 entry.window = window;
                 window.set_type(Meta.WindowType.DOCK);
                 window.hide_from_window_list();
-                window.make_above();
+                const shown = window.connect('shown', () => {
+                    window.make_above();
+                    this._place(entry);
+                });
                 window.stick();
                 const size = window.connect('size-changed', () => this._place(entry));
                 const unmanaged = window.connect('unmanaged', () => {
                     window.disconnect(size);
                     window.disconnect(unmanaged);
+                    window.disconnect(shown);
                     entry.window = null;
                     entry.disconnect = null;
                 });
-                entry.disconnect = () => { window.disconnect(size); window.disconnect(unmanaged); };
+                entry.disconnect = () => { window.disconnect(size); window.disconnect(shown); window.disconnect(unmanaged); };
                 this._place(entry);
             }
             this._release(window);
