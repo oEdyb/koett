@@ -46,3 +46,25 @@ function Invoke-LabButton([IntPtr]$window,[string]$name){
 }
 
 [LabDriver]::SetThreadDpiAwarenessContext([IntPtr](-4))|Out-Null
+
+if(-not ('LabActivation' -as [type])){Add-Type @'
+using System;using System.Runtime.InteropServices;
+public class LabActivation{
+ [DllImport("user32.dll")]public static extern bool SetWindowPos(IntPtr h,IntPtr a,int x,int y,int w,int z,uint flags);
+ [DllImport("user32.dll")]public static extern void mouse_event(uint f,uint x,uint y,uint d,UIntPtr extra);
+ public static void Click(){mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);}
+}
+'@}
+function Activate-LabEditor([IntPtr]$window){
+ [LabNative]::ShowWindow($window,9)|Out-Null
+ [LabActivation]::SetWindowPos($window,[IntPtr](-1),0,0,0,0,0x13)|Out-Null
+ $r=[LabDriver]::RectOf($window);[LabDriver]::SetCursorPos(($r[0]+60),($r[1]+85))|Out-Null
+ [LabActivation]::Click();Start-Sleep -Milliseconds 120
+ [LabActivation]::SetWindowPos($window,[IntPtr](-2),0,0,0,0,0x13)|Out-Null
+ $f=Get-LabFocus;if($f.hwnd-ne$window.ToInt64()){throw "Editor activation failed: $($f.hwnd) != $window"}
+}
+
+function Get-LabArtifact {
+ $app=Get-Process Koett -ErrorAction Stop|Select-Object -First 1
+ @{pid=$app.Id;path=$app.Path;sha256=(Get-FileHash $app.Path).Hash}
+}

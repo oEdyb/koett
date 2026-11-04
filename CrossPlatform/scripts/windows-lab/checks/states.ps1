@@ -6,7 +6,7 @@ $process=$null
 if($target -eq [IntPtr]::Zero){$process=Start-Process powershell.exe -ArgumentList @('-NoProfile','-STA','-EncodedCommand',$encoded) -PassThru}
 for($i=0;$i -lt 40 -and $target -eq [IntPtr]::Zero;$i++){Start-Sleep -Milliseconds 500;$target=[LabDriver]::ByTitle('Koett Focus Target')}
 if($target -eq [IntPtr]::Zero){throw 'Typing target did not open'}
-[LabNative]::SetForegroundWindow($target)|Out-Null
+Activate-LabEditor $target
 [LabDriver]::SetCursorPos(20,20)|Out-Null
 Start-Sleep -Milliseconds 300
 $before=Get-LabFocus
@@ -36,4 +36,4 @@ $steps=@($record,$transcribing,$done,$expired)
 foreach($case in @(@(4,'not-pasted'),@(5,'rescue-error'),@(6,'transient-error'),@(1,'recording-again'),@(10,'paused'),@(11,'drawing'),@(12,'media-result'))){
  Set-LabPhase $case[0];$steps+=Get-LabStep $case[1]
 }
-@{steps=$steps;target=$before;artifact='e63e65a'}
+@{passed=($record.focus_preserved -and $text.Contains('Typing remains here.') -and -not $expired.visible);steps=$steps;target=$before;artifact=(Get-LabArtifact)}

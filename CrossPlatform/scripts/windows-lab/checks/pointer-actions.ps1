@@ -6,7 +6,7 @@ $process=$null
 if($target -eq [IntPtr]::Zero){$process=Start-Process powershell.exe -ArgumentList @('-NoProfile','-STA','-EncodedCommand',$encoded) -PassThru}
 for($i=0;$i -lt 40 -and $target -eq [IntPtr]::Zero;$i++){Start-Sleep -Milliseconds 500;$target=[LabDriver]::ByTitle('Koett Focus Target')}
 if($target -eq [IntPtr]::Zero){throw 'Typing target did not open'}
-[LabNative]::SetForegroundWindow($target)|Out-Null
+Activate-LabEditor $target
 [LabDriver]::SetCursorPos(20,20)|Out-Null
 Start-Sleep -Milliseconds 300
 $before=Get-LabFocus
@@ -21,32 +21,32 @@ Set-LabPhase 1
 $r=Get-PillRect;$dpi=$r.dpi/96
 [LabDriver]::SetCursorPos(($r.left+120*$dpi),($r.top+24*$dpi))|Out-Null
 Start-Sleep -Milliseconds 300
-$steps+=Get-LabStep 'recording-hover-controls-e63'
+$steps+=Get-LabStep 'recording-hover-controls'
 $overlay=[LabDriver]::ByClass('KoettOverlayWindow')
 Click-Pill 135
-$steps+=Get-LabStep 'pause-button-invoked-e63'
+$steps+=Get-LabStep 'pause-button-invoked'
 Click-Pill 135
 Click-Pill 65
-$steps+=Get-LabStep 'cancel-button-hides-e63'
+$steps+=Get-LabStep 'cancel-button-hides'
 [LabDriver]::SetCursorPos(20,20)|Out-Null
 Set-LabPhase 3
 [LabDriver]::SetCursorPos(($r.left+270*$dpi),($r.top+24*$dpi))|Out-Null
 Start-Sleep -Milliseconds 2700
-$steps+=Get-LabStep 'done-hover-holds-e63'
+$steps+=Get-LabStep 'done-hover-holds'
 [LabDriver]::SetCursorPos(20,20)|Out-Null
 Start-Sleep -Milliseconds 1400
-$steps+=Get-LabStep 'done-hover-exit-hides-e63'
+$steps+=Get-LabStep 'done-hover-exit-hides'
 Set-LabPhase 3
 Click-Pill 265
 $copied=[Windows.Forms.Clipboard]::GetText()
-$steps+=Get-LabStep 'done-copied-e63'
+$steps+=Get-LabStep 'done-copied'
 Start-Sleep -Milliseconds 1300
-$steps+=Get-LabStep 'copied-hides-after-second-e63'
-[LabNative]::SetForegroundWindow($target)|Out-Null
+$steps+=Get-LabStep 'copied-hides-after-second'
+Activate-LabEditor $target
 Set-LabPhase 1
 Set-LabPhase 4
 Start-Sleep -Milliseconds 2500
-$steps+=Get-LabStep 'not-pasted-persists-e63'
+$steps+=Get-LabStep 'not-pasted-persists'
 $beforePaste=Get-LabFocus
 Click-Pill 210
 Start-Sleep -Milliseconds 300
@@ -56,5 +56,5 @@ public class LabEdit { [DllImport("user32.dll",CharSet=CharSet.Unicode)]public s
 '@
 }
 $text=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
-$steps+=Get-LabStep 'not-pasted-retry-e63'
-@{artifact='e63e65a';interaction='real guest mouse_event';copied=$copied;pasted_editor_text=$text;before_paste=$beforePaste;steps=$steps}
+$steps+=Get-LabStep 'not-pasted-retry'
+@{passed=($copied-eq'Desktop lab result'-and$text.Contains('Desktop lab recovery')-and@($steps|Where-Object {$_.focus.hwnd-ne$before.hwnd-or$_.focus.pid-ne$before.pid}).Count-eq0);artifact=(Get-LabArtifact);interaction='real guest mouse_event';copied=$copied;pasted_editor_text=$text;before_paste=$beforePaste;steps=$steps}

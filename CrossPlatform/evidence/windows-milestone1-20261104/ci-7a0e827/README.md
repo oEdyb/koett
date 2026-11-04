@@ -24,3 +24,23 @@ correctly refuses and leaves the original editor empty. The JSON captures
 foreground HWND/PID at every step. PR remains draft; Milestone 1 is open.
 Further diagnostics and source changes are not equivalent to retesting the
 final unmodified CI executable.
+
+
+## Source correction after this failed run
+
+The pill now exposes virtual UIA Button/Invoke fragments through its own
+DirectComposition HWND. The root owns virtual focus; Invoke posts an action
+without activating a native child HWND. The original recording-target Paste
+guard remains unchanged. Native Settings/History controls are unchanged.
+Windows-target all-target metadata Clippy passes, including the new ABI and
+state tests' compilation. No locally linked executable is claimed. The new
+Rust provider must pass a rebuilt-artifact regression before PR readiness.
+The isolated managed probe passes; it is separately labeled diagnostic only.
+
+The source also enables NIF_SHOWTIP for NOTIFYICON_VERSION_4 and uses a stable
+Koett icon identity with a current status tooltip, including after Explorer
+restart. The guest diagnostic showed that omitting NIF_SHOWTIP suppresses
+current tip text in Shell accessibility; adding it exposes the updated text.
+That source correction also awaits its rebuilt-artifact runtime check.
+Supply-chain outputs were regenerated for the explicit pinned windows-core
+macro dependency; policy remains unchanged.

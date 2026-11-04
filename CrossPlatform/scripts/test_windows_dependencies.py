@@ -34,12 +34,13 @@ class DependencyTests(unittest.TestCase):
             path=Path(directory)/'Koett.exe';path.write_bytes(executable('KERNEL32.dll'))
             self.assertTrue(verify(path)['system_only'])
     def test_accepts_windows_theme_import(self):
-        for delayed in [False,True]:
-            with self.subTest(delayed=delayed), tempfile.TemporaryDirectory() as directory:
-                path=Path(directory)/'Koett.exe';path.write_bytes(executable('UxTheme.dll',delayed))
-                self.assertTrue(verify(path)['system_only'])
+        for name in ['UxTheme.dll','UIAutomationCore.dll']:
+            for delayed in [False,True]:
+                with self.subTest(name=name,delayed=delayed), tempfile.TemporaryDirectory() as directory:
+                    path=Path(directory)/'Koett.exe';path.write_bytes(executable(name,delayed))
+                    self.assertTrue(verify(path)['system_only'])
     def test_rejects_unknown_imports(self):
-        for name in ['unknown.dll','uxtheme_extra.dll','VCRUNTIME140_1.dll']:
+        for name in ['unknown.dll','uxtheme_extra.dll','uiautomationcore_extra.dll','VCRUNTIME140_1.dll']:
             for delayed in [False,True]:
                 with self.subTest(name=name,delayed=delayed), tempfile.TemporaryDirectory() as directory:
                     path=Path(directory)/'Koett.exe';path.write_bytes(executable(name,delayed))

@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "result": {
+    "diagnostic_only": true,
+    "checks": [
+      {
+        "before": {
+          "hwnd": 262172,
+          "process": "powershell",
+          "pid": 9036
+        },
+        "name": "Direct Invoke",
+        "preserved": true,
+        "after": {
+          "hwnd": 262172,
+          "process": "powershell",
+          "pid": 9036
+        }
+      }
+    ],
+    "log": "2026-11-04T19:13:52.7363627Z virtual SetFocus no activation fg=262172\r\n2026-11-04T19:13:52.7385503Z virtual invoke fg=262172\r\n2026-11-04T19:13:52.7385503Z parent msg=273 w=101 l=0 fg=262172\r\n"
+  },
+  "id": "1793823234405111635"
+}

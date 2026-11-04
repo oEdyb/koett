@@ -44,8 +44,9 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_MENU, VK_RWIN, VK_SHIFT,
 };
 use windows::Win32::UI::Shell::{
-    NIF_GUID, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NIM_SETFOCUS,
-    NIM_SETVERSION, NIN_SELECT, NINF_KEY, NOTIFYICON_VERSION_4, NOTIFYICONDATAW, Shell_NotifyIconW,
+    NIF_GUID, NIF_ICON, NIF_MESSAGE, NIF_SHOWTIP, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY,
+    NIM_SETFOCUS, NIM_SETVERSION, NIN_SELECT, NINF_KEY, NOTIFYICON_VERSION_4, NOTIFYICONDATAW,
+    Shell_NotifyIconW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
@@ -96,7 +97,6 @@ struct WindowsApp {
     status: AppStatus,
     paste_target: Option<HWND>,
     overlay: HWND,
-    overlay_previous_window: Cell<Option<HWND>>,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     last_render_error: Cell<Option<Instant>>,
     pill_buttons: Option<pill_buttons::Buttons>,
@@ -159,7 +159,6 @@ pub fn run() -> Result<(), String> {
         },
         paste_target: None,
         overlay: HWND::default(),
-        overlay_previous_window: Cell::new(None),
         pill_renderer: RefCell::new(None),
         last_render_error: Cell::new(None),
         pill_buttons: None,
@@ -336,9 +335,8 @@ unsafe fn run_message_loop(
         .is_ok()
     {
         app.registered_shortcut = Some(shortcut);
-    } else {
-        app.update_tray();
     }
+    app.update_tray();
     if unsafe { SetTimer(Some(hwnd), POLL_TIMER_ID, 33, None) } == 0 {
         return Err("could not start the Koett event timer".to_string());
     }
@@ -459,15 +457,10 @@ unsafe extern "system" fn overlay_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
-    if message == windows::Win32::UI::WindowsAndMessaging::WM_DRAWITEM {
-        if lparam.0 != 0 {
-            unsafe {
-                pill_buttons::draw(
-                    &*(lparam.0 as *const windows::Win32::UI::Controls::DRAWITEMSTRUCT),
-                );
-            }
-        }
-        return windows::Win32::Foundation::LRESULT(1);
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_GETOBJECT
+        && let Some(result) = pill_buttons::object(hwnd, wparam, lparam)
+    {
+        return result;
     }
     if message == windows::Win32::UI::WindowsAndMessaging::WM_COMMAND {
         let cell = APP.load(Ordering::Acquire);
@@ -482,23 +475,16 @@ unsafe extern "system" fn overlay_proc(
                 105 => 210,
                 _ => -1,
             };
-            if x >= 0 {
+            if x >= 0
+                && app
+                    .pill_buttons
+                    .as_ref()
+                    .is_some_and(|buttons| buttons.allows(wparam.0 & 0xffff))
+            {
                 app.pill_click(x);
             }
         }
         return Default::default();
-    }
-    if message == windows::Win32::UI::WindowsAndMessaging::WM_ACTIVATE
-        && wparam.0 & 0xffff != windows::Win32::UI::WindowsAndMessaging::WA_INACTIVE as usize
-        && lparam.0 != 0
-    {
-        let cell = APP.load(Ordering::Acquire);
-        if !cell.is_null()
-            && let Ok(app) = unsafe { &*cell }.try_borrow()
-        {
-            app.overlay_previous_window
-                .set(Some(HWND(lparam.0 as *mut _)));
-        }
     }
     if message == WM_MOUSEACTIVATE {
         return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
@@ -793,19 +779,6 @@ impl WindowsApp {
     }
 
     fn pill_click(&mut self, x: i32) {
-        // Standard UI Automation Invoke can activate a native BUTTON even in a
-        // WS_EX_NOACTIVATE window. Return to the window it displaced before any
-        // action. Paste still checks that this is the original recording target.
-        // If the user switched apps, restoring that newer window cannot bypass
-        // the original-target guard.
-        unsafe {
-            if GetForegroundWindow() == self.overlay
-                && let Some(previous) = self.overlay_previous_window.get()
-                && previous != self.overlay
-            {
-                let _ = SetForegroundWindow(previous);
-            }
-        }
         let now = self.clock.elapsed().as_millis() as u64;
         match &self.pill_state.phase {
             pill_state::Phase::Recording | pill_state::Phase::Transcribing
@@ -996,14 +969,14 @@ impl WindowsApp {
             cbSize: size_of::<NOTIFYICONDATAW>() as u32,
             hWnd: self.hwnd,
             uID: 1,
-            uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_GUID,
+            uFlags: NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_GUID | NIF_SHOWTIP,
             uCallbackMessage: TRAY_MESSAGE,
             hIcon: unsafe { LoadIconW(None, IDI_APPLICATION) }
                 .map_err(|error| format!("could not load the Koett tray icon: {error}"))?,
             guidItem: TRAY_GUID,
             ..Default::default()
         };
-        set_wide_array(&mut tray.szTip, "Koett — Starting");
+        set_wide_array(&mut tray.szTip, "Koett");
         if !unsafe { Shell_NotifyIconW(NIM_ADD, &tray) }.as_bool() {
             return Err("could not add the Koett tray icon".to_string());
         }

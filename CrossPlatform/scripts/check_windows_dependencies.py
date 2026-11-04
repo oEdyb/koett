@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 import struct
 
-# SetWindowTheme is supplied by Windows, including clean Windows 11 installs.
+# SetWindowTheme and UI Automation are supplied by clean Windows 11 installs.
 # https://learn.microsoft.com/en-us/windows/win32/api/uxtheme/nf-uxtheme-setwindowtheme
-SYSTEM = set('kernel32 shell32 combase secur32 crypt32 advapi32 user32 gdi32 d3d11 d2d1 dcomp dwrite comdlg32 dxgi ole32 mmdevapi oleaut32 bcryptprimitives ntdll ws2_32 dbghelp setupapi ucrtbase bcrypt propsys shlwapi comctl32 dwmapi winmm winhttp ncrypt normaliz rpcrt4 cfgmgr32 powrprof version uuid wininet userenv wtsapi32 uxtheme'.split())
+# https://learn.microsoft.com/en-us/windows/win32/api/uiautomationcoreapi/nf-uiautomationcoreapi-uiareturnrawelementprovider
+SYSTEM = set('kernel32 shell32 combase secur32 crypt32 advapi32 user32 gdi32 d3d11 d2d1 dcomp dwrite comdlg32 dxgi ole32 mmdevapi oleaut32 bcryptprimitives ntdll ws2_32 dbghelp setupapi ucrtbase bcrypt propsys shlwapi comctl32 dwmapi winmm winhttp ncrypt normaliz rpcrt4 cfgmgr32 powrprof version uuid wininet userenv wtsapi32 uxtheme uiautomationcore'.split())
 
 
 def imports(data):

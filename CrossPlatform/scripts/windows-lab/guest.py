@@ -14,4 +14,6 @@ for line in f:
    if isinstance(value,dict):return {k:concise(v) for k,v in value.items() if k!='screenshot'}
    if isinstance(value,list):return [concise(v) for v in value]
    return value
-  print(json.dumps(concise(result))[:5000]); break
+  print(json.dumps(concise(result))[:5000])
+  if not result.get('ok') or (isinstance(result.get('result'),dict) and result['result'].get('passed') is False): sys.exit(1)
+  break

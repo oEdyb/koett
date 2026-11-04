@@ -14,12 +14,13 @@ python3 CrossPlatform/scripts/windows-lab/guest.py \
   CrossPlatform/scripts/windows-lab/checks/helpers.ps1
 ```
 
-These exact check bodies produced the e63e65a receipts. Their labels identify
-that artifact; use new output files and record the new executable hash on
-retest. `automation-actions.ps1` is a regression reproducer: e63e65a activates
+The archived e63e65a receipts used earlier check bodies. Current focus checks
+activate only the guest test editor through guest mouse input and verify its
+foreground HWND before continuing. They record the installed executable hash;
+use a new output file for each artifact. The client returns failure for a
+PowerShell error or an explicit `passed: false` result. `automation-actions.ps1` is a regression reproducer: e63e65a activates
 the pill and refuses Paste. The fixed executable must preserve the editor
-and paste the fixture. Also switch foreground to a second editor before
-invoking Paste: it must refuse to insert into the newer target.
+and paste the fixture. Then run `changed-target.ps1`: switching to a second editor must refuse Paste.
 
 `states` opens an isolated WinForms typing editor. `pointer-actions` checks
 real pointer controls and recovery. `scaling` needs Windows Display Settings
