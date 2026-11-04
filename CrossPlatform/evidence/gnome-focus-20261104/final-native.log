@@ -1,0 +1,74 @@
+Running as unit: run-p1433655-i5569317.scope; invocation ID: 8e0831af18c543b1b67f86015f471c93
+[
+  {
+    "case": "left",
+    "elapsed_ms": 2,
+    "focus": [
+      1,
+      "org.example.GnomeLeft"
+    ]
+  },
+  {
+    "case": "right",
+    "elapsed_ms": 2,
+    "focus": [
+      2,
+      "org.example.GnomeRight"
+    ]
+  },
+  {
+    "case": "alt-tab-left",
+    "elapsed_ms": 2,
+    "focus": [
+      1,
+      "org.example.GnomeLeft"
+    ]
+  },
+  {
+    "case": "overview",
+    "elapsed_ms": 1,
+    "focus": null
+  },
+  {
+    "case": "after-overview",
+    "elapsed_ms": 1,
+    "focus": [
+      1,
+      "org.example.GnomeLeft"
+    ]
+  },
+  {
+    "case": "unresponsive-shell",
+    "elapsed_ms": 250,
+    "focus": null
+  },
+  {
+    "case": "fresh-after-timeout",
+    "elapsed_ms": 2,
+    "focus": [
+      2,
+      "org.example.GnomeRight"
+    ]
+  },
+  {
+    "case": "left-again",
+    "elapsed_ms": 1,
+    "focus": [
+      1,
+      "org.example.GnomeLeft"
+    ]
+  },
+  {
+    "case": "disabled",
+    "elapsed_ms": 1,
+    "focus": null
+  },
+  {
+    "case": "reenabled",
+    "elapsed_ms": 2,
+    "focus": [
+      1,
+      "org.example.GnomeLeft"
+    ]
+  }
+]

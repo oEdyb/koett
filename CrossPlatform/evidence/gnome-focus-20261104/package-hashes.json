@@ -1,0 +1,98 @@
+{
+  "geoclue-2.8.2-2.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "f9a3ca2d95d48f0d26df9e3a737d9257e01e27258dc0c2909542b326d2e795f4",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "gnome-session-51.0-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "d8c6a5e3eeea96e70c684124570bc5e0ade35566268fe9734a5daaaa92b98a49",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "gjs-2:1.90.1-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "37bc62137c066f0b0eebeea53369184a138970b47233265f951363d7992f064e",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "geocode-glib-3.26.4-6-x86_64_v4.pkg.tar.zst": {
+    "sha256": "65bf83a7f6baaab48571d6b3b2b878c1044dc775adf370b8bc0e7beda2a0caf2",
+    "repositories": [
+      "cachyos-znver4.db"
+    ]
+  },
+  "gnome-settings-daemon-51.1-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "9e2288a405355cef6a381898268374e1612cd24afbe0443cb01b06fe5621bbd2",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "js140-140.17.0-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "0dd3f3190de3764ec4c5853c43e3b6c549bb9587aa0f8dcfcdbc6e36fd1ae874",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "libgweather-4-4.6.0-1.3-x86_64_v4.pkg.tar.zst": {
+    "sha256": "3e99f507ab300e57b24339c098de848a77e72a8742bbe9166dacbf8b3331ecf2",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "libibus-1.5.34-2.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "1659b6808733eaff4a325c5852077792bfde3aae90260f7debac7d25db1a259f",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "gweather-locations-2026.2-1.3-x86_64_v4.pkg.tar.zst": {
+    "sha256": "035f8e4cf7f06c05f1713728efed1e7c9557fc7599c5c3175e01eb1549876fb8",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "libgdm-51.1.1-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "ccd75e9e17c8416a38e4a042644c5d2eaff8f01df24f40c348a875c025bd64f7",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "libgusb-0.4.9-2.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "c002c965769b367e4f1b5438e521762bc945fd0463fadb97cc09876ce3d22c00",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "ibus-1.5.34-2.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "4a3099d6cb2ae79eb8162395c75aa8da424b01418fbfd0eda328a45906f339b8",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "mutter-51.1-1-x86_64.pkg.tar.zst": {
+    "sha256": "d1a7bd59d7e5edfade4aab2850a4804f2b47a23ac4f0c65789b6ad028229b02c",
+    "repositories": [
+      "cachyos.db"
+    ]
+  },
+  "gnome-shell-1:51.1-1.1-x86_64_v4.pkg.tar.zst": {
+    "sha256": "254b3444508626f4d888109d285671afd4a19b3cd2cbd649d66e64c6ed24ce35",
+    "repositories": [
+      "cachyos-extra-znver4.db"
+    ]
+  },
+  "colord-1.4.8-2-x86_64.pkg.tar.zst": {
+    "sha256": "383373868edc94b47c59386577e39be1ea156156047471ddfdc7b6725700183e",
+    "repositories": [
+      "extra.db"
+    ]
+  },
+  "webkitgtk-6.0-2.54.2-1-x86_64.pkg.tar.zst": {
+    "sha256": "38806dbdad248fb6f4bc6e609b3b5bac49f2ac250c2b0514b0595fba2fee0e80",
+    "repositories": [
+      "extra.db"
+    ]
+  }
+}

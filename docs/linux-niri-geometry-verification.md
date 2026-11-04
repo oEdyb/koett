@@ -5,8 +5,10 @@
 The optional pinned niri adapter provides tiled-window coordinates to Koett's
 existing context reader. Stock niri 26.04 still omits them. This implements a
 verified alternative; it does not claim stock-niri parity or install/replace a
-compositor. The host Koett batch installed separately is main `3b4785f`, without
-this adapter. GNOME integration remains next.
+compositor. The host Koett app was updated to main `d899540` after #73 merged. Its
+running binary hash and all four user-data/settings files were verified. The
+host compositor was not replaced: exact tiled pointer context still requires
+explicit adapter deployment. GNOME integration remains next.
 
 The adapter adds `koett_geometry_v1` only to a `PickWindow` reply. It captures
 pointer position, window-buffer position, visible geometry and full surface-tree

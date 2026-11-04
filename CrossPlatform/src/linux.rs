@@ -283,6 +283,7 @@ mod escape;
 mod feedback;
 mod fix_word_view;
 mod formatting_view;
+mod gnome_focus;
 mod history_view;
 mod image_paste;
 mod input_preview;
