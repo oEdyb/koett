@@ -734,7 +734,7 @@ impl RecordingOverlay {
         let copy_sketch = pill_button("");
         copy_sketch.set_icon_name("image-x-generic-symbolic");
         copy_sketch.set_tooltip_text(Some("Copy sketch"));
-        copy_sketch.update_property(&[gtk::accessible::Property::Label("Copy sketch")]);
+        super::menu::set_accessible_label(copy_sketch.upcast_ref(), "Copy sketch");
         copy_sketch.set_size_request(28, 28);
         main.put(&copy_sketch, COPY_X - 34.0, 10.0);
         copy.set_tooltip_text(Some("Copy text"));
@@ -1018,17 +1018,13 @@ impl RecordingOverlay {
             Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
         };
-        let has_sketch = matches!(phase, Phase::Done | Phase::Recovery)
+        let has_sketch = phase == Phase::Done
             && self
                 .latest
                 .borrow()
                 .as_deref()
                 .is_some_and(super::feedback::has_sketch);
-        let sketch_x = if phase == Phase::Recovery {
-            PASTE_X - 34.0
-        } else {
-            COPY_X - 34.0
-        };
+        let sketch_x = COPY_X - 34.0;
         if let Some(main) = self.copy_sketch.parent().and_downcast::<gtk::Fixed>() {
             main.move_(&self.copy_sketch, sketch_x, 10.0);
         }
@@ -1045,7 +1041,7 @@ impl RecordingOverlay {
             // Finished rows start at the strip's edge and stop 10 px before
             // their right-hand buttons (Mac `resultRect`).
             let (x, width) = match phase {
-                Phase::Recovery | Phase::Done if has_sketch => (44.0, sketch_x as i32 - 10 - 44),
+                Phase::Done if has_sketch => (44.0, sketch_x as i32 - 10 - 44),
                 Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
                 Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
                 Phase::Message => (44.0, WIDTH - 44 - 16),

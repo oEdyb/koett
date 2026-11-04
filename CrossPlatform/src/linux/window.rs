@@ -130,6 +130,15 @@ fn build_window(
         }
     });
     status_row.append(&recovery);
+    let copy_sketch = gtk::Button::with_label("Copy last sketch");
+    copy_sketch.set_visible(false);
+    status_row.append(&copy_sketch);
+    copy_sketch.connect_clicked({
+        let actions = actions.clone();
+        move |_| {
+            let _ = actions.send(TrayAction::Recovery("copy-sketch".into()));
+        }
+    });
     layout.append(&status_row);
     let delivery_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     delivery_row.add_css_class("koett-delivery");
