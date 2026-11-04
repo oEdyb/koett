@@ -17,13 +17,13 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Yes; empty-result path not fully traced | Engine; runtime unverified | Exercise silent live capture and empty ASR on all; add Nemotron trim only if streaming semantics allow |
 | Escape cancel | Yes, recording-only | X11 yes; Wayland recording-only with keyboard read access | No recording Esc path identified | Windows recording-scoped observer; Wayland read-only keyboard observer; [checks and permission fallback](linux-cancel-errors-verification.md), pill/CLI without access |
 | Paste into original target | Original PID/launch identity + available AX window checked per paste; no atomic receipt | niri/X11 guard; other Wayland desktops copy-only | HWND equality guard in `deliver`; receipt absent | Add Mac guard; Windows PID/liveness + per-stage recheck; keep copy fallback everywhere |
-| Terminal versus GUI paste chord | Configurable per-app image delivery | One global choice | Ctrl+V baseline | Per-app chord rules on Linux/Windows; never guess by sending both |
+| Terminal versus GUI paste chord | Configurable per-app image delivery | Per-app image rules with known niri identity; separate text chord | Ctrl+V baseline | Per-app chord rules on Linux/Windows; never guess by sending both |
 | Last transcript / Copy and Paste Last | Yes | Yes; CLI paste-last copies only | Shared persistence; no matching tray actions | Native actions + honest CLI naming on Windows; align Linux CLI behavior/docs |
 | Failed audio / failed text fallback | Yes | Yes | Shared engine/store paths; untested | Windows visible recovery + failure injection, preserve ASR/delivery separation |
 | Retry Save / recovery status | Retry Save + Copy Unsaved; stable recovery IDs | Yes | No full recovery UI | Add Retry Save/status on Mac and Windows; stable IDs prevent duplicate saves |
 | Crash during active capture | No automatic recovery | No, audio in memory | Unverified; no durable capture journal found | Optional bounded crash-safe local recording journal, explicit privacy/retention; never claim current recovery covers kills |
 | Long live dictation | Synthetic long-ASR probes, not full hardware proof | Not newly verified | Not verified | 30-minute live sessions; check memory, dictionary/progress on long-path chunking |
-| Permission onboarding | Live-status first-run window | No window; portal prompts | No focused onboarding | Small Linux/Windows status surface with system-settings links, no extra dictation screens |
+| Permission onboarding | Live-status first-run window | Manual Permissions window, live keyboard/shortcuts, explicit mic/screen checks | No focused onboarding | Small Linux/Windows status surface with system-settings links, no extra dictation screens |
 | Login toggle / tray or menu bar | Native toggle; explicit disabled preference survives reinstall | Yes | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
 
 Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,EscapeKeyMonitor,MicrophoneSelection,PermissionsWindow}.swift`; `CrossPlatform/src/{windows,runtime,audio,state,history}.rs`, `linux/{recording_overlay,input_preview,output,recovery,control}.rs`; [demo limits](video-demo-checklist.md).
@@ -104,3 +104,16 @@ No ordinary product feature above is declared impossible across an entire OS. So
 - **Protected capture:** [Windows capture protection](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity) can exclude content. Blank/denied capture must be reported; no bypass. Other platforms' protected-content behavior needs its own verification.
 
 “All features everywhere” means closing each row or shipping a clearly named closest alternative, not calling an absent feature impossible. No rows may be silently dropped. Acceptance and unresolved purchasing/security choices live in [Windows port plan](windows-port-plan.md).
+
+## Linux follow-up order
+
+[Row-4 checks and limits](linux-paste-permissions-verification.md): per-app image
+rules and the manual permissions surface. Next: row 5, then remaining row 6 gaps.
+After row 6, revisit these explicitly open integrations:
+
+- **Tiled niri pointer context:** stock IPC omits tiled window positions. Add a
+  trusted compositor geometry source or explicit browser integration; retain
+  image/window context when exact link/image coordinates cannot be proved.
+- **GNOME drawing overlay:** implement a GNOME Shell-compatible overlay/input
+  integration; layer-shell alone does not provide it. Verify pass-through,
+  recording-scoped gestures, capture exclusion, cancellation and accessibility.

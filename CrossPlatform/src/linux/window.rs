@@ -192,6 +192,25 @@ fn build_window(
         move |_, _| super::settings_view::show(&window, &panels, settings_saved.clone(), None, None)
     });
     application.add_action(&settings);
+    let permissions = gtk::gio::SimpleAction::new("permissions", None);
+    permissions.connect_activate({
+        let window = window.clone();
+        let panels = panels.clone();
+        let settings_saved = settings_saved.clone();
+        move |_, _| {
+            let parent = window.clone();
+            let panels = panels.clone();
+            let saved = settings_saved.clone();
+            super::permissions_view::show(
+                &window,
+                Rc::new(move |page| {
+                    super::settings_view::show(&parent, &panels, saved.clone(), None, Some(page))
+                }),
+            );
+        }
+    });
+    application.add_action(&permissions);
+
     let about = gtk::gio::SimpleAction::new("about", None);
     about.connect_activate({
         let window = window.clone();
@@ -545,6 +564,11 @@ fn build_window(
                                 None,
                                 Some("model"),
                             );
+                        }
+                    }
+                    Update::Status(message) if message == "@permissions" => {
+                        if let Some(app) = window.application() {
+                            app.activate_action("permissions", None);
                         }
                     }
                     Update::Status(message) if message == "@settings" => {

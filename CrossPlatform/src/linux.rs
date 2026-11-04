@@ -278,6 +278,7 @@ mod feedback;
 mod fix_word_view;
 mod formatting_view;
 mod history_view;
+mod image_paste;
 mod input_preview;
 pub(crate) mod media;
 mod media_view;
@@ -285,6 +286,7 @@ mod menu;
 mod menu_preferences;
 mod models_view;
 mod output;
+mod permissions_view;
 mod recording_overlay;
 mod recovery;
 mod settings_view;
@@ -297,7 +299,7 @@ pub fn run() -> Result<(), String> {
         if command == "menu-help" {
             println!(
                 "{}",
-                serde_json::json!({"ok":true,"commands":["menu-status","menu-model compact|parakeet_v2|parakeet_v3|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-dictionary-import ABSOLUTE_PATH", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
+                serde_json::json!({"ok":true,"commands":["menu-status","menu-image-paste APP_ID ctrl_v|ctrl_shift_v|default","menu-model compact|parakeet_v2|parakeet_v3|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-dictionary-import ABSOLUTE_PATH", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
             );
         } else {
             let command = std::iter::once(command)
@@ -312,6 +314,13 @@ pub fn run() -> Result<(), String> {
                 std::process::exit(1);
             }
         }
+        return Ok(());
+    }
+    if let Some(command) = std::env::args()
+        .nth(1)
+        .filter(|c| matches!(c.as_str(), "permissions" | "permissions-status"))
+    {
+        println!("{}", control::request(&command)?);
         return Ok(());
     }
     if std::env::args().nth(1).as_deref() == Some("shortcuts-help") {
@@ -2420,7 +2429,7 @@ impl WaylandOutput {
             return Err("target window changed".into());
         }
         trace.post();
-        self.press(PasteShortcut::CtrlV).await?;
+        self.press(image_paste::for_target(target)?).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
             && Instant::now() < deadline

@@ -12,6 +12,7 @@ fn main() {
     if let Err(error) = koett_engine::linux::run() {
         if std::env::args().nth(1).is_some_and(|s| {
             s.starts_with("menu-")
+                || s.starts_with("permissions")
                 || s.starts_with("ask")
                 || matches!(
                     s.as_str(),

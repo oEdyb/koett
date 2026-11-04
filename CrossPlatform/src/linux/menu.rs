@@ -88,6 +88,7 @@ pub(super) fn button() -> gtk::MenuButton {
     }
     let preferences = gtk::gio::Menu::new();
     preferences.append(Some("Settings…"), Some("app.settings"));
+    preferences.append(Some("Permissions…"), Some("app.permissions"));
     preferences.append(Some("About Koett…"), Some("app.about"));
     model.append_section(None, &preferences);
     let section = gtk::gio::Menu::new();

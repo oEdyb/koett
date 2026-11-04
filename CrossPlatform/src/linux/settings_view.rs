@@ -433,6 +433,18 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     pause_media.set_active(settings.pause_media);
     recording.append(&pause_media);
     let drawing = group(&draw_page, "Drawing");
+    let image_rules = gtk::TextView::new();
+    image_rules.set_monospace(true);
+    image_rules.set_size_request(-1, 90);
+    image_rules
+        .buffer()
+        .set_text(&super::image_paste::format(&settings.image_paste_shortcuts));
+    super::menu::set_accessible_label(
+        image_rules.upcast_ref(),
+        "Image paste rules: app ID = Ctrl+V or Ctrl+Shift+V",
+    );
+    recording.append(&help("Image paste rules: app ID = Ctrl+V or Ctrl+Shift+V"));
+    recording.append(&image_rules);
     let draw = gtk::CheckButton::with_label("_Draw & Pin While Dictating");
     draw.set_use_underline(true);
     draw.set_active(settings.draw_while_dictating);
@@ -619,6 +631,20 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
                     error.set_text("Choose a paste shortcut.");
                     stack.set_visible_child_name("audio");
                     paste.grab_focus();
+                    return;
+                }
+            };
+            let buffer = image_rules.buffer();
+            updated.image_paste_shortcuts = match super::image_paste::parse(&buffer.text(
+                &buffer.start_iter(),
+                &buffer.end_iter(),
+                false,
+            )) {
+                Ok(rules) => rules,
+                Err(message) => {
+                    error.set_text(&message);
+                    stack.set_visible_child_name("audio");
+                    image_rules.grab_focus();
                     return;
                 }
             };

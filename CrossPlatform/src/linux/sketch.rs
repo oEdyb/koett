@@ -19,7 +19,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::{cell::RefCell, rc::Rc};
 
-mod capture;
+pub(super) mod capture;
 mod frames;
 mod gesture;
 pub mod keys;
