@@ -94,7 +94,10 @@ jobs:
 
   windows:
     runs-on: windows-2025
-    timeout-minutes: 20
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 4
+      CMAKE_BUILD_PARALLEL_LEVEL: 4
     defaults:
       run:
         working-directory: CrossPlatform
@@ -108,7 +111,7 @@ jobs:
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
       - name: Build ASR-only native libraries
-        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026"
+        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
       - name: Test
         run: cargo test --locked
       - name: Lint

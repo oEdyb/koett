@@ -76,6 +76,10 @@ const MENU_OPEN_HISTORY: usize = 2;
 const MENU_START_AT_LOGIN: usize = 3;
 const MENU_QUIT: usize = 4;
 const MENU_SETTINGS: usize = 5;
+const MENU_COPY_LAST: usize = 6;
+const MENU_PAUSE: usize = 7;
+const MENU_CANCEL: usize = 8;
+const MENU_RECORD: usize = 9;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -113,10 +117,9 @@ pub fn run() -> Result<(), String> {
     };
     let settings = Settings::load()?;
     let shortcut = Shortcut::from_str(&settings.shortcut)?;
-    let startup_warning = settings
-        .start_at_login
-        .then(|| set_start_at_login(true).err())
-        .flatten();
+    let startup_warning: Option<String> = None;
+    history::recovery::initialize_last()?;
+    let restored_last = history::recovery::last().unwrap_or_default();
     let engine = runtime::start(settings.clone());
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
@@ -129,7 +132,7 @@ pub fn run() -> Result<(), String> {
         meter: meter::Meter::default(),
         pill_state: pill_state::State::default(),
         clock: Instant::now(),
-        last_transcript: String::new(),
+        last_transcript: restored_last,
         last_pill_redraw: None,
         shortcut_window: HWND::default(),
         registered_shortcut: None,
@@ -581,6 +584,11 @@ impl WindowsApp {
 
     fn tick_pill(&mut self) {
         let now = self.clock.elapsed().as_millis() as u64;
+        if self.pill_state.opacity(now, pill::reduced_motion()) <= 0.0
+            && !matches!(self.pill_state.phase, pill_state::Phase::Hidden)
+        {
+            self.pill_state.set(pill_state::Phase::Hidden, now);
+        }
         let mut point = POINT::default();
         let mut bounds = RECT::default();
         unsafe {
@@ -605,7 +613,9 @@ impl WindowsApp {
         );
         unsafe {
             if opacity > 0.0 {
-                if matches!(self.pill_state.phase, pill_state::Phase::Recording) {
+                if matches!(self.pill_state.phase, pill_state::Phase::Recording)
+                    || self.recording_started.is_none()
+                {
                     position_overlay(
                         self.overlay,
                         self.paste_target.unwrap_or_else(|| GetForegroundWindow()),
@@ -648,24 +658,23 @@ impl WindowsApp {
             pill_state::Phase::Recording | pill_state::Phase::Transcribing
                 if self.pill_state.hovered =>
             {
-                if x < 100 {
+                if (40..100).contains(&x) {
                     if let Some(engine) = &self.engine {
                         engine.cancel_dictation();
                     }
                     self.pill_state.set(pill_state::Phase::Hidden, now);
-                } else if x < 175 && self.status == AppStatus::Recording {
+                } else if (100..175).contains(&x) && self.status == AppStatus::Recording {
                     if let Some(levels) = &self.levels {
                         self.pill_state.paused = !levels.paused();
                         levels.set_paused(self.pill_state.paused);
                     }
-                } else if x >= 175 {
+                } else if (175..238).contains(&x) {
                     let _ = open_history();
                 }
             }
             pill_state::Phase::Done(_) | pill_state::Phase::NotPasted => {
                 if x >= 245 {
                     if copy_text(self.hwnd, &self.last_transcript).is_ok() {
-                        self.pill_state.copy(now);
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
                         self.pill_state.copy(now);
@@ -769,6 +778,11 @@ impl WindowsApp {
 
     fn deliver(&mut self, model: &str, text: &str, raw: Option<&str>) {
         if text.trim().is_empty() {
+            self.pill_state.set(
+                pill_state::Phase::Hidden,
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.update_overlay();
             return;
         }
         let delivery_error = if let Err(error) = copy_text(self.hwnd, text) {
@@ -792,6 +806,7 @@ impl WindowsApp {
             Ok(None) => None,
             Err(error) => Some(error),
         };
+        let history_failed = history_error.is_some();
         if history_error.is_some() || delivery_error.is_some() {
             let error = match (history_error, delivery_error) {
                 (Some(history), Some(delivery)) => {
@@ -803,7 +818,12 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let phase = if failed {
+        let phase = if history_failed {
+            pill_state::Phase::Error {
+                message: "History failed · Copy from tray".into(),
+                rescue: true,
+            }
+        } else if failed {
             pill_state::Phase::NotPasted
         } else {
             pill_state::Phase::Done(text.to_string())
@@ -877,7 +897,51 @@ impl WindowsApp {
             let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
             let _ = AppendMenuW(menu, MF_STRING, MENU_OPEN_HISTORY, w!("History"));
             let _ = AppendMenuW(menu, MF_STRING, MENU_SETTINGS, w!("Settings"));
-            let startup_flags = if self.settings.start_at_login {
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING,
+                MENU_RECORD,
+                if self.status == AppStatus::Recording {
+                    w!("Stop")
+                } else {
+                    w!("Record")
+                },
+            );
+            let _ = AppendMenuW(
+                menu,
+                if self.last_transcript.is_empty() {
+                    MF_STRING | MF_DISABLED
+                } else {
+                    MF_STRING
+                },
+                MENU_COPY_LAST,
+                w!("Copy last transcript"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                if self.status == AppStatus::Recording {
+                    MF_STRING
+                } else {
+                    MF_STRING | MF_DISABLED
+                },
+                MENU_PAUSE,
+                if self.pill_state.paused {
+                    w!("Resume")
+                } else {
+                    w!("Pause")
+                },
+            );
+            let _ = AppendMenuW(
+                menu,
+                if matches!(self.status, AppStatus::Recording | AppStatus::Transcribing) {
+                    MF_STRING
+                } else {
+                    MF_STRING | MF_DISABLED
+                },
+                MENU_CANCEL,
+                w!("Cancel"),
+            );
+            let startup_flags = if start_at_login_registered().unwrap_or(false) {
                 MF_STRING | MF_CHECKED
             } else {
                 MF_STRING
@@ -921,6 +985,28 @@ impl WindowsApp {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
+            MENU_COPY_LAST => {
+                if let Err(e) = copy_text(self.hwnd, &self.last_transcript) {
+                    show_fatal_error(&e);
+                }
+            }
+            MENU_RECORD => self.toggle(),
+            MENU_PAUSE => {
+                if let Some(levels) = &self.levels {
+                    self.pill_state.paused = !levels.paused();
+                    levels.set_paused(self.pill_state.paused);
+                }
+            }
+            MENU_CANCEL => {
+                if let Some(engine) = &self.engine {
+                    engine.cancel_dictation();
+                }
+                self.pill_state.set(
+                    pill_state::Phase::Hidden,
+                    self.clock.elapsed().as_millis() as u64,
+                );
+                self.update_overlay();
+            }
             MENU_OPEN_HISTORY => {
                 if let Err(error) = open_history() {
                     show_fatal_error(&error);
@@ -930,7 +1016,7 @@ impl WindowsApp {
                 let result = (|| {
                     let mut edit = Settings::edit()?;
                     let previous = start_at_login_registered()?;
-                    let enabled = !edit.settings.start_at_login;
+                    let enabled = !previous;
                     set_start_at_login(enabled)?;
                     edit.settings.start_at_login = enabled;
                     if let Err(error) = edit.commit() {
@@ -1062,7 +1148,7 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
                 .paint(
                     hwnd,
                     bounds,
-                    &app.meter.bars(),
+                    &app.meter.positions(),
                     elapsed,
                     &app.pill_state,
                     app.clock.elapsed().as_millis() as u64,

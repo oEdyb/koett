@@ -98,7 +98,7 @@ impl Renderer {
         &mut self,
         hwnd: HWND,
         bounds: RECT,
-        bars: &[f32; 64],
+        bars: &[(f32, f32)],
         elapsed: u64,
         state: &super::pill_state::State,
         now: u64,
@@ -231,9 +231,9 @@ impl Renderer {
                     } else {
                         (1.0 - 1.6 * morph).max(0.0)
                     });
-                    for (index, level) in bars.iter().enumerate() {
+                    for (position, level) in bars {
                         let height = 2.0 + level * 24.0;
-                        let x = 44.0 + index as f32 * 3.0;
+                        let x = 44.0 + position * 3.0;
                         target.FillRoundedRectangle(
                             &D2D1_ROUNDED_RECT {
                                 rect: rect(x, 24.0 - height / 2.0, x + 2.0, 24.0 + height / 2.0),

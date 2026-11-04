@@ -1,0 +1,9 @@
+
+running 4 tests
+test tests::copy_leaves_after_one_second_with_reduced_motion ... ok
+test tests::done_leaves_at_two_seconds_including_fade ... ok
+test tests::hover_holds_then_leaves_after_800ms ... ok
+test tests::rescue_never_times_out ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

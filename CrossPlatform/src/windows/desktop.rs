@@ -35,6 +35,8 @@ enum Reply {
     Text(u64, Result<String, String>),
 }
 struct Window {
+    font: HFONT,
+    controls: Vec<(HWND, [i32; 4])>,
     hwnd: HWND,
     owner: usize,
     settings: bool,
@@ -133,6 +135,8 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
         let mut window = Window {
+            font: HFONT::default(),
+            controls: vec![],
             hwnd,
             owner,
             settings,
@@ -145,6 +149,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             replies,
             generation: 0,
         };
+        window.refresh_font();
         window.create()?;
         WINDOW.with(|w| *w.borrow_mut() = Some(window));
         SetTimer(Some(hwnd), 1, 50, None);
@@ -168,13 +173,58 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
     Ok(())
 }
 
+impl Drop for Window {
+    fn drop(&mut self) {
+        if !self.font.is_invalid() {
+            unsafe {
+                let _ = DeleteObject(HGDIOBJ(self.font.0));
+            }
+        }
+    }
+}
 impl Window {
+    fn refresh_font(&mut self) {
+        unsafe {
+            let font = CreateFontW(
+                -self.scale(14),
+                0,
+                0,
+                0,
+                400,
+                0,
+                0,
+                0,
+                DEFAULT_CHARSET,
+                OUT_DEFAULT_PRECIS,
+                CLIP_DEFAULT_PRECIS,
+                CLEARTYPE_QUALITY,
+                DEFAULT_PITCH.0 as u32,
+                w!("Segoe UI"),
+            );
+            if !font.is_invalid() {
+                let old = self.font;
+                self.font = font;
+                for (child, _) in &self.controls {
+                    SendMessageW(
+                        *child,
+                        WM_SETFONT,
+                        Some(WPARAM(font.0 as usize)),
+                        Some(LPARAM(1)),
+                    );
+                }
+                if !old.is_invalid() {
+                    let _ = DeleteObject(HGDIOBJ(old.0));
+                }
+            }
+        }
+    }
+
     fn scale(&self, value: i32) -> i32 {
         value * unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(self.hwnd) }.max(96) as i32 / 96
     }
 
     fn control(
-        &self,
+        &mut self,
         class: PCWSTR,
         label: &str,
         style: WINDOW_STYLE,
@@ -202,9 +252,10 @@ impl Window {
             let _ = SendMessageW(
                 child,
                 WM_SETFONT,
-                Some(WPARAM(GetStockObject(DEFAULT_GUI_FONT).0 as usize)),
+                Some(WPARAM(self.font.0 as usize)),
                 Some(LPARAM(1)),
             );
+            self.controls.push((child, bounds));
             Ok(child)
         }
     }
@@ -417,6 +468,18 @@ impl Window {
         }
     }
     fn layout(&self) {
+        for (child, [x, y, w, h]) in &self.controls {
+            unsafe {
+                let _ = MoveWindow(
+                    *child,
+                    self.scale(*x),
+                    self.scale(*y),
+                    self.scale(*w),
+                    self.scale(*h),
+                    true,
+                );
+            }
+        }
         if self.settings {
             return;
         }
@@ -482,6 +545,22 @@ unsafe extern "system" fn proc(
                 WM_COMMAND => window.command(wparam.0 & 0xffff, ((wparam.0 >> 16) & 0xffff) as u16),
                 WM_TIMER => window.poll(),
                 WM_SIZE => window.layout(),
+                WM_DPICHANGED => {
+                    let suggested = unsafe { &*(lparam.0 as *const RECT) };
+                    unsafe {
+                        let _ = SetWindowPos(
+                            hwnd,
+                            None,
+                            suggested.left,
+                            suggested.top,
+                            suggested.right - suggested.left,
+                            suggested.bottom - suggested.top,
+                            SWP_NOACTIVATE | SWP_NOZORDER,
+                        );
+                    }
+                    window.refresh_font();
+                    window.layout();
+                }
                 _ => {}
             }
         }
