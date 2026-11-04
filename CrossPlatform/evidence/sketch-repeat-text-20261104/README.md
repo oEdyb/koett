@@ -1,4 +1,8 @@
-# Repeat-paste text regression
+# Withdrawn text-only proposal — repeat-paste regression
+
+This candidate was rejected: text-only repeat paste loses the sketch. Its product
+changes have been withdrawn from PR #48; these receipts are historical evidence.
+The added Done-pill control was also removed.
 
 The installed baseline (8970c15, including #42) and the candidate used a single
 private agent-lab koett-repeat-text KWin desktop, private app state and a copied

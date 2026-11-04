@@ -25,11 +25,6 @@ pub fn operation(command: &str) -> Result<serde_json::Value, String> {
                 serde_json::json!({"ok":true,"unsaved_count":recovery::pending_count(),"last_available":recovery::last().is_some(),"last_source":recovery::last_source()}),
             );
         }
-        "copy-sketch" => {
-            let text = last_text()?;
-            let png = super::feedback::sketch_for(&text).ok_or("Last sketch is unavailable")?;
-            super::output::copy_image(&png)?;
-        }
         "retry-unsaved" => recovery::retry()?,
         "copy-last" | "copy-unsaved" | "paste-last" => {
             let text = if command == "copy-unsaved" {

@@ -352,7 +352,6 @@ pub struct RecordingOverlay {
     cancel: gtk::Button,
     pause: gtk::Button,
     copy: gtk::Button,
-    copy_sketch: gtk::Button,
     paste: gtk::Button,
     history: gtk::Button,
     latest: Rc<RefCell<Option<String>>>,
@@ -731,13 +730,6 @@ impl RecordingOverlay {
         let paste = pill_button("Paste");
         paste.set_size_request(PASTE_W, 28);
         main.put(&paste, PASTE_X, 10.0);
-        let copy_sketch = pill_button("");
-        copy_sketch.set_icon_name("image-x-generic-symbolic");
-        copy_sketch.set_tooltip_text(Some("Copy sketch"));
-        super::menu::set_accessible_label(copy_sketch.upcast_ref(), "Copy sketch");
-        copy_sketch.set_size_request(28, 28);
-        main.put(&copy_sketch, COPY_X - 34.0, 10.0);
-        copy.set_tooltip_text(Some("Copy text"));
         let history = pill_button("History");
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         row.set_size_request(-1, 28);
@@ -804,25 +796,6 @@ impl RecordingOverlay {
             }
         });
 
-        copy_sketch.connect_clicked({
-            let latest = latest.clone();
-            let acted = acted.clone();
-            move |button| {
-                if let Some(text) = latest.borrow().as_ref() {
-                    match super::feedback::copy_sketch(&button.clipboard(), text) {
-                        Ok(()) => {
-                            button.set_icon_name("object-select-symbolic");
-                            acted.set(Some(Acted::Copied));
-                        }
-                        Err(error) => {
-                            button.set_tooltip_text(Some("Copy sketch failed"));
-                            eprintln!("Copy sketch: {error}");
-                        }
-                    }
-                }
-            }
-        });
-
         let motion = gtk::EventControllerMotion::new();
         motion.connect_enter({
             let state = state.clone();
@@ -854,7 +827,6 @@ impl RecordingOverlay {
             cancel,
             pause,
             copy,
-            copy_sketch,
             paste,
             history,
             latest,
@@ -920,8 +892,6 @@ impl RecordingOverlay {
         let mut pill = self.state.borrow_mut();
         if pill.phase != phase && matches!(phase, Phase::Done | Phase::Recovery | Phase::Media) {
             self.copy.set_label("Copy");
-            self.copy_sketch.set_icon_name("image-x-generic-symbolic");
-            self.copy_sketch.set_tooltip_text(Some("Copy sketch"));
             self.acted.set(None);
         }
         if started.is_some() && pill.started != started {
@@ -1018,17 +988,6 @@ impl RecordingOverlay {
             Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
         };
-        let has_sketch = phase == Phase::Done
-            && self
-                .latest
-                .borrow()
-                .as_deref()
-                .is_some_and(super::feedback::has_sketch);
-        let sketch_x = COPY_X - 34.0;
-        if let Some(main) = self.copy_sketch.parent().and_downcast::<gtk::Fixed>() {
-            main.move_(&self.copy_sketch, sketch_x, 10.0);
-        }
-        self.copy_sketch.set_visible(has_sketch);
         self.primary.set_text(&text);
         if strip || actions {
             self.primary.set_xalign(1.0);
@@ -1041,7 +1000,6 @@ impl RecordingOverlay {
             // Finished rows start at the strip's edge and stop 10 px before
             // their right-hand buttons (Mac `resultRect`).
             let (x, width) = match phase {
-                Phase::Done if has_sketch => (44.0, sketch_x as i32 - 10 - 44),
                 Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
                 Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
                 Phase::Message => (44.0, WIDTH - 44 - 16),

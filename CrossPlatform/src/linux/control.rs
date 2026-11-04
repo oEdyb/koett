@@ -139,7 +139,6 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 && matches!(
                     command,
                     "copy-last"
-                        | "copy-sketch"
                         | "paste-last"
                         | "copy-unsaved"
                         | "retry-unsaved"

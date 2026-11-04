@@ -16,7 +16,6 @@ fn main() {
                 || matches!(
                     s.as_str(),
                     "copy-last"
-                        | "copy-sketch"
                         | "paste-last"
                         | "copy-unsaved"
                         | "retry-unsaved"

@@ -80,17 +80,17 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   the text is pasted with the configured chord as
   `- #N (M:SS) “words”` bullets (`- #N (M:SS) marked` when nothing was said).
   Without sketches dictation is unchanged.
-- After delivery, the clipboard stays **text only**. Repeat Ctrl+V and **Copy**
-  paste the bullets reliably, including in T3 Code. A clipboard advertising PNG
-  and text cannot require a target to insert both: T3 and Chrome can choose only
-  the image, and a text-only terminal cannot paste PNG.
-- **Copy sketch** (image button on Done) and **Copy last sketch** in the main
-  window explicitly select PNG only. Copy/Copy last transcript select text again.
-  The same action is available as `koett copy-sketch` while that sketch remains
-  in memory. Not pasted **Paste** still replays image then text. No automatic
-  paste chord, ordering, timing or focus check changed for this repeat-paste fix.
-- The latest sketch stays in memory until another dictation completes. Failed
-  image delivery keeps Not pasted even if text succeeds.
+- After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
+  700 ms), the clipboard offers the same sheet as `image/png` and bullets as
+  `text/plain` / `text/plain;charset=utf-8` on the portal path. Without the
+  clipboard portal, `wl-copy` leaves `image/png` selected instead: GTK cannot
+  reliably claim the clipboard automatically without a fresh focused input
+  event. Ctrl+V can reuse the sketch;
+  plain-text targets can read the bullets from the combined offer. Done and
+  Not pasted **Copy** offer both PNG and text using the button's input event;
+  Not pasted **Paste** replays image then text. The most
+  recent sketch is retained in memory until another dictation completes.
+  A failed image delivery keeps the result in Not pasted even if text succeeds.
 - History stores the bullet text, with the plain transcript as raw text. Images
   stay in memory only, like Ask's screen image; nothing is written to disk
   except the portal's own screenshot file, which Koett deletes immediately.
@@ -196,30 +196,34 @@ Same output as Linux: one numbered contact sheet, then the same
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
 
-## Repeat-paste policy (2026-11-04)
+## Repeat-paste repair (2026-11-04)
 
-Olle clarified that the initial automatic paste delivered both the sketch and
-text. Only a later manual paste lost text. PR #42's final PNG/text offer (portal)
-or PNG-only offer (wl-copy fallback) caused that repeat-paste behavior. The host
-journal reports that its portal cannot provide keyboard paste, so its session
-uses wl-copy; there was no text representation in the final PNG clipboard.
-The journal contains capture starts but no per-step paste trace; it cannot
-establish a historical text-step timing or guard failure. No History text was
-printed during diagnosis.
+Before the repair the clipboard was PNG during the first paste, then text only
+after the bullet paste. Done/Not pasted Copy also wrote only text, and Paste
+recovery replayed only text. The final portal offer now includes both formats without
+changing either automatic paste or its focus checks. The wl-copy fallback
+preserves the image instead; pill Copy offers both using its fresh input event.
+An unfocused GTK clipboard claim returned success but left text selected during
+the private full-app drawing test, so automatic restoration uses the existing
+portal or wl-copy backend. A combined offer is preferred where reliable so
+terminals retain usable text and image-aware targets can attach the sheet. Chrome's native contenteditable chooses the image; targets
+decide how much of a multi-format clipboard to insert.
 
-A combined offer is a choice of representations, not an instruction to insert
-every representation. The older [mixed-offer receipts](evidence/linux-sketch-clipboard/targets.json)
-already show T3 choosing the image without inserting the accompanying text.
-Defaulting to text after the unchanged automatic sequence prevents silent text
-loss in T3's composer, Chrome's editor, and terminals. Images remain available
-through the explicitly named sketch-copy action; one manual paste does not
-promise an attachment and text in an arbitrary target.
+The native `sketch_clipboard_probe` example uses the production Copy helper.
+Private KWin/Chrome checks read both exact PNG bytes and exact Unicode text, and
+two Ctrl+V events each exposed a PNG file plus text. Kitty Ctrl+Shift+V received
+the exact bullets while PNG remained readable. Unit coverage checks all three
+MIME types, plain-text behavior and replacement of the in-memory sketch.
+T3 Code 0.1.2's actual composer attached the image on each Ctrl+V after removing
+the previous attachment; no message was sent. It chooses the image rather than
+inserting the offered text. [Target receipts](evidence/linux-sketch-clipboard/targets.json)
+cover the production Copy helper and real clipboard consumers; they do not claim
+a fresh microphone/drawing end-to-end run.
 
-Mac at `6ed0ead` (which includes PR #46) has the same manual-paste limitation:
-`SketchClipboard.write` puts PNG, TIFF and string on one NSPasteboardItem.
-`SketchPaste.deliver` restores it after sequential automatic image/text pastes.
-A target can choose the image alone there too. This is a source-level finding,
-not a Mac runtime check; this Linux change does not modify Swift.
+Mac routing: `SketchPaste.swift` offers PNG/TIFF, then
+`DictationSession.swift` clears the pasteboard and sets only the string.
+Mac therefore has the same repeat-paste loss by source inspection; Swift was
+not changed or runtime-tested here.
 
 ## How this was chosen (2026-11-02)
 
