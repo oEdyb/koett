@@ -4,7 +4,7 @@ use crate::{
 };
 use std::cell::RefCell;
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     mpsc,
 };
 use windows::Win32::{
@@ -17,6 +17,8 @@ use windows::core::{PCWSTR, w};
 
 static HISTORY_OPEN: AtomicBool = AtomicBool::new(false);
 static SETTINGS_OPEN: AtomicBool = AtomicBool::new(false);
+static HISTORY_HWND: AtomicUsize = AtomicUsize::new(0);
+static SETTINGS_HWND: AtomicUsize = AtomicUsize::new(0);
 thread_local! { static WINDOW: RefCell<Option<Window>> = const { RefCell::new(None) }; }
 const SEARCH: usize = 10;
 const LIST: usize = 11;
@@ -35,6 +37,7 @@ enum Reply {
     Text(u64, Result<String, String>),
 }
 struct Window {
+    theme: super::native_theme::Theme,
     font: HFONT,
     controls: Vec<(HWND, [i32; 4])>,
     hwnd: HWND,
@@ -45,6 +48,8 @@ struct Window {
     detail: HWND,
     startup: HWND,
     rows: Vec<HistorySummary>,
+    selected_key: Option<String>,
+    selected_text: Option<String>,
     query: mpsc::Sender<Query>,
     replies: mpsc::Receiver<Reply>,
     generation: u64,
@@ -56,18 +61,31 @@ pub(super) fn open(settings: bool, owner: HWND) {
     } else {
         &HISTORY_OPEN
     };
+    let slot = if settings {
+        &SETTINGS_HWND
+    } else {
+        &HISTORY_HWND
+    };
     if flag.swap(true, Ordering::AcqRel) {
+        let existing = HWND(slot.load(Ordering::Acquire) as *mut _);
+        if !existing.is_invalid() {
+            unsafe {
+                let _ = ShowWindow(existing, SW_SHOWNORMAL);
+                let _ = SetForegroundWindow(existing);
+            }
+        }
         return;
     }
     let owner = owner.0 as usize;
     std::thread::spawn(move || {
-        struct Reset(&'static AtomicBool);
+        struct Reset(&'static AtomicBool, &'static AtomicUsize);
         impl Drop for Reset {
             fn drop(&mut self) {
+                self.1.store(0, Ordering::Release);
                 self.0.store(false, Ordering::Release);
             }
         }
-        let _reset = Reset(flag);
+        let _reset = Reset(flag, slot);
         if let Err(error) = run(settings, owner) {
             super::show_fatal_error(&error);
         }
@@ -75,6 +93,17 @@ pub(super) fn open(settings: bool, owner: HWND) {
 }
 
 fn run(settings: bool, owner: usize) -> Result<(), String> {
+    use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx, CoUninitialize};
+    unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok() }.map_err(|e| e.to_string())?;
+    struct Apartment;
+    impl Drop for Apartment {
+        fn drop(&mut self) {
+            unsafe {
+                CoUninitialize();
+            }
+        }
+    }
+    let _apartment = Apartment;
     let (send, receive) = mpsc::channel();
     let (reply, replies) = mpsc::channel();
     std::thread::spawn(move || {
@@ -134,7 +163,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             None,
         )
         .map_err(|e| e.to_string())?;
+        fit_window(hwnd, None);
         let mut window = Window {
+            theme: super::native_theme::Theme::new()?,
             font: HFONT::default(),
             controls: vec![],
             hwnd,
@@ -145,12 +176,23 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             detail: HWND::default(),
             startup: HWND::default(),
             rows: vec![],
+            selected_key: None,
+            selected_text: None,
             query: send,
             replies,
             generation: 0,
         };
+        (if settings {
+            &SETTINGS_HWND
+        } else {
+            &HISTORY_HWND
+        })
+        .store(hwnd.0 as usize, Ordering::Release);
+        window.theme.apply(hwnd);
         window.refresh_font();
         window.create()?;
+        window.actions_enabled(false);
+        window.layout();
         WINDOW.with(|w| *w.borrow_mut() = Some(window));
         SetTimer(Some(hwnd), 1, 50, None);
         let _ = ShowWindow(hwnd, SW_SHOWNORMAL);
@@ -322,6 +364,13 @@ impl Window {
                 SEARCH,
                 [24, 44, 280, 30],
             )?;
+            self.control(
+                w!("STATIC"),
+                "Transcripts",
+                Default::default(),
+                0,
+                [24, 66, 280, 20],
+            )?;
             self.list = self.control(
                 w!("LISTBOX"),
                 "Transcripts",
@@ -331,6 +380,13 @@ impl Window {
                     | WINDOW_STYLE(LBS_NOTIFY as u32 | LBS_NOINTEGRALHEIGHT as u32),
                 LIST,
                 [24, 88, 280, 480],
+            )?;
+            self.control(
+                w!("STATIC"),
+                "Transcript",
+                Default::default(),
+                24,
+                [328, 66, 200, 20],
             )?;
             self.detail = self.control(
                 w!("EDIT"),
@@ -352,24 +408,56 @@ impl Window {
                 EXPORT,
                 [440, 32, 100, 32],
             )?;
-            self.control(
-                w!("STATIC"),
-                "Transcript",
-                Default::default(),
-                0,
-                [328, 66, 200, 20],
-            )?;
             self.search();
         }
         Ok(())
     }
     fn search(&mut self) {
+        self.rows.clear();
+        self.selected_key = None;
+        self.selected_text = None;
+        unsafe {
+            let _ = SendMessageW(self.list, LB_RESETCONTENT, None, None);
+        }
+        self.actions_enabled(false);
         self.generation += 1;
         let _ = self
             .query
             .send(Query::Search(self.generation, read(self.search)));
     }
+    fn actions_enabled(&self, enabled: bool) {
+        if self.settings {
+            return;
+        }
+        for id in [COPY, EXPORT] {
+            if let Ok(child) = unsafe { GetDlgItem(Some(self.hwnd), id as i32) } {
+                let _ = unsafe {
+                    windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(child, enabled)
+                };
+            }
+        }
+    }
+    fn selection_changed(&mut self) {
+        if self.settings {
+            return;
+        }
+        let index = unsafe { SendMessageW(self.list, LB_GETCURSEL, None, None) }.0;
+        let key = usize::try_from(index)
+            .ok()
+            .and_then(|i| self.rows.get(i))
+            .map(|r| r.id.clone());
+        if self.selected_key != key {
+            self.selected_key = key.clone();
+            self.selected_text = None;
+            self.actions_enabled(false);
+            if let Some(key) = key {
+                self.generation += 1;
+                let _ = self.query.send(Query::Get(self.generation, key));
+            }
+        }
+    }
     fn poll(&mut self) {
+        self.selection_changed();
         while let Ok(reply) = self.replies.try_recv() {
             match reply {
                 Reply::Rows(id, result) if id == self.generation => match result {
@@ -408,9 +496,21 @@ impl Window {
                     }
                     Err(e) => set(self.detail, &e),
                 },
-                Reply::Text(id, result) if id == self.generation => {
-                    set(self.detail, &result.unwrap_or_else(|e| e))
-                }
+                Reply::Text(id, result) if id == self.generation => match result {
+                    Ok(text) => {
+                        set(
+                            self.detail,
+                            &text.replace("\r\n", "\n").replace('\n', "\r\n"),
+                        );
+                        self.selected_text = Some(text);
+                        self.actions_enabled(true);
+                    }
+                    Err(error) => {
+                        set(self.detail, &error);
+                        self.selected_text = None;
+                        self.actions_enabled(false);
+                    }
+                },
                 _ => {}
             }
         }
@@ -418,20 +518,18 @@ impl Window {
     fn command(&mut self, id: usize, notification: u16) {
         match id {
             SEARCH if notification == EN_CHANGE as u16 => self.search(),
-            LIST if notification == LBN_SELCHANGE as u16 => {
-                let index = unsafe { SendMessageW(self.list, LB_GETCURSEL, None, None) }.0;
-                if let Some(row) = usize::try_from(index).ok().and_then(|i| self.rows.get(i)) {
-                    self.generation += 1;
-                    let _ = self.query.send(Query::Get(self.generation, row.id.clone()));
-                }
-            }
+            LIST if notification == LBN_SELCHANGE as u16 => self.selection_changed(),
             COPY => {
-                if let Err(e) = super::copy_text(self.hwnd, &read(self.detail)) {
-                    set(self.detail, &e);
+                if let Some(text) = &self.selected_text
+                    && let Err(e) = super::copy_text(self.hwnd, text)
+                {
+                    super::show_fatal_error(&e);
                 }
             }
             EXPORT => {
-                if let Err(e) = export(self.hwnd, &read(self.detail)) {
+                if let Some(text) = &self.selected_text
+                    && let Err(e) = export(self.hwnd, text)
+                {
                     super::show_fatal_error(&e);
                 }
             }
@@ -491,6 +589,22 @@ impl Window {
                 r.bottom = r.bottom * 96 / dpi;
                 let left = (r.right / 3).clamp(180, 320);
                 let height = (r.bottom - 112).max(80);
+                for (id, x, y, w, h) in [
+                    (COPY, left + 24, 32, 100, 32),
+                    (EXPORT, left + 136, 32, 100, 32),
+                    (24, left + 24, 66, (r.right - left - 48).max(80), 20),
+                ] {
+                    if let Ok(child) = GetDlgItem(Some(self.hwnd), id as i32) {
+                        let _ = MoveWindow(
+                            child,
+                            self.scale(x),
+                            self.scale(y),
+                            self.scale(w),
+                            self.scale(h),
+                            true,
+                        );
+                    }
+                }
                 let _ = MoveWindow(
                     self.search,
                     self.scale(24),
@@ -519,6 +633,45 @@ impl Window {
         }
     }
 }
+fn fit_window(hwnd: HWND, suggested: Option<&RECT>) {
+    unsafe {
+        let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        let mut info = MONITORINFO {
+            cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+            ..Default::default()
+        };
+        if !GetMonitorInfoW(monitor, &mut info).as_bool() {
+            return;
+        }
+        let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd).max(96) as i32;
+        let width = suggested
+            .map(|r| r.right - r.left)
+            .unwrap_or(960 * dpi / 96)
+            .min(info.rcWork.right - info.rcWork.left);
+        let height = suggested
+            .map(|r| r.bottom - r.top)
+            .unwrap_or(680 * dpi / 96)
+            .min(info.rcWork.bottom - info.rcWork.top);
+        let x = suggested
+            .map(|r| r.left)
+            .unwrap_or(info.rcWork.left + (info.rcWork.right - info.rcWork.left - width) / 2)
+            .clamp(info.rcWork.left, info.rcWork.right - width);
+        let y = suggested
+            .map(|r| r.top)
+            .unwrap_or(info.rcWork.top + (info.rcWork.bottom - info.rcWork.top - height) / 2)
+            .clamp(info.rcWork.top, info.rcWork.bottom - height);
+        let _ = SetWindowPos(
+            hwnd,
+            None,
+            x,
+            y,
+            width,
+            height,
+            SWP_NOACTIVATE | SWP_NOZORDER,
+        );
+    }
+}
+
 unsafe extern "system" fn proc(
     hwnd: HWND,
     message: u32,
@@ -537,6 +690,28 @@ unsafe extern "system" fn proc(
         }
         return LRESULT(0);
     }
+    if matches!(
+        message,
+        WM_ERASEBKGND | WM_CTLCOLOREDIT | WM_CTLCOLORLISTBOX | WM_CTLCOLORSTATIC | WM_CTLCOLORBTN
+    ) && let Some(result) = WINDOW.with(|cell| {
+        cell.try_borrow().ok().and_then(|slot| {
+            slot.as_ref().map(|window| unsafe {
+                let dc = HDC(wparam.0 as *mut _);
+                if message == WM_ERASEBKGND {
+                    let mut bounds = RECT::default();
+                    let _ = GetClientRect(hwnd, &mut bounds);
+                    FillRect(dc, &bounds, window.theme.brush);
+                    LRESULT(1)
+                } else {
+                    SetTextColor(dc, window.theme.foreground);
+                    SetBkColor(dc, window.theme.background);
+                    LRESULT(window.theme.brush.0 as isize)
+                }
+            })
+        })
+    }) {
+        return result;
+    }
     WINDOW.with(|cell| {
         if let Ok(mut window) = cell.try_borrow_mut()
             && let Some(window) = window.as_mut()
@@ -544,20 +719,22 @@ unsafe extern "system" fn proc(
             match message {
                 WM_COMMAND => window.command(wparam.0 & 0xffff, ((wparam.0 >> 16) & 0xffff) as u16),
                 WM_TIMER => window.poll(),
+                WM_THEMECHANGED | WM_SETTINGCHANGE | WM_SYSCOLORCHANGE => {
+                    if let Ok(theme) = super::native_theme::Theme::new() {
+                        window.theme = theme;
+                        window.theme.apply(hwnd);
+                    }
+                    unsafe {
+                        let _ = InvalidateRect(Some(hwnd), None, true);
+                        for (child, _) in &window.controls {
+                            let _ = InvalidateRect(Some(*child), None, true);
+                        }
+                    }
+                }
                 WM_SIZE => window.layout(),
                 WM_DPICHANGED => {
                     let suggested = unsafe { &*(lparam.0 as *const RECT) };
-                    unsafe {
-                        let _ = SetWindowPos(
-                            hwnd,
-                            None,
-                            suggested.left,
-                            suggested.top,
-                            suggested.right - suggested.left,
-                            suggested.bottom - suggested.top,
-                            SWP_NOACTIVATE | SWP_NOZORDER,
-                        );
-                    }
+                    fit_window(hwnd, Some(suggested));
                     window.refresh_font();
                     window.layout();
                 }
@@ -585,10 +762,17 @@ fn export(hwnd: HWND, text: &str) -> Result<(), String> {
     for (dest, src) in file.iter_mut().zip("Transcript.txt".encode_utf16()) {
         *dest = src;
     }
+    let initial = directories::UserDirs::new()
+        .and_then(|d| d.document_dir().map(|p| p.to_path_buf()))
+        .map(|p| super::wide(&p.to_string_lossy()));
     let mut dialog = OPENFILENAMEW {
         lStructSize: std::mem::size_of::<OPENFILENAMEW>() as u32,
         hwndOwner: hwnd,
         lpstrFile: windows::core::PWSTR(file.as_mut_ptr()),
+        lpstrInitialDir: initial
+            .as_ref()
+            .map(|p| PCWSTR(p.as_ptr()))
+            .unwrap_or_default(),
         nMaxFile: file.len() as u32,
         lpstrFilter: w!("Text files\0*.txt\0All files\0*.*\0\0"),
         lpstrDefExt: w!("txt"),

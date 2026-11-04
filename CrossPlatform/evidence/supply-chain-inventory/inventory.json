@@ -14918,9 +14918,9 @@
       "sha256": "1c6ebf8b2618a725f216c486a389ba5fd94aa6da7a56dced1a867aeb3cf10b1c"
     },
     {
-      "bytes": 3046,
+      "bytes": 3102,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "0e583db633441ee2cb7aa300fa99401e8c3705fab82e45aa5d294664ab2601a2"
+      "sha256": "156fb9f663f31c931833b5f9074e3111cda59a0d0201cad1f498f39b5fb5f9f7"
     },
     {
       "bytes": 5621,

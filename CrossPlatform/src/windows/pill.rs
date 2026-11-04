@@ -11,7 +11,7 @@ use windows::core::w;
 use windows_numerics::Matrix3x2;
 
 pub(super) struct Renderer {
-    device: IDCompositionDevice2,
+    device: IDCompositionDesktopDevice,
     _target: IDCompositionTarget,
     visual: IDCompositionVisual2,
     opacity: IDCompositionEffectGroup,
@@ -44,9 +44,8 @@ impl Renderer {
             let factory: ID2D1Factory1 =
                 D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, None)?;
             let d2d = factory.CreateDevice(&dxgi)?;
-            let device: IDCompositionDevice2 = DCompositionCreateDevice2(&d2d)?;
-            let desktop: IDCompositionDesktopDevice = device.cast()?;
-            let target = desktop.CreateTargetForHwnd(hwnd, false)?;
+            let device: IDCompositionDesktopDevice = DCompositionCreateDevice2(&d2d)?;
+            let target = device.CreateTargetForHwnd(hwnd, false)?;
             let visual = device.CreateVisual()?;
             let opacity = device.CreateEffectGroup()?;
             visual.SetEffect(&opacity)?;

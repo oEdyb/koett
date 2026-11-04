@@ -1,5 +1,6 @@
 mod desktop;
 mod meter;
+mod native_theme;
 mod pill;
 mod pill_buttons;
 mod pill_state;
@@ -126,6 +127,13 @@ pub fn run() -> Result<(), String> {
     let _apartment = ComApartment;
     unsafe {
         let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+    let controls = windows::Win32::UI::Controls::INITCOMMONCONTROLSEX {
+        dwSize: size_of::<windows::Win32::UI::Controls::INITCOMMONCONTROLSEX>() as u32,
+        dwICC: windows::Win32::UI::Controls::ICC_STANDARD_CLASSES,
+    };
+    if !unsafe { windows::Win32::UI::Controls::InitCommonControlsEx(&controls) }.as_bool() {
+        return Err("Could not initialize Windows controls".into());
     }
     let Some(mutex) = single_instance()? else {
         return Ok(());
