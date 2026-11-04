@@ -10,7 +10,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Toggle / hold / configurable shortcuts | Yes, modifier or chord | Yes, desktop-dependent | Chord registration; hold parity unverified | Windows Raw Input for bare modifier/hold; Linux portal/compositor bindings |
 | Selected microphone | Yes | Yes | Engine; no full Settings UI | Native Windows input selector, stable endpoint identity |
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | No | Add Mac and Windows preview that releases capture on close/record |
-| Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
+| Recording sounds / actual RMS | Tink and Basso system sounds; always on | Original synthesized cues at the same moments, with a Settings switch (on by default); real RMS | Basic RMS pill; sounds unverified | Windows cues; a switch on Mac if wanted; no invented activity |
 | Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
 | Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | No equivalent state/recovery actions | Port persistent rescue states; never time out unsaved text |

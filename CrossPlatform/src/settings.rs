@@ -63,6 +63,8 @@ pub struct Settings {
     pub replacements: Vec<crate::replacements::Replacement>,
     pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
+    /// Start and stop cues while dictating (Linux; the Mac always plays them).
+    pub recording_sounds: bool,
     pub paste_shortcut: PasteShortcut,
     pub image_paste_shortcuts: std::collections::BTreeMap<String, PasteShortcut>,
     /// Off by default: drawing takes keyboard focus while recording.
@@ -92,6 +94,7 @@ impl Default for Settings {
             replacements: Vec::new(),
             dictionary: Vec::new(),
             pause_media: false,
+            recording_sounds: true,
             paste_shortcut: PasteShortcut::default(),
             image_paste_shortcuts: Default::default(),
             draw_while_dictating: false,
@@ -261,6 +264,9 @@ impl Settings {
         }
         if self.pause_media != opened.pause_media {
             merged.pause_media = self.pause_media;
+        }
+        if self.recording_sounds != opened.recording_sounds {
+            merged.recording_sounds = self.recording_sounds;
         }
         if self.paste_shortcut != opened.paste_shortcut {
             merged.paste_shortcut = self.paste_shortcut;

@@ -301,6 +301,7 @@ mod recording_overlay;
 mod recovery;
 mod settings_view;
 mod sketch;
+mod sounds;
 mod theme;
 mod window;
 
@@ -2196,6 +2197,7 @@ impl LinuxEngine {
                 EngineUpdate::Status(status) => {
                     self.configuration_pending = false;
                     self.stop_sent = false;
+                    recording_cue(&self.status, &status);
                     self.status = status;
                     self.capture_pending = false;
                     QUIT_BUSY.store(
@@ -2257,6 +2259,17 @@ impl LinuxEngine {
         if let Some(error) = interaction_error {
             status_changed(&format!("@error:{error}. Use Copy last transcript"));
         }
+    }
+}
+
+/// Plays the cue for a status change unless the user turned sounds off.
+fn recording_cue(old: &AppStatus, new: &AppStatus) {
+    // Tests drive these status changes and must stay silent.
+    if !cfg!(test)
+        && let Some(cue) = sounds::for_change(old, new)
+        && Settings::load().map_or(true, |settings| settings.recording_sounds)
+    {
+        sounds::play(cue);
     }
 }
 
