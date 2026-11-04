@@ -103,7 +103,8 @@ struct WindowsApp {
     pill_state: pill_state::State,
     clock: Instant,
     last_transcript: String,
-    last_pill_redraw: Option<Instant>,
+    last_pill_redraw: Cell<Option<Instant>>,
+    last_pill_key: Cell<Option<pill_state::PaintKey>>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
     levels: Option<AudioLevels>,
@@ -164,7 +165,8 @@ pub fn run() -> Result<(), String> {
         pill_state: pill_state::State::default(),
         clock: Instant::now(),
         last_transcript: restored_last,
-        last_pill_redraw: None,
+        last_pill_redraw: Cell::new(None),
+        last_pill_key: Cell::new(None),
         shortcut_window: HWND::default(),
         registered_shortcut: None,
         levels: None,
@@ -402,7 +404,6 @@ unsafe extern "system" fn window_proc(
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.poll_updates();
-                    app.tick_pill();
                     if app.status == AppStatus::Recording {
                         let elapsed = app
                             .recording_started
@@ -415,17 +416,8 @@ unsafe extern "system" fn window_proc(
                             .map(|v| v.0)
                             .unwrap_or(0.0);
                         app.meter.sample(elapsed, rms);
-                        if !pill::reduced_motion()
-                            || app
-                                .last_pill_redraw
-                                .is_none_or(|t| t.elapsed() >= Duration::from_secs(1))
-                        {
-                            app.last_pill_redraw = Some(Instant::now());
-                            unsafe {
-                                let _ = InvalidateRect(Some(app.overlay), None, false);
-                            }
-                        }
                     }
+                    app.tick_pill();
                 }
                 return Default::default();
             }
@@ -452,6 +444,7 @@ unsafe extern "system" fn window_proc(
             && message == app.taskbar_created
         {
             let _ = app.add_tray();
+            app.update_tray();
             return Default::default();
         }
     }
@@ -767,11 +760,16 @@ impl WindowsApp {
                     self.pill_state.interactive(),
                 );
                 let _ = ShowWindow(self.overlay, SW_SHOWNOACTIVATE);
-                if !pill::reduced_motion()
+                let key = self.pill_state.paint_key();
+                if self.last_pill_key.get() != Some(key)
+                    || !pill::reduced_motion()
                     || self
                         .last_pill_redraw
+                        .get()
                         .is_none_or(|t| t.elapsed() >= Duration::from_secs(1))
                 {
+                    self.last_pill_key.set(Some(key));
+                    self.last_pill_redraw.set(Some(Instant::now()));
                     let _ = InvalidateRect(Some(self.overlay), None, false);
                 }
             } else {

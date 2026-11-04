@@ -123,11 +123,12 @@ impl Renderer {
                 let dpi = windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) as f32;
                 target.SetDpi(dpi, dpi);
                 let light = light_theme();
-                let background = if light {
+                let mut background = if light {
                     color(1.0, 1.0, 1.0)
                 } else {
                     color(0.075, 0.075, 0.08)
                 };
+                background.a = 0.97;
                 let coral = target.CreateSolidColorBrush(
                     &if light {
                         color(0.85, 0.267, 0.227)
@@ -162,11 +163,31 @@ impl Renderer {
                     },
                     &fill,
                 );
+                let stroke = target.CreateSolidColorBrush(
+                    &if light {
+                        color(0.11, 0.098, 0.09)
+                    } else {
+                        color(1.0, 1.0, 1.0)
+                    },
+                    None,
+                )?;
+                stroke.SetOpacity(if light { 0.12 } else { 0.10 });
+                target.DrawRoundedRectangle(
+                    &D2D1_ROUNDED_RECT {
+                        rect: rect(0.5, 0.5, 299.5, 47.5),
+                        radiusX: 23.0,
+                        radiusY: 23.0,
+                    },
+                    &stroke,
+                    1.0,
+                    None,
+                );
                 use super::pill_state::Phase;
                 let reduced = reduced_motion();
                 self.opacity.SetOpacity2(state.opacity(now, reduced))?;
                 let active = matches!(state.phase, Phase::Recording | Phase::Transcribing);
                 let morph = state.morph(now, reduced);
+                white.SetOpacity(0.90);
                 let draw = |label: &str, left: f32, right: f32, clock: bool| {
                     target.DrawText(
                         &label.encode_utf16().collect::<Vec<_>>(),
@@ -223,17 +244,32 @@ impl Renderer {
                     );
                 }
                 if (active && !state.hovered) || (!active && morph < 1.0) {
-                    coral.SetOpacity(if active {
-                        if matches!(state.phase, Phase::Transcribing) {
-                            0.4
+                    let wave = target.CreateSolidColorBrush(
+                        &if light {
+                            color(0.11, 0.098, 0.09)
                         } else {
-                            1.0
-                        }
-                    } else {
-                        (1.0 - 1.6 * morph).max(0.0)
-                    });
+                            color(1.0, 1.0, 1.0)
+                        },
+                        None,
+                    )?;
                     for (position, level) in bars {
-                        let height = 2.0 + level * 24.0;
+                        let silent = *level < 0.08;
+                        let dim = silent || matches!(state.phase, Phase::Transcribing);
+                        let alpha = if light {
+                            if dim { 0.22 } else { 0.72 }
+                        } else if dim {
+                            0.28
+                        } else {
+                            0.82
+                        };
+                        let fade = ((position + 1.0) / 6.0).clamp(0.0, 1.0);
+                        let morph_alpha = if active {
+                            1.0
+                        } else {
+                            (1.0 - 1.6 * morph).max(0.0)
+                        };
+                        wave.SetOpacity(alpha * fade * morph_alpha);
+                        let height = if silent { 2.0 } else { 4.0 + level * 22.0 };
                         let x = 44.0 + position * 3.0;
                         target.FillRoundedRectangle(
                             &D2D1_ROUNDED_RECT {
@@ -241,7 +277,7 @@ impl Renderer {
                                 radiusX: 1.0,
                                 radiusY: 1.0,
                             },
-                            &coral,
+                            &wave,
                         );
                     }
                 }
@@ -267,7 +303,7 @@ impl Renderer {
                         );
                     }
                 } else {
-                    white.SetOpacity(morph);
+                    white.SetOpacity(0.90 * morph);
                     let shift = 8.0 * (1.0 - morph);
                     match &state.phase {
                         Phase::Done(preview) => {

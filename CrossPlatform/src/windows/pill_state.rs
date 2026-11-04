@@ -8,6 +8,16 @@ pub enum Phase {
     Error { message: String, rescue: bool },
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct PaintKey {
+    changed: u64,
+    hovered: bool,
+    paused: bool,
+    copied: bool,
+    drawing: bool,
+    media_result: bool,
+}
+
 pub struct State {
     pub phase: Phase,
     pub hovered: bool,
@@ -81,6 +91,16 @@ impl State {
             1.0 - (1.0 - t).powi(3)
         }
     }
+    pub fn paint_key(&self) -> PaintKey {
+        PaintKey {
+            changed: self.changed,
+            hovered: self.hovered,
+            paused: self.paused,
+            copied: self.copied,
+            drawing: self.drawing,
+            media_result: self.media_result,
+        }
+    }
     pub fn interactive(&self) -> bool {
         self.hovered
             || matches!(
@@ -92,6 +112,25 @@ impl State {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn paint_key_changes_for_controls_without_a_phase_transition() {
+        let mut s = State::default();
+        s.set(Phase::Recording, 0);
+        let recording = s.paint_key();
+        s.hover(true, 10);
+        assert!(s.paint_key() != recording);
+        let hovered = s.paint_key();
+        s.hover(true, 20);
+        assert!(s.paint_key() == hovered);
+        s.paused = true;
+        assert!(s.paint_key() != hovered);
+        let paused = s.paint_key();
+        s.drawing = true;
+        assert!(s.paint_key() != paused);
+        let drawing = s.paint_key();
+        s.copy(30);
+        assert!(s.paint_key() != drawing);
+    }
     #[test]
     fn done_leaves_at_two_seconds_including_fade() {
         let mut s = State::default();
