@@ -117,7 +117,6 @@ pub(super) fn show(
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     footer.add_css_class("koett-settings-footer");
     outer.append(&footer);
-    tab_past_sidebar(&navigation, &stack, &header, &footer);
     window.set_child(Some(&outer));
     let input = gtk::ComboBoxText::new();
     for cell in input.cells() {
@@ -553,6 +552,7 @@ Media: open Koett → Transcribe media",
     save.set_hexpand(true);
     save.set_halign(gtk::Align::End);
     footer.append(&save);
+    tab_past_sidebar(&navigation, &stack, &save, &footer);
     save.connect_clicked({
         let window = window.clone();
         move |_| {
@@ -665,13 +665,13 @@ fn section(stack: &gtk::Stack, name: &str, title: &str) -> gtk::Box {
 fn tab_past_sidebar(
     sidebar: &gtk::StackSidebar,
     stack: &gtk::Stack,
-    header: &gtk::HeaderBar,
+    save: &gtk::Button,
     footer: &gtk::Box,
 ) {
     let keys = gtk::EventControllerKey::new();
     keys.set_propagation_phase(gtk::PropagationPhase::Capture);
     let stack = stack.clone();
-    let header = header.clone();
+    let save = save.clone();
     let footer = footer.clone();
     keys.connect_key_pressed(move |_, key, _, modifiers| {
         if !matches!(
@@ -681,9 +681,7 @@ fn tab_past_sidebar(
             return gtk::glib::Propagation::Proceed;
         }
         if modifiers.contains(gtk::gdk::ModifierType::SHIFT_MASK) {
-            if !header.child_focus(gtk::DirectionType::TabBackward) {
-                footer.child_focus(gtk::DirectionType::TabBackward);
-            }
+            save.grab_focus();
         } else if !stack
             .visible_child()
             .is_some_and(|page| page.child_focus(gtk::DirectionType::TabForward))
