@@ -45,10 +45,13 @@ No new settings, model selection, history schema or persistent KWin script is ad
 
 ## Verification, 2026-11-04
 
-- 387 Rust tests passed, 17 ignored, plus native ABI subprocess check.
+- 389 Rust tests passed, 17 ignored, plus native ABI subprocess check.
   New coverage checks stable/distinct window tokens, compositor restart, invalid
   and own identities, exhaustion, exact app rules and lost identity at chord
   resolution. Obsolete tests for the removed niri-only boolean helper were removed.
+- Rebased on main `778c901` with the captured-drawing undo changes retained.
+  The private app returned drawing status and the expected exit-1 `no_drawing`
+  response for empty Undo, alongside working paste-target status.
 - Formatting, clippy with warnings denied, release app/example builds and diff
   check passed. MSVC cross-check is blocked here by missing Microsoft's `lib.exe`.
 - Real KWin 6.8.2-1.1 private desktop, copied 110M model, release app/control socket
@@ -57,9 +60,9 @@ No new settings, model selection, history schema or persistent KWin script is ad
   key posts and left B untouched; copied text remained available.
 - Exact real app-class image-rule resolution selected Ctrl+Shift+V while the text
   preference stayed Ctrl+V. No active target and Koett's own window were rejected.
-- Twenty identity-status CLI round trips: median 22.0 ms, max 23.1 ms.
+- Twenty identity-status CLI round trips: median 21.2 ms, max 22.4 ms.
   This includes client startup; it is not a universal latency guarantee. A 700 ms
-  private-compositor stall returned unavailable in 220.6 ms, then a fresh
+  private-compositor stall returned unavailable in 217.9 ms, then a fresh
   check recovered. No last-known focus was returned during the stall.
 - Production read-only scripts were unloaded and scratch directories were absent
   after checks. The existing isolated niri fixture also passed unchanged-target,
@@ -69,7 +72,7 @@ No new settings, model selection, history schema or persistent KWin script is ad
 The KWin key sender was a test-only `wtype` shim mapping to the private KWin input
 socket. This proves one real GTK text consumer and the production guard path,
 not native wtype support or portal permission grants. No host input/clipboard or
-installation was performed. The inspected screenshot includes the expected
+installation of this PR was performed. The inspected screenshot includes the expected
 Paste failed notice from deliberately changing the target, with the text in A.
 
 ### Image transport remains open

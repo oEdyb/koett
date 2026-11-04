@@ -53,6 +53,9 @@ app=subprocess.Popen([str(binary),'--background'],stdout=(out/'app.log').open('w
 target=None;probe=None;results={}
 try:
     wait(lambda:not cli('menu-status')[1].get('busy',True),'Koett idle')
+    assert cli('drawing-status')[1]['count']==0
+    code,empty_undo=cli('undo-drawing');assert code==1 and empty_undo['error']['code']=='no_drawing'
+    results['drawing_commands_retained']={'status_ok':True,'empty_undo_exit':1}
     target=subprocess.Popen(['/usr/bin/python3',str(out/'target.py')],stdout=(out/'target.log').open('w'),stderr=subprocess.STDOUT)
     wait(lambda:cli('paste-target-status')[1].get('available'),'KWin identity')
     state=cli('paste-target-status')[1];assert state['backend']=='kwin';app_id=state['app_id'];results['identity']=state
