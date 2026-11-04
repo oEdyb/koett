@@ -12,13 +12,12 @@ exact-once recognized text in Notepad/Edge/Windows Terminal, foreground-switch
 recovery and read-only-history fallback. [Runtime evidence](../CrossPlatform/evidence/windows-milestone2/ci-1fa2169/README.md)
 records exact text, paste events, history counts and HWND/PID.
 
-Two failures remain pending a new artifact: elevated targets silently showed
-Done, and combined delivery/history failure hid recovery actions. Source adds
-an integrity preflight, saved/unsaved Not pasted states and recovery priority.
-M2 remains incomplete until those fixes and the remaining failure gates run.
-The private WAV path is `Koett.exe --dictation-lab-wav C:\path\speech.wav`.
-It uses the shared session/CPU ASR/delivery flow. Physical hardware and thirty
-minutes of live capture remain unverified. No all-platform readiness claim.
+The 03a9041 artifact passed the elevated-target and combined-failure retests,
+plus storage fallback exhaustion with an honest Not saved label and Copy/Paste.
+[Final recovery retest](../CrossPlatform/evidence/windows-milestone2/ci-03a9041/README.md)
+records the results and readiness audit. M2 remains draft because software fault
+gates (including ASR failure/retention and busy storage) remain unverified; these
+are not hardware blockers. M3 starts after those gates close.
 
 ## First checkpoint
 
@@ -33,7 +32,7 @@ shared engine retains its existing recording-start replacement policy.
 
 The original microphone controls have guest evidence above; newer hold/layout
 changes still require their rebuilt artifact. They reuse the native [combo-box selection contract](https://learn.microsoft.com/en-us/windows/win32/controls/about-combo-boxes).
-The Settings HWND remains native; the window is 560×400 DIPs and fitted to the
+The Settings HWND remains native; the window is 560×440 DIPs and fitted to the
 monitor work area. Verify labels, keyboard/UIA access, dark/light and 100/150/200%.
 
 The Windows CI archive now also includes the existing `koett-engine.exe` CPU
