@@ -215,7 +215,7 @@ impl ModelsView {
     pub fn update(&self, message: &str) {
         let about_models = message.to_ascii_lowercase().contains("model");
         if let Some(notice) = message.strip_prefix("@notice:") {
-            if about_models && !notice.contains("S1-mini") {
+            if let Some(notice) = notice.strip_prefix("@model-notice:") {
                 self.notice.set_text(notice);
             }
             return;

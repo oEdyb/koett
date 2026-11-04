@@ -699,13 +699,15 @@ fn run(
                             }
                             Err(error) => {
                                 worker.stop();
-                                let _ = updates.send(EngineUpdate::Notice(error));
+                                let _ = updates
+                                    .send(EngineUpdate::Notice(format!("@model-notice:{error}")));
                             }
                         }
                     }
                     Ok((_, worker)) => worker.stop(),
                     Err(error) => {
-                        let _ = updates.send(EngineUpdate::Notice(error));
+                        let _ =
+                            updates.send(EngineUpdate::Notice(format!("@model-notice:{error}")));
                     }
                 }
                 status = AppStatus::Ready;
@@ -713,7 +715,7 @@ fn run(
             }
             EngineCommand::SwitchModel(_) => {
                 let _ = updates.send(EngineUpdate::Notice(
-                    "Stop recording before changing models".into(),
+                    "@model-notice:Stop recording before changing models".into(),
                 ));
             }
             EngineCommand::Toggle | EngineCommand::Start if status == AppStatus::Ready => {

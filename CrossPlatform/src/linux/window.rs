@@ -558,7 +558,9 @@ fn build_window(
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message.starts_with("@notice:") => {
-                        let phase = message.trim_start_matches("@notice:");
+                        let phase = message
+                            .trim_start_matches("@notice:")
+                            .trim_start_matches("@model-notice:");
                         if phase == crate::runtime::LIMIT_NOTICE {
                             stopped_at_limit = true;
                         }
