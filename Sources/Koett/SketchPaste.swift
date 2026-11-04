@@ -13,17 +13,20 @@ enum SketchPaste {
     static func paste(
         png: Data,
         pasteboard: NSPasteboard = .general,
-        postPaste: () -> Bool
+        postPaste: () -> Bool,
+        didWrite: (Int) -> Void = { _ in }
     ) async -> Bool {
         let provider = SketchImageProvider(png: png)
         let item = NSPasteboardItem()
         guard item.setDataProvider(provider, forTypes: [.png, .tiff]) else { return false }
         pasteboard.clearContents()
         guard pasteboard.writeObjects([item]) else { return false }
+        let generation = pasteboard.changeCount
+        didWrite(generation)
         let posted = ContinuousClock.now
         guard postPaste() else { return false }
         let deadline = posted + readTimeout
-        while ContinuousClock.now < deadline {
+        while ContinuousClock.now < deadline, pasteboard.changeCount == generation {
             if let readAt = provider.readAt, readAt >= posted { break }
             try? await Task.sleep(for: .milliseconds(10))
         }
@@ -39,7 +42,9 @@ enum SketchPaste {
         postText: () -> Bool,
         persist: () -> TranscriptPersistence.Outcome
     ) async throws -> TimeInterval {
-        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: postImage)
+        var imageGeneration: Int?
+        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: postImage,
+                                      didWrite: { imageGeneration = $0 })
         let provider = SketchTextProvider(text: text)
         var textGeneration: Int?
         var textPostedAt: ContinuousClock.Instant?
@@ -48,6 +53,7 @@ enum SketchPaste {
             result = .success(try DictationDelivery.deliver(
                 text,
                 writeToClipboard: { _ in
+                    guard pasteboard.changeCount == imageGeneration else { return false }
                     let item = NSPasteboardItem()
                     guard item.setDataProvider(provider, forTypes: [.string]) else { return false }
                     pasteboard.clearContents()
