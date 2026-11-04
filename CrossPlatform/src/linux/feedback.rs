@@ -67,6 +67,14 @@ pub(super) fn remember_sketch(text: &str, png: Option<&[u8]>) {
         png.map(|png| (text.to_owned(), png.to_vec()));
 }
 
+pub(super) fn has_sketch(text: &str) -> bool {
+    SKETCH_COPY
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|(saved, _)| saved == text)
+}
+
 pub(super) fn sketch_for(text: &str) -> Option<Vec<u8>> {
     SKETCH_COPY
         .lock()

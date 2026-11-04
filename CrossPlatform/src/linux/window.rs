@@ -711,6 +711,12 @@ fn build_window(
                 "Automatic paste unavailable"
             });
             delivery_row.set_visible(recovering);
+            copy_sketch.set_visible(
+                latest_completed
+                    .borrow()
+                    .as_deref()
+                    .is_some_and(super::feedback::has_sketch),
+            );
             recovery.set_visible(latest_completed.borrow().is_some() && !recovering);
             let warning = recording_started.and_then(|started| {
                 audio_levels.as_ref().and_then(|levels| {

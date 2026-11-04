@@ -343,7 +343,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("recovery-help") {
         println!(
             "{}",
-            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Copies to clipboard when external focus cannot be proven"})
+            serde_json::json!({"commands":["copy-last","copy-sketch","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Copies to clipboard when external focus cannot be proven"})
         );
         return Ok(());
     }
@@ -351,6 +351,7 @@ pub fn run() -> Result<(), String> {
         matches!(
             c.as_str(),
             "copy-last"
+                | "copy-sketch"
                 | "paste-last"
                 | "copy-unsaved"
                 | "retry-unsaved"
