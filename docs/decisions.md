@@ -198,3 +198,12 @@ on several seconds later, after the user had moved on. Removing the queue keeps
 one tap tied to an immediate action. The existing shortcut event tap also observes
 mouse presses, so Option-click and Option-drag do not masquerade as plain taps;
 this uses the app's existing Accessibility grant.
+
+## 2026-11-04: drawing listens only to physical keyboards
+
+A uinput device, grabbed or not, and a mouse with a keyboard map can't start
+drawing. The cost: remapper daemons that present a virtual keyboard (keyd, kanata)
+no longer trigger drawing through that device, though a physical keyboard they grab
+still reports its held keys. Olle's rule is that drawing follows a real Shift hold,
+and a test or tool must never take his pointer. The only exception is one device
+named by `KOETT_TEST_DRAW_KEYBOARD`, for private labs.

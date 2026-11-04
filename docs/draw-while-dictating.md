@@ -12,11 +12,22 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   keyboard devices whenever they're readable, so the overlay never takes
   keyboard focus. About 60 times a second it samples which keys are held
   (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly contains
-  every held key), uses only Shift/Ctrl/Alt/Super, stores nothing and wipes the
-  sample with volatile writes. It never reads key events or typed text, and
+  every held key), keeps only Shift/Ctrl/Alt/Super and a yes/no for "another key
+  is down", stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
   opens keyboards only while a dictation with drawing records. Keyboards are
   found through sysfs capabilities and rescanned every 2 s, so hot-plugged ones
   join and unplugged handles are dropped; unreadable ones are reported.
+- Only physical keyboards count. Virtual devices (uinput, including a tool that
+  grabs its device so the compositor never sees it, and `ydotoold`) and mice
+  that report a keyboard map (Razer Viper) are ignored, because `EVIOCGKEY` reads
+  a device's state even while another program grabs it. A private test names the
+  one virtual device allowed with `KOETT_TEST_DRAW_KEYBOARD=<device name>`; then
+  only that device counts, so a lab can't be drawn on by anything else.
+- A hold must be deliberate. The key must be seen up first, so Shift already down
+  when recording starts, or left down from Ctrl+Shift+Space, never draws. Another
+  modifier or key during a hold ends it until the key is released, so typing with
+  Shift lets the pointer go. In the focused overlay, where a release can be missed,
+  a hold with no pointer activity for 15 s is released.
 - A draw-key hold under 120 ms does nothing, so typing a capital letter neither
   blocks clicks nor flashes the crosshair, and ink under 12 px is dropped as a
   resting hand rather than becoming a sketch.

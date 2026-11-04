@@ -192,3 +192,17 @@ re-decoded everything; a double-tap on Stop started a new recording; a slow live
 decoder raised a false overflow warning; a press before ready did nothing; S1-mini
 could hold a paste for 180 s. Each has a regression test.
 
+## 2026-11-04: drawing started with no Shift press
+
+Olle: "it presses shifts by itself sometimes and then my mouse just goes off".
+Since #35 Koett read Shift from every device reporting the key, and `EVIOCGKEY`
+sees a device even while another program grabs it. `lab-grabbed-shift.py`, run on
+the host kernel by a test on the same PC, held a virtual Shift that his desktop
+never saw and his running Koett obeyed: it drew and took clicks. A read-only sampler
+logged that device going down with no keyboard press, and his unwanted pasted
+sketches fall inside those runs. The installed build reproduced it in a private lab.
+Only physical keyboards count now, which also drops `ydotoold` and his Razer mouse's
+keyboard map. A hold needs the key seen up first, so releasing Ctrl from
+Ctrl+Shift+Space or a key stuck at start can't draw; other keys end a hold, and a
+focused hold idle for 15 s is released. Regression tests are in `sketch/keys.rs`.
+Labs must name their device in `KOETT_TEST_DRAW_KEYBOARD`.
