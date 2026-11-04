@@ -253,3 +253,8 @@ posts Shift events. The Linux bug in PR #44 reads a grabbed virtual device throu
 `EVIOCGKEY` even when its Shift never reaches the compositor. Mac does not read
 those devices and that specific cause does not apply. No draw-key behavior was
 changed by this clipboard fix; hardware phantom-Shift behavior was not reproduced.
+
+AppKit contract: each copy creates a fresh
+[`NSPasteboardItem`](https://developer.apple.com/documentation/appkit/nspasteboarditem)
+with multiple representation types. Pasteboard items are not cached or reused;
+only the image bytes and text are retained for the next copy.

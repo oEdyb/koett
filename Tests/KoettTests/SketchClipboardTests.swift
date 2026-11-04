@@ -39,6 +39,11 @@ final class SketchClipboardTests: XCTestCase {
             XCTAssertEqual(board.string(forType: .string), text)
             XCTAssertNotNil(board.data(forType: .tiff))
         }
+        XCTAssertNotNil(NSImage(pasteboard: board), "A native image consumer must still receive the sketch")
+        let editor = NSTextView(frame: .zero)
+        editor.isRichText = false
+        XCTAssertTrue(editor.readSelection(from: board, type: .string))
+        XCTAssertEqual(editor.string, text)
     }
 
     func testRestorationWaitsForTheAsynchronousTextRead() async throws {
