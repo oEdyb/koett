@@ -46,7 +46,7 @@ impl Renderer {
             let d2d = factory.CreateDevice(&dxgi)?;
             let device: IDCompositionDevice2 = DCompositionCreateDevice2(&d2d)?;
             let desktop: IDCompositionDesktopDevice = device.cast()?;
-            let target = desktop.CreateTargetForHwnd(hwnd, true)?;
+            let target = desktop.CreateTargetForHwnd(hwnd, false)?;
             let visual = device.CreateVisual()?;
             let opacity = device.CreateEffectGroup()?;
             visual.SetEffect(&opacity)?;
@@ -192,6 +192,8 @@ impl Renderer {
                     }
                 } else if state.paused {
                     draw("Ⅱ", 18.0, 32.0, false);
+                } else if state.drawing {
+                    draw("✎", 16.0, 33.0, false);
                 } else if matches!(state.phase, Phase::NotPasted | Phase::Error { .. }) {
                     draw("!", 19.0, 30.0, false);
                 } else if matches!(state.phase, Phase::Transcribing) {

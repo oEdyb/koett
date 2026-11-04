@@ -51,6 +51,8 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
+      - name: Test Windows dependency gate
+        run: python3 scripts/test_windows_dependencies.py
       - name: Test native build configuration
         run: python3 scripts/test_build_asr_native.py
       - name: Test ASR wrapper provenance
@@ -118,6 +120,8 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Check clean-Windows DLL dependencies
+        run: python scripts/check_windows_dependencies.py target/release/koett.exe
       - name: Runtime self-test
         run: cargo run --release --locked --bin koett-engine -- --self-test
       - name: Runtime long-input probe

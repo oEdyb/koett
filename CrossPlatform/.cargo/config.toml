@@ -1,2 +1,5 @@
 [env]
 SHERPA_ONNX_LIB_DIR = { value = "native-build/lib", relative = true }
+
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -13,6 +13,8 @@ pub struct State {
     pub hovered: bool,
     pub paused: bool,
     pub copied: bool,
+    pub drawing: bool,
+    pub media_result: bool,
     changed: u64,
     left_hover: Option<u64>,
 }
@@ -23,6 +25,8 @@ impl Default for State {
             hovered: false,
             paused: false,
             copied: false,
+            drawing: false,
+            media_result: false,
             changed: 0,
             left_hover: None,
         }
@@ -33,6 +37,8 @@ impl State {
         self.phase = phase;
         self.changed = now;
         self.copied = false;
+        self.drawing = false;
+        self.media_result = false;
         self.left_hover = None;
         if self.phase == Phase::Recording {
             self.paused = false;
@@ -56,7 +62,7 @@ impl State {
             Phase::Done(_) => Some(
                 self.left_hover
                     .map(|t| t + 800)
-                    .unwrap_or(self.changed + 1750),
+                    .unwrap_or(self.changed + if self.media_result { 10000 } else { 1750 }),
             ),
             Phase::Error { rescue: false, .. } => Some(self.changed + 5000),
             _ => None,

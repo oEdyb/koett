@@ -577,6 +577,19 @@ impl WindowsApp {
                 let _ = open_history();
                 return;
             }
+            11 => {
+                self.pill_state.drawing = !self.pill_state.drawing;
+                self.update_overlay();
+                return;
+            }
+            12 => {
+                self.last_transcript = "Desktop lab media result".into();
+                self.pill_state
+                    .set(Phase::Done(self.last_transcript.clone()), now);
+                self.pill_state.media_result = true;
+                self.update_overlay();
+                return;
+            }
             10 => {
                 self.pill_state.paused = !self.pill_state.paused;
                 self.update_overlay();
@@ -585,6 +598,7 @@ impl WindowsApp {
             _ => return,
         };
         self.pill_state.set(phase, now);
+        self.update_tray();
         self.update_overlay();
     }
 
@@ -775,10 +789,15 @@ impl WindowsApp {
                         engine.cancel_dictation();
                     }
                     self.pill_state.set(pill_state::Phase::Hidden, now);
+                    if self.desktop_lab {
+                        self.status = AppStatus::Ready;
+                    }
                 } else if (100..175).contains(&x) && self.status == AppStatus::Recording {
                     if let Some(levels) = &self.levels {
                         self.pill_state.paused = !levels.paused();
                         levels.set_paused(self.pill_state.paused);
+                    } else if self.desktop_lab {
+                        self.pill_state.paused = !self.pill_state.paused;
                     }
                 } else if (175..238).contains(&x) {
                     let _ = open_history();
