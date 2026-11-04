@@ -1,5 +1,6 @@
 use ashpd::zbus;
 use base64::{Engine, engine::general_purpose::STANDARD};
+use std::sync::{Arc, LazyLock, OnceLock};
 use std::time::Duration;
 
 const MAX_PNG: usize = 32 * 1024 * 1024;
@@ -42,10 +43,24 @@ fn decode(raw: &str) -> Result<Vec<u8>, String> {
 }
 
 pub fn capture(rect: super::capture::Rect) -> Result<Vec<u8>, String> {
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|_| "GNOME capture runtime unavailable")?;
+    static RUNTIME: OnceLock<Result<tokio::runtime::Runtime, String>> = OnceLock::new();
+    static SLOTS: LazyLock<Arc<tokio::sync::Semaphore>> =
+        LazyLock::new(|| Arc::new(tokio::sync::Semaphore::new(4)));
+    let permit = SLOTS
+        .clone()
+        .try_acquire_owned()
+        .map_err(|_| "GNOME capture busy; dictation was kept")?;
+    let runtime = RUNTIME
+        .get_or_init(|| {
+            tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(1)
+                .max_blocking_threads(4)
+                .enable_all()
+                .build()
+                .map_err(|_| "GNOME capture runtime unavailable".into())
+        })
+        .as_ref()
+        .map_err(Clone::clone)?;
     runtime.block_on(async {
         tokio::time::timeout(WAIT, async {
             let connection = zbus::Connection::session()
@@ -75,7 +90,12 @@ pub fn capture(rect: super::capture::Rect) -> Result<Vec<u8>, String> {
                 .call("Capture", &(request,))
                 .await
                 .map_err(|_| "Enable the Koett GNOME extension for drawing capture")?;
-            decode(&raw)
+            tokio::task::spawn_blocking(move || {
+                let _permit = permit;
+                decode(&raw)
+            })
+            .await
+            .map_err(|_| "GNOME screenshot decoding failed")?
         })
         .await
         .map_err(|_| "GNOME capture timed out; dictation was kept")?
