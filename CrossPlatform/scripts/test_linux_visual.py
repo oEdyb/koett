@@ -261,14 +261,14 @@ try:
     capture('settings-long-rules')
     phrases = [n for n in walk(settings) if n.get_name() == 'Phrase' and 'EditableText' in n.get_interfaces()]
     assert len(phrases) == 16
-    for _ in range(60):
-        phrases[0].clear_cache()
-        if phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED):
-            break
-        keys('key', 15)
-        time.sleep(0.05)
-    phrases[0].clear_cache()
-    assert phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED)
+    sidebar = find('Words', settings, 'list item')
+    assert sidebar is not None
+    assert sidebar.get_component_iface().grab_focus()
+    keys('chord', 42, 15)
+    wait(lambda: find('Save', settings).get_state_set().contains(Atspi.StateType.FOCUSED), 'Shift+Tab leaves sidebar for Save')
+    assert sidebar.get_component_iface().grab_focus()
+    keys('key', 15)
+    wait(lambda: phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED), 'single Tab reaches chosen page')
     assert any(n.get_name() == 'Dictionary' for n in walk(settings)), 'Tab stays on the chosen Settings page'
     checks.append('Tab from the Settings sidebar reaches the chosen page instead of walking to the last page')
     keys('key', *([15] * 48))
