@@ -74,3 +74,11 @@ Rebased again onto main `ff50dd5` after PR #68 merged: 385 tests passed,
 The private-app undo workflow passed again. Only the parity document conflicted;
 first-visible Permissions, Paste Last and drawing undo were all retained.
 MSVC cross-check still lacks `lib.exe`. No installation.
+
+Rebased onto main `e2c170b` after PR #69 merged: 388 tests passed, 17 ignored,
+plus native ABI check; formatting, clippy and release passed. The frame-store
+conflict retained both empty-result pending-frame detection and undo removal/
+late-result rejection. The private workflow now also draws, undoes all captures,
+then stops silently: exact Unicode clipboard, Last and history remain unchanged.
+MSVC cross-check still lacks `lib.exe`. Full-batch installation awaits fresh CI
+for this rebased head; no partial installation was performed.

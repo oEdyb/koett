@@ -1,4 +1,4 @@
-import json, math, os, subprocess, sys, time
+import json, math, os, sqlite3, subprocess, sys, time
 from pathlib import Path
 assert os.environ['AGENT_LAB_RUNTIME'].endswith('/koett-undo-sol')
 root=Path(sys.argv[1]).resolve();out=root/'CrossPlatform/target/undo-sol'
@@ -72,14 +72,29 @@ try:
     results['native_undo']=status();capture('native-undo')
     assert cli('undo-drawing')[0]==0;assert status()['count']==0
     assert cli('undo-drawing')[0]==1
-    cli('cancel');wait(lambda:not status()['active'],'cancel closes drawing session')
+    clipboard_seed='Keep after undo. Räksmörgås 🦐\n'
+    subprocess.run(['wl-copy','--type','text/plain;charset=utf-8'],input=clipboard_seed.encode(),check=True)
+    last=out/'data/koett/Last Transcript.txt'
+    before_last=last.read_bytes() if last.exists() else None
+    database=out/'data/koett/History.sqlite3'
+    def row_count():
+        with sqlite3.connect(database) as connection:
+            return connection.execute('select count(*) from transcripts').fetchone()[0]
+    before_rows=row_count()
+    cli('stop');wait(lambda:not cli('menu-status')[1].get('busy',True),'silent stop after undo')
+    wait(lambda:not status()['active'],'stop closes drawing session')
+    assert subprocess.check_output(['wl-paste','--no-newline'])==clipboard_seed.encode()
+    assert (last.read_bytes() if last.exists() else None)==before_last
+    assert row_count()==before_rows
+    results['silent_stop_after_undo']={'clipboard_unchanged':True,'last_unchanged':True,'history_unchanged':True}
+
     assert cli('undo-drawing')[0]==1
     cli('start');wait(lambda:status()['active'],'next session')
     assert status()['count']==0 and not status()['can_undo']
     cli('cancel');wait(lambda:not cli('menu-status')[1].get('busy',True),'idle after cancel')
     results['new_recording']=status()
     (out/'results.json').write_text(json.dumps(results,indent=2)+'\n')
-    print('PASS: pending/late capture undo, two completed captures, native menu action and CLI undo, idle refusal, next-recording isolation',flush=True)
+    print('PASS: pending/late capture undo, two completed captures, native menu action and CLI undo, silent stop preserves clipboard/Last/history, idle refusal, next-recording isolation',flush=True)
 finally:
     cli('cancel');time.sleep(.2);cli('quit')
     try:app.wait(timeout=12)

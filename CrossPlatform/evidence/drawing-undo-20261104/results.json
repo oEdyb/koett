@@ -27,6 +27,11 @@
     "count": 1,
     "ok": true
   },
+  "silent_stop_after_undo": {
+    "clipboard_unchanged": true,
+    "last_unchanged": true,
+    "history_unchanged": true
+  },
   "new_recording": {
     "active": false,
     "can_undo": false,
