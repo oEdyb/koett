@@ -27,9 +27,12 @@ fn marker() -> Result<std::path::PathBuf, String> {
 }
 
 fn pending_at(path: &std::path::Path) -> Result<bool, String> {
-    path.try_exists()
-        .map(|seen| !seen)
-        .map_err(|e| e.to_string())
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_file() => Ok(false),
+        Ok(_) => Err("Setup status is not a regular file".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(true),
+        Err(error) => Err(error.to_string()),
+    }
 }
 
 fn pending() -> Result<bool, String> {
@@ -49,14 +52,14 @@ fn remember_at(path: &std::path::Path) -> Result<(), String> {
         .open(path)
     {
         Ok(_) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => pending_at(path).map(|_| ()),
         Err(error) => Err(error.to_string()),
     }
 }
 
 /// Only explicit app/window opening calls this; background startup stays quiet.
 pub fn maybe_show(application: &gtk::Application) {
-    if pending() == Ok(true) {
+    if pending() != Ok(false) {
         application.activate_action("permissions", None);
     }
 }
@@ -273,6 +276,10 @@ mod tests {
         let blocked = settings.join("permissions-seen");
         assert!(pending_at(&blocked).is_err());
         assert!(remember_at(&blocked).is_err());
+        std::fs::remove_file(&marker).unwrap();
+        std::fs::create_dir(&marker).unwrap();
+        assert!(pending_at(&marker).is_err());
+        assert!(remember_at(&marker).is_err());
         std::fs::remove_dir_all(directory).unwrap();
     }
 }
