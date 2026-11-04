@@ -31,7 +31,9 @@ private struct Koett {
             let reply: ControlReply
             do { reply = try LocalControlSocket.request(commands) }
             catch { reply = .failure("unavailable", error.localizedDescription) }
-            if let data = try? JSONEncoder().encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            if let data = try? encoder.encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
             exit(reply.ok ? EXIT_SUCCESS : EXIT_FAILURE)
         }
 
