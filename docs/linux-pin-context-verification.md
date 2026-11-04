@@ -12,8 +12,8 @@ Windows/shared engine change. Main with #54/#57 was separately installed at
   seconds through AT-SPI Value.CurrentValue. Volume and other sliders are ignored.
   Existing `t`/`start` parameters are replaced; video identity and other parameters
   stay. Missing/invalid time leaves the original URL. No MPRIS association guess.
-- KWin: a one-shot read-only script gets the top window at the pin and its client
-  geometry. It neither clicks nor changes focus. Own overlays are excluded.
+- KWin: a one-shot read-only script gets the top window at the pin and its buffer
+  geometry (including surface margins used by window-relative accessibility coordinates). It neither clicks nor changes focus. Own overlays are excluded.
   A dedicated temporary D-Bus reply accepts only the KWin service owner. The script
   is unloaded and its private scratch file deleted after the bounded query.
 - Other desktops: AT-SPI showing-frame geometry can identify a unique frame;
@@ -45,7 +45,7 @@ GNOME currently lacks the drawing overlay backend as a separate Linux gap.
 ## Fresh checks
 
 - `cargo fmt --check`: passed.
-- `cargo test --locked`: 373 passed, 17 ignored in the library suite, plus native
+- `cargo test --locked`: 375 passed, 17 ignored in the library suite, plus native
   ABI test passed. The three added ignored tests require private desktop fixtures.
 - `cargo clippy --all-targets -- -D warnings`: passed.
 - `cargo build --release --locked`: passed.
@@ -67,7 +67,7 @@ Private KWin desktop `koett-row3-sol`, private Chrome profile, native Wayland:
 - The actual linked-image fixture returned link `https://example.com/pin-target`
   and image label `Coral square`. Its file URL was intentionally absent from the
   resulting page URL. The authenticated KWin callback was enabled for this check.
-- The independent KWin geometry test returned the browser's nonzero client rect.
+- The independent KWin geometry test returned the browser's nonzero window rect.
 
 These tests exercise the context reader against live providers, not a complete
 Shift-click/capture/paste session. Existing pin gesture, capture and delivery
@@ -80,4 +80,4 @@ acceptance remain unverified. No claim that all row-3 platforms are complete.
   and [scrolling IPC layout population](https://github.com/YaLTeR/niri/blob/main/src/layout/scrolling.rs).
 - [AT-SPI Component coordinates and hit tests](https://github.com/GNOME/at-spi2-core/blob/main/xml/Component.xml)
   and [Value scalar properties](https://github.com/GNOME/at-spi2-core/blob/main/xml/Value.xml).
-- [KWin windowAt and clientGeometry](https://develop.kde.org/docs/plasma/kwin/api/).
+- [KWin windowAt and bufferGeometry](https://develop.kde.org/docs/plasma/kwin/api/).

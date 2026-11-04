@@ -110,7 +110,7 @@ for (const w of windows) {{
     const app = String(w.resourceClass).toLowerCase();
     if (app === "koett" || app === "com.olledyberg.koett") continue;
     if (w.dock || w.desktopWindow) break;
-    const r = w.clientGeometry;
+    const r = w.bufferGeometry;
     result = {{title:w.caption, app:String(w.resourceClass), x:r.x, y:r.y, width:r.width, height:r.height}};
     break;
 }}
