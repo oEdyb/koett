@@ -92,7 +92,7 @@ def keys(*codes):
 
 
 def control(*command):
-    return subprocess.run([str(binary), *command], capture_output=True, text=True, timeout=10)
+    return subprocess.run([str(binary), *command], capture_output=True, text=True, timeout=10, check=False)
 
 
 main = wait(lambda: find('Koett', role='frame'), 'main window', 60)

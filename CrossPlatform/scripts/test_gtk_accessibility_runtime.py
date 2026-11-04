@@ -67,6 +67,7 @@ def main():
     parser.add_argument("--lab", required=True)
     parser.add_argument("--library", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--reuse-registry", action="store_true")
     parser.add_argument("--rounds", type=int, default=20)
     args = parser.parse_args()
     assert re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args.lab)
@@ -86,8 +87,9 @@ def main():
     checks = []
     with (args.output / "registry.log").open("w") as registry_log, \
             (args.output / "gtk.log").open("w") as gtk_log:
-        registry = subprocess.Popen(["/usr/lib/at-spi2-registryd"], env=environment,
-                                    stdout=registry_log, stderr=subprocess.STDOUT)
+        registry = None if args.reuse_registry else subprocess.Popen(
+            ["/usr/lib/at-spi2-registryd"], env=environment,
+            stdout=registry_log, stderr=subprocess.STDOUT)
         try:
             deadline = time.monotonic() + 8
             while True:
@@ -100,7 +102,11 @@ def main():
             owner_name = ast.literal_eval(owner.stdout)[0]
             registry_pid = call(address, "org.freedesktop.DBus", "/org/freedesktop/DBus",
                                 "org.freedesktop.DBus.GetConnectionUnixProcessID", owner_name)
-            assert ast.literal_eval(registry_pid.stdout.replace("uint32 ", ""))[0] == registry.pid
+            owner_pid = ast.literal_eval(registry_pid.stdout.replace("uint32 ", ""))[0]
+            if registry is not None:
+                assert owner_pid == registry.pid
+            assert call(address, owner_name, "/org/a11y/atspi/registry",
+                        "org.freedesktop.DBus.Peer.Ping").returncode == 0
             process = subprocess.Popen([sys.executable, __file__, "--gtk-child"], env=environment,
                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                        stderr=gtk_log, text=True)
@@ -138,7 +144,10 @@ def main():
                     assert result.returncode != 0, result.stdout
                     assert f"No child with index {index}" in result.stderr, result.stderr
                 assert process.poll() is None, "GTK process died"
-                assert registry.poll() is None, "registry died"
+                if registry is not None:
+                    assert registry.poll() is None, "registry died"
+                assert call(address, owner_name, "/org/a11y/atspi/registry",
+                            "org.freedesktop.DBus.Peer.Ping").returncode == 0
 
             def command(value):
                 process.stdin.write(value + "\n")
@@ -160,7 +169,7 @@ def main():
             command("quit")
             assert process.wait(timeout=5) == 0
             receipt = {"library": str(library), "sha256": hashlib.sha256(library.read_bytes()).hexdigest(),
-                       "registry_pid": registry.pid, "rounds": checks, "empty_root_error": True,
+                       "registry_pid": owner_pid, "rounds": checks, "empty_root_error": True,
                        "clean_exit": True}
             (args.output / "results.json").write_text(json.dumps(receipt, indent=2) + "\n")
             print(f"PASS: {len(checks)} visible/retired-child rounds; clean exit", flush=True)

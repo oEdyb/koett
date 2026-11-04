@@ -2,8 +2,38 @@ use crate::formatting::{Context, Formatting, Structure, Style};
 use gtk4::{self as gtk, prelude::*};
 use std::sync::mpsc::Sender;
 
-pub(super) struct FormattingView {
-    pub root: gtk::Box,
+/// See `ModelsPanel`: new widgets per Settings window, state kept here.
+pub(super) struct FormattingPanel {
+    actions: Sender<super::TrayAction>,
+    state: FormattingView,
+    current: std::cell::RefCell<Option<FormattingView>>,
+}
+
+impl FormattingPanel {
+    pub fn new(actions: Sender<super::TrayAction>) -> Self {
+        Self {
+            state: FormattingView::new(actions.clone()),
+            actions,
+            current: Default::default(),
+        }
+    }
+    pub fn build(&self) -> gtk::Box {
+        let view = FormattingView::new(self.actions.clone());
+        view.copy_from(&self.state);
+        let root = view.root.clone();
+        *self.current.borrow_mut() = Some(view);
+        root
+    }
+    pub fn update(&self, message: &str) {
+        self.state.update(message);
+        if let Some(view) = self.current.borrow().as_ref() {
+            view.update(message);
+        }
+    }
+}
+
+struct FormattingView {
+    root: gtk::Box,
     controls: gtk::Grid,
     output: gtk::ToggleButton,
     raw: gtk::ToggleButton,
@@ -161,6 +191,16 @@ impl FormattingView {
         } else if !message.starts_with('@') {
             self.idle.set(message == "Ready");
         }
+        self.apply_editable();
+    }
+    fn copy_from(&self, other: &Self) {
+        self.setup.set(other.setup.get());
+        self.idle.set(other.idle.get());
+        self.status.set_text(&other.status.text());
+        self.status.set_visible(other.status.is_visible());
+        self.apply_editable();
+    }
+    fn apply_editable(&self) {
         let editable = self.idle.get() && !self.setup.get();
         self.controls.set_sensitive(editable);
         self.raw.set_sensitive(editable);

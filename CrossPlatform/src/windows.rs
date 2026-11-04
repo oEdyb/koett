@@ -460,6 +460,10 @@ impl WindowsApp {
             match update {
                 EngineUpdate::ActiveModel(_) => {}
                 EngineUpdate::Notice(message) => {
+                    let message = message
+                        .strip_prefix("@model-notice:")
+                        .unwrap_or(&message)
+                        .to_string();
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {

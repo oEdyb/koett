@@ -20,6 +20,8 @@ pub struct HistoryView {
     pub record_button: gtk::Button,
     refresh: Rc<dyn Fn()>,
 }
+const TWO_PANE_WIDTH: i32 = 680;
+
 impl HistoryView {
     pub fn refresh(&self) {
         (self.refresh)();
@@ -166,7 +168,18 @@ impl HistoryView {
         buttons.append(&export);
         buttons.append(&fix);
         toolbar.append(&buttons);
-        workspace.append(&detail);
+        let reading = gtk::ScrolledWindow::builder()
+            .child(&detail)
+            .hscrollbar_policy(gtk::PolicyType::Automatic)
+            .vscrollbar_policy(gtk::PolicyType::Never)
+            .propagate_natural_width(true)
+            .hexpand(true)
+            .build();
+        detail
+            .bind_property("visible", &reading, "visible")
+            .sync_create()
+            .build();
+        workspace.append(&reading);
         let notice = gtk::Label::new(None);
         notice.add_css_class("koett-notice");
         notice.set_wrap(true);
@@ -271,6 +284,7 @@ impl HistoryView {
                 if let Some(row) = row
                     && let Some(summary) = rows.borrow().get(row.index() as usize)
                 {
+                    let changed = selected_id.borrow().as_ref() != Some(&summary.id);
                     *selected_id.borrow_mut() = Some(summary.id.clone());
                     selected.borrow_mut().take();
                     copy.set_sensitive(false);
@@ -280,11 +294,24 @@ impl HistoryView {
                     meta.set_text("");
                     transcript_heading.set_text(&timestamp(summary.created_at_ms));
                     let _ = sender.send(Query::Get(summary.id.clone()));
-                    if workspace.width() < 650 {
+                    if changed && workspace.width() < TWO_PANE_WIDTH {
                         navigation.set_visible(false);
                         detail.set_visible(true);
                         back.set_visible(true);
                     }
+                }
+            }
+        });
+        list.connect_row_activated({
+            let navigation = navigation.clone();
+            let detail = detail.clone();
+            let back = back.clone();
+            let workspace = workspace.clone();
+            move |_, _| {
+                if workspace.width() < TWO_PANE_WIDTH {
+                    navigation.set_visible(false);
+                    detail.set_visible(true);
+                    back.set_visible(true);
                 }
             }
         });
@@ -307,8 +334,8 @@ impl HistoryView {
                 let Some(root) = root.upgrade() else {
                     return gtk::glib::ControlFlow::Break;
                 };
-                navigation.set_hexpand(root.width() < 650);
-                if root.width() >= 650 {
+                navigation.set_hexpand(root.width() < TWO_PANE_WIDTH);
+                if root.width() >= TWO_PANE_WIDTH {
                     navigation.set_visible(true);
                     detail.set_visible(true);
                     back.set_visible(false);
@@ -460,6 +487,7 @@ impl HistoryView {
                         }
                         Reply::Page(g, result) if g == generation.get() => match result {
                             Ok(page) => {
+                                let showing_list = navigation.is_visible();
                                 while let Some(child) = list.first_child() {
                                     list.remove(&child);
                                 }
@@ -514,6 +542,10 @@ impl HistoryView {
                                 }) && let Some(row) = list.row_at_index(index as i32)
                                 {
                                     list.select_row(Some(&row));
+                                }
+                                if workspace.width() < TWO_PANE_WIDTH {
+                                    navigation.set_visible(showing_list);
+                                    detail.set_visible(!showing_list);
                                 }
                             }
                             Err(error) => {
