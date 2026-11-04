@@ -3,7 +3,8 @@
 //! Each decode runs two streams in one batch: a plain one and one with the
 //! terms as hotwords. Only the biased stream's dictionary words are kept (see
 //! `dictionary::adopt_terms`), because the boost also changes casing of other
-//! words. An empty dictionary, or a CTC model, keeps the original greedy decoder.
+//! words. An empty dictionary keeps the original greedy decoder. CTC retains
+//! its greedy primary stream and may use the bounded transducer sidecar.
 //! Settings follow the pinned sherpa-onnx Parakeet TDT hotword example.
 
 use std::fs;

@@ -16,6 +16,7 @@ const READY: u8 = 1;
 const BUSY: u8 = 2;
 const FAILED: u8 = 3;
 const MAX_SAMPLES: usize = 1_000_000;
+// Native decoding is not interruptible; one cached worker bounds stalled work.
 static WORKER: OnceLock<Option<Worker>> = OnceLock::new();
 
 struct Job {
@@ -127,9 +128,10 @@ impl Worker {
                     }
                 }
                 let _failure = FailedOnExit(progress.clone());
-                if crate::model::validate_local_model(crate::model::LocalModel::ParakeetV2, &path)
-                    .is_err()
+                if let Err(error) =
+                    crate::model::validate_local_model(crate::model::LocalModel::ParakeetV2, &path)
                 {
+                    eprintln!("ctc_dictionary_sidecar_unavailable={error}");
                     return;
                 }
                 let Ok(mut decoder) =

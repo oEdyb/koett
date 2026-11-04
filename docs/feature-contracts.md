@@ -334,8 +334,9 @@
 - An empty dictionary must leave decoding exactly as before (single greedy pass).
 - Biased decoding may only change words that become a dictionary term. Keep the
   plain stream as the base; never ship single-stream biasing.
-- The spelling pass ignores case, spaces and hyphens, never punctuation, runs
-  once, and precedes literal replacements.
+- The spelling pass ignores case, spaces and hyphens, never punctuation. It runs
+  before optional S1-mini and restores spelling on successful cleanup output.
+  Without cleanup it runs once. Literal replacements remain the final stage.
 - Never write derived files (the hotword `bpe.vocab`) into model folders.
 - Dictionary edits apply to the next dictation without restarting Koett.
 - Fix a word stores corrections apart from history and never edits history text.

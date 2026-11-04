@@ -2638,10 +2638,9 @@ fn completed_text(
     }
 }
 
-/// Dictionary spelling first, then the user's literal replacements.
+/// Runtime has restored dictionary spelling around cleanup; literal rules run last.
 fn own_words(raw: &str, settings: &Settings) -> String {
-    let spelled = crate::dictionary::apply(raw, &settings.dictionary);
-    crate::replacements::apply(&spelled, &settings.replacements)
+    crate::replacements::apply(raw, &settings.replacements)
 }
 
 /// Pasted text and optional contact sheet for a dictation with sketches.
