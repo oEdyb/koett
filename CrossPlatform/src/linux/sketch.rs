@@ -548,8 +548,9 @@ impl Session {
                 self.press();
             }
         } else if self.protecting {
-            if held {
+            if held || others {
                 self.gesture = gesture::PinGesture::default();
+                self.drop_jitter();
             }
             self.release();
         }
@@ -1447,6 +1448,21 @@ mod tests {
         let region = input_region((1000, 800), Some((5.0, 5.0)));
         assert!(!region.contains_point(0, 0));
         assert!(region.contains_point(60, 60));
+    }
+
+    #[test]
+    fn short_deliberate_ink_keeps_the_existing_twelve_pixel_gate() {
+        for extent in [12.0, 16.0, 24.0] {
+            assert!(!accidental(&[vec![
+                (100.0, 100.0),
+                (100.0 + extent, 100.0)
+            ]]));
+        }
+        assert!(accidental(&[vec![
+            (100.0, 100.0),
+            (111.0, 100.0),
+            (100.0, 100.0)
+        ]]));
     }
 
     #[test]
