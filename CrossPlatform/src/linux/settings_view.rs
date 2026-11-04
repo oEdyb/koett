@@ -430,12 +430,12 @@ Media: open Koett → Transcribe media",
     pause_media.set_active(settings.pause_media);
     recording.append(&pause_media);
     let drawing = group(&draw_page, "Drawing");
-    let draw = gtk::CheckButton::with_label("_Draw on screen while dictating");
+    let draw = gtk::CheckButton::with_label("_Draw & Pin While Dictating");
     draw.set_use_underline(true);
     draw.set_active(settings.draw_while_dictating);
     drawing.append(&draw);
     drawing.append(&help(
-        "Hold the draw key and move the pointer to sketch. Sketches paste as one numbered image, then your text. Works on KDE, niri, Sway and Hyprland; KDE asks once for screenshot permission.",
+        "Hold the draw key and move the pointer to sketch, or click to drop a numbered pin. They paste as one numbered image, then your text. Works on KDE, niri, Sway and Hyprland; KDE asks once for screenshot permission.",
     ));
     let draw_options = gtk::Box::new(gtk::Orientation::Vertical, 8);
     draw_options.add_css_class("koett-setting-nested");
@@ -450,6 +450,20 @@ Media: open Koett → Transcribe media",
         DrawKey::Alt => "alt",
     }));
     row(&draw_options, "Draw key", &draw_key);
+    let pin_selection = gtk::CheckButton::with_label("Include Selected Text in Pins");
+    pin_selection.set_active(settings.pin_selected_text);
+    draw_options.append(&pin_selection);
+    draw_options.append(&help(
+        "Pins add the app and window title on niri. Chrome adds its page link and selected text only after this one-time setup, which makes it build its accessibility tree.",
+    ));
+    let page_links = gtk::Button::with_label("Copy page-link setup command");
+    page_links.set_halign(gtk::Align::Start);
+    page_links.set_tooltip_text(Some(PAGE_LINK_SETUP));
+    page_links.connect_clicked(|button| {
+        button.clipboard().set_text(PAGE_LINK_SETUP);
+        button.set_label("Copied · paste into a terminal, then log in again");
+    });
+    draw_options.append(&page_links);
     draw_options.append(&help(
         "Typing keeps working while you record. To see the draw key, Koett checks physical keyboards for Shift, Ctrl, Alt, Super and whether another key is down, only while a drawing dictation records. It never reads typed text.",
     ));
@@ -608,6 +622,7 @@ Media: open Koett → Transcribe media",
             updated.pause_media = pause_media.is_active();
             updated.draw_while_dictating = draw.is_active();
             updated.draw_may_take_keyboard = may_take.is_active();
+            updated.pin_selected_text = pin_selection.is_active();
             updated.draw_key = match draw_key.active_id().as_deref() {
                 Some("control") => DrawKey::Control,
                 Some("alt") => DrawKey::Alt,
@@ -692,6 +707,8 @@ fn tab_past_sidebar(
     });
     sidebar.add_controller(keys);
 }
+
+const PAGE_LINK_SETUP: &str = "mkdir -p ~/.config/environment.d && echo ACCESSIBILITY_ENABLED=1 > ~/.config/environment.d/koett-page-links.conf && echo --force-renderer-accessibility >> ~/.config/chrome-flags.conf";
 
 fn group(page: &gtk::Box, title: &str) -> gtk::Box {
     let heading = gtk::Label::new(Some(title));

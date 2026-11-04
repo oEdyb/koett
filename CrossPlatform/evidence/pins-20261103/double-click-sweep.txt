@@ -1,0 +1,93 @@
+grabbed /dev/input/event31
+/home/olle/.cache/koett-pins-lab/t13.sh: line 25: dra: command not found
+== dbl-100 presses=0
+- #1 (0:05) “I love you”'
+
+{"id":2,"title":"Target","app_
+== dbl-120 presses=0
+- #1 (0:05) “I love you”'
+
+{"id":2,"title":"Target","app_
+== dbl-140 presses=1
+5611.584 Other ACTIVE True
+5611.585 Target ACTIVE False
+5611.634 Other PRESS n=1 x=140 y=330
+5611.634 Target ACTIVE True
+5611.634 Other ACTIVE False
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-150 presses=0
+5629.692 Target ACTIVE False
+5629.692 Other ACTIVE True
+5629.742 Other ACTIVE False
+5629.742 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-160 presses=0
+5647.893 Target ACTIVE False
+5647.893 Other ACTIVE True
+5647.927 Other ACTIVE False
+5647.927 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-170 presses=0
+5665.943 Target ACTIVE False
+5665.943 Other ACTIVE True
+5665.960 Other ACTIVE False
+5665.960 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-180 presses=0
+5684.046 Target ACTIVE False
+5684.046 Other ACTIVE True
+5684.096 Other ACTIVE False
+5684.096 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-190 presses=0
+5702.397 Target ACTIVE False
+5702.397 Other ACTIVE True
+5702.447 Other ACTIVE False
+5702.447 Target ACTIVE True
+- #1 (0:05) “I love you.”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== dbl-200 presses=0
+5720.446 Target ACTIVE False
+5720.446 Other ACTIVE True
+5720.496 Other ACTIVE False
+5720.496 Target ACTIVE True
+- #1 (0:05) “I love you.”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+== dbl-220 presses=0
+no-paste
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+== dbl-150 presses=0
+no-paste
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+== dbl-160 presses=0
+no-paste
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds
+
+agent-lab: Lab koett-pins accessibility unavailable: Private AT-SPI check failed: TimeoutExpired: Command '['/usr/bin/gdbus', 'call', '--session', '-d', 'org.a11y.Bus', '-o', '/org/a11y/bus', '-m', 'org.a11y.Bus.GetAddress']' timed out after 3 seconds

@@ -2,7 +2,8 @@
 
 Status: approach A chosen on 2026-11-02. Mac is built (`PinContext.swift`,
 `PinContextReader.swift`, `SketchBoard` pins, tests in `SketchPinTests.swift`);
-live check pending. Linux follows. Ask stays until pins have been used for about a week, then is removed.
+live check pending. Linux is built (`pin_context.rs`, `linux/sketch/gesture.rs`,
+`niri_pick.rs`, `pin_reader.rs`, `wl_click.rs`); see "Linux" below. Ask stays until pins have been used for about a week, then is removed.
 
 Koett is used mostly to dictate into AI agents (Claude Code in a terminal,
 browser chats). The goal is that the agent also gets *where you were
@@ -13,11 +14,11 @@ switching apps or copying links by hand.
 
 | Context | Mac | Linux (niri, Wayland) |
 |---|---|---|
-| App and window title under a point | `CGWindowListCopyWindowInfo` front-to-back, bounds and owner PID; titles need Screen Recording, which drawing already has | `niri msg -j windows`: `layout.tile_pos_in_workspace_view` and `window_size` locate the window, plus `title`, `app_id`, `pid` |
-| Browser URL and page title of the clicked tab | Accessibility: walk up from the element at the click to `AXWebArea`, which carries `AXURL` and `AXTitle` (checked on Olle's Chrome, 2026-11-02). Works for Chrome, Brave, Edge, Arc, Safari. No AppleScript, so no Automation prompt | AT-SPI `Document.GetAttributes` `DocURL`, already used by `browser_media.rs` |
-| Element under the pointer (link, image) | `AXUIElementCopyElementAtPosition` on the app's element, then `AXURL` / `AXDescription` | AT-SPI `Component.GetAccessibleAtPoint` |
-| Selected text | `AXFocusedUIElement` → `AXSelectedText` | AT-SPI `Text.GetSelection` |
-| YouTube video time | YouTube's progress bar is `role="slider"` with `aria-valuenow` in seconds and class `ytp-progress-bar` (checked in the live player `base.js`, 2026-11-02). Chrome exposes it as an `AXSlider` with `AXDOMClassList`, so Koett reads `AXValue` | Chromium's MPRIS service implements `Position` but sets no `xesam:url` (Chromium source, `system_media_controls_linux.cc`); match its title to the AT-SPI URL |
+| App and window title under a point | `CGWindowListCopyWindowInfo` front-to-back, bounds and owner PID; titles need Screen Recording, which drawing already has | niri `PickWindow` finished by one synthetic click: `tile_pos_in_workspace_view` is null for tiled windows on niri 26.04, so positions cannot locate one |
+| Browser URL and page title of the clicked tab | Accessibility: walk up from the element at the click to `AXWebArea`, which carries `AXURL` and `AXTitle` (checked on Olle's Chrome, 2026-11-02). Works for Chrome, Brave, Edge, Arc, Safari. No AppleScript, so no Automation prompt | AT-SPI `Document.GetAttributes` (`URI` on Chromium). Chrome exposes its page only when started with `ACCESSIBILITY_ENABLED=1` and `--force-renderer-accessibility`; either alone is not enough |
+| Element under the pointer (link, image) | `AXUIElementCopyElementAtPosition` on the app's element, then `AXURL` / `AXDescription` | AT-SPI `Component.GetAccessibleAtPoint`; needs window coordinates, which niri gives only for floating windows |
+| Selected text | `AXFocusedUIElement` → `AXSelectedText` | AT-SPI `Text.GetSelection`. PRIMARY is not used: nothing proves which app owns it |
+| YouTube video time | YouTube's progress bar is `role="slider"` with `aria-valuenow` in seconds and class `ytp-progress-bar` (checked in the live player `base.js`, 2026-11-02). Chrome exposes it as an `AXSlider` with `AXDOMClassList`, so Koett reads `AXValue` | Not read: the paste has the plain link. Chromium's MPRIS service implements `Position` but sets no `xesam:url` (Chromium source, `system_media_controls_linux.cc`) |
 | GitHub repo, PR, file, line | All of it is in the URL (`/owner/repo/pull/22`, `/blob/main/a.swift#L10-L20`); nothing extra to read | Same |
 
 Ruled out: macOS MediaRemote (entitlement-locked since macOS 15.4), and
@@ -124,6 +125,60 @@ If the YouTube time cannot be read, the link is the plain video URL.
   granted for paste and drawing.
 - Known gap: private/incognito windows are not detected on Mac yet. Their URL
   is pasted like any other; you see it before sending.
+
+## Linux
+
+Same gesture table and paste format as the Mac; `gesture.rs` ports the Mac's
+rules and their tests. Differences, all measured on niri 26.04:
+
+- **Finding the window takes a synthetic click.** niri gives no position for
+  tiled windows, and `PickWindow` ends only on a click. Koett sends one through
+  `zwlr_virtual_pointer_v1` as soon as the pin is confirmed.
+- **The click cannot reach an app.** A pick returns nothing where the overlay
+  accepts input, and a click sent before the pick starts goes to whatever is under
+  the pointer. So the click waits for proof: the pick's pointer grab sends the
+  overlay a pointer leave. Only then does the overlay open a 64 px hole at the pin
+  and let the click through. A real click anywhere else still lands on the overlay,
+  and so does any click on the other monitor. If the proof never comes, the overlay
+  stays whole and absorbs the cleanup clicks. A click is never repeated while the
+  hole is open. If a pick stays unanswered, the overlay closes the hole first, then
+  ends the pick, so it cannot eat the next real click. `PickGate` holds these turns.
+  Right after the click a second pick starts as a shield, so a real press while the
+  hole closes (the second click of a double click, in the lab) is absorbed rather
+  than reaching the app; a click on the whole overlay then ends it. What remains is
+  a real press landing in the milliseconds just before the click or between the two
+  picks, so it reaches the window it was aimed at. In a sweep on the slow nested lab
+  that hit one double-click gap in nine, and focus still came back afterwards.
+- **A wrong label is worse than none.** If the pointer has left the hole by the
+  time the click lands, shortly after the pin, the overlay blocks the pick: that pin
+  gets its image and bullet but no context line, rather than another window's. Two
+  windows with the same title give no page or selection. A pin over no window, or
+  on another desktop, has no context line either.
+- **Focus goes back at once.** niri focuses whatever a press lands on, even
+  during a pick, with no way to skip it (`on_pointer_button`, niri 8ed0da4), and
+  the paste must reach the window being dictated into. Koett reads the focused
+  workspace's active window first, because niri reports no focused window while
+  an exclusive overlay holds the keyboard, and refocuses right after the click.
+  Measured in nested niri on a debug build under load: focus is away 16 to 17 ms
+  when typing stays free, 33 to 50 ms with the focused overlay. Frames sampled
+  every 50 ms showed nothing moving for a fully visible column. A partly
+  off-screen column made the view shift by at least 12 px for one sampled frame,
+  then return exactly. **Kept**, because the alternatives are no window context,
+  or a paste into the wrong app.
+- **A wrong label is worse than none.** Past 80 px of movement before the grab,
+  the pick is discarded, though a pin within about 100 px of a window's edge can
+  still be mislabelled by moving across it at once. Two windows with the same
+  title give no page or selection. A pin over no window, or on another desktop, has an image and bullet
+  but no context line.
+- **What Linux cannot read:** the link or image under the pointer on tiled windows
+  (no window position), YouTube time, and selections in apps without AT-SPI text,
+  such as terminals. Chrome gives only app and title until its one-time setup,
+  which Settings copies. That setup makes Chrome keep its accessibility tree on.
+- **Fast Shift-clicks pass through.** The overlay takes the pointer only once the
+  key has been held 120 ms (so typing a capital is never interrupted) and its
+  input region has been committed. A click sooner than that reaches the app.
+
+Evidence: `CrossPlatform/evidence/pins-20261103/README.md`.
 
 ## Effort
 

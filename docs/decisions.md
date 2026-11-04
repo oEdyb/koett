@@ -207,3 +207,15 @@ no longer trigger drawing through that device, though a physical keyboard they g
 still reports its held keys. Olle's rule is that drawing follows a real Shift hold,
 and a test or tool must never take his pointer. The only exception is one device
 named by `KOETT_TEST_DRAW_KEYBOARD`, for private labs.
+
+## 2026-11-04: Linux pins find the window with a synthetic click
+
+niri gives no position for tiled windows, so the only exact answer to "which
+window is under the pointer" is `PickWindow`, which ends on a click. Koett sends
+that click itself, gated so it can never reach an app, and refocuses straight
+after, because niri focuses what a press lands on. Measured flicker: focus away
+for 16 to 17 ms, nothing moving on a fully visible column, one short shift on a
+partly off-screen one. Kept over the alternatives, which are no window context
+or a paste into the wrong app. PRIMARY was rejected as a selection source because
+nothing proves its owner, so a token selected in a terminal could be pasted under
+a browser pin. Details: docs/screen-context-proposal.md.

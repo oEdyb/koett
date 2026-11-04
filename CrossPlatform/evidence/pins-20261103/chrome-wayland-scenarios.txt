@@ -1,0 +1,20 @@
+== page presses=0
+- #1 (0:02) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html"
+
+0
+{"id":2,"title":"Target","app_
+== selected-word presses=0
+- #1 (0:02) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n  selected: “Parakeet”"
+
+0
+{"id":2,"title":"Target","app_
+== plain-input presses=0
+- #1 (0:02) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n  selected: “visibletext”"
+
+0
+{"id":2,"title":"Target","app_
+== password-unfocused presses=0
+- #1 (0:02) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html"
+
+0
+{"id":2,"title":"Target","app_

@@ -11,6 +11,8 @@ pub struct Keyframe {
     pub order: u64,
     pub start: f32,
     pub png: Vec<u8>,
+    /// What a pin read at the click; `None` for sketches.
+    pub context: Option<crate::pin_context::PinContext>,
 }
 
 struct Frames {
@@ -94,6 +96,7 @@ mod tests {
             order: (start * 10.0) as u64,
             start,
             png: vec![start as u8],
+            context: None,
         }
     }
 
@@ -162,11 +165,13 @@ mod tests {
             order: 2,
             start: 5.0,
             png: vec![2],
+            context: None,
         };
         let first = Keyframe {
             order: 1,
             start: 5.0,
             png: vec![1],
+            context: None,
         };
         assert!(push(recording, second));
         assert!(push(recording, first));
