@@ -1,5 +1,6 @@
 use ashpd::zbus;
 use gtk::prelude::*;
+use gtk4 as gtk;
 use std::time::Duration;
 
 fn query(
@@ -50,7 +51,7 @@ pub fn configure(
         .map(|title| title.to_string())
         .unwrap_or_else(|| format!("Koett pill {}", uuid::Uuid::new_v4()));
     window.set_title(Some(&title));
-    let monitors = window.display().monitors();
+    let monitors = gtk::prelude::WidgetExt::display(window).monitors();
     let fallback = monitors.item(0).and_downcast::<gtk::gdk::Monitor>();
     let rect = monitor
         .or(fallback.as_ref())
