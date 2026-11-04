@@ -22,6 +22,7 @@ use std::{cell::RefCell, rc::Rc};
 pub(super) mod capture;
 mod frames;
 mod gesture;
+mod gnome_capture;
 pub mod keys;
 pub(super) mod kwin_context;
 mod niri_pick;
@@ -754,6 +755,8 @@ impl Session {
                 }
                 Err(error) => {
                     eprintln!("Sketch capture failed: {error}");
+                    self.notices
+                        .push(format!("Drawing capture failed · {error}"));
                     self.drop_group(index);
                 }
             }

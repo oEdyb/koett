@@ -18,6 +18,9 @@ pub struct Target {
 }
 
 pub fn capture(target: &Target) -> Result<Vec<u8>, String> {
+    if super::super::gnome_focus::desktop() {
+        return super::gnome_capture::capture(target.monitor);
+    }
     match grim(target) {
         Ok(png) => Ok(png),
         Err(grim) => portal(target).map_err(|portal| format!("{grim}; {portal}")),
