@@ -30,6 +30,7 @@ pub fn focused_window() -> Option<u32> {
 }
 
 pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Result<(), String> {
+    let mut trace = DeliveryStep::new("text", "fallback", text.len());
     let mut copy = Command::new("wl-copy")
         .args(["--type", "text/plain;charset=utf-8"])
         .stdin(Stdio::piped())
@@ -46,10 +47,12 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
     if !target_unchanged(target) {
         return Err("Copied · paste into your target application".into());
     }
+    trace.post();
     let status = Command::new("wtype")
         .args(wtype_arguments(shortcut))
         .status()
         .map_err(|e| format!("Copied · automatic paste unavailable: {e}"))?;
+    trace.finish(status.success());
     if status.success() {
         Ok(())
     } else {
@@ -59,37 +62,46 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
 
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
 /// text chord (terminal agents read the image themselves on Ctrl+V).
-pub fn copy_image(png: &[u8]) -> Result<(), String> {
-    let mut copy = Command::new("wl-copy")
-        .args(["--type", "image/png"])
-        .stdin(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Copy failed: {e}"))?;
-    copy.stdin
-        .take()
-        .ok_or("Clipboard input unavailable")?
-        .write_all(png)
-        .map_err(|e| e.to_string())?;
-    if !copy.wait().map_err(|e| e.to_string())?.success() {
-        return Err("image copy failed".into());
-    }
-    Ok(())
-}
-
 pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
-    copy_image(png)?;
+    let mut trace = DeliveryStep::new("image", "fallback", png.len());
+    super::clipboard_owner::start(super::clipboard_owner::Payload::image(png))?;
     if !target_unchanged(target) {
         return Err("target window changed".into());
     }
+    trace.post();
     let status = Command::new("wtype")
         .args(wtype_arguments(PasteShortcut::CtrlV))
         .status()
         .map_err(|e| format!("automatic paste unavailable: {e}"))?;
+    trace.finish(status.success());
     if !status.success() {
         return Err("virtual keyboard unavailable".into());
     }
     std::thread::sleep(WL_COPY_IMAGE_WAIT);
     Ok(())
+}
+
+pub fn deliver_sketch_text(
+    text: &str,
+    target: Option<u32>,
+    shortcut: PasteShortcut,
+) -> Result<(), String> {
+    let mut trace = DeliveryStep::new("text", "fallback", text.len());
+    super::clipboard_owner::replace(super::clipboard_owner::Payload::text(text))?;
+    if !target_unchanged(target) {
+        return Err("Copied · paste into your target application".into());
+    }
+    trace.post();
+    let status = Command::new("wtype")
+        .args(wtype_arguments(shortcut))
+        .status()
+        .map_err(|e| e.to_string())?;
+    trace.finish(status.success());
+    if status.success() {
+        Ok(())
+    } else {
+        Err("virtual keyboard unavailable".into())
+    }
 }
 
 pub(super) fn paste_keysyms(shortcut: PasteShortcut) -> &'static [u32] {
@@ -161,5 +173,51 @@ mod target_tests {
     #[test]
     fn pressing_paste_skips_the_target_check() {
         assert!(target_unchanged(Some(PASTE_NOW)));
+    }
+}
+
+/// Payload-free diagnostics: a post is logged once immediately before a paste key.
+pub(super) struct DeliveryStep {
+    id: u64,
+    kind: &'static str,
+    backend: &'static str,
+    bytes: usize,
+    outcome: &'static str,
+}
+impl DeliveryStep {
+    pub fn new(kind: &'static str, backend: &'static str, bytes: usize) -> Self {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let value = Self {
+            id: NEXT.fetch_add(1, Ordering::Relaxed),
+            kind,
+            backend,
+            bytes,
+            outcome: "aborted",
+        };
+        value.log("begin");
+        value
+    }
+    fn log(&self, event: &str) {
+        eprintln!(
+            "delivery_step pid={} id={} kind={} backend={} attempt=1 bytes={} event={} outcome={}",
+            std::process::id(),
+            self.id,
+            self.kind,
+            self.backend,
+            self.bytes,
+            event,
+            self.outcome
+        );
+    }
+    pub fn post(&self) {
+        self.log("paste_post");
+    }
+    pub fn finish(&mut self, ok: bool) {
+        self.outcome = if ok { "ok" } else { "failed" };
+    }
+}
+impl Drop for DeliveryStep {
+    fn drop(&mut self) {
+        self.log("end");
     }
 }
