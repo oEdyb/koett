@@ -15,28 +15,27 @@ extension KoettController {
             return
         }
 
-        state = .media
-        rebuildMenu()
-        recordingOverlay.showStatus("Finding media…")
-        Task { @MainActor [weak self] in
-            await self?.transcribeMedia(target: target)
-        }
-    }
-
-    private func transcribeMedia(target: BrowserTabTarget) async {
-        defer {
-            state = .ready
-            rebuildMenu()
-        }
-
-        do {
+        beginMediaTranscription {
             let browserURL = try await BrowserMedia.currentURL(for: target)
             guard let source = BrowserMediaSource(url: browserURL) else {
                 throw Self.failure("The focused tab does not have a web URL.")
             }
+            return try await BrowserMedia.fetchAudio(for: source)
+        }
+    }
 
-            recordingOverlay.showStatus("Fetching audio…")
-            let download = try await BrowserMedia.fetchAudio(for: source)
+    func beginMediaTranscription(load: @escaping @MainActor @Sendable () async throws -> DownloadedMediaAudio) {
+        guard canStartSession else { return }
+        assistantSpeech.stop()
+        state = .media
+        recordingOverlay.showStatus("Fetching audio…")
+        Task { @MainActor [weak self] in await self?.transcribeMedia(load: load) }
+    }
+
+    private func transcribeMedia(load: @MainActor @Sendable () async throws -> DownloadedMediaAudio) async {
+        defer { state = .ready }
+        do {
+            let download = try await load()
             do {
                 recordingOverlay.showStatus("Transcribing locally…")
                 let decoderLayers = await manager.decoderLayerCount
@@ -86,6 +85,37 @@ extension KoettController {
 
     @objc func transcribeCurrentMedia() {
         startMediaTranscription()
+    }
+
+    @objc func transcribeMediaFile() {
+        guard canStartSession else { return }
+        let panel = NSOpenPanel()
+        panel.title = "Transcribe Media File"
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Transcribe"
+        guard panel.runModal() == .OK, let url = panel.url, canStartSession else { return }
+        beginMediaTranscription { try await BrowserMedia.localAudio(at: url) }
+    }
+
+    @objc func transcribeMediaURL() {
+        guard canStartSession else { return }
+        let alert = NSAlert()
+        alert.messageText = "Transcribe Media URL"
+        alert.addButton(withTitle: "Transcribe")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 400, height: 24))
+        field.placeholderString = "https://"
+        field.setAccessibilityLabel("Media URL")
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn, canStartSession else { return }
+        guard let url = URL(string: field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let source = BrowserMediaSource(url: url) else {
+            recordingOverlay.showError("Enter an HTTP or HTTPS URL")
+            return
+        }
+        beginMediaTranscription { try await BrowserMedia.fetchAudio(for: source) }
     }
 
     @objc func openMediaTranscripts() {
