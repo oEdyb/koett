@@ -263,10 +263,14 @@ try:
     assert len(phrases) == 16
     sidebar = find('Words', settings, 'list item')
     assert sidebar is not None
-    assert sidebar.get_component_iface().grab_focus()
+    rect = sidebar.get_component_iface().get_extents(Atspi.CoordType.SCREEN)
+    keys('move', rect.x + rect.width // 2, rect.y + rect.height // 2)
+    keys('click')
     keys('chord', 42, 15)
     wait(lambda: find('Save', settings).get_state_set().contains(Atspi.StateType.FOCUSED), 'Shift+Tab leaves sidebar for Save')
-    assert sidebar.get_component_iface().grab_focus()
+    rect = sidebar.get_component_iface().get_extents(Atspi.CoordType.SCREEN)
+    keys('move', rect.x + rect.width // 2, rect.y + rect.height // 2)
+    keys('click')
     keys('key', 15)
     wait(lambda: phrases[0].get_state_set().contains(Atspi.StateType.FOCUSED), 'single Tab reaches chosen page')
     assert any(n.get_name() == 'Dictionary' for n in walk(settings)), 'Tab stays on the chosen Settings page'
