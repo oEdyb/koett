@@ -54,6 +54,7 @@ extension KoettController {
                     text,
                     title: download.title,
                     source: download.source,
+                    model: speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName,
                     mediaStore: mediaTranscriptStore,
                     recovery: transcriptPersistence
                 )

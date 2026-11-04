@@ -17,6 +17,7 @@ enum MediaTranscriptPersistence {
         _ text: String,
         title: String,
         source: BrowserMediaSource,
+        model: String = "Parakeet v2",
         mediaStore: MediaTranscriptStore,
         recovery: TranscriptPersistence
     ) async -> Outcome {
@@ -25,14 +26,14 @@ enum MediaTranscriptPersistence {
                 text,
                 title: title,
                 source: source,
-                model: "Parakeet v2"
+                model: model
             )
             return Outcome(fileURL: fileURL, recoveryRecord: nil, recoveryOutcome: nil)
         } catch {
             fputs("Warning: media history failed: \(error.localizedDescription)\n", stderr)
             let record = TranscriptRecord(
                 text: text,
-                model: "Parakeet v2 (Media: \(source.platformName); "
+                model: "\(model) (Media: \(source.platformName); "
                     + "\(MediaTranscriptStore.cleanTitle(title)); \(source.url.absoluteString))"
             )
             return Outcome(

@@ -133,7 +133,7 @@ extension KoettController {
                 preserveQuestion: { question in
                     let outcome = self.persistTranscript(
                         question,
-                        model: "Parakeet v2 (Koett Ask)"
+                        model: "\(self.speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : self.speechEngine.displayName) (Koett Ask)"
                     )
                     self.assistantPanel.showStorageWarning(outcome.warning)
                 },

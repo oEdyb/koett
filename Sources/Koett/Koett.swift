@@ -25,6 +25,7 @@ final class KoettController: NSObject {
         case toggle
     }
 
+    var automaticPasteTarget: PasteTarget?
     var mediaPauseTask: Task<Void, Never>?
     let speechEngine: SpeechEngine
     var transcriptStore: TranscriptStore { transcriptPersistence.history }
@@ -75,7 +76,10 @@ final class KoettController: NSObject {
             if state != oldValue {
                 rebuildMenu()
                 refreshMicrophoneMonitorTarget()
-                if state == .ready { activeDictationID = nil }
+                if state == .ready {
+                    activeDictationID = nil
+                    automaticPasteTarget = nil
+                }
                 refreshEscapeMonitor()
                 refreshCaptureWatch()
             }

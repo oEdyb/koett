@@ -174,7 +174,7 @@ extension KoettController {
             TranscriptPersistence.Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
         }
     ) async throws -> TimeInterval {
-        let target = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let target = automaticPasteTarget?.identity.bundleID ?? NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         let chord = SketchPasteChord.forApp(target, overrides: SketchPasteChord.overrides(in: .standard))
         return try await SketchPaste.deliver(
             png: png, text: text, pasteboard: pasteboard,
