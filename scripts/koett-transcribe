@@ -63,7 +63,7 @@ def source_identity(source):
 
 
 def cache_path(source, model, remote):
-    identity = [1, source, model, ENGINE]
+    identity = [1, source, model, ENGINE.replace(' ', '-')]
     if not remote:
         stat = Path(source).stat()
         identity += [stat.st_size, stat.st_mtime_ns]
