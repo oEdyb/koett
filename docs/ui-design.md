@@ -92,9 +92,9 @@ Settings is the one place for every Linux preference (2026-11-03, after Olle: "g
 all the settings to one place"). A sidebar lists pages in the Mac menu's order, most
 used first: Dictation (microphone and live meter, recording mode, paste shortcut,
 pause media), Model & formatting (speech model download/switch, Raw/S1-mini and its
-controls; these apply right away), Draw on screen (the switch, then its draw key and
-Keep typing while recording, then that option's one-time keyboard setup, each nested
-and disabled until its parent is on), Shortcuts, Words (dictionary and replacements),
+controls; these apply right away), Draw on screen (Draw & Pin While Dictating, then its draw key, Include Selected Text in
+Pins, the page-link setup command and the keyboard options, each nested and disabled
+until its parent is on), Shortcuts, Words (dictionary and replacements),
 Ask About Screen, and General (start at login, About). Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
 workflow. Changes show validation near the control and persist predictably. The microphone
 selection has one labeled live input-level meter for the selected option. Switching

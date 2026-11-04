@@ -6,6 +6,7 @@ pub mod formatting;
 pub mod history;
 pub mod model;
 pub mod paths;
+pub mod pin_context;
 pub mod replacements;
 pub mod runtime;
 pub mod settings;

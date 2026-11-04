@@ -3,13 +3,16 @@
 //! moving the pointer leaves red ink; otherwise clicks pass through. Strokes on
 //! one monitor close into a sketch shortly after the key is released; that
 //! monitor is then captured with the ink still visible, and the ink fades.
-//! Delivery turns the captures into one numbered contact sheet.
+//! A click with the key held drops a numbered pin instead (`gesture`), which
+//! also reads one line of context (`pin_reader`). Delivery turns the captures
+//! into one numbered contact sheet.
 //!
 //! A recording never blocks typing by default: Wayland gives no global key
 //! state, so the draw key is read from keyboard devices (see `keys`) and the
 //! overlay stays without keyboard focus. Only a user who opted in lets the
 //! overlay hold focus when keyboards can't be read; otherwise drawing stays off
 //! for that dictation with a one-line hint.
+use crate::pin_context::PinContext;
 use crate::settings::DrawKey;
 use gtk4::{self as gtk, gdk, glib, prelude::*};
 use std::sync::{Arc, Mutex};
@@ -18,8 +21,12 @@ use std::{cell::RefCell, rc::Rc};
 
 mod capture;
 mod frames;
+mod gesture;
 pub mod keys;
+mod niri_pick;
+mod pin_reader;
 pub mod sheet;
+mod wl_click;
 
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
 const INK_WIDTH: f64 = 5.0;
@@ -31,6 +38,18 @@ const MAX_SKETCHES: usize = 256;
 const MIN_INK: f64 = 12.0;
 /// How often device mode looks for added or removed keyboards.
 const KEYBOARD_RESCAN: Duration = Duration::from_secs(2);
+const PIN_RADIUS: f64 = 16.0;
+/// The reader bounds itself well below this; a frame never waits longer.
+const PIN_CONTEXT_WAIT: Duration = Duration::from_millis(1500);
+/// Exclusive focus moves between overlays when a click changes the active
+/// monitor, and the old one can report inactive first. Only a longer gap means
+/// the key release was really missed.
+const FOCUS_GRACE: Duration = Duration::from_millis(100);
+/// Longest wait for the frame that commits a pick's change to the input region.
+const COMMIT_WAIT: Duration = Duration::from_millis(300);
+/// Half the side of the hole a pick opens at a pin, in logical px: larger than the
+/// pin's click slop, far smaller than a window.
+const PICK_HOLE: f64 = 32.0;
 
 pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
 #[cfg(test)]
@@ -95,12 +114,43 @@ impl AudioClock {
     }
 }
 
+/// Where the overlays take the pointer.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PointerInput {
+    Nowhere,
+    Everywhere,
+    /// Everywhere except a hole at this point on this surface.
+    ExceptPick(usize, gesture::Point),
+}
+
+/// A monitor's whole surface, minus the hole when there is one.
+fn input_region((width, height): (i32, i32), hole: Option<gesture::Point>) -> gtk::cairo::Region {
+    let all = gtk::cairo::RectangleInt::new(0, 0, width, height);
+    let region = gtk::cairo::Region::create_rectangle(&all);
+    if let Some((x, y)) = hole {
+        let side = (PICK_HOLE * 2.0) as i32;
+        let around = gtk::cairo::RectangleInt::new(
+            (x - PICK_HOLE).floor() as i32,
+            (y - PICK_HOLE).floor() as i32,
+            side,
+            side,
+        );
+        if let Err(error) = region.subtract_rectangle(&around) {
+            eprintln!("Sketch input region failed: {error}");
+        }
+    }
+    region
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
     Drawing,
     /// Other ink on its monitor is hidden; capture starts after it settles.
     Queued(Instant),
     Capturing,
+    /// The pin's image is taken; its context is still being read. Other
+    /// captures on the monitor need not wait for that.
+    Reading(Instant),
     Captured,
 }
 
@@ -124,6 +174,10 @@ struct Group {
     /// Set when the draw key is released: one hold is one sketch.
     closed: bool,
     phase: Phase,
+    /// Set for a pin: the click, in the same coordinates as strokes.
+    pin: Option<(f64, f64)>,
+    context: Option<std::sync::mpsc::Receiver<Option<PinContext>>>,
+    png: Option<Vec<u8>>,
 }
 
 /// The sketch that movement on `surface` continues: only one still being
@@ -177,6 +231,16 @@ struct Session {
     stroking: Option<u64>,
     finishing: bool,
     results: CaptureResults,
+    gesture: gesture::PinGesture,
+    include_selection: bool,
+    pick: Arc<niri_pick::PickGate>,
+    /// What the input regions were last asked to be.
+    input: PointerInput,
+    /// Changed the input regions at this time, with each overlay's frame counter.
+    committing: Option<(Instant, Vec<i64>)>,
+    last_pin: Option<(usize, gesture::Point)>,
+    /// When the last active overlay went inactive during a hold.
+    inactive_since: Option<Instant>,
     /// Device mode (no keyboard focus); `None` means the overlay holds focus.
     keyboards: Option<keys::Keyboards>,
     /// The user allows focus as a last resort if every keyboard is lost.
@@ -192,20 +256,84 @@ struct Session {
 }
 
 impl Session {
-    fn set_input(&self, accept: bool) {
-        for surface in &self.surfaces {
+    /// Takes the pointer while the key is held. A running window pick overrides
+    /// that: input stays on until the pick is proven, then opens around the pin.
+    fn sync_input(&mut self) {
+        let wanted = match self.last_pin {
+            Some((surface, point)) if self.pick.wants_open() => {
+                PointerInput::ExceptPick(surface, point)
+            }
+            _ if self.pick.busy() || self.held => PointerInput::Everywhere,
+            _ => PointerInput::Nowhere,
+        };
+        if wanted != self.input {
+            self.input = wanted;
+            self.set_input(wanted);
+            self.committing = Some((Instant::now(), self.frame_counters()));
+        }
+        let committed = self.committing.as_ref().is_none_or(|(asked, before)| {
+            asked.elapsed() >= COMMIT_WAIT
+                || self
+                    .frame_counters()
+                    .iter()
+                    .zip(before)
+                    .all(|(now, before)| now > before)
+        });
+        if committed {
+            self.committing = None;
+            if self.pick.wants_open() {
+                self.pick.opened();
+            } else if self.pick.wants_closed() {
+                self.pick.closed();
+            }
+        }
+    }
+
+    fn frame_counters(&self) -> Vec<i64> {
+        self.surfaces
+            .iter()
+            .map(|surface| {
+                surface
+                    .area
+                    .frame_clock()
+                    .map_or(0, |clock| clock.frame_counter())
+            })
+            .collect()
+    }
+
+    /// Focused mode: follows a key release that focus loss swallowed.
+    fn watch_focus(&mut self, now: Instant) {
+        let active = self
+            .surfaces
+            .iter()
+            .any(|surface| surface.window.is_active());
+        if self.keyboards.is_some() || !self.held || active {
+            self.inactive_since = None;
+            return;
+        }
+        let since = *self.inactive_since.get_or_insert(now);
+        if now.saturating_duration_since(since) >= FOCUS_GRACE {
+            self.inactive_since = None;
+            self.release();
+        }
+    }
+
+    fn set_input(&self, input: PointerInput) {
+        for (index, surface) in self.surfaces.iter().enumerate() {
             if let Some(native) = surface.window.surface() {
-                if accept {
-                    let (_, _, width, height) = surface.target.monitor;
-                    let all = gtk::cairo::RectangleInt::new(0, 0, width, height);
-                    native.set_input_region(Some(&gtk::cairo::Region::create_rectangle(&all)));
-                } else {
-                    native.set_input_region(Some(&gtk::cairo::Region::create()));
-                }
+                let (_, _, width, height) = surface.target.monitor;
+                let region = match input {
+                    PointerInput::Nowhere => gtk::cairo::Region::create(),
+                    PointerInput::Everywhere => input_region((width, height), None),
+                    PointerInput::ExceptPick(pinned, point) => {
+                        input_region((width, height), (pinned == index).then_some(point))
+                    }
+                };
+                native.set_input_region(Some(&region));
             }
             surface
                 .window
-                .set_cursor_from_name(accept.then_some("crosshair"));
+                .set_cursor_from_name((input != PointerInput::Nowhere).then_some("crosshair"));
             // GDK applies a new input region with the next surface commit.
             surface.area.queue_draw();
         }
@@ -229,18 +357,98 @@ impl Session {
     /// Ends the current hold: its sketch closes and is captured; the next hold
     /// starts a new sketch, on this monitor or another.
     fn release(&mut self) {
+        if let Some(pin) = self.gesture.release(Instant::now()) {
+            self.drop_pin(pin);
+        }
         self.held = false;
         self.lift();
         for group in &mut self.groups {
             group.closed = true;
         }
-        self.set_input(false);
+        self.sync_input();
     }
 
     fn press(&mut self) {
         self.gate.moved(Instant::now());
+        if self.held {
+            return;
+        }
         self.held = true;
-        self.set_input(true);
+        self.gesture.hold();
+        self.sync_input();
+    }
+
+    /// Raw left-button events while the overlay has the pointer.
+    fn button(&mut self, surface: usize, pressed: bool, point: gesture::Point) {
+        let now = Instant::now();
+        self.gate.moved(now);
+        if !pressed {
+            if let Some(pin) = self.gesture.button_up(now) {
+                self.drop_pin(pin);
+            }
+        } else if !self.pick.busy()
+            && !self.finishing
+            && self.gesture.button_down(surface, point, now) == gesture::Down::Press
+        {
+            self.drop_jitter();
+        }
+    }
+
+    /// Ink this short in the hold was the hand settling before the click.
+    fn drop_jitter(&mut self) {
+        self.lift();
+        while let Some(index) = self
+            .groups
+            .iter()
+            .rposition(|group| !group.closed && group.pin.is_none())
+        {
+            self.drop_group(index);
+        }
+        self.redraw();
+    }
+
+    fn drop_pin(&mut self, mark: gesture::Mark) {
+        if self.groups.len() >= MAX_SKETCHES {
+            return;
+        }
+        self.lift();
+        let (sender, receiver) = std::sync::mpsc::channel();
+        self.pick.begin();
+        self.last_pin = Some((mark.surface, mark.point));
+        self.sync_input();
+        let (include_selection, point, pick) =
+            (self.include_selection, mark.point, self.pick.clone());
+        std::thread::spawn(move || {
+            let _ = sender.send(pin_reader::read(include_selection, point, &pick));
+        });
+        self.next_id += 1;
+        self.groups.push(Group {
+            id: self.next_id,
+            surface: mark.surface,
+            strokes: Vec::new(),
+            start: mark.at,
+            end: mark.at,
+            audio_start: self.clock.at(self.started, mark.at),
+            painted: std::cell::Cell::new(None),
+            lifted: Some(Instant::now()),
+            closed: true,
+            phase: Phase::Drawing,
+            pin: Some(mark.point),
+            context: Some(receiver),
+            png: None,
+        });
+        self.surfaces[mark.surface].area.queue_draw();
+        self.publish();
+    }
+
+    fn pointer_moved(&mut self, surface: usize, point: gesture::Point) {
+        let now = Instant::now();
+        if let gesture::Motion::Ink { from, to } = self.gesture.motion(surface, point, now) {
+            if let Some(from) = from {
+                self.point(surface, from.point.0, from.point.1, from.at);
+            }
+            self.point(surface, to.0, to.1, now);
+        }
     }
 
     /// Device mode: follows the draw key from keyboard modifier state,
@@ -297,8 +505,7 @@ impl Session {
         }
     }
 
-    fn point(&mut self, surface: usize, x: f64, y: f64) {
-        let now = Instant::now();
+    fn point(&mut self, surface: usize, x: f64, y: f64, now: Instant) {
         self.gate.moved(now);
         let current = self
             .stroking
@@ -325,6 +532,9 @@ impl Session {
                         lifted: None,
                         closed: false,
                         phase: Phase::Drawing,
+                        pin: None,
+                        context: None,
+                        png: None,
                     });
                     self.groups.len() - 1
                 });
@@ -389,6 +599,39 @@ impl Session {
         }
     }
 
+    /// Hands over captured images whose context, if any, has arrived.
+    fn finish_frames(&mut self, now: Instant) {
+        for group in &mut self.groups {
+            let Phase::Reading(since) = group.phase else {
+                continue;
+            };
+            let context = match group.context.as_ref().map(|context| context.try_recv()) {
+                None => None,
+                Some(Ok(context)) => context,
+                Some(Err(std::sync::mpsc::TryRecvError::Disconnected)) => None,
+                Some(Err(std::sync::mpsc::TryRecvError::Empty))
+                    if now.saturating_duration_since(since) < PIN_CONTEXT_WAIT =>
+                {
+                    continue;
+                }
+                Some(Err(std::sync::mpsc::TryRecvError::Empty)) => None,
+            };
+            group.phase = Phase::Captured;
+            group.context = None;
+            if let Some(png) = group.png.take() {
+                frames::push(
+                    self.recording,
+                    Keyframe {
+                        order: group.id,
+                        start: group.audio_start.as_secs_f32(),
+                        png,
+                        context,
+                    },
+                );
+            }
+        }
+    }
+
     /// One timer step. Returns false once a finishing session is complete.
     fn tick(&mut self) -> bool {
         self.poll_keys();
@@ -398,6 +641,8 @@ impl Session {
             self.release();
         }
         let now = Instant::now();
+        self.watch_focus(now);
+        self.sync_input();
         let results = std::mem::take(
             &mut *self
                 .results
@@ -410,13 +655,8 @@ impl Session {
             };
             match result {
                 Ok(png) => {
-                    self.groups[index].phase = Phase::Captured;
-                    let frame = Keyframe {
-                        order: id,
-                        start: self.groups[index].audio_start.as_secs_f32(),
-                        png,
-                    };
-                    frames::push(self.recording, frame);
+                    self.groups[index].png = Some(png);
+                    self.groups[index].phase = Phase::Reading(now);
                 }
                 Err(error) => {
                     eprintln!("Sketch capture failed: {error}");
@@ -429,11 +669,13 @@ impl Session {
             group.phase == Phase::Drawing
                 && self.stroking != Some(group.id)
                 && (group.closed || self.finishing)
+                && group.pin.is_none()
                 && accidental(&group.strokes)
         }) {
             self.drop_group(index);
             self.redraw();
         }
+        self.finish_frames(now);
         for index in 0..self.groups.len() {
             let group = &self.groups[index];
             let surface_busy = self
@@ -477,7 +719,10 @@ impl Session {
             }
             {
                 let (id, target) = (group.id, self.surfaces[group.surface].target.clone());
-                let strokes = group.strokes.clone();
+                let strokes = match group.pin {
+                    Some(pin) => vec![vec![pin]],
+                    None => group.strokes.clone(),
+                };
                 self.groups[index].phase = Phase::Capturing;
                 let results = self.results.clone();
                 std::thread::spawn(move || {
@@ -495,7 +740,7 @@ impl Session {
             .groups
             .iter()
             .any(|group| group.phase != Phase::Captured);
-        if self.finishing && !busy {
+        if self.finishing && !busy && !self.pick.busy() {
             return false;
         }
         if self.groups.iter().any(|group| {
@@ -519,6 +764,10 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
     {
         let alpha = group.alpha(now);
         if alpha <= 0.0 {
+            continue;
+        }
+        if let Some(pin) = group.pin {
+            paint_pin(context, pin, alpha);
             continue;
         }
         context.set_source_rgba(INK.0, INK.1, INK.2, alpha);
@@ -569,6 +818,21 @@ fn draw_input<K>(access: Result<K, keys::Access>, may_take_keyboard: bool) -> Dr
         Err(_) if may_take_keyboard => DrawInput::Focus,
         Err(_) => DrawInput::Off,
     }
+}
+
+/// A pin's ring, white-edged so it reads on dark and light pages.
+fn paint_pin(context: &gtk::cairo::Context, (x, y): (f64, f64), alpha: f64) {
+    let full_circle = std::f64::consts::TAU;
+    context.set_line_width(INK_WIDTH + 3.0);
+    context.set_source_rgba(1.0, 1.0, 1.0, 0.9 * alpha);
+    context.arc(x, y, PIN_RADIUS, 0.0, full_circle);
+    let _ = context.stroke();
+    context.set_line_width(INK_WIDTH);
+    context.set_source_rgba(INK.0, INK.1, INK.2, alpha);
+    context.arc(x, y, PIN_RADIUS, 0.0, full_circle);
+    let _ = context.stroke();
+    context.arc(x, y, 3.0, 0.0, full_circle);
+    let _ = context.fill();
 }
 
 /// Whether each monitor's overlay asks for exclusive keyboard focus. In
@@ -674,14 +938,7 @@ impl SketchOverlay {
                         DrawInput::Focus => None,
                         DrawInput::Off => return,
                     };
-                    self.open(
-                        application,
-                        started,
-                        id,
-                        settings.draw_key,
-                        keyboards,
-                        may_take,
-                    );
+                    self.open(application, started, id, &settings, keyboards);
                 }
             }
             (Some(session), Some(_)) => {
@@ -692,8 +949,8 @@ impl SketchOverlay {
                 }
             }
             (Some(session), None) if !session.finishing => {
-                session.finishing = true;
                 session.release();
+                session.finishing = true;
                 // Close keyboard devices as soon as recording ends.
                 session.keyboards = None;
                 for surface in &session.surfaces {
@@ -746,9 +1003,8 @@ impl SketchOverlay {
         application: &gtk::Application,
         started: Instant,
         recording: u64,
-        key: DrawKey,
+        settings: &crate::settings::Settings,
         keyboards: Option<keys::Keyboards>,
-        may_take_keyboard: bool,
     ) {
         let focus = keyboards.is_none();
         let Some(display) = gdk::Display::default() else {
@@ -834,7 +1090,7 @@ impl SketchOverlay {
                     }
                     // Pointer events can carry stale modifier state (seen on
                     // KWin), so drawing follows the overlay's own key events.
-                    session.point(surface, x, y);
+                    session.pointer_moved(surface, (x, y));
                 }
             });
             motion.connect_leave({
@@ -844,34 +1100,54 @@ impl SketchOverlay {
                         && let Ok(mut session) = session.try_borrow_mut()
                         && let Some(session) = session.as_mut()
                     {
+                        session.pick.pointer_left();
+                        session.sync_input();
+                        session.gesture.lift();
                         session.lift();
                     }
                 }
             });
+            motion.connect_enter({
+                let session = Rc::downgrade(&self.session);
+                move |_, _, _| {
+                    if let Some(session) = session.upgrade()
+                        && let Ok(session) = session.try_borrow()
+                        && let Some(session) = session.as_ref()
+                    {
+                        session.pick.pointer_entered();
+                    }
+                }
+            });
             area.add_controller(motion);
+            // Raw events: GestureClick would cancel when a press turns into a drag.
+            let buttons = gtk::EventControllerLegacy::new();
+            buttons.connect_event({
+                let session = Rc::downgrade(&self.session);
+                move |_, event| {
+                    let pressed = match event.event_type() {
+                        gdk::EventType::ButtonPress => true,
+                        gdk::EventType::ButtonRelease => false,
+                        _ => return glib::Propagation::Proceed,
+                    };
+                    if let Some(button) = event.downcast_ref::<gdk::ButtonEvent>()
+                        && button.button() == gdk::BUTTON_PRIMARY
+                        && let Some(point) = event.position()
+                        && let Some(session) = session.upgrade()
+                        && let Ok(mut session) = session.try_borrow_mut()
+                        && let Some(session) = session.as_mut()
+                    {
+                        session.button(surface, pressed, point);
+                    }
+                    glib::Propagation::Proceed
+                }
+            });
+            area.add_controller(buttons);
             // Every monitor's overlay listens: the compositor focuses the one on
             // its active output. Device mode can fall back to focus
             // mid-recording, so the controller is always present.
             {
                 window.add_controller(self.keys());
-                // A missed key release must not leave clicks blocked.
-                window.connect_is_active_notify({
-                    let session = Rc::downgrade(&self.session);
-                    move |window| {
-                        if !window.is_active()
-                            && let Some(session) = session.upgrade()
-                            && let Ok(mut session) = session.try_borrow_mut()
-                            && let Some(session) = session.as_mut()
-                            && session.held
-                            && !session
-                                .surfaces
-                                .iter()
-                                .any(|surface| surface.window.is_active())
-                        {
-                            session.release();
-                        }
-                    }
-                });
+                // A missed key release cannot leave clicks blocked: `watch_focus`.
             }
             window.connect_realize(|window| {
                 if let Some(native) = window.surface() {
@@ -899,7 +1175,7 @@ impl SketchOverlay {
             recording,
             started,
             clock: AudioClock::default(),
-            key,
+            key: settings.draw_key,
             surfaces,
             groups: Vec::new(),
             next_id: 0,
@@ -907,8 +1183,15 @@ impl SketchOverlay {
             stroking: None,
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
+            gesture: gesture::PinGesture::default(),
+            include_selection: settings.pin_selected_text,
+            pick: Arc::new(niri_pick::PickGate::default()),
+            input: PointerInput::Nowhere,
+            committing: None,
+            last_pin: None,
+            inactive_since: None,
             keyboards,
-            may_take_keyboard,
+            may_take_keyboard: settings.draw_may_take_keyboard,
             gate: keys::DrawGate::default(),
             keyboards_lost: false,
             rescanned: None,
@@ -994,6 +1277,33 @@ mod tests {
     }
 
     #[test]
+    fn a_picks_hole_lets_through_only_the_pin() {
+        let region = input_region((1000, 800), Some((500.0, 400.0)));
+        assert!(!region.contains_point(500, 400), "the pin itself");
+        assert!(!region.contains_point(530, 400), "a hand that barely moved");
+        assert!(region.contains_point(540, 400), "the pointer moved on");
+        assert!(region.contains_point(100, 100), "a click elsewhere");
+    }
+
+    #[test]
+    fn a_hole_at_the_screen_edge_keeps_the_rest_of_the_screen() {
+        let region = input_region((1000, 800), Some((5.0, 5.0)));
+        assert!(!region.contains_point(0, 0));
+        assert!(region.contains_point(60, 60));
+    }
+
+    #[test]
+    fn a_pin_is_never_dropped_as_a_resting_hand() {
+        let mut pin = group(1, 0, Phase::Drawing);
+        pin.strokes.clear();
+        pin.pin = Some((5.0, 5.0));
+        assert!(accidental(&pin.strokes), "a pin has no strokes");
+        let mut session_groups = vec![pin];
+        session_groups.retain(|group| !(group.pin.is_none() && accidental(&group.strokes)));
+        assert_eq!(session_groups.len(), 1);
+    }
+
+    #[test]
     fn captured_ink_fades_after_the_scrawl_delay() {
         let now = Instant::now();
         let mut group = Group {
@@ -1007,6 +1317,9 @@ mod tests {
             lifted: Some(now),
             closed: false,
             phase: Phase::Capturing,
+            pin: None,
+            context: None,
+            png: None,
         };
         assert_eq!(group.alpha(now + Duration::from_secs(5)), 1.0);
         group.phase = Phase::Captured;
@@ -1027,6 +1340,9 @@ mod tests {
             lifted: None,
             closed: false,
             phase,
+            pin: None,
+            context: None,
+            png: None,
         }
     }
 

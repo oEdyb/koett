@@ -10,7 +10,7 @@ Checked in code on 2026-11-03. Update a row when a feature changes.
 | Fix a word | Yes | Yes |
 | Literal replacements | Yes: Dictionary → Replacements | Yes |
 | Draw while dictating | Yes | Yes where layer-shell plus grim or portal exist (checked on KWin; not GNOME or X11) |
-| Shift-click pins | Yes | Not on `main` yet; in progress |
+| Shift-click pins | Yes | Yes on niri: app and title always; Chrome page link and selection after its one-time setup; link or image under the pointer only on floating windows. Pin without context on other desktops |
 | Pill: rolling strip, pause, Paste, Done | Yes; no pause on Nemotron | Yes |
 | Silence: VAD trim, dots, no warnings | Yes; Nemotron skips the trim | Yes (empty-result path not traced) |
 | Recovery: last transcript, failed audio, failed text | Yes | Yes |

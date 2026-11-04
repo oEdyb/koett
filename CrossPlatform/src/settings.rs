@@ -68,6 +68,8 @@ pub struct Settings {
     /// Opt-in last resort: when keyboards can't be read, let the drawing overlay
     /// hold keyboard focus while recording, which pauses typing elsewhere.
     pub draw_may_take_keyboard: bool,
+    /// On by default: a pin also reads the selected text, capped at 500 characters.
+    pub pin_selected_text: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -89,6 +91,7 @@ impl Default for Settings {
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
             draw_may_take_keyboard: false,
+            pin_selected_text: true,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -263,6 +266,9 @@ impl Settings {
         }
         if self.draw_may_take_keyboard != opened.draw_may_take_keyboard {
             merged.draw_may_take_keyboard = self.draw_may_take_keyboard;
+        }
+        if self.pin_selected_text != opened.pin_selected_text {
+            merged.pin_selected_text = self.pin_selected_text;
         }
         merged
     }
@@ -444,6 +450,15 @@ mod tests {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert_eq!(settings.paste_shortcut, PasteShortcut::CtrlV);
         assert!(serde_json::from_str::<Settings>(r#"{"paste_shortcut":"shift_insert"}"#).is_err());
+    }
+
+    #[test]
+    fn pins_read_selected_text_unless_turned_off() {
+        assert!(Settings::default().pin_selected_text);
+        let old: Settings = serde_json::from_str(r#"{"draw_while_dictating":true}"#).unwrap();
+        assert!(old.pin_selected_text, "a settings file from before pins");
+        let off: Settings = serde_json::from_str(r#"{"pin_selected_text":false}"#).unwrap();
+        assert!(!off.pin_selected_text);
     }
 
     #[test]

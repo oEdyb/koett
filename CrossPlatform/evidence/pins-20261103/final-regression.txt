@@ -1,0 +1,149 @@
+koett-pins2: invisible desktop ready (1920×1080)
+koett-pins2: running
+536870916
+grabbed /dev/input/event30
+== pin presses=0
+8425.680 Other ACTIVE True
+8425.680 Target ACTIVE False
+8425.730 Target ACTIVE True
+8425.731 Other ACTIVE False
+- #1 (0:05) “I love you.”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== double presses=0
+8443.864 Target ACTIVE False
+8443.864 Other ACTIVE True
+8443.914 Target ACTIVE True
+8443.914 Other ACTIVE False
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== double-slow presses=1
+8461.764 Target ACTIVE False
+8461.764 Other ACTIVE True
+8461.780 Other PRESS n=1 x=256 y=330
+8461.814 Other ACTIVE False
+8461.814 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== ink presses=0
+- #1 (0:05) “I love you”'
+
+{"id":2,"title":"Target","app_
+== tap presses=0
+- #1 (0:05) “I love you”I love you'
+
+{"id":2,"title":"Target","app_
+== keyup presses=0
+8513.830 Target ACTIVE False
+8513.830 Other ACTIVE True
+8513.880 Target ACTIVE True
+8513.880 Other ACTIVE False
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== flick presses=0
+- #1 (0:05) “I love you”'
+
+{"id":2,"title":"Target","app_
+== jitter presses=0
+8549.864 Target ACTIVE False
+8549.864 Other ACTIVE True
+8549.914 Target ACTIVE True
+8549.914 Other ACTIVE False
+- #1 (0:05) “I love you”\n  Other · “Other”'
+
+{"id":2,"title":"Target","app_
+== drag presses=0
+- #1 (0:05) “I love you”'
+
+{"id":2,"title":"Target","app_
+== no-key presses=1
+8584.447 Other PRESS n=1 x=256 y=330
+8584.447 Target ACTIVE False
+8584.447 Other ACTIVE True
+no-paste
+{"id":3,"title":"Other","app_i
+chrome 4
+== chrome-page presses=0
+8613.980 Target ACTIVE False
+8614.030 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== chrome-selected presses=0
+8632.697 Target ACTIVE False
+8632.748 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n  selected: “Parakeet”'
+
+{"id":2,"title":"Target","app_
+== chrome-plain presses=0
+8651.814 Target ACTIVE False
+8651.864 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n  selected: “visibletext”'
+
+{"id":2,"title":"Target","app_
+== chrome-password presses=0
+8670.447 Target ACTIVE False
+8670.497 Target ACTIVE True
+- #1 (0:05) “I love you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+0
+grabbed /dev/input/event30
+== gap-350 presses=0
+8689.780 Target ACTIVE False
+8689.830 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:06) marked'
+
+{"id":2,"title":"Target","app_
+== gap-400 presses=0
+8709.414 Target ACTIVE False
+8709.464 Target ACTIVE True
+8710.397 Target ACTIVE False
+8710.447 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== gap-450 presses=0
+8729.181 Target ACTIVE False
+8729.231 Target ACTIVE True
+8730.447 Target ACTIVE False
+8730.497 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== gap-500 presses=0
+8749.330 Target ACTIVE False
+8749.381 Target ACTIVE True
+8750.664 Target ACTIVE False
+8750.714 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== gap-550 presses=0
+8769.597 Target ACTIVE False
+8769.647 Target ACTIVE True
+8770.897 Target ACTIVE False
+8770.947 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== gap-600 presses=0
+8789.897 Target ACTIVE False
+8789.947 Target ACTIVE True
+8791.481 Target ACTIVE False
+8791.531 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:06) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+== gap-700 presses=0
+8810.564 Target ACTIVE False
+8810.614 Target ACTIVE True
+8812.347 Target ACTIVE False
+8812.397 Target ACTIVE True
+- #1 (0:05) “I love”\n  Target · “Target”\n- #2 (0:06) “you”\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html\n- #3 (0:07) marked\n  Target · “Target”\n- #4 (0:07) marked\n  Google Chrome · “Pin Fixture” · http://127.0.0.1:18733/index.html'
+
+{"id":2,"title":"Target","app_
+ALL-DONE

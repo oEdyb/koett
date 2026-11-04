@@ -6,8 +6,9 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 
 ## Behaviour (Linux, implemented)
 
-- Settings › Text: **Draw on screen while dictating**, off by default, and
-  **Draw key**: Shift (default), Ctrl or Alt.
+- Settings › Draw on screen: **Draw & Pin While Dictating**, off by default,
+  **Draw key**: Shift (default), Ctrl or Alt, and **Include Selected Text in
+  Pins**, on by default.
 - A recording never blocks typing by default. Koett reads the draw key from the
   keyboard devices whenever they're readable, so the overlay never takes
   keyboard focus. About 60 times a second it samples which keys are held
@@ -115,8 +116,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Multi-monitor: one overlay and one capture per monitor; portal images that
   span the desktop are cropped per monitor (unit-tested). The lab has a single
   virtual output, so multi-monitor drawing is not yet verified on hardware.
-- On Linux, pins (Scrawl's Shift-click), click keyframes and spoken cue keyframes are not
-  implemented.
+- On Linux, click keyframes and spoken cue keyframes are not implemented. Pins are:
+  rules, context and limits are in `screen-context-proposal.md`.
 - `wl-copy` cannot report when the target read the image, so the wlroots path
   waits a fixed 700 ms before switching the clipboard to text. The portal path
   waits for the actual read (max 1.5 s) plus 160 ms.
@@ -156,7 +157,7 @@ Same output as Linux: one numbered contact sheet, then the same
   therefore cannot contain another sketch's ink or the pill, and needs no
   frame-presentation sync. Ctrl+Z undo is not ported: the overlay never has
   keyboard focus and captures start on release.
-- Pins (Mac only so far): a click while the draw key is held drops numbered
+- Pins (Linux has them too, read through niri and AT-SPI instead): a click while the draw key is held drops numbered
   pin #N at the click instead of ink. It shares numbering, linking, the sheet
   and the paste with sketches; its tile is a crop around a red ring, and its
   bullet gains a context line read through Accessibility only (window owner,
