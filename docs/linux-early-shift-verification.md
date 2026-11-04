@@ -21,7 +21,10 @@ held-key samples are still wiped after polling.
 
 Base: main `1c247fb` including #70 and #71. Rebased after monitor hotplug merged;
 layout invalidation resets early click protection as well as ink and the hold
-gate. The Rust, native Shift and hotplug checks were rerun together.
+gate. The Rust, native Shift and hotplug checks were rerun together. The
+combined hotplug result is retained as `combined-hotplug.json` beside the Shift
+fixture: completed frames survive, late frames are rejected, fresh drawing and
+Undo work after scale/remove/reconnect, and a held key needs release.
 No dependency, Windows/shared-engine changes or host installation.
 
 - Rust: 392 tests passed, 17 ignored, plus native ABI subprocess check.

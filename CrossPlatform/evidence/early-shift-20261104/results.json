@@ -3,47 +3,7 @@
     "trials": [
       {
         "requested_ms": 40,
-        "click_flushed_ms": 40.82,
-        "pins": 1
-      },
-      {
-        "requested_ms": 60,
-        "click_flushed_ms": 60.89,
-        "pins": 1
-      },
-      {
-        "requested_ms": 80,
-        "click_flushed_ms": 81.0,
-        "pins": 1
-      },
-      {
-        "requested_ms": 100,
-        "click_flushed_ms": 100.89,
-        "pins": 1
-      },
-      {
-        "requested_ms": 40,
-        "click_flushed_ms": 40.89,
-        "pins": 1
-      },
-      {
-        "requested_ms": 60,
-        "click_flushed_ms": 61.05,
-        "pins": 1
-      },
-      {
-        "requested_ms": 80,
-        "click_flushed_ms": 80.79,
-        "pins": 1
-      },
-      {
-        "requested_ms": 100,
-        "click_flushed_ms": 100.83,
-        "pins": 1
-      },
-      {
-        "requested_ms": 40,
-        "click_flushed_ms": 40.8,
+        "click_flushed_ms": 40.9,
         "pins": 1
       },
       {
@@ -53,32 +13,72 @@
       },
       {
         "requested_ms": 80,
-        "click_flushed_ms": 80.83,
+        "click_flushed_ms": 80.76,
         "pins": 1
       },
       {
         "requested_ms": 100,
-        "click_flushed_ms": 100.76,
+        "click_flushed_ms": 100.79,
         "pins": 1
       },
       {
         "requested_ms": 40,
-        "click_flushed_ms": 40.87,
+        "click_flushed_ms": 41.05,
         "pins": 1
       },
       {
         "requested_ms": 60,
-        "click_flushed_ms": 60.94,
+        "click_flushed_ms": 60.78,
         "pins": 1
       },
       {
         "requested_ms": 80,
-        "click_flushed_ms": 80.82,
+        "click_flushed_ms": 80.81,
         "pins": 1
       },
       {
         "requested_ms": 100,
-        "click_flushed_ms": 100.85,
+        "click_flushed_ms": 100.79,
+        "pins": 1
+      },
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.84,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 60.79,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 80.84,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.84,
+        "pins": 1
+      },
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.85,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 60.97,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 80.84,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.8,
         "pins": 1
       }
     ],
