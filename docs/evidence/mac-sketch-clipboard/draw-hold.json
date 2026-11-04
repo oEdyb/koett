@@ -29,5 +29,16 @@
     "No physical phantom-Shift reproduction",
     "Keyboard devices are not read or authenticated on macOS"
   ],
-  "relationship": "Clipboard fix already merged in PR #46 before fresh-hold request; gating follows in PR #47."
+  "relationship": "Clipboard fix already merged in PR #46 before fresh-hold request; gating follows in PR #47.",
+  "releaseBuild": {
+    "command": "swift build -c release",
+    "exit": 0,
+    "seconds": 46.16
+  },
+  "packaging": {
+    "diffCheck": 0,
+    "installerSyntax": 0,
+    "Info.plist": 0,
+    "entitlements": 0
+  }
 }
