@@ -14,9 +14,11 @@ pub(super) struct Renderer {
     device: IDCompositionDevice2,
     _target: IDCompositionTarget,
     visual: IDCompositionVisual2,
+    opacity: IDCompositionEffectGroup,
     surface: IDCompositionSurface,
     size: (u32, u32),
     text: IDWriteTextFormat,
+    body: IDWriteTextFormat,
 }
 
 impl Renderer {
@@ -46,6 +48,8 @@ impl Renderer {
             let desktop: IDCompositionDesktopDevice = device.cast()?;
             let target = desktop.CreateTargetForHwnd(hwnd, true)?;
             let visual = device.CreateVisual()?;
+            let opacity = device.CreateEffectGroup()?;
+            visual.SetEffect(&opacity)?;
             let surface = device.CreateSurface(
                 size.0,
                 size.1,
@@ -66,13 +70,26 @@ impl Renderer {
             )?;
             text.SetTextAlignment(DWRITE_TEXT_ALIGNMENT_TRAILING)?;
             text.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER)?;
+            let body = write.CreateTextFormat(
+                w!("Segoe UI"),
+                None,
+                DWRITE_FONT_WEIGHT_NORMAL,
+                DWRITE_FONT_STYLE_NORMAL,
+                DWRITE_FONT_STRETCH_NORMAL,
+                12.0,
+                w!("en-US"),
+            )?;
+            body.SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER)?;
+            body.SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP)?;
             Ok(Self {
                 device,
                 _target: target,
                 visual,
+                opacity,
                 surface,
                 size,
                 text,
+                body,
             })
         }
     }
@@ -83,7 +100,8 @@ impl Renderer {
         bounds: RECT,
         bars: &[f32; 64],
         elapsed: u64,
-        busy: bool,
+        state: &super::pill_state::State,
+        now: u64,
     ) -> windows::core::Result<()> {
         unsafe {
             let size = (
@@ -145,39 +163,135 @@ impl Renderer {
                     },
                     &fill,
                 );
-                target.FillRoundedRectangle(
-                    &D2D1_ROUNDED_RECT {
-                        rect: rect(19.0, 20.0, 27.0, 28.0),
-                        radiusX: 4.0,
-                        radiusY: 4.0,
-                    },
-                    &coral,
-                );
-                for (index, level) in bars.iter().enumerate() {
-                    let height = 2.0 + level * 24.0;
-                    let x = 44.0 + index as f32 * 3.0;
+                use super::pill_state::Phase;
+                let reduced = reduced_motion();
+                self.opacity.SetOpacity2(state.opacity(now, reduced))?;
+                let active = matches!(state.phase, Phase::Recording | Phase::Transcribing);
+                let morph = state.morph(now, reduced);
+                let draw = |label: &str, left: f32, right: f32, clock: bool| {
+                    target.DrawText(
+                        &label.encode_utf16().collect::<Vec<_>>(),
+                        if clock { &self.text } else { &self.body },
+                        &rect(left, 0.0, right, 48.0),
+                        &white,
+                        D2D1_DRAW_TEXT_OPTIONS_CLIP,
+                        DWRITE_MEASURING_MODE_NATURAL,
+                    );
+                };
+                if matches!(state.phase, Phase::Done(_)) {
+                    for (i, h) in [6.0, 12.0, 18.0, 12.0, 6.0].iter().enumerate() {
+                        let x = 16.0 + i as f32 * 3.0;
+                        target.FillRoundedRectangle(
+                            &D2D1_ROUNDED_RECT {
+                                rect: rect(x, 24.0 - h / 2.0, x + 2.0, 24.0 + h / 2.0),
+                                radiusX: 1.0,
+                                radiusY: 1.0,
+                            },
+                            &coral,
+                        );
+                    }
+                } else if state.paused {
+                    draw("Ⅱ", 18.0, 32.0, false);
+                } else if matches!(state.phase, Phase::NotPasted | Phase::Error { .. }) {
+                    draw("!", 19.0, 30.0, false);
+                } else if matches!(state.phase, Phase::Transcribing) {
+                    let index = if reduced { 0 } else { (now / 100) % 8 };
+                    for i in 0..8 {
+                        let angle = i as f32 * std::f32::consts::TAU / 8.0;
+                        coral.SetOpacity(if i == index { 1.0 } else { 0.25 });
+                        let x = 23.0 + angle.cos() * 5.0;
+                        let y = 24.0 + angle.sin() * 5.0;
+                        target.FillRoundedRectangle(
+                            &D2D1_ROUNDED_RECT {
+                                rect: rect(x - 1.0, y - 1.0, x + 1.0, y + 1.0),
+                                radiusX: 1.0,
+                                radiusY: 1.0,
+                            },
+                            &coral,
+                        );
+                    }
+                    coral.SetOpacity(1.0);
+                } else {
                     target.FillRoundedRectangle(
                         &D2D1_ROUNDED_RECT {
-                            rect: rect(x, 24.0 - height / 2.0, x + 2.0, 24.0 + height / 2.0),
-                            radiusX: 1.0,
-                            radiusY: 1.0,
+                            rect: rect(19.0, 20.0, 27.0, 28.0),
+                            radiusX: 4.0,
+                            radiusY: 4.0,
                         },
                         &coral,
                     );
                 }
-                let label = if busy {
-                    "…".to_string()
+                if (active && !state.hovered) || (!active && morph < 1.0) {
+                    coral.SetOpacity(if active {
+                        if matches!(state.phase, Phase::Transcribing) {
+                            0.4
+                        } else {
+                            1.0
+                        }
+                    } else {
+                        (1.0 - 1.6 * morph).max(0.0)
+                    });
+                    for (index, level) in bars.iter().enumerate() {
+                        let height = 2.0 + level * 24.0;
+                        let x = 44.0 + index as f32 * 3.0;
+                        target.FillRoundedRectangle(
+                            &D2D1_ROUNDED_RECT {
+                                rect: rect(x, 24.0 - height / 2.0, x + 2.0, 24.0 + height / 2.0),
+                                radiusX: 1.0,
+                                radiusY: 1.0,
+                            },
+                            &coral,
+                        );
+                    }
+                }
+                if active {
+                    if state.hovered {
+                        draw("Cancel", 44.0, 99.0, false);
+                        if matches!(state.phase, Phase::Recording) {
+                            draw(
+                                if state.paused { "Resume" } else { "Pause" },
+                                105.0,
+                                172.0,
+                                false,
+                            );
+                        }
+                        draw("History", 178.0, 235.0, false);
+                    }
+                    if !matches!(state.phase, Phase::Transcribing) {
+                        draw(
+                            &format!("{}:{:02}", elapsed / 60, elapsed % 60),
+                            238.0,
+                            284.0,
+                            true,
+                        );
+                    }
                 } else {
-                    format!("{}:{:02}", elapsed / 60, elapsed % 60)
-                };
-                target.DrawText(
-                    &label.encode_utf16().collect::<Vec<_>>(),
-                    &self.text,
-                    &rect(238.0, 0.0, 284.0, 48.0),
-                    &white,
-                    D2D1_DRAW_TEXT_OPTIONS_CLIP,
-                    DWRITE_MEASURING_MODE_NATURAL,
-                );
+                    white.SetOpacity(morph);
+                    let shift = 8.0 * (1.0 - morph);
+                    match &state.phase {
+                        Phase::Done(preview) => {
+                            draw(
+                                &preview.replace(['\n', '\r'], " "),
+                                44.0 + shift,
+                                234.0,
+                                false,
+                            );
+                            draw(
+                                if state.copied { "Copied" } else { "Copy" },
+                                246.0,
+                                295.0,
+                                false,
+                            );
+                        }
+                        Phase::NotPasted => {
+                            draw("Not pasted · saved", 44.0 + shift, 189.0, false);
+                            draw("Paste", 192.0, 237.0, false);
+                            draw("Copy", 245.0, 292.0, false);
+                        }
+                        Phase::Error { message, .. } => draw(message, 44.0, 284.0, false),
+                        _ => {}
+                    }
+                }
                 Ok(())
             })();
             let ended = self.surface.EndDraw();

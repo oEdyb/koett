@@ -1,5 +1,7 @@
+mod desktop;
 mod meter;
 mod pill;
+mod pill_state;
 
 use std::cell::RefCell;
 use std::mem::size_of;
@@ -42,7 +44,6 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 use windows::Win32::UI::Shell::{
     NIF_GUID, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NIM_SETFOCUS,
     NIM_SETVERSION, NIN_SELECT, NINF_KEY, NOTIFYICON_VERSION_4, NOTIFYICONDATAW, Shell_NotifyIconW,
-    ShellExecuteW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
@@ -74,6 +75,7 @@ const MENU_CHANGE_SHORTCUT: usize = 1;
 const MENU_OPEN_HISTORY: usize = 2;
 const MENU_START_AT_LOGIN: usize = 3;
 const MENU_QUIT: usize = 4;
+const MENU_SETTINGS: usize = 5;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -90,6 +92,9 @@ struct WindowsApp {
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     meter: meter::Meter,
+    pill_state: pill_state::State,
+    clock: Instant,
+    last_transcript: String,
     last_pill_redraw: Option<Instant>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
@@ -122,6 +127,9 @@ pub fn run() -> Result<(), String> {
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
         meter: meter::Meter::default(),
+        pill_state: pill_state::State::default(),
+        clock: Instant::now(),
+        last_transcript: String::new(),
         last_pill_redraw: None,
         shortcut_window: HWND::default(),
         registered_shortcut: None,
@@ -342,6 +350,12 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            windows::Win32::UI::WindowsAndMessaging::WM_COMMAND => {
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.handle_menu(wparam.0 & 0xffff);
+                }
+                return Default::default();
+            }
             WM_HOTKEY => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.toggle();
@@ -351,6 +365,7 @@ unsafe extern "system" fn window_proc(
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.poll_updates();
+                    app.tick_pill();
                     if app.status == AppStatus::Recording {
                         let elapsed = app
                             .recording_started
@@ -414,6 +429,16 @@ unsafe extern "system" fn overlay_proc(
 ) -> windows::Win32::Foundation::LRESULT {
     if message == WM_MOUSEACTIVATE {
         return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
+    }
+    if message == WM_LBUTTONUP {
+        let cell = APP.load(Ordering::Acquire);
+        if !cell.is_null()
+            && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
+        {
+            let dpi = unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) }.max(96);
+            app.pill_click(((lparam.0 as u16 as i16) as i32) * 96 / dpi as i32);
+        }
+        return Default::default();
     }
     if message == WM_PAINT {
         let app_cell = APP.load(Ordering::Acquire);
@@ -504,8 +529,22 @@ impl WindowsApp {
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {
-                    if let AppStatus::Error(error) = &status {
-                        show_fatal_error(error);
+                    let now = self.clock.elapsed().as_millis() as u64;
+                    match &status {
+                        AppStatus::Recording => {
+                            self.pill_state.set(pill_state::Phase::Recording, now)
+                        }
+                        AppStatus::Transcribing => {
+                            self.pill_state.set(pill_state::Phase::Transcribing, now)
+                        }
+                        AppStatus::Error(message) => self.pill_state.set(
+                            pill_state::Phase::Error {
+                                message: message.clone(),
+                                rescue: true,
+                            },
+                            now,
+                        ),
+                        _ => {}
                     }
                     self.status = status;
                     self.update_tray();
@@ -540,15 +579,114 @@ impl WindowsApp {
         }
     }
 
-    fn update_overlay(&self) {
+    fn tick_pill(&mut self) {
+        let now = self.clock.elapsed().as_millis() as u64;
+        let mut point = POINT::default();
+        let mut bounds = RECT::default();
         unsafe {
-            if matches!(self.status, AppStatus::Recording | AppStatus::Transcribing) {
-                position_overlay(self.overlay, GetForegroundWindow());
+            let _ = GetCursorPos(&mut point);
+            let _ =
+                windows::Win32::UI::WindowsAndMessaging::GetWindowRect(self.overlay, &mut bounds);
+        }
+        self.pill_state.hover(
+            point.x >= bounds.left
+                && point.x < bounds.right
+                && point.y >= bounds.top
+                && point.y < bounds.bottom,
+            now,
+        );
+        self.update_overlay();
+    }
+
+    fn update_overlay(&self) {
+        let opacity = self.pill_state.opacity(
+            self.clock.elapsed().as_millis() as u64,
+            pill::reduced_motion(),
+        );
+        unsafe {
+            if opacity > 0.0 {
+                if matches!(self.pill_state.phase, pill_state::Phase::Recording) {
+                    position_overlay(
+                        self.overlay,
+                        self.paste_target.unwrap_or_else(|| GetForegroundWindow()),
+                    );
+                }
+                let flags = windows::Win32::UI::WindowsAndMessaging::GetWindowLongPtrW(
+                    self.overlay,
+                    windows::Win32::UI::WindowsAndMessaging::GWL_EXSTYLE,
+                );
+                let transparent = WS_EX_TRANSPARENT.0 as isize;
+                let next = if self.pill_state.interactive() {
+                    flags & !transparent
+                } else {
+                    flags | transparent
+                };
+                if flags != next {
+                    windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(
+                        self.overlay,
+                        windows::Win32::UI::WindowsAndMessaging::GWL_EXSTYLE,
+                        next,
+                    );
+                }
                 let _ = ShowWindow(self.overlay, SW_SHOWNOACTIVATE);
+                if !pill::reduced_motion()
+                    || self
+                        .last_pill_redraw
+                        .is_none_or(|t| t.elapsed() >= Duration::from_secs(1))
+                {
+                    let _ = InvalidateRect(Some(self.overlay), None, false);
+                }
             } else {
                 let _ = ShowWindow(self.overlay, SW_HIDE);
             }
         }
+    }
+
+    fn pill_click(&mut self, x: i32) {
+        let now = self.clock.elapsed().as_millis() as u64;
+        match &self.pill_state.phase {
+            pill_state::Phase::Recording | pill_state::Phase::Transcribing
+                if self.pill_state.hovered =>
+            {
+                if x < 100 {
+                    if let Some(engine) = &self.engine {
+                        engine.cancel_dictation();
+                    }
+                    self.pill_state.set(pill_state::Phase::Hidden, now);
+                } else if x < 175 && self.status == AppStatus::Recording {
+                    if let Some(levels) = &self.levels {
+                        self.pill_state.paused = !levels.paused();
+                        levels.set_paused(self.pill_state.paused);
+                    }
+                } else if x >= 175 {
+                    let _ = open_history();
+                }
+            }
+            pill_state::Phase::Done(_) | pill_state::Phase::NotPasted => {
+                if x >= 245 {
+                    if copy_text(self.hwnd, &self.last_transcript).is_ok() {
+                        self.pill_state.copy(now);
+                        self.pill_state
+                            .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
+                        self.pill_state.copy(now);
+                    }
+                } else if x >= 190 && matches!(self.pill_state.phase, pill_state::Phase::NotPasted)
+                {
+                    if self.paste_target == Some(unsafe { GetForegroundWindow() })
+                        && copy_text(self.hwnd, &self.last_transcript).is_ok()
+                        && paste().is_ok()
+                    {
+                        self.pill_state
+                            .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
+                    }
+                } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted) {
+                    self.pill_state.set(pill_state::Phase::Hidden, now);
+                }
+            }
+            pill_state::Phase::Error { .. } => self.pill_state.set(pill_state::Phase::Hidden, now),
+            _ => {}
+        }
+        self.update_overlay();
     }
 
     fn show_shortcut_window(&self) {
@@ -639,9 +777,13 @@ impl WindowsApp {
             && let Err(error) = paste()
         {
             Some(format!("Copied. Automatic paste failed: {error}"))
+        } else if self.paste_target != Some(unsafe { GetForegroundWindow() }) {
+            Some("Focus changed. Transcript saved.".to_string())
         } else {
             None
         };
+        self.last_transcript = text.to_string();
+        let failed = delivery_error.is_some();
         let history_error = match history::append_transcript_with_raw_resilient(model, text, raw) {
             Ok(Some(path)) => Some(format!(
                 "The main transcript history failed. Koett saved this transcript to {}",
@@ -659,9 +801,16 @@ impl WindowsApp {
                 (None, Some(delivery)) => delivery,
                 (None, None) => unreachable!(),
             };
-            show_fatal_error(&error);
+            eprintln!("Koett: {error}");
         }
-        self.paste_target = None;
+        let phase = if failed {
+            pill_state::Phase::NotPasted
+        } else {
+            pill_state::Phase::Done(text.to_string())
+        };
+        self.pill_state
+            .set(phase, self.clock.elapsed().as_millis() as u64);
+        self.update_overlay();
     }
 
     fn add_tray(&mut self) -> Result<(), String> {
@@ -726,7 +875,8 @@ impl WindowsApp {
                 w!("Change shortcut…"),
             );
             let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
-            let _ = AppendMenuW(menu, MF_STRING, MENU_OPEN_HISTORY, w!("Open Transcripts"));
+            let _ = AppendMenuW(menu, MF_STRING, MENU_OPEN_HISTORY, w!("History"));
+            let _ = AppendMenuW(menu, MF_STRING, MENU_SETTINGS, w!("Settings"));
             let startup_flags = if self.settings.start_at_login {
                 MF_STRING | MF_CHECKED
             } else {
@@ -770,6 +920,7 @@ impl WindowsApp {
     fn handle_menu(&mut self, command: usize) {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
+            MENU_SETTINGS => desktop::open(true, self.hwnd),
             MENU_OPEN_HISTORY => {
                 if let Err(error) = open_history() {
                     show_fatal_error(&error);
@@ -913,7 +1064,8 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
                     bounds,
                     &app.meter.bars(),
                     elapsed,
-                    app.status == AppStatus::Transcribing,
+                    &app.pill_state,
+                    app.clock.elapsed().as_millis() as u64,
                 )
                 .is_err()
             {
@@ -944,26 +1096,7 @@ fn set_wide_array<const N: usize>(output: &mut [u16; N], value: &str) {
 }
 
 fn open_history() -> Result<(), String> {
-    let path = crate::paths::history_file()?;
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
-    }
-    if !path.exists() {
-        std::fs::write(&path, "# Koett Transcripts\n\n")
-            .map_err(|error| format!("could not create {}: {error}", path.display()))?;
-    }
-    let path = wide(&path.display().to_string());
-    unsafe {
-        let _ = ShellExecuteW(
-            None,
-            w!("open"),
-            PCWSTR::from_raw(path.as_ptr()),
-            None,
-            None,
-            SW_SHOWNORMAL,
-        );
-    }
+    desktop::open(false, HWND::default());
     Ok(())
 }
 
