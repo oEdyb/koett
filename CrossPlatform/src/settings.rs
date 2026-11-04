@@ -62,6 +62,7 @@ pub struct Settings {
     pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
     pub paste_shortcut: PasteShortcut,
+    pub image_paste_shortcuts: std::collections::BTreeMap<String, PasteShortcut>,
     /// Off by default: drawing takes keyboard focus while recording.
     pub draw_while_dictating: bool,
     pub draw_key: DrawKey,
@@ -88,6 +89,7 @@ impl Default for Settings {
             dictionary: Vec::new(),
             pause_media: false,
             paste_shortcut: PasteShortcut::default(),
+            image_paste_shortcuts: Default::default(),
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
             draw_may_take_keyboard: false,
@@ -257,6 +259,9 @@ impl Settings {
         }
         if self.paste_shortcut != opened.paste_shortcut {
             merged.paste_shortcut = self.paste_shortcut;
+        }
+        if self.image_paste_shortcuts != opened.image_paste_shortcuts {
+            merged.image_paste_shortcuts = self.image_paste_shortcuts;
         }
         if self.draw_while_dictating != opened.draw_while_dictating {
             merged.draw_while_dictating = self.draw_while_dictating;
@@ -446,9 +451,27 @@ mod tests {
     }
 
     #[test]
+    fn image_rules_merge_without_overwriting_unrelated_edits() {
+        let opened = Settings::default();
+        let mut edited = opened.clone();
+        edited
+            .image_paste_shortcuts
+            .insert("org.example.Editor".into(), PasteShortcut::CtrlShiftV);
+        let mut current = opened.clone();
+        current.paste_shortcut = PasteShortcut::CtrlShiftV;
+        let merged = edited.merge_editor(&opened, current);
+        assert_eq!(merged.paste_shortcut, PasteShortcut::CtrlShiftV);
+        assert_eq!(
+            merged.image_paste_shortcuts["org.example.Editor"],
+            PasteShortcut::CtrlShiftV
+        );
+    }
+
+    #[test]
     fn paste_shortcut_defaults_for_existing_settings_and_rejects_unknown_chords() {
         let settings: Settings = serde_json::from_str(r#"{"shortcut":"Alt+Space"}"#).unwrap();
         assert_eq!(settings.paste_shortcut, PasteShortcut::CtrlV);
+        assert!(settings.image_paste_shortcuts.is_empty());
         assert!(serde_json::from_str::<Settings>(r#"{"paste_shortcut":"shift_insert"}"#).is_err());
     }
 

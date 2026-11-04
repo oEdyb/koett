@@ -135,6 +135,15 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
+            if bytes == b"permissions-status" {
+                let _ = stream.write_all(super::permissions_view::status().to_string().as_bytes());
+                continue;
+            }
+            if bytes == b"permissions" {
+                let _ = ui.send(super::window::Update::Status("@permissions".into()));
+                let _ = stream.write_all(b"{\"ok\":true}");
+                continue;
+            }
             if let Ok(command) = std::str::from_utf8(&bytes)
                 && matches!(
                     command,

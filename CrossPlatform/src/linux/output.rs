@@ -11,7 +11,7 @@ pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_mill
 /// wl-copy cannot report reads, so wait this long after an image paste.
 const WL_COPY_IMAGE_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 
-pub fn focused_window() -> Option<u32> {
+pub fn focused_identity() -> Option<(u32, String)> {
     let output = Command::new("niri")
         .args(["msg", "-j", "focused-window"])
         .output()
@@ -26,7 +26,14 @@ pub fn focused_window() -> Option<u32> {
     {
         return None;
     }
-    u32::try_from(value["id"].as_u64()?).ok()
+    Some((
+        u32::try_from(value["id"].as_u64()?).ok()?,
+        value["app_id"].as_str()?.to_owned(),
+    ))
+}
+
+pub fn focused_window() -> Option<u32> {
+    focused_identity().map(|(id, _)| id)
 }
 
 pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Result<(), String> {
@@ -68,9 +75,10 @@ pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     if !target_unchanged(target) {
         return Err("target window changed".into());
     }
+    let chord = super::image_paste::for_target(target)?;
     trace.post();
     let status = Command::new("wtype")
-        .args(wtype_arguments(PasteShortcut::CtrlV))
+        .args(wtype_arguments(chord))
         .status()
         .map_err(|e| format!("automatic paste unavailable: {e}"))?;
     trace.finish(status.success());
