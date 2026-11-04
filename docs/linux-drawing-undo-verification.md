@@ -68,3 +68,9 @@ plus native ABI check; formatting, clippy and release build passed. The same
 private-app workflow passed again, including native action and late-result undo.
 The parity-document conflict retained both guarded Paste Last and drawing undo,
 plus the open-row queue; the native Rust changes merged without a code conflict.
+
+Rebased again onto main `ff50dd5` after PR #68 merged: 385 tests passed,
+17 ignored, plus native ABI check; formatting, clippy and release passed.
+The private-app undo workflow passed again. Only the parity document conflicted;
+first-visible Permissions, Paste Last and drawing undo were all retained.
+MSVC cross-check still lacks `lib.exe`. No installation.
