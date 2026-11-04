@@ -27,9 +27,6 @@ const FADE_AFTER: Duration = Duration::from_millis(1500);
 const FADE_FOR: Duration = Duration::from_millis(400);
 /// Matches the pill timeline's cap (`timeline::MAX_SKETCHES`, 256 per dictation).
 const MAX_SKETCHES: usize = 256;
-/// A draw-key hold shorter than this does nothing, so typing a capital letter
-/// during a dictation neither blocks clicks nor flashes the crosshair.
-const DRAW_ARM: Duration = Duration::from_millis(120);
 /// Ink smaller than this (logical px) is a resting hand, not a sketch.
 const MIN_INK: f64 = 12.0;
 /// How often device mode looks for added or removed keyboards.
@@ -184,8 +181,8 @@ struct Session {
     keyboards: Option<keys::Keyboards>,
     /// The user allows focus as a last resort if every keyboard is lost.
     may_take_keyboard: bool,
-    /// When the draw key alone went down, before the hold arms drawing.
-    key_down_since: Option<Instant>,
+    /// Decides whether the sampled key state is a deliberate drawing hold.
+    gate: keys::DrawGate,
     /// Keyboards were reported lost; cleared when one answers again.
     keyboards_lost: bool,
     rescanned: Option<Instant>,
@@ -241,6 +238,7 @@ impl Session {
     }
 
     fn press(&mut self) {
+        self.gate.moved(Instant::now());
         self.held = true;
         self.set_input(true);
     }
@@ -265,7 +263,8 @@ impl Session {
             }
             self.reported_unreadable = unreadable;
         }
-        let down = !self.finishing && keyboards.modifiers().draws(self.key);
+        let (held, others) = keyboards.modifiers().for_key(self.key);
+        let held = held && !self.finishing;
         if keyboards.is_empty() {
             if self.may_take_keyboard {
                 self.keyboards = None;
@@ -291,13 +290,7 @@ impl Session {
         } else {
             self.keyboards_lost = false;
         }
-        let now = Instant::now();
-        self.key_down_since = if down {
-            self.key_down_since.or(Some(now))
-        } else {
-            None
-        };
-        match (armed(self.key_down_since, now), self.held) {
+        match (self.gate.update(held, others, Instant::now()), self.held) {
             (true, false) => self.press(),
             (false, true) => self.release(),
             _ => {}
@@ -306,6 +299,7 @@ impl Session {
 
     fn point(&mut self, surface: usize, x: f64, y: f64) {
         let now = Instant::now();
+        self.gate.moved(now);
         let current = self
             .stroking
             .and_then(|id| self.groups.iter().position(|group| group.id == id))
@@ -398,6 +392,11 @@ impl Session {
     /// One timer step. Returns false once a finishing session is complete.
     fn tick(&mut self) -> bool {
         self.poll_keys();
+        // Focused mode has no key state to sample: a missed release must not
+        // leave clicks blocked once the pointer has stopped drawing.
+        if self.keyboards.is_none() && self.held && self.gate.expired(Instant::now()) {
+            self.release();
+        }
         let now = Instant::now();
         let results = std::mem::take(
             &mut *self
@@ -537,11 +536,6 @@ fn paint(session: &Session, surface: usize, context: &gtk::cairo::Context) {
             let _ = context.stroke();
         }
     }
-}
-
-/// Whether a held draw key has lasted long enough to start drawing.
-fn armed(down_since: Option<Instant>, now: Instant) -> bool {
-    down_since.is_some_and(|since| now.saturating_duration_since(since) >= DRAW_ARM)
 }
 
 /// Whether strokes are too small to be a deliberate sketch.
@@ -915,7 +909,7 @@ impl SketchOverlay {
             results: Arc::new(Mutex::new(Vec::new())),
             keyboards,
             may_take_keyboard,
-            key_down_since: None,
+            gate: keys::DrawGate::default(),
             keyboards_lost: false,
             rescanned: None,
             reported_unreadable: 0,
@@ -1086,14 +1080,6 @@ mod tests {
             ));
         }
         assert_eq!(keyboard_modes(false, 2), [false, false]);
-    }
-
-    #[test]
-    fn typing_a_capital_does_not_arm_drawing() {
-        let now = Instant::now();
-        assert!(!armed(None, now));
-        assert!(!armed(Some(now), now + Duration::from_millis(60)));
-        assert!(armed(Some(now), now + DRAW_ARM));
     }
 
     #[test]
