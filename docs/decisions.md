@@ -226,3 +226,11 @@ The real pill stays in place, invisible at 1/255 opacity, and keeps the pointer 
 while an input-free live copy follows the pointer onto any monitor. On release the real
 pill moves there. This gives one code path for every compositor and exact pointer offsets.
 The cost is a second window for the length of a drag.
+
+## 2026-11-05: Esc ends draw lock instead of cancelling
+
+While draw lock is on, Esc captures the sketch and leaves the lock, and a second Esc
+cancels. In a mode the user entered on purpose, Esc reads as "leave this mode", and
+throwing away the whole dictation is the costliest wrong guess. Ctrl+Z also reaches the
+focused app, since typing must keep working and sampled keys can't be consumed, so
+right-click is the undo that touches nothing else.

@@ -225,3 +225,12 @@ Found while adding `transcribe-file`. Any CLI error outside a hard-coded list op
 desktop dialog saying Koett could not start and exited 0, so a script saw success. The
 media commands now print a JSON error and exit 1. `start`, `stop` and `toggle` keep the
 dialog on purpose, since a desktop keybinding has nowhere else to show it.
+
+## 2026-11-05: an emptied dictation wiped the clipboard, and X11 pasted with no focus
+
+Found in the audit of the Linux parity PRs. A replacement rule that removes a whole
+dictation got past the empty check, which looked at the text before replacements, so
+Koett cleared the clipboard, pressed paste and saved a blank history row. On X11 the
+focus guard compared raw focus values, so None and PointerRoot matched themselves and
+Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
+private lab with real speech. Regression tests are in `linux.rs`.
