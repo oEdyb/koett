@@ -18,7 +18,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Escape cancel | Yes, recording-only | X11 yes; Wayland recording-only with keyboard read access | No recording Esc path identified | Windows recording-scoped observer; Wayland read-only keyboard observer; [checks and permission fallback](linux-cancel-errors-verification.md), pill/CLI without access |
 | Paste into original target | Original PID/launch identity + available AX window checked per paste; no atomic receipt | niri/X11 guard; other Wayland desktops copy-only | HWND equality guard in `deliver`; receipt absent | Add Mac guard; Windows PID/liveness + per-stage recheck; keep copy fallback everywhere |
 | Terminal versus GUI paste chord | Configurable per-app image delivery | Per-app image rules with known niri identity; separate text chord | Ctrl+V baseline | Per-app chord rules on Linux/Windows; never guess by sending both |
-| Last transcript / Copy and Paste Last | Yes | Yes; CLI paste-last copies only | Shared persistence; no matching tray actions | Native actions + honest CLI naming on Windows; align Linux CLI behavior/docs |
+| Last transcript / Copy and Paste Last | Yes | Yes; CLI uses guarded controller delivery | Shared persistence; no matching tray actions | Native actions on Windows; Linux [CLI checks and limits](linux-last-paste-verification.md), target consumption remains unverified |
 | Failed audio / failed text fallback | Yes | Yes | Shared engine/store paths; untested | Windows visible recovery + failure injection, preserve ASR/delivery separation |
 | Retry Save / recovery status | Retry Save + Copy Unsaved; stable recovery IDs | Yes | No full recovery UI | Add Retry Save/status on Mac and Windows; stable IDs prevent duplicate saves |
 | Crash during active capture | No automatic recovery | No, audio in memory | Unverified; no durable capture journal found | Optional bounded crash-safe local recording journal, explicit privacy/retention; never claim current recovery covers kills |
@@ -108,7 +108,10 @@ No ordinary product feature above is declared impossible across an entire OS. So
 ## Linux follow-up order
 
 [Row-4 checks and limits](linux-paste-permissions-verification.md): per-app image
-rules and the manual permissions surface. Next: row 5, then remaining row 6 gaps.
+rules and the manual permissions surface. Row 5 is proposed in PR #65.
+Row 6 starts with [guarded CLI Paste Last](linux-last-paste-verification.md).
+The remaining work is tracked in the [Linux open-row queue](linux-open-rows.md);
+no acceptance-only row is closed by this command change.
 After row 6, revisit these explicitly open integrations:
 
 - **Tiled niri pointer context:** stock IPC omits tiled window positions. Add a
