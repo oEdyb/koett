@@ -196,6 +196,46 @@ Same output as Linux: one numbered contact sheet, then the same
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
 
+## Passive rich repeat paste — 2026-11-04
+
+The portal's final sketch offer and the existing Copy button now retain four
+MIME types together: PNG, HTML, plain UTF-8 text and plain text. HTML embeds the
+same PNG as a data URL followed by the escaped, unmodified transcript in a pre
+block. Image-aware targets can still select PNG; rich editors can insert both
+from HTML; terminals can select plain text. Nothing runs when a format is read.
+The existing wl-copy fallback still retains PNG only. It cannot offer several
+representations; replacing that backend is outside this change. Copy uses the
+rich offer regardless of the automatic-paste backend.
+
+Private KWin tests exercised the production Copy helper's exact simultaneous
+offer in T3 Code 0.1.2, Chrome's native rich editor and kitty. T3 retained the
+image on two pastes (it still does not insert the text). Chrome inserted one
+image and exact Unicode transcript per paste, including a second paste from
+the same offer. Kitty received exact plain text. Both PNG bytes and the embedded
+PNG were checked against the private drawing fixture. These are clipboard target
+tests, not a new end-to-end automatic-dictation or Mac runtime test.
+
+T3's receiver fix `1d4662546a` ships in 0.1.24 but was not installed for these
+checks. Its real repeat-paste verification remains pending: paste two lines
+including @AGENTS.md and a sketch into existing composer text, then repeat and
+check both lines, one attachment per paste and surrounding text. Also compare
+PNG+text with this exact HTML bundle and check ordinary browser-image copying.
+The HTML carries actual transcript body text; its fixed alt is “Koett sketch”,
+never the dictation. Retain HTML even after T3's fix because Chrome's native
+rich editor needs it to insert both from one paste.
+
+[Combined-offer receipt](evidence/linux-sketch-clipboard/combined-offer.json) and
+[private target script](evidence/linux-sketch-clipboard/combined-offer.py).
+The fixture came from private dictation/drawing with copied models; host focus,
+clipboard, model folders and installed application were untouched.
+
+Automatic image-then-text delivery, its focus guard and the single Copy button
+in the 48 px Done pill are unchanged. Request-triggered replay was rejected:
+a canceled real Ctrl+V plus background reader could trigger unwanted pasting;
+first-format inference could duplicate images. No replay or key monitor is added.
+Mac PR #46 at `6ed0ead` likewise offers image and text representations separately;
+a recipient can choose only one. Swift is unchanged and was not runtime-tested.
+
 ## Repeat-paste repair (2026-11-04)
 
 Before the repair the clipboard was PNG during the first paste, then text only

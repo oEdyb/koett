@@ -121,6 +121,8 @@ recovery; never send multiple paste chords to guess what the target accepts.
   waveform and functioning timer/status. Transcribing retains the capsule until
   delivery/cleanup; the surface never captures typing or pointer input.
 - Transcribing: clear busy state without blocking history or closing the window.
+- Done pill: a short result and one Copy button on the right. No other controls;
+  the entire pill stays at most 48 px tall. Extra actions belong outside it.
 - Saved result: refresh recent history without changing the user's current selection
   while they are reading an older entry. Copy confirms with Copied, then resets.
 - Empty history: No transcripts yet and an enabled recording action.
