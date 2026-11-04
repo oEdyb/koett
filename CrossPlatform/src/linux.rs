@@ -270,6 +270,7 @@ impl ksni::Tray for LinuxTray {
 mod ask_settings;
 mod ask_view;
 mod browser_media;
+mod clipboard_owner;
 mod control;
 mod dictionary_view;
 mod feedback;
@@ -1203,6 +1204,13 @@ async fn run_wayland(
     actions: Receiver<TrayAction>,
     tray: Option<&TrayUpdates>,
 ) -> Result<(), String> {
+    struct ClipboardShutdown;
+    impl Drop for ClipboardShutdown {
+        fn drop(&mut self) {
+            clipboard_owner::stop();
+        }
+    }
+    let _clipboard_shutdown = ClipboardShutdown;
     let (shortcut_sender, shortcut_receiver) = mpsc::channel();
     let shortcut_settings = settings.clone();
     let shortcut_updates = tray.cloned();
@@ -1302,6 +1310,9 @@ async fn run_wayland(
                                 Some(output) => {
                                     output.deliver(&text, now, settings.paste_shortcut).await
                                 }
+                                None if png.is_some() => {
+                                    output::deliver_sketch_text(&text, now, settings.paste_shortcut)
+                                }
                                 None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             let copied = if let Some(png) = &png {
@@ -1326,8 +1337,11 @@ async fn run_wayland(
                 {
                     if let Ok(text) = recovery::last_text()
                         && let Some(png) = feedback::sketch_for(&text)
-                        && let Err(error) =
+                        && let Err(error) = if output.is_none() {
+                            clipboard_owner::start(clipboard_owner::Payload::bundle(&png, &text))
+                        } else {
                             restore_sketch_clipboard(output.as_ref(), &png, &text).await
+                        }
                     {
                         update_tray_status(tray, &format!("@notice:{error}"));
                     }
@@ -1426,6 +1440,9 @@ async fn run_wayland(
                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
             let text_delivery = match &output {
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                None if sheet.is_some() => {
+                    output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+                }
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let mut delivered = image_delivery.and(text_delivery);
@@ -2217,7 +2234,16 @@ async fn restore_sketch_clipboard(
     png: &[u8],
     text: &str,
 ) -> Result<(), String> {
-    if let Some(output) = output {
+    let mut trace = output::DeliveryStep::new(
+        "offer",
+        if output.is_some() {
+            "portal"
+        } else {
+            "fallback"
+        },
+        png.len() + text.len(),
+    );
+    let result = if let Some(output) = output {
         *output
             .current
             .write()
@@ -2241,8 +2267,10 @@ async fn restore_sketch_clipboard(
             .await
             .map_err(|error| format!("could not preserve the sketch clipboard: {error}"))
     } else {
-        output::copy_image(png)
-    }
+        clipboard_owner::replace(clipboard_owner::Payload::bundle(png, text))
+    };
+    trace.finish(result.is_ok());
+    result
 }
 
 async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>) {
@@ -2365,6 +2393,7 @@ impl WaylandOutput {
     /// Pastes the contact sheet with Ctrl+V and waits until the target has
     /// read it, so the following text paste cannot replace it too early.
     async fn deliver_image(&self, png: &[u8], target: Option<u32>) -> Result<(), String> {
+        let mut trace = output::DeliveryStep::new("image", "portal", png.len());
         *self
             .current
             .write()
@@ -2385,6 +2414,7 @@ impl WaylandOutput {
         if !output::target_unchanged(target) {
             return Err("target window changed".into());
         }
+        trace.post();
         self.press(PasteShortcut::CtrlV).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
@@ -2393,6 +2423,7 @@ impl WaylandOutput {
             tokio::time::sleep(Duration::from_millis(20)).await;
         }
         tokio::time::sleep(output::AFTER_IMAGE_READ).await;
+        trace.finish(true);
         Ok(())
     }
 
@@ -2418,6 +2449,7 @@ impl WaylandOutput {
         target: Option<u32>,
         shortcut: PasteShortcut,
     ) -> Result<(), String> {
+        let mut trace = output::DeliveryStep::new("text", "portal", text.len());
         *self
             .current
             .write()
@@ -2438,7 +2470,10 @@ impl WaylandOutput {
         if !output::target_unchanged(target) {
             return Err("Copied · paste into your target application".into());
         }
-        self.press(shortcut).await
+        trace.post();
+        let result = self.press(shortcut).await;
+        trace.finish(result.is_ok());
+        result
     }
 
     async fn send_keysym(&self, keysym: i32, state: KeyState) -> Result<(), String> {

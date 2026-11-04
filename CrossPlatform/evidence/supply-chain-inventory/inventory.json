@@ -2226,6 +2226,43 @@
     {
       "bundled_license_files": [
         {
+          "bytes": 10850,
+          "path": "CrossPlatform/packaging/notices/rust/downcast-rs-1.2.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "bytes": 1073,
+          "path": "CrossPlatform/packaging/notices/rust/downcast-rs-1.2.1/LICENSE-MIT",
+          "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958"
+        }
+      ],
+      "cargo_checksum_sha256": "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2",
+      "declared_license": "MIT/Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10850,
+          "path": "LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "bytes": 1073,
+          "path": "LICENSE-MIT",
+          "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958"
+        }
+      ],
+      "name": "downcast-rs",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "bundled",
+      "repository": "https://github.com/marcianx/downcast-rs",
+      "sbom_ref": "pkg:cargo/downcast-rs@1.2.1",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "1.2.1"
+    },
+    {
+      "bundled_license_files": [
+        {
           "bytes": 1023,
           "path": "CrossPlatform/packaging/notices/rust/endi-1.1.1/LICENSE-MIT",
           "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
@@ -6669,6 +6706,33 @@
     {
       "bundled_license_files": [
         {
+          "bytes": 1105,
+          "path": "CrossPlatform/packaging/notices/rust/quick-xml-0.41.0/LICENSE-MIT.md",
+          "sha256": "5b2c207dcf571267ebe0bbdd5bf321f561ddc22ff597e7b363e96f4539507a29"
+        }
+      ],
+      "cargo_checksum_sha256": "e660451e55124f798a69a5af3f49ccfbefbd41910eefd25caf2393e1f3473ec1",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1105,
+          "path": "LICENSE-MIT.md",
+          "sha256": "5b2c207dcf571267ebe0bbdd5bf321f561ddc22ff597e7b363e96f4539507a29"
+        }
+      ],
+      "name": "quick-xml",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/tafia/quick-xml",
+      "sbom_ref": "pkg:cargo/quick-xml@0.41.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.41.0"
+    },
+    {
+      "bundled_license_files": [
+        {
           "bytes": 9723,
           "path": "CrossPlatform/packaging/notices/rust/quote-1.0.47/LICENSE-APACHE",
           "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
@@ -10001,6 +10065,168 @@
     {
       "bundled_license_files": [
         {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-backend-0.3.17/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "38a91b4eaddff87b1cd1074985e3713da4af2c49742d1b356b2c01670a67a078",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-backend",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-backend@0.3.17",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.17"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-client-0.31.15/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "e3c36a0f861ad76d0901f2800b46321410d9f73f2ea88aac0650d86c32688073",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-client",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-client@0.31.15",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.31.15"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-0.32.13/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "23d0c813de3daa2ed6520af85a3bd49b0e722a3078506899aa9686fea58dc4b6",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-protocols",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-protocols@0.32.13",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.32.13"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "eb04e52f7836d7c7976c78ca0250d61e33873c34156a2a1fc9474828ec268234",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-protocols-wlr",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-protocols-wlr@0.3.12",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.12"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-scanner-0.31.11/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "338e30461b3a2b67d70eb30a6d89f8e0c93a833e07d2ae89085cd070c4a00ac0",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-scanner",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-scanner@0.31.11",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.31.11"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-sys-0.31.11/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "d8eab23fefc9e41f8e841df4a9c707e8a8c4ed26e944ef69297184de2785e3be",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-sys",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-sys@0.31.11",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.31.11"
+    },
+    {
+      "bundled_license_files": [
+        {
           "bytes": 10847,
           "path": "CrossPlatform/packaging/notices/rust/web-sys-0.3.104/LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
@@ -12407,6 +12633,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/downcast-rs@1.2.1"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/endi@1.1.1"
     },
     {
@@ -13041,6 +13271,8 @@
         "pkg:cargo/ureq@3.4.0",
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/uuid@1.29.0",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols-wlr@0.3.12",
         "pkg:cargo/windows@0.62.2",
         "pkg:cargo/x11rb@0.13.2",
         "pkg:cargo/xkeysym@0.2.1",
@@ -13456,6 +13688,12 @@
         "pkg:cargo/unicode-ident@1.0.24"
       ],
       "ref": "pkg:cargo/proc-macro2@1.0.107"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/memchr@2.8.3"
+      ],
+      "ref": "pkg:cargo/quick-xml@0.41.0"
     },
     {
       "dependsOn": [
@@ -14151,6 +14389,58 @@
     },
     {
       "dependsOn": [
+        "pkg:cargo/cc@1.4.4",
+        "pkg:cargo/downcast-rs@1.2.1",
+        "pkg:cargo/rustix@1.1.4",
+        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/wayland-sys@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-backend@0.3.17"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/rustix@1.1.4",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-client@0.31.15"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols@0.32.13",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-protocols-wlr@0.3.12"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-protocols@0.32.13"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quick-xml@0.41.0",
+        "pkg:cargo/quote@1.0.47"
+      ],
+      "ref": "pkg:cargo/wayland-scanner@0.31.11"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/pkg-config@0.3.34"
+      ],
+      "ref": "pkg:cargo/wayland-sys@0.31.11"
+    },
+    {
+      "dependsOn": [
         "pkg:cargo/js-sys@0.3.104",
         "pkg:cargo/wasm-bindgen@0.2.127"
       ],
@@ -14622,14 +14912,14 @@
   ],
   "inputs": [
     {
-      "bytes": 83313,
+      "bytes": 85446,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "b8fac7693a784fa6954e2851fec7b54d92739aa844fb49e0136f2bb88412d436"
+      "sha256": "546ff309b2392a43a0632c4389b4cbe8c48c1250b6193f9fce358769600244a8"
     },
     {
-      "bytes": 2594,
+      "bytes": 2693,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "8fb62ebbb972ff0111de80bd86ac1ebbf3d1528423e3b091b894514b4f69ccfe"
+      "sha256": "17deede464af62113e73601691b62a6335128ff6a21c4cfde29f7b9f65d27312"
     },
     {
       "bytes": 5621,
@@ -14897,6 +15187,12 @@
     {
       "component": "pkg:cargo/displaydoc@0.2.7",
       "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/downcast-rs@1.2.1",
+      "declared": "MIT/Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
     },
@@ -16094,11 +16390,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 359,
+    "components": 367,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 32,
-    "rust_packages": 337,
+    "rust_packages": 345,
     "swift_packages": 1
   }
 }
