@@ -90,6 +90,8 @@ receipts are in `CrossPlatform/evidence/linux-paste-focus/`.
   another real target could take focus during recording.
 - Chrome rich editor and kitty received exact text once through production
   delivery, with Ctrl+V and configured Ctrl+Shift+V respectively.
+- The extra private T3 chat-box check was blocked at its pairing/bootstrap screen;
+  it is not counted as a successful target check. No message was sent.
 - Unit regressions cover US/Swedish/Dvorak key resolution, malformed maps,
   synchronization timeout, focus restoration, held modifiers, final post checks,
   refused changed/remapped targets, explicit recovery binding, query timeout,
