@@ -8,5 +8,10 @@
     "inserted_once": true,
     "shortcut": "Ctrl+Shift+V",
     "bytes": 22
+  },
+  "t3_chat": {
+    "status": "blocked",
+    "reason": "private_pairing_bootstrap_screen",
+    "messages_sent": 0
   }
 }
