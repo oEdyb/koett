@@ -1286,10 +1286,11 @@ async fn run_wayland(
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = Some(output::PASTE_NOW);
-                            let image_delivery = if let Some(png) = feedback::sketch_for(&text) {
+                            let png = feedback::sketch_for(&text);
+                            let image_delivery = if let Some(png) = &png {
                                 match &output {
-                                    Some(output) => output.deliver_image(&png, now).await,
-                                    None => output::deliver_image(&png, now),
+                                    Some(output) => output.deliver_image(png, now).await,
+                                    None => output::deliver_image(png, now),
                                 }
                             } else {
                                 Ok(())
@@ -1303,17 +1304,13 @@ async fn run_wayland(
                                 }
                                 None => output::deliver(&text, now, settings.paste_shortcut),
                             };
-                            if feedback::sketch_for(&text).is_some() {
+                            let copied = if let Some(png) = &png {
                                 settle_sketch_text(output.as_ref(), before_text).await;
-                                if let Some(png) = feedback::sketch_for(&text) {
-                                    if let Err(error) =
-                                        restore_sketch_clipboard(output.as_ref(), &png, &text).await
-                                    {
-                                        update_tray_status(tray, &format!("@notice:{error}"));
-                                    }
-                                }
-                            }
-                            image_delivery.and(result)
+                                restore_sketch_clipboard(output.as_ref(), png, &text).await
+                            } else {
+                                Ok(())
+                            };
+                            image_delivery.and(result).and(copied)
                         }
                         Err(error) => Err(error),
                     };
