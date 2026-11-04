@@ -33,6 +33,11 @@ and native Settings/History are still outstanding. No all-feature parity claim.
 
 - linux-tests.log: native Linux suite: 370 passed, 14 ignored; isolation test
   additionally passed. Uses existing pinned ASR-only native cache. No Linux UI run.
+- linux-clippy.log: all-targets native Linux Clippy passed with warnings denied.
+- linux-release.log: native Linux release build passed in 1m 13s.
+- cargo fmt --check, git diff --check and zsh -n install-macos.sh passed.
+  Both packaging plists parsed with Python plistlib; plutil is unavailable.
+  Swift tests/build were not run because Swift/macOS SDK is unavailable.
 - meter-tests.log: standalone Rust meter tests, 4 passed. Does not test Win32 rendering.
 - windows-clippy.log: all-targets Windows Rust metadata checking, warnings denied.
   DOCS_RS=1 skips sherpa native linking; LIBSQLITE3_SYS_USE_PKG_CONFIG=1 and
