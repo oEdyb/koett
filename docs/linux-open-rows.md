@@ -1,7 +1,7 @@
 # Linux open-row queue
 
 The feature-parity table remains authoritative. This is the work queue after
-rows 1–4, with row 5 proposed separately in PR #65. A verification gap stays open
+rows 1–5, with row 5 merged in PR #65. A verification gap stays open
 until its actual acceptance check runs. Nothing below is declared OS-impossible.
 
 ## Row 6: remaining implementation and acceptance
@@ -12,8 +12,9 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
   beyond Ctrl+Z on the current canvas; prove ordinary editor undo stays untouched.
 - **Original paste target / per-app chord outside niri:** add trustworthy desktop
   identity checks for Wayland desktops; preserve copy/manual paste if unavailable.
-- **Permissions:** manual window exists; add first-run status parity, verify actual
-  microphone/keyboard/screenshot grants and denied/revoked paths.
+- **Permissions:** first visible launch now opens the existing window once;
+  background startup stays quiet. Actual microphone/keyboard/screenshot grants
+  and denied/revoked paths still need acceptance.
 - **Silence and empty ASR:** trace and exercise live silence through finalization;
   no failure pill, stale result or saved blank transcript.
 - **Long dictation:** 30-minute hardware capture; measure memory, progress,

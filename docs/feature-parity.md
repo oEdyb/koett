@@ -23,7 +23,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Retry Save / recovery status | Retry Save + Copy Unsaved; stable recovery IDs | Yes | No full recovery UI | Add Retry Save/status on Mac and Windows; stable IDs prevent duplicate saves |
 | Crash during active capture | No automatic recovery | No, audio in memory | Unverified; no durable capture journal found | Optional bounded crash-safe local recording journal, explicit privacy/retention; never claim current recovery covers kills |
 | Long live dictation | Synthetic long-ASR probes, not full hardware proof | Not newly verified | Not verified | 30-minute live sessions; check memory, dictionary/progress on long-path chunking |
-| Permission onboarding | Live-status first-run window | Manual Permissions window, live keyboard/shortcuts, explicit mic/screen checks | No focused onboarding | Small Linux/Windows status surface with system-settings links, no extra dictation screens |
+| Permission onboarding | Live-status first-run window | First visible launch + manual Permissions window; live keyboard/shortcuts; explicit mic/screen checks | No focused onboarding | Linux [first-launch checks and limits](linux-first-run-permissions-verification.md); real grant/revocation acceptance remains open; Windows focused status surface |
 | Login toggle / tray or menu bar | Native toggle; explicit disabled preference survives reinstall | Yes | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
 
 Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,EscapeKeyMonitor,MicrophoneSelection,PermissionsWindow}.swift`; `CrossPlatform/src/{windows,runtime,audio,state,history}.rs`, `linux/{recording_overlay,input_preview,output,recovery,control}.rs`; [demo limits](video-demo-checklist.md).
@@ -108,7 +108,7 @@ No ordinary product feature above is declared impossible across an entire OS. So
 ## Linux follow-up order
 
 [Row-4 checks and limits](linux-paste-permissions-verification.md): per-app image
-rules and the manual permissions surface. Row 5 is proposed in PR #65.
+rules and the permissions surface. Row 5 merged in PR #65.
 Row 6 starts with [guarded CLI Paste Last](linux-last-paste-verification.md).
 The remaining work is tracked in the [Linux open-row queue](linux-open-rows.md);
 no acceptance-only row is closed by this command change.

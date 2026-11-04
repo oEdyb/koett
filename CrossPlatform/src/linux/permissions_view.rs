@@ -14,7 +14,56 @@ pub fn status() -> serde_json::Value {
         .read()
         .map(|value| value.clone())
         .unwrap_or_default();
-    serde_json::json!({"ok":true,"keyboard":keyboard,"shortcuts":shortcuts,"microphone":"check_in_audio_preview","screen":"explicit_capture_check_required","last_capture_check":CAPTURE_CHECK.read().map(|v| *v).unwrap_or("unknown")})
+    let onboarding = match pending() {
+        Ok(true) => "pending",
+        Ok(false) => "seen",
+        Err(_) => "unavailable",
+    };
+    serde_json::json!({"ok":true,"onboarding":onboarding,"keyboard":keyboard,"shortcuts":shortcuts,"microphone":"check_in_audio_preview","screen":"explicit_capture_check_required","last_capture_check":CAPTURE_CHECK.read().map(|v| *v).unwrap_or("unknown")})
+}
+
+fn marker() -> Result<std::path::PathBuf, String> {
+    Ok(crate::paths::settings_file()?.with_file_name("permissions-seen"))
+}
+
+fn pending_at(path: &std::path::Path) -> Result<bool, String> {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_file() => Ok(false),
+        Ok(_) => Err("Setup status is not a regular file".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(true),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+fn pending() -> Result<bool, String> {
+    pending_at(&marker()?)
+}
+
+fn remember_at(path: &std::path::Path) -> Result<(), String> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let parent = path
+        .parent()
+        .ok_or("Permissions status directory unavailable")?;
+    std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)
+    {
+        Ok(_) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            pending_at(path).map(|_| ())
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+/// Only explicit app/window opening calls this; background startup stays quiet.
+pub fn maybe_show(application: &gtk::Application) {
+    if pending() != Ok(false) {
+        application.activate_action("permissions", None);
+    }
 }
 
 pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
@@ -179,6 +228,11 @@ pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
             gtk::glib::ControlFlow::Break
         }
     });
+    let save_error = gtk::Label::new(None);
+    save_error.set_wrap(true);
+    save_error.set_xalign(0.0);
+    save_error.set_visible(false);
+    layout.append(&save_error);
     let done = gtk::Button::with_label("Done");
     done.set_halign(gtk::Align::End);
     done.connect_clicked({
@@ -192,4 +246,42 @@ pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
     layout.append(&done);
     window.set_child(Some(&layout));
     window.present();
+    if let Err(error) = marker().and_then(|path| remember_at(&path)) {
+        save_error.set_text(&format!("Could not save setup status · {error}"));
+        save_error.set_visible(true);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn viewing_is_remembered_without_changing_settings_or_claiming_grants() {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join(format!("permissions-onboarding-{}", std::process::id()));
+        std::fs::create_dir_all(&directory).unwrap();
+        let marker = directory.join("permissions-seen");
+        let settings = directory.join("settings.json");
+        std::fs::write(&settings, b"existing preferences").unwrap();
+        assert!(pending_at(&marker).unwrap());
+        remember_at(&marker).unwrap();
+        assert!(!pending_at(&marker).unwrap());
+        assert_eq!(
+            std::fs::metadata(&marker).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        remember_at(&marker).unwrap();
+        assert_eq!(std::fs::read(&settings).unwrap(), b"existing preferences");
+        // A file where a directory is expected must stay a visible failure.
+        let blocked = settings.join("permissions-seen");
+        assert!(pending_at(&blocked).is_err());
+        assert!(remember_at(&blocked).is_err());
+        std::fs::remove_file(&marker).unwrap();
+        std::fs::create_dir(&marker).unwrap();
+        assert!(pending_at(&marker).is_err());
+        assert!(remember_at(&marker).is_err());
+        std::fs::remove_dir_all(directory).unwrap();
+    }
 }
