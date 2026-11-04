@@ -20,7 +20,7 @@ private struct ParakeetBaseline {
         guard !paths.isEmpty else {
             throw failure(
                 "Usage: parakeet-baseline [--prewarm] [--concurrency N] "
-                    + "[--transcript-directory PATH] [--model-version v2|v3] [--results-json PATH] <audio-file>..."
+                    + "[--transcript-directory PATH] [--model-version v2|v3|110m] [--model-directory PATH] [--results-json PATH] <audio-file>..."
             )
         }
 
@@ -33,9 +33,12 @@ private struct ParakeetBaseline {
             )
         }
         print("Loading Parakeet \(options.modelVersion)...")
-        let models = try await AsrModels.downloadAndLoad(
-            version: options.modelVersion == "v3" ? .v3 : .v2
-        )
+        let version: AsrModelVersion = switch options.modelVersion {
+        case "v3": .v3
+        case "110m": .tdtCtc110m
+        default: .v2
+        }
+        let models = try await AsrModels.downloadAndLoad(to: options.modelDirectory, version: version)
         try await manager.loadModels(models)
         let decoderLayers = await manager.decoderLayerCount
         if options.prewarm {
@@ -106,6 +109,7 @@ private struct ParakeetBaseline {
 
     private struct Options {
         let modelVersion: String
+        let modelDirectory: URL?
         let resultsJSON: URL?
         let concurrency: Int
         let prewarm: Bool
@@ -115,6 +119,7 @@ private struct ParakeetBaseline {
 
     private static func parseArguments(_ arguments: [String]) throws -> Options {
         var modelVersion = "v2"
+        var modelDirectory: URL?
         var resultsJSON: URL?
         var concurrency = ASRConfig.default.parallelChunkConcurrency
         var prewarm = false
@@ -125,10 +130,16 @@ private struct ParakeetBaseline {
         while index < arguments.count {
             if arguments[index] == "--model-version" {
                 guard index + 1 < arguments.count,
-                      ["v2", "v3"].contains(arguments[index + 1]) else {
-                    throw failure("--model-version must be v2 or v3.")
+                      ["v2", "v3", "110m"].contains(arguments[index + 1]) else {
+                    throw failure("--model-version must be v2, v3 or 110m.")
                 }
                 modelVersion = arguments[index + 1]
+                index += 2
+            } else if arguments[index] == "--model-directory" {
+                guard index + 1 < arguments.count, !arguments[index + 1].hasPrefix("-") else {
+                    throw failure("--model-directory needs a path.")
+                }
+                modelDirectory = URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
                 index += 2
             } else if arguments[index] == "--results-json" {
                 guard index + 1 < arguments.count,
@@ -170,6 +181,7 @@ private struct ParakeetBaseline {
 
         return Options(
             modelVersion: modelVersion,
+            modelDirectory: modelDirectory,
             resultsJSON: resultsJSON,
             concurrency: concurrency,
             prewarm: prewarm,

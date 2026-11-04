@@ -45,7 +45,7 @@ extension KoettController {
 
     private func startRecording() throws {
         switch speechEngine {
-        case .parakeet:
+        case .parakeet, .parakeetV3, .parakeet110m:
             try startParakeetRecording()
         case .nemotron:
             try startNemotronRecording()
@@ -203,7 +203,7 @@ extension KoettController {
         sketchOverlay.finish()
         let session = activeDictationID ?? beginDictationSession()
         switch speechEngine {
-        case .parakeet:
+        case .parakeet, .parakeetV3, .parakeet110m:
             stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp, session: session)
         case .nemotron:
             stopNemotronRecording(releaseEventTimestamp: releaseEventTimestamp, session: session)

@@ -7,17 +7,6 @@ import Darwin
 import FluidAudio
 import Foundation
 
-enum SpeechEngine: String {
-    case parakeet
-    case nemotron
-
-    var displayName: String {
-        switch self {
-        case .parakeet: "Parakeet v2"
-        case .nemotron: "Nemotron 560 ms"
-        }
-    }
-}
 
 @MainActor
 final class KoettController: NSObject {
@@ -219,16 +208,17 @@ final class KoettController: NSObject {
             )
         }
 
-        setSetupStatus(.checkingModel("Parakeet v2"))
-        print("Loading Parakeet v2...")
+        let modelName = speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName
+        setSetupStatus(.checkingModel(modelName))
+        print("Loading \(modelName)...")
         let models = try await AsrModels.downloadAndLoad(
-            version: .v2,
-            progressHandler: fluidAudioProgressHandler(model: "Parakeet v2")
+            version: speechEngine.parakeetVersion,
+            progressHandler: fluidAudioProgressHandler(model: modelName)
         )
-        setSetupStatus(.loadingModel("Parakeet v2"))
+        setSetupStatus(.loadingModel(modelName))
         try await manager.loadModels(models)
-        setSetupStatus(.warmingModel("Parakeet v2"))
-        print("Warming Parakeet v2...")
+        setSetupStatus(.warmingModel(modelName))
+        print("Warming \(modelName)...")
         let decoderLayers = await manager.decoderLayerCount
         var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
         let silence = [Float](repeating: 0, count: 4_800)
@@ -630,6 +620,14 @@ final class KoettController: NSObject {
         setSpeechEngine(.parakeet)
     }
 
+    @objc func useParakeetV3Model() {
+        setSpeechEngine(.parakeetV3)
+    }
+
+    @objc func useParakeet110MModel() {
+        setSpeechEngine(.parakeet110m)
+    }
+
     @objc func useNemotronModel() {
         setSpeechEngine(.nemotron)
     }
@@ -894,7 +892,7 @@ final class KoettController: NSObject {
     }
 
     func relaunch(with engine: SpeechEngine) {
-        let argument = engine == .nemotron ? "--nemotron" : "--parakeet"
+        let argument = engine.launchArgument
         let bundleURL = Bundle.main.bundleURL
         if bundleURL.pathExtension == "app" {
             let configuration = NSWorkspace.OpenConfiguration()
