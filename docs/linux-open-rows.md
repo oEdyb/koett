@@ -26,8 +26,12 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
   pause/cancel, dictionary and chunk handling. Short/synthetic ASR is insufficient.
 - **Bare Shift:** verify lost releases/capital/chord gestures and early-click
   behavior in a private lab; retain explicit keyboard-access fallback.
-- **Displays:** add/remove during a recording and mixed-DPI coordinates/capture;
-  currently a newly added monitor waits for the next recording.
+- **Displays:** live layer-shell drawing/pill refresh now handles monitor-list,
+  geometry, connector and scale changes during a recording. Completed images and
+  Undo survive; unfinished captures are invalidated with a pill notice. Private
+  KWin virtual scale/remove/reconnect checks passed; physical mixed-DPI capture,
+  portal screenshots and hotplug during a niri pointer pick remain open. See
+  [the verification receipt](linux-monitor-hotplug-verification.md).
 - **Pin providers:** verify browser URL/selection and password rejection on other
   desktops/providers; keep image-only context when inaccessible. Browser setup
   must remain explicit. Incognito detection is absent on Mac too; do not imply it.
@@ -48,11 +52,14 @@ a crash journal needs explicit retention/privacy behavior before implementation.
 
 ## Implementation still open before the deferred integrations
 
-Row 6 is not acceptance-only: active monitor hotplug and remaining Wayland
-identity/clipboard adapters still need code. KWin identity is implemented;
-GNOME identity belongs with its deferred Shell integration. The early-click gap while the Shift guard arms
-also remains explicit. Existing copy/manual paste, next-recording monitor setup
-and documented keyboard-access alternatives are fallbacks, not full parity.
+Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
+still need code. GNOME identity belongs with its deferred Shell integration.
+Layer-shell monitor refresh is implemented; the physical/portal/niri-pick
+hotplug cases above remain acceptance/integration work. The early-click gap
+while the Shift guard arms still needs code. Existing copy/manual paste and
+keyboard-access alternatives are fallbacks, not full parity. Early Shift clicks
+come next, then the deferred integrations.
+
 
 ## Deferred until after row 6
 

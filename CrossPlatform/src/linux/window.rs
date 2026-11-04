@@ -822,7 +822,13 @@ fn build_window(
                     paused,
                 );
                 if let Some(message) = sketch.take_notice() {
-                    notice = Some(message);
+                    if message.redraw_required {
+                        pill_message = Some((
+                            "Display changed · redraw unfinished items".into(),
+                            Instant::now() + Duration::from_secs(12),
+                        ));
+                    }
+                    notice = Some(message.text);
                     notice_until = Some(Instant::now() + Duration::from_secs(12));
                 }
             }
