@@ -1304,31 +1304,14 @@ async fn run_wayland(
                                 }
                                 None => output::deliver(&text, now, settings.paste_shortcut),
                             };
-                            let copied = if let Some(png) = &png {
+                            if png.is_some() {
                                 settle_sketch_text(output.as_ref(), before_text).await;
-                                restore_sketch_clipboard(output.as_ref(), png, &text).await
-                            } else {
-                                Ok(())
-                            };
-                            image_delivery.and(result).and(copied)
+                            }
+                            image_delivery.and(result)
                         }
                         Err(error) => Err(error),
                     };
                     if let Err(error) = pasted {
-                        update_tray_status(tray, &format!("@notice:{error}"));
-                    }
-                }
-                TrayAction::Recovery(command)
-                    if command == "copy-last"
-                        && recovery::last_text()
-                            .ok()
-                            .is_some_and(|text| feedback::sketch_for(&text).is_some()) =>
-                {
-                    if let Ok(text) = recovery::last_text()
-                        && let Some(png) = feedback::sketch_for(&text)
-                        && let Err(error) =
-                            restore_sketch_clipboard(output.as_ref(), &png, &text).await
-                    {
                         update_tray_status(tray, &format!("@notice:{error}"));
                     }
                 }
@@ -1428,11 +1411,9 @@ async fn run_wayland(
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
-            let mut delivered = image_delivery.and(text_delivery);
-            if let Some(png) = &sheet {
+            let delivered = image_delivery.and(text_delivery);
+            if sheet.is_some() {
                 settle_sketch_text(output.as_ref(), before_text).await;
-                delivered =
-                    delivered.and(restore_sketch_clipboard(output.as_ref(), png, &text).await);
             }
             report_delivery(tray, &delivered);
             let saved = history::append_transcript_with_raw_resilient(
@@ -2155,7 +2136,6 @@ struct WaylandOutput {
 struct ClipboardPayload {
     image: bool,
     bytes: Vec<u8>,
-    text: Option<Vec<u8>>,
 }
 
 impl ClipboardPayload {
@@ -2163,11 +2143,7 @@ impl ClipboardPayload {
         match mime_type {
             "image/png" if self.image => Some(&self.bytes),
             "text/plain" | "text/plain;charset=utf-8" => {
-                if self.image {
-                    self.text.as_deref()
-                } else {
-                    Some(&self.bytes)
-                }
+                (!self.image).then_some(self.bytes.as_slice())
             }
             _ => None,
         }
@@ -2176,63 +2152,26 @@ impl ClipboardPayload {
 
 #[cfg(test)]
 #[test]
-fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
-    let sketch = ClipboardPayload {
+fn final_text_offer_cannot_be_mistaken_for_an_image_on_repeat_paste() {
+    let text = ClipboardPayload {
+        image: false,
+        bytes: b"- #1 words".to_vec(),
+    };
+    assert_eq!(text.bytes_for("text/plain"), Some(b"- #1 words".as_slice()));
+    assert_eq!(
+        text.bytes_for("text/plain;charset=utf-8"),
+        Some(b"- #1 words".as_slice())
+    );
+    assert_eq!(text.bytes_for("image/png"), None);
+    let image = ClipboardPayload {
         image: true,
         bytes: vec![137, 80, 78, 71],
-        text: Some(b"- #1 words".to_vec()),
     };
     assert_eq!(
-        sketch.bytes_for("image/png"),
+        image.bytes_for("image/png"),
         Some([137, 80, 78, 71].as_slice())
     );
-    assert_eq!(
-        sketch.bytes_for("text/plain"),
-        Some(b"- #1 words".as_slice())
-    );
-    assert_eq!(
-        sketch.bytes_for("text/plain;charset=utf-8"),
-        Some(b"- #1 words".as_slice())
-    );
-    assert_eq!(sketch.bytes_for("text/html"), None);
-    let plain = ClipboardPayload {
-        image: false,
-        bytes: b"plain".to_vec(),
-        text: None,
-    };
-    assert_eq!(plain.bytes_for("image/png"), None);
-    assert_eq!(plain.bytes_for("text/plain"), Some(b"plain".as_slice()));
-}
-
-async fn restore_sketch_clipboard(
-    output: Option<&WaylandOutput>,
-    png: &[u8],
-    text: &str,
-) -> Result<(), String> {
-    if let Some(output) = output {
-        *output
-            .current
-            .write()
-            .map_err(|_| "the clipboard lock failed")? = ClipboardPayload {
-            image: true,
-            bytes: png.to_vec(),
-            text: Some(text.as_bytes().to_vec()),
-        };
-        output
-            .clipboard
-            .set_selection(
-                &output.session,
-                SetSelectionOptions::default().set_mime_types(&[
-                    "image/png",
-                    "text/plain;charset=utf-8",
-                    "text/plain",
-                ]),
-            )
-            .await
-            .map_err(|error| format!("could not preserve the sketch clipboard: {error}"))
-    } else {
-        output::copy_image(png)
-    }
+    assert_eq!(image.bytes_for("text/plain"), None);
 }
 
 async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>) {
@@ -2361,7 +2300,6 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard lock failed".to_string())? = ClipboardPayload {
             image: true,
             bytes: png.to_vec(),
-            text: None,
         };
         let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
@@ -2413,7 +2351,6 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard text lock failed".to_string())? = ClipboardPayload {
             image: false,
             bytes: text.as_bytes().to_vec(),
-            text: None,
         };
         let mime_types = ["text/plain;charset=utf-8", "text/plain"];
         self.clipboard

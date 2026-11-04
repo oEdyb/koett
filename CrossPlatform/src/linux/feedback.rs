@@ -45,7 +45,17 @@ pub(super) fn copy_transcript(
     clipboard: &gtk4::gdk::Clipboard,
     text: &str,
 ) -> Result<(), gtk4::glib::BoolError> {
-    let content = transcript_content(text, sketch_for(text).as_deref());
+    let content = transcript_content(text);
+    clipboard.set_content(Some(&content))
+}
+
+pub(super) fn copy_sketch(
+    clipboard: &gtk4::gdk::Clipboard,
+    text: &str,
+) -> Result<(), gtk4::glib::BoolError> {
+    let png = sketch_for(text).ok_or_else(|| gtk4::glib::bool_error!("Sketch unavailable"))?;
+    let content =
+        gtk4::gdk::ContentProvider::for_bytes("image/png", &gtk4::glib::Bytes::from_owned(png));
     clipboard.set_content(Some(&content))
 }
 
@@ -66,9 +76,9 @@ pub(super) fn sketch_for(text: &str) -> Option<Vec<u8>> {
         .map(|(_, png)| png.clone())
 }
 
-fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvider {
+fn transcript_content(text: &str) -> gtk4::gdk::ContentProvider {
     use gtk4::prelude::*;
-    let text = gtk4::gdk::ContentProvider::new_union(&[
+    gtk4::gdk::ContentProvider::new_union(&[
         gtk4::gdk::ContentProvider::for_bytes(
             "text/plain;charset=utf-8",
             &gtk4::glib::Bytes::from(text.as_bytes()),
@@ -78,23 +88,17 @@ fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvi
             &gtk4::glib::Bytes::from(text.as_bytes()),
         ),
         gtk4::gdk::ContentProvider::for_value(&text.to_value()),
-    ]);
-    match png {
-        Some(png) => gtk4::gdk::ContentProvider::new_union(&[
-            gtk4::gdk::ContentProvider::for_bytes("image/png", &gtk4::glib::Bytes::from(png)),
-            text,
-        ]),
-        None => text,
-    }
+    ])
 }
 
 #[cfg(test)]
 #[test]
-fn sketch_copy_offers_image_and_text_and_plain_copy_stays_plain() {
+fn copy_text_never_advertises_an_image_even_when_a_sketch_is_cached() {
     use gtk4::prelude::*;
-    let content = transcript_content("- #1 (0:00) “hello”", Some(&[1, 2, 3]));
+    remember_sketch("- #1 (0:00) “hello”", Some(&[1, 2, 3]));
+    let content = transcript_content("- #1 (0:00) “hello”");
     let formats = content.formats();
-    assert!(formats.contain_mime_type("image/png"));
+    assert!(!formats.contain_mime_type("image/png"));
     assert!(formats.contain_mime_type("text/plain"));
     assert!(formats.contain_mime_type("text/plain;charset=utf-8"));
     remember_sketch("sketch", Some(&[1, 2, 3]));
@@ -104,7 +108,7 @@ fn sketch_copy_offers_image_and_text_and_plain_copy_stays_plain() {
     assert_eq!(sketch_for("sketch"), None);
     assert!(formats.contains_type(String::static_type()));
     assert!(
-        !transcript_content("plain", None)
+        !transcript_content("plain")
             .formats()
             .contain_mime_type("image/png")
     );
