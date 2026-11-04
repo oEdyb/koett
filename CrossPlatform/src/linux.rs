@@ -282,6 +282,7 @@ mod dictionary_view;
 mod escape;
 mod feedback;
 mod fix_word_view;
+mod focus_tokens;
 mod formatting_view;
 mod gnome_focus;
 mod gnome_pill;
@@ -675,15 +676,16 @@ fn run_x11(
     // time, so Esc keeps working everywhere else.
     let escape = HotKey::new(None, global_hotkey::hotkey::Code::Escape);
     let mut escape_registered = false;
+    let mut escape_recording = false;
     loop {
         let recording = app.status == AppStatus::Recording;
-        if recording != escape_registered {
-            escape_registered = if recording {
-                hotkeys.register(escape).is_ok()
-            } else {
+        // Once per recording: a failed grab must not retry on every loop.
+        if recording != escape_recording {
+            escape_recording = recording;
+            escape_registered = recording && hotkeys.register(escape).is_ok();
+            if !recording {
                 let _ = hotkeys.unregister(escape);
-                false
-            };
+            }
         }
         while let Ok(action) = actions.try_recv() {
             let (action, paste_request) = match action {

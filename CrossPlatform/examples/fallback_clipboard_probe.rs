@@ -10,6 +10,9 @@ mod clipboard_owner;
 #[path = "../src/linux/feedback.rs"]
 mod feedback;
 #[cfg(target_os = "linux")]
+#[path = "../src/linux/focus_tokens.rs"]
+mod focus_tokens;
+#[cfg(target_os = "linux")]
 #[allow(dead_code)]
 #[path = "../src/linux/gnome_focus.rs"]
 mod gnome_focus;
