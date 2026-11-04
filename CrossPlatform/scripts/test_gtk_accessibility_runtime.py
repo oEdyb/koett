@@ -144,7 +144,10 @@ def main():
                     assert result.returncode != 0, result.stdout
                     assert f"No child with index {index}" in result.stderr, result.stderr
                 assert process.poll() is None, "GTK process died"
-                assert registry.poll() is None, "registry died"
+                if registry is not None:
+                    assert registry.poll() is None, "registry died"
+                assert call(address, owner_name, "/org/a11y/atspi/registry",
+                            "org.freedesktop.DBus.Peer.Ping").returncode == 0
 
             def command(value):
                 process.stdin.write(value + "\n")
