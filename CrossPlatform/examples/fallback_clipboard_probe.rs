@@ -11,6 +11,10 @@ mod clipboard_owner;
 mod feedback;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
+#[path = "../src/linux/gnome_focus.rs"]
+mod gnome_focus;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
 #[path = "../src/linux/image_paste.rs"]
 mod image_paste;
 #[cfg(target_os = "linux")]

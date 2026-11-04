@@ -12,8 +12,8 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
   PR #67; real capture, tray and ordinary-editor acceptance remain open.
   No global Ctrl+Z interception was added.
 - **Original paste target / per-app chord outside niri:** KWin identity is now
-  checked with per-window UUIDs and exact app-class rules. GNOME and other
-  compositor adapters remain open; preserve copy/manual paste when unavailable.
+  checked with per-window UUIDs and exact app-class rules. Optional GNOME Shell identity now has native
+  focus checks; other compositor adapters and GNOME delivery remain open; preserve copy/manual paste when unavailable.
   KWin portal grants/image consumption and the missing fallback clipboard
   protocol in the private KWin lab remain explicit acceptance/backend work.
 - **Permissions:** first visible launch now opens the existing window once;
@@ -25,7 +25,7 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
 - **Long dictation:** 30-minute hardware capture; measure memory, progress,
   pause/cancel, dictionary and chunk handling. Short/synthetic ASR is insufficient.
 Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
-still need code. GNOME identity belongs with its deferred Shell integration.
+still need code. Optional GNOME identity is implemented; Shell overlay/capture/context remain open.
 Layer-shell monitor refresh is implemented; physical/portal/niri-pick hotplug
 cases remain acceptance/integration work. Early click protection no longer
 waits for the ink delay, but the smaller keyboard-sample/surface-commit race
@@ -56,7 +56,7 @@ a crash journal needs explicit retention/privacy behavior before implementation.
 ## Implementation still open before the deferred integrations
 
 Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
-still need code. GNOME identity belongs with its deferred Shell integration.
+still need code. Optional GNOME identity is implemented; Shell overlay/capture/context remain open.
 Layer-shell monitor refresh is implemented; physical/portal/niri-pick hotplug
 cases remain acceptance/integration work. Early click protection no longer
 waits for the ink delay, but the smaller keyboard-sample/surface-commit race
@@ -79,3 +79,6 @@ access alternatives are fallbacks, not full parity.
   current layer-shell implementation does not provide it.
 
 These integrations and all acceptance gaps remain open in `feature-parity.md`.
+
+For every open parity-table row and its reason, see the
+[complete Linux audit](linux-parity-open-audit.md).

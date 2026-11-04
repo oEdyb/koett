@@ -131,6 +131,44 @@ mod tests {
         serde_json::json!({"protocol":1,"id":id,"pid":1,"app":"org.example.Editor"}).to_string()
     }
     #[test]
+    #[ignore = "requires the named private GNOME desktop and native windows"]
+    fn native_gnome_focus() {
+        let lab = std::env::var("AGENT_LAB_RUNTIME").unwrap();
+        assert!(lab.ends_with("/koett-gnome-sol"));
+        assert_eq!(
+            std::env::var("XDG_RUNTIME_DIR").unwrap(),
+            format!("{lab}/gnome")
+        );
+        assert_eq!(
+            std::env::var("WAYLAND_DISPLAY").unwrap(),
+            "wayland-gnome-sol"
+        );
+        let directory = std::path::PathBuf::from(std::env::var("KOETT_GNOME_PROBE_DIR").unwrap());
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let connection = runtime.block_on(zbus::Connection::session()).unwrap();
+        runtime
+            .block_on(connection.request_name(super::super::APP_ID))
+            .unwrap();
+        std::fs::write(directory.join("ready"), "ready").unwrap();
+        let deadline = Instant::now() + Duration::from_secs(90);
+        let mut last = String::new();
+        while Instant::now() < deadline {
+            let command = std::fs::read_to_string(directory.join("command")).unwrap_or_default();
+            if command == "stop" {
+                return;
+            }
+            if !command.is_empty() && command != last {
+                let started = Instant::now();
+                let value = focused();
+                let result = serde_json::json!({"case":command,"focus":value,"elapsed_ms":started.elapsed().as_millis()});
+                std::fs::write(directory.join("result.json"), result.to_string()).unwrap();
+                last = command;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        panic!("private GNOME controller did not finish");
+    }
+    #[test]
     fn distinct_windows_and_shell_restarts_never_reuse_tokens() {
         let mut ids = Identities::default();
         let first = ids.resolve(":1.1".into(), &window(1)).unwrap();

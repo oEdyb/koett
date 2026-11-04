@@ -45,7 +45,7 @@ export default class Koett extends Extension {
             const [callerPid, appPid] = await Promise.all([pid(sender), pid(owner)]);
             const currentOwner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
             if (this._enabled && owner === currentOwner && callerPid === appPid &&
-                !Main.sessionMode.isLocked && !Main.screenShield.locked &&
+                !Main.sessionMode.isLocked && !Main.screenShield?.locked &&
                 !Main.overview.visible && Main.modalCount === 0) {
                 const window = global.display.focus_window;
                 const app = window?.get_gtk_application_id() || window?.get_wm_class() || '';
