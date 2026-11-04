@@ -14,7 +14,10 @@ import time
 from urllib.parse import urlsplit
 
 REPO = Path(__file__).resolve().parent.parent
-CACHE = Path.home() / 'Library/Caches/Koett/CLI Transcripts'
+LINUX = sys.platform.startswith('linux')
+ENGINE = 'sherpa-onnx 1.13.5' if LINUX else 'FluidAudio 0.15.6'
+CACHE = ((Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache')) / 'koett')
+         if LINUX else Path.home() / 'Library/Caches/Koett') / 'CLI Transcripts'
 MAX_SECONDS = 10800
 
 
@@ -43,7 +46,7 @@ def run(args, timeout=1800):
 def require(name):
     found = shutil.which(name)
     if not found:
-        raise RuntimeError(f'Missing {name}. Install dependencies: brew install yt-dlp ffmpeg')
+        raise RuntimeError(f'Missing {name}. Install yt-dlp and FFmpeg with your package manager.')
     return found
 
 
@@ -60,7 +63,7 @@ def source_identity(source):
 
 
 def cache_path(source, model, remote):
-    identity = [1, source, model, 'FluidAudio-0.15.6']
+    identity = [1, source, model, ENGINE.replace(' ', '-')]
     if not remote:
         stat = Path(source).stat()
         identity += [stat.st_size, stat.st_mtime_ns]
@@ -95,10 +98,14 @@ def transcribe(source, model, refresh=False, no_cache=False):
             pass
     ffmpeg = require('ffmpeg')
     ffprobe = require('ffprobe')
-    binary = REPO / '.build/release/parakeet-baseline'
+    binary = (REPO / 'CrossPlatform/target/release/koett-transcribe-engine' if LINUX
+              else REPO / '.build/release/parakeet-baseline')
     if not binary.is_file():
-        raise RuntimeError(f'Build the engine first: swift build --package-path {REPO} -c release --product parakeet-baseline')
-    with tempfile.TemporaryDirectory(prefix='koett-cli-') as temp:
+        raise RuntimeError('Build the engine first: scripts/install-transcribe-linux.sh' if LINUX else
+                           f'Build the engine first: swift build --package-path {REPO} -c release --product parakeet-baseline')
+    if LINUX:
+        CACHE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with tempfile.TemporaryDirectory(prefix='koett-cli-', dir=CACHE.parent if LINUX else None) as temp:
         folder = Path(temp)
         metadata = {}
         media = Path(source)
@@ -130,7 +137,7 @@ def transcribe(source, model, refresh=False, no_cache=False):
         result = {'schema_version': 1, 'source': source,
                   'title': metadata.get('title') or media.name,
                   'source_id': metadata.get('id'),
-                  'model': f'Parakeet {model}', 'engine': 'FluidAudio 0.15.6',
+                  'model': f'Parakeet {model}', 'engine': ENGINE,
                   'transcript_status': 'raw_asr_unverified',
                   'duration_seconds': record['audioSeconds'],
                   'asr_seconds': round(record['engineMilliseconds'] / 1000, 3),
