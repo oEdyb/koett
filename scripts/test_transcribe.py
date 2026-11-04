@@ -48,6 +48,46 @@ class TranscribeTests(unittest.TestCase):
             media.write_bytes(b'different')
             self.assertNotEqual(before, cli.cache_path(str(media), 'v3', False))
 
+    def test_engine_cache_identity_is_separate(self):
+        with patch.object(cli, 'ENGINE', 'FluidAudio 0.15.6'):
+            mac = cli.cache_path('https://example.com/v', 'v3', True)
+        with patch.object(cli, 'ENGINE', 'sherpa-onnx 1.13.5'):
+            linux = cli.cache_path('https://example.com/v', 'v3', True)
+        self.assertNotEqual(mac, linux)
+
+    def test_linux_file_pipeline_and_no_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary = root / 'CrossPlatform/target/release/koett-transcribe-engine'
+            binary.parent.mkdir(parents=True)
+            binary.touch()
+            media = root / 'input.wav'
+            media.touch()
+            calls = []
+
+            def fake_run(args):
+                calls.append(args)
+                if args[0] == binary:
+                    Path(args[4]).write_text(json.dumps([{
+                        'text': 'Raw words.', 'audioSeconds': 2,
+                        'engineMilliseconds': 120,
+                    }]))
+
+            probe = subprocess.CompletedProcess([], 0, json.dumps({
+                'streams': [{'codec_type': 'audio'}], 'format': {'duration': '2'}
+            }))
+            with patch.object(cli, 'REPO', root), patch.object(cli, 'LINUX', True), \
+                    patch.object(cli, 'CACHE', root / 'cache/results'), \
+                    patch.object(cli, 'require', side_effect=lambda name: name), \
+                    patch.object(cli, 'run', side_effect=fake_run), \
+                    patch.object(cli.subprocess, 'run', return_value=probe):
+                result = cli.transcribe(str(media), 'v2', no_cache=True)
+            self.assertEqual(result['text'], 'Raw words.')
+            self.assertEqual(result['asr_seconds'], 0.12)
+            self.assertFalse(result['cached'])
+            self.assertEqual(calls[-1][1:3], ['--model-version', 'v2'])
+            self.assertEqual(list((root / 'cache').iterdir()), [])
+
     def test_failed_process_and_timeout_are_errors(self):
         with self.assertRaises(RuntimeError):
             cli.run([sys.executable, '-c', 'raise SystemExit(7)'])
