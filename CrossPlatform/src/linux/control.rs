@@ -273,7 +273,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
             let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
                 value if value.starts_with("media ") => {
                     let source = &value[6..];
-                    if crate::media_transcription::validate_url(source).is_err() {
+                    if crate::media_transcription::validate_source(source).is_err() {
                         continue;
                     }
                     TrayAction::Media(source.into())

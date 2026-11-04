@@ -25,6 +25,9 @@ fn main() {
                         | "failed-transcripts"
                         | "failed-recordings"
                         | "quit"
+                        | "media"
+                        | "transcribe-url"
+                        | "transcribe-file"
                 )
         }) {
             println!(

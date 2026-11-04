@@ -28,6 +28,30 @@ pub fn validate_url(value: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// A local file for the picker or `koett transcribe-file`: an absolute path to a
+/// regular file. FFmpeg reads it through the same format limits as a download.
+pub fn validate_file(value: &str) -> Result<(), String> {
+    let path = Path::new(value);
+    if !path.is_absolute() || value.chars().any(char::is_control) || value.len() > 7000 {
+        return Err("Pass the absolute path of a media file".into());
+    }
+    let metadata = fs::metadata(path).map_err(|_| "The media file is unavailable".to_string())?;
+    if !metadata.is_file() {
+        return Err("The media path is not a file".into());
+    }
+    File::open(path).map_err(|_| "The media file can not be read".to_string())?;
+    Ok(())
+}
+
+/// Accepts either kind of media source.
+pub fn validate_source(value: &str) -> Result<(), String> {
+    if value.starts_with('/') {
+        validate_file(value)
+    } else {
+        validate_url(value)
+    }
+}
+
 pub struct Download {
     directory: PathBuf,
     pub pcm: PathBuf,
@@ -55,7 +79,7 @@ impl Drop for Fetch {
 }
 impl Fetch {
     pub fn start(source: String, progress: impl Fn(&str) + Send + 'static) -> Result<Self, String> {
-        validate_url(&source)?;
+        validate_source(&source)?;
         let cancelled = Arc::new(AtomicBool::new(false));
         let flag = cancelled.clone();
         let (send, reply) = mpsc::channel();
@@ -91,35 +115,17 @@ fn fetch(
         title: String::new(),
         source,
     };
-    let input = download.directory.join("source.%(ext)s");
-    let metadata = download.directory.join("metadata");
-    let tool = std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .ok_or("Home directory unavailable")?
-        .join(".local/bin/yt-dlp");
     let started = Instant::now();
-    progress("Fetching audio…");
-    let mut command = Command::new(tool);
-    bound_file_size(&mut command, 2 * 1024 * 1024 * 1024);
-    command.args(["--ignore-config", "--no-cookies", "--no-cookies-from-browser", "--no-playlist", "--playlist-items", "1", "--socket-timeout", "30", "--retries", "2", "--max-filesize", "2G", "--match-filters", "!is_live & !playlist_id & duration<=?10800", "--format", "bestaudio[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]/best[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]", "--downloader", "native", "--fixup", "never", "--abort-on-unavailable-fragments", "--fragment-retries", "2", "--no-progress", "--no-simulate", "--print", "after_move:{\"title\":%(title)j,\"path\":%(filepath)j}", "--output"]).arg(&input);
-    command
-        .arg("--ffmpeg-location")
-        .arg(download.directory.join("disabled-ffmpeg"))
-        .arg("--")
-        .arg(&download.source);
-    run(
-        &mut command,
-        &metadata,
-        &download.directory,
-        cancelled,
-        Duration::from_secs(1800),
-        2 * 1024 * 1024 * 1024 + 1024 * 1024,
-    )?;
-    if fs::metadata(&metadata).map_err(|e| e.to_string())?.len() > 65536 {
-        return Err("Media metadata exceeds limit".into());
-    }
-    let (title, input) = downloaded_item(&metadata, &download.directory)?;
-    download.title = title;
+    let input = if download.source.starts_with('/') {
+        let path = PathBuf::from(&download.source);
+        download.title = path
+            .file_stem()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        path
+    } else {
+        download_source(&mut download, cancelled, &progress)?
+    };
     progress("Converting audio…");
     let mut command = Command::new("/usr/bin/ffmpeg");
     bound_file_size(&mut command, 16000 * 2 * 10800);
@@ -146,7 +152,8 @@ fn fetch(
         cancelled,
         Duration::from_secs(1800).saturating_sub(started.elapsed()),
         2 * 1024 * 1024 * 1024 + 350 * 1024 * 1024,
-    )?;
+    )
+    .map_err(|error| conversion_error(error, download.source.starts_with('/')))?;
     if fs::metadata(&download.pcm)
         .map_err(|e| e.to_string())?
         .len()
@@ -155,6 +162,53 @@ fn fetch(
         return Err("Media exceeds three hours".into());
     }
     Ok(download)
+}
+
+/// The generic tool failure talks about sources and logins, which means nothing for
+/// a file the user picked.
+fn conversion_error(error: String, local: bool) -> String {
+    if local && error.starts_with("Media tool failed") {
+        "This file has no audio Koett can read".into()
+    } else {
+        error
+    }
+}
+
+/// Fetches a URL with yt-dlp into the private directory.
+fn download_source(
+    download: &mut Download,
+    cancelled: &AtomicBool,
+    progress: &impl Fn(&str),
+) -> Result<PathBuf, String> {
+    let input = download.directory.join("source.%(ext)s");
+    let metadata = download.directory.join("metadata");
+    let tool = std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .ok_or("Home directory unavailable")?
+        .join(".local/bin/yt-dlp");
+    progress("Fetching audio…");
+    let mut command = Command::new(tool);
+    bound_file_size(&mut command, 2 * 1024 * 1024 * 1024);
+    command.args(["--ignore-config", "--no-cookies", "--no-cookies-from-browser", "--no-playlist", "--playlist-items", "1", "--socket-timeout", "30", "--retries", "2", "--max-filesize", "2G", "--match-filters", "!is_live & !playlist_id & duration<=?10800", "--format", "bestaudio[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]/best[protocol~=\"^(https?|m3u8_native|http_dash_segments)$\"]", "--downloader", "native", "--fixup", "never", "--abort-on-unavailable-fragments", "--fragment-retries", "2", "--no-progress", "--no-simulate", "--print", "after_move:{\"title\":%(title)j,\"path\":%(filepath)j}", "--output"]).arg(&input);
+    command
+        .arg("--ffmpeg-location")
+        .arg(download.directory.join("disabled-ffmpeg"))
+        .arg("--")
+        .arg(&download.source);
+    run(
+        &mut command,
+        &metadata,
+        &download.directory,
+        cancelled,
+        Duration::from_secs(1800),
+        2 * 1024 * 1024 * 1024 + 1024 * 1024,
+    )?;
+    if fs::metadata(&metadata).map_err(|e| e.to_string())?.len() > 65536 {
+        return Err("Media metadata exceeds limit".into());
+    }
+    let (title, input) = downloaded_item(&metadata, &download.directory)?;
+    download.title = title;
+    Ok(input)
 }
 
 fn downloaded_item(metadata: &Path, directory: &Path) -> Result<(String, PathBuf), String> {
@@ -288,6 +342,47 @@ pub fn save(title: &str, source: &str, model: &str, text: &str) -> Result<PathBu
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_failed_local_conversion_says_what_happened() {
+        use super::conversion_error;
+        let failed = "Media tool failed: unsupported, blocked or login-required source";
+        assert_eq!(
+            conversion_error(failed.into(), true),
+            "This file has no audio Koett can read"
+        );
+        assert_eq!(conversion_error(failed.into(), false), failed);
+        assert_eq!(conversion_error("Cancelled".into(), true), "Cancelled");
+    }
+
+    #[test]
+    fn a_local_source_must_be_an_absolute_path_to_a_readable_file() {
+        use super::{validate_file, validate_source};
+        let directory = scratch();
+        std::fs::create_dir_all(&directory).unwrap();
+        let file = directory.join("clip with spaces.wav");
+        std::fs::write(&file, b"audio").unwrap();
+        let path = file.to_str().unwrap();
+        assert_eq!(validate_file(path), Ok(()));
+        assert_eq!(validate_source(path), Ok(()));
+        assert!(validate_file("clip.wav").is_err(), "relative");
+        assert!(validate_file("-i").is_err(), "looks like a flag");
+        assert!(
+            validate_file(directory.to_str().unwrap()).is_err(),
+            "a folder"
+        );
+        assert!(validate_file(&format!("{path}.missing")).is_err());
+        assert!(
+            validate_file(&format!("{path}\n")).is_err(),
+            "control character"
+        );
+        assert!(
+            validate_source("relative/clip.wav").is_err(),
+            "falls to URL rules"
+        );
+        assert_eq!(validate_source("https://example.com/a"), Ok(()));
+        let _ = std::fs::remove_dir_all(directory);
+    }
+
     fn scratch() -> std::path::PathBuf {
         let path = std::env::temp_dir().join(format!(
             "koett-media-test-{}",

@@ -29,9 +29,11 @@ pub(super) fn show(
         .build();
     super::menu::set_accessible_label(entry.upcast_ref(), "Media URL");
     let start = gtk::Button::with_label("Transcribe");
+    let choose = gtk::Button::with_label("Choose File…");
     let cancel = gtk::Button::with_label("Cancel");
     content.append(&entry);
     content.append(&start);
+    content.append(&choose);
     content.append(&cancel);
     let phase = gtk::Label::new(None);
     phase.set_wrap(true);
@@ -67,6 +69,7 @@ pub(super) fn show(
         let dialog = dialog.downgrade();
         let start = start.clone();
         let copy = copy.clone();
+        let choose = choose.clone();
         move || {
             copy.set_sensitive(latest.borrow().is_some());
             if latest.borrow().is_none() {
@@ -88,9 +91,9 @@ pub(super) fn show(
             {
                 result.buffer().set_text(text);
             }
-            start.set_sensitive(
-                status.text().starts_with("Ready") || status.text().starts_with("Error"),
-            );
+            let idle = status.text().starts_with("Ready") || status.text().starts_with("Error");
+            start.set_sensitive(idle);
+            choose.set_sensitive(idle);
             gtk::glib::ControlFlow::Continue
         }
     });
@@ -123,6 +126,43 @@ pub(super) fn show(
         move |_| submit()
     });
     entry.connect_activate(move |_| submit());
+    choose.connect_clicked({
+        let actions = actions.clone();
+        let dialog = dialog.clone();
+        let phase = phase.clone();
+        move |button| {
+            let picker = gtk::FileChooserNative::new(
+                Some("Transcribe Media File"),
+                Some(&dialog),
+                gtk::FileChooserAction::Open,
+                Some("Transcribe"),
+                Some("Cancel"),
+            );
+            picker.set_modal(true);
+            let actions = actions.clone();
+            let button = button.clone();
+            let phase = phase.clone();
+            // Keep the native chooser alive until it answers.
+            let held = std::rc::Rc::new(std::cell::RefCell::new(Some(picker.clone())));
+            picker.connect_response(move |picker, response| {
+                if response == gtk::ResponseType::Accept
+                    && let Some(path) = picker.file().and_then(|file| file.path())
+                {
+                    let path = path.to_string_lossy().into_owned();
+                    match crate::media_transcription::validate_file(&path) {
+                        Ok(()) => {
+                            let _ = actions.send(TrayAction::Media(path));
+                            button.set_sensitive(false);
+                        }
+                        Err(error) => phase.set_text(&error),
+                    }
+                }
+                picker.destroy();
+                held.borrow_mut().take();
+            });
+            picker.show();
+        }
+    });
     cancel.connect_clicked({
         let actions = actions.clone();
         let dialog = dialog.clone();
