@@ -215,6 +215,15 @@ the same offer. Kitty received exact plain text. Both PNG bytes and the embedded
 PNG were checked against the private drawing fixture. These are clipboard target
 tests, not a new end-to-end automatic-dictation or Mac runtime test.
 
+T3's receiver fix `1d4662546a` ships in 0.1.24 but was not installed for these
+checks. Its real repeat-paste verification remains pending: paste two lines
+including @AGENTS.md and a sketch into existing composer text, then repeat and
+check both lines, one attachment per paste and surrounding text. Also compare
+PNG+text with this exact HTML bundle and check ordinary browser-image copying.
+The HTML carries actual transcript body text; its fixed alt is “Koett sketch”,
+never the dictation. Retain HTML even after T3's fix because Chrome's native
+rich editor needs it to insert both from one paste.
+
 [Combined-offer receipt](evidence/linux-sketch-clipboard/combined-offer.json) and
 [private target script](evidence/linux-sketch-clipboard/combined-offer.py).
 The fixture came from private dictation/drawing with copied models; host focus,

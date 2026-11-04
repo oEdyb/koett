@@ -36,6 +36,8 @@
     "model_copy": "/home/olle/.cache/koett-repeat-replay/model-copy",
     "host_clipboard_focus_pointer_untouched": true,
     "automatic_delivery_retested": false,
+    "t3_tested_version": "0.1.2",
+    "t3_0_1_24_repeat_verification": "pending installation and go-ahead",
     "replay": false
   }
 }
