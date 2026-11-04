@@ -1,0 +1,111 @@
+{
+  "early_clicks": {
+    "trials": [
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.82,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 60.89,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 81.0,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.89,
+        "pins": 1
+      },
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.89,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 61.05,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 80.79,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.83,
+        "pins": 1
+      },
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.8,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 60.87,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 80.83,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.76,
+        "pins": 1
+      },
+      {
+        "requested_ms": 40,
+        "click_flushed_ms": 40.87,
+        "pins": 1
+      },
+      {
+        "requested_ms": 60,
+        "click_flushed_ms": 60.94,
+        "pins": 1
+      },
+      {
+        "requested_ms": 80,
+        "click_flushed_ms": 80.82,
+        "pins": 1
+      },
+      {
+        "requested_ms": 100,
+        "click_flushed_ms": 100.85,
+        "pins": 1
+      }
+    ],
+    "underlying_clicks": 0
+  },
+  "click_across_ink_arm": {
+    "pins": 1
+  },
+  "early_drag": {
+    "pins": 0,
+    "drawings": 0,
+    "underlying_clicks": 0
+  },
+  "capitals": {
+    "text": "AA",
+    "drawings": 0
+  },
+  "shortcut_tail": {
+    "underlying_clicks": 2,
+    "drawings": 0
+  },
+  "idle_timeout": {
+    "underlying_clicks": 1,
+    "drawings": 0
+  },
+  "keyboard_removed": {
+    "underlying_clicks": 1,
+    "drawings": 0
+  }
+}

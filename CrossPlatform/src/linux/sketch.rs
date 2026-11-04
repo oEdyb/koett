@@ -702,6 +702,7 @@ impl Session {
         }
         self.layout_invalid = true;
         self.held = false;
+        self.protecting = false;
         self.stroking = None;
         self.gesture = gesture::PinGesture::default();
         self.gate = keys::DrawGate::default();

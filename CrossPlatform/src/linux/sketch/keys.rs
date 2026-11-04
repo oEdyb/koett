@@ -126,8 +126,9 @@ const DRAW_ARM: Duration = Duration::from_millis(120);
 const HOLD_IDLE: Duration = Duration::from_secs(15);
 
 /// Decides from sampled key state whether a hold is a deliberate drawing hold.
-/// It must start from a key seen up in this recording, stay free of any other
-/// key, and last past [`DRAW_ARM`]. Releasing Ctrl from Ctrl+Shift+Space (the
+/// It must start from a key seen up in this recording and stay free of other
+/// keys. Clicks are protected immediately; ink waits past [`DRAW_ARM`].
+/// Releasing Ctrl from Ctrl+Shift+Space (the
 /// default dictation shortcut) leaves Shift down, which must not start drawing.
 #[derive(Debug, Default)]
 pub struct DrawGate {
