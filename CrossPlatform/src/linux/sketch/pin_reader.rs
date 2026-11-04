@@ -320,6 +320,7 @@ fn accessible(
             include_selection,
             point,
             screen_point,
+            window.geometry.as_ref(),
             &mut found,
         );
         let _ = tokio::time::timeout(limit, read).await;
@@ -332,15 +333,23 @@ async fn fill(
     include_selection: bool,
     point: Option<(i32, i32)>,
     screen_point: (f64, f64),
+    geometry: Option<&super::pick_geometry::PickGeometry>,
     found: &mut Found,
 ) -> zbus::Result<()> {
     let bus = accessibility_bus().await?;
     let Some(frame) = frame_titled(&bus, title).await? else {
         return Ok(());
     };
-    let point = match point {
-        Some(point) => Some(point),
-        None => screen_to_window(&bus, &frame, screen_point).await,
+    let point = if let Some(geometry) = geometry {
+        let rect: zbus::Result<(i32, i32, i32, i32)> =
+            call(&bus, &frame, COMPONENT, "GetExtents", &(COORDS_WINDOW,)).await;
+        rect.ok()
+            .and_then(|rect| geometry.in_frame(screen_point, rect))
+    } else {
+        match point {
+            Some(point) => Some(point),
+            None => screen_to_window(&bus, &frame, screen_point).await,
+        }
     };
     fill_frame(&bus, &frame, include_selection, point, found).await;
     if name(&bus, &frame).await.as_deref() != Some(title) {
@@ -702,6 +711,59 @@ async fn read_selection(bus: &Connection, scan: &Scan) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "requires the named private niri geometry lab and real AT-SPI fixture"]
+    fn native_niri_geometry_context() {
+        let runtime = std::env::var("AGENT_LAB_RUNTIME").unwrap();
+        assert!(runtime.ends_with("/koett-niri-geometry-sol"));
+        assert_eq!(std::env::var("XDG_RUNTIME_DIR").unwrap(), runtime);
+        let case_path = std::path::PathBuf::from(std::env::var("KOETT_NIRI_NATIVE_CASE").unwrap());
+        let case: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&case_path).unwrap()).unwrap();
+        let mut window = niri_pick::parse_picked(&case["reply"].to_string()).unwrap();
+        window.title_unique = case["windows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|entry| entry["title"].as_str() == Some(&window.title))
+            .count()
+            == 1;
+        let pin = (
+            case["pin"][0].as_f64().unwrap(),
+            case["pin"][1].as_f64().unwrap(),
+        );
+        let found = if window.title_unique {
+            accessible(&window, false, pin, pin, Instant::now() + TOTAL)
+        } else {
+            Found::default()
+        };
+        let evidence = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let bus = accessibility_bus().await.ok()?;
+                let frame = frame_titled(&bus, &window.title).await.ok()??;
+                let rect: (i32, i32, i32, i32) =
+                    call(&bus, &frame, COMPONENT, "GetExtents", &(COORDS_WINDOW,))
+                        .await
+                        .ok()?;
+                Some((
+                    rect,
+                    window
+                        .geometry
+                        .as_ref()
+                        .and_then(|geometry| geometry.in_frame(pin, rect)),
+                ))
+            });
+        let result = serde_json::json!({"link":found.link,"image":found.image,"window":window.title,
+            "point":window.geometry.as_ref().and_then(|geometry| geometry.point(pin)),
+            "frame_bounds":evidence.map(|value|value.0),"frame_point":evidence.and_then(|value|value.1)});
+        std::fs::write(case_path.with_extension("result.json"), result.to_string()).unwrap();
+        assert_eq!(result["link"], case["expected_link"], "{result}");
+        assert_eq!(result["image"], case["expected_image"], "{result}");
+    }
 
     #[test]
     #[ignore = "requires isolated desktop with a YouTube browser fixture"]

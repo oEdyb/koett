@@ -25,6 +25,7 @@ mod gesture;
 pub mod keys;
 pub(super) mod kwin_context;
 mod niri_pick;
+mod pick_geometry;
 mod pin_reader;
 pub mod sheet;
 mod video_time;

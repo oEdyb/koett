@@ -136,6 +136,7 @@ pub struct NiriWindow {
     /// Set only for floating windows.
     pub tile_pos: Option<(f64, f64)>,
     pub window_offset: (f64, f64),
+    pub geometry: Option<super::pick_geometry::PickGeometry>,
     /// No other window has this title, so a title match can only mean this one.
     pub title_unique: bool,
 }
@@ -178,11 +179,14 @@ fn parse_window(value: &Value) -> Option<NiriWindow> {
             .and_then(|layout| layout.get("window_offset_in_tile"))
             .and_then(pair)
             .unwrap_or_default(),
+        geometry: value
+            .get("koett_geometry_v1")
+            .and_then(|value| serde_json::from_value(value.clone()).ok()),
         title_unique: false,
     })
 }
 
-fn parse_picked(reply: &str) -> Option<NiriWindow> {
+pub(super) fn parse_picked(reply: &str) -> Option<NiriWindow> {
     let reply: Value = serde_json::from_str(reply).ok()?;
     parse_window(reply.get("Ok")?.get("PickedWindow")?)
 }
@@ -510,6 +514,7 @@ mod tests {
                 pid: Some(2233),
                 tile_pos: None,
                 window_offset: (0.0, 0.0),
+                geometry: None,
                 title_unique: false,
             }
         );

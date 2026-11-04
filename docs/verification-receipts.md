@@ -48,17 +48,20 @@
 
 ### Linux host install — 2026-11-04
 
-Clean main `778c9015be75df6de03b51fc249497c6c3521833` (#67/#68/#69 plus the
-previous #54/#57/#61/#64/#65/#66 batches) is installed as a private current-PC
-bundle. Its running executable matched candidate SHA-256
-`76ccf842d2b3d9ed241988ca8e3b997ef279408569f5fab4316b51a454481cd0`.
+Clean main `3b4785feb501af658e7d53c7b856a6c764b1d91c` (#70/#71/#72 plus the
+previous Linux batches) is installed as a private current-PC bundle. Its running
+executable matched candidate SHA-256
+`235a69538abe5a6fe9f1bc6ec153ce6a434ea69efd4ca9a2cda79a1ca4495933`.
 Koett was idle, exited through guarded Quit, and was confirmed absent before
-the installer changed the launcher. All four configuration/saved-data file hashes
-were unchanged across installation and restart. Existing GTK/llama runtime and
-previous versions were retained; the transcription CLI link was updated.
+the installer switched the launcher. All four configuration/saved-data file
+hashes were unchanged through installation and restart. Model, formatting and
+paste preferences were preserved; existing runtime and previous versions were
+retained. The transcription CLI link and help were checked.
 
-Clean-main release build and 388 tests passed (17 ignored, plus native ABI check).
-Preflight passed. The new background process reached busy false and retained
-its model selection and formatting preference. No new live host dictation or
-permission-grant acceptance is claimed. PR #70 is not installed.
-Local install/hash receipts live under `~/.cache/koett/main-install-778c901/`.
+Clean-main release build and 392 tests passed (17 ignored, plus native ABI check).
+Required-runtime preflight passed. Optional rich Ask is reported unavailable
+(the complete WebKitGTK runtime/helpers are required); its plain-text fallback
+is retained. The new background process reached busy false. No new live host
+microphone, pin or physical monitor acceptance is claimed. The optional niri
+adapter in PR #73 is not installed and the host compositor was not changed.
+Local install/hash receipts live under `~/.cache/koett/main-install-3b4785f/`.

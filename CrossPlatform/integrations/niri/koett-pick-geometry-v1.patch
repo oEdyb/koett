@@ -1,0 +1,142 @@
+diff --git a/niri-ipc/src/lib.rs b/niri-ipc/src/lib.rs
+index 0aa3cb4..0d26373 100644
+--- a/niri-ipc/src/lib.rs
++++ b/niri-ipc/src/lib.rs
+@@ -1291,6 +1291,20 @@ pub enum Transform {
+     Flipped270,
+ }
+ 
++/// One compositor hit-test snapshot. Normal window listings do not populate this.
++#[derive(Serialize, Deserialize, Debug, Clone)]
++#[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
++pub struct KoettPickGeometry {
++    /// Pointer location in global logical coordinates at the pick.
++    pub pointer_global: (f64, f64),
++    /// The same pointer relative to the picked window's buffer origin.
++    pub point_in_buffer: (f64, f64),
++    /// Visible window geometry relative to its buffer origin.
++    pub bounds_in_buffer: (i32, i32, i32, i32),
++    /// Main surface tree bounds, including client-side shadow margins.
++    pub buffer_bounds: (i32, i32, i32, i32),
++}
++
+ /// Toplevel window.
+ #[derive(Serialize, Deserialize, Debug, Clone)]
+ #[cfg_attr(feature = "json-schema", derive(schemars::JsonSchema))]
+@@ -1326,6 +1340,9 @@ pub struct Window {
+     pub is_urgent: bool,
+     /// Position- and size-related properties of the window.
+     pub layout: WindowLayout,
++    /// Optional pin-time geometry from the Koett adapter, in logical buffer coordinates.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub koett_geometry_v1: Option<KoettPickGeometry>,
+     /// Timestamp when the window was most recently focused.
+     ///
+     /// This timestamp is intended for most-recently-used window switchers, i.e. Alt-Tab. It only
+diff --git a/src/input/pick_window_grab.rs b/src/input/pick_window_grab.rs
+index 9c2615b..48ce221 100644
+--- a/src/input/pick_window_grab.rs
++++ b/src/input/pick_window_grab.rs
+@@ -9,7 +9,6 @@ use smithay::input::SeatHandler;
+ use smithay::utils::{Logical, Point};
+ 
+ use crate::niri::State;
+-use crate::window::Mapped;
+ 
+ pub struct PickWindowGrab {
+     start_data: PointerGrabStartData<State>,
+@@ -68,11 +67,15 @@ impl PointerGrab<State> for PickWindowGrab {
+         data.niri.suppressed_buttons.insert(event.button);
+ 
+         if let Some(tx) = data.niri.pick_window.take() {
+-            let _ = tx.send_blocking(
+-                data.niri
+-                    .window_under(handle.current_location())
+-                    .map(Mapped::id),
+-            );
++            let _ = tx.send_blocking(data.niri.window_under(handle.current_location()).map(
++                |window| {
++                    (
++                        window.id(),
++                        data.niri
++                            .koett_pick_geometry(handle.current_location(), window),
++                    )
++                },
++            ));
+         }
+ 
+         handle.unset_grab(self, data, event.serial, event.time, true);
+diff --git a/src/ipc/server.rs b/src/ipc/server.rs
+index db71da6..53249c6 100644
+--- a/src/ipc/server.rs
++++ b/src/ipc/server.rs
+@@ -363,9 +363,11 @@ async fn process(ctx: &ClientCtx, request: Request) -> Reply {
+             });
+             let result = rx.recv().await;
+             let id = result.map_err(|_| String::from("error getting picked window info"))?;
+-            let window = id.and_then(|id| {
++            let window = id.and_then(|(id, geometry)| {
+                 let state = ctx.event_stream_state.borrow();
+-                state.windows.windows.get(&id.get()).cloned()
++                let mut window = state.windows.windows.get(&id.get())?.clone();
++                window.koett_geometry_v1 = geometry;
++                Some(window)
+             });
+             Response::PickedWindow(window)
+         }
+@@ -527,6 +529,7 @@ fn make_ipc_window(
+         is_floating: mapped.is_floating(),
+         is_urgent: mapped.is_urgent(),
+         layout,
++        koett_geometry_v1: None,
+         focus_timestamp: mapped.get_focus_timestamp().map(Timestamp::from),
+     })
+ }
+diff --git a/src/niri.rs b/src/niri.rs
+index ec40e01..321fa2e 100644
+--- a/src/niri.rs
++++ b/src/niri.rs
+@@ -392,7 +392,8 @@ pub struct Niri {
+     pub window_mru_ui: WindowMruUi,
+     pub pending_mru_commit: Option<PendingMruCommit>,
+ 
+-    pub pick_window: Option<async_channel::Sender<Option<MappedId>>>,
++    pub pick_window:
++        Option<async_channel::Sender<Option<(MappedId, Option<niri_ipc::KoettPickGeometry>)>>>,
+     pub pick_color: Option<async_channel::Sender<Option<niri_ipc::PickedColor>>>,
+ 
+     pub debug_draw_opaque_regions: bool,
+@@ -3265,6 +3266,33 @@ impl Niri {
+         Some(window)
+     }
+ 
++    pub fn koett_pick_geometry(
++        &self,
++        pos: Point<f64, Logical>,
++        window: &Mapped,
++    ) -> Option<niri_ipc::KoettPickGeometry> {
++        let (output, local) = self.output_under(pos)?;
++        let hit = self
++            .layout
++            .interactive_moved_window_under(output, local)
++            .or_else(|| self.layout.window_under(output, local))?;
++        if hit.0.id() != window.id() {
++            return None;
++        }
++        let HitType::Input { win_pos } = hit.1 else {
++            return None;
++        };
++        let point = local - win_pos;
++        let bounds = window.window.geometry();
++        let buffer = window.window.bbox();
++        Some(niri_ipc::KoettPickGeometry {
++            pointer_global: (pos.x, pos.y),
++            point_in_buffer: (point.x, point.y),
++            bounds_in_buffer: (bounds.loc.x, bounds.loc.y, bounds.size.w, bounds.size.h),
++            buffer_bounds: (buffer.loc.x, buffer.loc.y, buffer.size.w, buffer.size.h),
++        })
++    }
++
+     /// Returns the window under the cursor to be activated.
+     ///
+     /// The cursor may be inside the window's activation region, but not within the window's input
