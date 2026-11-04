@@ -7,25 +7,18 @@ M2 is **in progress**, not a dictation-readiness claim.
 
 ## Current checkpoint
 
-The ae8e454 artifact passed real guest endpoint persistence/default selection,
-preview stop/close/reacquire, unavailable-endpoint refusal and offline CPU
-speech/silence WAV recognition. See [the receipt](../CrossPlatform/evidence/windows-milestone2/ci-ae8e454/README.md).
-These used emulated input, not a real mic. M2 remains incomplete.
+The 1fa2169 artifact passed real Windows WAV-fed hold, pause/resume/cancel,
+exact-once recognized text in Notepad/Edge/Windows Terminal, foreground-switch
+recovery and read-only-history fallback. [Runtime evidence](../CrossPlatform/evidence/windows-milestone2/ci-1fa2169/README.md)
+records exact text, paste events, history counts and HWND/PID.
 
-New source adds hold mode, queued cancellation, original HWND+PID target guards,
-and an explicit WAV-fed desktop path:
-
-```powershell
-.\Koett.exe --dictation-lab-wav C:\Users\KoettLab\speech.wav
-```
-
-This loads the shared CPU engine normally. Use the actual shortcut or tray to
-start/stop. The feeder supplies real 16 kHz PCM frames at 20 ms intervals;
-pause discards frames and cancel wakes the engine. It reuses normal session IDs,
-ASR, delivery and history. It is distinct from --desktop-lab, which only presents
-silent UI fixtures. Source WAV remains a lab input, not failed recording data.
-WAV input is capped at 20 MiB and ten minutes. This new path, hold controls and
-reentrant theme fix need a rebuilt-executable guest retest before any pass claim.
+Two failures remain pending a new artifact: elevated targets silently showed
+Done, and combined delivery/history failure hid recovery actions. Source adds
+an integrity preflight, saved/unsaved Not pasted states and recovery priority.
+M2 remains incomplete until those fixes and the remaining failure gates run.
+The private WAV path is `Koett.exe --dictation-lab-wav C:\path\speech.wav`.
+It uses the shared session/CPU ASR/delivery flow. Physical hardware and thirty
+minutes of live capture remain unverified. No all-platform readiness claim.
 
 ## First checkpoint
 

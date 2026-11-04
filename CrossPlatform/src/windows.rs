@@ -2,6 +2,7 @@ mod desktop;
 mod meter;
 mod native_theme;
 mod paste_guard;
+mod paste_security;
 mod pill;
 mod pill_buttons;
 mod pill_state;
@@ -612,7 +613,7 @@ impl WindowsApp {
             4 => {
                 self.status = AppStatus::Ready;
                 self.last_transcript = "Desktop lab recovery".into();
-                Phase::NotPasted
+                Phase::NotPasted { saved: true }
             }
             5 => Phase::Error {
                 message: "Recording saved · retry from History".into(),
@@ -758,8 +759,17 @@ impl WindowsApp {
                 }
                 EngineUpdate::FormattingBusy(_) => {}
                 EngineUpdate::TranscriptReady {
-                    model, transcript, ..
+                    model,
+                    transcript,
+                    session,
                 } => {
+                    if self
+                        .engine
+                        .as_ref()
+                        .is_some_and(|engine| engine.dictation_cancelled(session))
+                    {
+                        continue;
+                    }
                     self.deliver(&model, &transcript.text, transcript.raw.as_deref());
                 }
             }
@@ -859,14 +869,15 @@ impl WindowsApp {
                     let _ = open_history();
                 }
             }
-            pill_state::Phase::Done(_) | pill_state::Phase::NotPasted => {
+            pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
                 if x >= 245 {
                     if copy_text(self.hwnd, &self.last_transcript).is_ok() {
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
                         self.pill_state.copy(now);
                     }
-                } else if x >= 190 && matches!(self.pill_state.phase, pill_state::Phase::NotPasted)
+                } else if x >= 190
+                    && matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. })
                 {
                     if let Some(target) = self.paste_target
                         && copy_text(self.hwnd, &self.last_transcript).is_ok()
@@ -875,7 +886,7 @@ impl WindowsApp {
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
                     }
-                } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted) {
+                } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }) {
                     self.pill_state.set(pill_state::Phase::Hidden, now);
                 }
             }
@@ -981,7 +992,9 @@ impl WindowsApp {
             .err();
         self.last_transcript = text.to_string();
         let failed = delivery_error.is_some();
-        let history_error = match history::append_transcript_with_raw_resilient(model, text, raw) {
+        let storage = history::append_transcript_with_raw_resilient(model, text, raw);
+        let saved = storage.is_ok();
+        let history_error = match storage {
             Ok(Some(path)) => Some(format!(
                 "The main transcript history failed. Koett saved this transcript to {}",
                 path.display()
@@ -1001,16 +1014,7 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let phase = if history_failed {
-            pill_state::Phase::Error {
-                message: "History failed · Copy from tray".into(),
-                rescue: true,
-            }
-        } else if failed {
-            pill_state::Phase::NotPasted
-        } else {
-            pill_state::Phase::Done(text.to_string())
-        };
+        let phase = pill_state::delivery_result(text.to_string(), !failed, saved, history_failed);
         self.pill_state
             .set(phase, self.clock.elapsed().as_millis() as u64);
         self.update_overlay();
@@ -1559,6 +1563,7 @@ fn foreground_paste_target() -> Option<PasteTarget> {
 }
 
 fn paste(expected: PasteTarget) -> Result<(), String> {
+    paste_security::check(expected.pid)?;
     let modifiers_are_down = || {
         [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
             .into_iter()
