@@ -159,6 +159,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                         value
                     }
                     Err(error) => {
+                        let _ = ui.send(super::window::Update::Status(format!("@error:{error}")));
                         serde_json::json!({"ok":false,"error":{"code":"recovery_operation_failed","message":error,"retryable":true}})
                     }
                 };

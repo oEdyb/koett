@@ -1,10 +1,9 @@
 //! Draw-key state straight from keyboard devices, so the sketch overlay never
 //! needs keyboard focus and typing keeps working while recording.
 //!
-//! Privacy boundary: Koett never reads key events. While a recording with
-//! drawing is active it samples each keyboard's held-key state (`EVIOCGKEY`).
+//! Privacy boundary: Koett never reads key events. While recording is active it samples each keyboard's held-key state (`EVIOCGKEY`).
 //! The kernel only reports all keys at once, so a sample briefly holds which
-//! keys are down; Koett uses only the Shift/Ctrl/Alt/Super bits and whether any
+//! keys are down; Koett uses only the Escape/Shift/Ctrl/Alt/Super bits and whether any
 //! other key is down, stores nothing, and wipes the sample with volatile writes
 //! right after each poll. Devices are opened only for that recording.
 //!
@@ -19,6 +18,7 @@ use std::os::unix::fs::OpenOptionsExt as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+const KEY_ESC: usize = 1;
 const KEY_LEFTCTRL: usize = 29;
 const KEY_LEFTSHIFT: usize = 42;
 const KEY_RIGHTSHIFT: usize = 54;
@@ -57,9 +57,10 @@ fn wipe(bits: &mut [u8]) {
     std::sync::atomic::compiler_fence(std::sync::atomic::Ordering::SeqCst);
 }
 
-/// Modifiers currently held on any keyboard.
+/// Escape and modifiers currently held on any keyboard.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Modifiers {
+    pub escape: bool,
     pub shift: bool,
     pub control: bool,
     pub alt: bool,
@@ -71,6 +72,7 @@ pub struct Modifiers {
 impl Modifiers {
     fn from_bits(bits: &[u8]) -> Self {
         Self {
+            escape: bit(bits, KEY_ESC),
             shift: bit(bits, KEY_LEFTSHIFT) || bit(bits, KEY_RIGHTSHIFT),
             control: bit(bits, KEY_LEFTCTRL) || bit(bits, KEY_RIGHTCTRL),
             alt: bit(bits, KEY_LEFTALT) || bit(bits, KEY_RIGHTALT),
@@ -96,6 +98,7 @@ impl Modifiers {
 
     fn or(self, other: Self) -> Self {
         Self {
+            escape: self.escape || other.escape,
             shift: self.shift || other.shift,
             control: self.control || other.control,
             alt: self.alt || other.alt,

@@ -189,6 +189,12 @@ pub(super) fn error_row(status: &str) -> &'static str {
         "Microphone couldn't start"
     } else if error.contains("download") {
         "Model download failed"
+    } else if error.contains("paste") {
+        "Paste failed"
+    } else if error.contains("clipboard") || error.contains("copy") {
+        "Copy failed"
+    } else if error.contains("save") || error.contains("write") {
+        "Save failed"
     } else {
         "Dictation failed"
     }
@@ -1100,6 +1106,9 @@ mod tests {
             "Model download failed"
         );
         assert_eq!(super::error_row("Error: anything"), "Dictation failed");
+        assert_eq!(super::error_row("clipboard unavailable"), "Copy failed");
+        assert_eq!(super::error_row("paste chord failed"), "Paste failed");
+        assert_eq!(super::error_row("could not write history"), "Save failed");
     }
 
     use super::*;

@@ -402,10 +402,13 @@ pub(super) fn show(
 Toggle: koett toggle
 Hold press: koett start
 Hold release: koett stop
+Cancel: koett cancel
 Ask toggle: koett ask
 Ask press: koett ask-start
 Ask release: koett ask-stop
-Media: open Koett → Transcribe media",
+Media: open Koett → Transcribe media
+
+Escape cancels while recording with keyboard access. Settings → Draw on screen has the setup. Otherwise use Cancel on the pill or bind koett cancel to a desktop shortcut.",
         ));
         instructions.set_wrap(true);
         instructions.set_xalign(0.0);
