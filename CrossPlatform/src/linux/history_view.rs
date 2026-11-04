@@ -276,15 +276,10 @@ impl HistoryView {
             let text = text.clone();
             let meta = meta.clone();
             let transcript_heading = transcript_heading.clone();
-            let navigation = navigation.clone();
-            let detail = detail.clone();
-            let back = back.clone();
-            let workspace = workspace.clone();
             move |_, row| {
                 if let Some(row) = row
                     && let Some(summary) = rows.borrow().get(row.index() as usize)
                 {
-                    let changed = selected_id.borrow().as_ref() != Some(&summary.id);
                     *selected_id.borrow_mut() = Some(summary.id.clone());
                     selected.borrow_mut().take();
                     copy.set_sensitive(false);
@@ -294,11 +289,19 @@ impl HistoryView {
                     meta.set_text("");
                     transcript_heading.set_text(&timestamp(summary.created_at_ms));
                     let _ = sender.send(Query::Get(summary.id.clone()));
-                    if changed && workspace.width() < TWO_PANE_WIDTH {
-                        navigation.set_visible(false);
-                        detail.set_visible(true);
-                        back.set_visible(true);
-                    }
+                }
+            }
+        });
+        list.connect_row_activated({
+            let navigation = navigation.clone();
+            let detail = detail.clone();
+            let back = back.clone();
+            let workspace = workspace.clone();
+            move |_, _| {
+                if workspace.width() < TWO_PANE_WIDTH {
+                    navigation.set_visible(false);
+                    detail.set_visible(true);
+                    back.set_visible(true);
                 }
             }
         });
