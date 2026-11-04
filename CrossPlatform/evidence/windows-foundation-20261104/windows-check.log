@@ -1,0 +1,65 @@
+Running as unit: run-p60252-i4268703.scope; invocation ID: 32799c9e60c74946a6858d5caea470ca
+   Compiling libsqlite3-sys v0.39.1
+    Checking cpal v0.18.2
+    Checking ringbuf v0.5.2
+    Checking sherpa-onnx v1.13.5 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx)
+    Checking directories v6.0.0
+warning: libsqlite3-sys@0.39.1: In file included from sqlite3/sqlite3.c:15216:
+warning: libsqlite3-sys@0.39.1: In file included from /usr/lib/clang/23/include/intrin.h:22:
+warning: libsqlite3-sys@0.39.1: In file included from /usr/lib/clang/23/include/x86intrin.h:15:
+warning: libsqlite3-sys@0.39.1: In file included from /usr/lib/clang/23/include/immintrin.h:21:
+warning: libsqlite3-sys@0.39.1: In file included from /usr/lib/clang/23/include/xmmintrin.h:32:
+warning: libsqlite3-sys@0.39.1: /usr/lib/clang/23/include/mm_malloc.h(13,10): fatal error: 'stdlib.h' file not found
+warning: libsqlite3-sys@0.39.1:    13 | #include <stdlib.h>
+warning: libsqlite3-sys@0.39.1:       |          ^~~~~~~~~~
+warning: libsqlite3-sys@0.39.1: 1 error generated.
+error: failed to run custom build command for `libsqlite3-sys v0.39.1`
+
+Caused by:
+  process didn't exit successfully: `/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/target/debug/build/libsqlite3-sys-4114c0a0901e7aa8/build-script-build` (exit status: 1)
+  --- stdout
+  cargo:rerun-if-env-changed=LIBSQLITE3_SYS_USE_PKG_CONFIG
+  cargo:include=/home/olle/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/libsqlite3-sys-0.39.1/sqlite3
+  cargo:rerun-if-changed=sqlite3/sqlite3.c
+  cargo:rerun-if-changed=sqlite3/wasm32-wasi-vfs.c
+  cargo:rerun-if-env-changed=SQLITE_MAX_VARIABLE_NUMBER
+  cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH
+  cargo:rerun-if-env-changed=SQLITE_MAX_COLUMN
+  cargo:rerun-if-env-changed=LIBSQLITE3_FLAGS
+  cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+  CC_FORCE_DISABLE = None
+  cargo:rerun-if-env-changed=VCINSTALLDIR
+  VCINSTALLDIR = None
+  cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+  CC_x86_64-pc-windows-msvc = None
+  cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+  CC_x86_64_pc_windows_msvc = Some(clang-cl)
+  cargo:rerun-if-env-changed=CC_KNOWN_WRAPPER_CUSTOM
+  CC_KNOWN_WRAPPER_CUSTOM = None
+  cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+  cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+  CRATE_CC_NO_DEFAULTS = None
+  cargo:rerun-if-env-changed=CFLAGS
+  CFLAGS = None
+  cargo:rerun-if-env-changed=TARGET_CFLAGS
+  TARGET_CFLAGS = None
+  cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+  CFLAGS_x86_64_pc_windows_msvc = None
+  cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+  CFLAGS_x86_64-pc-windows-msvc = None
+  cargo:warning=In file included from sqlite3/sqlite3.c:15216:
+  cargo:warning=In file included from /usr/lib/clang/23/include/intrin.h:22:
+  cargo:warning=In file included from /usr/lib/clang/23/include/x86intrin.h:15:
+  cargo:warning=In file included from /usr/lib/clang/23/include/immintrin.h:21:
+  cargo:warning=In file included from /usr/lib/clang/23/include/xmmintrin.h:32:
+  cargo:warning=/usr/lib/clang/23/include/mm_malloc.h(13,10): fatal error: 'stdlib.h' file not found
+  cargo:warning=   13 | #include <stdlib.h>
+  cargo:warning=      |          ^~~~~~~~~~
+  cargo:warning=1 error generated.
+
+  --- stderr
+
+
+  error occurred in cc-rs: command did not execute successfully (status code exit status: 1): LC_ALL="C" "clang-cl" "-nologo" "-MD" "-Z7" "-Brepro" "--target=x86_64-pc-windows-msvc" "-W0" "-DSQLITE_CORE" "-DSQLITE_DEFAULT_FOREIGN_KEYS=1" "-DSQLITE_ENABLE_API_ARMOR" "-DSQLITE_ENABLE_COLUMN_METADATA" "-DSQLITE_ENABLE_DBSTAT_VTAB" "-DSQLITE_ENABLE_FTS3" "-DSQLITE_ENABLE_FTS3_PARENTHESIS" "-DSQLITE_ENABLE_FTS5" "-DSQLITE_ENABLE_JSON1" "-DSQLITE_ENABLE_LOAD_EXTENSION=1" "-DSQLITE_ENABLE_RTREE" "-DSQLITE_ENABLE_STAT4" "-DSQLITE_SOUNDEX" "-DSQLITE_THREADSAFE=1" "-DSQLITE_USE_URI" "-DHAVE_USLEEP=1" "-DHAVE_ISNAN" "-D_POSIX_THREAD_SAFE_FUNCTIONS" "-Fo/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/target/x86_64-pc-windows-msvc/debug/build/libsqlite3-sys-6472774ca244b5ef/out/c877a2978823c39d-sqlite3.o" "-c" "--" "sqlite3/sqlite3.c"
+
+

@@ -1,0 +1,114 @@
+{
+  "ok": true,
+  "result": {
+    "modifier_race_refused": false,
+    "history_search_text": "Desktop lab recoveryselftargetmarker",
+    "unhovered_actions": false,
+    "steps": [
+      {
+        "step": "unhovered-actions",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131690
+        },
+        "focus": {
+          "hwnd": 197356,
+          "process": "powershell",
+          "pid": 8832
+        },
+        "visible": true
+      },
+      {
+        "step": "modifier-wait-second-editor",
+        "rect": [
+          208,
+          208,
+          1608,
+          808
+        ],
+        "focus": {
+          "hwnd": 131888,
+          "process": "powershell",
+          "pid": 3996
+        }
+      },
+      {
+        "step": "modifier-wait-recovery",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131690
+        },
+        "focus": {
+          "hwnd": 131888,
+          "process": "powershell",
+          "pid": 3996
+        },
+        "visible": true
+      },
+      {
+        "step": "history-search-refuses-self-paste",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 131432,
+          "process": "Koett",
+          "pid": 8536
+        }
+      },
+      {
+        "step": "history-pagination",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 131432,
+          "process": "Koett",
+          "pid": 8536
+        }
+      }
+    ],
+    "self_paste_refused": false,
+    "passed": false,
+    "cancel": false,
+    "history": false,
+    "own_focus": {
+      "hwnd": 131432,
+      "process": "Koett",
+      "pid": 8536
+    },
+    "switched": {
+      "hwnd": 131888,
+      "process": "powershell",
+      "pid": 3996
+    },
+    "pause": false,
+    "history_counts": [
+      50
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\Koett23\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 8536,
+      "sha256": "FDB8206D8A96F6DB4D424D1FDA7CA80C3E77C3225EFE331038C1055A9283E19E"
+    },
+    "original_text": "",
+    "unhovered_names": [],
+    "pagination": false,
+    "second_text": "Desktop lab recovery"
+  },
+  "id": "1793828068245341725"
+}

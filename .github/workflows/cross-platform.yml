@@ -51,6 +51,8 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
+      - name: Test Windows dependency gate
+        run: python3 scripts/test_windows_dependencies.py
       - name: Test native build configuration
         run: python3 scripts/test_build_asr_native.py
       - name: Test ASR wrapper provenance
@@ -94,7 +96,10 @@ jobs:
 
   windows:
     runs-on: windows-2025
-    timeout-minutes: 20
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 4
+      CMAKE_BUILD_PARALLEL_LEVEL: 4
     defaults:
       run:
         working-directory: CrossPlatform
@@ -108,13 +113,15 @@ jobs:
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
       - name: Build ASR-only native libraries
-        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026"
+        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
       - name: Test
         run: cargo test --locked
       - name: Lint
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Check clean-Windows DLL dependencies
+        run: python scripts/check_windows_dependencies.py target/release/koett.exe
       - name: Runtime self-test
         run: cargo run --release --locked --bin koett-engine -- --self-test
       - name: Runtime long-input probe

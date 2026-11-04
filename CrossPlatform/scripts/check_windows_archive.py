@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 
 from test_package_linux_archive import verify_notices
+from check_windows_dependencies import verify as verify_dependencies
 
 
 def verify(archive):
@@ -19,6 +20,7 @@ def verify(archive):
             if not (source / name).is_file():
                 raise ValueError(f'Windows archive is missing {name}')
         verify_notices(source)
+        verify_dependencies(source / "Koett.exe")
         return {'archive': str(archive), 'canonical_notices': True,
                 'native_receipt': True, 'runtime_execution': False}
 

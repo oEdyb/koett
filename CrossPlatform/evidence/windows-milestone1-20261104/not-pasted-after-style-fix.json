@@ -1,0 +1,17 @@
+{
+  "step": "not-pasted-after-style-fix",
+  "rect": {
+    "left": 490,
+    "bottom": 724,
+    "top": 676,
+    "right": 790,
+    "dpi": 96,
+    "hwnd": 131528
+  },
+  "focus": {
+    "hwnd": 66352,
+    "process": "powershell",
+    "pid": 9172
+  },
+  "visible": true
+}

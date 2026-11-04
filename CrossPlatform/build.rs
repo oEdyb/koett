@@ -1,5 +1,15 @@
 use std::{fs, path::Path};
 fn main() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        let manifest = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+            .join("packaging/windows/Koett.manifest");
+        println!("cargo:rerun-if-changed={}", manifest.display());
+        println!("cargo:rustc-link-arg-bin=koett=/MANIFEST:EMBED");
+        println!(
+            "cargo:rustc-link-arg-bin=koett=/MANIFESTINPUT:{}",
+            manifest.display()
+        );
+    }
     let source = Path::new("../Sources/Koett/Resources/AssistantRenderer");
     println!("cargo:rerun-if-changed={}", source.display());
     let mut html = fs::read_to_string(source.join("index.html"))

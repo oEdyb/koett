@@ -1,0 +1,17 @@
+{
+  "step": "unhovered-actions",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 131690
+  },
+  "focus": {
+    "hwnd": 197356,
+    "process": "powershell",
+    "pid": 8832
+  },
+  "visible": true
+}

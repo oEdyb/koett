@@ -1,0 +1,103 @@
+{
+  "ok": true,
+  "result": {
+    "checks": [
+      {
+        "rect": {
+          "left": 1130,
+          "bottom": 1524,
+          "top": 1476,
+          "right": 1430,
+          "dpi": 96,
+          "hwnd": 262734
+        },
+        "percent": 100,
+        "matches": true,
+        "expected_height": 48,
+        "expected_width": 300
+      },
+      {
+        "rect": {
+          "left": 1055,
+          "bottom": 1500,
+          "top": 1428,
+          "right": 1505,
+          "dpi": 144,
+          "hwnd": 262734
+        },
+        "percent": 150,
+        "matches": true,
+        "expected_height": 72,
+        "expected_width": 450
+      },
+      {
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 262734
+        },
+        "percent": 200,
+        "matches": true,
+        "expected_height": 96,
+        "expected_width": 600
+      }
+    ],
+    "steps": [
+      {
+        "step": "scale-100-visible-e63",
+        "rect": {
+          "left": 1130,
+          "bottom": 1524,
+          "top": 1476,
+          "right": 1430,
+          "dpi": 96,
+          "hwnd": 262734
+        },
+        "focus": {
+          "hwnd": 131818,
+          "process": "ApplicationFrameHost",
+          "pid": 8812
+        },
+        "visible": true
+      },
+      {
+        "step": "scale-150-visible-e63",
+        "rect": {
+          "left": 1055,
+          "bottom": 1500,
+          "top": 1428,
+          "right": 1505,
+          "dpi": 144,
+          "hwnd": 262734
+        },
+        "focus": {
+          "hwnd": 131818,
+          "process": "ApplicationFrameHost",
+          "pid": 8812
+        },
+        "visible": true
+      },
+      {
+        "step": "scale-200-visible-e63",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 262734
+        },
+        "focus": {
+          "hwnd": 131818,
+          "process": "ApplicationFrameHost",
+          "pid": 8812
+        },
+        "visible": true
+      }
+    ]
+  },
+  "id": "1793819415663098421"
+}

@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "result": {
+    "before": {
+      "hwnd": 131842,
+      "process": "Koett",
+      "pid": 3156
+    },
+    "steps": [
+      {
+        "step": "tray-opens-settings-e63",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 327966,
+          "process": "Koett",
+          "pid": 3156
+        }
+      }
+    ],
+    "action": "real-tray-menu-settings"
+  },
+  "id": "1793819504930700172"
+}
