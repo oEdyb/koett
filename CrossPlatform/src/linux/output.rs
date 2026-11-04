@@ -59,7 +59,7 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
 
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
 /// text chord (terminal agents read the image themselves on Ctrl+V).
-pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
+pub fn copy_image(png: &[u8]) -> Result<(), String> {
     let mut copy = Command::new("wl-copy")
         .args(["--type", "image/png"])
         .stdin(Stdio::piped())
@@ -73,6 +73,11 @@ pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     if !copy.wait().map_err(|e| e.to_string())?.success() {
         return Err("image copy failed".into());
     }
+    Ok(())
+}
+
+pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
+    copy_image(png)?;
     if !target_unchanged(target) {
         return Err("target window changed".into());
     }

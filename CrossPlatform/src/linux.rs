@@ -1286,16 +1286,49 @@ async fn run_wayland(
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = Some(output::PASTE_NOW);
-                            match &output {
+                            let png = feedback::sketch_for(&text);
+                            let image_delivery = if let Some(png) = &png {
+                                match &output {
+                                    Some(output) => output.deliver_image(png, now).await,
+                                    None => output::deliver_image(png, now),
+                                }
+                            } else {
+                                Ok(())
+                            };
+                            let before_text = output
+                                .as_ref()
+                                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
+                            let result = match &output {
                                 Some(output) => {
                                     output.deliver(&text, now, settings.paste_shortcut).await
                                 }
                                 None => output::deliver(&text, now, settings.paste_shortcut),
-                            }
+                            };
+                            let copied = if let Some(png) = &png {
+                                settle_sketch_text(output.as_ref(), before_text).await;
+                                restore_sketch_clipboard(output.as_ref(), png, &text).await
+                            } else {
+                                Ok(())
+                            };
+                            image_delivery.and(result).and(copied)
                         }
                         Err(error) => Err(error),
                     };
                     if let Err(error) = pasted {
+                        update_tray_status(tray, &format!("@notice:{error}"));
+                    }
+                }
+                TrayAction::Recovery(command)
+                    if command == "copy-last"
+                        && recovery::last_text()
+                            .ok()
+                            .is_some_and(|text| feedback::sketch_for(&text).is_some()) =>
+                {
+                    if let Ok(text) = recovery::last_text()
+                        && let Some(png) = feedback::sketch_for(&text)
+                        && let Err(error) =
+                            restore_sketch_clipboard(output.as_ref(), &png, &text).await
+                    {
                         update_tray_status(tray, &format!("@notice:{error}"));
                     }
                 }
@@ -1377,21 +1410,30 @@ async fn run_wayland(
             } else {
                 original.as_deref().unwrap_or(&formatted)
             };
+            feedback::remember_sketch(&text, sheet.as_deref());
             cache_completed(tray, &text);
-            if let Some(png) = &sheet {
-                // Scrawl order: the numbered sheet first, then the matching text.
-                let pasted = match &output {
+            let image_delivery = if let Some(png) = &sheet {
+                match &output {
                     Some(output) => output.deliver_image(png, target).await,
                     None => output::deliver_image(png, target),
-                };
-                if let Err(error) = pasted {
-                    update_tray_status(tray, &format!("@notice:Contact sheet not pasted: {error}"));
                 }
-            }
-            let delivered = match &output {
+                .map_err(|error| format!("Contact sheet not pasted: {error}"))
+            } else {
+                Ok(())
+            };
+            let before_text = output
+                .as_ref()
+                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
+            let text_delivery = match &output {
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
+            let mut delivered = image_delivery.and(text_delivery);
+            if let Some(png) = &sheet {
+                settle_sketch_text(output.as_ref(), before_text).await;
+                delivered =
+                    delivered.and(restore_sketch_clipboard(output.as_ref(), png, &text).await);
+            }
             report_delivery(tray, &delivered);
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
@@ -2111,15 +2153,97 @@ struct WaylandOutput {
 struct ClipboardPayload {
     image: bool,
     bytes: Vec<u8>,
+    text: Option<Vec<u8>>,
 }
 
 impl ClipboardPayload {
-    fn offers(&self, mime_type: &str) -> bool {
-        if self.image {
-            mime_type == "image/png"
-        } else {
-            mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8"
+    fn bytes_for(&self, mime_type: &str) -> Option<&[u8]> {
+        match mime_type {
+            "image/png" if self.image => Some(&self.bytes),
+            "text/plain" | "text/plain;charset=utf-8" => {
+                if self.image {
+                    self.text.as_deref()
+                } else {
+                    Some(&self.bytes)
+                }
+            }
+            _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
+    let sketch = ClipboardPayload {
+        image: true,
+        bytes: vec![137, 80, 78, 71],
+        text: Some(b"- #1 words".to_vec()),
+    };
+    assert_eq!(
+        sketch.bytes_for("image/png"),
+        Some([137, 80, 78, 71].as_slice())
+    );
+    assert_eq!(
+        sketch.bytes_for("text/plain"),
+        Some(b"- #1 words".as_slice())
+    );
+    assert_eq!(
+        sketch.bytes_for("text/plain;charset=utf-8"),
+        Some(b"- #1 words".as_slice())
+    );
+    assert_eq!(sketch.bytes_for("text/html"), None);
+    let plain = ClipboardPayload {
+        image: false,
+        bytes: b"plain".to_vec(),
+        text: None,
+    };
+    assert_eq!(plain.bytes_for("image/png"), None);
+    assert_eq!(plain.bytes_for("text/plain"), Some(b"plain".as_slice()));
+}
+
+async fn restore_sketch_clipboard(
+    output: Option<&WaylandOutput>,
+    png: &[u8],
+    text: &str,
+) -> Result<(), String> {
+    if let Some(output) = output {
+        *output
+            .current
+            .write()
+            .map_err(|_| "the clipboard lock failed")? = ClipboardPayload {
+            image: true,
+            bytes: png.to_vec(),
+            text: Some(text.as_bytes().to_vec()),
+        };
+        output
+            .clipboard
+            .set_selection(
+                &output.session,
+                SetSelectionOptions::default().set_mime_types(&[
+                    "image/png",
+                    "text/plain;charset=utf-8",
+                    "text/plain",
+                ]),
+            )
+            .await
+            .map_err(|error| format!("could not preserve the sketch clipboard: {error}"))
+    } else {
+        output::copy_image(png)
+    }
+}
+
+async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>) {
+    if let (Some(output), Some(before)) = (output, before) {
+        let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
+        while output.served.load(std::sync::atomic::Ordering::Acquire) == before
+            && Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        tokio::time::sleep(output::AFTER_IMAGE_READ).await;
+    } else {
+        tokio::time::sleep(Duration::from_millis(700)).await;
     }
 }
 
@@ -2196,8 +2320,7 @@ impl WaylandOutput {
                 let bytes = transfer_payload
                     .read()
                     .ok()
-                    .filter(|payload| payload.offers(&mime_type))
-                    .map(|payload| payload.bytes.clone());
+                    .and_then(|payload| payload.bytes_for(&mime_type).map(<[u8]>::to_vec));
                 let success = match bytes {
                     Some(bytes) => match transfer_clipboard.selection_write(&session, serial).await
                     {
@@ -2236,6 +2359,7 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard lock failed".to_string())? = ClipboardPayload {
             image: true,
             bytes: png.to_vec(),
+            text: None,
         };
         let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
@@ -2287,6 +2411,7 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard text lock failed".to_string())? = ClipboardPayload {
             image: false,
             bytes: text.as_bytes().to_vec(),
+            text: None,
         };
         let mime_types = ["text/plain;charset=utf-8", "text/plain"];
         self.clipboard

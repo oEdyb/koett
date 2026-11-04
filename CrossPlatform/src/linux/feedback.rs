@@ -45,9 +45,69 @@ pub(super) fn copy_transcript(
     clipboard: &gtk4::gdk::Clipboard,
     text: &str,
 ) -> Result<(), gtk4::glib::BoolError> {
-    use gtk4::prelude::*;
-    let content = gtk4::gdk::ContentProvider::for_value(&text.to_value());
+    let content = transcript_content(text, sketch_for(text).as_deref());
     clipboard.set_content(Some(&content))
+}
+
+type SketchCopy = Option<(String, Vec<u8>)>;
+static SKETCH_COPY: std::sync::Mutex<SketchCopy> = std::sync::Mutex::new(None);
+
+pub(super) fn remember_sketch(text: &str, png: Option<&[u8]>) {
+    *SKETCH_COPY.lock().unwrap_or_else(|e| e.into_inner()) =
+        png.map(|png| (text.to_owned(), png.to_vec()));
+}
+
+pub(super) fn sketch_for(text: &str) -> Option<Vec<u8>> {
+    SKETCH_COPY
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .filter(|(saved, _)| saved == text)
+        .map(|(_, png)| png.clone())
+}
+
+fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvider {
+    use gtk4::prelude::*;
+    let text = gtk4::gdk::ContentProvider::new_union(&[
+        gtk4::gdk::ContentProvider::for_bytes(
+            "text/plain;charset=utf-8",
+            &gtk4::glib::Bytes::from(text.as_bytes()),
+        ),
+        gtk4::gdk::ContentProvider::for_bytes(
+            "text/plain",
+            &gtk4::glib::Bytes::from(text.as_bytes()),
+        ),
+        gtk4::gdk::ContentProvider::for_value(&text.to_value()),
+    ]);
+    match png {
+        Some(png) => gtk4::gdk::ContentProvider::new_union(&[
+            gtk4::gdk::ContentProvider::for_bytes("image/png", &gtk4::glib::Bytes::from(png)),
+            text,
+        ]),
+        None => text,
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn sketch_copy_offers_image_and_text_and_plain_copy_stays_plain() {
+    use gtk4::prelude::*;
+    let content = transcript_content("- #1 (0:00) “hello”", Some(&[1, 2, 3]));
+    let formats = content.formats();
+    assert!(formats.contain_mime_type("image/png"));
+    assert!(formats.contain_mime_type("text/plain"));
+    assert!(formats.contain_mime_type("text/plain;charset=utf-8"));
+    remember_sketch("sketch", Some(&[1, 2, 3]));
+    assert_eq!(sketch_for("sketch"), Some(vec![1, 2, 3]));
+    assert_eq!(sketch_for("another transcript"), None);
+    remember_sketch("plain", None);
+    assert_eq!(sketch_for("sketch"), None);
+    assert!(formats.contains_type(String::static_type()));
+    assert!(
+        !transcript_content("plain", None)
+            .formats()
+            .contain_mime_type("image/png")
+    );
 }
 
 #[cfg(test)]

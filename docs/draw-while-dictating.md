@@ -79,6 +79,17 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   the text is pasted with the configured chord as
   `- #N (M:SS) “words”` bullets (`- #N (M:SS) marked` when nothing was said).
   Without sketches dictation is unchanged.
+- After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
+  700 ms), the clipboard offers the same sheet as `image/png` and bullets as
+  `text/plain` / `text/plain;charset=utf-8` on the portal path. Without the
+  clipboard portal, `wl-copy` leaves `image/png` selected instead: GTK cannot
+  reliably claim the clipboard automatically without a fresh focused input
+  event. Ctrl+V can reuse the sketch;
+  plain-text targets can read the bullets from the combined offer. Done and
+  Not pasted **Copy** offer both PNG and text using the button's input event;
+  Not pasted **Paste** replays image then text. The most
+  recent sketch is retained in memory until another dictation completes.
+  A failed image delivery keeps the result in Not pasted even if text succeeds.
 - History stores the bullet text, with the plain transcript as raw text. Images
   stay in memory only, like Ask's screen image; nothing is written to disk
   except the portal's own screenshot file, which Koett deletes immediately.
@@ -181,6 +192,35 @@ Same output as Linux: one numbered contact sheet, then the same
   ID in `sketchImagePasteControlV`. In a plain shell, Control-V is quoted
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
+
+## Repeat-paste repair (2026-11-04)
+
+Before the repair the clipboard was PNG during the first paste, then text only
+after the bullet paste. Done/Not pasted Copy also wrote only text, and Paste
+recovery replayed only text. The final portal offer now includes both formats without
+changing either automatic paste or its focus checks. The wl-copy fallback
+preserves the image instead; pill Copy offers both using its fresh input event.
+An unfocused GTK clipboard claim returned success but left text selected during
+the private full-app drawing test, so automatic restoration uses the existing
+portal or wl-copy backend. A combined offer is preferred where reliable so
+terminals retain usable text and image-aware targets can attach the sheet. Chrome's native contenteditable chooses the image; targets
+decide how much of a multi-format clipboard to insert.
+
+The native `sketch_clipboard_probe` example uses the production Copy helper.
+Private KWin/Chrome checks read both exact PNG bytes and exact Unicode text, and
+two Ctrl+V events each exposed a PNG file plus text. Kitty Ctrl+Shift+V received
+the exact bullets while PNG remained readable. Unit coverage checks all three
+MIME types, plain-text behavior and replacement of the in-memory sketch.
+T3 Code 0.1.2's actual composer attached the image on each Ctrl+V after removing
+the previous attachment; no message was sent. It chooses the image rather than
+inserting the offered text. [Target receipts](evidence/linux-sketch-clipboard/targets.json)
+cover the production Copy helper and real clipboard consumers; they do not claim
+a fresh microphone/drawing end-to-end run.
+
+Mac routing: `SketchPaste.swift` offers PNG/TIFF, then
+`DictationSession.swift` clears the pasteboard and sets only the string.
+Mac therefore has the same repeat-paste loss by source inspection; Swift was
+not changed or runtime-tested here.
 
 ## How this was chosen (2026-11-02)
 
