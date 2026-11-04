@@ -169,6 +169,38 @@ impl LayerShell {
     }
 }
 
+enum PillLayer {
+    Layer(LayerShell),
+    Gnome,
+}
+
+impl PillLayer {
+    fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        if super::gnome_pill::available() {
+            return Ok(Self::Gnome);
+        }
+        Ok(Self::Layer(LayerShell::load()?))
+    }
+
+    fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
+        match self {
+            Self::Layer(layer) => Ok(layer.configure(window)?),
+            Self::Gnome => super::gnome_pill::configure(window, None),
+        }
+    }
+
+    fn choose_monitor(
+        &self,
+        window: &gtk::Window,
+        monitor: Option<&gtk::gdk::Monitor>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        match self {
+            Self::Layer(layer) => Ok(layer.choose_monitor(window, monitor)?),
+            Self::Gnome => super::gnome_pill::configure(window, monitor),
+        }
+    }
+}
+
 const WIDTH: i32 = 300;
 /// Every state is exactly this tall; nothing ever grows.
 const ROW: i32 = 48;
@@ -381,7 +413,8 @@ pub struct RecordingOverlay {
     warning: gtk::Label,
     state: Rc<RefCell<Pill>>,
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
-    layer_shell: LayerShell,
+    layer_shell: PillLayer,
+    closed: Rc<std::cell::Cell<bool>>,
     layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
@@ -674,7 +707,7 @@ impl RecordingOverlay {
         latest: Rc<RefCell<Option<String>>>,
         actions: std::sync::mpsc::Sender<super::TrayAction>,
     ) -> Option<Self> {
-        let layer_shell = match LayerShell::load() {
+        let layer_shell = match PillLayer::load() {
             Ok(shell) => shell,
             Err(error) => {
                 eprintln!("Recording overlay unavailable; using in-window feedback: {error}");
@@ -694,6 +727,14 @@ impl RecordingOverlay {
             window.destroy();
             return None;
         }
+        let closed = Rc::new(std::cell::Cell::new(false));
+        window.connect_close_request({
+            let closed = closed.clone();
+            move |_| {
+                closed.set(true);
+                gtk::glib::Propagation::Proceed
+            }
+        });
         window.add_css_class("koett-pill");
         window.set_focusable(false);
         window.set_can_target(false);
@@ -858,6 +899,7 @@ impl RecordingOverlay {
             state,
             tick,
             layer_shell,
+            closed,
             layout: RefCell::new(super::monitor_layout::MonitorLayout::new()),
         })
     }
@@ -867,12 +909,14 @@ impl RecordingOverlay {
         if let Some(id) = self.tick.borrow_mut().take() {
             id.remove();
         }
-        self.window.destroy();
+        if !self.closed.replace(true) {
+            self.window.destroy();
+        }
     }
 
     /// Keeps Done and recovery up while the pointer rests on the pill.
     pub fn hovered(&self) -> bool {
-        self.state.borrow().hovered
+        !self.closed.get() && self.state.borrow().hovered
     }
 
     /// Copy or Paste on a finished pill, reported once.
@@ -901,6 +945,9 @@ impl RecordingOverlay {
         media_preview: Option<&str>,
         message: Option<&str>,
     ) {
+        if self.closed.get() {
+            return;
+        }
         if self.layout.borrow().changed() {
             let layout = super::monitor_layout::MonitorLayout::new();
             let previous = self

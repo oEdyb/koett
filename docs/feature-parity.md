@@ -11,7 +11,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Selected microphone | Yes | Yes | Engine; no full Settings UI | Native Windows input selector, stable endpoint identity |
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | No | Add Mac and Windows preview that releases capture on close/record |
 | Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
-| Pill rolling strip, timer, sketch bands | Yes | Yes | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
+| Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
 | Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | No equivalent state/recovery actions | Port persistent rescue states; never time out unsaved text |
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Empty dictation finishes quietly; silent drawings retain image delivery | Engine; runtime unverified | Linux [silence checks](linux-empty-dictation-verification.md); real microphone/model matrix remains open; add Nemotron trim only if streaming semantics allow |
@@ -24,7 +24,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Crash during active capture | No automatic recovery | No, audio in memory | Unverified; no durable capture journal found | Optional bounded crash-safe local recording journal, explicit privacy/retention; never claim current recovery covers kills |
 | Long live dictation | Synthetic long-ASR probes, not full hardware proof | Not newly verified | Not verified | 30-minute live sessions; check memory, dictionary/progress on long-path chunking |
 | Permission onboarding | Live-status first-run window | First visible launch + manual Permissions window; live keyboard/shortcuts; explicit mic/screen checks | No focused onboarding | Linux [first-launch checks and limits](linux-first-run-permissions-verification.md); real grant/revocation acceptance remains open; Windows focused status surface |
-| Login toggle / tray or menu bar | Native toggle; explicit disabled preference survives reinstall | Yes | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
+| Login toggle / tray or menu bar | Native toggle; explicit disabled preference survives reinstall | StatusNotifier tray; GNOME needs indicator provider; app/CLI alternative | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
 
 Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,EscapeKeyMonitor,MicrophoneSelection,PermissionsWindow}.swift`; `CrossPlatform/src/{windows,runtime,audio,state,history}.rs`, `linux/{recording_overlay,input_preview,output,recovery,control}.rs`; [demo limits](video-demo-checklist.md).
 
@@ -135,3 +135,7 @@ remain open.
 Every currently open Linux row and its reason is enumerated in the
 [Linux parity audit](linux-parity-open-audit.md). GNOME focus identity is a
 separate verified component; GNOME drawing/capture/pointer context remain open.
+
+Optional GNOME recording pill: [native fullscreen/remap/cancel/focus checks and
+remaining limits](linux-gnome-pill-verification.md). GNOME drawing, capture and
+pointer context remain open; a recording pill does not supply those backends.

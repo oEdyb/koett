@@ -1,0 +1,47 @@
+{
+  "base": "441c302a8bf4997145cdc9eba291bd4eb1eec028",
+  "gnome_shell": "51.1",
+  "physical_hardware": false,
+  "full_screen_editor": true,
+  "recording_cycles": 2,
+  "cancel_clicks": 2,
+  "editor_clicks": 0,
+  "editor_text": "AAAAAAA",
+  "unauthorized_registration": false,
+  "extension_disable": {
+    "pill_removed": true,
+    "recording_continued": true,
+    "cli_cancel_worked": true,
+    "keyboard_focus_preserved": true
+  },
+  "mutter_critical_or_js_error_in_final_session": false,
+  "tests": {
+    "passed": 398,
+    "ignored": 19,
+    "native_abi_subprocess": true
+  },
+  "not_tested": [
+    "physical GNOME login",
+    "lock screen",
+    "real microphone",
+    "multi-monitor/mixed DPI",
+    "GNOME drawing/capture/context",
+    "Done/recovery Copy/Paste consumption",
+    "screen reader",
+    "independent review"
+  ],
+  "missing_extension_fresh_start": {
+    "recording": true,
+    "cli_cancel": true,
+    "typing_preserved": true,
+    "pill_absent": true
+  },
+  "implementation_commit": "5530c51653aeb79ca429cf9c4225802e113be168",
+  "binary_sha256": "3678dec8c1bfe8388a78f7d353e8432f072165e464ed1f1dec5ce94c3db0cf2a",
+  "source_sha256": {
+    "CrossPlatform/src/linux/gnome_pill.rs": "b2bac1e4ca76061c6d59e9993ce32c88853129d2b6abf8762d61fa94d1cae2b6",
+    "CrossPlatform/src/linux/recording_overlay.rs": "f5f6c4bbf177cc1a0dea66db8b38886edcce9b8af8eb317f78cd42b5401f66ee",
+    "CrossPlatform/integrations/gnome/koett@olledyberg.com/extension.js": "99aeed2025a22dfbd645dec8765bd78d9f68ea1e7df255469d0bf4b776b845d2",
+    "CrossPlatform/integrations/gnome/koett@olledyberg.com/pills.js": "969b7b809408ce4203588a19eb8fc2f33b7a53a09e3eb814b9e02973a22849bf"
+  }
+}

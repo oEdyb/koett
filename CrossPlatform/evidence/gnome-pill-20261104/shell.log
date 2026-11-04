@@ -1,0 +1,149 @@
+Running as unit: run-p1545072-i5741654.scope; invocation ID: 4a109be0147643bfb8939f9c5a9b8475
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gtk.vfs.Daemon' requested by ':1.0' (uid=1000 pid=1545113 comm="gsettings set org.gnome.shell enabled-extensions [")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.gtk.vfs.Daemon'
+fusermount3: mount failed: Operation not permitted
+libmutter-Message: 22:27:42.699: Running GNOME Shell (using mutter 51.1) as a Wayland display server
+libmutter-Message: 22:27:42.773: Added device '/dev/dri/renderD128' (nvidia-drm) using no mode setting.
+libmutter-Message: 22:27:42.783: Added device '/dev/dri/renderD129' (amdgpu) using no mode setting.
+libmutter-Message: 22:27:42.783: Created gbm renderer for '/dev/dri/renderD128'
+libmutter-Message: 22:27:42.784: Created gbm renderer for '/dev/dri/renderD129'
+libmutter-Message: 22:27:42.784: Boot VGA GPU /dev/dri/renderD128 selected as primary
+** Message: 22:27:42.784: Obtained a high priority EGL context
+libmutter-Message: 22:27:42.793: Added virtual monitor Meta-0
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.a11y.Bus' requested by ':1.4' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.a11y.Bus'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+libmutter-Message: 22:27:42.799: Using Wayland display name 'wayland-gnome-sol'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+
+** (gnome-shell:1545109): WARNING **: 22:27:42.821: AT-SPI: Could not obtain desktop path or name
+
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:27:42.821: There is no colord server available
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gnome.Shell.Screencast' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.impl.portal.PermissionStore' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gnome.Shell.CalendarServer' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+/usr/lib/gnome-shell-calendar-server: error while loading shared libraries: libecal-2.0.so.3: cannot open shared object file: No such file or directory
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.gnome.Shell.CalendarServer' failed: Process org.gnome.Shell.CalendarServer exited with status 127
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+GNOME Shell-Message: 22:27:42.976: Registering session with GDM
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gnome.Shell.Notifications' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+GNOME Shell-Message: 22:27:42.981: Error loading calendars: Error calling StartServiceByName for org.gnome.Shell.CalendarServer: Process org.gnome.Shell.CalendarServer exited with status 127
+GNOME Shell-Message: 22:27:42.982: Error registering session with GDM: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.portal.Desktop' requested by ':1.7' (uid=1000 pid=1545186 comm="/usr/bin/gjs -m /usr/share/gnome-shell/org.gnome.S")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.portal.Documents' requested by ':1.10' (uid=1000 pid=1545233 comm="/usr/lib/xdg-desktop-portal")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.portal.IBus' requested by ':1.11' (uid=1000 pid=1545228 comm="ibus-daemon --panel disable")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.portal.Documents'
+fusermount3: mount failed: Operation not permitted
+error: fuse init failed: Can't mount path /run/user/1000/agent-lab/koett-gnome-sol/gnome/doc
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.portal.IBus'
+
+(/usr/lib/xdg-desktop-portal:1545233): xdg-desktop-portal-WARNING **: 22:27:43.000: Document portal fuse mount point unknown: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name :1.12 was not provided by any .service files
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.impl.portal.desktop.gtk' requested by ':1.10' (uid=1000 pid=1545233 comm="/usr/lib/xdg-desktop-portal")
+
+** (gnome-shell:1545109): WARNING **: 22:27:43.001: atk-bridge: GetRegisteredEvents returned message with unknown signature
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.gnome.Shell.Notifications'
+
+** (gnome-shell:1545109): WARNING **: 22:27:43.027: atk-bridge: get_device_events_reply: unknown signature
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gtk.vfs.Metadata' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.gtk.vfs.Metadata'
+GNOME Shell-Message: 22:27:43.050: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.gtk.vfs.UDisks2VolumeMonitor' requested by ':1.3' (uid=1000 pid=1545109 comm="gnome-shell --headless --wayland --no-x11 --virtua")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.gtk.vfs.UDisks2VolumeMonitor'
+GNOME Shell-Message: 22:27:43.108: Failed to register AuthenticationAgent
+
+(gnome-shell:1545109): GNOME Shell-WARNING **: 22:27:43.124: Missing required core component Settings, expect trouble…
+GNOME Shell-Message: 22:27:43.138: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gtk'
+
+** (xdg-desktop-portal-gtk:1545264): WARNING **: 22:27:43.181: AT-SPI: Could not obtain desktop path or name
+
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+
+** (xdg-desktop-portal-gtk:1545264): WARNING **: 22:27:43.182: atk-bridge: GetRegisteredEvents returned message with unknown signature
+
+** (xdg-desktop-portal-gtk:1545264): WARNING **: 22:27:43.182: atk-bridge: get_device_events_reply: unknown signature
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.impl.portal.desktop.gnome' requested by ':1.10' (uid=1000 pid=1545233 comm="/usr/lib/xdg-desktop-portal")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gnome'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.impl.portal.desktop.kde' requested by ':1.10' (uid=1000 pid=1545233 comm="/usr/lib/xdg-desktop-portal")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.kde'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+
+** (xdg-desktop-portal-kde:1545409): WARNING **: 22:27:43.286: AT-SPI: Could not obtain desktop path or name
+
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+
+** (xdg-desktop-portal-kde:1545409): WARNING **: 22:27:43.287: atk-bridge: GetRegisteredEvents returned message with unknown signature
+
+** (xdg-desktop-portal-kde:1545409): WARNING **: 22:27:43.287: atk-bridge: get_device_events_reply: unknown signature
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.freedesktop.portal.Desktop'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Successfully activated service 'org.gnome.Shell.Screencast'
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=1545177 comm="/usr/bin/dbus-broker-launch --config-file=/usr/sha")
+dbus-daemon[1545108]: [session uid=1000 pid=1545108 pidfd=5] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+GNOME Shell-Message: 22:27:44.166: GNOME Shell started at Wed Nov 04 2026 22:27:42 GMT+0100 (Central European Standard Time)
+GNOME Shell-Message: 22:27:44.166: Registering display with GDM
+GNOME Shell-Message: 22:27:44.167: Error registering display with GDM: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:27:59.068: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:27:59.068: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:27:59.074: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:27:59.075: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:01.230: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:01.230: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:01.232: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:01.232: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:03.720: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:03.721: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:03.722: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:03.722: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:28:03.764: Tried to ping window W4 (Koett pill c9f14bb5-9168-4797-9924-4e158ed3567e) with a bad serial! Not allowed.
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:31:59.206: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:31:59.207: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:31:59.212: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:31:59.212: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:01.698: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:01.699: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:01.700: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:01.700: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:04.020: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:04.021: (../mutter/src/wayland/meta-wayland-xdg-shell.c:984):meta_wayland_xdg_toplevel_apply_state: runtime check failed: ((!xdg_surface_priv->has_initial_config && !xdg_surface_priv->configure_sent) || (xdg_surface_priv->has_initial_config && xdg_surface_priv->configure_sent))
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:04.022: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:04.022: (../mutter/src/core/window.c:4367):meta_window_move_resize_internal: runtime check failed: (priv->is_ready)
+
+(gnome-shell:1545109): libmutter-WARNING **: 22:32:04.083: Tried to ping window W10 (Koett pill 4357ad18-8bbc-4f52-ba3e-9ef608a5ebd5) with a bad serial! Not allowed.
+** Message: 22:33:11.135: Shutting down GNOME Shell

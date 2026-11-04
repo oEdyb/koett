@@ -73,7 +73,8 @@ access alternatives are fallbacks, not full parity.
   adapter deployment, production compositor packaging, physical mixed-DPI and
   overlay/capture/paste acceptance stay open. Never infer missing coordinates.
   See [the adapter receipt](linux-niri-geometry-verification.md).
-- **GNOME drawing:** Shell-compatible overlay/input integration, recording-scoped
+- **GNOME drawing:** the optional recording pill has native fullscreen/focus/Cancel
+  checks; drawing still needs Shell-compatible overlay/input integration, recording-scoped
   gestures, pass-through, capture exclusion, cancellation and accessibility.
 - **X11 drawing:** overlay/input backend and equivalent capture/gesture gates;
   current layer-shell implementation does not provide it.
@@ -82,3 +83,7 @@ These integrations and all acceptance gaps remain open in `feature-parity.md`.
 
 For every open parity-table row and its reason, see the
 [complete Linux audit](linux-parity-open-audit.md).
+
+GNOME without an indicator extension lacks a StatusNotifierWatcher in the
+native lab. Tray/menu integration or explicit provider setup remains open;
+native app windows and the local CLI remain available.

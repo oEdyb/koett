@@ -11,8 +11,10 @@ This audit records limitations, not new acceptance evidence or OS impossibility.
 1. **Toggle / hold / configurable shortcuts** — desktop portal/compositor
    availability and physical keyboard/layout acceptance remain desktop-dependent.
 2. **Pill rolling strip, timer, sketch bands** and **Pill hover Cancel, Pause,
-   History** — layer-shell implementation exists; the equivalent GNOME/X11 pill
-   remains missing. Normal-window feedback and explicit controls are fallbacks.
+   History** — layer-shell and optional GNOME Shell pills now exist. Native GNOME
+   recording/Cancel/focus/remap checks pass; Done/recovery consumption, physical
+   session and accessibility acceptance stay open. X11 pill remains missing;
+   normal-window feedback and explicit controls are its fallback.
 3. **Silence trimming / no silence warnings** — real 110M/synthetic silence
    checks passed; physical microphone and other-model acceptance remain open.
 4. **Escape cancel** — Wayland observation requires keyboard read permission.
@@ -119,6 +121,13 @@ This audit records limitations, not new acceptance evidence or OS impossibility.
     verified, including idle upgrade/data preservation. Clean user, offline,
     update/recovery and distro/runtime packaging acceptance remain open. This
     includes source-installed CLI setup; it is not a public multi-distro release.
+
+37. **Login toggle / tray or menu bar** — the private GNOME 51 session has no
+    StatusNotifierWatcher without an indicator extension. GNOME tray/menu
+    integration or explicit indicator setup remains open; native app windows
+    and the local CLI are the existing alternative. This is a desktop-provider
+    gap, not an OS impossibility.
+
 
 ## Next implementation
 
