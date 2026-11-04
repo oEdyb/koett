@@ -903,14 +903,22 @@ fn run(
                             send_status(&updates, &status);
                             continue;
                         }
+                        let before_spelling = transcript.text.clone();
+                        transcript.text =
+                            crate::dictionary::apply(&transcript.text, dictionary.current());
+                        if transcript.text != before_spelling && transcript.raw.is_none() {
+                            transcript.raw = Some(before_spelling);
+                        }
                         if settings.formatting.enabled
                             && !transcript.text.is_empty()
                             && let Some(active) = cleaner.as_mut()
                         {
                             match active.clean(&transcript.text, settings.formatting) {
                                 Ok(text) => {
-                                    transcript.raw =
-                                        Some(std::mem::replace(&mut transcript.text, text));
+                                    let raw = std::mem::replace(&mut transcript.text, text);
+                                    if transcript.raw.is_none() {
+                                        transcript.raw = Some(raw);
+                                    }
                                 }
                                 Err(error) => {
                                     let _ = updates
@@ -921,6 +929,8 @@ fn run(
                                 }
                             }
                         }
+                        transcript.text =
+                            crate::dictionary::apply(&transcript.text, dictionary.current());
                         let _ = updates.send(EngineUpdate::TranscriptReady {
                             model: model.clone(),
                             transcript,

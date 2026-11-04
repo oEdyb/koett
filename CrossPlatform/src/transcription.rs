@@ -13,7 +13,9 @@ use crate::audio::AudioRecording;
 use crate::model::VAD_FILE;
 
 mod background;
+mod ctc_bias;
 mod hotwords;
+pub use ctc_bias::status as ctc_dictionary_bias_status;
 mod nemotron;
 mod recovery;
 pub use nemotron::NemotronTranscriber;
@@ -83,6 +85,7 @@ pub struct ParakeetTranscriber {
     model_directory: PathBuf,
     threads: i32,
     bias: Option<hotwords::Bias>,
+    ctc_bias: Option<ctc_bias::Sidecar>,
 }
 
 impl ParakeetTranscriber {
@@ -107,6 +110,11 @@ impl ParakeetTranscriber {
             model_directory: model_directory.to_path_buf(),
             threads,
             bias,
+            ctc_bias: if model_directory.join("model.int8.onnx").is_file() {
+                ctc_bias::Sidecar::new(dictionary)
+            } else {
+                None
+            },
         })
     }
 

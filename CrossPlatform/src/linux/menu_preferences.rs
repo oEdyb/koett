@@ -32,7 +32,7 @@ pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
         if command == "menu-status" {
             let settings = Settings::load()?;
             return Ok(
-                serde_json::json!({"ok":true,"busy":busy,"desired_model":settings.selected_model,"active_engine":ACTIVE.read().map_err(|e| e.to_string())?.clone(),"microphone":settings.microphone,"microphones":input_status(),"recording_mode":settings.recording_mode,"start_at_login":settings.start_at_login,"login_registered":login_registered(),"formatting":settings.formatting,"paste_shortcut":settings.paste_shortcut,"image_paste_shortcuts":settings.image_paste_shortcuts,"version":env!("CARGO_PKG_VERSION")}),
+                serde_json::json!({"ok":true,"busy":busy,"desired_model":settings.selected_model,"active_engine":ACTIVE.read().map_err(|e| e.to_string())?.clone(),"microphone":settings.microphone,"microphones":input_status(),"recording_mode":settings.recording_mode,"start_at_login":settings.start_at_login,"login_registered":login_registered(),"formatting":settings.formatting,"paste_shortcut":settings.paste_shortcut,"image_paste_shortcuts":settings.image_paste_shortcuts,"ctc_dictionary_bias":crate::transcription::ctc_dictionary_bias_status(),"version":env!("CARGO_PKG_VERSION")}),
             );
         }
         if busy {

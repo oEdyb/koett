@@ -58,6 +58,9 @@ impl ParakeetTranscriber {
             self.recognizer = Self::recognizer(&self.model_directory, self.threads, bias.as_ref())?;
         }
         self.bias = bias;
+        if self.model_directory.join("model.int8.onnx").is_file() {
+            self.ctc_bias = super::ctc_bias::Sidecar::new(dictionary);
+        }
         Ok(())
     }
 
@@ -97,6 +100,10 @@ impl ParakeetTranscriber {
                 dictionary::adopt_terms(&result.text, &text(stream)?, &bias.dictionary)
             }
         };
+        let text = match &self.ctc_bias {
+            Some(bias) => bias.refine(&text, sample_rate, samples),
+            None => text,
+        };
         Ok((text, words))
     }
 }
@@ -109,7 +116,7 @@ fn text(stream: &sherpa_onnx::OfflineStream) -> Result<String, String> {
 }
 
 /// sherpa-onnx separates per-stream hotwords with "/" and reads ":" as a score.
-fn hotwords(dictionary: &[DictionaryEntry]) -> String {
+pub(super) fn hotwords(dictionary: &[DictionaryEntry]) -> String {
     dictionary
         .iter()
         .map(|entry| entry.term.trim())
