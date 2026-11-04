@@ -2630,11 +2630,10 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the contact sheet: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("target window changed".into());
-        }
-        trace.post();
-        self.press(image_paste::for_target(target)?).await?;
+        trace.prepare_paste(target)?;
+        let chord = trace.image_chord(target)?;
+        trace.post()?;
+        self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
             && Instant::now() < deadline
@@ -2686,10 +2685,8 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("Copied · paste into your target application".into());
-        }
-        trace.post();
+        trace.prepare_paste(target)?;
+        trace.post()?;
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result

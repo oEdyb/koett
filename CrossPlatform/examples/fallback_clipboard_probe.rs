@@ -31,8 +31,13 @@ mod kwin_focus;
 mod output;
 #[cfg(target_os = "linux")]
 mod sketch {
+    pub(crate) use crate::keyboard_state as keys;
     pub(crate) use crate::kwin_context;
 }
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+#[path = "../src/linux/sketch/keys.rs"]
+pub(crate) mod keyboard_state;
 #[cfg(target_os = "linux")]
 const APP_ID: &str = "com.olledyberg.Koett";
 #[cfg(target_os = "linux")]
