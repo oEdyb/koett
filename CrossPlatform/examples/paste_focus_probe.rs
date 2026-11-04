@@ -1,6 +1,6 @@
 //! Private Wayland exercise of the production fallback delivery functions.
 #[cfg(target_os = "linux")]
-pub use koett_engine::settings;
+pub use koett_engine::{settings, shortcut};
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 #[path = "../src/linux/clipboard_owner.rs"]
