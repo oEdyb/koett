@@ -126,7 +126,9 @@ private struct Koett {
             let speechEngine = SpeechEngine.selected(arguments: Array(arguments), defaults: .standard)
             let controller = try KoettController(
                 defaults: .standard,
-                speechEngine: speechEngine
+                speechEngine: speechEngine,
+                pasteDiagnostics: PasteDiagnostics(directory: URL.applicationSupportDirectory
+                    .appendingPathComponent("Koett/Diagnostics", isDirectory: true))
             )
             let delegate = KoettDelegate(controller: controller)
             let application = NSApplication.shared

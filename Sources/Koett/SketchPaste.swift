@@ -40,11 +40,17 @@ enum SketchPaste {
         pasteboard: NSPasteboard = .general,
         postImage: () -> Bool,
         postText: () -> Bool,
+        prepareImage: () async -> Bool = { true },
+        prepareText: () async -> Bool = { true },
+        clipboardFailure: (PasteBlockReason) -> Void = { _ in },
         persist: () -> TranscriptPersistence.Outcome
     ) async throws -> TimeInterval {
         var imageGeneration: Int?
-        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: postImage,
+        let imageReady = await prepareImage()
+        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: { imageReady && postImage() },
                                       didWrite: { imageGeneration = $0 })
+        if imageGeneration == nil { clipboardFailure(.clipboardUnavailable) }
+        let textReady = imagePosted ? await prepareText() : false
         let provider = SketchTextProvider(text: text)
         var textGeneration: Int?
         var textPostedAt: ContinuousClock.Instant?
@@ -53,16 +59,23 @@ enum SketchPaste {
             result = .success(try DictationDelivery.deliver(
                 text,
                 writeToClipboard: { _ in
-                    guard pasteboard.changeCount == imageGeneration else { return false }
+                    guard pasteboard.changeCount == imageGeneration else {
+                        clipboardFailure(.clipboardChanged)
+                        return false
+                    }
                     let item = NSPasteboardItem()
-                    guard item.setDataProvider(provider, forTypes: [.string]) else { return false }
+                    guard item.setDataProvider(provider, forTypes: [.string]) else {
+                        clipboardFailure(.clipboardUnavailable)
+                        return false
+                    }
                     pasteboard.clearContents()
                     let written = pasteboard.writeObjects([item])
+                    if !written { clipboardFailure(.clipboardUnavailable) }
                     textGeneration = pasteboard.changeCount
                     return written
                 },
                 postPaste: {
-                    guard imagePosted else { return false }
+                    guard imagePosted && textReady else { return false }
                     textPostedAt = .now
                     let posted = postText()
                     if !posted { textPostedAt = nil }
@@ -83,6 +96,7 @@ enum SketchPaste {
         }
         if pasteboard.changeCount == textGeneration {
             guard SketchClipboard(text: text, png: png).write(to: pasteboard) else {
+                clipboardFailure(.clipboardUnavailable)
                 throw NSError(domain: "Koett.Sketch", code: 3, userInfo: [
                     NSLocalizedDescriptionKey: "Image and text could not be kept on the clipboard. Use Copy to retry."
                 ])

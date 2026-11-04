@@ -15,7 +15,7 @@ extension KoettController {
         let command = arguments.first ?? "status"
         func result(_ failure: ControlReply.Failure? = nil) -> ControlReply {
             .init(ok: failure == nil, phase: String(describing: state), model: speechEngine.rawValue,
-                  paused: recorder?.isPaused, error: failure)
+                  paused: recorder?.isPaused, error: failure, paste: pasteDiagnostics.latest, pasteLogError: pasteDiagnostics.writeError)
         }
         func fail(_ code: String, _ message: String) -> ControlReply {
             result(.init(code: code, message: message))

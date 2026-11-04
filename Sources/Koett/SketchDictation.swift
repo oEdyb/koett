@@ -192,6 +192,7 @@ extension KoettController {
     func deliverSketch(
         text: String,
         png: Data,
+        prepared: Bool? = nil,
         pasteboard: NSPasteboard = .general,
         persist: () -> TranscriptPersistence.Outcome = {
             TranscriptPersistence.Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
@@ -203,6 +204,12 @@ extension KoettController {
             png: png, text: text, pasteboard: pasteboard,
             postImage: { self.postPasteKey(flags: chord.flags) },
             postText: pasteAtCursor,
+            prepareImage: {
+                if let prepared { return prepared }
+                return await self.pasteCoordinator.prepare(stage: .sketchImage)
+            },
+            prepareText: { await self.pasteCoordinator.prepare(stage: .sketchText) },
+            clipboardFailure: { self.pasteCoordinator.externalFailure($0) },
             persist: persist
         )
     }
