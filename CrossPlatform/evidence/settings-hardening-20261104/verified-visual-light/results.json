@@ -1,0 +1,8 @@
+[
+  "Ctrl+F focuses named native search; exact long Unicode transcript and Copy",
+  "normal and 500px list/detail navigation and no-results recovery",
+  "close and reopen Settings under an accessibility client: model and formatting panels work, no crash",
+  "Tab from the Settings sidebar reaches the chosen page instead of walking to the last page",
+  "all Settings pages; long names/rules; Save remains reachable and exact rules persist",
+  "empty and real database-open error at normal/narrow sizes; Retry recovers"
+]
