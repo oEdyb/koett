@@ -333,14 +333,32 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+            "permissions"
+                | "permissions-status"
+                | "drawing-status"
+                | "undo-drawing"
+                | "status"
+                | "pause"
+                | "resume"
         )
     }) {
-        let response = control::request(&command)?;
+        let response = match control::request(&command) {
+            Ok(response) => response,
+            Err(_) if matches!(command.as_str(), "status" | "pause" | "resume") => {
+                println!(
+                    "{}",
+                    serde_json::json!({"ok":false,"error":{"code":"not_running","message":"Start Koett and retry"}})
+                );
+                std::process::exit(1);
+            }
+            Err(error) => return Err(error),
+        };
         println!("{response}");
-        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
-            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
-                == false
+        if matches!(
+            command.as_str(),
+            "drawing-status" | "undo-drawing" | "status" | "pause" | "resume"
+        ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+            == false
         {
             std::process::exit(1);
         }
@@ -2185,6 +2203,9 @@ impl LinuxEngine {
                 EngineUpdate::Status(status) => {
                     self.configuration_pending = false;
                     self.stop_sent = false;
+                    if let Ok(mut phase) = menu_preferences::PHASE.write() {
+                        *phase = menu_preferences::phase_name(&status);
+                    }
                     self.status = status;
                     self.capture_pending = false;
                     QUIT_BUSY.store(

@@ -72,7 +72,7 @@ pub struct AudioLevels {
 }
 
 impl AudioLevels {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
