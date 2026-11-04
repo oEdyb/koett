@@ -140,10 +140,12 @@ Same output as Linux: one numbered contact sheet, then the same
   asks for Screen Recording once.
 - One transparent, non-activating panel per screen at `.screenSaver` level,
   shown only while a dictation records. The draw key comes from `.flagsChanged`
-  global and local monitors (modifier flags only, no key events), so the
-  panels never take keyboard focus and typing keeps working. The key draws
-  only when it is the only modifier down, so Command-Shift-4 or Control-Shift-T
-  never draw. While it is held the panels take the pointer; otherwise clicks
+  global and local monitors, so the panels never take keyboard focus and typing
+  keeps working. Key-down/up codes track other held keys; typed characters are
+  never read. The draw key must first be seen released in this recording. A
+  modifier chord or another held key ends a drawing hold and blocks it until
+  the draw key is released, so dropping Control from Control-Shift cannot
+  start drawing. While it is held the panels take the pointer; otherwise clicks
   pass through. The pointer is sampled at 120 Hz while held.
 - A hold starts a sketch only after the pointer moves 3 pt, so Shift for a
   capital letter leaves no dot. The sketch's start is the sample where the
@@ -286,15 +288,26 @@ key to be the only Shift/Control/Option/Command modifier. With no modifiers it i
 false. The configured key can be Control or Option, and a shortcut conflict can
 select a different effective key; Shift is not always the active draw key.
 
-There is no fresh-down requirement: Shift already held when recording begins,
-or releasing Control while Shift remains down, can engage drawing without a new
-Shift press. macOS flags are not proof of a physical keyboard press. No Mac code
-posts Shift events. The Linux bug in PR #44 reads a grabbed virtual device through
-`EVIOCGKEY` even when its Shift never reaches the compositor. Mac does not read
-those devices and that specific cause does not apply. No draw-key behavior was
-changed by this clipboard fix; hardware phantom-Shift behavior was not reproduced.
+The audit found that a key held at recording start, or releasing Control while
+Shift remained down, could engage drawing without a new Shift press. `DrawHoldGate`
+now requires the draw key to be observed up in this recording. A chord or normal
+key press spoils the hold until the draw key is released; releasing only the
+other key cannot resume drawing. The existing 3 pt pointer threshold stays.
+
+macOS flags are not proof of a physical keyboard press. No Mac code posts Shift.
+The Linux bug in PR #44 reads a grabbed virtual device through `EVIOCGKEY` even
+when its Shift never reaches the compositor. Mac does not read those devices,
+so that specific cause does not apply. Physical phantom-Shift behavior was not
+reproduced. Gate tests cover startup holds, Control-Shift release, other modifier
+and normal-key interruptions, fresh holds and Caps Lock.
 
 AppKit contract: each copy creates a fresh
 [`NSPasteboardItem`](https://developer.apple.com/documentation/appkit/nspasteboarditem)
 with multiple representation types. Pasteboard items are not cached or reused;
 only the image bytes and text are retained for the next copy.
+
+Mac clipboard and draw-hold regression receipts live in
+[`docs/evidence/mac-sketch-clipboard`](evidence/mac-sketch-clipboard).
+The final full suite ran 396 tests with 9 intentional skips and zero failures.
+The production overlay is tested with an empty screen provider, so no panels or
+screen captures are created by the hold-transition regression.
