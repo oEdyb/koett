@@ -138,6 +138,12 @@ extension KoettController {
         )
         mediaShortcutItem.isEnabled = state == .ready
         menu.addItem(mediaShortcutItem)
+        for (title, action) in [("Transcribe Media File…", #selector(transcribeMediaFile)),
+                                ("Transcribe Media URL…", #selector(transcribeMediaURL))] {
+            let item = menuItem(title: title, action: action, selected: false)
+            item.isEnabled = state == .ready
+            menu.addItem(item)
+        }
         let resetShortcutsItem = menuItem(
             title: "Reset Shortcuts to Defaults",
             action: #selector(resetShortcuts),

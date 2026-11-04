@@ -6,6 +6,7 @@ struct BrowserMediaSource: Equatable, Sendable {
     let url: URL
 
     var platformName: String {
+        if url.isFileURL { return "Local File" }
         let host = url.host?.lowercased() ?? "Media"
         if Self.matches(host, domain: "youtu.be")
             || Self.matches(host, domain: "youtube.com") {
@@ -42,6 +43,11 @@ struct BrowserMediaSource: Equatable, Sendable {
             return nil
         }
         self.url = url
+    }
+
+    init(localFileURL: URL) {
+        precondition(localFileURL.isFileURL)
+        url = localFileURL
     }
 
     private static func matches(_ host: String, domain: String) -> Bool {
@@ -177,6 +183,29 @@ enum BrowserMedia {
                     stderr
                 )
             }
+            throw error
+        }
+    }
+
+    @concurrent
+    static func localAudio(at url: URL) async throws -> DownloadedMediaAudio {
+        guard url.isFileURL, FileManager.default.isReadableFile(atPath: url.path) else {
+            throw failure("The selected media file is unavailable.")
+        }
+        guard let ffmpeg = executable(named: "ffmpeg") else {
+            throw failure("Media support needs FFmpeg. Run: brew install ffmpeg")
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("koett-media-\(UUID())", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let audio = directory.appendingPathComponent("audio.wav")
+        do {
+            _ = try await run(executableURL: ffmpeg,
+                arguments: ["-nostdin", "-v", "error", "-i", url.path, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_f32le", audio.path],
+                timeout: 30 * 60, timeoutMessage: "The local media conversion timed out.")
+            return DownloadedMediaAudio(source: BrowserMediaSource(localFileURL: url), title: url.lastPathComponent,
+                                        audioURL: audio, temporaryDirectoryURL: directory)
+        } catch {
+            await removeTemporaryAudio(at: directory)
             throw error
         }
     }
