@@ -48,6 +48,27 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
     if !point.0.is_finite() || !point.1.is_finite() {
         return None;
     }
+    let body = format!(
+        r#"
+const windows = workspace.windowAt({{x:{}, y:{}}}, -1);
+let result = null;
+for (const w of windows) {{
+    const app = String(w.resourceClass).toLowerCase();
+    if (app === "koett" || app === "com.olledyberg.koett") continue;
+    if (w.dock || w.desktopWindow) break;
+    const r = w.bufferGeometry;
+    result = {{title:w.caption, app:String(w.resourceClass), x:r.x, y:r.y, width:r.width, height:r.height}};
+    break;
+}}
+"#,
+        point.0, point.1
+    );
+    let (_, raw) = query(&body).await?;
+    serde_json::from_str::<Option<Window>>(&raw).ok().flatten()
+}
+
+/// The result is authenticated against this KWin service incarnation.
+pub(crate) async fn query(body: &str) -> Option<(String, String)> {
     let (sender, receiver) = oneshot::channel();
     let setup = async {
         let connection = zbus::connection::Builder::session()
@@ -75,14 +96,14 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
                 "/Pin",
                 Reply {
                     sender: Mutex::new(Some(sender)),
-                    owner,
+                    owner: owner.clone(),
                 },
             )
             .await
             .ok()?;
-        Some(connection)
+        Some((connection, owner))
     };
-    let connection = tokio::time::timeout(Duration::from_millis(200), setup)
+    let (connection, owner) = tokio::time::timeout(Duration::from_millis(200), setup)
         .await
         .ok()??;
     let bus = zbus::Proxy::new(
@@ -95,6 +116,7 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
     .ok()?;
     let name = format!("koett-pin-{}", uuid::Uuid::new_v4());
     let directory = directories::BaseDirs::new()?.cache_dir().join(&name);
+    std::fs::create_dir_all(directory.parent()?).ok()?;
     std::fs::DirBuilder::new()
         .mode(0o700)
         .create(&directory)
@@ -103,20 +125,8 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
     let path = scratch.0.join("pin.js");
     let destination = serde_json::to_string(connection.unique_name()?.as_str()).ok()?;
     let script = format!(
-        r#"
-const windows = workspace.windowAt({{x:{}, y:{}}}, -1);
-let result = null;
-for (const w of windows) {{
-    const app = String(w.resourceClass).toLowerCase();
-    if (app === "koett" || app === "com.olledyberg.koett") continue;
-    if (w.dock || w.desktopWindow) break;
-    const r = w.bufferGeometry;
-    result = {{title:w.caption, app:String(w.resourceClass), x:r.x, y:r.y, width:r.width, height:r.height}};
-    break;
-}}
-callDBus({}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify(result));
-"#,
-        point.0, point.1, destination
+        r#"{body}
+callDBus({destination}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify(result));"#
     );
     std::fs::OpenOptions::new()
         .write(true)
@@ -139,8 +149,7 @@ callDBus({}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify
             .await
             .ok()?;
         runner.call::<_, _, ()>("run", &()).await.ok()?;
-        let raw = receiver.await.ok()?;
-        serde_json::from_str::<Option<Window>>(&raw).ok().flatten()
+        receiver.await.ok()
     };
     let result = tokio::time::timeout(Duration::from_millis(350), result)
         .await
@@ -151,7 +160,7 @@ callDBus({}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify
         bus.call("unloadScript", &(&name,)),
     )
     .await;
-    result
+    result.map(|raw| (owner, raw))
 }
 
 #[cfg(test)]

@@ -286,6 +286,7 @@ mod formatting_view;
 mod history_view;
 mod image_paste;
 mod input_preview;
+mod kwin_focus;
 pub(crate) mod media;
 mod media_view;
 mod menu;
@@ -320,6 +321,10 @@ pub fn run() -> Result<(), String> {
                 std::process::exit(1);
             }
         }
+        return Ok(());
+    }
+    if std::env::args().nth(1).as_deref() == Some("paste-target-status") {
+        println!("{}", control::request("paste-target-status")?);
         return Ok(());
     }
     if let Some(command) = std::env::args().nth(1).filter(|c| {
@@ -369,7 +374,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("recovery-help") {
         println!(
             "{}",
-            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Posts paste to the unchanged niri/X11 target; otherwise copies with an error. Success confirms key posting, not target consumption."})
+            serde_json::json!({"commands":["copy-last","paste-last","paste-target-status","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Posts paste to the unchanged niri/KWin/X11 target; otherwise copies with an error. Success confirms key posting, not target consumption."})
         );
         return Ok(());
     }

@@ -23,7 +23,7 @@ pub(super) mod capture;
 mod frames;
 mod gesture;
 pub mod keys;
-mod kwin_context;
+pub(super) mod kwin_context;
 mod niri_pick;
 mod pin_reader;
 pub mod sheet;

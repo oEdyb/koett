@@ -1,4 +1,4 @@
-//! Private niri exercise of the production fallback delivery functions.
+//! Private Wayland exercise of the production fallback delivery functions.
 #[cfg(target_os = "linux")]
 pub use koett_engine::settings;
 #[cfg(target_os = "linux")]
@@ -15,8 +15,20 @@ mod feedback;
 mod image_paste;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
+#[path = "../src/linux/sketch/kwin_context.rs"]
+pub(crate) mod kwin_context;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+#[path = "../src/linux/kwin_focus.rs"]
+mod kwin_focus;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
 #[path = "../src/linux/output.rs"]
 mod output;
+#[cfg(target_os = "linux")]
+mod sketch {
+    pub(crate) use crate::kwin_context;
+}
 #[cfg(target_os = "linux")]
 const APP_ID: &str = "com.olledyberg.Koett";
 #[cfg(target_os = "linux")]
@@ -29,6 +41,15 @@ fn main() {
         std::env::var("WAYLAND_DISPLAY").unwrap(),
         std::env::var("KOETT_TEST_NIRI_DISPLAY").unwrap()
     );
+    if std::env::args().any(|arg| arg == "--focus-status") {
+        let target = output::capture_target();
+        let chord = image_paste::for_target(target).ok();
+        println!(
+            "{}",
+            serde_json::json!({"target_available":target.is_some(),"image_chord":chord})
+        );
+        return;
+    }
     let png = std::fs::read(std::env::args().nth(1).unwrap()).unwrap();
     let text = "- #1 (0:00) “fallback clipboard regression”\nsecond line @AGENTS.md";
     if std::env::args().any(|arg| arg == "--clipboard-only") {

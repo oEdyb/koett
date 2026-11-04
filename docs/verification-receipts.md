@@ -48,18 +48,17 @@
 
 ### Linux host install — 2026-11-04
 
-Clean main `e4feb547c197ad7b87c3c0ee38a180b6c9150294` (#65 + #66, with the
-previous #54/#57/#61/#64 batch) is installed as a private current-PC bundle.
-Its running executable matched candidate SHA-256
-`7b30545003570ab7bc5e7ebf68c388a7f78899441778fd2f2ae55d42d8a1f645`.
+Clean main `778c9015be75df6de03b51fc249497c6c3521833` (#67/#68/#69 plus the
+previous #54/#57/#61/#64/#65/#66 batches) is installed as a private current-PC
+bundle. Its running executable matched candidate SHA-256
+`76ccf842d2b3d9ed241988ca8e3b997ef279408569f5fab4316b51a454481cd0`.
 Koett was idle, exited through guarded Quit, and was confirmed absent before
 the installer changed the launcher. All four configuration/saved-data file hashes
 were unchanged across installation and restart. Existing GTK/llama runtime and
-previous versions were retained; the transcription CLI link and help were checked.
+previous versions were retained; the transcription CLI link was updated.
 
-Clean-main release build and 382 tests passed (17 ignored, plus native ABI check).
-Preflight passed. The new background process reached busy false, retained the v2
-selection and formatting off, and exposed CTC dictionary status. No new live
-host dictation or permission-grant acceptance is claimed. PR #67 was still open
-and is not installed; first-run onboarding is also not in this installed build.
-Local install/hash receipts live under `~/.cache/koett/main-install-e4feb54/`.
+Clean-main release build and 388 tests passed (17 ignored, plus native ABI check).
+Preflight passed. The new background process reached busy false and retained
+its model selection and formatting preference. No new live host dictation or
+permission-grant acceptance is claimed. PR #70 is not installed.
+Local install/hash receipts live under `~/.cache/koett/main-install-778c901/`.

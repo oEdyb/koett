@@ -1,0 +1,50 @@
+{
+  "drawing_commands_retained": {
+    "status_ok": true,
+    "empty_undo_exit": 1
+  },
+  "identity": {
+    "app_id": "org.example.KoettPasteTarget",
+    "available": true,
+    "backend": "kwin",
+    "ok": true
+  },
+  "same_app_other_window": {
+    "response": {
+      "error": {
+        "code": "recovery_operation_failed",
+        "message": "Copied \u00b7 paste into your target application",
+        "retryable": true
+      },
+      "ok": false
+    },
+    "extra_key_posts": 0
+  },
+  "image_chord_selection": {
+    "image_chord": "ctrl_shift_v",
+    "target_available": true
+  },
+  "image_transport": "Not accepted: KWin lab lacks fallback wlr data-control; portal grants/consumption remain open",
+  "identity_roundtrip_ms": {
+    "median": 21.197093497903552,
+    "max": 22.415161001845263,
+    "samples": 20
+  },
+  "timeout": {
+    "available": false,
+    "roundtrip_ms": 217.89339400129393,
+    "fresh_after_unblock": true
+  },
+  "unavailable": {
+    "response": {
+      "error": {
+        "code": "recovery_operation_failed",
+        "message": "Copied \u00b7 paste into your target application",
+        "retryable": true
+      },
+      "ok": false
+    },
+    "extra_key_posts": 0
+  },
+  "own_window_rejected": true
+}

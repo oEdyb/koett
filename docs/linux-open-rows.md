@@ -11,8 +11,11 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
 - **Undo drawing:** recording-scoped implementation and private workflow are in
   PR #67; real capture, tray and ordinary-editor acceptance remain open.
   No global Ctrl+Z interception was added.
-- **Original paste target / per-app chord outside niri:** add trustworthy desktop
-  identity checks for Wayland desktops; preserve copy/manual paste if unavailable.
+- **Original paste target / per-app chord outside niri:** KWin identity is now
+  checked with per-window UUIDs and exact app-class rules. GNOME and other
+  compositor adapters remain open; preserve copy/manual paste when unavailable.
+  KWin portal grants/image consumption and the missing fallback clipboard
+  protocol in the private KWin lab remain explicit acceptance/backend work.
 - **Permissions:** first visible launch now opens the existing window once;
   background startup stays quiet. Actual microphone/keyboard/screenshot grants
   and denied/revoked paths still need acceptance.
@@ -45,8 +48,9 @@ a crash journal needs explicit retention/privacy behavior before implementation.
 
 ## Implementation still open before the deferred integrations
 
-Row 6 is not acceptance-only: non-niri Wayland target/app identity and active
-monitor hotplug still need code. The early-click gap while the Shift guard arms
+Row 6 is not acceptance-only: active monitor hotplug and remaining Wayland
+identity/clipboard adapters still need code. KWin identity is implemented;
+GNOME identity belongs with its deferred Shell integration. The early-click gap while the Shift guard arms
 also remains explicit. Existing copy/manual paste, next-recording monitor setup
 and documented keyboard-access alternatives are fallbacks, not full parity.
 
