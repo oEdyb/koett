@@ -66,9 +66,22 @@ pub(super) fn sketch_for(text: &str) -> Option<Vec<u8>> {
         .map(|(_, png)| png.clone())
 }
 
+/// A passive rich representation of the same sheet and literal transcript.
+pub(super) fn sketch_html(text: &str, png: &[u8]) -> String {
+    use base64::Engine as _;
+    let escaped = text
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+    format!(
+        "<p><img alt=\"Koett sketch\" src=\"data:image/png;base64,{}\"></p><pre>{escaped}</pre>",
+        base64::engine::general_purpose::STANDARD.encode(png)
+    )
+}
+
 fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvider {
     use gtk4::prelude::*;
-    let text = gtk4::gdk::ContentProvider::new_union(&[
+    let plain = gtk4::gdk::ContentProvider::new_union(&[
         gtk4::gdk::ContentProvider::for_bytes(
             "text/plain;charset=utf-8",
             &gtk4::glib::Bytes::from(text.as_bytes()),
@@ -82,9 +95,13 @@ fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvi
     match png {
         Some(png) => gtk4::gdk::ContentProvider::new_union(&[
             gtk4::gdk::ContentProvider::for_bytes("image/png", &gtk4::glib::Bytes::from(png)),
-            text,
+            gtk4::gdk::ContentProvider::for_bytes(
+                "text/html",
+                &gtk4::glib::Bytes::from(sketch_html(text, png).as_bytes()),
+            ),
+            plain,
         ]),
-        None => text,
+        None => plain,
     }
 }
 
@@ -95,8 +112,18 @@ fn sketch_copy_offers_image_and_text_and_plain_copy_stays_plain() {
     let content = transcript_content("- #1 (0:00) “hello”", Some(&[1, 2, 3]));
     let formats = content.formats();
     assert!(formats.contain_mime_type("image/png"));
+    assert!(formats.contain_mime_type("text/html"));
     assert!(formats.contain_mime_type("text/plain"));
     assert!(formats.contain_mime_type("text/plain;charset=utf-8"));
+    assert!(
+        !transcript_content("plain", None)
+            .formats()
+            .contain_mime_type("text/html")
+    );
+    assert_eq!(
+        sketch_html("- #1 <script>& “quote”\nsecond line", &[137, 80, 78, 71]),
+        "<p><img alt=\"Koett sketch\" src=\"data:image/png;base64,iVBORw==\"></p><pre>- #1 &lt;script&gt;&amp; “quote”\nsecond line</pre>"
+    );
     remember_sketch("sketch", Some(&[1, 2, 3]));
     assert_eq!(sketch_for("sketch"), Some(vec![1, 2, 3]));
     assert_eq!(sketch_for("another transcript"), None);

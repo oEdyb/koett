@@ -196,47 +196,36 @@ Same output as Linux: one numbered contact sheet, then the same
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
 
-## Repeat replay investigation — 2026-11-04
+## Passive rich repeat paste — 2026-11-04
 
-PR #48 is a draft investigation, not an approved repeat-paste fix. Its text-only
-proposal and all application changes were withdrawn: text alone loses the sketch,
-and the Done pill must keep one Copy button in its 300×48 row.
+The portal's final sketch offer and the existing Copy button now retain four
+MIME types together: PNG, HTML, plain UTF-8 text and plain text. HTML embeds the
+same PNG as a data URL followed by the escaped, unmodified transcript in a pre
+block. Image-aware targets can still select PNG; rich editors can insert both
+from HTML; terminals can select plain text. Nothing runs when a format is read.
+The existing wl-copy fallback still retains PNG only. It cannot offer several
+representations; replacing that backend is outside this change. Copy uses the
+rich offer regardless of the automatic-paste backend.
 
-A clipboard read is not a paste-accepted signal. In the private lab, a successful
-Chrome paste and a canceled trusted Ctrl+V plus a background reader produced the
-same MIME sequence, with the same focused target and clipboard ownership. The
-experimental follow-up paste inserted an unwanted image after the canceled key.
-Choosing replay order from the first format also duplicated an image: Chrome
-requested text first but inserted the image. A browser-window match did not detect
-a move to another field, where an experimental replay inserted unwanted text.
-Clipboard ownership loss was observable and a newer copy remained intact in the
-passive probe; this does not establish a race-free replay implementation.
+Private KWin tests exercised the production Copy helper's exact simultaneous
+offer in T3 Code 0.1.2, Chrome's native rich editor and kitty. T3 retained the
+image on two pastes (it still does not insert the text). Chrome inserted one
+image and exact Unicode transcript per paste, including a second paste from
+the same offer. Kitty received exact plain text. Both PNG bytes and the embedded
+PNG were checked against the private drawing fixture. These are clipboard target
+tests, not a new end-to-end automatic-dictation or Mac runtime test.
 
-The [Clipboard portal API](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Clipboard.html)
-and pinned ashpd 0.13.13 source supply a session, MIME and transfer serial, without
-a recipient paste-acceptance token. Focus, timing, ownership and one-shot deduplication
-can filter events, but cannot distinguish the successful and canceled-read cases.
-No global Ctrl+V interception, keyboard monitoring or production replay is added.
+[Combined-offer receipt](evidence/linux-sketch-clipboard/combined-offer.json) and
+[private target script](evidence/linux-sketch-clipboard/combined-offer.py).
+The fixture came from private dictation/drawing with copied models; host focus,
+clipboard, model folders and installed application were untouched.
 
-A static HTML+plain-text offer inserted both in Chrome's native editor and plain
-text in kitty; T3's current composer kept text and dropped the HTML image. A
-PNG+plain-text offer inserted only the image in T3 and Chrome, and text in kitty.
-
-Recommended next design, not implemented here: a passive rich clipboard bundle
-and recipient-side paste support in T3 to import its image and text in one real
-paste event. Chrome's rich editor can consume HTML and terminals plain text. This
-needs a multi-format owner on the wl-copy fallback and a T3 change; it is not a
-universal promise for arbitrary browser sites. It avoids sender-side typing and
-later clipboard rewrites, so clipboard-manager reads do nothing and newer copies
-keep ownership. Until supported, the existing explicit Paste recovery is the
-user-initiated paired route; ordinary Ctrl+V cannot promise both in every target.
-
-[Experiment, fixtures and rejection checks](../CrossPlatform/evidence/sketch-repeat-replay-20261104/README.md).
-Mac source at `6ed0ead` (PR #46) likewise restores a single item with PNG, TIFF
-and plain text after its automatic sequence. It therefore allows the same
-recipient choice: an image-aware target can select only the image. This is a
-source-level compatibility risk, not a Mac runtime reproduction. No Swift or
-installed host application was changed.
+Automatic image-then-text delivery, its focus guard and the single Copy button
+in the 48 px Done pill are unchanged. Request-triggered replay was rejected:
+a canceled real Ctrl+V plus background reader could trigger unwanted pasting;
+first-format inference could duplicate images. No replay or key monitor is added.
+Mac PR #46 at `6ed0ead` likewise offers image and text representations separately;
+a recipient can choose only one. Swift is unchanged and was not runtime-tested.
 
 ## Repeat-paste repair (2026-11-04)
 

@@ -2156,12 +2156,14 @@ struct ClipboardPayload {
     image: bool,
     bytes: Vec<u8>,
     text: Option<Vec<u8>>,
+    html: Option<Vec<u8>>,
 }
 
 impl ClipboardPayload {
     fn bytes_for(&self, mime_type: &str) -> Option<&[u8]> {
         match mime_type {
             "image/png" if self.image => Some(&self.bytes),
+            "text/html" if self.image => self.html.as_deref(),
             "text/plain" | "text/plain;charset=utf-8" => {
                 if self.image {
                     self.text.as_deref()
@@ -2181,6 +2183,7 @@ fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
         image: true,
         bytes: vec![137, 80, 78, 71],
         text: Some(b"- #1 words".to_vec()),
+        html: Some(feedback::sketch_html("- #1 words", &[137, 80, 78, 71]).into_bytes()),
     };
     assert_eq!(
         sketch.bytes_for("image/png"),
@@ -2194,13 +2197,18 @@ fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
         sketch.bytes_for("text/plain;charset=utf-8"),
         Some(b"- #1 words".as_slice())
     );
-    assert_eq!(sketch.bytes_for("text/html"), None);
+    assert_eq!(
+        sketch.bytes_for("text/html"),
+        Some(feedback::sketch_html("- #1 words", &[137, 80, 78, 71]).as_bytes())
+    );
     let plain = ClipboardPayload {
         image: false,
         bytes: b"plain".to_vec(),
         text: None,
+        html: None,
     };
     assert_eq!(plain.bytes_for("image/png"), None);
+    assert_eq!(plain.bytes_for("text/html"), None);
     assert_eq!(plain.bytes_for("text/plain"), Some(b"plain".as_slice()));
 }
 
@@ -2217,6 +2225,7 @@ async fn restore_sketch_clipboard(
             image: true,
             bytes: png.to_vec(),
             text: Some(text.as_bytes().to_vec()),
+            html: Some(feedback::sketch_html(text, png).into_bytes()),
         };
         output
             .clipboard
@@ -2224,6 +2233,7 @@ async fn restore_sketch_clipboard(
                 &output.session,
                 SetSelectionOptions::default().set_mime_types(&[
                     "image/png",
+                    "text/html",
                     "text/plain;charset=utf-8",
                     "text/plain",
                 ]),
@@ -2362,6 +2372,7 @@ impl WaylandOutput {
             image: true,
             bytes: png.to_vec(),
             text: None,
+            html: None,
         };
         let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
@@ -2414,6 +2425,7 @@ impl WaylandOutput {
             image: false,
             bytes: text.as_bytes().to_vec(),
             text: None,
+            html: None,
         };
         let mime_types = ["text/plain;charset=utf-8", "text/plain"];
         self.clipboard
