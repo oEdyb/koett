@@ -912,10 +912,14 @@ impl RecordingOverlay {
         warning.add_css_class("koett-feedback");
         warning.set_visible(false);
         layout.append(&warning);
-        window.set_child(Some(&layout));
+        // Fading this parent hides the pill during a drag and leaves the live copy of
+        // `layout` intact; GTK ignores opacity on the window itself.
+        let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        shell.append(&layout);
+        window.set_child(Some(&shell));
         if let PillLayer::Layer(layer) = &layer_shell {
             position::apply(&window, layer);
-            position::attach(&window, &layout, layer.clone());
+            position::attach(&window, &shell, &layout, layer.clone());
         }
         Some(Self {
             window,

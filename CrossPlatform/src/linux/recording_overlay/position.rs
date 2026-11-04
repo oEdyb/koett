@@ -8,6 +8,10 @@ struct Position {
 }
 
 const DRAG_THRESHOLD: f64 = 4.0;
+/// Invisible, yet not 0: a window with nothing to draw gets no render node, so GTK
+/// skips the frame and the compositor keeps showing the old pill.
+const HIDDEN: f64 = 1.0 / 255.0;
+const CARRIER_LINGER: std::time::Duration = std::time::Duration::from_millis(120);
 
 fn file() -> Option<std::path::PathBuf> {
     Some(
@@ -169,6 +173,15 @@ fn button_at(widget: &gtk::Widget, x: f64, y: f64) -> bool {
     false
 }
 
+fn target_monitor(window: &gtk::Window, pointer: (f64, f64)) -> Option<gtk::gdk::Monitor> {
+    let outputs = monitors(window);
+    let rects: Vec<Rect> = outputs
+        .iter()
+        .map(|monitor| Rect::from(monitor.geometry()))
+        .collect();
+    outputs.into_iter().nth(monitor_under(&rects, pointer)?)
+}
+
 fn current_monitor(window: &gtk::Window) -> Option<gtk::gdk::Monitor> {
     window
         .surface()
@@ -189,54 +202,85 @@ fn current_margins(window: &gtk::Window, monitor: &gtk::gdk::Monitor) -> (i32, i
     }
 }
 
-/// niri (measured) and sway (`seatop_down`) keep the surface origin of the press
-/// for the whole implicit grab, so an offset is the pointer's distance from the
-/// press however far the pill has moved. Others, such as KWin, report against the
-/// surface's current position, so an offset is added to the position the
-/// compositor has confirmed. Adding it to the last request would compound, and
-/// using the wrong model throws the pill away from the pointer.
-fn grab_freezes_origin() -> bool {
-    std::env::var_os("NIRI_SOCKET").is_some() || std::env::var_os("SWAYSOCK").is_some()
-}
-
-/// Margins an offset asks for.
-fn wanted(frozen: bool, start: (i32, i32), applied: (i32, i32), offset: (f64, f64)) -> (f64, f64) {
-    let base = if frozen { start } else { applied };
-    (f64::from(base.0) + offset.0, f64::from(base.1) + offset.1)
+/// Shows the live copy at `margins` on `monitor`. Layer windows take no focus, and
+/// this one takes no input either, so the grab stays with the real pill.
+fn carry(
+    carrier: &mut Option<gtk::Window>,
+    window: &gtk::Window,
+    shell: &gtk::Box,
+    body: &gtk::Box,
+    layer: &LayerShell,
+    monitor: &gtk::gdk::Monitor,
+    margins: (i32, i32),
+) {
+    if carrier.is_none() {
+        let copy = gtk::Window::builder()
+            .title("Koett recording")
+            .decorated(false)
+            .resizable(false)
+            .default_width(window.width())
+            .default_height(window.height())
+            .build();
+        if let Some(application) = window.application() {
+            copy.set_application(Some(&application));
+        }
+        if let Err(error) = layer.configure(&copy) {
+            eprintln!("Pill copy failed: {error}");
+            copy.destroy();
+            return;
+        }
+        copy.set_css_classes(
+            &window
+                .css_classes()
+                .iter()
+                .map(|class| class.as_str())
+                .collect::<Vec<_>>(),
+        );
+        copy.set_focusable(false);
+        copy.set_can_target(false);
+        let picture = gtk::Picture::for_paintable(&gtk::WidgetPaintable::new(Some(body)));
+        picture.set_can_shrink(false);
+        copy.set_child(Some(&picture));
+        // Hide the real pill only once the copy is up, so it never blinks away.
+        copy.connect_map({
+            let shell = shell.clone();
+            move |_| shell.set_opacity(HIDDEN)
+        });
+        *carrier = Some(copy);
+    }
+    if let Some(copy) = carrier {
+        if let Err(error) = layer.position(copy, monitor, margins.0, margins.1) {
+            eprintln!("Pill copy move failed: {error}");
+        }
+        copy.present();
+    }
 }
 
 /// A press that has moved far enough to be a drag rather than a click.
 struct Drag {
     monitor: gtk::gdk::Monitor,
-    /// Margins when the drag began.
+    /// Margins the real pill keeps for the whole drag.
     start: (i32, i32),
-    /// Margins the compositor has confirmed. Pointer events are relative to this.
-    applied: (i32, i32),
-    /// Margins sent in the last painted frame, confirmed by the next frame.
-    committed: (i32, i32),
-    /// Margins most recently asked for.
-    requested: (i32, i32),
     /// Pill's unclamped top-left in global layout coordinates.
     global: (f64, f64),
+    /// Live copy of the pill that follows the pointer.
+    carrier: Option<gtk::Window>,
 }
 
-impl Drag {
-    /// GDK holds the next frame until the compositor's frame callback, which it
-    /// sends after applying the previous commit, so each frame confirms the last.
-    fn next_frame(&mut self) {
-        self.applied = self.committed;
-        self.committed = self.requested;
-    }
-}
-
-/// Press-and-drag moves the real layer surface by updating its margins. The
-/// press's implicit pointer grab keeps events coming even outside the surface.
-/// What an offset means depends on the compositor; see `grab_freezes_origin`.
-/// Nothing here takes the
-/// keyboard, offers data or opens another window, so focus, the clipboard and
-/// the recording are untouched. A layer surface can't change output without a
-/// remap, which would end the grab, so the switch happens on release.
-pub(super) fn attach(window: &gtk::Window, body: &gtk::Box, layer: Rc<LayerShell>) {
+/// The press's implicit grab keeps events coming from the real pill wherever the
+/// pointer goes. Moving that surface would change what the events measure, and
+/// compositors differ: niri keeps the press's origin, KWin follows the surface a
+/// variable time later. So the real pill stays put and invisible, its offsets stay
+/// exact everywhere, and a live copy that takes no input follows the pointer onto
+/// any monitor. A remap would also end the grab, so the real pill moves on release.
+/// Nothing here takes the keyboard or offers data, so focus, the clipboard and the
+/// recording are untouched.
+pub(super) fn attach(
+    window: &gtk::Window,
+    shell: &gtk::Box,
+    body: &gtk::Box,
+    layer: Rc<LayerShell>,
+) {
     let press = Rc::new(std::cell::Cell::new((0.0, 0.0)));
     let drag = Rc::new(RefCell::new(None::<Drag>));
     let gesture = gtk::GestureDrag::new();
@@ -256,8 +300,9 @@ pub(super) fn attach(window: &gtk::Window, body: &gtk::Box, layer: Rc<LayerShell
         let window = window.clone();
         let body = body.clone();
         let layer = layer.clone();
+        let press = press.clone();
+        let shell = shell.clone();
         let state = drag.clone();
-        let frozen = grab_freezes_origin();
         move |gesture, dx, dy| {
             let mut drag = state.borrow_mut();
             if drag.is_none() {
@@ -276,44 +321,46 @@ pub(super) fn attach(window: &gtk::Window, body: &gtk::Box, layer: Rc<LayerShell
                     ),
                     monitor,
                     start: margins,
-                    applied: margins,
-                    committed: margins,
-                    requested: margins,
+                    carrier: None,
                 });
                 DRAGGING.with(|dragging| dragging.set(true));
                 gesture.set_state(gtk::EventSequenceState::Claimed);
                 body.set_cursor_from_name(Some("grabbing"));
-                body.add_tick_callback({
-                    let state = state.clone();
-                    move |_, _| match state.borrow_mut().as_mut() {
-                        Some(drag) => {
-                            drag.next_frame();
-                            gtk::glib::ControlFlow::Continue
-                        }
-                        None => gtk::glib::ControlFlow::Break,
-                    }
-                });
-                if let Err(error) = layer.margins(&window, margins.0, margins.1) {
-                    eprintln!("Pill move failed: {error}");
-                }
             }
             let Some(drag) = drag.as_mut() else {
                 return;
             };
-            let rect = Rect::from(drag.monitor.geometry());
-            let wanted = wanted(frozen, drag.start, drag.applied, (dx, dy));
-            drag.global = (f64::from(rect.x) + wanted.0, f64::from(rect.y) + wanted.1);
-            let margins = clamped(rect, size_on(&window, rect), wanted);
-            if margins != drag.requested {
-                drag.requested = margins;
-                if let Err(error) = layer.margins(&window, margins.0, margins.1) {
-                    eprintln!("Pill move failed: {error}");
-                }
-            }
+            let origin = Rect::from(drag.monitor.geometry());
+            drag.global = (
+                f64::from(origin.x + drag.start.0) + dx,
+                f64::from(origin.y + drag.start.1) + dy,
+            );
+            let (px, py) = press.get();
+            let pointer = (drag.global.0 + px, drag.global.1 + py);
+            let target = target_monitor(&window, pointer).unwrap_or_else(|| drag.monitor.clone());
+            let rect = Rect::from(target.geometry());
+            let margins = clamped(
+                rect,
+                size_on(&window, rect),
+                (
+                    drag.global.0 - f64::from(rect.x),
+                    drag.global.1 - f64::from(rect.y),
+                ),
+            );
+            carry(
+                &mut drag.carrier,
+                &window,
+                &shell,
+                &body,
+                &layer,
+                &target,
+                margins,
+            );
         }
     });
     let finish = {
         let window = window.clone();
+        let shell = shell.clone();
         let body = body.clone();
         let layer = layer.clone();
         let press = press.clone();
@@ -324,31 +371,19 @@ pub(super) fn attach(window: &gtk::Window, body: &gtk::Box, layer: Rc<LayerShell
             };
             DRAGGING.with(|dragging| dragging.set(false));
             body.set_cursor_from_name(None);
-            let outputs = monitors(&window);
-            let rects: Vec<Rect> = outputs
-                .iter()
-                .map(|monitor| Rect::from(monitor.geometry()))
-                .collect();
             let (px, py) = press.get();
             let pointer = (drag.global.0 + px, drag.global.1 + py);
-            let target = monitor_under(&rects, pointer)
-                .and_then(|index| outputs.get(index).cloned())
-                .filter(gtk::gdk::Monitor::is_valid)
-                .unwrap_or_else(|| drag.monitor.clone());
+            let target = target_monitor(&window, pointer).unwrap_or_else(|| drag.monitor.clone());
             let rect = Rect::from(target.geometry());
             let size = size_on(&window, rect);
-            let margins = if target == drag.monitor {
-                drag.requested
-            } else {
-                clamped(
-                    rect,
-                    size,
-                    (
-                        drag.global.0 - f64::from(rect.x),
-                        drag.global.1 - f64::from(rect.y),
-                    ),
-                )
-            };
+            let margins = clamped(
+                rect,
+                size,
+                (
+                    drag.global.0 - f64::from(rect.x),
+                    drag.global.1 - f64::from(rect.y),
+                ),
+            );
             let position = position_for(
                 target.connector().map(|v| v.to_string()),
                 rect,
@@ -357,6 +392,11 @@ pub(super) fn attach(window: &gtk::Window, body: &gtk::Box, layer: Rc<LayerShell
             );
             save(&position);
             place(&window, &layer, &position);
+            shell.set_opacity(1.0);
+            // Hold the copy over the real pill's remap so it doesn't blink.
+            if let Some(copy) = drag.carrier {
+                gtk::glib::timeout_add_local_once(CARRIER_LINGER, move || copy.destroy());
+            }
         }
     };
     gesture.connect_drag_end({
@@ -437,20 +477,6 @@ mod tests {
         assert_eq!(
             clamped(SECOND, (300, 48), (2400.0 - 1920.0, 480.0)),
             (480, 480)
-        );
-    }
-
-    #[test]
-    fn a_frozen_grab_measures_from_the_press_and_a_live_one_from_the_surface() {
-        // niri trace: pill started at 490, has reached 655, pointer is 30 from the press.
-        assert_eq!(
-            wanted(true, (490, 728), (655, 508), (30.0, -40.0)),
-            (520.0, 688.0)
-        );
-        // Live origin: the same pointer position reports as 0 once the move landed.
-        assert_eq!(
-            wanted(false, (490, 728), (520, 688), (0.0, 0.0)),
-            (520.0, 688.0)
         );
     }
 
