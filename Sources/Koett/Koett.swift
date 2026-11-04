@@ -80,6 +80,7 @@ final class KoettController: NSObject {
                     activeDictationID = nil
                     automaticPasteTarget = nil
                 }
+                microphonePreview?.refresh()
                 refreshEscapeMonitor()
                 refreshCaptureWatch()
             }
@@ -97,6 +98,7 @@ final class KoettController: NSObject {
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
     let defaultMicrophoneID: @MainActor () throws -> AudioDeviceID
+    var microphonePreview: MicrophonePreviewWindow?
     var microphoneMonitor: MicrophoneAvailabilityMonitor?
     var recorder: MicrophoneRecorder?
     var recordingURL: URL?

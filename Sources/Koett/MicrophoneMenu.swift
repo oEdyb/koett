@@ -15,6 +15,9 @@ extension KoettController {
         let system = menuItem(title: "System Default", action: #selector(selectMicrophone(_:)), selected: microphoneSelection.uid == nil)
         system.isEnabled = state == .ready
         menu.addItem(system)
+        let preview = menuItem(title: "Input Level…", action: #selector(showMicrophonePreview), selected: false)
+        preview.isEnabled = state == .ready
+        menu.addItem(preview)
         menu.addItem(.separator())
         do {
             let devices = try availableMicrophones()
@@ -46,6 +49,7 @@ extension KoettController {
         microphoneSelection.uid = sender.representedObject as? String
         microphoneSelection.save(to: microphoneDefaults)
         refreshMicrophoneAvailability()
+        microphonePreview?.refresh()
     }
 
     func selectedMicrophone() throws -> MicrophoneDevice {
