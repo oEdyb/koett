@@ -59,11 +59,15 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.get(1).unwrap().clone();
     let expected = args[2].parse::<u32>().unwrap();
-    if mode == "plain" {
+    if mode == "plain" || mode == "terminal" {
         let result = output::deliver(
             "Koett focus regression",
             Some(expected),
-            settings::PasteShortcut::CtrlV,
+            if mode == "terminal" {
+                settings::PasteShortcut::CtrlShiftV
+            } else {
+                settings::PasteShortcut::CtrlV
+            },
         );
         println!(
             "{}",

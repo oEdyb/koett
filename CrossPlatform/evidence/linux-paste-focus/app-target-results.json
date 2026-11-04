@@ -1,0 +1,12 @@
+{
+  "chrome": {
+    "inserted_once": true,
+    "paste_events": 1,
+    "native_key": 47
+  },
+  "kitty": {
+    "inserted_once": true,
+    "shortcut": "Ctrl+Shift+V",
+    "bytes": 22
+  }
+}

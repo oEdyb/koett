@@ -109,9 +109,7 @@ pub(super) fn keyboard_layout_group() -> Option<u32> {
         .and_then(|index| u32::try_from(index).ok())
 }
 fn underlying_window() -> Option<u32> {
-    if std::env::var_os("NIRI_SOCKET").is_none() {
-        return None;
-    }
+    std::env::var_os("NIRI_SOCKET")?;
     workspace_target(&niri_json("workspaces")?)
 }
 pub fn focused_identity() -> Option<(u32, String)> {
@@ -252,6 +250,15 @@ struct Sample {
     focused: Option<u32>,
     own_window: bool,
     modifiers: Option<u8>,
+}
+fn post_refusal(expected: Option<u32>, sample: Sample) -> Option<&'static str> {
+    if sample.own_window || expected.is_none() || sample.focused != expected {
+        Some("focus_changed_before_post")
+    } else if sample.modifiers.is_some_and(|mask| mask != 0) {
+        Some("modifiers_held_before_post")
+    } else {
+        None
+    }
 }
 #[derive(Debug, PartialEq, Eq)]
 enum Decision {
@@ -424,19 +431,24 @@ impl DeliveryStep {
         }
     }
     pub fn image_chord(&mut self, target: Option<u32>) -> Result<PasteShortcut, String> {
-        super::image_paste::for_target(target).map_err(|error| {
+        super::image_paste::for_target(target).inspect_err(|_| {
             self.reason = "image_chord_focus";
             self.outcome = "refused";
-            error
         })
     }
     pub fn post(&mut self) -> Result<(), String> {
         self.observed = focused_window();
-        if (WINDOW_ACTIVE.load(Ordering::Acquire) || own_layer_active())
-            || self.expected.is_none()
-            || self.observed != self.expected
-        {
-            self.reason = "focus_changed_before_post";
+        self.modifiers = super::sketch::keys::Keyboards::open()
+            .ok()
+            .as_mut()
+            .and_then(modifier_mask);
+        let sample = Sample {
+            focused: self.observed,
+            own_window: WINDOW_ACTIVE.load(Ordering::Acquire) || own_layer_active(),
+            modifiers: self.modifiers,
+        };
+        if let Some(reason) = post_refusal(self.expected, sample) {
+            self.reason = reason;
             self.outcome = "refused";
             self.log("guard_refused");
             return Err("Not pasted · saved. Use Paste or Copy".into());
@@ -549,6 +561,21 @@ mod target_tests {
             focused: id,
             own_window: false,
             modifiers,
+        }
+    }
+    #[test]
+    fn focus_and_modifiers_are_checked_again_after_keyboard_setup() {
+        assert_eq!(post_refusal(Some(42), sample(Some(42), Some(0))), None);
+        assert_eq!(post_refusal(Some(42), sample(Some(42), None)), None);
+        assert_eq!(
+            post_refusal(Some(42), sample(Some(43), Some(0))),
+            Some("focus_changed_before_post")
+        );
+        for mask in [1, 2, 4, 8] {
+            assert_eq!(
+                post_refusal(Some(42), sample(Some(42), Some(mask))),
+                Some("modifiers_held_before_post")
+            );
         }
     }
     #[test]

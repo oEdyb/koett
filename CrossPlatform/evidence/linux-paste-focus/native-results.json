@@ -1,0 +1,47 @@
+{
+  "plain": [
+    {
+      "error": null,
+      "ok": true
+    }
+  ],
+  "overlay_release": [
+    {
+      "captured": 18,
+      "expected": 18,
+      "focused_missing": true,
+      "overlay_active": true
+    },
+    {
+      "elapsed_ms": 339,
+      "error": null,
+      "ok": true
+    }
+  ],
+  "overlay_held": [
+    {
+      "captured": 18,
+      "expected": 18,
+      "focused_missing": true,
+      "overlay_active": true
+    },
+    {
+      "elapsed_ms": 1113,
+      "error": "Not pasted \u00b7 saved. Use Paste or Copy",
+      "ok": false
+    }
+  ],
+  "focus_changed": [
+    {
+      "error": "Not pasted \u00b7 saved. Use Paste or Copy",
+      "ok": false
+    }
+  ],
+  "explicit_recovery": [
+    {
+      "error": null,
+      "ok": true
+    }
+  ],
+  "contents_logged": false
+}

@@ -72,10 +72,10 @@ impl Dispatch<wl_keyboard::WlKeyboard, ()> for State {
             fd,
             size,
         } = event
+            && size > 0
+            && size <= 4 * 1024 * 1024
         {
-            if size > 0 && size <= 4 * 1024 * 1024 {
-                state.keymap = Some((File::from(fd), size));
-            }
+            state.keymap = Some((File::from(fd), size));
         }
     }
 }
