@@ -212,12 +212,18 @@ impl Dispatch<source::ZwlrDataControlSourceV1, ()> for State {
             source::Event::Send { mime_type, fd } => {
                 if let Some((_, data)) = state.payload.0.iter().find(|(mime, _)| *mime == mime_type)
                 {
+                    eprintln!(
+                        "clipboard_owner event=read mime={} bytes={}",
+                        mime_type,
+                        data.len()
+                    );
                     let data = data.clone();
                     let alive = state.owned.clone();
                     thread::spawn(move || {
                         use std::os::fd::AsRawFd;
                         let mut file = File::from(fd);
                         let raw = file.as_raw_fd();
+                        // SAFETY: raw belongs to this live File; F_SETFL changes only its flags.
                         unsafe {
                             libc::fcntl(raw, libc::F_SETFL, libc::O_NONBLOCK);
                         }
@@ -236,6 +242,7 @@ impl Dispatch<source::ZwlrDataControlSourceV1, ()> for State {
                                         events: libc::POLLOUT,
                                         revents: 0,
                                     };
+                                    // SAFETY: poll points to one initialized pollfd with a live fd.
                                     unsafe {
                                         libc::poll(&mut poll, 1, 50);
                                     }
@@ -310,6 +317,7 @@ fn serve(requests: mpsc::Receiver<Request>, stop: Arc<AtomicBool>) -> Result<(),
                 events: libc::POLLIN,
                 revents: 0,
             };
+            // SAFETY: one initialized pollfd; the connection outlives the read guard.
             if unsafe { libc::poll(&mut poll, 1, 25) } > 0 {
                 read.read().map_err(|e| e.to_string())?;
             }
@@ -317,4 +325,93 @@ fn serve(requests: mpsc::Receiver<Request>, stop: Arc<AtomicBool>) -> Result<(),
     }
     owned.store(false, Ordering::Release);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::{Command, Stdio};
+    const TEXT: &str = "- #1 <literal> & “Unicode”\nsecond line";
+    #[test]
+    fn bundle_keeps_each_representation_and_escapes_only_html() {
+        let payload = Payload::bundle(&[137, 80, 78, 71], TEXT);
+        assert_eq!(payload.0.len(), 4);
+        assert_eq!(payload.0[0].1, [137, 80, 78, 71]);
+        let html = String::from_utf8(payload.0[1].1.clone()).unwrap();
+        assert!(html.contains("data:image/png;base64,iVBORw=="));
+        assert!(html.contains("&lt;literal&gt; &amp; “Unicode”\nsecond line"));
+        for (_, bytes) in &payload.0[2..] {
+            assert_eq!(bytes, TEXT.as_bytes());
+        }
+    }
+    fn read(mime: &str) -> Vec<u8> {
+        let result = Command::new("wl-paste")
+            .args(["--no-newline", "--type", mime])
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "read failed: {mime}");
+        result.stdout
+    }
+    #[test]
+    #[ignore = "requires an owned agent-lab nested niri; never run on the host clipboard"]
+    fn niri_owner_keeps_bundle_yields_to_new_copies_and_stops() {
+        assert!(
+            std::env::var("AGENT_LAB_RUNTIME")
+                .unwrap()
+                .contains("/agent-lab/")
+        );
+        assert_eq!(
+            std::env::var("WAYLAND_DISPLAY").unwrap(),
+            std::env::var("KOETT_TEST_NIRI_DISPLAY").unwrap()
+        );
+        assert!(std::env::var_os("NIRI_SOCKET").is_some());
+        let fixture = std::fs::read(std::env::var("KOETT_TEST_PNG").unwrap()).unwrap();
+        assert!(super::super::output::deliver_image(&fixture, None).is_err());
+        for _ in 0..3 {
+            assert_eq!(read("image/png"), fixture);
+        }
+        assert!(
+            super::super::output::deliver_sketch_text(
+                TEXT,
+                None,
+                crate::settings::PasteShortcut::CtrlV
+            )
+            .is_err()
+        );
+        assert_eq!(read("text/plain"), TEXT.as_bytes());
+        replace(Payload::bundle(&fixture, TEXT)).unwrap();
+        for _ in 0..3 {
+            assert_eq!(read("image/png"), fixture);
+            assert_eq!(read("text/plain"), TEXT.as_bytes());
+            assert_eq!(
+                read("text/html"),
+                super::super::feedback::sketch_html(TEXT, &fixture).as_bytes()
+            );
+        }
+        let mut newer = Command::new("wl-copy")
+            .args(["--type", "text/plain"])
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        newer
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(b"newer copy wins")
+            .unwrap();
+        assert!(newer.wait().unwrap().success());
+        assert!(replace(Payload::bundle(&fixture, TEXT)).is_err());
+        assert_eq!(read("text/plain"), b"newer copy wins");
+        stop();
+        assert_eq!(read("text/plain"), b"newer copy wins");
+        start(Payload::bundle(&fixture, TEXT)).unwrap();
+        assert_eq!(read("image/png"), fixture);
+        stop();
+        assert!(OWNER.lock().unwrap().is_none());
+        let listing = Command::new("wl-paste")
+            .arg("--list-types")
+            .output()
+            .unwrap();
+        assert!(!String::from_utf8_lossy(&listing.stdout).contains("image/png"));
+    }
 }

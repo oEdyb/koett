@@ -151,31 +151,6 @@ pub fn target_unchanged(target: Option<u32>) -> bool {
     }
 }
 
-#[cfg(test)]
-mod target_tests {
-    use super::*;
-
-    #[test]
-    fn a_desktop_without_a_focus_check_has_no_paste_target() {
-        assert_eq!(target_on_wayland(false, || Some(7)), None);
-    }
-
-    #[test]
-    fn niri_targets_the_focused_window() {
-        assert_eq!(target_on_wayland(true, || Some(7)), Some(7));
-    }
-
-    #[test]
-    fn no_target_means_clipboard_only() {
-        assert!(!target_unchanged(None));
-    }
-
-    #[test]
-    fn pressing_paste_skips_the_target_check() {
-        assert!(target_unchanged(Some(PASTE_NOW)));
-    }
-}
-
 /// Payload-free diagnostics: a post is logged once immediately before a paste key.
 pub(super) struct DeliveryStep {
     id: u64,
@@ -192,7 +167,7 @@ impl DeliveryStep {
             kind,
             backend,
             bytes,
-            outcome: "aborted",
+            outcome: "pending",
         };
         value.log("begin");
         value
@@ -218,6 +193,34 @@ impl DeliveryStep {
 }
 impl Drop for DeliveryStep {
     fn drop(&mut self) {
+        if self.outcome == "pending" {
+            self.outcome = "aborted";
+        }
         self.log("end");
+    }
+}
+
+#[cfg(test)]
+mod target_tests {
+    use super::*;
+
+    #[test]
+    fn a_desktop_without_a_focus_check_has_no_paste_target() {
+        assert_eq!(target_on_wayland(false, || Some(7)), None);
+    }
+
+    #[test]
+    fn niri_targets_the_focused_window() {
+        assert_eq!(target_on_wayland(true, || Some(7)), Some(7));
+    }
+
+    #[test]
+    fn no_target_means_clipboard_only() {
+        assert!(!target_unchanged(None));
+    }
+
+    #[test]
+    fn pressing_paste_skips_the_target_check() {
+        assert!(target_unchanged(Some(PASTE_NOW)));
     }
 }

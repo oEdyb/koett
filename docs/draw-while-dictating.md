@@ -196,6 +196,45 @@ Same output as Linux: one numbered contact sheet, then the same
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
 
+## niri fallback ownership repair — 2026-11-04
+
+The host advertises RemoteDesktop AvailableDeviceTypes=0 with its configured
+GNOME portal backend under niri. Koett checks for keyboard support before opening
+a session and therefore intentionally selects wtype. ScreenCast support does not
+imply RemoteDesktop keyboard support. The fallback must preserve the same clipboard
+bundle as the portal path; PNG-only wl-copy after automatic sketch paste was a bug.
+
+The sketch fallback now owns the regular clipboard through niri's
+zwlr_data_control_manager_v1. One in-process worker transitions image → text →
+PNG+HTML+plain-text bundle. It drains cancellation before changing an existing
+offer, stops when replaced, never retries a lost claim, and does not clear an
+external selection on shutdown. The controller stops the worker on exit. There
+is no helper process or temporary image file. Plain dictations still use their
+existing wl-copy text path. Explicit recovery Copy can start a fresh bundle.
+
+Delivery logs include PID, step ID, image/text/offer kind, backend, attempt=1,
+byte count, and begin/paste_post/end events. Clipboard reads log MIME and byte
+count only. No transcript is logged. No text delivery retry loop was found:
+automatic completion posts image once and text once, restores the offer without
+keys, then persists. Recovery Paste is a separate explicit operation. ASR
+recovery and history failures do not replay a completed clipboard delivery.
+
+The ignored native niri regression exercises the actual fallback image/text
+functions with an absent target (clipboard changes, paste guard refuses keys),
+then the full bundle, repeated exact reads, newer-copy preservation and shutdown.
+The private consumer probe exercises the same owner and final payload. Chrome
+rich editor consumed both once per paste; old T3 retained image data. Its DOM
+image count is not a count of attachments. No updated-T3 claim is made.
+Nested niri did not deliver wtype key events to the browser, and kitty's private
+paste action produced no terminal input, so automatic-key and kitty end-to-end
+verification remain open. Exact plain bytes were verified via native wl-paste.
+[Receipt](evidence/linux-sketch-clipboard/fallback-owner.json) and
+[consumer script](evidence/linux-sketch-clipboard/fallback-owner.py) record scope.
+No host input, Swift, portal configuration or installation was changed.
+
+Portal API: [AvailableDeviceTypes](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.RemoteDesktop.html).
+Niri documents the GNOME backend for [screencasting](https://github.com/niri-wm/niri/wiki/Screencasting).
+
 ## Passive rich repeat paste — 2026-11-04
 
 The portal's final sketch offer and the existing Copy button now retain four
@@ -203,9 +242,9 @@ MIME types together: PNG, HTML, plain UTF-8 text and plain text. HTML embeds the
 same PNG as a data URL followed by the escaped, unmodified transcript in a pre
 block. Image-aware targets can still select PNG; rich editors can insert both
 from HTML; terminals can select plain text. Nothing runs when a format is read.
-The existing wl-copy fallback still retains PNG only. It cannot offer several
-representations; replacing that backend is outside this change. Copy uses the
-rich offer regardless of the automatic-paste backend.
+PR #48 left the wl-copy fallback PNG-only; the niri ownership repair above
+replaces that sketch backend. Copy uses the rich offer regardless of the
+automatic-paste backend.
 
 Private KWin tests exercised the production Copy helper's exact simultaneous
 offer in T3 Code 0.1.2, Chrome's native rich editor and kitty. T3 retained the
