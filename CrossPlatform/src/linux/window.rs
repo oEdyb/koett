@@ -6,8 +6,15 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DrawingRequest {
+    Status,
+    Undo,
+    ToggleLock,
+}
+
 pub enum Update {
-    DrawingCommand(bool, Sender<serde_json::Value>, Instant),
+    DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
@@ -435,10 +442,22 @@ fn build_window(
                     }
                 }
                 match update {
-                    Update::DrawingCommand(undo, reply, expires) => {
+                    Update::DrawingCommand(request, reply, expires) => {
                         let value = if Instant::now() >= expires {
                             serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
-                        } else if undo {
+                        } else if request == DrawingRequest::ToggleLock {
+                            if recording_started.is_some()
+                                && sketch.as_ref().is_some_and(|sketch| sketch.toggle_lock())
+                            {
+                                sketch
+                                    .as_ref()
+                                    .map_or(serde_json::json!({"ok":true}), |sketch| {
+                                        sketch.status()
+                                    })
+                            } else {
+                                serde_json::json!({"ok":false,"error":{"code":"no_drawing_session","message":"Draw lock needs a recording with drawing on"}})
+                            }
+                        } else if request == DrawingRequest::Undo {
                             if recording_started.is_some()
                                 && sketch.as_ref().is_some_and(|sketch| sketch.undo_last())
                             {

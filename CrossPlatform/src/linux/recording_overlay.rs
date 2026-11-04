@@ -200,6 +200,11 @@ impl LayerShell {
     }
 }
 
+/// The pencil follows a live stroke, and stays for the whole of a draw lock.
+fn shows_pencil(pill: &Pill) -> bool {
+    pill.timeline.drawing() || super::sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire)
+}
+
 enum PillLayer {
     Layer(Rc<LayerShell>),
     Gnome,
@@ -473,7 +478,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     }
     let palette = if pill.dark { &DARK } else { &LIGHT };
     let (ar, ag, ab) = palette.accent;
-    let drawing = pill.phase == Phase::Recording && pill.timeline.drawing();
+    let drawing = pill.phase == Phase::Recording && shows_pencil(pill);
     let radius = height / 2.0;
     rounded(
         context,
@@ -534,7 +539,7 @@ fn paint_body(
     palette: &Palette,
 ) -> Result<(), gtk::cairo::Error> {
     let (ar, ag, ab) = palette.accent;
-    let drawing = phase == Phase::Recording && pill.timeline.drawing();
+    let drawing = phase == Phase::Recording && shows_pencil(pill);
     context.set_source_rgb(ar, ag, ab);
     context.set_line_cap(gtk::cairo::LineCap::Round);
     context.set_line_join(gtk::cairo::LineJoin::Round);
