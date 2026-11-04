@@ -444,7 +444,9 @@ fn build_window(
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
                     Update::CopyResult(text) => {
-                        if let Err(error) = super::feedback::copy_transcript(&window.clipboard(), &text) {
+                        if let Err(error) =
+                            super::feedback::copy_transcript(&window.clipboard(), &text)
+                        {
                             eprintln!("Copy result: {error}");
                         }
                     }

@@ -786,13 +786,7 @@ fn run_x11(
                 }
                 cache_completed(tray, &final_text);
                 let delivered = output.deliver(&final_text, target, paste_shortcut);
-                if sheet.is_some() {
-                tokio::time::sleep(Duration::from_millis(700)).await;
-                if let Some(tray) = tray {
-                    let _ = tray.sender.send(TrayUpdate::CopyResult(text.clone()));
-                }
-            }
-            report_delivery(tray, &delivered);
+                report_delivery(tray, &delivered);
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
@@ -1298,8 +1292,12 @@ async fn run_wayland(
                             let now = Some(output::PASTE_NOW);
                             if let Some(png) = feedback::sketch_for(&text) {
                                 match &output {
-                                    Some(output) => { let _ = output.deliver_image(&png, now).await; }
-                                    None => { let _ = output::deliver_image(&png, now); }
+                                    Some(output) => {
+                                        let _ = output.deliver_image(&png, now).await;
+                                    }
+                                    None => {
+                                        let _ = output::deliver_image(&png, now);
+                                    }
                                 }
                             }
                             let result = match &output {
@@ -1322,8 +1320,12 @@ async fn run_wayland(
                         update_tray_status(tray, &format!("@notice:{error}"));
                     }
                 }
-                TrayAction::Recovery(command) if command == "copy-last"
-                    && recovery::last_text().ok().is_some_and(|text| feedback::sketch_for(&text).is_some()) => {
+                TrayAction::Recovery(command)
+                    if command == "copy-last"
+                        && recovery::last_text()
+                            .ok()
+                            .is_some_and(|text| feedback::sketch_for(&text).is_some()) =>
+                {
                     if let (Some(tray), Ok(text)) = (tray, recovery::last_text()) {
                         let _ = tray.sender.send(TrayUpdate::CopyResult(text));
                     }
@@ -1422,6 +1424,12 @@ async fn run_wayland(
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
+            if sheet.is_some() {
+                tokio::time::sleep(Duration::from_millis(700)).await;
+                if let Some(tray) = tray {
+                    let _ = tray.sender.send(TrayUpdate::CopyResult(text.clone()));
+                }
+            }
             report_delivery(tray, &delivered);
             let saved = history::append_transcript_with_raw_resilient(
                 &model,

@@ -59,8 +59,12 @@ pub(super) fn remember_sketch(text: &str, png: Option<&[u8]>) {
 }
 
 pub(super) fn sketch_for(text: &str) -> Option<Vec<u8>> {
-    SKETCH_COPY.lock().unwrap_or_else(|e| e.into_inner())
-        .as_ref().filter(|(saved, _)| saved == text).map(|(_, png)| png.clone())
+    SKETCH_COPY
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .filter(|(saved, _)| saved == text)
+        .map(|(_, png)| png.clone())
 }
 
 fn transcript_content(text: &str, png: Option<&[u8]>) -> gtk4::gdk::ContentProvider {
@@ -83,7 +87,11 @@ fn sketch_copy_offers_image_and_text_and_plain_copy_stays_plain() {
     let formats = content.formats();
     assert!(formats.contain_mime_type("image/png"));
     assert!(formats.contains_type(String::static_type()));
-    assert!(!transcript_content("plain", None).formats().contain_mime_type("image/png"));
+    assert!(
+        !transcript_content("plain", None)
+            .formats()
+            .contain_mime_type("image/png")
+    );
 }
 
 #[cfg(test)]
