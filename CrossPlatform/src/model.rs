@@ -99,6 +99,12 @@ impl LocalModel {
     }
 }
 
+pub fn validate_local_model(selection: LocalModel, directory: &Path) -> Result<(), String> {
+    let manifest = selection.manifest()?;
+    manifest::validate_manifest(&manifest)?;
+    validate_model_files(directory, &manifest.files, &AtomicBool::new(false)).map(|_| ())
+}
+
 pub fn ensure_model(
     selection: LocalModel,
     cancelled: &AtomicBool,

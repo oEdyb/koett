@@ -1,0 +1,1065 @@
+{
+  "cold_ms": 61.647367,
+  "cold_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+  "probe": {
+    "bounded_ms": 400.12796699999996,
+    "duration_seconds": 18.5875,
+    "overlap_ms": 62.295317000000004,
+    "overlap_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "raw_ms": 159.575287,
+    "status_after": "busy; raw CTC fallback for overlapping requests",
+    "unchanged_raw": true
+  },
+  "records": {
+    "n01-en-GB-RyanNeural": {
+      "elapsed_ms": 161.44922400000002,
+      "text": "I bought a coat and a new pair of boots",
+      "with_spelling": "I bought a coat and a new pair of boots"
+    },
+    "n01-en-US-AndrewNeural": {
+      "elapsed_ms": 128.122556,
+      "text": "I bought a coat and a new pair of boots.",
+      "with_spelling": "I bought a coat and a new pair of boots."
+    },
+    "n01-en-US-EmmaNeural": {
+      "elapsed_ms": 130.609436,
+      "text": "I bought a coat and a new pair of boots",
+      "with_spelling": "I bought a coat and a new pair of boots"
+    },
+    "n02-en-GB-RyanNeural": {
+      "elapsed_ms": 151.78095199999998,
+      "text": "The parrot sat on the kitchen counter",
+      "with_spelling": "The parrot sat on the kitchen counter"
+    },
+    "n02-en-US-AndrewNeural": {
+      "elapsed_ms": 121.161863,
+      "text": "The parrots sat on the kitchen counter",
+      "with_spelling": "The parrots sat on the kitchen counter"
+    },
+    "n02-en-US-EmmaNeural": {
+      "elapsed_ms": 133.64758400000002,
+      "text": "The parrot sat on the kitchen counter",
+      "with_spelling": "The parrot sat on the kitchen counter"
+    },
+    "n03-en-GB-RyanNeural": {
+      "elapsed_ms": 141.33649300000002,
+      "text": "She sent a short note to the team",
+      "with_spelling": "She sent a short note to the team"
+    },
+    "n03-en-US-AndrewNeural": {
+      "elapsed_ms": 112.366177,
+      "text": "She sent a short note to the team",
+      "with_spelling": "She sent a short note to the team"
+    },
+    "n03-en-US-EmmaNeural": {
+      "elapsed_ms": 128.950542,
+      "text": "She sent a short note to the team",
+      "with_spelling": "She sent a short note to the team"
+    },
+    "n04-en-GB-RyanNeural": {
+      "elapsed_ms": 162.950818,
+      "text": "We need a group decision before lunch",
+      "with_spelling": "We need a group decision before lunch"
+    },
+    "n04-en-US-AndrewNeural": {
+      "elapsed_ms": 125.239137,
+      "text": "We need a group decision before launch",
+      "with_spelling": "We need a group decision before launch"
+    },
+    "n04-en-US-EmmaNeural": {
+      "elapsed_ms": 128.739403,
+      "text": "We need a group decision before lunch",
+      "with_spelling": "We need a group decision before lunch"
+    },
+    "n05-en-GB-RyanNeural": {
+      "elapsed_ms": 154.050563,
+      "text": "The quQeen visited the city last summer",
+      "with_spelling": "The quQeen visited the city last summer"
+    },
+    "n05-en-US-AndrewNeural": {
+      "elapsed_ms": 127.15639900000001,
+      "text": "The quQeen visited the city last summer",
+      "with_spelling": "The quQeen visited the city last summer"
+    },
+    "n05-en-US-EmmaNeural": {
+      "elapsed_ms": 136.128234,
+      "text": "The quQeen visited the city last summer.",
+      "with_spelling": "The quQeen visited the city last summer."
+    },
+    "n06-en-GB-RyanNeural": {
+      "elapsed_ms": 153.85072499999998,
+      "text": "He drove the cart across the field",
+      "with_spelling": "He drove the cart across the field"
+    },
+    "n06-en-US-AndrewNeural": {
+      "elapsed_ms": 118.508544,
+      "text": "He drove the cart across the field",
+      "with_spelling": "He drove the cart across the field"
+    },
+    "n06-en-US-EmmaNeural": {
+      "elapsed_ms": 126.69287100000001,
+      "text": "He drove the cart across the field.",
+      "with_spelling": "He drove the cart across the field."
+    },
+    "n07-en-GB-RyanNeural": {
+      "elapsed_ms": 157.93817800000002,
+      "text": "Hold on, I will call you back in a minute",
+      "with_spelling": "Hold on, I will call you back in a minute"
+    },
+    "n07-en-US-AndrewNeural": {
+      "elapsed_ms": 141.957631,
+      "text": "Hold on, I will call you back in a minute",
+      "with_spelling": "Hold on, I will call you back in a minute"
+    },
+    "n07-en-US-EmmaNeural": {
+      "elapsed_ms": 136.518102,
+      "text": "Hold on, I will call you back in a minute",
+      "with_spelling": "Hold on, I will call you back in a minute"
+    },
+    "n08-en-GB-RyanNeural": {
+      "elapsed_ms": 172.278712,
+      "text": "Jacob and Matthias went fishing on Sunday",
+      "with_spelling": "Jacob and Matthias went fishing on Sunday"
+    },
+    "n08-en-US-AndrewNeural": {
+      "elapsed_ms": 144.065573,
+      "text": "Jacob and Matthias went fishing on Sunday",
+      "with_spelling": "Jacob and Matthias went fishing on Sunday"
+    },
+    "n08-en-US-EmmaNeural": {
+      "elapsed_ms": 151.589463,
+      "text": "Jacob and Matthias went fishing on Sunday",
+      "with_spelling": "Jacob and Matthias went fishing on Sunday"
+    },
+    "n09-en-GB-RyanNeural": {
+      "elapsed_ms": 151.750263,
+      "text": "The old coat hangs behind the door",
+      "with_spelling": "The old coat hangs behind the door"
+    },
+    "n09-en-US-AndrewNeural": {
+      "elapsed_ms": 120.987004,
+      "text": "The old coat hangs behind the door",
+      "with_spelling": "The old coat hangs behind the door"
+    },
+    "n09-en-US-EmmaNeural": {
+      "elapsed_ms": 128.94483200000002,
+      "text": "The old coat hangs behind the door",
+      "with_spelling": "The old coat hangs behind the door"
+    },
+    "n10-en-GB-RyanNeural": {
+      "elapsed_ms": 161.975112,
+      "text": "Cloud storage is cheaper than it used to be",
+      "with_spelling": "Cloud storage is cheaper than it used to be"
+    },
+    "n10-en-US-AndrewNeural": {
+      "elapsed_ms": 130.67131600000002,
+      "text": "Cloud storage is cheaper than it used to be",
+      "with_spelling": "Cloud storage is cheaper than it used to be"
+    },
+    "n10-en-US-EmmaNeural": {
+      "elapsed_ms": 145.064469,
+      "text": "Cloud storage is cheaper than it used to be",
+      "with_spelling": "Cloud storage is cheaper than it used to be"
+    },
+    "n11-en-GB-RyanNeural": {
+      "elapsed_ms": 158.08660799999998,
+      "text": "Fortunately, the train arrived on time",
+      "with_spelling": "Fortunately, the train arrived on time"
+    },
+    "n11-en-US-AndrewNeural": {
+      "elapsed_ms": 128.784633,
+      "text": "Fortunately, the train arrived on time",
+      "with_spelling": "Fortunately, the train arrived on time"
+    },
+    "n11-en-US-EmmaNeural": {
+      "elapsed_ms": 143.85332400000001,
+      "text": "Fortunately, the train arrived on time",
+      "with_spelling": "Fortunately, the train arrived on time"
+    },
+    "n12-en-GB-RyanNeural": {
+      "elapsed_ms": 165.74008800000001,
+      "text": "The tower was built more than a hundred years ago",
+      "with_spelling": "The tower was built more than a hundred years ago"
+    },
+    "n12-en-US-AndrewNeural": {
+      "elapsed_ms": 146.716353,
+      "text": "The tower was built more than a hundred years ago",
+      "with_spelling": "The tower was built more than a hundred years ago"
+    },
+    "n12-en-US-EmmaNeural": {
+      "elapsed_ms": 159.27900400000001,
+      "text": "The tower was built more than a hundred years ago",
+      "with_spelling": "The tower was built more than a hundred years ago"
+    },
+    "n13-en-GB-RyanNeural": {
+      "elapsed_ms": 175.51725000000002,
+      "text": "Please fix the typo in the second paragraph",
+      "with_spelling": "Please fix the typo in the second paragraph"
+    },
+    "n13-en-US-AndrewNeural": {
+      "elapsed_ms": 144.86839,
+      "text": "Please fix the typo in the second paragraph",
+      "with_spelling": "Please fix the typo in the second paragraph"
+    },
+    "n13-en-US-EmmaNeural": {
+      "elapsed_ms": 154.689042,
+      "text": "Please fix the typo in the second paragraph",
+      "with_spelling": "Please fix the typo in the second paragraph"
+    },
+    "n14-en-GB-RyanNeural": {
+      "elapsed_ms": 153.24126800000002,
+      "text": "The weather in the bay was calm and sunny",
+      "with_spelling": "The weather in the bay was calm and sunny"
+    },
+    "n14-en-US-AndrewNeural": {
+      "elapsed_ms": 132.089801,
+      "text": "The weather in the bay was calm and sunny",
+      "with_spelling": "The weather in the bay was calm and sunny"
+    },
+    "n14-en-US-EmmaNeural": {
+      "elapsed_ms": 128.958473,
+      "text": "The weather in the bay was calm and sunny",
+      "with_spelling": "The weather in the bay was calm and sunny"
+    },
+    "n15-en-GB-RyanNeural": {
+      "elapsed_ms": 175.880758,
+      "text": "I want to grow tomatoes in the garden this year",
+      "with_spelling": "I want to grow tomatoes in the garden this year"
+    },
+    "n15-en-US-AndrewNeural": {
+      "elapsed_ms": 129.58544999999998,
+      "text": "I want to grow tomatoes in the garden this year",
+      "with_spelling": "I want to grow tomatoes in the garden this year"
+    },
+    "n15-en-US-EmmaNeural": {
+      "elapsed_ms": 149.013114,
+      "text": "I want to grow tomatoes in the garden this year",
+      "with_spelling": "I want to grow tomatoes in the garden this year"
+    },
+    "n16-en-GB-RyanNeural": {
+      "elapsed_ms": 173.41004800000002,
+      "text": "The superbase price does not include tax",
+      "with_spelling": "The superbase price does not include tax"
+    },
+    "n16-en-US-AndrewNeural": {
+      "elapsed_ms": 155.24821,
+      "text": "The super base price does not include tax",
+      "with_spelling": "The super base price does not include tax"
+    },
+    "n16-en-US-EmmaNeural": {
+      "elapsed_ms": 155.225839,
+      "text": "The super base price does not include tax",
+      "with_spelling": "The super base price does not include tax"
+    },
+    "n17-en-GB-RyanNeural": {
+      "elapsed_ms": 149.25277300000002,
+      "text": "Can you send me the code from yesterday",
+      "with_spelling": "Can you send me the code from yesterday"
+    },
+    "n17-en-US-AndrewNeural": {
+      "elapsed_ms": 112.069199,
+      "text": "Can you send me the code from yesterday",
+      "with_spelling": "Can you send me the code from yesterday"
+    },
+    "n17-en-US-EmmaNeural": {
+      "elapsed_ms": 129.93386,
+      "text": "Can you send me the code from yesterday?",
+      "with_spelling": "Can you send me the code from yesterday?"
+    },
+    "n18-en-GB-RyanNeural": {
+      "elapsed_ms": 139.06901399999998,
+      "text": "That matters more than the deadline",
+      "with_spelling": "That matters more than the deadline"
+    },
+    "n18-en-US-AndrewNeural": {
+      "elapsed_ms": 114.195031,
+      "text": "That matters more than the deadline",
+      "with_spelling": "That matters more than the deadline"
+    },
+    "n18-en-US-EmmaNeural": {
+      "elapsed_ms": 125.68728600000001,
+      "text": "That matters more than the deadline",
+      "with_spelling": "That matters more than the deadline"
+    },
+    "n19-en-GB-RyanNeural": {
+      "elapsed_ms": 156.086997,
+      "text": "The audio was too fluid to follow",
+      "with_spelling": "The audio was too fluid to follow"
+    },
+    "n19-en-US-AndrewNeural": {
+      "elapsed_ms": 123.330304,
+      "text": "The audio was too fluid to follow",
+      "with_spelling": "The audio was too fluid to follow"
+    },
+    "n19-en-US-EmmaNeural": {
+      "elapsed_ms": 128.75840399999998,
+      "text": "The audio was too fluid to follow",
+      "with_spelling": "The audio was too fluid to follow"
+    },
+    "n20-en-GB-RyanNeural": {
+      "elapsed_ms": 156.928363,
+      "text": "We ordered a pizza and some salad",
+      "with_spelling": "We ordered a pizza and some salad"
+    },
+    "n20-en-US-AndrewNeural": {
+      "elapsed_ms": 126.64075199999999,
+      "text": "We ordered a pizza and some salad",
+      "with_spelling": "We ordered a pizza and some salad"
+    },
+    "n20-en-US-EmmaNeural": {
+      "elapsed_ms": 128.262266,
+      "text": "We ordered a pizza and some salad",
+      "with_spelling": "We ordered a pizza and some salad"
+    },
+    "n21-en-GB-RyanNeural": {
+      "elapsed_ms": 171.51102600000002,
+      "text": "The meeting starts at nine to morrow morning",
+      "with_spelling": "The meeting starts at nine to morrow morning"
+    },
+    "n21-en-US-AndrewNeural": {
+      "elapsed_ms": 127.72055900000001,
+      "text": "The meeting starts at nine tomorrow morning",
+      "with_spelling": "The meeting starts at nine tomorrow morning"
+    },
+    "n21-en-US-EmmaNeural": {
+      "elapsed_ms": 140.415268,
+      "text": "The meeting starts at nine tomorrow morning",
+      "with_spelling": "The meeting starts at nine tomorrow morning"
+    },
+    "n22-en-GB-RyanNeural": {
+      "elapsed_ms": 162.517771,
+      "text": "Her sister moved to Gothenberurg in the spring",
+      "with_spelling": "Her sister moved to Gothenberurg in the spring"
+    },
+    "n22-en-US-AndrewNeural": {
+      "elapsed_ms": 129.39072099999998,
+      "text": "Her sister moved to Gothenburg in the spring",
+      "with_spelling": "Her sister moved to Gothenburg in the spring"
+    },
+    "n22-en-US-EmmaNeural": {
+      "elapsed_ms": 149.445473,
+      "text": "Her sister moved to Gothenburg in the spring",
+      "with_spelling": "Her sister moved to Gothenburg in the spring"
+    },
+    "n23-en-GB-RyanNeural": {
+      "elapsed_ms": 140.277959,
+      "text": "The highighland cattle stood in the rain",
+      "with_spelling": "The highighland cattle stood in the rain"
+    },
+    "n23-en-US-AndrewNeural": {
+      "elapsed_ms": 125.08350800000001,
+      "text": "The Highland cattle stood in the rain",
+      "with_spelling": "The Highland cattle stood in the rain"
+    },
+    "n23-en-US-EmmaNeural": {
+      "elapsed_ms": 133.603285,
+      "text": "The highighland cattle stood in the rain",
+      "with_spelling": "The highighland cattle stood in the rain"
+    },
+    "n24-en-GB-RyanNeural": {
+      "elapsed_ms": 144.85060099999998,
+      "text": "Put the kettle on and make some tea",
+      "with_spelling": "Put the kettle on and make some tea"
+    },
+    "n24-en-US-AndrewNeural": {
+      "elapsed_ms": 122.07768,
+      "text": "Put the kettle on and make some tea",
+      "with_spelling": "Put the kettle on and make some tea"
+    },
+    "n24-en-US-EmmaNeural": {
+      "elapsed_ms": 124.410691,
+      "text": "Put the kettle on and make some tea",
+      "with_spelling": "Put the kettle on and make some tea"
+    },
+    "n25-en-GB-RyanNeural": {
+      "elapsed_ms": 158.423127,
+      "text": "The car was parked outside the hotel",
+      "with_spelling": "The car was parked outside the hotel"
+    },
+    "n25-en-US-AndrewNeural": {
+      "elapsed_ms": 121.176254,
+      "text": "The car was parked outside the hotel",
+      "with_spelling": "The car was parked outside the hotel"
+    },
+    "n25-en-US-EmmaNeural": {
+      "elapsed_ms": 128.200356,
+      "text": "The car was parked outside the hotel",
+      "with_spelling": "The car was parked outside the hotel"
+    },
+    "n26-en-GB-RyanNeural": {
+      "elapsed_ms": 123.308755,
+      "text": "Can you look at the budget again?",
+      "with_spelling": "Can you look at the budget again?"
+    },
+    "n26-en-US-AndrewNeural": {
+      "elapsed_ms": 110.233947,
+      "text": "Can you look at the budget again",
+      "with_spelling": "Can you look at the budget again"
+    },
+    "n26-en-US-EmmaNeural": {
+      "elapsed_ms": 113.936972,
+      "text": "Can you look at the budget again",
+      "with_spelling": "Can you look at the budget again"
+    },
+    "n27-en-GB-RyanNeural": {
+      "elapsed_ms": 162.530651,
+      "text": "We should hire another designer next quarter",
+      "with_spelling": "We should hire another designer next quarter"
+    },
+    "n27-en-US-AndrewNeural": {
+      "elapsed_ms": 130.889696,
+      "text": "We should hire another designer next quarter",
+      "with_spelling": "We should hire another designer next quarter"
+    },
+    "n27-en-US-EmmaNeural": {
+      "elapsed_ms": 145.876068,
+      "text": "We should hire another designer next quarter",
+      "with_spelling": "We should hire another designer next quarter"
+    },
+    "n28-en-GB-RyanNeural": {
+      "elapsed_ms": 168.93931700000002,
+      "text": "The parakeets in the park are loud in the morning",
+      "with_spelling": "The parakeets in the park are loud in the morning"
+    },
+    "n28-en-US-AndrewNeural": {
+      "elapsed_ms": 151.119067,
+      "text": "The parakeets in the park are loud in the morning",
+      "with_spelling": "The parakeets in the park are loud in the morning"
+    },
+    "n28-en-US-EmmaNeural": {
+      "elapsed_ms": 157.82478,
+      "text": "The parakeets in the park are loud in the morning",
+      "with_spelling": "The parakeets in the park are loud in the morning"
+    },
+    "n29-en-GB-RyanNeural": {
+      "elapsed_ms": 147.460911,
+      "text": "Thanks, that sounds good to me",
+      "with_spelling": "Thanks, that sounds good to me"
+    },
+    "n29-en-US-AndrewNeural": {
+      "elapsed_ms": 109.628929,
+      "text": "Thanks. That sounds good to me.",
+      "with_spelling": "Thanks. That sounds good to me."
+    },
+    "n29-en-US-EmmaNeural": {
+      "elapsed_ms": 105.39053600000001,
+      "text": "Thanks, that sounds good to me",
+      "with_spelling": "Thanks, that sounds good to me"
+    },
+    "n30-en-GB-RyanNeural": {
+      "elapsed_ms": 166.444206,
+      "text": "Remember to back up your files every week",
+      "with_spelling": "Remember to back up your files every week"
+    },
+    "n30-en-US-AndrewNeural": {
+      "elapsed_ms": 138.293287,
+      "text": "Remember to back upp your files every week",
+      "with_spelling": "Remember to back upp your files every week"
+    },
+    "n30-en-US-EmmaNeural": {
+      "elapsed_ms": 147.96173000000002,
+      "text": "Remember to back up your files every week",
+      "with_spelling": "Remember to back up your files every week"
+    },
+    "p01-en-GB-RyanNeural": {
+      "elapsed_ms": 187.363935,
+      "text": "Koett turns my voice into text without the cloud",
+      "with_spelling": "Koett turns my voice into text without the cloud"
+    },
+    "p01-en-US-AndrewNeural": {
+      "elapsed_ms": 164.608844,
+      "text": "Cat turns my voice into text without the cloud",
+      "with_spelling": "Cat turns my voice into text without the cloud"
+    },
+    "p01-en-US-EmmaNeural": {
+      "elapsed_ms": 167.33944400000001,
+      "text": "Cat turns my voice into text without the cloud",
+      "with_spelling": "Cat turns my voice into text without the cloud"
+    },
+    "p02-en-GB-RyanNeural": {
+      "elapsed_ms": 201.725318,
+      "text": "Open Koett and press the option key to start dictating",
+      "with_spelling": "Open Koett and press the option key to start dictating"
+    },
+    "p02-en-US-AndrewNeural": {
+      "elapsed_ms": 173.008891,
+      "text": "Open code and press the option key to start dictating",
+      "with_spelling": "Open code and press the option key to start dictating"
+    },
+    "p02-en-US-EmmaNeural": {
+      "elapsed_ms": 174.200616,
+      "text": "Open code and press the option key to start dictating",
+      "with_spelling": "Open code and press the option key to start dictating"
+    },
+    "p03-en-GB-RyanNeural": {
+      "elapsed_ms": 172.95311099999998,
+      "text": "The parakeet model runs locally on the laptop",
+      "with_spelling": "The Parakeet model runs locally on the laptop"
+    },
+    "p03-en-US-AndrewNeural": {
+      "elapsed_ms": 157.77565099999998,
+      "text": "The parakeet model runs locally on the laptop",
+      "with_spelling": "The Parakeet model runs locally on the laptop"
+    },
+    "p03-en-US-EmmaNeural": {
+      "elapsed_ms": 159.63636300000002,
+      "text": "The Parakeet model runs locally on the laptop",
+      "with_spelling": "The Parakeet model runs locally on the laptop"
+    },
+    "p04-en-GB-RyanNeural": {
+      "elapsed_ms": 176.179079,
+      "text": "We compiled Spperons from the pinsource tag",
+      "with_spelling": "We compiled Spperons from the pinsource tag"
+    },
+    "p04-en-US-AndrewNeural": {
+      "elapsed_ms": 159.616913,
+      "text": "We compiled shirp belalongs from the pin source tag.",
+      "with_spelling": "We compiled shirp belalongs from the pin source tag."
+    },
+    "p04-en-US-EmmaNeural": {
+      "elapsed_ms": 160.813259,
+      "text": "We compiled shpbonks from the pin source tag",
+      "with_spelling": "We compiled shpbonks from the pin source tag"
+    },
+    "p05-en-GB-RyanNeural": {
+      "elapsed_ms": 196.690808,
+      "text": "Nemotron streams partial results every half second",
+      "with_spelling": "Nemotron streams partial results every half second"
+    },
+    "p05-en-US-AndrewNeural": {
+      "elapsed_ms": 177.81739199999998,
+      "text": "Nemotron streams partial results every half second",
+      "with_spelling": "Nemotron streams partial results every half second"
+    },
+    "p05-en-US-EmmaNeural": {
+      "elapsed_ms": 180.343692,
+      "text": "Nemotron streams partial results every half second",
+      "with_spelling": "Nemotron streams partial results every half second"
+    },
+    "p06-en-GB-RyanNeural": {
+      "elapsed_ms": 192.070537,
+      "text": "On the Mac we use FluidAudio for speech recognition",
+      "with_spelling": "On the Mac we use FluidAudio for speech recognition"
+    },
+    "p06-en-US-AndrewNeural": {
+      "elapsed_ms": 169.862734,
+      "text": "On the Mac, we use FluidAudio for speech recognition.",
+      "with_spelling": "On the Mac, we use FluidAudio for speech recognition."
+    },
+    "p06-en-US-EmmaNeural": {
+      "elapsed_ms": 181.905527,
+      "text": "On the Mac, we use FluidAudio for speech recognition",
+      "with_spelling": "On the Mac, we use FluidAudio for speech recognition"
+    },
+    "p07-en-GB-RyanNeural": {
+      "elapsed_ms": 181.631808,
+      "text": "Send a backlink report to Nordicrank by Friday",
+      "with_spelling": "Send a backlink report to Nordicrank by Friday"
+    },
+    "p07-en-US-AndrewNeural": {
+      "elapsed_ms": 166.851516,
+      "text": "Send the Blink report to Nordicrank by Friday",
+      "with_spelling": "Send the Blink report to Nordicrank by Friday"
+    },
+    "p07-en-US-EmmaNeural": {
+      "elapsed_ms": 168.40267,
+      "text": "Send the backlink report to Nordicrank by Friday",
+      "with_spelling": "Send the backlink report to Nordicrank by Friday"
+    },
+    "p08-en-GB-RyanNeural": {
+      "elapsed_ms": 173.993478,
+      "text": "I logged into Hogia to check the invoices",
+      "with_spelling": "I logged into Hogia to check the invoices"
+    },
+    "p08-en-US-AndrewNeural": {
+      "elapsed_ms": 136.26228500000002,
+      "text": "I logged into Hogia to check the invoices.",
+      "with_spelling": "I logged into Hogia to check the invoices."
+    },
+    "p08-en-US-EmmaNeural": {
+      "elapsed_ms": 157.093344,
+      "text": "I logged into Hogia to check the invoices.",
+      "with_spelling": "I logged into Hogia to check the invoices."
+    },
+    "p09-en-GB-RyanNeural": {
+      "elapsed_ms": 172.335704,
+      "text": "Yakob wants a demo of the booking app tomorrow",
+      "with_spelling": "Yakob wants a demo of the booking app tomorrow"
+    },
+    "p09-en-US-AndrewNeural": {
+      "elapsed_ms": 141.069827,
+      "text": "Yakob wants a demo of the booking app tomorrow.",
+      "with_spelling": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "p09-en-US-EmmaNeural": {
+      "elapsed_ms": 154.39897399999998,
+      "text": "Yakob wants a demo of the booking app tomorrow",
+      "with_spelling": "Yakob wants a demo of the booking app tomorrow"
+    },
+    "p10-en-GB-RyanNeural": {
+      "elapsed_ms": 157.041794,
+      "text": "Machios paid the last three invoices",
+      "with_spelling": "Machios paid the last three invoices"
+    },
+    "p10-en-US-AndrewNeural": {
+      "elapsed_ms": 148.62546700000001,
+      "text": "Matyas paid the last three invoices",
+      "with_spelling": "Matyas paid the last three invoices"
+    },
+    "p10-en-US-EmmaNeural": {
+      "elapsed_ms": 139.88783099999998,
+      "text": "Matyas paid the last three invoices.",
+      "with_spelling": "Matyas paid the last three invoices."
+    },
+    "p11-en-GB-RyanNeural": {
+      "elapsed_ms": 179.544726,
+      "text": "Hi, this is O Diberg calling about the meeting",
+      "with_spelling": "Hi, this is O Diberg calling about the meeting"
+    },
+    "p11-en-US-AndrewNeural": {
+      "elapsed_ms": 155.440791,
+      "text": "Hi, this is all Diber callalling about the meeting",
+      "with_spelling": "Hi, this is all Diber callalling about the meeting"
+    },
+    "p11-en-US-EmmaNeural": {
+      "elapsed_ms": 156.509656,
+      "text": "Hi, this is All Diberg calling about the meeting",
+      "with_spelling": "Hi, this is All Diberg calling about the meeting"
+    },
+    "p12-en-GB-RyanNeural": {
+      "elapsed_ms": 157.323303,
+      "text": "O will review the pool request tonight",
+      "with_spelling": "O will review the pool request tonight"
+    },
+    "p12-en-US-AndrewNeural": {
+      "elapsed_ms": 126.754694,
+      "text": "All will review the poll request tonight.",
+      "with_spelling": "All will review the poll request tonight."
+    },
+    "p12-en-US-EmmaNeural": {
+      "elapsed_ms": 138.13612899999998,
+      "text": "All will review the poull request tonight",
+      "with_spelling": "All will review the poull request tonight"
+    },
+    "p13-en-GB-RyanNeural": {
+      "elapsed_ms": 181.844888,
+      "text": "The cluster runs on Kubernetes with three nodes",
+      "with_spelling": "The cluster runs on Kubernetes with three nodes"
+    },
+    "p13-en-US-AndrewNeural": {
+      "elapsed_ms": 164.031817,
+      "text": "The cluster runs on Kubernetes with three nodes",
+      "with_spelling": "The cluster runs on Kubernetes with three nodes"
+    },
+    "p13-en-US-EmmaNeural": {
+      "elapsed_ms": 164.50894499999998,
+      "text": "The cluster runs on Kubernetes with three nodes",
+      "with_spelling": "The cluster runs on Kubernetes with three nodes"
+    },
+    "p14-en-GB-RyanNeural": {
+      "elapsed_ms": 206.450371,
+      "text": "Store the bookings in PostgreSQL instead of a flat file",
+      "with_spelling": "Store the bookings in PostgreSQL instead of a flat file"
+    },
+    "p14-en-US-AndrewNeural": {
+      "elapsed_ms": 201.12649199999998,
+      "text": "Store the bookings in PostgreSQL instead of a flat file",
+      "with_spelling": "Store the bookings in PostgreSQL instead of a flat file"
+    },
+    "p14-en-US-EmmaNeural": {
+      "elapsed_ms": 201.838059,
+      "text": "Store the bookings in PostgreSQL instead of a flat file",
+      "with_spelling": "Store the bookings in PostgreSQL instead of a flat file"
+    },
+    "p15-en-GB-RyanNeural": {
+      "elapsed_ms": 194.737217,
+      "text": "Tori bundles the webView into a small desktop app.",
+      "with_spelling": "Tori bundles the webView into a small desktop app."
+    },
+    "p15-en-US-AndrewNeural": {
+      "elapsed_ms": 185.083495,
+      "text": "Towerry bundles the web view into a small desktop app",
+      "with_spelling": "Towerry bundles the web view into a small desktop app"
+    },
+    "p15-en-US-EmmaNeural": {
+      "elapsed_ms": 175.12777400000002,
+      "text": "Towerry bundles the webView into a small desktop app",
+      "with_spelling": "Towerry bundles the webView into a small desktop app"
+    },
+    "p16-en-GB-RyanNeural": {
+      "elapsed_ms": 175.97821,
+      "text": "The settings window is written in GTK4 four",
+      "with_spelling": "The settings window is written in GTK4 four"
+    },
+    "p16-en-US-AndrewNeural": {
+      "elapsed_ms": 165.414602,
+      "text": "The settings window is written in GTK4 four",
+      "with_spelling": "The settings window is written in GTK4 four"
+    },
+    "p16-en-US-EmmaNeural": {
+      "elapsed_ms": 169.614345,
+      "text": "The settings window is written in GTK4 four",
+      "with_spelling": "The settings window is written in GTK4 four"
+    },
+    "p17-en-GB-RyanNeural": {
+      "elapsed_ms": 173.997628,
+      "text": "Superbase handles the login and the database",
+      "with_spelling": "Superbase handles the login and the database"
+    },
+    "p17-en-US-AndrewNeural": {
+      "elapsed_ms": 157.133354,
+      "text": "Supabase handles the login and the database",
+      "with_spelling": "Supabase handles the login and the database"
+    },
+    "p17-en-US-EmmaNeural": {
+      "elapsed_ms": 161.26837799999998,
+      "text": "Supabase handles the login and the database",
+      "with_spelling": "Supabase handles the login and the database"
+    },
+    "p18-en-GB-RyanNeural": {
+      "elapsed_ms": 160.77926,
+      "text": "The landing page is built with SvelteKit.",
+      "with_spelling": "The landing page is built with SvelteKit."
+    },
+    "p18-en-US-AndrewNeural": {
+      "elapsed_ms": 131.772964,
+      "text": "The landing page is built with Sveltekit",
+      "with_spelling": "The landing page is built with SvelteKit"
+    },
+    "p18-en-US-EmmaNeural": {
+      "elapsed_ms": 131.701024,
+      "text": "The landing page is built with SvelteKit",
+      "with_spelling": "The landing page is built with SvelteKit"
+    },
+    "p19-en-GB-RyanNeural": {
+      "elapsed_ms": 202.199768,
+      "text": "Export the receipts to Fortnox before the end of the month",
+      "with_spelling": "Export the receipts to Fortnox before the end of the month"
+    },
+    "p19-en-US-AndrewNeural": {
+      "elapsed_ms": 179.675806,
+      "text": "Export the receipts to Fortnox before the end of the month",
+      "with_spelling": "Export the receipts to Fortnox before the end of the month"
+    },
+    "p19-en-US-EmmaNeural": {
+      "elapsed_ms": 182.84292399999998,
+      "text": "Export the receipts to Fortnox before the end of the month",
+      "with_spelling": "Export the receipts to Fortnox before the end of the month"
+    },
+    "p20-en-GB-RyanNeural": {
+      "elapsed_ms": 181.841558,
+      "text": "Scatteririt sent a letter about the VAT return",
+      "with_spelling": "Scatteririt sent a letter about the VAT return"
+    },
+    "p20-en-US-AndrewNeural": {
+      "elapsed_ms": 160.568901,
+      "text": "Scatterket sent a letter about the VAT return",
+      "with_spelling": "Scatterket sent a letter about the VAT return"
+    },
+    "p20-en-US-EmmaNeural": {
+      "elapsed_ms": 170.785671,
+      "text": "Scatterwket sent a letter about the VAT return",
+      "with_spelling": "Scatterwket sent a letter about the VAT return"
+    },
+    "p21-en-GB-RyanNeural": {
+      "elapsed_ms": 166.427708,
+      "text": "I am taking the train to Göteborg on Monday",
+      "with_spelling": "I am taking the train to Göteborg on Monday"
+    },
+    "p21-en-US-AndrewNeural": {
+      "elapsed_ms": 144.321135,
+      "text": "I am taking the train to Göteborg on Monday",
+      "with_spelling": "I am taking the train to Göteborg on Monday"
+    },
+    "p21-en-US-EmmaNeural": {
+      "elapsed_ms": 151.59056700000002,
+      "text": "I am taking the train to Göteborg on Monday.",
+      "with_spelling": "I am taking the train to Göteborg on Monday."
+    },
+    "p22-en-GB-RyanNeural": {
+      "elapsed_ms": 137.860231,
+      "text": "Let's grab a feka after the call",
+      "with_spelling": "Let's grab a feka after the call"
+    },
+    "p22-en-US-AndrewNeural": {
+      "elapsed_ms": 118.746145,
+      "text": "Let's grab a fika after the call",
+      "with_spelling": "Let's grab a fika after the call"
+    },
+    "p22-en-US-EmmaNeural": {
+      "elapsed_ms": 126.963143,
+      "text": "Let's grab a fika after the call.",
+      "with_spelling": "Let's grab a fika after the call."
+    },
+    "p23-en-GB-RyanNeural": {
+      "elapsed_ms": 185.45130400000002,
+      "text": "The server is a small Hetzner machine in Helsinki",
+      "with_spelling": "The server is a small Hetzner machine in Helsinki"
+    },
+    "p23-en-US-AndrewNeural": {
+      "elapsed_ms": 169.333327,
+      "text": "The server is a small Hetzner machine in Helsinki",
+      "with_spelling": "The server is a small Hetzner machine in Helsinki"
+    },
+    "p23-en-US-EmmaNeural": {
+      "elapsed_ms": 162.633893,
+      "text": "The server is a small Hetzner machine in Helsinki",
+      "with_spelling": "The server is a small Hetzner machine in Helsinki"
+    },
+    "p24-en-GB-RyanNeural": {
+      "elapsed_ms": 202.10390999999998,
+      "text": "Cartesia reads the first sentence of the answer out loud",
+      "with_spelling": "Cartesia reads the first sentence of the answer out loud"
+    },
+    "p24-en-US-AndrewNeural": {
+      "elapsed_ms": 174.09049900000002,
+      "text": "Cartesia reads the first sentence of the answer out loud",
+      "with_spelling": "Cartesia reads the first sentence of the answer out loud"
+    },
+    "p24-en-US-EmmaNeural": {
+      "elapsed_ms": 171.68487800000003,
+      "text": "Cartesia reads the first sentence of the answer out loud",
+      "with_spelling": "Cartesia reads the first sentence of the answer out loud"
+    },
+    "p25-en-GB-RyanNeural": {
+      "elapsed_ms": 175.707333,
+      "text": "Ask uses Groq because it answers very quickly",
+      "with_spelling": "Ask uses Groq because it answers very quickly"
+    },
+    "p25-en-US-AndrewNeural": {
+      "elapsed_ms": 163.69131000000002,
+      "text": "Ask Ues Grock because it answers very quickly",
+      "with_spelling": "Ask Ues Grock because it answers very quickly"
+    },
+    "p25-en-US-EmmaNeural": {
+      "elapsed_ms": 170.93280199999998,
+      "text": "Ask usees Grock because it answers very quickly",
+      "with_spelling": "Ask usees Grock because it answers very quickly"
+    },
+    "p26-en-GB-RyanNeural": {
+      "elapsed_ms": 210.017978,
+      "text": "The default model is Qwen with twenty seven billion parameters",
+      "with_spelling": "The default model is Qwen with twenty seven billion parameters"
+    },
+    "p26-en-US-AndrewNeural": {
+      "elapsed_ms": 189.560968,
+      "text": "The default model is Quin with twenty seven billion parameters",
+      "with_spelling": "The default model is Quin with twenty seven billion parameters"
+    },
+    "p26-en-US-EmmaNeural": {
+      "elapsed_ms": 187.578666,
+      "text": "The default model is Qwen with twenty seven billion parameters",
+      "with_spelling": "The default model is Qwen with twenty seven billion parameters"
+    },
+    "p27-en-GB-RyanNeural": {
+      "elapsed_ms": 174.889075,
+      "text": "Save the notes in Obsidian under the project folder",
+      "with_spelling": "Save the notes in Obsidian under the project folder"
+    },
+    "p27-en-US-AndrewNeural": {
+      "elapsed_ms": 164.328497,
+      "text": "Save the notes in Obsidian under the project folder",
+      "with_spelling": "Save the notes in Obsidian under the project folder"
+    },
+    "p27-en-US-EmmaNeural": {
+      "elapsed_ms": 169.575016,
+      "text": "Save the notes in Obsidian under the project folder",
+      "with_spelling": "Save the notes in Obsidian under the project folder"
+    },
+    "p28-en-GB-RyanNeural": {
+      "elapsed_ms": 174.111119,
+      "text": "Global shortcuts work differently on Wayland",
+      "with_spelling": "Global shortcuts work differently on Wayland"
+    },
+    "p28-en-US-AndrewNeural": {
+      "elapsed_ms": 153.31686,
+      "text": "Global shortcuts work differently on Wayland",
+      "with_spelling": "Global shortcuts work differently on Wayland"
+    },
+    "p28-en-US-EmmaNeural": {
+      "elapsed_ms": 161.837857,
+      "text": "Global shortcuts work differently on Wayland",
+      "with_spelling": "Global shortcuts work differently on Wayland"
+    },
+    "p29-en-GB-RyanNeural": {
+      "elapsed_ms": 180.653923,
+      "text": "My desktop is hyperand with a single monitor",
+      "with_spelling": "My desktop is hyperand with a single monitor"
+    },
+    "p29-en-US-AndrewNeural": {
+      "elapsed_ms": 148.26912000000002,
+      "text": "My desktop is Hyperlland with a single monitor.",
+      "with_spelling": "My desktop is Hyperlland with a single monitor."
+    },
+    "p29-en-US-EmmaNeural": {
+      "elapsed_ms": 157.86064299999998,
+      "text": "My desktop is Hyperlan with a single monitor.",
+      "with_spelling": "My desktop is Hyperlan with a single monitor."
+    },
+    "p30-en-GB-RyanNeural": {
+      "elapsed_ms": 184.347259,
+      "text": "Ask Claude to write the tests and Codex to review them.",
+      "with_spelling": "Ask Claude to write the tests and Codex to review them."
+    },
+    "p30-en-US-AndrewNeural": {
+      "elapsed_ms": 169.420817,
+      "text": "askk Claude to write the tests and codex to review them",
+      "with_spelling": "askk Claude to write the tests and Codex to review them"
+    },
+    "p30-en-US-EmmaNeural": {
+      "elapsed_ms": 169.56421699999999,
+      "text": "Ask Claude to write the tests in codex to review them",
+      "with_spelling": "Ask Claude to write the tests in Codex to review them"
+    },
+    "p31-en-GB-RyanNeural": {
+      "elapsed_ms": 168.63873099999998,
+      "text": "Run parakeet through Sprons on Linux",
+      "with_spelling": "Run Parakeet through Sprons on Linux"
+    },
+    "p31-en-US-AndrewNeural": {
+      "elapsed_ms": 158.222682,
+      "text": "run parakeet through shir blonks on Linux",
+      "with_spelling": "run Parakeet through shir blonks on Linux"
+    },
+    "p31-en-US-EmmaNeural": {
+      "elapsed_ms": 155.829561,
+      "text": "Run parakeet through shirp bonks on Linux",
+      "with_spelling": "Run Parakeet through shirp bonks on Linux"
+    },
+    "p32-en-GB-RyanNeural": {
+      "elapsed_ms": 164.783906,
+      "text": "Yakob and all met in Göteborg for a fika",
+      "with_spelling": "Yakob and all met in Göteborg for a fika"
+    },
+    "p32-en-US-AndrewNeural": {
+      "elapsed_ms": 148.955648,
+      "text": "Yakob and all metet in Gataborg for a Fica",
+      "with_spelling": "Yakob and all metet in Gataborg for a Fica"
+    },
+    "p32-en-US-EmmaNeural": {
+      "elapsed_ms": 154.02797800000002,
+      "text": "Yakob and all met in Göteborg for a fika",
+      "with_spelling": "Yakob and all met in Göteborg for a fika"
+    },
+    "p33-en-GB-RyanNeural": {
+      "elapsed_ms": 183.692462,
+      "text": "Move the database from Supabase to a Hetzner server",
+      "with_spelling": "Move the database from Supabase to a Hetzner server"
+    },
+    "p33-en-US-AndrewNeural": {
+      "elapsed_ms": 176.60245,
+      "text": "Move the database from Supabase to a Hetzner server",
+      "with_spelling": "Move the database from Supabase to a Hetzner server"
+    },
+    "p33-en-US-EmmaNeural": {
+      "elapsed_ms": 179.639127,
+      "text": "Move the database from Supabase to a Hetzner server",
+      "with_spelling": "Move the database from Supabase to a Hetzner server"
+    },
+    "p34-en-GB-RyanNeural": {
+      "elapsed_ms": 161.018361,
+      "text": "Nordicrank pays through Fortnox",
+      "with_spelling": "Nordicrank pays through Fortnox"
+    },
+    "p34-en-US-AndrewNeural": {
+      "elapsed_ms": 126.805065,
+      "text": "Nordicrank pays through four knocks",
+      "with_spelling": "Nordicrank pays through four knocks"
+    },
+    "p34-en-US-EmmaNeural": {
+      "elapsed_ms": 133.45189900000003,
+      "text": "Nordicrank pays through Fortnox",
+      "with_spelling": "Nordicrank pays through Fortnox"
+    },
+    "p35-en-GB-RyanNeural": {
+      "elapsed_ms": 177.218038,
+      "text": "Motios asked Weether Coet works on Wayland",
+      "with_spelling": "Motios asked Weether Coet works on Wayland"
+    },
+    "p35-en-US-AndrewNeural": {
+      "elapsed_ms": 144.09951700000002,
+      "text": "Matias asked whether Coat works on Wayland",
+      "with_spelling": "Matias asked whether Coat works on Wayland"
+    },
+    "p35-en-US-EmmaNeural": {
+      "elapsed_ms": 150.080413,
+      "text": "Madias asks whether Cat works on Wayland",
+      "with_spelling": "Madias asks whether Cat works on Wayland"
+    },
+    "p36-en-GB-RyanNeural": {
+      "elapsed_ms": 182.303097,
+      "text": "Compare Nemotron with parakeet on the same clips",
+      "with_spelling": "Compare Nemotron with Parakeet on the same clips"
+    },
+    "p36-en-US-AndrewNeural": {
+      "elapsed_ms": 160.493013,
+      "text": "Compare Nemotron with parakeet on the same clips",
+      "with_spelling": "Compare Nemotron with Parakeet on the same clips"
+    },
+    "p36-en-US-EmmaNeural": {
+      "elapsed_ms": 171.39809,
+      "text": "Compare Nemotron with parakeet on the same clips",
+      "with_spelling": "Compare Nemotron with Parakeet on the same clips"
+    },
+    "p37-en-GB-RyanNeural": {
+      "elapsed_ms": 179.316079,
+      "text": "Groq serves Qwen faster than the other providers",
+      "with_spelling": "Groq serves Qwen faster than the other providers"
+    },
+    "p37-en-US-AndrewNeural": {
+      "elapsed_ms": 158.81292,
+      "text": "Grock serves Quinn faster than the other providers",
+      "with_spelling": "Grock serves Quinn faster than the other providers"
+    },
+    "p37-en-US-EmmaNeural": {
+      "elapsed_ms": 167.74909499999998,
+      "text": "Groq serves Quinn faster than the other providers",
+      "with_spelling": "Groq serves Quinn faster than the other providers"
+    },
+    "p38-en-GB-RyanNeural": {
+      "elapsed_ms": 182.936606,
+      "text": "Hogia and Scatterwkit both need the same numbers",
+      "with_spelling": "Hogia and Scatterwkit both need the same numbers"
+    },
+    "p38-en-US-AndrewNeural": {
+      "elapsed_ms": 176.472461,
+      "text": "Hogia and Skatteverket both need the same numbers",
+      "with_spelling": "Hogia and Skatteverket both need the same numbers"
+    },
+    "p38-en-US-EmmaNeural": {
+      "elapsed_ms": 163.68737,
+      "text": "Hogia and Scatterfirkit both need the same numbers",
+      "with_spelling": "Hogia and Scatterfirkit both need the same numbers"
+    },
+    "p39-en-GB-RyanNeural": {
+      "elapsed_ms": 174.10934,
+      "text": "Claude wrote the Tauri prototype last week",
+      "with_spelling": "Claude wrote the Tauri prototype last week"
+    },
+    "p39-en-US-AndrewNeural": {
+      "elapsed_ms": 161.74939799999999,
+      "text": "Claude wrote the Towerry prototype last week",
+      "with_spelling": "Claude wrote the Towerry prototype last week"
+    },
+    "p39-en-US-EmmaNeural": {
+      "elapsed_ms": 153.61490999999998,
+      "text": "Claude wrote the Towerry prototype last week",
+      "with_spelling": "Claude wrote the Towerry prototype last week"
+    },
+    "p40-en-GB-RyanNeural": {
+      "elapsed_ms": 149.272397,
+      "text": "Dyberg is spelled with a Y",
+      "with_spelling": "Dyberg is spelled with a Y"
+    },
+    "p40-en-US-AndrewNeural": {
+      "elapsed_ms": 115.848367,
+      "text": "Dyberg is spelled with A Y",
+      "with_spelling": "Dyberg is spelled with A Y"
+    },
+    "p40-en-US-EmmaNeural": {
+      "elapsed_ms": 116.675584,
+      "text": "Dyberg is spelled with a Y",
+      "with_spelling": "Dyberg is spelled with a Y"
+    }
+  }
+}

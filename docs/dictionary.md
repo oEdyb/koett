@@ -32,10 +32,15 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
    Keys are NFC, so a decomposed "Göteborg" matches. Terms also match across
    spaces ("sherpa onnx"); a form only matches spans with its own word count, so
    the form "Superbase" leaves "the super base price" alone. One pass, no
-   cascades. Literal replacements run afterwards.
+   cascades within a pass. Runtime applies spelling before optional S1-mini and
+   restores it on successful cleanup output. Without cleanup there is one pass.
+   Literal replacements run afterwards.
 
-An empty dictionary keeps the original single greedy decode. CTC models
-(Parakeet 110M) and Nemotron streaming get the spelling pass only. The engine
+An empty dictionary keeps the original single greedy decode. Parakeet 110M can
+use a verified, already-downloaded v2 transducer sidecar with a 250 ms deadline
+and raw CTC fallback. This is acoustic sidecar decoding, not CTC hotwords.
+See [benchmark, setup and limits](ctc-dictionary-benchmark.md). Nemotron streaming
+still gets spelling only. The engine
 re-reads the saved dictionary once a second while idle and swaps hotwords
 without reloading; only turning biasing on or off reloads the decoder.
 

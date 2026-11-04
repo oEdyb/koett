@@ -3,7 +3,8 @@
 //! Each decode runs two streams in one batch: a plain one and one with the
 //! terms as hotwords. Only the biased stream's dictionary words are kept (see
 //! `dictionary::adopt_terms`), because the boost also changes casing of other
-//! words. An empty dictionary, or a CTC model, keeps the original greedy decoder.
+//! words. An empty dictionary keeps the original greedy decoder. CTC retains
+//! its greedy primary stream and may use the bounded transducer sidecar.
 //! Settings follow the pinned sherpa-onnx Parakeet TDT hotword example.
 
 use std::fs;
@@ -58,6 +59,9 @@ impl ParakeetTranscriber {
             self.recognizer = Self::recognizer(&self.model_directory, self.threads, bias.as_ref())?;
         }
         self.bias = bias;
+        if self.model_directory.join("model.int8.onnx").is_file() {
+            self.ctc_bias = super::ctc_bias::Sidecar::new(dictionary);
+        }
         Ok(())
     }
 
@@ -97,6 +101,10 @@ impl ParakeetTranscriber {
                 dictionary::adopt_terms(&result.text, &text(stream)?, &bias.dictionary)
             }
         };
+        let text = match &self.ctc_bias {
+            Some(bias) => bias.refine(&text, sample_rate, samples),
+            None => text,
+        };
         Ok((text, words))
     }
 }
@@ -109,7 +117,7 @@ fn text(stream: &sherpa_onnx::OfflineStream) -> Result<String, String> {
 }
 
 /// sherpa-onnx separates per-stream hotwords with "/" and reads ":" as a score.
-fn hotwords(dictionary: &[DictionaryEntry]) -> String {
+pub(super) fn hotwords(dictionary: &[DictionaryEntry]) -> String {
     dictionary
         .iter()
         .map(|entry| entry.term.trim())

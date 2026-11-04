@@ -903,22 +903,23 @@ fn run(
                             send_status(&updates, &status);
                             continue;
                         }
-                        if settings.formatting.enabled
-                            && !transcript.text.is_empty()
-                            && let Some(active) = cleaner.as_mut()
-                        {
-                            match active.clean(&transcript.text, settings.formatting) {
-                                Ok(text) => {
-                                    transcript.raw =
-                                        Some(std::mem::replace(&mut transcript.text, text));
-                                }
-                                Err(error) => {
-                                    let _ = updates
-                                        .send(EngineUpdate::Notice(format!("Raw active: {error}")));
-                                    if active.stalled() {
-                                        cleaner = None;
-                                    }
-                                }
+                        let spelling = Settings::load()
+                            .map(|saved| saved.dictionary)
+                            .unwrap_or_else(|_| dictionary.current().to_vec());
+                        let prepared = prepare_dictation_text(&mut transcript, &spelling, |text| {
+                            if settings.formatting.enabled && !text.is_empty() {
+                                cleaner
+                                    .as_mut()
+                                    .map(|active| active.clean(text, settings.formatting))
+                            } else {
+                                None
+                            }
+                        });
+                        if let Err(error) = prepared {
+                            let _ =
+                                updates.send(EngineUpdate::Notice(format!("Raw active: {error}")));
+                            if cleaner.as_ref().is_some_and(|active| active.stalled()) {
+                                cleaner = None;
                             }
                         }
                         let _ = updates.send(EngineUpdate::TranscriptReady {
@@ -1067,6 +1068,68 @@ fn load_worker(
 }
 
 /// Follows the saved dictionary while idle, so Settings edits bias the next dictation.
+fn prepare_dictation_text(
+    transcript: &mut Transcript,
+    entries: &[crate::dictionary::DictionaryEntry],
+    cleanup: impl FnOnce(&str) -> Option<Result<String, String>>,
+) -> Result<(), String> {
+    let before = transcript.text.clone();
+    let spelled = crate::dictionary::apply(&before, entries);
+    let (text, result, cleaned) = match cleanup(&spelled) {
+        Some(Ok(text)) => (crate::dictionary::apply(&text, entries), Ok(()), true),
+        Some(Err(error)) => (spelled, Err(error), false),
+        None => (spelled, Ok(()), false),
+    };
+    if transcript.raw.is_none() && (text != before || cleaned) {
+        transcript.raw = Some(before);
+    }
+    transcript.text = text;
+    result
+}
+
+#[cfg(test)]
+mod dictionary_cleanup_tests {
+    use super::*;
+    fn transcript() -> Transcript {
+        Transcript {
+            raw: None,
+            text: "Use fuid audio".into(),
+            words: vec![],
+            audio_duration: Duration::ZERO,
+            transcription: Duration::ZERO,
+        }
+    }
+    #[test]
+    fn cleanup_sees_spelled_text_and_output_is_spelled_again() {
+        let dictionary = [crate::dictionary::DictionaryEntry::new(
+            "FluidAudio",
+            &["fuid audio"],
+        )];
+        let mut text = transcript();
+        prepare_dictation_text(&mut text, &dictionary, |input| {
+            assert_eq!(input, "Use FluidAudio");
+            Some(Ok("Use fuid audio!".into()))
+        })
+        .unwrap();
+        assert_eq!(text.text, "Use FluidAudio!");
+        assert_eq!(text.raw.as_deref(), Some("Use fuid audio"));
+    }
+    #[test]
+    fn cleanup_failure_retains_spelled_raw_and_original_recovery_text() {
+        let dictionary = [crate::dictionary::DictionaryEntry::new(
+            "FluidAudio",
+            &["fuid audio"],
+        )];
+        let mut text = transcript();
+        assert!(
+            prepare_dictation_text(&mut text, &dictionary, |_| Some(Err("timeout".into())))
+                .is_err()
+        );
+        assert_eq!(text.text, "Use FluidAudio");
+        assert_eq!(text.raw.as_deref(), Some("Use fuid audio"));
+    }
+}
+
 struct DictionarySync {
     entries: Vec<crate::dictionary::DictionaryEntry>,
     checked: std::time::Instant,
