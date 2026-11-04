@@ -27,6 +27,7 @@ pub fn run(actions: Sender<TrayAction>, updates: Receiver<Update>, visible: bool
     application.connect_activate(move |application| {
         if let Some(window) = application.active_window() {
             window.present();
+            super::permissions_view::maybe_show(application);
             return;
         }
         if let Some(updates) = updates.borrow_mut().take() {
@@ -427,6 +428,9 @@ fn build_window(
                     Update::Show(token) => {
                         history.refresh();
                         present(window.upcast_ref(), Some(&token));
+                        if let Some(app) = window.application() {
+                            super::permissions_view::maybe_show(&app);
+                        }
                     }
                     Update::Settings(token) => {
                         // Map the parent without requesting activation. The
@@ -543,6 +547,9 @@ fn build_window(
                     Update::Status(message) if message == "@show" => {
                         history.refresh();
                         window.present();
+                        if let Some(app) = window.application() {
+                            super::permissions_view::maybe_show(&app);
+                        }
                     }
                     Update::Status(message) if message == "@media" => {
                         window.set_visible(true);
@@ -816,6 +823,7 @@ fn build_window(
     });
     if visible {
         window.present();
+        super::permissions_view::maybe_show(application);
     }
 }
 
