@@ -30,10 +30,11 @@ success. Use actual recordings and fault injection in Milestone 2 for those gate
 The DirectComposition pill exposes virtual UIA Button/Invoke fragments with
 stable action IDs and a root that owns virtual focus. Native child BUTTONs
 were removed because UIA activated their HWNDs before Invoke, blocking guarded
-Paste. Settings and History retain native controls. The new provider, polite
-status announcements, cached-element teardown and switched-target refusal
-require a rebuilt executable guest regression; the isolated diagnostic alone
-is not a Koett pass. See the milestone evidence and scripts/windows-lab/checks.
+Paste. Settings and History retain native controls. The unmodified CI artifact 23f8b75 passed real-guest UIA action invocation,
+exact recovery Paste without focus theft, switched-target refusal and mouse
+actions. Dedicated virtual-action Narrator speech and retained-provider
+teardown were not exercised in that final retest; see its explicit scope in
+the milestone receipt. See the milestone evidence and scripts/windows-lab/checks.
 The test client returns failure on script errors, failed assertions or EOF.
 Paste checks clear only the isolated editor and require one exact insertion.
 

@@ -48,7 +48,8 @@ $steps+=Get-LabStep 'done-copied'
 Start-Sleep -Milliseconds 1300
 $steps+=Get-LabStep 'copied-hides-after-second'
 Activate-LabEditor $target
-[Windows.Forms.SendKeys]::SendWait('^a{BACKSPACE}')
+# Clear only the isolated Edit control; SendKeys can miss its child focus.
+$null=[LabEdit]::SendMessage([LabDriver]::GetWindow($target,5),0xC,[IntPtr]::Zero,(New-Object Text.StringBuilder))
 Start-Sleep -Milliseconds 100
 $beforePasteText=[LabEdit]::Read([LabDriver]::GetWindow($target,5))
 if($beforePasteText-ne''){throw 'The isolated editor did not clear before the Paste check'}

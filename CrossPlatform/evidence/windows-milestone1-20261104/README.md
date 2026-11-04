@@ -1,40 +1,28 @@
-# Milestone 1 — ongoing real Windows checks
+# Milestone 1 — real Windows desktop checks
 
 ## Current checkpoint
 
-Milestone 1 remains **incomplete**. The green, unmodified CI artifact 7a0e827
-passes the corrected waveform, dark/light checkbox toggle, compact Settings,
-verified typing focus, visible states, reduced-motion visual checks, native
-Settings/pill geometry at 100/150/200%, and scoped dark-checkbox Narrator
-navigation. Earlier artifact receipts retain History Copy/Export and startup
-on/off across boots. See [the latest retest](ci-7a0e827/README.md).
+Milestone 1 is **complete** against the final agreed acceptance gate. The
+unmodified green CI artifact 23f8b75 passes exact UIA recovery Paste with no
+focus theft, UIA Pause/Resume/Cancel/Copy, hover/timing behavior, switched-target
+refusal and real mouse actions. See [the final retest](ci-23f8b75/README.md)
+for screenshots, foreground HWND/PID and exact artifact hashes.
 
-**UIA Invoke still failed** in 7a0e827: activation moved focus to the pill and
-the original-target Paste guard refused. The earlier focus restoration was
-insufficient and is removed. Source now exposes virtual UIA fragments through
-the DirectComposition HWND. An isolated managed probe preserves foreground;
-the new Rust implementation has Windows all-target metadata Clippy evidence
-only and still requires its linked-executable test. Native Settings/History
-remain native. The tray standard-tooltip correction also needs that retest.
-
-Do not mark the PR ready until the rebuilt executable passes UIA exact Paste,
-changed-target refusal, pointer/state, Narrator/status, teardown and tray
-regressions. No original-target guard was relaxed. Root status names and a
-revision counter cover accessible announcements and same-tick transitions.
-Supply-chain outputs are current; six dependency tests and ten inventory tests
-pass without a policy bypass. Native Linux tests report 389 passed, 17 ignored;
-Clippy/release pass; six pure timing/state tests pass.
-
-The guest completed a full Windows shutdown. No QEMU process or transfer server
-is left running. Its disk remains private under ~/.cache/koett-windows; the
-host Koett installation/data, Mac app and Linux product code were untouched.
-No spend, license purchase, privileged helper, install or release was made.
+Earlier e63e65a and 7a0e827 receipts cover the rest of the desktop matrix:
+visible 300×48 pill, typing focus, light/dark checkbox, native Settings and
+History Copy/Export, startup on/off across boots, tray/Explorer restart,
+reduced motion, scoped Narrator and 100/150/200% scaling. The final retest
+explicitly identifies checks carried forward and checks not repeated.
+No original-target guard was relaxed; no fallback was needed. Native
+Settings/History remain native. CI is rerun after rebasing; no merge or release
+is authorized by this receipt. Real dictation and broader parity are later
+milestones. The guest completed a full Windows shutdown after testing.
 
 The remaining sections preserve earlier investigation evidence and failures;
 they are not the current pass list.
 
 
-This is a partial receipt, not Milestone 1 completion. PR remains draft.
+The following is historical investigation evidence; failures below were superseded where the current checkpoint says so.
 
 ## Executed on Windows
 
