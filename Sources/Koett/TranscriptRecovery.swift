@@ -53,6 +53,18 @@ extension KoettController {
         }
     }
 
+    @objc func retrySaveTranscripts() {
+        guard state == .ready else { return }
+        transcriptPersistence.recoverInBackground { [weak self] outcome in
+            if let warning = outcome.warning {
+                self?.recordingOverlay.showError(warning, keepUntilClicked: true)
+            } else {
+                self?.recordingOverlay.showTransientStatus("Transcripts saved")
+            }
+            self?.rebuildMenu()
+        }
+    }
+
     @objc func copyUnsavedTranscripts() {
         guard state == .ready, let text = transcriptPersistence.unsavedTranscriptText else { return }
         lastTranscriptMenuActions.queue(.copy(text))

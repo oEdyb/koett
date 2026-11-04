@@ -132,6 +132,10 @@ private struct Koett {
     }
 
     private static func registerLoginItem() throws {
+        guard LoginPreference.shouldRegister(in: .standard) else {
+            print("Login Item remains disabled by preference.")
+            return
+        }
         let service = SMAppService.mainApp
         if service.status != .enabled {
             try service.register()

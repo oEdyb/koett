@@ -296,6 +296,11 @@ extension KoettController {
         )
         pasteLastItem.isEnabled = state == .ready && lastTranscript != nil
         menu.addItem(pasteLastItem)
+        if transcriptPersistence.hasVolatileTranscripts || failedTranscriptStore.hasTranscripts {
+            let retry = menuItem(title: "Retry Save Transcripts", action: #selector(retrySaveTranscripts), selected: false)
+            retry.isEnabled = state == .ready
+            menu.addItem(retry)
+        }
         if transcriptPersistence.unsavedTranscriptText != nil {
             let unsavedItem = menuItem(
                 title: "Copy Unsaved Transcripts",
@@ -320,6 +325,7 @@ extension KoettController {
             ))
         }
         menu.addItem(.separator())
+        menu.addItem(loginMenuItem())
         menu.addItem(menuItem(title: "Permissions…", action: #selector(showPermissions), selected: false))
         let versionItem = NSMenuItem(
             title: "Koett \(Self.versionLabel)",

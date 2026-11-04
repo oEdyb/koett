@@ -16,15 +16,15 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | No equivalent state/recovery actions | Port persistent rescue states; never time out unsaved text |
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Yes; empty-result path not fully traced | Engine; runtime unverified | Exercise silent live capture and empty ASR on all; add Nemotron trim only if streaming semantics allow |
 | Escape cancel | Yes, recording-only | X11 yes; Wayland no global Esc | No recording Esc path identified | Windows recording-scoped observer; Wayland compositor binding/portal shortcut, pill/CLI fallback |
-| Paste into original target | No strong target guard/receipt | niri/X11 guard; other Wayland desktops copy-only | HWND equality guard in `deliver`; receipt absent | Add Mac guard; Windows PID/liveness + per-stage recheck; keep copy fallback everywhere |
+| Paste into original target | Original PID/launch identity + available AX window checked per paste; no atomic receipt | niri/X11 guard; other Wayland desktops copy-only | HWND equality guard in `deliver`; receipt absent | Add Mac guard; Windows PID/liveness + per-stage recheck; keep copy fallback everywhere |
 | Terminal versus GUI paste chord | Configurable per-app image delivery | One global choice | Ctrl+V baseline | Per-app chord rules on Linux/Windows; never guess by sending both |
 | Last transcript / Copy and Paste Last | Yes | Yes; CLI paste-last copies only | Shared persistence; no matching tray actions | Native actions + honest CLI naming on Windows; align Linux CLI behavior/docs |
 | Failed audio / failed text fallback | Yes | Yes | Shared engine/store paths; untested | Windows visible recovery + failure injection, preserve ASR/delivery separation |
-| Retry Save / recovery status | Copy Unsaved only | Yes | No full recovery UI | Add Retry Save/status on Mac and Windows; stable IDs prevent duplicate saves |
+| Retry Save / recovery status | Retry Save + Copy Unsaved; stable recovery IDs | Yes | No full recovery UI | Add Retry Save/status on Mac and Windows; stable IDs prevent duplicate saves |
 | Crash during active capture | No automatic recovery | No, audio in memory | Unverified; no durable capture journal found | Optional bounded crash-safe local recording journal, explicit privacy/retention; never claim current recovery covers kills |
 | Long live dictation | Synthetic long-ASR probes, not full hardware proof | Not newly verified | Not verified | 30-minute live sessions; check memory, dictionary/progress on long-path chunking |
 | Permission onboarding | Live-status first-run window | No window; portal prompts | No focused onboarding | Small Linux/Windows status surface with system-settings links, no extra dictation screens |
-| Login toggle / tray or menu bar | Login on at install; no toggle | Yes | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
+| Login toggle / tray or menu bar | Native toggle; explicit disabled preference survives reinstall | Yes | Run-key toggle + tray source | Add Mac toggle; Windows verify Explorer restart and user-disabled startup |
 
 Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,EscapeKeyMonitor,MicrophoneSelection,PermissionsWindow}.swift`; `CrossPlatform/src/{windows,runtime,audio,state,history}.rs`, `linux/{recording_overlay,input_preview,output,recovery,control}.rs`; [demo limits](video-demo-checklist.md).
 

@@ -44,6 +44,7 @@ extension KoettController {
     }
 
     private func startRecording() throws {
+        automaticPasteTarget = PasteTarget.capture()
         switch speechEngine {
         case .parakeet, .parakeetV3, .parakeet110m:
             try startParakeetRecording()
@@ -645,6 +646,11 @@ extension KoettController {
 
     /// Posts V with `flags` (Command for text; Control for images in terminals).
     func postPasteKey(flags: CGEventFlags) -> Bool {
+        guard state != .transcribing || automaticPasteTarget?.isCurrent == true,
+              let foreground = NSWorkspace.shared.frontmostApplication,
+              foreground.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+              CGEventSource.flagsState(.combinedSessionState)
+                .intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift]).isEmpty else { return false }
         guard let source = CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(
                   keyboardEventSource: source,
