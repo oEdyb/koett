@@ -2,6 +2,7 @@
 //! recording. Every recording start (with drawing on or off) begins a new
 //! scope, so frames from a cancelled, failed or earlier recording, and captures
 //! that finish late, can never be pasted with a later dictation.
+use std::collections::BTreeSet;
 use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
@@ -19,12 +20,14 @@ struct Frames {
     recording: u64,
     open: bool,
     frames: Vec<Keyframe>,
+    removed: BTreeSet<u64>,
 }
 
 static FRAMES: Mutex<Frames> = Mutex::new(Frames {
     recording: 0,
     open: false,
     frames: Vec::new(),
+    removed: BTreeSet::new(),
 });
 static CLOSED: Condvar = Condvar::new();
 
@@ -38,6 +41,7 @@ pub fn begin_recording() -> u64 {
     state.recording += 1;
     state.open = false;
     state.frames.clear();
+    state.removed.clear();
     CLOSED.notify_all();
     state.recording
 }
@@ -49,6 +53,7 @@ pub fn discard_recording() {
     state.recording += 1;
     state.open = false;
     state.frames.clear();
+    state.removed.clear();
     CLOSED.notify_all();
 }
 
@@ -64,7 +69,7 @@ pub fn set_open(recording: u64, open: bool) {
 /// Stores a frame; returns false and drops it when its recording is over.
 pub fn push(recording: u64, frame: Keyframe) -> bool {
     let mut state = frames();
-    let current = state.recording == recording;
+    let current = state.recording == recording && !state.removed.contains(&frame.order);
     if current {
         state.frames.push(frame);
     }
@@ -75,6 +80,15 @@ pub fn push(recording: u64, frame: Keyframe) -> bool {
 pub fn has_frames_or_captures() -> bool {
     let state = frames();
     state.open || !state.frames.is_empty()
+}
+
+/// Rejects late results too, so an undone capture cannot return to delivery.
+pub fn remove(recording: u64, order: u64) {
+    let mut state = frames();
+    if state.recording == recording {
+        state.removed.insert(order);
+        state.frames.retain(|frame| frame.order != order);
+    }
 }
 
 /// Waits (bounded) for the overlay to finish capturing, then takes the current
@@ -108,6 +122,37 @@ mod tests {
 
     fn starts(frames: &[Keyframe]) -> Vec<f32> {
         frames.iter().map(|frame| frame.start).collect()
+    }
+
+    #[test]
+    fn undo_removes_completed_and_pending_frames_without_reusing_their_order() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let recording = begin_recording();
+        assert!(push(recording, frame(1.0)));
+        assert!(push(recording, frame(2.0)));
+        remove(recording, 20);
+        remove(recording, 30);
+        assert!(
+            !push(recording, frame(2.0)),
+            "completed result cannot return"
+        );
+        assert!(!push(recording, frame(3.0)), "pending result cannot return");
+        assert!(push(recording, frame(4.0)));
+        assert_eq!(starts(&take(Duration::ZERO)), [1.0, 4.0]);
+    }
+
+    #[test]
+    fn undo_is_scoped_to_its_recording() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let old = begin_recording();
+        remove(old, 10);
+        let current = begin_recording();
+        assert!(
+            push(current, frame(1.0)),
+            "new recording can reuse local orders"
+        );
+        remove(old, 10);
+        assert_eq!(starts(&take(Duration::ZERO)), [1.0]);
     }
 
     #[test]
