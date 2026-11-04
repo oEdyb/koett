@@ -1,0 +1,9 @@
+
+running 4 tests
+test tests::invalid_levels_do_not_poison_the_meter ... ok
+test tests::a_long_pause_replaces_old_audio_with_silence ... ok
+test tests::silence_stays_flat ... ok
+test tests::twenty_minutes_keeps_only_the_window ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

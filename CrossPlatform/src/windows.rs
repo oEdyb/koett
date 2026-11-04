@@ -1,3 +1,6 @@
+mod meter;
+mod pill;
+
 use std::cell::RefCell;
 use std::mem::size_of;
 use std::ptr;
@@ -10,10 +13,10 @@ use windows::Win32::Foundation::{
     GlobalFree, HANDLE, HWND, POINT, RECT,
 };
 use windows::Win32::Graphics::Gdi::{
-    BeginPaint, CreateSolidBrush, DT_CENTER, DT_SINGLELINE, DT_VCENTER, DeleteObject, DrawTextW,
-    EndPaint, FillRect, GetMonitorInfoW, GetStockObject, HGDIOBJ, InvalidateRect,
-    MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow, NULL_PEN, PAINTSTRUCT, RoundRect,
-    SelectObject, SetBkMode, SetTextColor, TRANSPARENT,
+    BeginPaint, CreateRoundRectRgn, CreateSolidBrush, DT_CENTER, DT_VCENTER, DeleteObject,
+    DrawTextW, EndPaint, FillRect, GetMonitorInfoW, HGDIOBJ, InvalidateRect,
+    MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow, PAINTSTRUCT, SetBkMode, SetTextColor,
+    SetWindowRgn, TRANSPARENT,
 };
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
@@ -27,7 +30,8 @@ use windows::Win32::System::Registry::{
 };
 use windows::Win32::System::Threading::CreateMutexW;
 use windows::Win32::UI::HiDpi::{
-    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext,
+    DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, GetDpiForMonitor, MDT_EFFECTIVE_DPI,
+    SetProcessDpiAwarenessContext,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, GetKeyState, HOT_KEY_MODIFIERS, INPUT, INPUT_0, INPUT_KEYBOARD,
@@ -43,14 +47,15 @@ use windows::Win32::UI::Shell::{
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
     DestroyWindow, DispatchMessageW, GetClientRect, GetCursorPos, GetForegroundWindow, GetMessageW,
-    HWND_TOPMOST, IDI_APPLICATION, KillTimer, LWA_ALPHA, LoadIconW, MF_CHECKED, MF_DISABLED,
-    MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage, RegisterClassExW,
+    HWND_TOPMOST, IDI_APPLICATION, KillTimer, LWA_ALPHA, LoadIconW, MA_NOACTIVATE, MF_CHECKED,
+    MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage, RegisterClassExW,
     RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, SWP_NOACTIVATE,
     SWP_SHOWWINDOW, SetForegroundWindow, SetLayeredWindowAttributes, SetTimer, SetWindowPos,
     ShowWindow, TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
     WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
-    WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED, WS_EX_NOACTIVATE,
-    WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_OVERLAPPEDWINDOW, WS_POPUP,
+    WM_MOUSEACTIVATE, WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED,
+    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_OVERLAPPEDWINDOW,
+    WS_POPUP,
 };
 use windows::core::{GUID, PCWSTR, w};
 
@@ -83,6 +88,8 @@ struct WindowsApp {
     status: AppStatus,
     paste_target: Option<HWND>,
     overlay: HWND,
+    pill_renderer: RefCell<Option<pill::Renderer>>,
+    meter: meter::Meter,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
     levels: Option<AudioLevels>,
@@ -112,6 +119,8 @@ pub fn run() -> Result<(), String> {
         status: AppStatus::Starting,
         paste_target: None,
         overlay: HWND::default(),
+        pill_renderer: RefCell::new(None),
+        meter: meter::Meter::default(),
         shortcut_window: HWND::default(),
         registered_shortcut: None,
         levels: None,
@@ -240,8 +249,8 @@ unsafe fn run_message_loop(
             WS_POPUP,
             0,
             0,
-            260,
-            52,
+            300,
+            48,
             None,
             None,
             Some(instance.into()),
@@ -336,6 +345,17 @@ unsafe extern "system" fn window_proc(
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.poll_updates();
                     if app.status == AppStatus::Recording {
+                        let elapsed = app
+                            .recording_started
+                            .map(|s| s.elapsed().as_millis() as u64)
+                            .unwrap_or(0);
+                        let rms = app
+                            .levels
+                            .as_ref()
+                            .map(AudioLevels::current)
+                            .map(|v| v.0)
+                            .unwrap_or(0.0);
+                        app.meter.sample(elapsed, rms);
                         unsafe {
                             let _ = InvalidateRect(Some(app.overlay), None, false);
                         }
@@ -378,6 +398,9 @@ unsafe extern "system" fn overlay_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if message == WM_MOUSEACTIVATE {
+        return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
+    }
     if message == WM_PAINT {
         let app_cell = APP.load(Ordering::Acquire);
         if !app_cell.is_null()
@@ -475,6 +498,7 @@ impl WindowsApp {
                     self.update_overlay();
                 }
                 EngineUpdate::RecordingStarted(levels) => {
+                    self.meter = meter::Meter::default();
                     self.levels = Some(levels);
                     self.recording_started = Some(Instant::now());
                     self.update_overlay();
@@ -504,7 +528,7 @@ impl WindowsApp {
 
     fn update_overlay(&self) {
         unsafe {
-            if self.status == AppStatus::Recording {
+            if matches!(self.status, AppStatus::Recording | AppStatus::Transcribing) {
                 position_overlay(self.overlay, GetForegroundWindow());
                 let _ = ShowWindow(self.overlay, SW_SHOWNOACTIVATE);
             } else {
@@ -829,8 +853,16 @@ unsafe fn position_overlay(overlay: HWND, target: HWND) {
         ..Default::default()
     };
     if unsafe { GetMonitorInfoW(monitor, &mut info) }.as_bool() {
-        let width = 260;
-        let height = 52;
+        let mut dpi = 96;
+        let mut dpi_y = 96;
+        let _ = unsafe { GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi, &mut dpi_y) };
+        let width = (300 * dpi / 96) as i32;
+        let height = (48 * dpi / 96) as i32;
+        let radius = (46 * dpi / 96) as i32;
+        let region = unsafe { CreateRoundRectRgn(0, 0, width + 1, height + 1, radius, radius) };
+        if unsafe { SetWindowRgn(overlay, Some(region), true) } == 0 {
+            let _ = unsafe { DeleteObject(HGDIOBJ(region.0)) };
+        }
         let x = info.rcWork.left + (info.rcWork.right - info.rcWork.left - width) / 2;
         let y = info.rcWork.bottom - height - 28;
         let _ = unsafe {
@@ -850,62 +882,33 @@ unsafe fn position_overlay(overlay: HWND, target: HWND) {
 unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
     let mut paint = PAINTSTRUCT::default();
     let dc = unsafe { BeginPaint(hwnd, &mut paint) };
-    let background = unsafe { CreateSolidBrush(COLORREF(0x00211e1d)) };
-    let coral = unsafe { CreateSolidBrush(COLORREF(0x006b7dff)) };
-    let old_brush = unsafe { SelectObject(dc, HGDIOBJ(background.0)) };
-    let old_pen = unsafe { SelectObject(dc, GetStockObject(NULL_PEN)) };
-    let _ = unsafe { RoundRect(dc, 0, 0, 260, 52, 26, 26) };
-
-    let level = app
-        .levels
-        .as_ref()
-        .map(AudioLevels::current)
-        .map(|(rms, _)| (rms * 18.0).clamp(0.08, 1.0))
-        .unwrap_or(0.08);
-    let _ = unsafe { SelectObject(dc, HGDIOBJ(coral.0)) };
-    let phase = app
-        .recording_started
-        .map(|started| started.elapsed().as_secs_f32() * 8.0)
-        .unwrap_or(0.0);
-    for index in 0..14 {
-        let wave = ((index as f32 * 0.7 + phase).sin().abs() * 0.65 + 0.35) * level;
-        let height = (6.0 + wave * 24.0) as i32;
-        let left = 20 + index * 7;
-        let rect = RECT {
-            left,
-            top: 26 - height / 2,
-            right: left + 3,
-            bottom: 26 + height / 2,
-        };
-        unsafe { FillRect(dc, &rect, coral) };
+    let mut bounds = RECT::default();
+    if unsafe { GetClientRect(hwnd, &mut bounds) }.is_ok() {
+        let mut renderer = app.pill_renderer.borrow_mut();
+        if renderer.is_none() {
+            *renderer = pill::Renderer::new().ok();
+        }
+        if let Some(current) = renderer.as_ref() {
+            let elapsed = app
+                .recording_started
+                .map(|s| s.elapsed().as_secs())
+                .unwrap_or(0);
+            if current
+                .paint(
+                    hwnd,
+                    dc,
+                    bounds,
+                    &app.meter.bars(),
+                    elapsed,
+                    app.status == AppStatus::Transcribing,
+                )
+                .is_err()
+            {
+                *renderer = None;
+            }
+        }
     }
-
-    let elapsed = app
-        .recording_started
-        .map(|started| started.elapsed().as_secs())
-        .unwrap_or(0);
-    let mut timer = format!("{:02}:{:02}", elapsed / 60, elapsed % 60)
-        .encode_utf16()
-        .collect::<Vec<_>>();
-    let mut timer_rect = RECT {
-        left: 130,
-        top: 0,
-        right: 238,
-        bottom: 52,
-    };
     unsafe {
-        SetBkMode(dc, TRANSPARENT);
-        SetTextColor(dc, COLORREF(0x00ffffff));
-        DrawTextW(
-            dc,
-            &mut timer,
-            &mut timer_rect,
-            DT_CENTER | DT_VCENTER | DT_SINGLELINE,
-        );
-        let _ = SelectObject(dc, old_pen);
-        let _ = SelectObject(dc, old_brush);
-        let _ = DeleteObject(HGDIOBJ(coral.0));
-        let _ = DeleteObject(HGDIOBJ(background.0));
         let _ = EndPaint(hwnd, &paint);
     }
 }
