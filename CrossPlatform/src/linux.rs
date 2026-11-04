@@ -1290,16 +1290,14 @@ async fn run_wayland(
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = Some(output::PASTE_NOW);
-                            if let Some(png) = feedback::sketch_for(&text) {
+                            let image_delivery = if let Some(png) = feedback::sketch_for(&text) {
                                 match &output {
-                                    Some(output) => {
-                                        let _ = output.deliver_image(&png, now).await;
-                                    }
-                                    None => {
-                                        let _ = output::deliver_image(&png, now);
-                                    }
+                                    Some(output) => output.deliver_image(&png, now).await,
+                                    None => output::deliver_image(&png, now),
                                 }
-                            }
+                            } else {
+                                Ok(())
+                            };
                             let result = match &output {
                                 Some(output) => {
                                     output.deliver(&text, now, settings.paste_shortcut).await
@@ -1312,7 +1310,7 @@ async fn run_wayland(
                                     let _ = tray.sender.send(TrayUpdate::CopyResult(text));
                                 }
                             }
-                            result
+                            image_delivery.and(result)
                         }
                         Err(error) => Err(error),
                     };
@@ -1410,20 +1408,20 @@ async fn run_wayland(
             };
             feedback::remember_sketch(&text, sheet.as_deref());
             cache_completed(tray, &text);
-            if let Some(png) = &sheet {
-                // Scrawl order: the numbered sheet first, then the matching text.
-                let pasted = match &output {
+            let image_delivery = if let Some(png) = &sheet {
+                match &output {
                     Some(output) => output.deliver_image(png, target).await,
                     None => output::deliver_image(png, target),
-                };
-                if let Err(error) = pasted {
-                    update_tray_status(tray, &format!("@notice:Contact sheet not pasted: {error}"));
                 }
-            }
-            let delivered = match &output {
+                .map_err(|error| format!("Contact sheet not pasted: {error}"))
+            } else {
+                Ok(())
+            };
+            let text_delivery = match &output {
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
+            let delivered = image_delivery.and(text_delivery);
             if sheet.is_some() {
                 tokio::time::sleep(Duration::from_millis(700)).await;
                 if let Some(tray) = tray {

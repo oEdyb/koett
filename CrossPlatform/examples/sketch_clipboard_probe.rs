@@ -5,7 +5,7 @@ mod feedback;
 
 #[cfg(target_os = "linux")]
 fn main() {
-    use gtk4::{gdk, glib};
+    use gtk4::{gdk, glib, prelude::*};
     gtk4::init().unwrap();
     let args: Vec<String> = std::env::args().collect();
     let png = std::fs::read(&args[1]).unwrap();
