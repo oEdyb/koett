@@ -46,7 +46,7 @@ export class Captures {
         const current = () => !this._closed && allowed() && this._epoch === epoch &&
             GLib.get_monotonic_time() < expires && monitorRect(rect);
         const result = this._tail.then(async () => {
-            if (!current() || !await valid()) throw new Error('Capture session changed');
+            if (!await valid() || !current()) throw new Error('Capture session changed');
             for (const actor of global.get_window_actors()) {
                 const window = actor.meta_window;
                 if (window.get_pid() === pid && /^Koett pill [0-9a-f-]{36}$/.test(window.get_title() || '')) {
@@ -73,7 +73,7 @@ export class Captures {
                         } catch (error) { reject(error); }
                     });
                 });
-                if (timedOut || !current() || !await valid()) throw new Error('Capture expired or session changed');
+                if (timedOut || !await valid() || !current()) throw new Error('Capture expired or session changed');
                 if (stream.get_data_size() > MAX_PNG) throw new Error('Screenshot is too large');
                 stream.close(null);
                 return GLib.base64_encode(stream.steal_as_bytes().get_data());

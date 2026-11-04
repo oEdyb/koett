@@ -116,6 +116,7 @@ mod tests {
             &css,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
+        let painted = std::rc::Rc::new(std::cell::Cell::new(0_u8));
         let windows = [
             (
                 "Koett pill 11111111-1111-4111-8111-111111111111",
@@ -132,10 +133,19 @@ mod tests {
                 .default_height(96)
                 .build();
             window.add_css_class(class);
+            let area = gtk::DrawingArea::new();
+            let blue = if class == "capture-pill" { 1.0 } else { 0.0 };
+            let painted = painted.clone();
+            let flag = if class == "capture-pill" { 1 } else { 2 };
+            area.set_draw_func(move |_, context, _, _| {
+                painted.set(painted.get() | flag);
+                context.set_source_rgb(1.0, 0.0, blue);
+                context.paint().unwrap();
+            });
+            window.set_child(Some(&area));
             window.present();
             window
         });
-        std::fs::write(directory.join("ready"), "ready").unwrap();
         let context = gtk::glib::MainContext::default();
         let deadline = Instant::now() + Duration::from_secs(120);
         let mut last = String::new();
@@ -143,6 +153,9 @@ mod tests {
         while Instant::now() < deadline {
             while context.pending() {
                 context.iteration(false);
+            }
+            if painted.get() == 3 && !directory.join("ready").exists() {
+                std::fs::write(directory.join("ready"), "ready").unwrap();
             }
             let command = std::fs::read_to_string(directory.join("command")).unwrap_or_default();
             if command == "stop" {
@@ -157,8 +170,15 @@ mod tests {
                 let (tx, rx) = std::sync::mpsc::channel();
                 std::thread::spawn(move || {
                     let start = Instant::now();
-                    let target = super::super::capture::Target { connector: None, monitor: rect, desktop: rect };
-                    let _ = tx.send((super::super::capture::capture(&target), start.elapsed().as_millis()));
+                    let target = super::super::capture::Target {
+                        connector: None,
+                        monitor: rect,
+                        desktop: rect,
+                    };
+                    let _ = tx.send((
+                        super::super::capture::capture(&target),
+                        start.elapsed().as_millis(),
+                    ));
                 });
                 pending = Some((value["case"].as_str().unwrap().to_string(), rx));
                 last = command;
@@ -181,6 +201,22 @@ mod tests {
             std::thread::sleep(Duration::from_millis(10));
         }
         panic!("private capture controller did not finish");
+    }
+
+    #[test]
+    fn complete_png_is_decoded_but_truncated_and_oversized_headers_fail() {
+        let png = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/evidence/gnome-capture-20261104/capture.png"
+        ));
+        let reply = |png: &[u8]| {
+            serde_json::json!({"protocol":1,"ok":true,"png":STANDARD.encode(png)}).to_string()
+        };
+        assert_eq!(decode(&reply(png)).unwrap(), png);
+        assert!(decode(&reply(&png[..24])).is_err());
+        let mut oversized = png.to_vec();
+        oversized[16..20].copy_from_slice(&i32::MAX.to_be_bytes());
+        assert!(decode(&reply(&oversized)).is_err());
     }
 
     #[test]
