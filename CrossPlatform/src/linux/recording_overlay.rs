@@ -1,6 +1,7 @@
 //! Optional GTK layer-shell feedback. The shim must precede libwayland in the
 //! dynamic loader's symbol scope; late dlopen alone is insufficient. See
 //! https://github.com/wmww/gtk4-layer-shell/blob/main/linking.md.
+mod position;
 use gtk4::{self as gtk, glib::translate::ToGlibPtr, prelude::*};
 use libloading::Library;
 use std::os::unix::process::CommandExt;
@@ -100,6 +101,29 @@ impl LayerShell {
         Ok(())
     }
 
+    fn position(
+        &self,
+        window: &gtk::Window,
+        monitor: &gtk::gdk::Monitor,
+        x: i32,
+        y: i32,
+    ) -> Result<(), libloading::Error> {
+        type EdgeFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32, i32);
+        self.choose_monitor(window, Some(monitor))?;
+        unsafe {
+            let anchor = self.0.get::<EdgeFn>(b"gtk_layer_set_anchor\0")?;
+            let margin = self.0.get::<EdgeFn>(b"gtk_layer_set_margin\0")?;
+            let pointer = window.to_glib_none().0;
+            for edge in 0..4 {
+                anchor(pointer, edge, i32::from(edge == 0 || edge == 2));
+                margin(pointer, edge, 0);
+            }
+            margin(pointer, 0, x);
+            margin(pointer, 2, y);
+        }
+        Ok(())
+    }
+
     /// Full-monitor overlay surface. Enums: overlay=3, keyboard none=0 or
     /// exclusive=1, edges left=0 right=1 top=2 bottom=3.
     pub(super) fn cover(
@@ -170,7 +194,7 @@ impl LayerShell {
 }
 
 enum PillLayer {
-    Layer(LayerShell),
+    Layer(Rc<LayerShell>),
     Gnome,
 }
 
@@ -179,7 +203,7 @@ impl PillLayer {
         if super::gnome_pill::available() {
             return Ok(Self::Gnome);
         }
-        Ok(Self::Layer(LayerShell::load()?))
+        Ok(Self::Layer(Rc::new(LayerShell::load()?)))
     }
 
     fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
@@ -882,6 +906,17 @@ impl RecordingOverlay {
         warning.set_visible(false);
         layout.append(&warning);
         window.set_child(Some(&layout));
+        if let PillLayer::Layer(layer) = &layer_shell {
+            position::apply(&window, layer);
+            position::attach(&window, &layout, layer.clone());
+            let css = gtk::CssProvider::new();
+            css.load_from_data("window.koett-pill-move-target { background: transparent; box-shadow: none; border: none; }");
+            gtk::style_context_add_provider_for_display(
+                &gtk::prelude::WidgetExt::display(&window),
+                &css,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
         Some(Self {
             window,
             drawing,
@@ -1129,6 +1164,9 @@ impl RecordingOverlay {
         );
         self.drawing.set_content_height(height);
         self.window.set_default_size(WIDTH, height);
+        if let PillLayer::Layer(layer) = &self.layer_shell {
+            position::apply(&self.window, layer);
+        }
 
         // States with buttons take the pointer (hover actions while recording
         // or transcribing); the pill never takes keyboard focus.
