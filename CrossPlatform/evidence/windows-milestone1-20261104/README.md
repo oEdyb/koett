@@ -1,5 +1,33 @@
 # Milestone 1 — ongoing real Windows checks
 
+## Current checkpoint
+
+Milestone 1 remains **incomplete**. The unmodified CI artifact e63e65a has
+visible pill, typing-focus, pointer-action, native History Copy/Export,
+startup-off/on, Explorer/tray recovery, light theme, reduced-motion and
+100/150/200% runtime receipts. Scoped Narrator keyboard/name and recorded
+speech checks passed. See [artifact-specific evidence](ci-e63e65a/README.md).
+
+Real Windows found an invisible composition factory interface, incorrect
+waveform colors, unreadable dark checkbox text, oversized Settings, and
+UIA Invoke activation blocking guarded Paste. Source fixes are pushed.
+The latest color, dark checkbox, compact Settings, reduced-motion scheduling,
+tray tooltip refresh and accessible-action focus fixes require a new
+unmodified CI artifact regression pass. Do not mark this PR ready yet.
+
+The accessibility fix restores only the window displaced by activation of
+Koett's own pill. It does not activate the original recording target after
+an unrelated app switch. Paste still requires that original target to be
+foreground; retest switching targets before invoking Paste.
+
+The guest is powered off after testing. All Windows data is in the isolated
+KoettLab guest; host Koett installation/data were not touched. No spend,
+license purchase, privileged helper, platform release or Mac app change.
+
+The remaining sections preserve earlier investigation evidence and failures;
+they are not the current pass list.
+
+
 This is a partial receipt, not Milestone 1 completion. PR remains draft.
 
 ## Executed on Windows
@@ -72,3 +100,15 @@ Source refinements awaiting their linked-binary test include embedded common
 controls/PMv2 manifest, DPI fitting, native theme colors, accessible heading
 association, window reuse, exact stored text for Copy/Export, CRLF display-only
 conversion and disabled result actions until a transcript is loaded.
+
+
+## Final local validation
+
+`final-local-validation.json` and the adjacent logs record native Linux
+`cargo test --locked` (388 passed, 17 ignored, plus the isolated child test),
+strict all-target Clippy, and a release build. Five meter and five timing/state
+unit tests pass. Windows-target metadata Clippy passes with DOCS_RS/native-link
+skips explicitly recorded. The final Windows fixes have **not** run in a newly
+linked executable. Swift test/release checks were not run on this Linux host.
+Supply-chain inventory remains current; 10 inventory and four PE dependency
+validator tests pass. No policy was weakened.
