@@ -22,3 +22,24 @@ Remaining issues: waveform uses coral instead of Mac gray/dim bars; source
 fix pending a rebuilt artifact. Dark mode, reduced motion, visible states
 at 100/150%, tray menu actions, startup-off reboot, and History export still
 need completion. PR remains draft.
+
+## Additional checks
+
+History SelectionItem automation loads the selected text. Copy and native
+Save As export exactly preserve the Unicode fixture and its LF newline.
+Exported file SHA-256 is `7c79b81831d3825b21290bd09bd3010638fb1284c59bd19968596a53740663b1`.
+
+Light/dark pill and native windows were exercised by changing the guest's
+AppsUseLightTheme preference. **Dark Settings failed**: the themed checkbox
+label remained black. A guest-only SetWindowTheme("", "") diagnostic made
+the native checkbox text readable; source now applies that rendering in
+dark mode. This needs an unmodified rebuilt artifact retest.
+
+SPI_SETCLIENTAREAANIMATION disabled animation; SPI_GETCLIENTAREAANIMATION
+returned 0. Transcribing stayed static in two samples, Done appeared and
+was hidden after 1.8 seconds. Animation was restored afterward. The newer
+source also corrects redraw scheduling and needs runtime retesting.
+
+The actual hidden tray icon opens a menu with History, Settings, Start at
+login and Quit; the JSON records menu item bounds and foreground owner
+HWND/PID. Menu action and restart checks remain to finish.

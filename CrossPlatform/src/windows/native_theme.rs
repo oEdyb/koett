@@ -50,6 +50,18 @@ impl Theme {
             light,
         })
     }
+    pub fn apply_checkbox(&self, hwnd: HWND) {
+        // The themed Win32 checkbox draws black text even after WM_CTLCOLORBTN.
+        // Classic rendering honors the system colors while retaining TogglePattern.
+        let theme = if self.light {
+            windows::core::PCWSTR::null()
+        } else {
+            windows::core::w!("")
+        };
+        unsafe {
+            let _ = windows::Win32::UI::Controls::SetWindowTheme(hwnd, theme, theme);
+        }
+    }
     pub fn apply(&self, hwnd: HWND) {
         let dark = windows::core::BOOL::from(!self.light);
         unsafe {

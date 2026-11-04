@@ -1,0 +1,143 @@
+{
+  "ok": true,
+  "result": {
+    "items": [
+      {
+        "patterns": [],
+        "name": "Koett Recording",
+        "bounds": [
+          980,
+          1380,
+          600,
+          96
+        ],
+        "type": "ControlType.Pane"
+      },
+      {
+        "patterns": [
+          "InvokePatternIdentifiers.Pattern",
+          "ScrollItemPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett \u2014 Starting",
+        "bounds": [
+          2083,
+          1390,
+          80,
+          80
+        ],
+        "type": "ControlType.Button"
+      },
+      {
+        "patterns": [
+          "ScrollItemPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett - 2 running windows",
+        "bounds": [
+          1813,
+          1504,
+          88,
+          96
+        ],
+        "type": "ControlType.Button"
+      },
+      {
+        "patterns": [
+          "InvokePatternIdentifiers.Pattern",
+          "ScrollItemPatternIdentifiers.Pattern"
+        ],
+        "name": "Show Hidden Icons Hide",
+        "bounds": [
+          2091,
+          1504,
+          64,
+          96
+        ],
+        "type": "ControlType.Button"
+      },
+      {
+        "patterns": [
+          "WindowPatternIdentifiers.Pattern",
+          "TransformPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett Settings",
+        "bounds": [
+          320,
+          72,
+          1920,
+          1360
+        ],
+        "type": "ControlType.Window"
+      },
+      {
+        "patterns": [],
+        "name": "Koett Settings",
+        "bounds": [
+          333,
+          85,
+          1894,
+          45
+        ],
+        "type": "ControlType.TitleBar"
+      },
+      {
+        "patterns": [
+          "WindowPatternIdentifiers.Pattern",
+          "TransformPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett History",
+        "bounds": [
+          320,
+          72,
+          1920,
+          1360
+        ],
+        "type": "ControlType.Window"
+      },
+      {
+        "patterns": [],
+        "name": "Koett History",
+        "bounds": [
+          333,
+          85,
+          1894,
+          45
+        ],
+        "type": "ControlType.TitleBar"
+      },
+      {
+        "patterns": [
+          "InvokePatternIdentifiers.Pattern",
+          "ScrollItemPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett Lab Local Account",
+        "bounds": [
+          63,
+          99,
+          580,
+          150
+        ],
+        "type": "ControlType.Button"
+      },
+      {
+        "patterns": [
+          "TextPatternIdentifiers.Pattern",
+          "ScrollItemPatternIdentifiers.Pattern"
+        ],
+        "name": "Koett Lab",
+        "bounds": [
+          229,
+          139,
+          152,
+          38
+        ],
+        "type": "ControlType.Text"
+      }
+    ],
+    "focus": {
+      "hwnd": 459254,
+      "process": "explorer",
+      "pid": 8092
+    }
+  },
+  "id": "1793819036002723691"
+}

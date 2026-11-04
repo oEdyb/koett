@@ -332,6 +332,7 @@ impl Window {
                 STARTUP,
                 [24, 112, 300, 32],
             )?;
+            self.theme.apply_checkbox(self.startup);
             unsafe {
                 SendMessageW(
                     self.startup,
@@ -723,6 +724,9 @@ unsafe extern "system" fn proc(
                     if let Ok(theme) = super::native_theme::Theme::new() {
                         window.theme = theme;
                         window.theme.apply(hwnd);
+                        if window.settings {
+                            window.theme.apply_checkbox(window.startup);
+                        }
                     }
                     unsafe {
                         let _ = InvalidateRect(Some(hwnd), None, true);
