@@ -588,6 +588,16 @@ fn build_window(
                         });
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
+                    Update::Status(message) if message == "@silence" => {
+                        // No delivery outcome will arrive for an empty result.
+                        state = "Ready".into();
+                        recording_started = None;
+                        settling_until = None;
+                        done_until = None;
+                        done_fading = None;
+                        recovery_until = None;
+                        stopped_at_limit = false;
+                    }
                     Update::Status(message) if message.starts_with("@error:") => {
                         let error = message.trim_start_matches("@error:");
                         pill_message = Some((

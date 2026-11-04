@@ -1073,6 +1073,9 @@ fn prepare_dictation_text(
     entries: &[crate::dictionary::DictionaryEntry],
     cleanup: impl FnOnce(&str) -> Option<Result<String, String>>,
 ) -> Result<(), String> {
+    if transcript.text.trim().is_empty() {
+        return Ok(());
+    }
     let before = transcript.text.clone();
     let spelled = crate::dictionary::apply(&before, entries);
     let (text, result, cleaned) = match cleanup(&spelled) {
@@ -1099,6 +1102,19 @@ mod dictionary_cleanup_tests {
             transcription: Duration::ZERO,
         }
     }
+    #[test]
+    fn empty_asr_never_reaches_cleanup_or_changes_raw_recovery() {
+        for empty in ["", " \n\t", "\u{2003}"] {
+            let mut text = transcript();
+            text.text = empty.into();
+            text.raw = Some(empty.into());
+            prepare_dictation_text(&mut text, &[], |_| panic!("empty ASR reached cleanup"))
+                .unwrap();
+            assert_eq!(text.text, empty);
+            assert_eq!(text.raw.as_deref(), Some(empty));
+        }
+    }
+
     #[test]
     fn cleanup_sees_spelled_text_and_output_is_spelled_again() {
         let dictionary = [crate::dictionary::DictionaryEntry::new(

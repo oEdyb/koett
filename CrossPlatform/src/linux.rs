@@ -1470,6 +1470,10 @@ async fn run_wayland(
             }
             let sketches = sketch::take_keyframes(Duration::from_secs(8));
             let (text, sheet) = sketch_delivery(&spoken, &words, &sketches);
+            if formatted.trim().is_empty() && text.trim().is_empty() {
+                update_tray_status(tray, "@silence");
+                continue;
+            }
             let raw = if sheet.is_some() {
                 spoken.as_str()
             } else {
@@ -1663,6 +1667,129 @@ mod queued_capture_tests {
             audio_duration: Duration::from_secs(1),
             transcription: Duration::from_millis(10),
         }
+    }
+
+    #[test]
+    fn empty_completion_skips_delivery_discards_frames_and_allows_next_dictation() {
+        let _guard = runtime_test_guard();
+        let _frames = sketch::FRAMES_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let (engine, _commands, updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        let mut delivered = Vec::new();
+        for empty in ["", " \n\t", "\u{2003}"] {
+            let session = app.engine.begin_test_session();
+            let recording = sketch::begin_recording();
+            assert!(!sketch::has_frames_or_captures());
+            app.paste_target = Some(42);
+            updates
+                .send(EngineUpdate::Status(AppStatus::Transcribing))
+                .unwrap();
+            updates
+                .send(EngineUpdate::TranscriptReady {
+                    model: "test".into(),
+                    transcript: transcript(empty),
+                    session,
+                })
+                .unwrap();
+            updates
+                .send(EngineUpdate::Status(AppStatus::Ready))
+                .unwrap();
+            let mut statuses = Vec::new();
+            app.poll(
+                |_, text, _, _, _| {
+                    delivered.push(text.to_string());
+                    Ok(())
+                },
+                |s| statuses.push(s.to_owned()),
+                |_| {},
+                |_| {},
+            );
+            assert!(delivered.is_empty());
+            assert!(statuses.iter().any(|s| s == "@silence"));
+            assert!(
+                !statuses
+                    .iter()
+                    .any(|s| s.starts_with("@error:") || s.starts_with("@notice:"))
+            );
+            assert_eq!(app.paste_target, None);
+            assert!(!app.quit_busy());
+            assert!(sketch::take_keyframes(Duration::ZERO).is_empty());
+            assert!(!sketch::push_frame(
+                recording,
+                sketch::Keyframe {
+                    order: 2,
+                    start: 1.0,
+                    png: vec![2],
+                    context: None,
+                }
+            ));
+        }
+        let session = app.engine.begin_test_session();
+        updates
+            .send(EngineUpdate::TranscriptReady {
+                model: "test".into(),
+                transcript: transcript("kept words"),
+                session,
+            })
+            .unwrap();
+        app.poll(
+            |_, text, _, _, _| {
+                delivered.push(text.to_string());
+                Ok(())
+            },
+            |_| {},
+            |_| {},
+            |_| {},
+        );
+        assert_eq!(delivered, ["kept words"]);
+    }
+
+    #[test]
+    fn empty_asr_preserves_drawings_for_the_delivery_composer() {
+        let _guard = runtime_test_guard();
+        let _frames = sketch::FRAMES_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let (engine, _commands, updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        let session = app.engine.begin_test_session();
+        let recording = sketch::begin_recording();
+        use base64::Engine;
+        let png = base64::engine::general_purpose::STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAALElEQVR4nGP8//8/A7mAiWydDKOaSQZMpGtBgFHNJAImUjUgg1HNJAKKAgwAnKADJa4TmNgAAAAASUVORK5CYII=").unwrap();
+        assert!(sketch::push_frame(
+            recording,
+            sketch::Keyframe {
+                order: 1,
+                start: 0.0,
+                png,
+                context: None
+            }
+        ));
+        updates
+            .send(EngineUpdate::TranscriptReady {
+                model: "test".into(),
+                transcript: transcript(""),
+                session,
+            })
+            .unwrap();
+        let mut routed = false;
+        app.poll(
+            |_, text, _, words, _| {
+                routed = true;
+                let frames = sketch::take_keyframes(Duration::ZERO);
+                let (text, sheet) = sketch_delivery(text, words, &frames);
+                assert!(!text.trim().is_empty());
+                assert!(sheet.is_some());
+                Ok(())
+            },
+            |_| {},
+            |_| {},
+            |_| {},
+        );
+        assert!(routed);
+        sketch::discard_recording();
     }
 
     #[test]
@@ -2052,6 +2179,12 @@ impl LinuxEngine {
                         self.paste_target = None;
                         sketch::discard_recording();
                         status_changed("@notice:Dictation cancelled");
+                        continue;
+                    }
+                    if transcript.text.trim().is_empty() && !sketch::has_frames_or_captures() {
+                        self.paste_target = None;
+                        sketch::discard_recording();
+                        status_changed("@silence");
                         continue;
                     }
                     if let Err(error) = deliver(

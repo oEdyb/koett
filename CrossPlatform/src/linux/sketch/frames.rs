@@ -71,6 +71,12 @@ pub fn push(recording: u64, frame: Keyframe) -> bool {
     current
 }
 
+/// An empty ASR result may still have drawings awaiting delivery.
+pub fn has_frames_or_captures() -> bool {
+    let state = frames();
+    state.open || !state.frames.is_empty()
+}
+
 /// Waits (bounded) for the overlay to finish capturing, then takes the current
 /// recording's keyframes in time order. Empty when nothing was drawn.
 pub fn take(timeout: Duration) -> Vec<Keyframe> {
