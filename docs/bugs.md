@@ -206,3 +206,15 @@ keyboard map. A hold needs the key seen up first, so releasing Ctrl from
 Ctrl+Shift+Space or a key stuck at start can't draw; other keys end a hold, and a
 focused hold idle for 15 s is released. Regression tests are in `sketch/keys.rs`.
 Labs must name their device in `KOETT_TEST_DRAW_KEYBOARD`.
+
+## 2026-11-05: the draggable pill didn't drag
+
+#79 shipped on a build check and did nothing for Olle: a ghost followed the pointer, the
+pill stayed at the bottom, and the drop never landed. It used Wayland drag-and-drop. The
+first margin-based rewrite stuck at the monitor edge, then failed on KWin. Three causes,
+all measured: niri keeps the press's surface origin for the whole grab while KWin follows
+the surface a variable time later; a layer surface can't change output without a remap,
+which ends the grab; and a window with nothing to draw gets no render node, so GTK skips
+the frame and the old pill stays on screen. The earlier lab passed because it never
+compared the pill to the pointer. Labs now assert one recording dot within 3 px of the
+pointer in a screenshot at each step, on niri and on two KWin outputs.

@@ -219,3 +219,10 @@ partly off-screen one. Kept over the alternatives, which are no window context
 or a paste into the wrong app. PRIMARY was rejected as a selection source because
 nothing proves its owner, so a token selected in a terminal could be pasted under
 a browser pin. Details: docs/screen-context-proposal.md.
+
+## 2026-11-05: the pill's drag moves a copy, not the pill
+
+The real pill stays in place, invisible at 1/255 opacity, and keeps the pointer grab
+while an input-free live copy follows the pointer onto any monitor. On release the real
+pill moves there. This gives one code path for every compositor and exact pointer offsets.
+The cost is a second window for the length of a drag.
