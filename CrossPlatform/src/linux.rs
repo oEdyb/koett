@@ -323,10 +323,14 @@ pub fn run() -> Result<(), String> {
         }
         return Ok(());
     }
+    if std::env::args().nth(1).as_deref() == Some("paste-target-status") {
+        println!("{}", control::request("paste-target-status")?);
+        return Ok(());
+    }
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "paste-target-status"
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
         )
     }) {
         let response = control::request(&command)?;

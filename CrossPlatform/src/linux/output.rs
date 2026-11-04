@@ -146,11 +146,6 @@ pub fn capture_target() -> Option<u32> {
     focused_window()
 }
 
-#[cfg(test)]
-fn target_on_wayland(can_check_focus: bool, focused: impl FnOnce() -> Option<u32>) -> Option<u32> {
-    if can_check_focus { focused() } else { None }
-}
-
 pub fn target_unchanged(target: Option<u32>) -> bool {
     if WINDOW_ACTIVE.load(Ordering::Acquire) {
         return false;
@@ -214,16 +209,6 @@ impl Drop for DeliveryStep {
 #[cfg(test)]
 mod target_tests {
     use super::*;
-
-    #[test]
-    fn a_desktop_without_a_focus_check_has_no_paste_target() {
-        assert_eq!(target_on_wayland(false, || Some(7)), None);
-    }
-
-    #[test]
-    fn niri_targets_the_focused_window() {
-        assert_eq!(target_on_wayland(true, || Some(7)), Some(7));
-    }
 
     #[test]
     fn no_target_means_clipboard_only() {

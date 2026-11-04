@@ -1,4 +1,4 @@
-//! Private niri exercise of the production fallback delivery functions.
+//! Private Wayland exercise of the production fallback delivery functions.
 #[cfg(target_os = "linux")]
 pub use koett_engine::settings;
 #[cfg(target_os = "linux")]
@@ -41,6 +41,15 @@ fn main() {
         std::env::var("WAYLAND_DISPLAY").unwrap(),
         std::env::var("KOETT_TEST_NIRI_DISPLAY").unwrap()
     );
+    if std::env::args().any(|arg| arg == "--focus-status") {
+        let target = output::capture_target();
+        let chord = image_paste::for_target(target).ok();
+        println!(
+            "{}",
+            serde_json::json!({"target_available":target.is_some(),"image_chord":chord})
+        );
+        return;
+    }
     let png = std::fs::read(std::env::args().nth(1).unwrap()).unwrap();
     let text = "- #1 (0:00) “fallback clipboard regression”\nsecond line @AGENTS.md";
     if std::env::args().any(|arg| arg == "--clipboard-only") {

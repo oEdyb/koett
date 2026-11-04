@@ -116,6 +116,7 @@ pub(crate) async fn query(body: &str) -> Option<(String, String)> {
     .ok()?;
     let name = format!("koett-pin-{}", uuid::Uuid::new_v4());
     let directory = directories::BaseDirs::new()?.cache_dir().join(&name);
+    std::fs::create_dir_all(directory.parent()?).ok()?;
     std::fs::DirBuilder::new()
         .mode(0o700)
         .create(&directory)
