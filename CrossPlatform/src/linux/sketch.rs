@@ -53,7 +53,9 @@ const COMMIT_WAIT: Duration = Duration::from_millis(300);
 /// pin's click slop, far smaller than a window.
 const PICK_HOLE: f64 = 32.0;
 
-pub use frames::{Keyframe, begin_recording, discard_recording, take as take_keyframes};
+pub use frames::{
+    Keyframe, begin_recording, discard_recording, has_frames_or_captures, take as take_keyframes,
+};
 #[cfg(test)]
 pub(crate) use frames::{TEST_LOCK as FRAMES_TEST_LOCK, push as push_frame};
 
