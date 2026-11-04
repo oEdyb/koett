@@ -262,6 +262,7 @@ struct Session {
     rescanned: Option<Instant>,
     reported_unreadable: usize,
     notices: Vec<String>,
+    redraw_required: bool,
     layer: Rc<super::recording_overlay::LayerShell>,
 }
 
@@ -676,7 +677,6 @@ impl Session {
         }
     }
 
-    /// One timer step. Returns false once a finishing session is complete.
     fn invalidate_layout(&mut self) {
         if !self.layout.changed() || self.layout_invalid {
             return;
@@ -694,12 +694,14 @@ impl Session {
             }
         }
         if removed {
+            self.redraw_required = true;
             self.notices
                 .push("Display changed · unfinished drawings removed; captured images kept".into());
         }
         self.redraw();
     }
 
+    /// One timer step. Returns false once a finishing session is complete.
     fn tick(&mut self) -> bool {
         self.invalidate_layout();
         if !self.layout_invalid {
@@ -940,13 +942,18 @@ fn other_modifiers(key: DrawKey) -> gdk::ModifierType {
 
 type SessionCell = Rc<RefCell<Option<Session>>>;
 
+pub struct DrawingNotice {
+    pub text: String,
+    pub redraw_required: bool,
+}
+
 pub struct SketchOverlay {
     layer: Rc<super::recording_overlay::LayerShell>,
     session: SessionCell,
     styled: std::cell::Cell<bool>,
     /// Last recording id the overlay decided on, so settings load once.
     decided: std::cell::Cell<u64>,
-    notice: RefCell<Option<String>>,
+    notice: RefCell<Option<DrawingNotice>>,
     hinted: std::cell::Cell<bool>,
 }
 
@@ -1024,6 +1031,7 @@ impl SketchOverlay {
                         surface.window.destroy();
                     }
                     for group in &mut session.groups {
+                        // Keep Undo entries without painting old ink on a replacement display.
                         group.surface = usize::MAX;
                     }
                     session.last_pin = None;
@@ -1039,8 +1047,10 @@ impl SketchOverlay {
                 }
                 session.clock.observe(paused, Instant::now());
                 if !session.notices.is_empty() {
-                    *self.notice.borrow_mut() =
-                        Some(std::mem::take(&mut session.notices).join(" "));
+                    *self.notice.borrow_mut() = Some(DrawingNotice {
+                        text: std::mem::take(&mut session.notices).join(" "),
+                        redraw_required: std::mem::take(&mut session.redraw_required),
+                    });
                 }
             }
             (Some(session), None) if !session.finishing => {
@@ -1062,7 +1072,10 @@ impl SketchOverlay {
     /// and as a desktop notification once per run, since the window is usually
     /// hidden while dictating.
     fn hint(&self, message: &'static str) {
-        *self.notice.borrow_mut() = Some(message.to_owned());
+        *self.notice.borrow_mut() = Some(DrawingNotice {
+            text: message.to_owned(),
+            redraw_required: false,
+        });
         if !self.hinted.replace(true) {
             let _ = std::process::Command::new("notify-send")
                 .args(["--app-name=Koett", "Koett", message])
@@ -1076,7 +1089,7 @@ impl SketchOverlay {
     pub fn status(&self) -> serde_json::Value {
         let session = self.session.borrow();
         let session = session.as_ref().filter(|session| !session.finishing);
-        serde_json::json!({"ok":true,"active":session.is_some(),"display_count":session.map_or(0, |session| session.surfaces.len()),"display_change_pending":session.is_some_and(|session| session.layout_invalid || session.layout.changed()),"display_generation":session.map_or(0, |session| session.display_generation),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
+        serde_json::json!({"ok":true,"active":session.is_some(),"display_count":session.map_or(0, |session| session.surfaces.len()),"displays":session.map(|session| session.surfaces.iter().map(|surface| serde_json::json!({"connector":surface.target.connector,"bounds":surface.target.monitor,"desktop":surface.target.desktop})).collect::<Vec<_>>()).unwrap_or_default(),"display_change_pending":session.is_some_and(|session| session.layout_invalid || session.layout.changed()),"display_generation":session.map_or(0, |session| session.display_generation),"count":session.map_or(0, |session| session.groups.len()),"captured_count":session.map_or(0, |session| session.groups.iter().filter(|group| group.phase == Phase::Captured).count()),"can_undo":session.is_some_and(|session| !session.groups.is_empty())})
     }
 
     pub fn can_undo(&self) -> bool {
@@ -1094,7 +1107,7 @@ impl SketchOverlay {
     }
 
     /// A one-time message for the main window (e.g. the focus fallback).
-    pub fn take_notice(&self) -> Option<String> {
+    pub fn take_notice(&self) -> Option<DrawingNotice> {
         self.notice.borrow_mut().take()
     }
 
@@ -1318,6 +1331,7 @@ impl SketchOverlay {
             rescanned: None,
             reported_unreadable: 0,
             notices: Vec::new(),
+            redraw_required: false,
             layer: self.layer.clone(),
         });
         // 16 ms: device mode polls the draw key on this tick.
