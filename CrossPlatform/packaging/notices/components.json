@@ -6447,6 +6447,128 @@
         }
       ],
       "gaps": []
+    },
+    {
+      "name": "downcast-rs",
+      "version": "1.2.1",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT/Apache-2.0",
+      "files": [
+        {
+          "path": "packaging/notices/rust/downcast-rs-1.2.1/LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90",
+          "source_url": "https://static.crates.io/crates/downcast-rs/downcast-rs-1.2.1.crate"
+        },
+        {
+          "path": "packaging/notices/rust/downcast-rs-1.2.1/LICENSE-MIT",
+          "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958",
+          "source_url": "https://static.crates.io/crates/downcast-rs/downcast-rs-1.2.1.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "quick-xml",
+      "version": "0.41.0",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/quick-xml-0.41.0/LICENSE-MIT.md",
+          "sha256": "5b2c207dcf571267ebe0bbdd5bf321f561ddc22ff597e7b363e96f4539507a29",
+          "source_url": "https://static.crates.io/crates/quick-xml/quick-xml-0.41.0.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-backend",
+      "version": "0.3.17",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-backend-0.3.17/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-backend/wayland-backend-0.3.17.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-client",
+      "version": "0.31.15",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-client-0.31.15/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-client/wayland-client-0.31.15.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-protocols",
+      "version": "0.32.13",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-protocols-0.32.13/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-protocols/wayland-protocols-0.32.13.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-protocols-wlr",
+      "version": "0.3.12",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-wlr/wayland-protocols-wlr-0.3.12.crate"
+        },
+        {
+          "path": "packaging/notices/rust/wayland-protocols-wlr-0.3.12/wlr-data-control-COPYRIGHT",
+          "sha256": "c115843e31d2d93502467df1ee9da9acafa10440ec1480ebdc606b827aff10a5",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-wlr/wayland-protocols-wlr-0.3.12.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-scanner",
+      "version": "0.31.11",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-scanner-0.31.11/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-scanner/wayland-scanner-0.31.11.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-sys",
+      "version": "0.31.11",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-sys-0.31.11/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-sys/wayland-sys-0.31.11.crate"
+        }
+      ],
+      "gaps": []
     }
   ]
 }

@@ -206,11 +206,35 @@ bundle as the portal path; PNG-only wl-copy after automatic sketch paste was a b
 
 The sketch fallback now owns the regular clipboard through niri's
 zwlr_data_control_manager_v1. One in-process worker transitions image → text →
-PNG+HTML+plain-text bundle. It drains cancellation before changing an existing
-offer, stops when replaced, never retries a lost claim, and does not clear an
-external selection on shutdown. The controller stops the worker on exit. There
-is no helper process or temporary image file. Plain dictations still use their
-existing wl-copy text path. Explicit recovery Copy can start a fresh bundle.
+PNG+HTML+plain-text bundle. An additional empty, opaque provenance MIME type lets
+it distinguish its own selection notifications from intervening external copies.
+It drains queued and socket-readable events immediately before claiming, retains
+the old source through a bounded confirmation barrier, and never retries a lost
+claim. Each Wayland synchronization has a deadline and observes shutdown; dropping
+the owner waits at most 250 ms and never performs a blocking join.
+
+The protocol has no conditional set-selection operation. A new copy in the last
+cross-client scheduling gap can still be overwritten. Koett detects the foreign
+selection followed by its own claim, reports ownership_race instead of success,
+and stops writing. It cannot safely restore the other app's now-canceled source;
+the visible error asks for the newer item to be copied again. It does not guess
+or reclaim content from clipboard history. Thus strict atomic newer-copy priority
+is not achievable in this protocol; the ordinary cancellation path preserves it.
+
+Started transfers retain immutable Arc bytes from their own source and finish
+even after ownership loss, with a five-second stalled-reader deadline. A global
+cap of four writers bounds concurrency; spawn errors close the request and are
+reported without panicking. The controller stops the owner on exit. There is no
+helper process or temporary image file. Plain dictations still use their existing
+wl-copy text path. Explicit recovery Copy can start a fresh bundle.
+
+Review regressions cover a controlled real-niri copy in the preflight/claim gap
+(detected overwrite), a real 2 MiB transfer continuing across selection replacement,
+a silent fake compositor deadline, bounded owner drop, shared payload allocation,
+writer-cap exhaustion, and injected spawn failure. The supply-chain CI failure
+at 29e599c was stale generated inventory/SBOM/gaps, not a policy rejection. The
+new crate licence texts and data-control protocol copyright are now bundled with
+provenance, and inventories regenerated; licence/advisory policy is unchanged.
 
 Delivery logs include PID, step ID, image/text/offer kind, backend, attempt=1,
 byte count, and begin/paste_post/end events. Clipboard reads log MIME and byte

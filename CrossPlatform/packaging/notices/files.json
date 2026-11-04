@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "components.json",
-      "sha256": "2d9e321d1d77e5b8dae5acaaa63005ead3ee605c8ff341e605182d538117c6de",
-      "bytes": 251229
+      "sha256": "f4bc0dbe0119726f890a1278d4fee63960ff3bfd90dab1a54f996836e894dcf5",
+      "bytes": 255684
     },
     {
       "path": "data/flashback-sv/NOTICE.md",
@@ -860,6 +860,16 @@
       "path": "rust/displaydoc-0.2.7/LICENSE-MIT",
       "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
       "bytes": 1023
+    },
+    {
+      "path": "rust/downcast-rs-1.2.1/LICENSE-APACHE",
+      "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90",
+      "bytes": 10850
+    },
+    {
+      "path": "rust/downcast-rs-1.2.1/LICENSE-MIT",
+      "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958",
+      "bytes": 1073
     },
     {
       "path": "rust/endi-1.1.1/LICENSE-MIT",
@@ -1952,6 +1962,11 @@
       "bytes": 1023
     },
     {
+      "path": "rust/quick-xml-0.41.0/LICENSE-MIT.md",
+      "sha256": "5b2c207dcf571267ebe0bbdd5bf321f561ddc22ff597e7b363e96f4539507a29",
+      "bytes": 1105
+    },
+    {
       "path": "rust/quote-1.0.47/LICENSE-APACHE",
       "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
       "bytes": 9723
@@ -2859,6 +2874,41 @@
     {
       "path": "rust/wasm-bindgen-shared-0.2.127/LICENSE-MIT",
       "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-backend-0.3.17/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-client-0.31.15/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-0.32.13/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-wlr-0.3.12/wlr-data-control-COPYRIGHT",
+      "sha256": "c115843e31d2d93502467df1ee9da9acafa10440ec1480ebdc606b827aff10a5",
+      "bytes": 1240
+    },
+    {
+      "path": "rust/wayland-scanner-0.31.11/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-sys-0.31.11/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
       "bytes": 1057
     },
     {
