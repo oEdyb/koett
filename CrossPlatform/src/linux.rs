@@ -1298,6 +1298,9 @@ async fn run_wayland(
                             } else {
                                 Ok(())
                             };
+                            let before_text = output
+                                .as_ref()
+                                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
                             let result = match &output {
                                 Some(output) => {
                                     output.deliver(&text, now, settings.paste_shortcut).await
@@ -1305,7 +1308,7 @@ async fn run_wayland(
                                 None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             if feedback::sketch_for(&text).is_some() {
-                                tokio::time::sleep(Duration::from_millis(700)).await;
+                                settle_sketch_text(output.as_ref(), before_text).await;
                                 if let Some(tray) = tray {
                                     let _ = tray.sender.send(TrayUpdate::CopyResult(text));
                                 }
@@ -1417,13 +1420,16 @@ async fn run_wayland(
             } else {
                 Ok(())
             };
+            let before_text = output
+                .as_ref()
+                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
             let text_delivery = match &output {
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let delivered = image_delivery.and(text_delivery);
             if sheet.is_some() {
-                tokio::time::sleep(Duration::from_millis(700)).await;
+                settle_sketch_text(output.as_ref(), before_text).await;
                 if let Some(tray) = tray {
                     let _ = tray.sender.send(TrayUpdate::CopyResult(text.clone()));
                 }
@@ -2156,6 +2162,20 @@ impl ClipboardPayload {
         } else {
             mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8"
         }
+    }
+}
+
+async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>) {
+    if let (Some(output), Some(before)) = (output, before) {
+        let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
+        while output.served.load(std::sync::atomic::Ordering::Acquire) == before
+            && Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        tokio::time::sleep(output::AFTER_IMAGE_READ).await;
+    } else {
+        tokio::time::sleep(Duration::from_millis(700)).await;
     }
 }
 

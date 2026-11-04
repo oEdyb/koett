@@ -68,6 +68,13 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   the text is pasted with the configured chord as
   `- #N (M:SS) “words”` bullets (`- #N (M:SS) marked` when nothing was said).
   Without sketches dictation is unchanged.
+- After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
+  700 ms), the clipboard offers the same sheet as `image/png` and bullets as
+  `text/plain` / `text/plain;charset=utf-8`. Ctrl+V can reuse the sketch;
+  plain-text targets can still read the bullets. Done and Not pasted **Copy**
+  use that same offer; Not pasted **Paste** replays image then text. The most
+  recent sketch is retained in memory until another dictation completes.
+  A failed image delivery keeps the result in Not pasted even if text succeeds.
 - History stores the bullet text, with the plain transcript as raw text. Images
   stay in memory only, like Ask's screen image; nothing is written to disk
   except the portal's own screenshot file, which Koett deletes immediately.
@@ -170,6 +177,27 @@ Same output as Linux: one numbered contact sheet, then the same
   ID in `sketchImagePasteControlV`. In a plain shell, Control-V is quoted
   insert, so the first pasted character arrives literally.
 - Limits: screens added during a recording get no panel until the next one.
+
+## Repeat-paste repair (2026-11-04)
+
+Before the repair the clipboard was PNG during the first paste, then text only
+after the bullet paste. Done/Not pasted Copy also wrote only text, and Paste
+recovery replayed only text. The final offer now includes both formats without
+changing either automatic paste or its focus checks. A combined offer was chosen
+over image-only so terminals retain usable text and image-aware targets can
+attach the sheet. Chrome's native contenteditable chooses the image; targets
+decide how much of a multi-format clipboard to insert.
+
+The native `sketch_clipboard_probe` example uses the production Copy helper.
+Private KWin/Chrome checks read both exact PNG bytes and exact Unicode text, and
+two Ctrl+V events each exposed a PNG file plus text. Kitty Ctrl+Shift+V received
+the exact bullets while PNG remained readable. Unit coverage checks all three
+MIME types, plain-text behavior and replacement of the in-memory sketch.
+
+Mac routing: `SketchPaste.swift` offers PNG/TIFF, then
+`DictationSession.swift` clears the pasteboard and sets only the string.
+Mac therefore has the same repeat-paste loss by source inspection; Swift was
+not changed or runtime-tested here.
 
 ## How this was chosen (2026-11-02)
 
