@@ -495,7 +495,7 @@ pub fn run() -> Result<(), String> {
         );
         let source = std::env::args().nth(2).ok_or(usage.clone())?;
         if std::env::args().count() != 3 {
-            return Err(usage.into());
+            return Err(usage);
         }
         if command == "transcribe-url" {
             crate::media_transcription::validate_url(&source)?;
