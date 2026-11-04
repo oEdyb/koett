@@ -3031,6 +3031,10 @@ mod delivery_tests {
         assert!(
             error.contains("clipboard failed") && error.contains("history and fallback failed")
         );
+        assert!(matches!(
+            receiver.recv().unwrap(),
+            TrayUpdate::DeliveryStarted
+        ));
         assert!(
             matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
         );
