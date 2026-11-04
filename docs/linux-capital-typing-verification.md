@@ -32,6 +32,24 @@ Use the existing early-Shift lab helpers/isolated copied model described in
 four-job/nice/12 GiB scope in `koett-shift-sol`; append `baseline` only for the
 old binary. Do not use host input, clipboard or a live model directory.
 
+## Fresh result — 2026-11-04
+
+Native regression passed: all three typing-interrupted sketches removed, actual
+`AAA` entered, all three 12/16/24 px Shift-release sketches retained, and a
+pin followed by another real capital retained. The final editor showed `AAAA`
+and the one deliberate pin; its screenshot was inspected. Background capture
+was a private fixed-image fixture, so this is gesture/editor acceptance, not
+fresh compositor screenshot acceptance. No host input/clipboard/model was used.
+
+The existing early-Shift native suite also passed: 16 clicks at 40–100 ms
+with no underlying clicks, real capitals, shortcut tails, idle timeout and
+keyboard removal. This preserves the separately documented pre-sample race.
+
+Rust: 397 passed, 18 ignored, plus native ABI subprocess check. Formatting,
+all-target clippy with warnings denied, release build and diff check passed.
+MSVC check remains blocked by missing Microsoft `lib.exe` on Linux. Independent
+review and physical hardware acceptance remain open. No host install was done.
+
 ## Limits
 
 A clean Shift hold plus pointer drift, with no observed typing, is indistinguishable
