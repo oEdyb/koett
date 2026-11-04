@@ -108,7 +108,7 @@ No ordinary product feature above is declared impossible across an entire OS. So
 ## Linux follow-up order
 
 [Row-4 checks and limits](linux-paste-permissions-verification.md): per-app image
-rules and the manual permissions surface. Row 5 is proposed in PR #65.
+rules and the permissions surface. Row 5 merged in PR #65.
 Row 6 starts with [guarded CLI Paste Last](linux-last-paste-verification.md).
 The remaining work is tracked in the [Linux open-row queue](linux-open-rows.md);
 no acceptance-only row is closed by this command change.

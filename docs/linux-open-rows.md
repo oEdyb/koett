@@ -1,7 +1,7 @@
 # Linux open-row queue
 
 The feature-parity table remains authoritative. This is the work queue after
-rows 1–4, with row 5 proposed separately in PR #65. A verification gap stays open
+rows 1–5, with row 5 merged in PR #65. A verification gap stays open
 until its actual acceptance check runs. Nothing below is declared OS-impossible.
 
 ## Row 6: remaining implementation and acceptance
