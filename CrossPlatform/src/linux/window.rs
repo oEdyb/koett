@@ -557,6 +557,15 @@ fn build_window(
                         });
                     }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
+                    Update::Status(message) if message.starts_with("@error:") => {
+                        let error = message.trim_start_matches("@error:");
+                        pill_message = Some((
+                            super::recording_overlay::error_row(error).to_string(),
+                            Instant::now() + PILL_MESSAGE_DURATION,
+                        ));
+                        notice = Some(error.to_string());
+                        notice_until = Some(Instant::now() + Duration::from_secs(8));
+                    }
                     Update::Status(message) if message.starts_with("@notice:") => {
                         let phase = message
                             .trim_start_matches("@notice:")

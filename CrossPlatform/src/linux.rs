@@ -273,6 +273,7 @@ mod browser_media;
 mod clipboard_owner;
 mod control;
 mod dictionary_view;
+mod escape;
 mod feedback;
 mod fix_word_view;
 mod formatting_view;
@@ -480,7 +481,7 @@ pub fn run() -> Result<(), String> {
             }
         }
         Err(error) => {
-            let _ = startup_ui.send(window::Update::Status(format!("@notice:{error}")));
+            let _ = startup_ui.send(window::Update::Status(format!("@error:{error}")));
         }
     });
     let worker_ui = ui.clone();
@@ -690,11 +691,11 @@ fn run_x11(
                     let pasted = recovery::last_text()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
                     if let Err(error) = pasted {
-                        update_tray_status(tray, &format!("@notice:{error}"));
+                        update_tray_status(tray, &format!("@error:{error}"));
                     }
                 }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
-                    Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
+                    Err(error) => update_tray_status(tray, &format!("@error:{error}")),
                     Ok(value) if command == "recovery-status" => update_tray_status(
                         tray,
                         &format!(
@@ -1225,7 +1226,8 @@ async fn run_wayland(
     }));
     let mut output = None;
     let mut app = LinuxEngine::new(runtime::start(settings.clone()));
-    let mut timer = tokio::time::interval(Duration::from_millis(30));
+    let mut timer = tokio::time::interval(Duration::from_millis(16));
+    let mut escape = escape::EscapeMonitor::default();
     loop {
         timer.tick().await;
         if shortcut_task
@@ -1258,6 +1260,9 @@ async fn run_wayland(
                 }
                 Err(error) => eprintln!("Portal task failed: {error}"),
             }
+        }
+        if escape.poll(app.status == AppStatus::Recording) {
+            app.command(EngineCommand::Cancel, || None);
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             match action {
@@ -1326,7 +1331,7 @@ async fn run_wayland(
                         Err(error) => Err(error),
                     };
                     if let Err(error) = pasted {
-                        update_tray_status(tray, &format!("@notice:{error}"));
+                        update_tray_status(tray, &format!("@error:{error}"));
                     }
                 }
                 TrayAction::Recovery(command)
@@ -1343,11 +1348,11 @@ async fn run_wayland(
                             restore_sketch_clipboard(output.as_ref(), &png, &text).await
                         }
                     {
-                        update_tray_status(tray, &format!("@notice:{error}"));
+                        update_tray_status(tray, &format!("@error:{error}"));
                     }
                 }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
-                    Err(error) => update_tray_status(tray, &format!("@notice:{error}")),
+                    Err(error) => update_tray_status(tray, &format!("@error:{error}")),
                     Ok(value) if command == "recovery-status" => update_tray_status(
                         tray,
                         &format!(
@@ -1458,11 +1463,11 @@ async fn run_wayland(
                 (text != raw).then_some(raw),
             );
             if let Err(error) = delivered {
-                update_tray_status(tray, &format!("@notice:{error}"));
+                update_tray_status(tray, &format!("@error:{error}"));
             }
             match saved {
                 Err(error) => {
-                    update_tray_status(tray, &format!("@notice:{error}. Use Copy last transcript"))
+                    update_tray_status(tray, &format!("@error:{error}. Use Copy last transcript"))
                 }
                 Ok(Some(path)) => {
                     update_tray_status(tray, &format!("@notice:Saved recovery: {}", path.display()))
@@ -1828,7 +1833,7 @@ impl LinuxEngine {
                 serde_json::json!({"ok":true,"status":"started"})
             }
             Err(error) => {
-                update_tray_status(tray, &format!("@notice:{error}"));
+                update_tray_status(tray, &format!("@error:{error}"));
                 update_tray_status(tray, "@media");
                 serde_json::json!({"ok":false,"error":{"code":"manual_url_required","message":error,"fix":"Enter an HTTP(S) URL in Transcribe media"}})
             }
@@ -2032,7 +2037,7 @@ impl LinuxEngine {
             }
         }
         if let Some(error) = interaction_error {
-            status_changed(&format!("@notice:{error}. Use Copy last transcript"));
+            status_changed(&format!("@error:{error}. Use Copy last transcript"));
         }
     }
 }
