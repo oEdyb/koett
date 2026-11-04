@@ -32,6 +32,16 @@ final class DrawHoldGateTests: XCTestCase {
         XCTAssertTrue(gate.draws(key: .shift, flags: [.shift]))
     }
 
+    func testFunctionKeyAlsoEndsAHoldUntilRelease() {
+        var gate = DrawHoldGate()
+        XCTAssertFalse(gate.draws(key: .shift, flags: []))
+        XCTAssertTrue(gate.draws(key: .shift, flags: [.shift]))
+        XCTAssertFalse(gate.draws(key: .shift, flags: [.shift, .function]))
+        XCTAssertFalse(gate.draws(key: .shift, flags: [.shift]))
+        XCTAssertFalse(gate.draws(key: .shift, flags: []))
+        XCTAssertTrue(gate.draws(key: .shift, flags: [.shift]))
+    }
+
     func testTypingEndsAHoldAndKeyUpDoesNotResumeIt() {
         var gate = DrawHoldGate()
         XCTAssertFalse(gate.draws(key: .shift, flags: []))

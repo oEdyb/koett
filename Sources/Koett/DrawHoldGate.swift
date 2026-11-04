@@ -16,7 +16,7 @@ struct DrawHoldGate {
             spoiled = false
             return false
         }
-        if !seenUp || !key.draws(flags) || !otherKeys.isEmpty {
+        if !seenUp || !key.draws(flags) || flags.contains(.function) || !otherKeys.isEmpty {
             spoiled = true
         }
         return !spoiled
