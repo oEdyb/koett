@@ -6,6 +6,7 @@
 //! PRIMARY is deliberately not a selection fallback: nothing proves which app
 //! owns it, so a token selected in a terminal could be pasted under a browser pin.
 use super::niri_pick::{self, NiriWindow, PickGate};
+use super::video_time;
 use crate::pin_context::PinContext;
 use ashpd::zbus::{
     self, Connection,
@@ -34,6 +35,8 @@ const DOCUMENT: &str = "org.a11y.atspi.Document";
 const HYPERLINK: &str = "org.a11y.atspi.Hyperlink";
 const PROPERTIES: &str = "org.freedesktop.DBus.Properties";
 
+const ROLE_SLIDER: u32 = 51;
+const VALUE: &str = "org.a11y.atspi.Value";
 const ROLE_IMAGE: u32 = 27;
 const ROLE_PASSWORD: u32 = 40;
 const ROLE_LINK: u32 = 88;
@@ -47,9 +50,14 @@ const COORDS_WINDOW: u32 = 1;
 pub fn read(
     include_selection: bool,
     surface_point: (f64, f64),
+    screen_point: (f64, f64),
     gate: &PickGate,
 ) -> Option<PinContext> {
     let deadline = Instant::now() + TOTAL;
+    if std::env::var_os("NIRI_SOCKET").is_none() {
+        gate.finish();
+        return read_screen(include_selection, screen_point, deadline);
+    }
     let window = niri_pick::window_at_pointer(gate)?;
     if is_own_window(&window.app_id, window.pid) {
         return None;
@@ -63,7 +71,13 @@ pub fn read(
     if !window.title_unique {
         return Some(context);
     }
-    let found = accessible(&window, include_selection, surface_point, deadline);
+    let found = accessible(
+        &window,
+        include_selection,
+        surface_point,
+        screen_point,
+        deadline,
+    );
     context.url = found.url;
     context.link = found.link;
     context.image = found.image;
@@ -71,6 +85,119 @@ pub fn read(
         context.title = Some(title);
     }
     context.selection = found.selection;
+    Some(context)
+}
+
+fn point_in_window(
+    screen: (f64, f64),
+    absolute: (i32, i32, i32, i32),
+    local: (i32, i32, i32, i32),
+) -> Option<(i32, i32)> {
+    let (x, y, width, height) = absolute;
+    if width <= 0
+        || height <= 0
+        || x == i32::MIN
+        || y == i32::MIN
+        || (x, y) == (local.0, local.1)
+        || !screen.0.is_finite()
+        || !screen.1.is_finite()
+        || screen.0 < f64::from(x)
+        || screen.1 < f64::from(y)
+        || screen.0 >= f64::from(x) + f64::from(width)
+        || screen.1 >= f64::from(y) + f64::from(height)
+    {
+        return None;
+    }
+    Some((
+        (screen.0 - f64::from(x) + f64::from(local.0)).round() as i32,
+        (screen.1 - f64::from(y) + f64::from(local.1)).round() as i32,
+    ))
+}
+
+async fn screen_to_window(
+    bus: &Connection,
+    frame: &Object,
+    screen: (f64, f64),
+) -> Option<(i32, i32)> {
+    let absolute = call(bus, frame, COMPONENT, "GetExtents", &(0_u32,))
+        .await
+        .ok()?;
+    let local = call(bus, frame, COMPONENT, "GetExtents", &(COORDS_WINDOW,))
+        .await
+        .ok()?;
+    point_in_window(screen, absolute, local)
+}
+
+fn read_screen(
+    include_selection: bool,
+    point: (f64, f64),
+    deadline: Instant,
+) -> Option<PinContext> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .ok()?;
+    let mut context = None;
+    let mut found = Found::default();
+    runtime.block_on(async {
+        let read = async {
+            let bus = accessibility_bus().await.ok()?;
+            let root = (
+                "org.a11y.atspi.Registry".to_owned(),
+                OwnedObjectPath::try_from(ROOT).ok()?,
+            );
+            let apps = children(&bus, &root).await.ok()?;
+            if apps.len() > MAX_APPS {
+                return None;
+            }
+            let mut candidates = Vec::new();
+            for app in apps {
+                let app_name = name(&bus, &app).await?;
+                if is_own_window(&app_name, None) {
+                    continue;
+                }
+                let frames = children(&bus, &app).await.ok()?;
+                if frames.len() > MAX_FRAMES {
+                    return None;
+                }
+                for frame in frames {
+                    let state: Vec<u32> =
+                        call(&bus, &frame, ACCESSIBLE, "GetState", &()).await.ok()?;
+                    if !has_state(&state, STATE_SHOWING) {
+                        continue;
+                    }
+                    if let Some(local) = screen_to_window(&bus, &frame, point).await {
+                        candidates.push((
+                            app_name.clone(),
+                            name(&bus, &frame).await?,
+                            frame,
+                            local,
+                        ));
+                    }
+                }
+            }
+            let (app, title, frame, local) = only(candidates)?;
+            context = Some(PinContext {
+                app: Some(app),
+                title: Some(title.clone()),
+                ..Default::default()
+            });
+            fill_frame(&bus, &frame, include_selection, Some(local), &mut found).await;
+            if name(&bus, &frame).await.as_deref() != Some(&title) {
+                found = Found::default();
+            }
+            Some(())
+        };
+        let _ = tokio::time::timeout(remaining(deadline).min(ACCESSIBILITY), read).await;
+    });
+    let mut context = context?;
+    context.url = found.url;
+    context.link = found.link;
+    context.image = found.image;
+    context.selection = found.selection;
+    if let Some(title) = found.title {
+        context.title = Some(title);
+    }
     Some(context)
 }
 
@@ -154,6 +281,7 @@ fn accessible(
     window: &NiriWindow,
     include_selection: bool,
     surface_point: (f64, f64),
+    screen_point: (f64, f64),
     deadline: Instant,
 ) -> Found {
     let point = window
@@ -169,7 +297,13 @@ fn accessible(
     };
     runtime.block_on(async {
         // Partial results stay in `found` when the budget runs out.
-        let read = fill(&window.title, include_selection, point, &mut found);
+        let read = fill(
+            &window.title,
+            include_selection,
+            point,
+            screen_point,
+            &mut found,
+        );
         let _ = tokio::time::timeout(limit, read).await;
     });
     found
@@ -179,20 +313,38 @@ async fn fill(
     title: &str,
     include_selection: bool,
     point: Option<(i32, i32)>,
+    screen_point: (f64, f64),
     found: &mut Found,
 ) -> zbus::Result<()> {
     let bus = accessibility_bus().await?;
     let Some(frame) = frame_titled(&bus, title).await? else {
         return Ok(());
     };
-    let scan = scan_frame(&bus, &frame, include_selection, found).await;
-    if let Some(point) = point {
-        under_pointer(&bus, &frame, point, found).await;
-    }
-    if include_selection && !found.password {
-        found.selection = read_selection(&bus, &scan).await;
+    let point = match point {
+        Some(point) => Some(point),
+        None => screen_to_window(&bus, &frame, screen_point).await,
+    };
+    fill_frame(&bus, &frame, include_selection, point, found).await;
+    if name(&bus, &frame).await.as_deref() != Some(title) {
+        *found = Found::default();
     }
     Ok(())
+}
+
+async fn fill_frame(
+    bus: &Connection,
+    frame: &Object,
+    include_selection: bool,
+    point: Option<(i32, i32)>,
+    found: &mut Found,
+) {
+    let scan = scan_frame(bus, frame, include_selection, found).await;
+    if let Some(point) = point {
+        under_pointer(bus, frame, point, found).await;
+    }
+    if include_selection && !found.password {
+        found.selection = read_selection(bus, &scan).await;
+    }
 }
 
 async fn accessibility_bus() -> zbus::Result<Connection> {
@@ -308,6 +460,7 @@ async fn scan_frame(
     let mut scan = Scan::default();
     let mut pending = VecDeque::from([frame.clone()]);
     let mut visited = 0;
+    let mut video = None;
     while let Some(object) = pending.pop_front() {
         visited += 1;
         if visited > MAX_NODES {
@@ -334,12 +487,38 @@ async fn scan_frame(
         if focused && scan.focused.is_none() {
             scan.focused = Some(object.clone());
         }
-        if !include_selection && found.url.is_some() {
+        if object_role == ROLE_SLIDER
+            && video.is_none()
+            && found
+                .url
+                .as_deref()
+                .is_some_and(video_time::is_youtube_video)
+        {
+            let attributes: zbus::Result<HashMap<String, String>> =
+                call(bus, &object, ACCESSIBLE, "GetAttributes", &()).await;
+            if attributes.as_ref().is_ok_and(video_time::is_player) {
+                let value: zbus::Result<OwnedValue> =
+                    call(bus, &object, PROPERTIES, "Get", &(VALUE, "CurrentValue")).await;
+                video = value.ok().and_then(|value| f64::try_from(value).ok());
+            }
+        }
+        if !include_selection
+            && found.url.is_some()
+            && !found
+                .url
+                .as_deref()
+                .is_some_and(video_time::is_youtube_video)
+        {
             break;
         }
         scan.showing.push(object.clone());
         if let Ok(descendants) = children(bus, &object).await {
             pending.extend(descendants.into_iter().take(MAX_CHILDREN));
+        }
+    }
+    if let (Some(url), Some(seconds)) = (&found.url, video) {
+        if let Some(timed) = video_time::timestamp(url, seconds) {
+            found.url = Some(timed);
         }
     }
     scan
@@ -371,26 +550,73 @@ async fn under_pointer(bus: &Connection, frame: &Object, point: (i32, i32), foun
     )
     .await;
     let mut current = hit.ok().filter(|hit| hit.1.as_str() != NULL_OBJECT);
+    let mut descended = Vec::new();
+    for _ in 0..MAX_PARENTS {
+        let Some(object) = &current else {
+            return;
+        };
+        if descended.contains(object) {
+            break;
+        }
+        descended.push(object.clone());
+        let deeper: zbus::Result<Object> = call(
+            bus,
+            object,
+            COMPONENT,
+            "GetAccessibleAtPoint",
+            &(point.0, point.1, COORDS_WINDOW),
+        )
+        .await;
+        match deeper
+            .ok()
+            .filter(|next| next.1.as_str() != NULL_OBJECT && next != object)
+        {
+            Some(next) => current = Some(next),
+            None => break,
+        }
+    }
+    let mut chain = Vec::new();
     for _ in 0..MAX_PARENTS {
         let Some(object) = current else {
             return;
         };
+        if chain.contains(&object) {
+            return;
+        }
+        chain.push(object.clone());
+        if &object == frame {
+            break;
+        }
+        current = parent(bus, &object).await;
+    }
+    if chain.last() != Some(frame) {
+        return;
+    }
+    for object in chain {
         match role(bus, &object).await {
+            Ok(ROLE_PASSWORD) => {
+                found.link = None;
+                found.image = None;
+                return;
+            }
             Ok(ROLE_LINK) if found.link.is_none() => {
                 let uri: zbus::Result<String> =
                     call(bus, &object, HYPERLINK, "GetURI", &(0_i32,)).await;
                 found.link = uri.ok().as_deref().and_then(web_url);
             }
             Ok(ROLE_IMAGE) if found.image.is_none() => {
-                found.image = name(bus, &object).await.filter(|name| !name.is_empty());
+                let attributes: zbus::Result<HashMap<String, String>> =
+                    call(bus, &object, ACCESSIBLE, "GetAttributes", &()).await;
+                found.image = attributes
+                    .ok()
+                    .and_then(|attrs| attrs.get("src").and_then(|src| web_url(src)));
+                if found.image.is_none() {
+                    found.image = name(bus, &object).await.filter(|name| !name.is_empty());
+                }
             }
             Ok(ROLE_DOCUMENT_WEB) => return,
             _ => {}
         }
-        if &object == frame {
-            return;
-        }
-        current = parent(bus, &object).await;
     }
 }
 
@@ -411,6 +637,7 @@ async fn selected_text(bus: &Connection, object: &Object) -> Option<String> {
     if start >= end {
         return None;
     }
+    let end = end.min(start.saturating_add(crate::pin_context::SELECTION_LIMIT as i32));
     let text: String = call(bus, object, TEXT, "GetText", &(start, end))
         .await
         .ok()?;
@@ -506,6 +733,34 @@ mod tests {
         assert_eq!(
             window_point((110.4, 60.0), (100.0, 40.0), (0.0, 10.0)),
             (10, 10)
+        );
+    }
+
+    #[test]
+    fn global_coordinates_require_a_real_origin_and_containment() {
+        assert_eq!(
+            point_in_window((110.0, 230.0), (100, 200, 500, 400), (0, 0, 500, 400)),
+            Some((10, 30))
+        );
+        assert_eq!(
+            point_in_window((-390.0, 230.0), (-400, 200, 500, 400), (0, 0, 500, 400)),
+            Some((10, 30))
+        );
+        assert_eq!(
+            point_in_window((10.0, 30.0), (0, 0, 500, 400), (0, 0, 500, 400)),
+            None
+        );
+        assert_eq!(
+            point_in_window((900.0, 30.0), (100, 200, 500, 400), (0, 0, 500, 400)),
+            None
+        );
+        assert_eq!(
+            point_in_window(
+                (100.0, 200.0),
+                (i32::MIN, i32::MIN, 500, 400),
+                (0, 0, 500, 400)
+            ),
+            None
         );
     }
 

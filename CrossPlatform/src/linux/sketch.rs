@@ -26,6 +26,7 @@ pub mod keys;
 mod niri_pick;
 mod pin_reader;
 pub mod sheet;
+mod video_time;
 mod wl_click;
 
 const INK: (f64, f64, f64) = (1.0, 59.0 / 255.0, 48.0 / 255.0);
@@ -418,8 +419,18 @@ impl Session {
         self.sync_input();
         let (include_selection, point, pick) =
             (self.include_selection, mark.point, self.pick.clone());
+        let monitor = self.surfaces[mark.surface].target.monitor;
+        let screen_point = (
+            point.0 + f64::from(monitor.0),
+            point.1 + f64::from(monitor.1),
+        );
         std::thread::spawn(move || {
-            let _ = sender.send(pin_reader::read(include_selection, point, &pick));
+            let _ = sender.send(pin_reader::read(
+                include_selection,
+                point,
+                screen_point,
+                &pick,
+            ));
         });
         self.next_id += 1;
         self.groups.push(Group {
