@@ -79,7 +79,7 @@ Evidence: `Sources/Koett/Sketch*.swift`, `DrawKey.swift`, `PinContext*.swift`; `
 | Unified Settings | Menus + focused native popovers/windows | Yes | Shortcut dialog + small tray menu | Windows grouped native pages; preserve Mac's approved interactions |
 | Focused browser media transcription | Yes | Yes plus focused document / typed URL | No; module Linux-gated | Share fetch/ASR/store; native Windows URL dialog + UIA browser URL |
 | File/document media entry | CLI; app focused-browser workflow | Yes | No product UI | Add Mac file/URL entry and Windows parity, no browser-cookie import |
-| Pause media during dictation | No (MediaRemote restricted) | MPRIS yes | No | Windows GSMTC explicit pause; Mac browser/player-specific explicit Pause commands or opt-in integration |
+| Pause media during dictation | Opt-in accessible Pause controls; unsupported players untouched, manual resume | MPRIS yes | No | Windows GSMTC explicit pause; Mac browser/player-specific explicit Pause commands or opt-in integration |
 | Open media transcripts | Yes | Yes | No action | Windows open folder/history action, shared filename/collision rules |
 | Vimeo anonymous fetch | Known 401 | Not reverified | No workflow | Track upstream extractor/auth restriction; user-supplied local file is alternative, never quietly import browser cookies |
 | `koett-transcribe` URL/file CLI | Yes, Mac-specific | No equivalent product CLI; WAV harness is not parity | No equivalent product CLI | Shared Rust CLI with same input/output/exit contract and yt-dlp/FFmpeg delivery on Linux/Windows |

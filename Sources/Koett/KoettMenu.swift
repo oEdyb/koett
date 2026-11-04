@@ -93,6 +93,11 @@ extension KoettController {
         menu.addItem(nemotronItem)
 
         menu.addItem(microphoneMenuItem())
+        let pauseMedia = menuItem(title: "Pause Supported Media While Recording", action: #selector(togglePauseMedia),
+                                  selected: microphoneDefaults.bool(forKey: "pauseMedia"))
+        pauseMedia.isEnabled = state == .ready
+        pauseMedia.toolTip = "Pauses visible Music, Spotify, VLC, QuickTime and YouTube controls using existing Accessibility access. Unsupported or paused players stay untouched. Resume playback manually."
+        menu.addItem(pauseMedia)
 
         let formattingMode = s1MiniEnabled ? "S1-mini" : "Raw"
         let formattingItem = menuItem(

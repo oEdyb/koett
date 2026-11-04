@@ -61,6 +61,7 @@ extension KoettController {
             ), sketchSession: session)
             startSketching(session: session, recorder: recorder)
         }
+        pauseSupportedMedia()
         play(startSound)
         print("RECORDING")
     }
@@ -177,6 +178,7 @@ extension KoettController {
     }
 
     private func discardRecording() {
+        mediaPauseTask?.cancel()
         recordingOverlay.stop()
         let live = nemotronRecorder
         nemotronRecorder = nil
@@ -199,6 +201,7 @@ extension KoettController {
     }
 
     func stopRecording(releaseEventTimestamp: TimeInterval) {
+        mediaPauseTask?.cancel()
         recordingOverlay.stop()
         sketchOverlay.finish()
         let session = activeDictationID ?? beginDictationSession()

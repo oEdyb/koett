@@ -25,6 +25,7 @@ final class KoettController: NSObject {
         case toggle
     }
 
+    var mediaPauseTask: Task<Void, Never>?
     let speechEngine: SpeechEngine
     var transcriptStore: TranscriptStore { transcriptPersistence.history }
     let mediaTranscriptStore = MediaTranscriptStore()
