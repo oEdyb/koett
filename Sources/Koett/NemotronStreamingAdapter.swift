@@ -108,6 +108,11 @@ final class LiveAudioStore: Sendable {
     let sampleRate: Double
     private let state: Mutex<State>
     private let droppedFrameCount = Atomic<Int>(0)
+    private let paused = Atomic<Bool>(false)
+    var isPaused: Bool {
+        get { paused.load(ordering: .acquiring) }
+        set { paused.store(newValue, ordering: .releasing) }
+    }
 
     init(sampleRate: Double, maximumDuration: TimeInterval) {
         self.sampleRate = sampleRate
@@ -124,9 +129,11 @@ final class LiveAudioStore: Sendable {
             state.isFinished = false
         }
         droppedFrameCount.store(0, ordering: .releasing)
+        isPaused = false
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {
+        guard !isPaused else { return }
         let requestedFrames = Int(buffer.frameLength)
         guard requestedFrames > 0,
               let input = buffer.floatChannelData else {
@@ -224,6 +231,10 @@ final class NemotronLiveRecorder {
     private var processingTask: Task<Void, Error>?
     private var isRecording = false
     private var captureError: Error?
+    var isPaused: Bool {
+        get { store.isPaused }
+        set { store.isPaused = newValue }
+    }
 
     convenience init(
         adapter: any StreamingTranscriptionAdapter,

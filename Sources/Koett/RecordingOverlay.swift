@@ -63,6 +63,7 @@ struct RecordingControls {
     let modelName: String
     let canPause: Bool
     let cancel: () -> Void
+    var pauseChanged: (Bool) -> Void = { _ in }
 }
 
 /// A panel that shows above every app but never becomes key or main.
@@ -99,6 +100,7 @@ final class RecordingOverlayController: NSObject {
     private var visibleGeneration = 0
     /// True from `show` until the pill is hidden or starts fading out.
     private(set) var isPresented = false
+    private var pauseChanged: ((Bool) -> Void)?
     private var resultText: String?
     private var resultPNG: Data?
     private(set) var latestOutcome: RecordingOverlayOutcome?
@@ -143,6 +145,7 @@ final class RecordingOverlayController: NSObject {
         stop()
         self.recorder = recorder
         self.sketchSession = sketchSession
+        pauseChanged = controls?.pauseChanged
         startedAt = ProcessInfo.processInfo.systemUptime
         pillView.timeline.reset()
         pillView.elapsed = 0
@@ -380,8 +383,14 @@ final class RecordingOverlayController: NSObject {
 
     private func togglePause() {
         guard let recorder, recorder.isRecording, pillView.canPause else { return }
-        recorder.isPaused.toggle()
-        pillView.content = .recording(paused: recorder.isPaused)
+        setPaused(!recorder.isPaused)
+    }
+
+    func setPaused(_ paused: Bool) {
+        guard let recorder, recorder.isRecording, pillView.canPause else { return }
+        recorder.isPaused = paused
+        pauseChanged?(paused)
+        pillView.content = .recording(paused: paused)
     }
 
     func copyResult(to pasteboard: NSPasteboard = .general) {

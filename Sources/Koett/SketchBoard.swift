@@ -221,6 +221,15 @@ struct SketchBoard {
         }
     }
 
+    mutating func undoLast() -> (id: UInt64, updates: [SketchUpdate])? {
+        guard !finishing, let last = groups.popLast() else { return nil }
+        if stroking == last.id { stroking = nil }
+        holdOrigin = nil
+        pressing = nil
+        holdInk = 0
+        return (last.id, [.removed(index: UInt32(groups.count + 1))])
+    }
+
     /// Closed sketches that should be captured now; they move to `.capturing`.
     mutating func takeReadyForCapture() -> [Group] {
         var ready: [Group] = []

@@ -42,7 +42,7 @@
   20 minutes looks like 5 seconds. It stays above apps without taking keyboard focus and
   follows the system light or dark appearance.
 - Hovering a dictation pill swaps the strip for Cancel, Pause/Resume
-  (Parakeet only) and History inside the same row; the clock stays. Cancel
+  (all models) and History inside the same row; the clock stays. Cancel
   stays on the transcribing pill. Esc also cancels; its monitor exists only
   while a dictation records or transcribes and never consumes Esc. Each
   dictation has its own session ID, so a stale Cancel never touches the next
@@ -103,8 +103,12 @@
   menu option. It processes microphone audio while the user speaks.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery
   WAV. Use that recovery only after capture, streaming, or finalization fails.
-- Model changes restart Koett. Command-line `--parakeet` and `--nemotron`
-  flags override the saved model for one launch.
+- Model changes restart Koett. Optional Parakeet v3 and 110M use the same pinned
+  runtime; v2 remains the default and Nemotron recovery model. `--parakeet`,
+  `--parakeet-v3`, `--parakeet-110m`, and `--nemotron` override one launch.
+- Pause drops both Nemotron live and backup buffers before storage. It does
+  not finalize/reset the stream; resume continues the same ordered audio clock.
+  Buffered Parakeet has the same drop-before-storage pause behavior.
 - The repo includes standalone audio, corpus, noise, Apple Speech, Parakeet,
   and Nemotron benchmark executables. These harnesses stay separate from the
   small production app path.

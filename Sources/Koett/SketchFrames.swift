@@ -48,6 +48,11 @@ final class SketchFrames {
         return true
     }
 
+    func remove(_ session: UInt64, order: UInt64) {
+        guard self.session == session else { return }
+        frames.removeAll { $0.order == order }
+    }
+
     /// Waits (bounded) for the overlay to finish capturing. Returns false when
     /// captures are still open at the deadline.
     func wait(_ session: UInt64, timeout: Duration) async -> Bool {
