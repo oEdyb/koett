@@ -1,6 +1,8 @@
 use gtk4::{self as gtk, prelude::*};
 use std::{rc::Rc, time::Duration};
 
+static CAPTURE_CHECK: std::sync::RwLock<&str> = std::sync::RwLock::new("not_checked");
+
 pub fn status() -> serde_json::Value {
     let keyboard = match super::sketch::keys::Keyboards::open() {
         Ok(keys) if keys.unreadable() == 0 => "available",
@@ -12,7 +14,7 @@ pub fn status() -> serde_json::Value {
         .read()
         .map(|value| value.clone())
         .unwrap_or_default();
-    serde_json::json!({"ok":true,"keyboard":keyboard,"shortcuts":shortcuts,"microphone":"check_in_audio_preview","screen":"explicit_capture_check_required"})
+    serde_json::json!({"ok":true,"keyboard":keyboard,"shortcuts":shortcuts,"microphone":"check_in_audio_preview","screen":"explicit_capture_check_required","last_capture_check":CAPTURE_CHECK.read().map(|v| *v).unwrap_or("unknown")})
 }
 
 pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
@@ -34,18 +36,20 @@ pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
         .default_width(480)
         .resizable(false)
         .build();
+    window.add_css_class("koett-window");
     let layout = gtk::Box::new(gtk::Orientation::Vertical, 14);
     layout.set_margin_top(20);
     layout.set_margin_bottom(20);
     layout.set_margin_start(20);
     layout.set_margin_end(20);
-    let row = |name: &str, label: &str, action: &str| {
+    let row = |_name: &str, label: &str, action: &str| {
         let line = gtk::Box::new(gtk::Orientation::Horizontal, 12);
         let text = gtk::Label::new(Some(label));
         text.set_xalign(0.0);
         text.set_wrap(true);
+        text.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+        text.set_max_width_chars(36);
         text.set_hexpand(true);
-        super::menu::set_accessible_label(text.upcast_ref(), name);
         let button = gtk::Button::with_label(action);
         line.append(&text);
         line.append(&button);
@@ -69,6 +73,7 @@ pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
         move |_| settings("audio")
     });
     edit.connect_clicked(move |_| settings("shortcuts"));
+    setup.set_tooltip_text(Some("Copies a command granting read-only keyboard access to your user for drawing and Escape. Other apps running as your user can also use that access. Dictation works without it."));
     setup.connect_clicked(|button| {
         button
             .clipboard()
@@ -124,6 +129,13 @@ pub fn show(parent: &gtk::ApplicationWindow, settings: Rc<dyn Fn(&str)>) {
                 };
                 match receive.try_recv() {
                     Ok(result) => {
+                        if let Ok(mut state) = CAPTURE_CHECK.write() {
+                            *state = if result.is_ok() {
+                                "available"
+                            } else {
+                                "failed"
+                            };
+                        }
                         button.set_sensitive(true);
                         screen.set_text(
                             &result

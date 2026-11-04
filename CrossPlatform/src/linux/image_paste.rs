@@ -40,7 +40,8 @@ pub fn format(rules: &BTreeMap<String, PasteShortcut>) -> String {
 }
 
 pub fn resolve(app: Option<&str>, rules: &BTreeMap<String, PasteShortcut>) -> PasteShortcut {
-    app.and_then(|app| rules.get(app))
+    app.filter(|app| !app.is_empty())
+        .and_then(|app| rules.get(app))
         .copied()
         .unwrap_or(PasteShortcut::CtrlV)
 }

@@ -32,11 +32,32 @@ pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
         if command == "menu-status" {
             let settings = Settings::load()?;
             return Ok(
-                serde_json::json!({"ok":true,"busy":busy,"desired_model":settings.selected_model,"active_engine":ACTIVE.read().map_err(|e| e.to_string())?.clone(),"microphone":settings.microphone,"microphones":input_status(),"recording_mode":settings.recording_mode,"start_at_login":settings.start_at_login,"login_registered":login_registered(),"formatting":settings.formatting,"version":env!("CARGO_PKG_VERSION")}),
+                serde_json::json!({"ok":true,"busy":busy,"desired_model":settings.selected_model,"active_engine":ACTIVE.read().map_err(|e| e.to_string())?.clone(),"microphone":settings.microphone,"microphones":input_status(),"recording_mode":settings.recording_mode,"start_at_login":settings.start_at_login,"login_registered":login_registered(),"formatting":settings.formatting,"paste_shortcut":settings.paste_shortcut,"image_paste_shortcuts":settings.image_paste_shortcuts,"version":env!("CARGO_PKG_VERSION")}),
             );
         }
         if busy {
             return Err("Finish recording or processing before changing preferences".into());
+        }
+        if let Some(rule) = command.strip_prefix("menu-image-paste ") {
+            let (app, chord) = rule
+                .rsplit_once(' ')
+                .ok_or("Use menu-image-paste APP_ID ctrl_v|ctrl_shift_v|default")?;
+            let parsed = super::image_paste::parse(&format!(
+                "{app} = {}",
+                match chord {
+                    "ctrl_shift_v" => "Ctrl+Shift+V",
+                    "ctrl_v" | "default" => "Ctrl+V",
+                    _ => return Err("Choose ctrl_v, ctrl_shift_v or default".into()),
+                }
+            ))?;
+            Settings::update(|settings| {
+                if chord == "default" {
+                    settings.image_paste_shortcuts.remove(app.trim());
+                } else {
+                    settings.image_paste_shortcuts.extend(parsed);
+                }
+            })?;
+            return Ok(serde_json::json!({"ok":true}));
         }
         if let Some(mode) = command.strip_prefix("menu-mode ") {
             let mode = match mode {

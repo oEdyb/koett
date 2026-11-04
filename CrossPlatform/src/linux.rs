@@ -299,7 +299,7 @@ pub fn run() -> Result<(), String> {
         if command == "menu-help" {
             println!(
                 "{}",
-                serde_json::json!({"ok":true,"commands":["menu-status","menu-model compact|parakeet_v2|parakeet_v3|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-dictionary-import ABSOLUTE_PATH", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
+                serde_json::json!({"ok":true,"commands":["menu-status","menu-image-paste APP_ID ctrl_v|ctrl_shift_v|default","menu-model compact|parakeet_v2|parakeet_v3|nemotron","menu-mode toggle|hold","menu-microphone default|CPAL_ID","menu-login on|off", "menu-dictionary-import ABSOLUTE_PATH", "menu-format raw|s1-mini", "menu-format style casual|semi-casual|semi-formal|formal", "menu-format structure prose|lists", "menu-format context general|email", "menu-open models|formatting|about|settings"]})
             );
         } else {
             let command = std::iter::once(command)

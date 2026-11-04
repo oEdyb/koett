@@ -28,7 +28,7 @@ pub fn focused_identity() -> Option<(u32, String)> {
     }
     Some((
         u32::try_from(value["id"].as_u64()?).ok()?,
-        value["app_id"].as_str()?.to_owned(),
+        value["app_id"].as_str().unwrap_or_default().to_owned(),
     ))
 }
 

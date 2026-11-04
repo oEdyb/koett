@@ -510,8 +510,28 @@ mod lifecycle_tests {
         };
         let server = std::thread::spawn(move || {
             let (mut tokenize, _) = listener.accept().unwrap();
-            let mut request = [0_u8; 4096];
-            let _ = tokenize.read(&mut request);
+            tokenize
+                .set_read_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            {
+                use std::io::BufRead;
+                let mut reader = std::io::BufReader::new(&mut tokenize);
+                let mut length = 0;
+                loop {
+                    let mut line = String::new();
+                    assert!(reader.read_line(&mut line).unwrap() > 0);
+                    if line == "\r\n" {
+                        break;
+                    }
+                    if let Some((key, value)) = line.split_once(':')
+                        && key.eq_ignore_ascii_case("content-length")
+                    {
+                        length = value.trim().parse::<usize>().unwrap();
+                    }
+                }
+                assert!(length <= 4096);
+                reader.read_exact(&mut vec![0; length]).unwrap();
+            }
             let body = r#"{"tokens":[1,2,3]}"#;
             let _ = write!(
                 tokenize,
