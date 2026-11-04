@@ -13,7 +13,11 @@ const WL_COPY_IMAGE_WAIT: std::time::Duration = std::time::Duration::from_millis
 
 pub fn focused_identity() -> Option<(u32, String)> {
     if std::env::var_os("NIRI_SOCKET").is_none() {
-        return super::kwin_focus::focused();
+        return if super::gnome_focus::desktop() {
+            super::gnome_focus::focused()
+        } else {
+            super::kwin_focus::focused()
+        };
     }
     let output = Command::new("niri")
         .args(["msg", "-j", "focused-window"])

@@ -200,7 +200,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
             }
             if bytes == b"paste-target-status" {
                 let focused = super::output::focused_identity();
-                let value = serde_json::json!({"ok":true,"available":focused.is_some(),"backend":if focused.is_none() {"unavailable"} else if std::env::var_os("NIRI_SOCKET").is_some() {"niri"} else {"kwin"},"app_id":focused.map(|(_, app)| app)});
+                let value = serde_json::json!({"ok":true,"available":focused.is_some(),"backend":if focused.is_none() {"unavailable"} else if std::env::var_os("NIRI_SOCKET").is_some() {"niri"} else if super::gnome_focus::desktop() {"gnome"} else {"kwin"},"app_id":focused.map(|(_, app)| app)});
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
