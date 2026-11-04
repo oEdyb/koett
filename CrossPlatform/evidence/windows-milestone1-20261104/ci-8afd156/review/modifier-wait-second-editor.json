@@ -1,0 +1,14 @@
+{
+  "step": "modifier-wait-second-editor",
+  "rect": [
+    156,
+    156,
+    1556,
+    756
+  ],
+  "focus": {
+    "hwnd": 131468,
+    "process": "powershell",
+    "pid": 8552
+  }
+}

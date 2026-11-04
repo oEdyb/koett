@@ -2,17 +2,11 @@
 
 ## Current checkpoint
 
-Independent review reopened four desktop issues after the initial M1 receipt:
-a delayed-paste focus race, Koett-owned targets, hover-gated UIA actions and
-History's first-page limit. Source fixes and regression tests are committed;
-the rebuilt executable must be retested before merging or starting M2.
-All four were reproduced on the old artifact in the real guest; see
-[review regressions](review-regressions/README.md).
-
-The earlier unmodified green CI artifact 23f8b75 passed the original final gate:
-exact UIA recovery Paste with stable foreground, basic UIA actions, timing,
-changed-target refusal and mouse actions. See [that retest](ci-23f8b75/README.md).
-Those observations did not cover a focus switch during the modifier wait.
+Milestone 1 is complete. All four independent-review fixes passed on the
+unmodified green CI artifact 8afd156 in the real Windows guest, followed by
+ordinary exact Paste and changed-target refusal. See [the final retest](ci-8afd156/README.md).
+PR #52 merged as fcaffcc9893c1d9bbf5d1e2ed5af3cc1b4f115b9. M2 work follows
+on its own branch. Older failed receipts remain historical evidence.
 
 Earlier e63e65a and 7a0e827 receipts cover the rest of the desktop matrix:
 visible 300×48 pill, typing focus, light/dark checkbox, native Settings and
@@ -20,9 +14,8 @@ History Copy/Export, startup on/off across boots, tray/Explorer restart,
 reduced motion, scoped Narrator and 100/150/200% scaling. The final retest
 explicitly identifies checks carried forward and checks not repeated.
 No original-target guard was relaxed; no fallback was needed. Native
-Settings/History remain native. CI is rerun after rebasing; no merge or release
-is authorized by this receipt. Real dictation and broader parity are later
-milestones. The guest completed a full Windows shutdown after testing.
+Settings/History remain native. M1 was merged after explicit authorization;
+no release was made. Real dictation and broader parity are later milestones. The guest completed a full Windows shutdown after testing.
 
 The remaining sections preserve earlier investigation evidence and failures;
 they are not the current pass list.

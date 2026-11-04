@@ -8,8 +8,8 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 |---|---|---|---|---|
 | Local offline ASR, loaded once | Yes, FluidAudio | Yes, sherpa/ORT | Engine + tray shell | Windows CPU/WASAPI live acceptance first; retain offline core |
 | Toggle / hold / configurable shortcuts | Yes, modifier or chord | Yes, desktop-dependent | Chord registration; hold parity unverified | Windows Raw Input for bare modifier/hold; Linux portal/compositor bindings |
-| Selected microphone | Yes | Yes | Engine; no full Settings UI | Native Windows input selector, stable endpoint identity |
-| Level preview in Settings | Native Microphone window; releases on close/record | Yes | No | Add Mac and Windows preview that releases capture on close/record |
+| Selected microphone | Yes | Yes | Native ID selector implemented; guest retest pending | Verify Windows endpoint selection/save/reopen and unavailable-device behavior |
+| Level preview in Settings | Native Microphone window; releases on close/record | Yes | Shared preview wired to native Settings; guest retest pending | Verify Windows close/record release and actual input levels |
 | Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
 | Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
 | Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |

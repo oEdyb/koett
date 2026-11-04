@@ -1,3 +1,4 @@
+mod microphone;
 use crate::{
     history::{HistoryCursor, HistoryStore, HistorySummary},
     settings::Settings,
@@ -68,6 +69,7 @@ struct Window {
     list: HWND,
     detail: HWND,
     startup: HWND,
+    microphone: Option<microphone::Controls>,
     rows: Vec<HistorySummary>,
     selected_key: Option<String>,
     selected_text: Option<String>,
@@ -180,7 +182,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             if settings { 560 } else { 960 },
-            if settings { 300 } else { 680 },
+            if settings { 400 } else { 680 },
             None,
             None,
             Some(instance.into()),
@@ -199,6 +201,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             list: HWND::default(),
             detail: HWND::default(),
             startup: HWND::default(),
+            microphone: None,
             rows: vec![],
             selected_key: None,
             selected_text: None,
@@ -352,12 +355,13 @@ impl Window {
                 CHANGE_SHORTCUT,
                 [300, 48, 180, 32],
             )?;
+            self.microphone = Some(microphone::Controls::new(self, &settings)?);
             self.startup = self.control(
                 w!("BUTTON"),
                 "Start at login",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 STARTUP,
-                [24, 112, 300, 32],
+                [24, 224, 300, 32],
             )?;
             self.theme.apply_checkbox(self.startup);
             unsafe {
@@ -373,10 +377,10 @@ impl Window {
                 "Save",
                 WS_TABSTOP | WINDOW_STYLE(BS_DEFPUSHBUTTON as u32),
                 SAVE,
-                [24, 176, 100, 32],
+                [24, 272, 100, 32],
             )?;
             self.detail =
-                self.control(w!("STATIC"), "", Default::default(), 0, [24, 224, 600, 64])?;
+                self.control(w!("STATIC"), "", Default::default(), 0, [24, 316, 488, 48])?;
         } else {
             self.control(
                 w!("STATIC"),
@@ -509,6 +513,9 @@ impl Window {
         }
     }
     fn poll(&mut self) {
+        if let Some(microphone) = &mut self.microphone {
+            microphone.poll();
+        }
         self.selection_changed();
         while let Ok(reply) = self.replies.try_recv() {
             match reply {
@@ -575,6 +582,13 @@ impl Window {
         }
     }
     fn command(&mut self, id: usize, notification: u16) {
+        if self
+            .microphone
+            .as_mut()
+            .is_some_and(|m| m.command(id, notification))
+        {
+            return;
+        }
         match id {
             SEARCH if notification == EN_CHANGE as u16 => self.search(),
             LIST if notification == LBN_SELCHANGE as u16 => self.selection_changed(),
@@ -608,7 +622,11 @@ impl Window {
             SAVE => {
                 let enabled = unsafe { SendMessageW(self.startup, BM_GETCHECK, None, None) }.0 != 0;
                 let result = (|| {
+                    let microphone = self.microphone.as_ref().map(|m| m.selected()).transpose()?;
                     let mut edit = Settings::edit()?;
+                    if let Some(microphone) = microphone {
+                        edit.settings.microphone = microphone;
+                    }
                     let old = super::start_at_login_registered()?;
                     super::set_start_at_login(enabled)?;
                     edit.settings.start_at_login = enabled;
@@ -715,7 +733,7 @@ fn fit_window(hwnd: HWND, suggested: Option<&RECT>, settings: bool) {
             .min(info.rcWork.right - info.rcWork.left);
         let height = suggested
             .map(|r| r.bottom - r.top)
-            .unwrap_or(if settings { 300 } else { 680 } * dpi / 96)
+            .unwrap_or(if settings { 400 } else { 680 } * dpi / 96)
             .min(info.rcWork.bottom - info.rcWork.top);
         let x = suggested
             .map(|r| r.left)
