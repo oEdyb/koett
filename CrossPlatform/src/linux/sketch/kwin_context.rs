@@ -17,12 +17,18 @@ pub struct Window {
     pub height: f64,
 }
 
-struct Reply(Mutex<Option<oneshot::Sender<String>>>);
+struct Reply {
+    sender: Mutex<Option<oneshot::Sender<String>>>,
+    owner: String,
+}
 
 #[zbus::interface(name = "com.olledyberg.Koett.PinContext", crate = "ashpd::zbus")]
 impl Reply {
-    fn window(&self, value: String) {
-        if let Ok(mut sender) = self.0.lock()
+    fn window(&self, value: String, #[zbus(header)] header: zbus::message::Header<'_>) {
+        if header.sender().map(|sender| sender.as_str()) != Some(self.owner.as_str()) {
+            return;
+        }
+        if let Ok(mut sender) = self.sender.lock()
             && let Some(sender) = sender.take()
         {
             let _ = sender.send(value);
@@ -43,13 +49,42 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
         return None;
     }
     let (sender, receiver) = oneshot::channel();
-    let connection = zbus::connection::Builder::session()
-        .ok()?
-        .serve_at("/Pin", Reply(Mutex::new(Some(sender))))
-        .ok()?
-        .build()
+    let setup = async {
+        let connection = zbus::connection::Builder::session()
+            .ok()?
+            .build()
+            .await
+            .ok()?;
+        // Avoid writing a script on desktops without KWin.
+        let dbus = zbus::fdo::DBusProxy::new(&connection).await.ok()?;
+        if !dbus
+            .name_has_owner("org.kde.KWin".try_into().ok()?)
+            .await
+            .ok()?
+        {
+            return None;
+        }
+        let owner = dbus
+            .get_name_owner("org.kde.KWin".try_into().ok()?)
+            .await
+            .ok()?
+            .to_string();
+        connection
+            .object_server()
+            .at(
+                "/Pin",
+                Reply {
+                    sender: Mutex::new(Some(sender)),
+                    owner,
+                },
+            )
+            .await
+            .ok()?;
+        Some(connection)
+    };
+    let connection = tokio::time::timeout(Duration::from_millis(200), setup)
         .await
-        .ok()?;
+        .ok()??;
     let bus = zbus::Proxy::new(
         &connection,
         "org.kde.KWin",
@@ -58,15 +93,6 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
     )
     .await
     .ok()?;
-    // Avoid writing a script on desktops without KWin.
-    let dbus = zbus::fdo::DBusProxy::new(&connection).await.ok()?;
-    if !dbus
-        .name_has_owner("org.kde.KWin".try_into().ok()?)
-        .await
-        .ok()?
-    {
-        return None;
-    }
     let name = format!("koett-pin-{}", uuid::Uuid::new_v4());
     let directory = directories::BaseDirs::new()?.cache_dir().join(&name);
     std::fs::DirBuilder::new()
@@ -81,7 +107,8 @@ pub async fn at_point(point: (f64, f64)) -> Option<Window> {
 const windows = workspace.windowAt({{x:{}, y:{}}}, -1);
 let result = null;
 for (const w of windows) {{
-    if (String(w.resourceClass).toLowerCase().includes("koett")) continue;
+    const app = String(w.resourceClass).toLowerCase();
+    if (app === "koett" || app === "com.olledyberg.koett") continue;
     if (w.dock || w.desktopWindow) break;
     const r = w.clientGeometry;
     result = {{title:w.caption, app:String(w.resourceClass), x:r.x, y:r.y, width:r.width, height:r.height}};
@@ -99,17 +126,14 @@ callDBus({}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify
         .ok()?
         .write_all(script.as_bytes())
         .ok()?;
-    let loaded: zbus::Result<i32> = tokio::time::timeout(
-        Duration::from_millis(150),
-        bus.call("loadScript", &(path.to_str()?, &name)),
-    )
-    .await
-    .ok()?;
-    let id = loaded.ok()?;
-    if id < 0 {
-        return None;
-    }
     let result = async {
+        let id: i32 = bus
+            .call("loadScript", &(path.to_str()?, &name))
+            .await
+            .ok()?;
+        if id < 0 {
+            return None;
+        }
         let path = format!("/Scripting/Script{id}");
         let runner = zbus::Proxy::new(&connection, "org.kde.KWin", path, "org.kde.kwin.Script")
             .await
@@ -118,7 +142,7 @@ callDBus({}, "/Pin", "com.olledyberg.Koett.PinContext", "Window", JSON.stringify
         let raw = receiver.await.ok()?;
         serde_json::from_str::<Option<Window>>(&raw).ok().flatten()
     };
-    let result = tokio::time::timeout(Duration::from_millis(200), result)
+    let result = tokio::time::timeout(Duration::from_millis(350), result)
         .await
         .ok()
         .flatten();

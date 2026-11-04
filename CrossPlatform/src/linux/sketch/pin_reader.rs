@@ -1,10 +1,6 @@
-//! Reads a pin's context, once, when a pin is dropped: the window from niri,
-//! then the page, the element under the pointer and the selection through
-//! AT-SPI. Every failure degrades to the fields already known, so a pin on any
-//! window has at least app and title.
-//!
-//! PRIMARY is deliberately not a selection fallback: nothing proves which app
-//! owns it, so a token selected in a terminal could be pasted under a browser pin.
+//! Reads one pin's context from a compositor-identified window or a unique
+//! accessible frame with usable geometry. Missing metadata stays absent.
+//! PRIMARY is never a selection fallback: it has no verified window owner.
 use super::niri_pick::{self, NiriWindow, PickGate};
 use super::video_time;
 use crate::pin_context::PinContext;
@@ -140,9 +136,10 @@ fn read_screen(
     let mut context = None;
     let mut found = Found::default();
     runtime.block_on(async {
+        let geometry = super::kwin_context::at_point(point).await;
         let read = async {
             let bus = accessibility_bus().await.ok()?;
-            if let Some(window) = super::kwin_context::at_point(point).await {
+            if let Some(window) = geometry {
                 let local = (
                     (point.0 - window.x).round() as i32,
                     (point.1 - window.y).round() as i32,
@@ -359,10 +356,20 @@ async fn fill_frame(
     point: Option<(i32, i32)>,
     found: &mut Found,
 ) {
-    let scan = scan_frame(bus, frame, include_selection, found).await;
-    if let Some(point) = point {
-        under_pointer(bus, frame, point, found).await;
+    let chain = if let Some(point) = point {
+        hit_chain(bus, frame, point).await
+    } else {
+        Vec::new()
+    };
+    let mut scope = frame.clone();
+    for object in &chain {
+        if role(bus, object).await.ok() == Some(ROLE_DOCUMENT_WEB) {
+            scope = object.clone();
+            break;
+        }
     }
+    let scan = scan_frame(bus, &scope, include_selection, found).await;
+    read_hits(bus, chain, found).await;
     if include_selection && !found.password {
         found.selection = read_selection(bus, &scan).await;
     }
@@ -502,8 +509,12 @@ async fn scan_frame(
             }
             continue;
         }
-        if object_role == ROLE_DOCUMENT_WEB && found.url.is_none() {
-            read_document(bus, &object, found).await;
+        if object_role == ROLE_DOCUMENT_WEB {
+            if found.url.is_none() {
+                read_document(bus, &object, found).await;
+            } else {
+                continue;
+            }
         }
         if focused && scan.focused.is_none() {
             scan.focused = Some(object.clone());
@@ -560,8 +571,8 @@ async fn read_document(bus: &Connection, object: &Object, found: &mut Found) {
     }
 }
 
-/// Needs window coordinates, which niri reports only for floating windows.
-async fn under_pointer(bus: &Connection, frame: &Object, point: (i32, i32), found: &mut Found) {
+/// Uses window-relative coordinates from a compositor or a validated provider.
+async fn hit_chain(bus: &Connection, frame: &Object, point: (i32, i32)) -> Vec<Object> {
     let hit: zbus::Result<Object> = call(
         bus,
         frame,
@@ -574,7 +585,7 @@ async fn under_pointer(bus: &Connection, frame: &Object, point: (i32, i32), foun
     let mut descended = Vec::new();
     for _ in 0..MAX_PARENTS {
         let Some(object) = &current else {
-            return;
+            return Vec::new();
         };
         if descended.contains(object) {
             break;
@@ -599,10 +610,10 @@ async fn under_pointer(bus: &Connection, frame: &Object, point: (i32, i32), foun
     let mut chain = Vec::new();
     for _ in 0..MAX_PARENTS {
         let Some(object) = current else {
-            return;
+            return Vec::new();
         };
         if chain.contains(&object) {
-            return;
+            return Vec::new();
         }
         chain.push(object.clone());
         if &object == frame {
@@ -611,8 +622,12 @@ async fn under_pointer(bus: &Connection, frame: &Object, point: (i32, i32), foun
         current = parent(bus, &object).await;
     }
     if chain.last() != Some(frame) {
-        return;
+        return Vec::new();
     }
+    chain
+}
+
+async fn read_hits(bus: &Connection, chain: Vec<Object>, found: &mut Found) {
     for object in chain {
         match role(bus, &object).await {
             Ok(ROLE_PASSWORD) => {
@@ -696,7 +711,7 @@ mod tests {
                 .is_ok_and(|path| path.contains("/agent-lab/koett-row3-sol"))
         );
         let context =
-            read_screen(false, (500.0, 500.0), Instant::now() + TOTAL).expect("fixture context");
+            read_screen(false, (700.0, 500.0), Instant::now() + TOTAL).expect("fixture context");
         println!("context={context:?}");
         assert!(
             context
@@ -704,6 +719,23 @@ mod tests {
                 .as_deref()
                 .is_some_and(|url| url.contains("youtube.com/watch?v=") && url.contains("t="))
         );
+    }
+
+    #[test]
+    #[ignore = "requires isolated desktop with linked-image browser fixture"]
+    fn private_element_pin() {
+        assert!(
+            std::env::var("AGENT_LAB_RUNTIME")
+                .is_ok_and(|path| path.contains("/agent-lab/koett-row3-sol"))
+        );
+        let context =
+            read_screen(false, (500.0, 250.0), Instant::now() + TOTAL).expect("fixture context");
+        println!("context={context:?}");
+        assert_eq!(
+            context.link.as_deref(),
+            Some("https://example.com/pin-target")
+        );
+        assert_eq!(context.image.as_deref(), Some("Coral square"));
     }
 
     #[test]

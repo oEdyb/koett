@@ -170,9 +170,12 @@ rules and their tests. Differences, all measured on niri 26.04:
   still be mislabelled by moving across it at once. Two windows with the same
   title give no page or selection. A pin over no window, or on another desktop, has an image and bullet
   but no context line.
-- **What Linux cannot read:** the link or image under the pointer on tiled windows
-  (no window position), YouTube time, and selections in apps without AT-SPI text,
-  such as terminals. Chrome gives only app and title until its one-time setup,
+- **Current context support:** KWin can supply read-only window geometry;
+  YouTube time comes from the matched page's accessible seek slider. Other
+  desktops need usable AT-SPI frame geometry. Stock niri tiled native Wayland
+  browser hits still lack reliable coordinates; those omit link/image metadata.
+  Apps without AT-SPI text still provide no selection.
+  See [current checks and limits](linux-pin-context-verification.md). Chrome gives only app and title until its one-time setup,
   which Settings copies. That setup makes Chrome keep its accessibility tree on.
 - **Fast Shift-clicks pass through.** The overlay takes the pointer only once the
   key has been held 120 ms (so typing a capital is never interrupted) and its
