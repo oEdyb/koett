@@ -68,7 +68,7 @@ use crate::history;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
 use crate::settings::Settings;
 use crate::shortcut::{Key, Modifiers, Shortcut};
-use crate::state::AppStatus;
+use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 const HOTKEY_ID: i32 = 1;
 const POLL_TIMER_ID: usize = 1;
@@ -90,13 +90,19 @@ const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 // try_borrow instead of creating overlapping references from a raw pointer.
 static APP: AtomicPtr<RefCell<WindowsApp>> = AtomicPtr::new(ptr::null_mut());
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct PasteTarget {
+    hwnd: HWND,
+    pid: u32,
+}
+
 struct WindowsApp {
     hwnd: HWND,
     engine: Option<EngineHandle>,
     desktop_lab: bool,
     settings: Settings,
     status: AppStatus,
-    paste_target: Option<HWND>,
+    paste_target: Option<PasteTarget>,
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     last_render_error: Cell<Option<Instant>>,
@@ -109,8 +115,10 @@ struct WindowsApp {
     last_pill_key: Cell<Option<pill_state::PaintKey>>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
+    shortcut_latch: ShortcutLatch,
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
+    capture_pending: bool,
     tray: NOTIFYICONDATAW,
     taskbar_created: u32,
 }
@@ -146,8 +154,16 @@ pub fn run() -> Result<(), String> {
     let startup_warning: Option<String> = None;
     history::recovery::initialize_last()?;
     let restored_last = history::recovery::last().unwrap_or_default();
-    let desktop_lab = std::env::args().any(|argument| argument == "--desktop-lab");
-    let engine = (!desktop_lab).then(|| runtime::start(settings.clone()));
+    let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+    let desktop_lab = arguments.as_slice() == [std::ffi::OsString::from("--desktop-lab")];
+    let engine = match arguments.as_slice() {
+        [] => Some(runtime::start(settings.clone())),
+        [_] if desktop_lab => None,
+        [flag, path] if flag == "--dictation-lab-wav" => {
+            Some(runtime::start_wav_lab(settings.clone(), path.into()))
+        }
+        _ => return Err("Use Koett.exe, --desktop-lab, or --dictation-lab-wav FILE.wav".into()),
+    };
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
         engine,
@@ -171,8 +187,10 @@ pub fn run() -> Result<(), String> {
         last_pill_key: Cell::new(None),
         shortcut_window: HWND::default(),
         registered_shortcut: None,
+        shortcut_latch: ShortcutLatch::default(),
         levels: None,
         recording_started: None,
+        capture_pending: false,
         tray: NOTIFYICONDATAW::default(),
         taskbar_created: 0,
     }));
@@ -382,6 +400,14 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            0x8053 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Ok(settings) = Settings::load()
+                {
+                    app.settings = settings;
+                }
+                return Default::default();
+            }
             0x8052 => {
                 if let Ok(mut app) = app_cell.try_borrow_mut()
                     && app.desktop_lab
@@ -396,15 +422,27 @@ unsafe extern "system" fn window_proc(
                 }
                 return Default::default();
             }
-            WM_HOTKEY => {
-                if let Ok(mut app) = app_cell.try_borrow_mut() {
-                    app.toggle();
+            WM_HOTKEY if wparam.0 == HOTKEY_ID as usize => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && matches!(app.status, AppStatus::Ready | AppStatus::Recording)
+                {
+                    let mode = app.settings.recording_mode;
+                    if let Some(intent) = app.shortcut_latch.press(mode) {
+                        app.recording_intent(intent);
+                    }
                 }
                 return Default::default();
             }
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.poll_updates();
+                    if app
+                        .registered_shortcut
+                        .is_none_or(|shortcut| !shortcut_is_down(shortcut))
+                        && let Some(intent) = app.shortcut_latch.release()
+                    {
+                        app.recording_intent(intent);
+                    }
                     if app.status == AppStatus::Recording {
                         let elapsed = app
                             .recording_started
@@ -619,33 +657,44 @@ impl WindowsApp {
     }
 
     fn toggle(&mut self) {
+        self.recording_intent(RecordingIntent::Toggle);
+    }
+
+    fn recording_intent(&mut self, intent: RecordingIntent) {
         if self.desktop_lab {
-            self.lab_phase(if self.status == AppStatus::Recording {
-                2
-            } else {
-                1
-            });
-            return;
-        }
-        if self.status != AppStatus::Ready
-            && self.status != AppStatus::Recording
-            && !matches!(self.status, AppStatus::Error(_))
-        {
-            return;
-        }
-        let focused = foreground_paste_target();
-        if self.status == AppStatus::Ready || matches!(self.status, AppStatus::Error(_)) {
-            self.paste_target = focused;
-        }
-        if self.status == AppStatus::Recording {
-            // Keep the app that was focused when recording started if the
-            // non-activating overlay is briefly reported during the stop.
-            if focused.is_some() {
-                self.paste_target = focused;
+            match intent {
+                RecordingIntent::Start if self.status == AppStatus::Ready => self.lab_phase(1),
+                RecordingIntent::Stop if self.status == AppStatus::Recording => self.lab_phase(2),
+                RecordingIntent::Toggle => self.lab_phase(if self.status == AppStatus::Recording {
+                    2
+                } else {
+                    1
+                }),
+                _ => {}
             }
+            return;
+        }
+        if intent == RecordingIntent::Stop {
+            if let Some(engine) = &self.engine {
+                let _ = engine.commands.send(EngineCommand::Stop);
+            }
+            return;
+        }
+        if !matches!(
+            self.status,
+            AppStatus::Ready | AppStatus::Recording | AppStatus::Error(_)
+        ) {
+            return;
+        }
+        if intent == RecordingIntent::Start && self.status == AppStatus::Recording {
+            return;
+        }
+        if matches!(self.status, AppStatus::Ready | AppStatus::Error(_)) && !self.capture_pending {
+            self.paste_target = foreground_paste_target();
+            self.capture_pending = true;
         }
         if let Some(engine) = &self.engine {
-            let _ = engine.commands.send(EngineCommand::Toggle);
+            let _ = engine.commands.send(intent.into());
         }
     }
 
@@ -666,6 +715,7 @@ impl WindowsApp {
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {
+                    self.capture_pending = false;
                     let now = self.clock.elapsed().as_millis() as u64;
                     match &status {
                         AppStatus::Recording => {
@@ -755,7 +805,9 @@ impl WindowsApp {
                 {
                     position_overlay(
                         self.overlay,
-                        self.paste_target.unwrap_or_else(|| GetForegroundWindow()),
+                        self.paste_target
+                            .map(|target| target.hwnd)
+                            .unwrap_or_else(|| GetForegroundWindow()),
                     );
                 }
                 let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
@@ -790,6 +842,7 @@ impl WindowsApp {
                 if (40..100).contains(&x) {
                     if let Some(engine) = &self.engine {
                         engine.cancel_dictation();
+                        let _ = engine.commands.send(EngineCommand::Cancel);
                     }
                     self.pill_state.set(pill_state::Phase::Hidden, now);
                     if self.desktop_lab {
@@ -1130,6 +1183,7 @@ impl WindowsApp {
             MENU_CANCEL => {
                 if let Some(engine) = &self.engine {
                     engine.cancel_dictation();
+                    let _ = engine.commands.send(EngineCommand::Cancel);
                 }
                 self.pill_state.set(
                     pill_state::Phase::Hidden,
@@ -1472,17 +1526,39 @@ unsafe fn write_open_clipboard(encoded: &[u16]) -> Result<(), String> {
     Ok(())
 }
 
-fn external_paste_target(hwnd: HWND) -> Option<HWND> {
-    let mut pid = 0;
-    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
-    (!hwnd.is_invalid() && pid != 0 && pid != std::process::id()).then_some(hwnd)
+fn shortcut_is_down(shortcut: Shortcut) -> bool {
+    let (_, key) = windows_shortcut(shortcut);
+    let mut keys = vec![VIRTUAL_KEY(key as u16)];
+    let modifiers = shortcut.modifiers;
+    for (required, key) in [
+        (modifiers.control, VK_CONTROL),
+        (modifiers.alt, VK_MENU),
+        (modifiers.shift, VK_SHIFT),
+    ] {
+        if required {
+            keys.push(key);
+        }
+    }
+    keys.into_iter()
+        .all(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0)
+        && (!modifiers.super_key
+            || [VK_LWIN, VK_RWIN]
+                .into_iter()
+                .any(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0))
 }
 
-fn foreground_paste_target() -> Option<HWND> {
+fn external_paste_target(hwnd: HWND) -> Option<PasteTarget> {
+    let mut pid = 0;
+    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+    (!hwnd.is_invalid() && pid != 0 && pid != std::process::id())
+        .then_some(PasteTarget { hwnd, pid })
+}
+
+fn foreground_paste_target() -> Option<PasteTarget> {
     external_paste_target(unsafe { GetForegroundWindow() })
 }
 
-fn paste(expected: HWND) -> Result<(), String> {
+fn paste(expected: PasteTarget) -> Result<(), String> {
     let modifiers_are_down = || {
         [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
             .into_iter()

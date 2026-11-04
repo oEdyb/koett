@@ -152,7 +152,22 @@ impl EngineHandle {
     }
 }
 
+enum CaptureSource {
+    Microphone,
+    #[cfg(target_os = "windows")]
+    WavFixture(std::path::PathBuf),
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn start_wav_lab(settings: Settings, path: std::path::PathBuf) -> EngineHandle {
+    start_source(settings, CaptureSource::WavFixture(path))
+}
+
 pub fn start(settings: Settings) -> EngineHandle {
+    start_source(settings, CaptureSource::Microphone)
+}
+
+fn start_source(settings: Settings, source: CaptureSource) -> EngineHandle {
     let (command_sender, command_receiver) = mpsc::channel();
     let (update_sender, update_receiver) = mpsc::channel();
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -170,6 +185,7 @@ pub fn start(settings: Settings) -> EngineHandle {
             worker_cancelled,
             worker_ask_cancelled,
             worker_sessions,
+            source,
         )
     });
 
@@ -190,6 +206,7 @@ fn run(
     cancelled: Arc<AtomicBool>,
     ask_cancelled: Arc<AtomicBool>,
     sessions: Arc<DictationSessions>,
+    source: CaptureSource,
 ) {
     #[cfg(not(target_os = "linux"))]
     let _ = ask_cancelled;
@@ -731,8 +748,13 @@ fn run(
                         settings.clone()
                     }
                 };
-                let input_resolution =
-                    crate::audio::resolve_recording_input(current.microphone.as_deref());
+                let input_resolution = match &source {
+                    CaptureSource::Microphone => {
+                        crate::audio::resolve_recording_input(current.microphone.as_deref())
+                    }
+                    #[cfg(target_os = "windows")]
+                    CaptureSource::WavFixture(_) => Ok(current.microphone.clone()),
+                };
                 let mut input_notice = None;
                 match input_resolution.as_ref() {
                     Ok(replacement) if replacement != &current.microphone => {
@@ -765,10 +787,16 @@ fn run(
                     media_notice(&updates, media.pause());
                 }
                 match input_resolution
-                    .and_then(|_| {
-                        MicrophoneRecorder::start_streaming_with_device(
-                            current.microphone.as_deref(),
-                        )
+                    .and_then(|_| match &source {
+                        CaptureSource::Microphone => {
+                            MicrophoneRecorder::start_streaming_with_device(
+                                current.microphone.as_deref(),
+                            )
+                        }
+                        #[cfg(target_os = "windows")]
+                        CaptureSource::WavFixture(path) => {
+                            MicrophoneRecorder::start_wav_fixture(path)
+                        }
                     })
                     .and_then(|(started, audio_chunks)| {
                         #[cfg(target_os = "linux")]

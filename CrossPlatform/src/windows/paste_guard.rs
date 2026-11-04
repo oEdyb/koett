@@ -25,6 +25,24 @@ mod tests {
     use std::cell::Cell;
 
     #[test]
+    fn reused_window_handle_with_different_pid_never_sends_input() {
+        let sent = Cell::new(false);
+        assert!(
+            paste_when_ready(
+                (10, 20),
+                || false,
+                || Some((10, 21)),
+                || {
+                    sent.set(true);
+                    Ok(())
+                }
+            )
+            .is_err()
+        );
+        assert!(!sent.get());
+    }
+
+    #[test]
     fn switching_during_modifier_wait_never_sends_input() {
         let target = Cell::new(1);
         let waited = Cell::new(false);

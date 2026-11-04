@@ -5,6 +5,28 @@ fcaffcc9893c1d9bbf5d1e2ed5af3cc1b4f115b9. M1's four review fixes and ordinary
 Paste/changed-target regression passed on the real guest; see its final receipt.
 M2 is **in progress**, not a dictation-readiness claim.
 
+## Current checkpoint
+
+The ae8e454 artifact passed real guest endpoint persistence/default selection,
+preview stop/close/reacquire, unavailable-endpoint refusal and offline CPU
+speech/silence WAV recognition. See [the receipt](../CrossPlatform/evidence/windows-milestone2/ci-ae8e454/README.md).
+These used emulated input, not a real mic. M2 remains incomplete.
+
+New source adds hold mode, queued cancellation, original HWND+PID target guards,
+and an explicit WAV-fed desktop path:
+
+```powershell
+.\Koett.exe --dictation-lab-wav C:\Users\KoettLab\speech.wav
+```
+
+This loads the shared CPU engine normally. Use the actual shortcut or tray to
+start/stop. The feeder supplies real 16 kHz PCM frames at 20 ms intervals;
+pause discards frames and cancel wakes the engine. It reuses normal session IDs,
+ASR, delivery and history. It is distinct from --desktop-lab, which only presents
+silent UI fixtures. Source WAV remains a lab input, not failed recording data.
+WAV input is capped at 20 MiB and ten minutes. This new path, hold controls and
+reentrant theme fix need a rebuilt-executable guest retest before any pass claim.
+
 ## First checkpoint
 
 Native Settings now offers the persisted CPAL endpoint ID, System default,
@@ -16,8 +38,8 @@ Settings closes preview. No model or file is loaded for preview. Unavailable
 saved IDs remain visible rather than silently becoming System default; the
 shared engine retains its existing recording-start replacement policy.
 
-These changes have compilation/unit-test evidence only until their Windows
-artifact runs. They reuse the native [combo-box selection contract](https://learn.microsoft.com/en-us/windows/win32/controls/about-combo-boxes).
+The original microphone controls have guest evidence above; newer hold/layout
+changes still require their rebuilt artifact. They reuse the native [combo-box selection contract](https://learn.microsoft.com/en-us/windows/win32/controls/about-combo-boxes).
 The Settings HWND remains native; the window is 560×400 DIPs and fitted to the
 monitor work area. Verify labels, keyboard/UIA access, dark/light and 100/150/200%.
 

@@ -21,6 +21,23 @@ static SETTINGS_OPEN: AtomicBool = AtomicBool::new(false);
 static HISTORY_HWND: AtomicUsize = AtomicUsize::new(0);
 static SETTINGS_HWND: AtomicUsize = AtomicUsize::new(0);
 thread_local! { static WINDOW: RefCell<Option<Window>> = const { RefCell::new(None) }; }
+#[derive(Clone, Copy)]
+struct PaintTheme {
+    background: COLORREF,
+    foreground: COLORREF,
+    brush: HBRUSH,
+}
+thread_local! { static PAINT: std::cell::Cell<Option<PaintTheme>> = const { std::cell::Cell::new(None) }; }
+impl From<&super::native_theme::Theme> for PaintTheme {
+    fn from(theme: &super::native_theme::Theme) -> Self {
+        Self {
+            background: theme.background,
+            foreground: theme.foreground,
+            brush: theme.brush,
+        }
+    }
+}
+
 const SEARCH: usize = 10;
 const LIST: usize = 11;
 const COPY: usize = 12;
@@ -69,6 +86,7 @@ struct Window {
     list: HWND,
     detail: HWND,
     startup: HWND,
+    mode: HWND,
     microphone: Option<microphone::Controls>,
     rows: Vec<HistorySummary>,
     selected_key: Option<String>,
@@ -182,7 +200,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             if settings { 560 } else { 960 },
-            if settings { 400 } else { 680 },
+            if settings { 440 } else { 680 },
             None,
             None,
             Some(instance.into()),
@@ -201,6 +219,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             list: HWND::default(),
             detail: HWND::default(),
             startup: HWND::default(),
+            mode: HWND::default(),
             microphone: None,
             rows: vec![],
             selected_key: None,
@@ -212,6 +231,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             next_cursor: None,
             page_pending: false,
         };
+        PAINT.with(|paint| paint.set(Some(PaintTheme::from(&window.theme))));
         (if settings {
             &SETTINGS_HWND
         } else {
@@ -247,6 +267,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
 
 impl Drop for Window {
     fn drop(&mut self) {
+        PAINT.with(|paint| paint.set(None));
         if !self.font.is_invalid() {
             unsafe {
                 let _ = DeleteObject(HGDIOBJ(self.font.0));
@@ -356,12 +377,47 @@ impl Window {
                 [300, 48, 180, 32],
             )?;
             self.microphone = Some(microphone::Controls::new(self, &settings)?);
+            self.control(
+                w!("STATIC"),
+                "Recording mode",
+                Default::default(),
+                0,
+                [300, 224, 200, 24],
+            )?;
+            self.mode = self.control(
+                w!("COMBOBOX"),
+                "",
+                WS_TABSTOP | WINDOW_STYLE(CBS_DROPDOWNLIST as u32),
+                33,
+                [300, 252, 212, 140],
+            )?;
+            for label in ["Toggle", "Hold"] {
+                let label = super::wide(label);
+                unsafe {
+                    SendMessageW(
+                        self.mode,
+                        CB_ADDSTRING,
+                        None,
+                        Some(LPARAM(label.as_ptr() as isize)),
+                    );
+                }
+            }
+            unsafe {
+                SendMessageW(
+                    self.mode,
+                    CB_SETCURSEL,
+                    Some(WPARAM(usize::from(
+                        settings.recording_mode == crate::settings::RecordingMode::Hold,
+                    ))),
+                    None,
+                );
+            }
             self.startup = self.control(
                 w!("BUTTON"),
                 "Start at login",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 STARTUP,
-                [24, 224, 300, 32],
+                [24, 252, 240, 32],
             )?;
             self.theme.apply_checkbox(self.startup);
             unsafe {
@@ -377,10 +433,10 @@ impl Window {
                 "Save",
                 WS_TABSTOP | WINDOW_STYLE(BS_DEFPUSHBUTTON as u32),
                 SAVE,
-                [24, 272, 100, 32],
+                [24, 300, 100, 32],
             )?;
             self.detail =
-                self.control(w!("STATIC"), "", Default::default(), 0, [24, 316, 488, 48])?;
+                self.control(w!("STATIC"), "", Default::default(), 0, [24, 344, 488, 48])?;
         } else {
             self.control(
                 w!("STATIC"),
@@ -628,11 +684,25 @@ impl Window {
                         edit.settings.microphone = microphone;
                     }
                     let old = super::start_at_login_registered()?;
-                    super::set_start_at_login(enabled)?;
                     edit.settings.start_at_login = enabled;
+                    let mode = unsafe { SendMessageW(self.mode, CB_GETCURSEL, None, None) }.0;
+                    edit.settings.recording_mode = match mode {
+                        0 => crate::settings::RecordingMode::Toggle,
+                        1 => crate::settings::RecordingMode::Hold,
+                        _ => return Err("Choose a recording mode".into()),
+                    };
+                    super::set_start_at_login(enabled)?;
                     if let Err(e) = edit.commit() {
                         let _ = super::set_start_at_login(old);
                         return Err(e);
+                    }
+                    unsafe {
+                        let _ = PostMessageW(
+                            Some(HWND(self.owner as *mut _)),
+                            0x8053,
+                            WPARAM(0),
+                            LPARAM(0),
+                        );
                     }
                     Ok(())
                 })();
@@ -733,7 +803,7 @@ fn fit_window(hwnd: HWND, suggested: Option<&RECT>, settings: bool) {
             .min(info.rcWork.right - info.rcWork.left);
         let height = suggested
             .map(|r| r.bottom - r.top)
-            .unwrap_or(if settings { 400 } else { 680 } * dpi / 96)
+            .unwrap_or(if settings { 440 } else { 680 } * dpi / 96)
             .min(info.rcWork.bottom - info.rcWork.top);
         let x = suggested
             .map(|r| r.left)
@@ -776,21 +846,19 @@ unsafe extern "system" fn proc(
     if matches!(
         message,
         WM_ERASEBKGND | WM_CTLCOLOREDIT | WM_CTLCOLORLISTBOX | WM_CTLCOLORSTATIC | WM_CTLCOLORBTN
-    ) && let Some(result) = WINDOW.with(|cell| {
-        cell.try_borrow().ok().and_then(|slot| {
-            slot.as_ref().map(|window| unsafe {
-                let dc = HDC(wparam.0 as *mut _);
-                if message == WM_ERASEBKGND {
-                    let mut bounds = RECT::default();
-                    let _ = GetClientRect(hwnd, &mut bounds);
-                    FillRect(dc, &bounds, window.theme.brush);
-                    LRESULT(1)
-                } else {
-                    SetTextColor(dc, window.theme.foreground);
-                    SetBkColor(dc, window.theme.background);
-                    LRESULT(window.theme.brush.0 as isize)
-                }
-            })
+    ) && let Some(result) = PAINT.with(|paint| {
+        paint.get().map(|theme| unsafe {
+            let dc = HDC(wparam.0 as *mut _);
+            if message == WM_ERASEBKGND {
+                let mut bounds = RECT::default();
+                let _ = GetClientRect(hwnd, &mut bounds);
+                FillRect(dc, &bounds, theme.brush);
+                LRESULT(1)
+            } else {
+                SetTextColor(dc, theme.foreground);
+                SetBkColor(dc, theme.background);
+                LRESULT(theme.brush.0 as isize)
+            }
         })
     }) {
         return result;
@@ -804,6 +872,7 @@ unsafe extern "system" fn proc(
                 WM_TIMER => window.poll(),
                 WM_THEMECHANGED | WM_SETTINGCHANGE | WM_SYSCOLORCHANGE => {
                     if let Ok(theme) = super::native_theme::Theme::new() {
+                        PAINT.with(|paint| paint.set(Some(PaintTheme::from(&theme))));
                         window.theme = theme;
                         window.theme.apply(hwnd);
                         if window.settings {

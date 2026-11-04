@@ -14,6 +14,9 @@ use sherpa_onnx::Wave;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) mod preview;
 
+#[cfg(any(target_os = "windows", test))]
+mod fixture;
+
 const MAX_RECORDING_DURATION: Duration = Duration::from_secs(10 * 60);
 
 pub struct AudioRecording {
