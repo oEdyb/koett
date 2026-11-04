@@ -487,6 +487,7 @@ impl HistoryView {
                         }
                         Reply::Page(g, result) if g == generation.get() => match result {
                             Ok(page) => {
+                                let showing_list = navigation.is_visible();
                                 while let Some(child) = list.first_child() {
                                     list.remove(&child);
                                 }
@@ -541,6 +542,10 @@ impl HistoryView {
                                 }) && let Some(row) = list.row_at_index(index as i32)
                                 {
                                     list.select_row(Some(&row));
+                                }
+                                if workspace.width() < TWO_PANE_WIDTH {
+                                    navigation.set_visible(showing_list);
+                                    detail.set_visible(!showing_list);
                                 }
                             }
                             Err(error) => {

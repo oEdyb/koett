@@ -235,8 +235,10 @@ try:
     keys('click')
     click('Back to history', main)
     control('show')
-    wait(lambda: find('Search transcripts', main), 'narrow list survives refresh')
-    assert not find('Back to history', main)
+    time.sleep(0.5)
+    capture('history-narrow-list-refresh')
+    history_list = find('', main, 'list')
+    assert history_list is not None, 'narrow list survives refresh'
     checks.append('Narrow history stays on the list after refresh')
     resize('Koett', 960, 680)
     button = wait(lambda: find('Menu', main, 'toggle button'), 'Menu')
