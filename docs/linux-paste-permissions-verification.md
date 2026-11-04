@@ -29,7 +29,9 @@ recording and releases capture on close. It does not invent an OS-wide permissio
 flag. Screen capture runs only after Check capture, is refused while busy, and
 discards the image. The [Screenshot portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Screenshot.html)
 may ask for permission. No automatic screenshot or first-run blocking screen.
-This is a manual status/actions window; no automatic first-run onboarding claim.
+This row-4 evidence covers the manual status/actions window. Later
+[first-visible-launch onboarding](linux-first-run-permissions-verification.md)
+uses the same explicit checks; this historical run did not test that addition.
 
 ## Fresh checks
 

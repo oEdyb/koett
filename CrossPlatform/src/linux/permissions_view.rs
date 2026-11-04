@@ -52,7 +52,9 @@ fn remember_at(path: &std::path::Path) -> Result<(), String> {
         .open(path)
     {
         Ok(_) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => pending_at(path).map(|_| ()),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            pending_at(path).map(|_| ())
+        }
         Err(error) => Err(error.to_string()),
     }
 }

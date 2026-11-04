@@ -48,12 +48,18 @@
 
 ### Linux host install — 2026-11-04
 
-Clean main `362b03d96cf232bdbddc94db7ed9e6a29793c9b3` (#61 + #64, including
-#54/#57) was installed as a private current-PC bundle. Its running executable
-matched candidate SHA-256 `a3695563544a919a6e82cad1a8e7c435a92bb3a7b2cfa5f644827d6390c12073`.
-Settings and saved-data hashes were unchanged by the installer. Existing GTK/llama
-runtime and previous version were retained; the transcription CLI link was updated.
-Activation waited for idle and used background launch. menu-status returned ok,
-busy false, the existing v2 selection and image-paste fields. Preflight passed;
-no new live dictation or permission-grant acceptance is claimed. The unmerged
-row-5 acoustic sidecar was not installed.
+Clean main `e4feb547c197ad7b87c3c0ee38a180b6c9150294` (#65 + #66, with the
+previous #54/#57/#61/#64 batch) is installed as a private current-PC bundle.
+Its running executable matched candidate SHA-256
+`7b30545003570ab7bc5e7ebf68c388a7f78899441778fd2f2ae55d42d8a1f645`.
+Koett was idle, exited through guarded Quit, and was confirmed absent before
+the installer changed the launcher. All four configuration/saved-data file hashes
+were unchanged across installation and restart. Existing GTK/llama runtime and
+previous versions were retained; the transcription CLI link and help were checked.
+
+Clean-main release build and 382 tests passed (17 ignored, plus native ABI check).
+Preflight passed. The new background process reached busy false, retained the v2
+selection and formatting off, and exposed CTC dictionary status. No new live
+host dictation or permission-grant acceptance is claimed. PR #67 was still open
+and is not installed; first-run onboarding is also not in this installed build.
+Local install/hash receipts live under `~/.cache/koett/main-install-e4feb54/`.
