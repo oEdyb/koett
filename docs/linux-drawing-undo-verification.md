@@ -62,3 +62,9 @@ agent-lab stop koett-undo-sol
 
 The fixture refuses other runtimes, uses isolated XDG directories, explicitly
 releases the grabbed keyboard and closes the private app with Cancel/Quit.
+
+Rebased onto main `e4feb54` after PR #66 merged: 384 tests passed, 17 ignored,
+plus native ABI check; formatting, clippy and release build passed. The same
+private-app workflow passed again, including native action and late-result undo.
+The parity-document conflict retained both guarded Paste Last and drawing undo,
+plus the open-row queue; the native Rust changes merged without a code conflict.
