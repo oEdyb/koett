@@ -13,7 +13,6 @@ pub enum Update {
     Show(String),
     Settings(String),
     Completed(String),
-    CopyResult(String),
     Delivered,
     DeliveryFailed,
     Shortcut(String),
@@ -443,13 +442,6 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
-                    Update::CopyResult(text) => {
-                        if let Err(error) =
-                            super::feedback::copy_transcript(&window.clipboard(), &text)
-                        {
-                            eprintln!("Copy result: {error}");
-                        }
-                    }
                     Update::Delivered => {
                         settling_until = None;
                         if std::mem::take(&mut stopped_at_limit) {

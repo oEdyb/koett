@@ -106,7 +106,6 @@ enum TrayAction {
 }
 
 enum TrayUpdate {
-    CopyResult(String),
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
@@ -508,9 +507,6 @@ pub fn run() -> Result<(), String> {
                     Err(_) => break,
                 };
                 match update {
-                    TrayUpdate::CopyResult(text) => {
-                        let _ = worker_ui.send(window::Update::CopyResult(text));
-                    }
                     TrayUpdate::Levels(levels) => {
                         let _ = worker_ui.send(window::Update::Levels(levels));
                     }
@@ -1309,8 +1305,12 @@ async fn run_wayland(
                             };
                             if feedback::sketch_for(&text).is_some() {
                                 settle_sketch_text(output.as_ref(), before_text).await;
-                                if let Some(tray) = tray {
-                                    let _ = tray.sender.send(TrayUpdate::CopyResult(text));
+                                if let Some(png) = feedback::sketch_for(&text) {
+                                    if let Err(error) =
+                                        restore_sketch_clipboard(output.as_ref(), &png, &text).await
+                                    {
+                                        update_tray_status(tray, &format!("@notice:{error}"));
+                                    }
                                 }
                             }
                             image_delivery.and(result)
@@ -1327,8 +1327,12 @@ async fn run_wayland(
                             .ok()
                             .is_some_and(|text| feedback::sketch_for(&text).is_some()) =>
                 {
-                    if let (Some(tray), Ok(text)) = (tray, recovery::last_text()) {
-                        let _ = tray.sender.send(TrayUpdate::CopyResult(text));
+                    if let Ok(text) = recovery::last_text()
+                        && let Some(png) = feedback::sketch_for(&text)
+                        && let Err(error) =
+                            restore_sketch_clipboard(output.as_ref(), &png, &text).await
+                    {
+                        update_tray_status(tray, &format!("@notice:{error}"));
                     }
                 }
                 TrayAction::Recovery(command) => match recovery::operation(&command) {
@@ -1427,12 +1431,11 @@ async fn run_wayland(
                 Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
                 None => output::deliver(&text, target, settings.paste_shortcut),
             };
-            let delivered = image_delivery.and(text_delivery);
-            if sheet.is_some() {
+            let mut delivered = image_delivery.and(text_delivery);
+            if let Some(png) = &sheet {
                 settle_sketch_text(output.as_ref(), before_text).await;
-                if let Some(tray) = tray {
-                    let _ = tray.sender.send(TrayUpdate::CopyResult(text.clone()));
-                }
+                delivered =
+                    delivered.and(restore_sketch_clipboard(output.as_ref(), png, &text).await);
             }
             report_delivery(tray, &delivered);
             let saved = history::append_transcript_with_raw_resilient(
@@ -2153,15 +2156,49 @@ struct WaylandOutput {
 struct ClipboardPayload {
     image: bool,
     bytes: Vec<u8>,
+    text: Option<Vec<u8>>,
 }
 
 impl ClipboardPayload {
     fn offers(&self, mime_type: &str) -> bool {
         if self.image {
             mime_type == "image/png"
+                || self.text.is_some()
+                    && (mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8")
         } else {
             mime_type == "text/plain" || mime_type == "text/plain;charset=utf-8"
         }
+    }
+}
+
+async fn restore_sketch_clipboard(
+    output: Option<&WaylandOutput>,
+    png: &[u8],
+    text: &str,
+) -> Result<(), String> {
+    if let Some(output) = output {
+        *output
+            .current
+            .write()
+            .map_err(|_| "the clipboard lock failed")? = ClipboardPayload {
+            image: true,
+            bytes: png.to_vec(),
+            text: Some(text.as_bytes().to_vec()),
+        };
+        output
+            .clipboard
+            .set_selection(
+                &output.session,
+                SetSelectionOptions::default().set_mime_types(&[
+                    "image/png",
+                    "text/plain;charset=utf-8",
+                    "text/plain",
+                ]),
+            )
+            .await
+            .map_err(|error| format!("could not preserve the sketch clipboard: {error}"))
+    } else {
+        output::copy_image(png)
     }
 }
 
@@ -2253,7 +2290,13 @@ impl WaylandOutput {
                     .read()
                     .ok()
                     .filter(|payload| payload.offers(&mime_type))
-                    .map(|payload| payload.bytes.clone());
+                    .map(|payload| {
+                        if payload.image && mime_type != "image/png" {
+                            payload.text.clone().unwrap_or_default()
+                        } else {
+                            payload.bytes.clone()
+                        }
+                    });
                 let success = match bytes {
                     Some(bytes) => match transfer_clipboard.selection_write(&session, serial).await
                     {
@@ -2292,6 +2335,7 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard lock failed".to_string())? = ClipboardPayload {
             image: true,
             bytes: png.to_vec(),
+            text: None,
         };
         let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
@@ -2343,6 +2387,7 @@ impl WaylandOutput {
             .map_err(|_| "the clipboard text lock failed".to_string())? = ClipboardPayload {
             image: false,
             bytes: text.as_bytes().to_vec(),
+            text: None,
         };
         let mime_types = ["text/plain;charset=utf-8", "text/plain"];
         self.clipboard
