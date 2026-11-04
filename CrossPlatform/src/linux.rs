@@ -286,6 +286,7 @@ mod formatting_view;
 mod history_view;
 mod image_paste;
 mod input_preview;
+mod kwin_focus;
 pub(crate) mod media;
 mod media_view;
 mod menu;
@@ -325,7 +326,7 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "paste-target-status"
         )
     }) {
         let response = control::request(&command)?;
@@ -369,7 +370,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("recovery-help") {
         println!(
             "{}",
-            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Posts paste to the unchanged niri/X11 target; otherwise copies with an error. Success confirms key posting, not target consumption."})
+            serde_json::json!({"commands":["copy-last","paste-last","paste-target-status","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Posts paste to the unchanged niri/KWin/X11 target; otherwise copies with an error. Success confirms key posting, not target consumption."})
         );
         return Ok(());
     }

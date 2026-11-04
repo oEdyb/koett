@@ -49,21 +49,46 @@ pub fn resolve(app: Option<&str>, rules: &BTreeMap<String, PasteShortcut>) -> Pa
 pub fn for_target(target: Option<u32>) -> Result<PasteShortcut, String> {
     let settings = Settings::load()?;
     let focused = super::output::focused_identity();
-    if let (Some(target), Some((id, _))) = (target, &focused)
-        && target != super::output::PASTE_NOW
-        && target != *id
-    {
-        return Err("target window changed".into());
+    chord_for_focus(target, focused, &settings.image_paste_shortcuts)
+}
+
+fn chord_for_focus(
+    target: Option<u32>,
+    focused: Option<(u32, String)>,
+    rules: &BTreeMap<String, PasteShortcut>,
+) -> Result<PasteShortcut, String> {
+    if target != Some(super::output::PASTE_NOW) {
+        let expected = target.ok_or("target window unavailable")?;
+        if focused.as_ref().map(|(id, _)| *id) != Some(expected) {
+            return Err("target window changed or unavailable".into());
+        }
     }
     Ok(resolve(
         focused.as_ref().map(|(_, app)| app.as_str()),
-        &settings.image_paste_shortcuts,
+        rules,
     ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn image_rules_require_the_same_live_window_and_keep_exact_app_matching() {
+        let rules = parse("org.example.Editor = Ctrl+Shift+V").unwrap();
+        let focused = Some((7, "org.example.Editor".into()));
+        assert_eq!(
+            chord_for_focus(Some(7), focused.clone(), &rules),
+            Ok(PasteShortcut::CtrlShiftV)
+        );
+        assert!(chord_for_focus(Some(8), focused, &rules).is_err());
+        assert!(chord_for_focus(Some(7), None, &rules).is_err());
+        assert!(chord_for_focus(None, None, &rules).is_err());
+        assert_eq!(
+            chord_for_focus(Some(super::super::output::PASTE_NOW), None, &rules),
+            Ok(PasteShortcut::CtrlV)
+        );
+    }
+
     #[test]
     fn exact_app_overrides_round_trip_and_unknown_keeps_default() {
         let rules = parse("kitty = Ctrl+V\norg.example.Editor = Ctrl+Shift+V").unwrap();

@@ -12,6 +12,9 @@ pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_mill
 const WL_COPY_IMAGE_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 
 pub fn focused_identity() -> Option<(u32, String)> {
+    if std::env::var_os("NIRI_SOCKET").is_none() {
+        return super::kwin_focus::focused();
+    }
     let output = Command::new("niri")
         .args(["msg", "-j", "focused-window"])
         .output()
@@ -135,15 +138,15 @@ fn wtype_arguments(shortcut: PasteShortcut) -> &'static [&'static str] {
 /// The person pressed Paste just now, so focus cannot have moved since.
 pub const PASTE_NOW: u32 = u32::MAX;
 
-/// Only Niri can report the focused window here. Elsewhere the target can't be
-/// checked, and a wrong-app paste is worse than a clipboard-only result.
+/// Unsupported or unavailable compositor checks retain manual paste.
 pub fn capture_target() -> Option<u32> {
     if WINDOW_ACTIVE.load(Ordering::Acquire) {
         return None;
     }
-    target_on_wayland(std::env::var_os("NIRI_SOCKET").is_some(), focused_window)
+    focused_window()
 }
 
+#[cfg(test)]
 fn target_on_wayland(can_check_focus: bool, focused: impl FnOnce() -> Option<u32>) -> Option<u32> {
     if can_check_focus { focused() } else { None }
 }

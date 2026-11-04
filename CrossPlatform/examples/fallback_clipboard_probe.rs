@@ -15,8 +15,20 @@ mod feedback;
 mod image_paste;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
+#[path = "../src/linux/sketch/kwin_context.rs"]
+pub(crate) mod kwin_context;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+#[path = "../src/linux/kwin_focus.rs"]
+mod kwin_focus;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
 #[path = "../src/linux/output.rs"]
 mod output;
+#[cfg(target_os = "linux")]
+mod sketch {
+    pub(crate) use crate::kwin_context;
+}
 #[cfg(target_os = "linux")]
 const APP_ID: &str = "com.olledyberg.Koett";
 #[cfg(target_os = "linux")]
