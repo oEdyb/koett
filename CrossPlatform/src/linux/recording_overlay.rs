@@ -108,8 +108,15 @@ impl LayerShell {
         x: i32,
         y: i32,
     ) -> Result<(), libloading::Error> {
-        type EdgeFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32, i32);
         self.choose_monitor(window, Some(monitor))?;
+        self.margins(window, x, y)
+    }
+
+    /// Moves a layer window within its current output. Changing the monitor
+    /// remaps the surface, so a live drag uses this and never `position`.
+    fn margins(&self, window: &gtk::Window, x: i32, y: i32) -> Result<(), libloading::Error> {
+        type EdgeFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32, i32);
+        // SAFETY: upstream C signatures; edges left=0 right=1 top=2 bottom=3.
         unsafe {
             let anchor = self.0.get::<EdgeFn>(b"gtk_layer_set_anchor\0")?;
             let margin = self.0.get::<EdgeFn>(b"gtk_layer_set_margin\0")?;
@@ -905,17 +912,14 @@ impl RecordingOverlay {
         warning.add_css_class("koett-feedback");
         warning.set_visible(false);
         layout.append(&warning);
-        window.set_child(Some(&layout));
+        // Fading this parent hides the pill during a drag and leaves the live copy of
+        // `layout` intact; GTK ignores opacity on the window itself.
+        let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        shell.append(&layout);
+        window.set_child(Some(&shell));
         if let PillLayer::Layer(layer) = &layer_shell {
             position::apply(&window, layer);
-            position::attach(&window, &layout, layer.clone());
-            let css = gtk::CssProvider::new();
-            css.load_from_data("window.koett-pill-move-target { background: transparent; box-shadow: none; border: none; }");
-            gtk::style_context_add_provider_for_display(
-                &gtk::prelude::WidgetExt::display(&window),
-                &css,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
+            position::attach(&window, &shell, &layout, layer.clone());
         }
         Some(Self {
             window,
