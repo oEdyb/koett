@@ -193,6 +193,11 @@ Private KWin/Chrome checks read both exact PNG bytes and exact Unicode text, and
 two Ctrl+V events each exposed a PNG file plus text. Kitty Ctrl+Shift+V received
 the exact bullets while PNG remained readable. Unit coverage checks all three
 MIME types, plain-text behavior and replacement of the in-memory sketch.
+T3 Code 0.1.2's actual composer attached the image on each Ctrl+V after removing
+the previous attachment; no message was sent. It chooses the image rather than
+inserting the offered text. [Target receipts](evidence/linux-sketch-clipboard/targets.json)
+cover the production Copy helper and real clipboard consumers; they do not claim
+a fresh microphone/drawing end-to-end run.
 
 Mac routing: `SketchPaste.swift` offers PNG/TIFF, then
 `DictationSession.swift` clears the pasteboard and sets only the string.
