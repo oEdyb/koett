@@ -1,6 +1,6 @@
 # Feature parity
 
-Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, not newly runtime-tested.** Windows has never been run on real Windows in the evidence available to this audit; every Windows row requires the [Windows plan's acceptance gates](windows-port-plan.md). “Engine” means shared Rust code exists but the Windows UI/action is missing. No builds or labs were run for this document. Public release availability is separate from branch implementation.
+Source audit: 2026-11-04, `origin/main` at `3d7674e`, with Linux rows corrected on 2026-11-05 after a second audit traced about 30 of them to code. The other Linux rows were not re-traced. **Yes means implemented, not newly runtime-tested.** Windows has never been run on real Windows in the evidence available to this audit; every Windows row requires the [Windows plan's acceptance gates](windows-port-plan.md). “Engine” means shared Rust code exists but the Windows UI/action is missing. No builds or labs were run for this document. Public release availability is separate from branch implementation.
 
 ## Dictation and recovery
 
@@ -11,7 +11,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Selected microphone | Yes | Yes | Engine; no full Settings UI | Native Windows input selector, stable endpoint identity |
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | No | Add Mac and Windows preview that releases capture on close/record |
 | Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
-| Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
+| Pill rolling strip, timer, sketch bands | Yes | Layer-shell, draggable. Optional GNOME Shell pill, not draggable, and likely [lost after a screen lock](linux-gnome-pill-verification.md#screen-lock) until restart. X11 has no pill | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
 | Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | No equivalent state/recovery actions | Port persistent rescue states; never time out unsaved text |
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Empty dictation finishes quietly; silent drawings retain image delivery | Engine; runtime unverified | Linux [silence checks](linux-empty-dictation-verification.md); real microphone/model matrix remains open; add Nemotron trim only if streaming semantics allow |
@@ -39,7 +39,7 @@ Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,Es
 | Download verification / progress / offline reuse | Yes | Yes | Engine + tray progress | Native Windows progress/cancel/retry, checksums and atomic activation |
 | CPU / GPU / ARM64 | Apple Silicon local runtime | CPU path | CPU candidate, accelerators unverified | Native Windows x64/ARM64 CPU first; WinML/CUDA/QNN only after graph/device benchmarks |
 | Dictionary editor, import/export | Yes | Yes | Shared parsing/storage; no UI | Windows native Words page; same exchange format |
-| Acoustic dictionary bias + adoption | v2 CTC sidecar boost; Nemotron spelling only | v2/v3 transducer hotwords; 110M optional bounded v2 sidecar; Nemotron spelling only | Same engine limitation as Linux | Bounded CTC rescorer/optional transducer sidecar for 110M; investigate Nemotron bias; spelling-only must stay labeled |
+| Acoustic dictionary bias + adoption | v2 CTC sidecar boost; Nemotron spelling only | v2/v3 transducer hotwords; 110M optional bounded v2 sidecar, which [falls back to raw from about 6 s of audio](ctc-dictionary-benchmark.md#how-long-a-unit-the-budget-covers); Nemotron spelling only | Same engine limitation as Linux | Bounded CTC rescorer/optional transducer sidecar for 110M; investigate Nemotron bias; spelling-only must stay labeled |
 | Spelling around S1-mini | Before and after | Before and after, with raw recovery preserved | Shared Rust order | Align Rust pre/post passes to Mac using fixture/corpus checks |
 | Literal replacements | Yes | Yes | Engine; no UI | Expose Windows editor; replacements remain final stage |
 | Fix a word / accepted learning suggestions | Yes | Yes | Shared correction modules; no UI | Windows history action, explicit Add/Dismiss, everyday-word warning |
@@ -63,6 +63,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 | YouTube timestamp link | Yes, Chrome AX player slider | AT-SPI player range on matched page; [checks/limits](linux-pin-context-verification.md) | No | Linux AT-SPI player range when matched to URL, else browser bridge; Windows UIA range + URL match, else bridge |
 | Password avoidance / bounded opt-in selection | Yes | Yes, provider-dependent | No context reader | Reject password/protected UI and stale cross-window context; no synthetic Copy |
 | Private/incognito URL exclusion | Automatic detection absent; explicit image-only pins omit all page details | Not established | No implementation | Explicit browser private-mode signal where available; absence must not imply privacy detection |
+| Include Page Details in Pins switch | Yes, on by default; off gives image-only pins | No; only Include Selected Text in Pins | No | Add the Linux switch |
 | First paste image then bullets | Yes, per-app chords | Per-app niri/KWin/optional GNOME image chord; portal/clipboard backend limits | No | Windows staged clipboard with foreground checks each step, persistent rescue if either stage fails |
 | Repeat paste PNG + HTML + text bundle | PNG + embedded-image HTML + exact text; real target consumption under verification | Multi-format owner now on main (#49); real target matrix still needed | Text-only baseline | Mac verify/repair same bundle for Done/last/Paste; Windows publish PNG+DIBV5+HTML+Unicode together |
 | Preserve newer clipboard copy | Image-to-text and bundle ownership guards; isolated race tests pass | Owner markers/race detection, bounded transfers | No staged bundle path | Port ownership contract on Windows; race fixture plus real clipboard-reader checks |
