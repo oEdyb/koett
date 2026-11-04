@@ -75,6 +75,15 @@ extension KoettController {
         )
         parakeetItem.isEnabled = canChangeModel
         menu.addItem(parakeetItem)
+        for (engine, action) in [
+            (SpeechEngine.parakeetV3, #selector(useParakeetV3Model)),
+            (SpeechEngine.parakeet110m, #selector(useParakeet110MModel)),
+        ] {
+            let item = menuItem(title: "Model: \(engine.displayName)", action: action,
+                                selected: speechEngine == engine)
+            item.isEnabled = canChangeModel
+            menu.addItem(item)
+        }
         let nemotronItem = menuItem(
             title: "Model: Nemotron 560 ms (Test)",
             action: #selector(useNemotronModel),

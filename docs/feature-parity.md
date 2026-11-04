@@ -33,8 +33,8 @@ Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,Es
 | Feature | Mac | Linux | Windows | Gap closure / default |
 |---|---|---|---|---|
 | Parakeet v2 | Yes | Yes | Engine | Keep choices/defaults; native picker + download status on Windows |
-| Parakeet v3 / Swedish in app | No; transcribe CLI has v3 | Yes | Engine, no picker | Add optional Mac v3 using existing supported engine integration; Windows picker; no default switch |
-| Parakeet 110M primary ASR | No; auxiliary vocabulary model only | Yes, default | Engine | Optional Mac 110M primary path; validate accuracy, not just load success |
+| Parakeet v3 / Swedish in app | Yes, optional v3; accuracy acceptance recorded separately | Yes | Engine, no picker | Add optional Mac v3 using existing supported engine integration; Windows picker; no default switch |
+| Parakeet 110M primary ASR | Yes, optional native 110M TDT; synthetic phrase tested, human corpus pending | Yes, default | Engine | Optional Mac 110M primary path; validate accuracy, not just load success |
 | Nemotron streaming / Parakeet recovery | Yes, experimental | Yes | Shared engine; Windows unverified | Same experimental label, capture/finalization failure tests; no delivery-triggered retranscription |
 | Download verification / progress / offline reuse | Yes | Yes | Engine + tray progress | Native Windows progress/cancel/retry, checksums and atomic activation |
 | CPU / GPU / ARM64 | Apple Silicon local runtime | CPU path | CPU candidate, accelerators unverified | Native Windows x64/ARM64 CPU first; WinML/CUDA/QNN only after graph/device benchmarks |
