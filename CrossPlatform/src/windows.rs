@@ -4,7 +4,7 @@ mod pill;
 mod pill_buttons;
 mod pill_state;
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::mem::size_of;
 use std::ptr;
 use std::str::FromStr;
@@ -49,15 +49,14 @@ use windows::Win32::UI::Shell::{
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
     DestroyWindow, DispatchMessageW, GetClientRect, GetCursorPos, GetForegroundWindow, GetMessageW,
-    HWND_TOPMOST, IDI_APPLICATION, KillTimer, LWA_ALPHA, LoadIconW, MA_NOACTIVATE, MF_CHECKED,
-    MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage, RegisterClassExW,
+    HWND_TOPMOST, IDI_APPLICATION, KillTimer, LoadIconW, MA_NOACTIVATE, MF_CHECKED, MF_DISABLED,
+    MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage, RegisterClassExW,
     RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, SWP_NOACTIVATE,
-    SWP_SHOWWINDOW, SetForegroundWindow, SetLayeredWindowAttributes, SetTimer, SetWindowPos,
-    ShowWindow, TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
-    WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
-    WM_MOUSEACTIVATE, WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_LAYERED,
-    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_OVERLAPPEDWINDOW,
-    WS_POPUP,
+    SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow, TPM_RETURNCMD,
+    TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE, WINDOW_STYLE, WM_CLOSE,
+    WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP, WM_MOUSEACTIVATE, WM_PAINT,
+    WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP,
 };
 use windows::core::{GUID, PCWSTR, w};
 
@@ -97,6 +96,7 @@ struct WindowsApp {
     paste_target: Option<HWND>,
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
+    last_render_error: Cell<Option<Instant>>,
     pill_buttons: Option<pill_buttons::Buttons>,
     meter: meter::Meter,
     pill_state: pill_state::State,
@@ -112,6 +112,18 @@ struct WindowsApp {
 }
 
 pub fn run() -> Result<(), String> {
+    use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx, CoUninitialize};
+    unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok() }
+        .map_err(|e| format!("Could not initialize the Windows desktop: {e}"))?;
+    struct ComApartment;
+    impl Drop for ComApartment {
+        fn drop(&mut self) {
+            unsafe {
+                CoUninitialize();
+            }
+        }
+    }
+    let _apartment = ComApartment;
     unsafe {
         let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     }
@@ -138,6 +150,7 @@ pub fn run() -> Result<(), String> {
         paste_target: None,
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
+        last_render_error: Cell::new(None),
         pill_buttons: None,
         meter: meter::Meter::default(),
         pill_state: pill_state::State::default(),
@@ -269,8 +282,6 @@ unsafe fn run_message_loop(
             WS_EX_TOOLWINDOW
                 | WS_EX_TOPMOST
                 | WS_EX_NOACTIVATE
-                | WS_EX_LAYERED
-                | WS_EX_TRANSPARENT
                 | windows::Win32::UI::WindowsAndMessaging::WS_EX_NOREDIRECTIONBITMAP,
             w!("KoettOverlayWindow"),
             w!("Koett Recording"),
@@ -286,10 +297,6 @@ unsafe fn run_message_loop(
         )
     }
     .map_err(|error| format!("could not create the Koett recording pill: {error}"))?;
-    unsafe {
-        SetLayeredWindowAttributes(app.overlay, COLORREF::default(), 242, LWA_ALPHA)
-            .map_err(|error| format!("could not style the Koett recording pill: {error}"))?;
-    }
     app.pill_buttons = Some(pill_buttons::Buttons::new(app.overlay)?);
     app.shortcut_window = unsafe {
         CreateWindowExW(
@@ -747,23 +754,10 @@ impl WindowsApp {
                         self.paste_target.unwrap_or_else(|| GetForegroundWindow()),
                     );
                 }
-                let flags = windows::Win32::UI::WindowsAndMessaging::GetWindowLongPtrW(
+                let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
                     self.overlay,
-                    windows::Win32::UI::WindowsAndMessaging::GWL_EXSTYLE,
+                    self.pill_state.interactive(),
                 );
-                let transparent = WS_EX_TRANSPARENT.0 as isize;
-                let next = if self.pill_state.interactive() {
-                    flags & !transparent
-                } else {
-                    flags | transparent
-                };
-                if flags != next {
-                    windows::Win32::UI::WindowsAndMessaging::SetWindowLongPtrW(
-                        self.overlay,
-                        windows::Win32::UI::WindowsAndMessaging::GWL_EXSTYLE,
-                        next,
-                    );
-                }
                 let _ = ShowWindow(self.overlay, SW_SHOWNOACTIVATE);
                 if !pill::reduced_motion()
                     || self
@@ -1268,30 +1262,52 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
     if unsafe { GetClientRect(hwnd, &mut bounds) }.is_ok() {
         let mut renderer = app.pill_renderer.borrow_mut();
         if renderer.is_none() {
-            *renderer = pill::Renderer::new(hwnd, (bounds.right as u32, bounds.bottom as u32)).ok();
+            match pill::Renderer::new(hwnd, (bounds.right as u32, bounds.bottom as u32)) {
+                Ok(created) => *renderer = Some(created),
+                Err(error) => report_render_error(app, "initialize", &error),
+            }
         }
         if let Some(current) = renderer.as_mut() {
             let elapsed = app
                 .recording_started
                 .map(|s| s.elapsed().as_secs())
                 .unwrap_or(0);
-            if current
-                .paint(
-                    hwnd,
-                    bounds,
-                    &app.meter.positions(),
-                    elapsed,
-                    &app.pill_state,
-                    app.clock.elapsed().as_millis() as u64,
-                )
-                .is_err()
-            {
+            if let Err(error) = current.paint(
+                hwnd,
+                bounds,
+                &app.meter.positions(),
+                elapsed,
+                &app.pill_state,
+                app.clock.elapsed().as_millis() as u64,
+            ) {
+                report_render_error(app, "paint", &error);
                 *renderer = None;
             }
         }
     }
     unsafe {
         let _ = EndPaint(hwnd, &paint);
+    }
+}
+
+fn report_render_error(app: &WindowsApp, stage: &str, error: &windows::core::Error) {
+    if app
+        .last_render_error
+        .get()
+        .is_some_and(|t| t.elapsed() < Duration::from_secs(5))
+    {
+        return;
+    }
+    app.last_render_error.set(Some(Instant::now()));
+    let message = format!("Pill {stage}: {error} ({:?})", error.code());
+    eprintln!("{message}");
+    if let Ok(path) =
+        crate::paths::settings_file().map(|p| p.with_file_name("Windows Renderer Error.txt"))
+    {
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(path, message);
     }
 }
 
