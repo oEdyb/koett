@@ -10765,6 +10765,41 @@
       "version": "0.31.15"
     },
     {
+      "bom-ref": "pkg:cargo/wayland-protocols-misc@0.3.12",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/smithay/wayland-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6e9567599ef23e09b8dad6e429e5738d4509dfc46b3b21f32841a304d16b29c8"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "wayland-protocols-misc",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/wayland-protocols-misc@0.3.12",
+      "type": "library",
+      "version": "0.3.12"
+    },
+    {
       "bom-ref": "pkg:cargo/wayland-protocols-wlr@0.3.12",
       "externalReferences": [
         {
@@ -14692,6 +14727,7 @@
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols-misc@0.3.12",
         "pkg:cargo/wayland-protocols-wlr@0.3.12",
         "pkg:cargo/windows-core@0.62.2",
         "pkg:cargo/windows-numerics@0.3.1",
@@ -15827,6 +15863,16 @@
         "pkg:cargo/wayland-scanner@0.31.11"
       ],
       "ref": "pkg:cargo/wayland-client@0.31.15"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols@0.32.13",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-protocols-misc@0.3.12"
     },
     {
       "dependsOn": [

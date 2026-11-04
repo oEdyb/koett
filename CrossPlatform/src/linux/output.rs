@@ -1,5 +1,5 @@
 use crate::settings::PasteShortcut;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -57,17 +57,63 @@ fn workspace_target(value: &serde_json::Value) -> Option<u32> {
         .as_u64()
         .and_then(|id| u32::try_from(id).ok())
 }
+fn bounded_json(
+    mut child: std::process::Child,
+    wait: std::time::Duration,
+) -> Option<serde_json::Value> {
+    let deadline = std::time::Instant::now() + wait;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                if !status.success() {
+                    return None;
+                }
+                let mut bytes = Vec::new();
+                child
+                    .stdout
+                    .take()?
+                    .take(64 * 1024)
+                    .read_to_end(&mut bytes)
+                    .ok()?;
+                return serde_json::from_slice(&bytes).ok();
+            }
+            Ok(None) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(3))
+            }
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+        }
+    }
+}
+fn niri_json(request: &'static str) -> Option<serde_json::Value> {
+    let child = Command::new("niri")
+        .args(["msg", "-j", request])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    let value = bounded_json(child, std::time::Duration::from_millis(200));
+    if value.is_none() {
+        let mut trace = DeliveryStep::new("focus_query", "niri", 0);
+        trace.finish(false);
+        trace.reason = "query_failed";
+    }
+    value
+}
+pub(super) fn keyboard_layout_group() -> Option<u32> {
+    niri_json("keyboard-layouts")?["current_idx"]
+        .as_u64()
+        .and_then(|index| u32::try_from(index).ok())
+}
 fn underlying_window() -> Option<u32> {
     if std::env::var_os("NIRI_SOCKET").is_none() {
         return None;
     }
-    let data = Command::new("niri")
-        .args(["msg", "-j", "workspaces"])
-        .output()
-        .ok()?;
-    workspace_target(&serde_json::from_slice(&data.stdout).ok()?)
+    workspace_target(&niri_json("workspaces")?)
 }
-
 pub fn focused_identity() -> Option<(u32, String)> {
     if std::env::var_os("NIRI_SOCKET").is_none() {
         return if super::gnome_focus::desktop() {
@@ -76,17 +122,11 @@ pub fn focused_identity() -> Option<(u32, String)> {
             super::kwin_focus::focused()
         };
     }
-    let output = Command::new("niri")
-        .args(["msg", "-j", "focused-window"])
-        .output()
-        .ok()?;
-    let value: serde_json::Value = serde_json::from_slice(&output.stdout).ok()?;
-    if value["pid"].as_u64() == Some(u64::from(std::process::id())) {
-        return None;
-    }
-    if value["app_id"]
-        .as_str()
-        .is_some_and(|id| id == super::APP_ID)
+    let value = niri_json("focused-window")?;
+    if value["pid"].as_u64() == Some(u64::from(std::process::id()))
+        || value["app_id"]
+            .as_str()
+            .is_some_and(|id| id == super::APP_ID)
     {
         return None;
     }
@@ -296,6 +336,8 @@ pub(super) struct DeliveryStep {
     observed: Option<u32>,
     modifiers: Option<u8>,
     exit_code: Option<i32>,
+    native_key: Option<u32>,
+    native_mask: Option<u32>,
 }
 impl DeliveryStep {
     pub fn new(kind: &'static str, backend: &'static str, bytes: usize) -> Self {
@@ -311,6 +353,8 @@ impl DeliveryStep {
             observed: None,
             modifiers: None,
             exit_code: None,
+            native_key: None,
+            native_mask: None,
         };
         value.log("begin");
         value
@@ -321,7 +365,7 @@ impl DeliveryStep {
             .unwrap_or_default()
             .as_millis();
         let line = format!(
-            "delivery_step pid={} id={} kind={} backend={} attempt=1 bytes={} event={} outcome={} reason={} expected={:?} observed={:?} modifiers={:?} exit_code={:?} timestamp_ms={timestamp}",
+            "delivery_step pid={} id={} kind={} backend={} attempt=1 bytes={} event={} outcome={} reason={} expected={:?} observed={:?} modifiers={:?} exit_code={:?} native_key={:?} native_mask={:?} timestamp_ms={timestamp}",
             std::process::id(),
             self.id,
             self.kind,
@@ -333,7 +377,9 @@ impl DeliveryStep {
             self.expected,
             self.observed,
             self.modifiers,
-            self.exit_code
+            self.exit_code,
+            self.native_key,
+            self.native_mask
         );
         eprintln!("{line}");
         persist_delivery_metadata(&line);
@@ -399,6 +445,23 @@ impl DeliveryStep {
         Ok(())
     }
     fn send_fallback(&mut self, shortcut: PasteShortcut) -> Result<(), String> {
+        if std::env::var_os("NIRI_SOCKET").is_some() {
+            self.reason = "native_keyboard_setup";
+            let result = super::native_keyboard::paste(shortcut, |key, mask| {
+                self.native_key = Some(key);
+                self.native_mask = Some(mask);
+                self.post()
+            });
+            if self.outcome != "refused" {
+                self.finish(result.is_ok());
+                self.reason = if result.is_ok() {
+                    "key_posted_native"
+                } else {
+                    "native_keyboard_error"
+                };
+            }
+            return result;
+        }
         self.post()?;
         match Command::new("wtype")
             .args(wtype_arguments(shortcut))
@@ -587,6 +650,19 @@ mod target_tests {
             workspace_target(&serde_json::json!([{ "is_focused":true,"active_window_id":null}])),
             None
         );
+    }
+    #[test]
+    fn a_stuck_niri_query_is_killed_and_reaped() {
+        let child = Command::new("python3")
+            .args(["-c", "import time; time.sleep(2)"])
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        let start = std::time::Instant::now();
+        assert!(bounded_json(child, Duration::from_millis(30)).is_none());
+        assert!(start.elapsed() < Duration::from_millis(500));
+        assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
     }
     #[test]
     fn metadata_log_is_private_bounded_and_rotates() {

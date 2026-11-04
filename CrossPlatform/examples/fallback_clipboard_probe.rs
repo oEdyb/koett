@@ -27,6 +27,10 @@ pub(crate) mod kwin_context;
 mod kwin_focus;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
+#[path = "../src/linux/native_keyboard.rs"]
+mod native_keyboard;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
 #[path = "../src/linux/output.rs"]
 mod output;
 #[cfg(target_os = "linux")]
