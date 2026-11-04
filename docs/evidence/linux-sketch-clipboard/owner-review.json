@@ -35,8 +35,8 @@
     "sync_deadline": "silent fake compositor timed out at 60 ms; explicit stop interrupted wait",
     "shutdown": "owner drop with unresponsive worker bounded at 250 ms; no blocking join",
     "writers": "Arc payload identity, four-writer global cap, injected spawn failure releases permit",
-    "regular_tests": "369 passed, 14 ignored",
-    "focused_tests": "8 passed, 1 ignored; ignored niri test run separately passed",
+    "regular_tests": "370 passed, 14 ignored",
+    "focused_tests": "9 passed, 1 ignored; ignored niri test run separately passed",
     "checks": [
       "fmt",
       "clippy all targets -D warnings",

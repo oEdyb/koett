@@ -350,12 +350,13 @@ fn spawn_writer(
     })?;
     spawn(Box::new(move || {
         let _permit = permit;
-        if let Err(error) = write_transfer(file, &data, Instant::now() + Duration::from_secs(5)) {
+        if let Err(error) = write_transfer(file, &data, Duration::from_secs(5)) {
             eprintln!("clipboard_owner event=transfer_failed error={error}");
         }
     }))
 }
-fn write_transfer(mut file: File, data: &[u8], deadline: Instant) -> io::Result<()> {
+fn write_transfer(mut file: File, data: &[u8], idle_timeout: Duration) -> io::Result<()> {
+    let mut deadline = Instant::now() + idle_timeout;
     let raw = file.as_raw_fd();
     // SAFETY: both calls operate on this live File; preserve existing file flags.
     unsafe {
@@ -379,7 +380,10 @@ fn write_transfer(mut file: File, data: &[u8], deadline: Instant) -> io::Result<
                     "clipboard pipe closed",
                 ));
             }
-            Ok(n) => bytes = &bytes[n..],
+            Ok(n) => {
+                bytes = &bytes[n..];
+                deadline = Instant::now() + idle_timeout;
+            }
             Err(e) if e.kind() == io::ErrorKind::Interrupted => {}
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 let mut poll = libc::pollfd {
@@ -725,6 +729,51 @@ mod tests {
         worker.join().unwrap();
         assert_eq!(received.as_slice(), data.as_ref());
         assert_eq!(pool.0.load(Ordering::Acquire), 0);
+    }
+    #[test]
+    fn transfer_deadline_tracks_inactivity_instead_of_total_duration() {
+        use std::{io::Read, os::unix::net::UnixStream};
+        let (writer, mut reader) = UnixStream::pair().unwrap();
+        reader
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let size: libc::c_int = 4096;
+        // SAFETY: writer is a live socket and size points to one initialized c_int.
+        assert_eq!(
+            unsafe {
+                libc::setsockopt(
+                    writer.as_raw_fd(),
+                    libc::SOL_SOCKET,
+                    libc::SO_SNDBUF,
+                    (&size as *const libc::c_int).cast(),
+                    std::mem::size_of_val(&size) as libc::socklen_t,
+                )
+            },
+            0
+        );
+        let data = vec![31; 64 * 1024];
+        let expected = data.clone();
+        let start = Instant::now();
+        let worker = thread::spawn(move || {
+            write_transfer(
+                File::from(std::os::fd::OwnedFd::from(writer)),
+                &data,
+                Duration::from_millis(300),
+            )
+        });
+        let mut received = Vec::new();
+        let mut chunk = [0u8; 4096];
+        loop {
+            let count = reader.read(&mut chunk).unwrap();
+            if count == 0 {
+                break;
+            }
+            received.extend_from_slice(&chunk[..count]);
+            thread::sleep(Duration::from_millis(30));
+        }
+        worker.join().unwrap().unwrap();
+        assert_eq!(received, expected);
+        assert!(start.elapsed() > Duration::from_millis(300));
     }
     #[test]
     fn compositor_sync_has_a_deadline_and_is_interruptible() {
