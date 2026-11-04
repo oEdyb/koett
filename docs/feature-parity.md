@@ -12,7 +12,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | No | Add Mac and Windows preview that releases capture on close/record |
 | Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
 | Pill rolling strip, timer, sketch bands | Yes | Yes | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
-| Pill hover Cancel, Pause, History | Yes; Nemotron pause absent | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
+| Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | No | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | No equivalent state/recovery actions | Port persistent rescue states; never time out unsaved text |
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Yes; empty-result path not fully traced | Engine; runtime unverified | Exercise silent live capture and empty ASR on all; add Nemotron trim only if streaming semantics allow |
 | Escape cancel | Yes, recording-only | X11 yes; Wayland no global Esc | No recording Esc path identified | Windows recording-scoped observer; Wayland compositor binding/portal shortcut, pill/CLI fallback |
@@ -53,7 +53,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 |---|---|---|---|---|
 | Drawing, hold key, pass-through otherwise | Yes | layer-shell; KWin evidence, not GNOME/X11 | No | Windows per-display HWNDs; Linux GNOME Shell integration and X11 overlay backend |
 | Bare Shift without interrupting capitals/chords | Yes, gesture guards | Opt-in evdev/keyboard setup; early clicks can pass through | No | Windows recording-scoped state observer + Mac fixture rules; Linux retain explicit permission explanation |
-| Undo ink | Not ported in documented Mac path | Ctrl+Z before capture | No | Add recording/drawing-scoped Mac/Windows undo; never consume ordinary editor undo outside that scope |
+| Undo ink | Recording-scoped Undo Last Drawing; removes pending/captured last frame | Ctrl+Z before capture | No | Add recording/drawing-scoped Mac/Windows undo; never consume ordinary editor undo outside that scope |
 | Multi-monitor / mixed DPI / hotplug | Per-screen capture; hardware parity not rechecked | Hardware multi-monitor unverified; new monitor waits until next recording | No | Real dual-monitor acceptance and add/remove during capture on all |
 | Word times, sketch linking, numbered contact sheet | Yes | Yes; some model times estimated | Shared data algorithms, no capture/UI | Windows compose intended ink onto captured background; keep timestamps and model approximation labels |
 | Shift-click pins + app/title | Yes | niri context; others image-only | No | Windows UIA + HWND identity; Linux compositor adapters rather than guessed labels |
@@ -61,7 +61,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 | Link/image under pointer, tiled windows | Yes via AX | niri floating only; tiled lacks position | No | Windows ElementFromPoint; Linux compositor geometry adapter or browser integration |
 | YouTube timestamp link | Yes, Chrome AX player slider | No | No | Linux AT-SPI player range when matched to URL, else browser bridge; Windows UIA range + URL match, else bridge |
 | Password avoidance / bounded opt-in selection | Yes | Yes, provider-dependent | No context reader | Reject password/protected UI and stale cross-window context; no synthetic Copy |
-| Private/incognito URL exclusion | Not detected | Not established | No implementation | Explicit browser private-mode signal where available; absence must not imply privacy detection |
+| Private/incognito URL exclusion | Automatic detection absent; explicit image-only pins omit all page details | Not established | No implementation | Explicit browser private-mode signal where available; absence must not imply privacy detection |
 | First paste image then bullets | Yes, per-app chords | Yes, global chord; portal/read-delay limits | No | Windows staged clipboard with foreground checks each step, persistent rescue if either stage fails |
 | Repeat paste PNG + HTML + text bundle | PNG + embedded-image HTML + exact text; real target consumption under verification | Multi-format owner now on main (#49); real target matrix still needed | Text-only baseline | Mac verify/repair same bundle for Done/last/Paste; Windows publish PNG+DIBV5+HTML+Unicode together |
 | Preserve newer clipboard copy | Image-to-text and bundle ownership guards; isolated race tests pass | Owner markers/race detection, bounded transfers | No staged bundle path | Port ownership contract on Windows; race fixture plus real clipboard-reader checks |

@@ -23,6 +23,14 @@ extension KoettController {
         )
         toggle.isEnabled = state == .ready
         menu.addItem(toggle)
+        let undo = menuItem(title: "Undo Last Drawing", action: #selector(undoLastDrawing), selected: false)
+        undo.tag = Self.sketchUndoTag
+        undo.isEnabled = state == .recording && sketchOverlay.canUndo
+        menu.addItem(undo)
+        let context = menuItem(title: "Include Page Details in Pins", action: #selector(togglePinContext),
+                               selected: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true)
+        context.isEnabled = state == .ready
+        menu.addItem(context)
         let selection = menuItem(
             title: "Include Selected Text in Pins",
             action: #selector(togglePinSelectedText),
@@ -52,6 +60,12 @@ extension KoettController {
         return root
     }
 
+    @objc func undoLastDrawing() {
+        guard state == .recording else { return }
+        sketchOverlay.undoLast()
+    }
+
+    static let sketchUndoTag = 0x5344
     static let sketchPasteChordTag = 0x5343
 
     /// Names the app the sheet would paste into now and its chord. The status
@@ -74,6 +88,7 @@ extension KoettController {
 
     func refreshSketchPasteChordItem(in menu: NSMenu) {
         let draw = menu.items.first { $0.submenu?.title == "Draw on Screen" }?.submenu
+        draw?.item(withTag: Self.sketchUndoTag)?.isEnabled = state == .recording && sketchOverlay.canUndo
         if let item = draw?.item(withTag: Self.sketchPasteChordTag) {
             refreshSketchPasteChordItem(item)
         }
@@ -92,6 +107,13 @@ extension KoettController {
         if drawWhileDictating && !permissionsWindow.model.center.isGranted(.screenRecording) {
             showPermissions()
         }
+        rebuildMenu()
+    }
+
+    @objc func togglePinContext() {
+        guard state == .ready else { return }
+        let current = microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true
+        microphoneDefaults.set(!current, forKey: "pinContext")
         rebuildMenu()
     }
 
@@ -125,7 +147,8 @@ extension KoettController {
             frames: sketchFrames,
             audioClock: { [weak recorder] in recorder?.currentTime ?? 0 },
             includeSelection: pinSelectedText,
-            onUpdate: { update in overlay.applySketch(update, session: session) }
+            onUpdate: { update in overlay.applySketch(update, session: session) },
+            includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true
         ), startedAt: startedAt)
     }
 

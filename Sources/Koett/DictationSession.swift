@@ -57,8 +57,9 @@ extension KoettController {
             let session = beginDictationSession()
             recordingOverlay.start(recorder: recorder, controls: RecordingControls(
                 modelName: speechEngine.displayName,
-                canPause: nemotronRecorder == nil,
-                cancel: { [weak self] in self?.cancelDictation(session) }
+                canPause: true,
+                cancel: { [weak self] in self?.cancelDictation(session) },
+                pauseChanged: { [weak self] in self?.nemotronRecorder?.isPaused = $0 }
             ), sketchSession: session)
             startSketching(session: session, recorder: recorder)
         }

@@ -16,6 +16,7 @@ final class SketchOverlay {
         /// Pins also read the selected text of the app under the click.
         let includeSelection: Bool
         let onUpdate: (SketchUpdate) -> Void
+        var includeContext = true
     }
 
     private struct Surface {
@@ -36,6 +37,15 @@ final class SketchOverlay {
     private(set) var failedCaptures = 0
 
     var isActive: Bool { session != nil }
+    var canUndo: Bool { board.map { !$0.finishing && !$0.groups.isEmpty } ?? false }
+
+    func undoLast() {
+        guard var board, let session, let undone = board.undoLast() else { return }
+        self.board = board
+        session.frames.remove(session.id, order: undone.id)
+        publish(undone.updates)
+        redraw()
+    }
     var isDrawing: Bool { board?.held == true }
 
     init(screens: @escaping () -> [NSScreen] = { NSScreen.screens }) {
@@ -179,11 +189,12 @@ final class SketchOverlay {
             let surface = surfaces[group.screen]
             let logical = surface.frame.size
             let includeSelection = session.includeSelection
+            let includeContext = session.includeContext
             let global = group.pin.map {
                 CGPoint(x: surface.frame.minX + $0.x, y: mainTop - surface.frame.maxY + $0.y)
             }
             Task { @MainActor [weak self] in
-                async let context = global.asyncMap { await PinContextReader.read(at: $0, includeSelection: includeSelection) }
+                async let context = (includeContext ? global : nil).asyncMap { await PinContextReader.read(at: $0, includeSelection: includeSelection) }
                 let result: Result<(CGImage, PinContext?), Error>
                 do {
                     let still = try await SketchCapture.still(displayID: surface.displayID, scale: surface.scale)
@@ -206,7 +217,8 @@ final class SketchOverlay {
     private func finishCapture(
         _ id: UInt64, session sessionID: UInt64, result: Result<(CGImage, PinContext?), Error>
     ) {
-        guard var board, let session, session.id == sessionID else { return }
+        guard var board, let session, session.id == sessionID,
+              board.groups.contains(where: { $0.id == id }) else { return }
         switch result {
         case .success(let (image, context)):
             if let group = board.captured(id) {
