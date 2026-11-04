@@ -37,7 +37,7 @@ Koett's synthetic Command/Control is not treated as a physical held key.
 ## Inspect exact future reasons
 
 `/Applications/Koett.app/Contents/MacOS/koett --control status` includes the latest
-`paste` object and an optional `pasteLogError`. `posted` means events were posted;
+`paste` object, current `pasteAccessGranted` preflight and an optional `pasteLogError`. `posted` means events were posted;
 it is not proof the target consumed text. macOS supplies no universal paste receipt.
 A later application-side rejection cannot be honestly reported as a confirmed paste.
 

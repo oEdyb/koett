@@ -651,8 +651,10 @@ extension KoettController {
         postPasteKey(flags: .maskCommand)
     }
 
+    var pasteAccessGranted: Bool { AXIsProcessTrusted() && CGPreflightPostEventAccess() }
+
     func pasteSnapshot() -> PasteSnapshot {
-        let access = AXIsProcessTrusted() && CGPreflightPostEventAccess()
+        let access = pasteAccessGranted
         let foreground = NSWorkspace.shared.frontmostApplication
         return PasteSnapshot(access: access,
             targetFailure: access ? (automaticPasteTarget?.failure ?? (automaticPasteTarget == nil ? .noTarget : nil)) : nil,
