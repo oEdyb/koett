@@ -452,7 +452,7 @@ Media: open Koett → Transcribe media",
     }));
     row(&draw_options, "Draw key", &draw_key);
     draw_options.append(&help(
-        "Typing keeps working while you record. To see the draw key, Koett checks which of Shift, Ctrl, Alt and Super are held, only while a drawing dictation records. It never reads typed text.",
+        "Typing keeps working while you record. To see the draw key, Koett checks physical keyboards for Shift, Ctrl, Alt, Super and whether another key is down, only while a drawing dictation records. It never reads typed text.",
     ));
     let (access_text, access_ready) = match super::sketch::keys::Keyboards::open() {
         Ok(keyboards) if keyboards.unreadable() > 0 => (
