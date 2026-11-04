@@ -31,7 +31,12 @@ Windows/shared-engine change, data migration or host installation is included.
 
 ## Evidence — 2026-11-04
 
-- Rust suite: 388 passed, 17 ignored, plus the native ABI subprocess check.
+Rebased on main `16af788` after the KWin identity change (#70). The work-queue
+conflict preserves both KWin identity status and the remaining display/input
+acceptance gaps. The Rust and private hotplug checks below were rerun on this
+combined source.
+
+- Rust suite: 389 passed, 17 ignored, plus the native ABI subprocess check.
 - Formatting, clippy with warnings denied, release build and diff check passed.
 - MSVC cross-check is blocked by missing Microsoft `lib.exe` on this host.
 - Private lab, nested KWin 6.8.2-1.1 with two virtual outputs; copied 110M model,
