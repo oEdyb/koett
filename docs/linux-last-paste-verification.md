@@ -6,7 +6,7 @@ uses the current configured text chord. If the session still has a matching
 sketch, Wayland delivery also retains the existing image/text/bundle path.
 It does not save another history entry.
 
-The control listener captures the focused niri window ID or X11 input window
+The control listener captures the focused niri/KWin window identity or X11 input window
 before queuing. The controller checks that same identity at delivery; a CLI
 request never uses the pill's immediate-click focus bypass. Requests that wait
 three seconds before starting expire without touching the clipboard or keys.
@@ -51,3 +51,7 @@ The fixture refuses to run outside this named private lab. It writes only under
 `CrossPlatform/target/row6-sol`, including its copied model/settings/history.
 It does not press Shift or send keys to a desktop; its key sender is a recorder.
 The private app reaches idle before the tests and exits through guarded Quit.
+
+KWin identity and its private native-consumer checks were added separately; see
+[KWin verification and transport limits](linux-kwin-paste-verification.md).
+The original niri fixture above remains a fixture, not a full desktop matrix.

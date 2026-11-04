@@ -9,8 +9,9 @@ select Ctrl+V or Ctrl+Shift+V for contact-sheet images. Unknown apps retain Ctrl
 text continues to use the independent `paste_shortcut`. Both portal and wtype
 image paths resolve the same rule. Existing settings load with an empty map.
 The target-window guard remains; no app-name substring detection or double chord.
-Other desktops without trustworthy app identity retain Ctrl+V. Their identity
-adapter and X11 drawing/image path remain in the broader Linux parity backlog.
+Later [KWin identity checks](linux-kwin-paste-verification.md) also resolve exact
+app-class rules. Other desktops without trustworthy identity retain Ctrl+V;
+identity adapters and the X11 drawing/image path remain in the Linux backlog.
 
 Edit rules in Settings → Dictation, one `app ID = Ctrl+Shift+V` or `app ID = Ctrl+V`
 per line. Empty means defaults. Duplicate IDs/unsupported chords are rejected.
