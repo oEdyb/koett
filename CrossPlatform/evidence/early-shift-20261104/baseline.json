@@ -1,0 +1,22 @@
+{
+  "early_clicks": {
+    "trials": [
+      {
+        "requested_ms": 60,
+        "click_finished_ms": 161.14,
+        "pins": 0
+      },
+      {
+        "requested_ms": 60,
+        "click_finished_ms": 161.08,
+        "pins": 0
+      },
+      {
+        "requested_ms": 60,
+        "click_finished_ms": 161.17,
+        "pins": 0
+      }
+    ],
+    "underlying_clicks": 3
+  }
+}

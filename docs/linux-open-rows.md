@@ -24,14 +24,15 @@ until its actual acceptance check runs. Nothing below is declared OS-impossible.
   still compose; real physical microphone and other-model acceptance stay open.
 - **Long dictation:** 30-minute hardware capture; measure memory, progress,
   pause/cancel, dictionary and chunk handling. Short/synthetic ASR is insufficient.
-- **Bare Shift:** verify lost releases/capital/chord gestures and early-click
-  behavior in a private lab; retain explicit keyboard-access fallback.
-- **Displays:** live layer-shell drawing/pill refresh now handles monitor-list,
-  geometry, connector and scale changes during a recording. Completed images and
-  Undo survive; unfinished captures are invalidated with a pill notice. Private
-  KWin virtual scale/remove/reconnect checks passed; physical mixed-DPI capture,
-  portal screenshots and hotplug during a niri pointer pick remain open. See
-  [the verification receipt](linux-monitor-hotplug-verification.md).
+Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
+still need code. GNOME identity belongs with its deferred Shell integration.
+Layer-shell monitor refresh is implemented; physical/portal/niri-pick hotplug
+cases remain acceptance/integration work. Early click protection no longer
+waits for the ink delay, but the smaller keyboard-sample/surface-commit race
+remains explicit for compositor integration. Copy/manual paste and keyboard-
+access alternatives are fallbacks, not full parity. Tiled niri geometry and
+GNOME integration come next.
+
 - **Pin providers:** verify browser URL/selection and password rejection on other
   desktops/providers; keep image-only context when inaccessible. Browser setup
   must remain explicit. Incognito detection is absent on Mac too; do not imply it.
@@ -52,6 +53,7 @@ a crash journal needs explicit retention/privacy behavior before implementation.
 
 ## Implementation still open before the deferred integrations
 
+<<<<<<< HEAD
 Row 6 is not acceptance-only: Wayland identity/clipboard adapters beyond KWin
 still need code. GNOME identity belongs with its deferred Shell integration.
 Layer-shell monitor refresh is implemented; the physical/portal/niri-pick
@@ -60,6 +62,15 @@ while the Shift guard arms still needs code. Existing copy/manual paste and
 keyboard-access alternatives are fallbacks, not full parity. Early Shift clicks
 come next, then the deferred integrations.
 
+=======
+Row 6 is not acceptance-only: remaining Wayland identity/clipboard adapters
+still need code. Active monitor hotplug is implemented in PR #71, awaiting merge. KWin identity is implemented;
+GNOME identity belongs with its deferred Shell integration. Early-click
+protection no longer waits for the ink delay, but the smaller keyboard-sample/
+surface-commit gap remains explicit for compositor integration. Existing
+copy/manual paste and documented keyboard-access alternatives are fallbacks,
+not full parity.
+>>>>>>> 1c60598 (Verify early draw-key clicks and preserve capital typing)
 
 ## Deferred until after row 6
 
