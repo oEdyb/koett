@@ -59,14 +59,9 @@ alsa.write_text('</usr/share/alsa/alsa.conf>\npcm.!default { type pulse device "
 os.environ.update(ALSA_CONFIG_PATH=str(alsa), PULSE_SOURCE='menu_mic')
 address = ast.literal_eval(subprocess.check_output(['gdbus', 'call', '--session', '--dest', 'org.a11y.Bus', '--object-path', '/org/a11y/bus', '--method', 'org.a11y.Bus.GetAddress'], text=True).strip())[0]
 os.environ['AT_SPI_BUS_ADDRESS'] = address
-registry = subprocess.Popen(['/usr/lib/at-spi2-registryd'], stdout=(output / 'accessibility.log').open('w'), stderr=subprocess.STDOUT)
-def stop_registry():
-    if registry.poll() is None:
-        registry.terminate()
-        registry.wait(timeout=5)
-
-
-atexit.register(stop_registry)
+portal = subprocess.Popen(['/usr/lib/xdg-desktop-portal-gtk', '--replace'],
+    stdout=(output / 'portal.log').open('w'), stderr=subprocess.STDOUT)
+atexit.register(lambda: portal.terminate() if portal.poll() is None else None)
 subprocess.run(['gdbus', 'call', '--session', '--dest', 'org.a11y.Bus', '--object-path', '/org/a11y/bus', '--method', 'org.freedesktop.DBus.Properties.Set', 'org.a11y.Status', 'IsEnabled', '<true>'], check=True, stdout=subprocess.DEVNULL)
 import gi
 

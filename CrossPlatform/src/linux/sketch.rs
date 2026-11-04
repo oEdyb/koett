@@ -470,7 +470,7 @@ impl Session {
                     continue;
                 }
                 Readiness::Capture => {
-                    if !timing.is_some_and(|(_, presented)| presented > 0) {
+                    if timing.is_none_or(|(_, presented)| presented <= 0) {
                         eprintln!("Sketch capture without presentation feedback");
                     }
                 }
