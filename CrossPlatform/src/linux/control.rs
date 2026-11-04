@@ -144,11 +144,15 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(b"{\"ok\":true}");
                 continue;
             }
+            if bytes == b"paste-last" {
+                let value = super::recovery::request_paste(&sender);
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if let Ok(command) = std::str::from_utf8(&bytes)
                 && matches!(
                     command,
                     "copy-last"
-                        | "paste-last"
                         | "copy-unsaved"
                         | "retry-unsaved"
                         | "recovery-status"

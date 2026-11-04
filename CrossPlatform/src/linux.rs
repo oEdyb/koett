@@ -103,6 +103,7 @@ enum TrayAction {
     Quit,
     QuitAnyway,
     Recovery(String),
+    RecoveryPaste(recovery::PasteRequest),
 }
 
 enum TrayUpdate {
@@ -354,7 +355,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("recovery-help") {
         println!(
             "{}",
-            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Copies to clipboard when external focus cannot be proven"})
+            serde_json::json!({"commands":["copy-last","paste-last","copy-unsaved","retry-unsaved","recovery-status","media-transcripts","failed-transcripts","failed-recordings","quit"],"paste_last":"Posts paste to the unchanged niri/X11 target; otherwise copies with an error. Success confirms key posting, not target consumption."})
         );
         return Ok(());
     }
@@ -663,7 +664,20 @@ fn run_x11(
             };
         }
         while let Ok(action) = actions.try_recv() {
+            let (action, paste_request) = match action {
+                TrayAction::RecoveryPaste(request) => {
+                    if request.expired() {
+                        request.finish(Err(
+                            "Paste request expired; retry from the intended target".into(),
+                        ));
+                        continue;
+                    }
+                    (TrayAction::Recovery("paste-last".into()), Some(request))
+                }
+                action => (action, None),
+            };
             match action {
+                TrayAction::RecoveryPaste(_) => unreachable!("normalized above"),
                 TrayAction::Menu(command, reply) => {
                     let value = if command == "media-current" {
                         app.current_media(tray)
@@ -696,9 +710,14 @@ fn run_x11(
                     update_tray_status(tray, "@settings");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
-                    let target = output.focused_window();
+                    let target = paste_request
+                        .as_ref()
+                        .map_or_else(|| output.focused_window(), |request| request.target);
                     let pasted = recovery::last_text()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
+                    if let Some(request) = paste_request {
+                        request.finish(pasted.clone());
+                    }
                     if let Err(error) = pasted {
                         update_tray_status(tray, &format!("@error:{error}"));
                     }
@@ -1274,7 +1293,20 @@ async fn run_wayland(
             app.command(EngineCommand::Cancel, || None);
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
+            let (action, paste_request) = match action {
+                TrayAction::RecoveryPaste(request) => {
+                    if request.expired() {
+                        request.finish(Err(
+                            "Paste request expired; retry from the intended target".into(),
+                        ));
+                        continue;
+                    }
+                    (TrayAction::Recovery("paste-last".into()), Some(request))
+                }
+                action => (action, None),
+            };
             match action {
+                TrayAction::RecoveryPaste(_) => unreachable!("normalized above"),
                 TrayAction::Menu(command, reply) => {
                     let value = if command == "media-current" {
                         app.current_media(tray)
@@ -1307,7 +1339,9 @@ async fn run_wayland(
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
-                            let now = Some(output::PASTE_NOW);
+                            let now = paste_request
+                                .as_ref()
+                                .map_or(Some(output::PASTE_NOW), |request| request.target);
                             let png = feedback::sketch_for(&text);
                             let image_delivery = if let Some(png) = &png {
                                 match &output {
@@ -1339,6 +1373,9 @@ async fn run_wayland(
                         }
                         Err(error) => Err(error),
                     };
+                    if let Some(request) = paste_request {
+                        request.finish(pasted.clone());
+                    }
                     if let Err(error) = pasted {
                         update_tray_status(tray, &format!("@error:{error}"));
                     }

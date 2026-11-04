@@ -90,7 +90,7 @@ desktops behave differently; see Rough edges.
   until the next dictation.
 - **Just after launch:** the model takes a few seconds to load. A press then opens
   the window with "Koett is still getting ready".
-- **`koett paste-last`:** the command copies; only the pill and menu press paste.
+- **`koett paste-last`:** posts to the unchanged niri/X11 target; unknown or changed focus copies with a manual-paste error. Posting does not prove consumption.
 - **Dictionary cost:** a 7 s clip took 0.60 s from stop to saved, against 0.32 s with
   an empty dictionary (6 runs each, load about 2). Memory settles at about 1.2 GB
   against 1.06 GB, and peaks near 2 GB when the dictionary loads.
