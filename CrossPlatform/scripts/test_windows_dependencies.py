@@ -33,6 +33,17 @@ class DependencyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'Koett.exe';path.write_bytes(executable('KERNEL32.dll'))
             self.assertTrue(verify(path)['system_only'])
+    def test_accepts_windows_theme_import(self):
+        for delayed in [False,True]:
+            with self.subTest(delayed=delayed), tempfile.TemporaryDirectory() as directory:
+                path=Path(directory)/'Koett.exe';path.write_bytes(executable('UxTheme.dll',delayed))
+                self.assertTrue(verify(path)['system_only'])
+    def test_rejects_unknown_imports(self):
+        for name in ['unknown.dll','uxtheme_extra.dll','VCRUNTIME140_1.dll']:
+            for delayed in [False,True]:
+                with self.subTest(name=name,delayed=delayed), tempfile.TemporaryDirectory() as directory:
+                    path=Path(directory)/'Koett.exe';path.write_bytes(executable(name,delayed))
+                    with self.assertRaisesRegex(ValueError,'non-system DLLs: '+name.lower()):verify(path)
     def test_rejects_invalid_executable(self):
         with self.assertRaisesRegex(ValueError,'not a PE'):imports(b'bad')
 
