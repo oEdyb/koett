@@ -1,0 +1,14 @@
+{
+  "step": "text-visible-while-history-database-exclusively-locked",
+  "rect": [
+    344,
+    344,
+    2264,
+    1436
+  ],
+  "focus": {
+    "hwnd": 131458,
+    "process": "Notepad",
+    "pid": 6124
+  }
+}

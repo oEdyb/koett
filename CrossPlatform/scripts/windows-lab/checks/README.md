@@ -32,3 +32,17 @@ All fixture state IDs are documented in docs/windows-desktop-lab.md.
 Read the result JSON and screenshots. A successful script exit alone is not
 a passing check. History and export use the guest-only fixture; never point
 these checks at an installed personal profile.
+
+
+M2 real dictation checks use the concatenated helpers.ps1 and
+ dictation-helpers.ps1 as the prefix, and launch-wav-dictation.ps1 switches a
+running artifact from desktop-lab to real CPU WAV input. Copy fixtures/m2-editor.html
+to the private HTTP transfer root and open it in guest Edge before browser-m2.
+The terminal check reads text as data and never executes recognized commands.
+Run on an isolated, freshly booted guest; checks retain lab windows for later
+steps. Sequence: Notepad, controls, browser, terminal, focus recovery, history
+failure, elevated start/test/probe, close elevated editor, combined failure.
+Elevated start requests guest UAC consent; do not provide host input or add a
+privileged Koett helper. Always restore readonly attributes and shut down.
+The 1fa2169 artifact intentionally fails elevated-test and combined-failure;
+the rebuilt fixes must pass those gates. See the current M2 receipt for scope.

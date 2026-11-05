@@ -29,7 +29,7 @@ $serial.Encoding=New-Object Text.UTF8Encoding
 $null=[Windows.Automation.AutomationElement]::RootElement
 $proxy=[Reflection.Assembly]::Load('UIAutomationClientsideProviders, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')
 [Windows.Automation.ClientSettings]::RegisterClientSideProviderAssembly($proxy.GetName())
-$serial.ReadTimeout=1000;$serial.WriteTimeout=60000;$serial.Open()
+$serial.ReadTimeout=30000;$serial.WriteTimeout=60000;$serial.Open()
 $serial.WriteLine('{"ready":true}')
 while($true){
  try { $line=$serial.ReadLine() } catch [TimeoutException] {continue}

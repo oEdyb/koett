@@ -4,7 +4,10 @@ s=socket.socket(socket.AF_UNIX);s.settimeout(180);s.connect(str(Path.home()/'.ca
 script=Path(sys.argv[1]).read_bytes()
 if len(sys.argv)>3: script=Path(sys.argv[3]).read_bytes()+b'\n'+script
 request={'id':str(time.time_ns()),'code':base64.b64encode(script).decode()}
-s.sendall((json.dumps(request)+'\n').encode());f=s.makefile('r')
+payload=(json.dumps(request)+'\n').encode()
+for offset in range(0,len(payload),64):
+ s.sendall(payload[offset:offset+64]);time.sleep(0.01)
+f=s.makefile('r')
 for line in f:
  try: result=json.loads(line)
  except json.JSONDecodeError: continue

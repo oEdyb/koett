@@ -1,0 +1,14 @@
+{
+  "step": "second-editor-untouched",
+  "rect": [
+    104,
+    104,
+    1504,
+    704
+  ],
+  "focus": {
+    "hwnd": 66402,
+    "process": "powershell",
+    "pid": 3028
+  }
+}

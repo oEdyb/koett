@@ -1,0 +1,17 @@
+{
+  "step": "destroyed-target-refuses-paste-and-keeps-copy",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 196958
+  },
+  "focus": {
+    "hwnd": 131260,
+    "process": "Notepad",
+    "pid": 8644
+  },
+  "visible": true
+}

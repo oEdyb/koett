@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "actions": [
+      "Paste",
+      "Copy"
+    ],
+    "readonly_restored": true,
+    "phase": "Koett Not pasted. Saved",
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM2c\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 9080,
+      "sha256": "FFDDB686AB54A710D1AB389736683725F3E9D462BE0E346AFDCE482720ABD1D5"
+    },
+    "steps": [
+      {
+        "step": "combined-delivery-and-history-failure",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 197008
+        },
+        "focus": {
+          "hwnd": 131914,
+          "process": "powershell",
+          "pid": 4004
+        },
+        "visible": true
+      }
+    ]
+  },
+  "id": "1793835719000021967"
+}
