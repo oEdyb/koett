@@ -1,0 +1,20 @@
+{
+  "cases": [
+    {
+      "status": "could not save C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json: Access is denied. (os error 5)",
+      "case": "model-settings-denied-preserves-working-selection",
+      "passed": true
+    },
+    {
+      "status": "Model setup cancelled; previous model remains ready",
+      "case": "model-cancel-preserves-working-selection",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3-fd\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 6208,
+    "sha256": "86D83E56FEA70F800B1A9B314C61319B59C8700A91B05D6F712733B3ECA70FD0"
+  },
+  "passed": true
+}

@@ -1,53 +1,54 @@
 # Windows milestones after reliable dictation
 
-M2 (#78) merged as dca0252e8fc8a3cc232e24b94315eb89384fc22f after its software
-gates passed. Hardware limitations remain explicit in its receipts. M3 #113
-now targets main and stays draft; no M3 merge before separate approval/source
-freeze. Windows product work must not disturb Mac/Linux v0.3.0.
+M2 (#78) merged as dca0252e8fc8a3cc232e24b94315eb89384fc22f. M3 #113 targets
+main and has completed its software acceptance on real Windows. It awaits
+separate review/merge approval. Main's v0.3.0 source freeze remains 41fca8e;
+this branch has not changed the frozen release or installed host apps.
 
 ## M3 — words and records
 
-Real Windows evidence for green 34d2dbe is in
-`CrossPlatform/evidence/windows-milestone3/ci-34d2dbe/`: all 110 search matches
-exported from 50 loaded rows, raw/final Copy, single/filtered export, native
-Save cancel preservation and old-row raw fallback. Guest history was restored
-with a matching hash and Windows shut down. This is not complete M3 proof.
+The [final c7e2376 receipt](../CrossPlatform/evidence/windows-milestone3/ci-c7e2376/README.md)
+links the per-artifact evidence, including historical failures and their rechecks.
+Screenshots include foreground HWND/PID and executable hashes. The guest is
+bounded to 4 vCPU / 8 GiB, nice 19, and shut down outside active testing.
 
-Implemented Windows-only candidates:
+Passed software gates:
 
-- Native Words supports bounded shared plain-text dictionary import, canonical
-  text export, explicit Save/Remove, and literal phrase replacements. Imports
-  merge only after acceptance. Settings edits preserve unrelated changes.
-- History Fix a word now edits a transcript correction in the shared Corrections
-  store. It does not rewrite history. Learning runs on a worker; proposals need
-  explicit Add or Dismiss. Everyday forms warn and require Add anyway. The
-  earlier selected-phrase shortcut is superseded by this shared-store flow.
-- A separate native Model and Formatting window keeps Settings compact. It uses
-  existing engine commands for 110M/v2/v3/Nemotron and all S1-mini controls.
-  Requests are rejected while recording/setup is busy. Progress/errors/cancel
-  are visible; only the engine commits a successfully prepared model/formatter.
-  Failure preserves the working configuration; raw remains the default.
-- Existing main selects shared-encoder transducer decoding only when the native
-  patch is supported; CTC defaults to spelling. No experimental second encoder
-  pass is exposed. No model defaults, dependencies or Mac/Linux runtime changed.
+- Full-search History export (110 matches from 50 visible rows), raw/final Copy,
+  selected/filtered export, native-file cancel preservation and legacy raw fallback.
+- Native dictionary CRUD, canonical plain-text import/export, validation, explicit
+  acceptance/cancel, denied writes, UIA selection, atomic rename/collision handling,
+  stale-editor preservation and literal replacements applied once before delivery.
+- Fix a word stores corrections separately from immutable history. Strict UIA
+  Save/Add/Dismiss, everyday warning/Add anyway, rapid-selection protection and
+  denied-write preservation passed without implicit dictionary adoption.
+- Native CPU model switching across Compact/v2/v3/Nemotron with the same small
+  prerecorded WAV, exactly-once Notepad delivery, v2 restart persistence, cancelled
+  setup and settings-write rollback. The Nemotron success log has no fallback marker.
+- Optional S1-mini controls, private CPU preparation, typing-focus preservation,
+  successful formatting, original-ASR history, missing runtime/setup cancel/settings
+  failure and formatter-crash raw fallback. Windows Job cleanup reaps the child
+  after forced parent termination. A rule deleting the entire result keeps clipboard.
+- Native UIA labels, forward/backward keyboard access with Narrator running, and
+  all three new windows at actual 100/150/200% display scaling in light/dark.
+- Windows executed 231 tests (12 ignored), including the same small dictionary,
+  adoption and learning fixture consumed by Swift. Linux native 431 tests (22
+  ignored), strict Clippy, release, formatting/diff and inventory/builder/pin checks
+  passed. No Mac/AppKit SDK verification was performed on this Linux host.
 
-Metadata Clippy, formatting/diff checks and normal native tests pass. New native
-UI, correction store/proposals, model switching/cancellation and S1-mini
-success/raw fallback still need their linked executable and guest evidence.
-The Windows tests now consume the same small Swift dictionary/adoption/learning
-fixture; the new formatting command test covers every wire option. Those tests
-are compiled locally; Windows CI executes them. Do not substitute metadata
-compilation for Windows execution.
+Defaults remain Compact and Raw. No slow second encoder pass or big benchmark
+was introduced. Shared product changes beyond Windows modules are limited to
+Windows Nemotron admission in model.rs/runtime.rs and Windows-only console/Job
+handling in formatting.rs, plus the Windows namespace feature in Cargo. Linux
+and Mac app behavior is unchanged; no host installation/data was modified.
 
-Remaining gates: guest Words import/export/edit/remove/validation, explicit
-correction Add/Dismiss/everyday acceptance, settings rollback/write failure,
-model switching/default preservation, formatting success/failure/raw fallback,
-UIA/keyboard/light-dark/scaling, and a small speech/near-miss/timing check. Keep
-the CTC acoustic gap explicit. Use focused fixtures and isolated measurements;
-no big benchmarks. The optional Windows formatting lab uses official llama.cpp
-b12125 CPU binaries, SHA256
-968091ccb8c230e0cf7e0eed386310703bebae4a4fd4375f0c57db53958307d8,
-only in the private guest cache; this is not a bundled runtime dependency.
+Limits remain explicit: physical mic/USB/Bluetooth/sleep/30-minute live capture
+from M2, broad Swedish accuracy, injected Nemotron-specific recovery faults,
+independent transcription of Narrator speech, and the plan's separate CTC acoustic
+corpus gate. Focused WAV checks do not establish those claims. The optional
+formatter used a pinned self-contained private CPU runtime (see runtime-static
+receipt); bundling/signing/clean-install are distribution work in M6. M3 completion
+is not a three-platform release or complete parity claim.
 
 ## M4 — draw and pin
 
@@ -65,67 +66,4 @@ only in the private guest cache; this is not a bundled runtime dependency.
 
 These are requirements carried from the reported Linux lessons, not Windows
 passes. Physical device/display/sleep limitations remain separate from guest
-or fixture evidence. M4 follows completion of M3.
-
-## Latest regression fixes awaiting linked retest
-
-The 6165f3f guest passed correction storage, explicit everyday acceptance,
-Dismiss and denied-write preservation through keyboard selection. Pure UIA
-selection revealed stale labels, now fixed with the same selection observation
-used by History. Word category/selection observation was fixed too. Editing a
-selected entry now renames it atomically, rejects rename collisions or stale
-snapshots, and offers New entry. Literal replacement whitespace is preserved.
-Focused tests cover rename, conflict/validation preservation and whitespace.
-
-One shared Rust file now has Windows-only changes: formatting.rs suppresses the
-formatter console and retains a kill-on-close Windows Job. The job implementation
-is Windows-only and Cargo adds only its Windows namespace feature. Mac/Linux
-paths and defaults are unchanged; normal native tests/Clippy/release pass.
-A Windows child-lifetime test compiles and awaits execution in Windows CI.
-
-The official llama.cpp CPU download needed VCRUNTIME140.dll on the clean guest.
-A private test runtime built from pinned MIT source with the existing Zig
-compiler has only system imports and passed --version on Windows; no runtime
-installer/licence decision, host install or global PATH change was needed.
-See the runtime-static receipt; binaries/models remain outside git. This is
-not a bundled dependency or completed formatting end-to-end proof.
-
-The 6165f3f guest also passed Compact and v3 CPU WAV-to-Notepad delivery,
-S1-mini preparation/formatting and formatter-crash raw fallback (once, same
-foreground HWND/PID). V2 delivered once but a spelling-specific harness
-assertion needs a corrected re-run. Receipts are under ci-6165f3f. A remaining
-shared model/runtime platform guard prevented Windows Nemotron despite the
-shared CPU recognizer; it now admits Windows too, with Linux/Mac behavior
-unchanged. This additional shared-source change requires linked Windows
-execution before claiming Nemotron support. The default remains Compact.
-
-On green b964d47, strict UIA correction selection/acceptance and Words
-category/selection/rename/collision/stale-edit all passed. A forced parent crash
-also reaped the Windows Job's formatter child within three seconds. Model write
-denial rolled back, but cancellation left a stale Loading model status despite
-preserving settings; the Windows presentation now reports cancellation explicitly.
-Native UIA inspection found Style was associated with the Structure label;
-label/control creation order is corrected. Both fixes await linked re-run.
-
-The live CPU WAV word test caught a missing Windows delivery stage: dictionary
-spelling applied and raw history survived, but replacements were never applied.
-Windows now applies shared literal rules once, after cleanup/dictionary and
-before clipboard/paste/history. It keeps original ASR text and reuses the
-existing empty-result clipboard-preservation guard. A focused Windows test
-covers original/raw preservation, no cascading and empty output. Linux/Mac code
-is untouched by this fix; the linked WAV/empty-result re-run remains required.
-
-Additional guest gates passed: full-search History export/raw Copy/legacy
-fallback re-run, missing formatting runtime, denied formatter settings writes
-and setup cancellation, all with preserved Raw mode/child cleanup. Narrator
-navigation found multiline EDIT consumed Tab; native form navigation is now
-explicit for Tab/Shift+Tab (other editing/modifier keys keep native behavior).
-A rapid UIA selection could adopt an everyday form before its warning refreshed;
-Add now requires the current warning to have been presented. Native Windows
-regression tests cover both fixes; linked execution is still required.
-
-Post-main native verification: 431 tests passed, 22 ignored, strict Clippy,
-release build, formatting/diff and 10 inventory/16 native-builder/8 workflow-pin
-checks passed. Windows all-target metadata Clippy passed for the latest fixes;
-this is compilation, not execution. Swift/AppKit SDK checks are not available
-on this Linux host. No physical hardware or broad accuracy benchmark is claimed.
+or fixture evidence. M4 is the next implementation milestone after the M3 merge.
