@@ -29,8 +29,8 @@ final class PermissionsModel: ObservableObject {
     }
 }
 
-/// A small floating window listing each permission with a live status, so it
-/// stays readable beside System Settings while the user flips switches.
+/// A small window listing each permission with a live status. System Settings
+/// and its authentication/relaunch dialogs must be able to appear above it.
 @MainActor
 final class PermissionsWindowController: NSObject, NSWindowDelegate {
     let model: PermissionsModel
@@ -47,7 +47,7 @@ final class PermissionsWindowController: NSObject, NSWindowDelegate {
         )
         super.init()
         window.title = "Koett Permissions"
-        window.level = .floating
+        window.level = .normal
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: PermissionsView(model: model) { [weak self] in
             self?.window.close()

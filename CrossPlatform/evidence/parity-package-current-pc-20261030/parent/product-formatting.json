@@ -1,5 +1,5 @@
 {
-  "packaged_launcher": "/home/olle/.cache/koett/private-tests/koett-package-parent/clean $ install/bin/koett",
+  "packaged_launcher": "<build-home>/.cache/koett/private-tests/koett-package-parent/clean $ install/bin/koett",
   "product_s1_capture": true,
   "raw_final_retained": true,
   "formatter_failure_exact_raw": true,

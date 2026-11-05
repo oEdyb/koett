@@ -111,7 +111,7 @@ async def main():
                        SHERPA_ONNX_LIB_DIR='/tmp/koett-native-host-abi0/lib', KOETT_SPEECH_MARKERS=str(temporary))
             capture = await asyncio.to_thread(subprocess.Popen, ['parec', '--device=agent_lab_audio.monitor', '--format=float32le', '--rate=44100', '--channels=1'], stdout=(temporary / 'monitor.pcm').open('wb'))
             try:
-                process = await asyncio.create_subprocess_exec('/home/olle/.cargo/bin/cargo', 'test', '--locked', 'native_spoken_answer' if NATIVE else 'private_wss_playback', '--', '--ignored', '--nocapture',
+                process = await asyncio.create_subprocess_exec(str(Path.home() / '.cargo/bin/cargo'), 'test', '--locked', 'native_spoken_answer' if NATIVE else 'private_wss_playback', '--', '--ignored', '--nocapture',
                     cwd=ROOT, env=env, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
                 async def captures():
                     if not NATIVE:

@@ -8,5 +8,5 @@ Captured done-copied
   "checks": [
     "scale 4: captured pill at [5.0, 60.0, 300.0, 1200.0] s; done row has Copy only; delivered 3839 chars; Copy exact"
   ],
-  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-fixed-strip-20261102/light-scaled"
+  "evidence": "<build-home>/dev/koett-pill-timeline/CrossPlatform/evidence/pill-fixed-strip-20261102/light-scaled"
 }
