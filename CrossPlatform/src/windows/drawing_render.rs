@@ -1,4 +1,5 @@
 use super::pixels::Pixels;
+use std::time::Duration;
 use windows::Win32::UI::WindowsAndMessaging::{ULW_ALPHA, UpdateLayeredWindow};
 use windows::{
     Win32::{
@@ -313,6 +314,39 @@ impl Surface {
                 }),
                 ULW_ALPHA,
             )
+        }
+    }
+}
+
+pub(super) fn released_alpha(pin: bool, elapsed: Duration, reduced_motion: bool) -> f32 {
+    let (hold, fade) = if pin {
+        (Duration::ZERO, Duration::from_millis(450))
+    } else {
+        (Duration::from_millis(1500), Duration::from_millis(400))
+    };
+    if elapsed >= hold + fade {
+        0.0
+    } else if reduced_motion || elapsed <= hold {
+        1.0
+    } else {
+        (1.0 - (elapsed - hold).as_secs_f32() / fade.as_secs_f32()).clamp(0.0, 1.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn released_ink_and_pins_match_mac_timing_without_animated_reduced_motion() {
+        let alpha = |pin, ms, reduced| released_alpha(pin, Duration::from_millis(ms), reduced);
+        assert_eq!(alpha(false, 1500, false), 1.0);
+        assert!((alpha(false, 1700, false) - 0.5).abs() < 0.0001);
+        assert_eq!(alpha(false, 1900, false), 0.0);
+        assert!((alpha(true, 225, false) - 0.5).abs() < 0.0001);
+        assert_eq!(alpha(true, 450, false), 0.0);
+        for (pin, end) in [(false, 1900), (true, 450)] {
+            assert_eq!(alpha(pin, end - 1, true), 1.0);
+            assert_eq!(alpha(pin, end, true), 0.0);
         }
     }
 }

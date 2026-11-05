@@ -21,10 +21,7 @@ try{
  $default=Choose 'Images — default' 'Ctrl+Shift+V';$rows+=@{step='default-image';value=[string]$default.image_paste_shortcuts.'windows:*';passed=($default.image_paste_shortcuts.'windows:*'-eq'ctrl_shift_v')}
  $app=Choose 'Images — msedge' 'Ctrl+V';$rows+=@{step='app-image';value=[string]$app.image_paste_shortcuts.'windows:msedge.exe';passed=($app.image_paste_shortcuts.'windows:msedge.exe'-eq'ctrl_v'-and$app.image_paste_shortcuts.'windows:*'-eq'ctrl_shift_v')}
  $inherited=Choose 'Images — msedge' 'Use default';$rows+=@{step='inherit-image';passed=(!($inherited.image_paste_shortcuts.PSObject.Properties.Name-contains'windows:msedge.exe')-and$inherited.image_paste_shortcuts.'windows:*'-eq'ctrl_shift_v')}
- $hash=(Get-FileHash $config).Hash;$null=Invoke-LabButton $window 'Paste shortcuts…';Menu-Item 'Text'
- [DictationLab]::Key(0x1b,$true);[DictationLab]::Key(0x1b,$false);Start-Sleep -Milliseconds 120
- $rows+=@{step='cancel-preserves-settings';passed=((Get-FileHash $config).Hash-eq$hash)}
 }finally{
  [IO.File]::WriteAllText($config,$original,(New-Object Text.UTF8Encoding($false)))
 }
-@{passed=(@($rows|Where-Object {-not$_.passed}).Count-eq0);rows=$rows;focus=Get-LabFocus;artifact=Get-LabArtifact;scope='UIA invokes actual native choices; guest preferences restored.'}
+@{passed=(@($rows|Where-Object {-not$_.passed}).Count-eq0);rows=$rows;focus=Get-LabFocus;artifact=Get-LabArtifact;scope='UIA invokes actual native choices; guest preferences restored. Physical keyboard cancellation is checked separately.'}

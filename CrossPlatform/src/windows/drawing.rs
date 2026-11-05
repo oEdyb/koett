@@ -692,6 +692,7 @@ impl Board {
         });
     }
     fn paint(&self, protect: bool, now: Instant) -> Result<(), String> {
+        let reduced_motion = super::pill::reduced_motion();
         for (index, overlay) in self.overlays.iter().enumerate() {
             if self.armed {
                 let _ = unsafe {
@@ -706,7 +707,11 @@ impl Board {
             }
             let faded = self.faded.iter().find(|(at, r)| {
                 r.display == overlay.display
-                    && now.saturating_duration_since(*at) < Duration::from_millis(1900)
+                    && super::drawing_render::released_alpha(
+                        r.pin.is_some(),
+                        now.saturating_duration_since(*at),
+                        reduced_motion,
+                    ) > 0.0
             });
             if !protect && faded.is_none() {
                 overlay.input(false);
@@ -721,9 +726,11 @@ impl Board {
                     overlay.surface.stroke(points, overlay.scale, 1.0)?;
                 }
                 if let Some((at, request)) = faded {
-                    let alpha = (1.0
-                        - (now.saturating_duration_since(*at).as_secs_f32() - 1.5) / 0.4)
-                        .clamp(0.0, 1.0);
+                    let alpha = super::drawing_render::released_alpha(
+                        request.pin.is_some(),
+                        now.saturating_duration_since(*at),
+                        reduced_motion,
+                    );
                     for points in &request.strokes {
                         overlay.surface.stroke(points, overlay.scale, alpha)?;
                     }

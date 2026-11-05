@@ -57,7 +57,7 @@ Do not substitute a compile result for a guest result.
 
 M4 checks use the concatenated `helpers.ps1` and `dictation-helpers.ps1` prefix:
 
-- `native-draw-m4.ps1` runs only impacted native groups, with bounded waits and
+- `native-draw-m4.ps1` covers the 42 focused M4 native tests, with bounded waits and
   an actual exit code per group. Set its test-executable path for the lab build.
 - `microphone-opening-m4.ps1` requires `--microphone-open-timeout-lab` and the
   Ctrl+Shift+Space toggle shortcut. It retries default/named input twice each,
@@ -66,7 +66,10 @@ M4 checks use the concatenated `helpers.ps1` and `dictation-helpers.ps1` prefix:
   enumeration, preview retry and duplicate-command suppression in real Settings.
 - `paste-shortcuts-m4.ps1` uses normal `--desktop-lab`, with Edge open. It invokes
   native choices through UIA and checks text/default/per-app/inherited values.
-  It restores preferences even after failure.
+  It restores preferences even after failure. Run `paste-shortcuts-cancel-m4.ps1`
+  asynchronously, wait for the visible popup, then send physical guest Escape
+  through QEMU. It checks closure and unchanged preferences; injected Escape
+  is not used as keyboard evidence.
 
 Serve `fixtures/draw-pin-m4.html` only through the private guest transfer server.
 The normal receiver records image and text as separate events. A case beginning

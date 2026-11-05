@@ -1,166 +1,144 @@
 # Windows M4 — draw and pin
 
-Base: main at 8344c545503ddf76f54a62023993f74a1f8020d3, after M3 #113.
-Work is on windows-draw-pin. M4 is not complete or released.
+M4's software gates passed in the isolated Windows 11 guest. PR #119 is based
+on main d7c8ec4; Windows is not a released platform. Distribution, physical
+hardware and the remaining parity milestones are separate gates.
 
-## Acceptance
+## Behavior
 
-1. Physical draw-key input is recording-scoped, must be seen up first, and is
-   spoiled by other keys. Injected input cannot arm drawing. Ordinary capitals,
-   chords and cross-process clicks keep working without keyboard focus theft.
-2. Mac movement/pin/double-click/drag/hold fixtures pass. Undo, pause, cancel and
-   pill-click stop preserve session identity, audio timing and the original target.
-3. One nonactivating overlay per display handles real DPI, negative coordinates,
-   rotation and hotplug. WGC excludes Koett windows and captures only on gestures.
-4. Bounded in-memory frames become the numbered contact sheet and timed bullets.
-   Images are not stored in history. Capture failures stay visible and bounded.
-5. Image-first delivery uses observed target read plus processing time, with a
-   bounded unknown-reader fallback. Every stage rechecks target and ownership;
-   newer copies win. Repeat Copy/Paste offers PNG, DIBV5, HTML and exact text.
-6. UIA context is explicit, bounded, password-safe and stale-result-safe. Browser
-   URL/private-mode/YouTube fields are tested separately in available browsers;
-   missing context remains absent. No synthetic Copy or guessed privacy signal.
-   Chrome itself remains untested: its terms were not accepted. Edge is the
-   authorized Chromium browser for M4 paste verification; Chrome is not a gate.
-7. Native guest evidence includes screenshots, foreground HWND/PID and clipboard
-   formats. Physical mixed-DPI/HDR/hotplug limits stay distinct from guest proof.
+- Recording-scoped physical Raw Input, release-before-arming, chord/other-key
+  guards and the shared Mac/Linux gesture fixtures. Injected keys cannot arm
+  drawing. Normal typing and idle cross-process clicks remain available.
+- One nonactivating Direct2D canvas per display, PMv2 coordinates, mixed DPI,
+  negative origins, rotation, display changes, lock and undo. Finished frames
+  survive topology changes; unfinished drawing is discarded visibly.
+- Gesture-only WGC capture excludes Koett windows. Intended strokes/pins are
+  composited offscreen into numbered contact sheets with audio-time anchors.
+  Images stay in memory; History keeps final and original speech text.
+- Released ink waits 1500 ms and fades for 400 ms. Pins use the Mac's 450 ms
+  pulse. Reduced Motion keeps the mark static for its lifetime, then removes it
+  without an animated fade. Bounds are 256 frames / 96 MiB retained pixels,
+  24 million pixels per capture, and 32 MiB per clipboard bundle.
+- Native Settings expose draw enable/key/lock/selected-text and paste choices.
+  Text uses paste_shortcut; images use windows:<exe-name>, then windows:*, then
+  Ctrl+V. Use default removes an app override. Shortcut-only labels include an
+  explicit tab separator so Windows exposes their full UIA names.
 
-Expected product changes: Windows modules, Windows feature flags in Cargo and
-their generated supply-chain outputs. Existing platform-neutral annotation,
-pin sanitization and gesture rules are reused. Shared/Linux changes, if needed,
-must be identified and checked separately. Mac app code remains native Swift.
+## Delivery and recovery
 
-## Native boundaries
+Images are offered with delayed PNG/DIBV5 rendering. Text follows a native read
+plus 200 ms, with a 1.5 second fallback when no qualifying read is observed.
+Known unrelated readers are ignored. Anonymous OpenClipboard(NULL) reads use
+that same processing gap because Edge uses this form.
 
-- [Raw Input](https://learn.microsoft.com/en-us/windows/win32/inputdev/using-raw-input):
-  INPUTSINK only during recording; no NOLEGACY and no retained typed-key history.
-- [WGC monitor/window interop](https://learn.microsoft.com/en-us/windows/win32/api/windows.graphics.capture.interop/nn-windows-graphics-capture-interop-igraphicscaptureiteminterop)
-  and [capture exclusion](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity).
-- [Clipboard ownership/rendering](https://learn.microsoft.com/en-us/windows/win32/dataxchg/using-the-clipboard)
-  and [UTF-8 HTML byte offsets](https://learn.microsoft.com/en-us/windows/win32/dataxchg/html-clipboard-format).
-- [WIC encoding](https://learn.microsoft.com/en-us/windows/win32/wic/-wic-creating-encoder):
-  native in-memory PNG; no image codec dependency upgrade.
+Text is delayed-rendered too. After its read plus 200 ms, PNG/DIBV5/HTML/Unicode
+are restored together only if owner, sequence and marker still match. A newer
+copy wins at both stages. Explicit Copy/Paste recovery can offer the bundle
+again, without another ASR pass or History write.
 
-No large benchmark is part of M4. Focused deterministic fixtures and real guest
-journeys establish behavior; they do not establish broad hardware compatibility.
+Each input stage checks the original HWND/PID, process eligibility, integrity,
+clipboard ownership and released modifiers. The final foreground query occurs
+**after** clipboard validation, immediately before SendInput. A changed target
+or failed delivery produces persistent Not pasted with recovery. SendInput
+itself cannot prove consumption in arbitrary applications.
 
-## Implementation
+Recovery retains the last result's destination across later cancelled/silent
+attempts. Tray focus uses the actual Explorer taskbar ancestor chain, including
+Windows 11 composition/input children. It returns to the current editor before
+refusing recovery for another window; it never pastes into Koett itself.
 
-Windows uses recording-scoped physical Raw Input, nonactivating Direct2D canvases,
-bounded WGC captures, the existing Mac/Linux gesture rules, numbered contact
-sheets and audio-time anchors. Draw lock waits for released modifiers; left drag
-paints, right-click/Ctrl+Z undoes, and Escape unlocks before cancelling.
+## Context and microphone boundaries
 
-Pin context uses bounded UIA reads, with password omission, explicit privacy
-signals and visible missing context. Browser URLs come from the actual browser
-document or browser chrome, never a page input that impersonates the address bar.
-No title-to-URL or seek-percentage-to-seconds inference is allowed.
+UIA reads are bounded, password-safe and rejected when the source window changes.
+Own Settings/History cannot pick up context from the browser underneath. URLs
+come from the actual browser document/chrome, never page fields impersonating
+an address bar. Private indicators are accepted only outside web documents;
+Edge's InPrivate browsing label clears title, URL, link, image label and selection.
+Unknown privacy/provider fields remain explicit, not a claim of public mode.
+YouTube links use actual exposed clock values; percentages never become seconds.
 
-Image paste offers delayed image formats first, then text after a native read
-plus 200 ms. Known unrelated readers are ignored; anonymous OpenClipboard(NULL)
-reads use the same gap, because Edge uses that form. With no qualifying read,
-the fallback is 1.5 seconds. Every stage rechecks HWND/PID, clipboard owner,
-sequence and marker, integrity level and released modifiers. Newer copies win.
-Text is also offered with delayed rendering. After its read plus 200 ms, the
-combined PNG/DIBV5/HTML/text offer is restored only while ownership, sequence
-and marker remain unchanged. Repeat paste does not write history again.
-Copy offers the same four formats. Native clipboard round trips passed; the
-latest automatic restoration still needs the browser journey.
-Raw speech remains available in History when final text contains annotations.
+Microphone lookup, opening, device enumeration and preview run in supervised
+children of the same executable. Opening has a five-second first-packet deadline;
+termination and reader cleanup have bounded waits. Four reader permits remain
+held until their readers exit. Pending native controls coalesce requests, so a
+stalled driver cannot queue unlimited retries or wedge the hotkey. Preview sends
+level pairs, not PCM. The private timeout lab is never used by normal launches.
 
-Settings expose draw enable/key/lock/selected-text controls and native per-app
-image-paste shortcut menus. Text uses paste_shortcut; image chords use the
-windows:<exe-name> override, then windows:*, then Ctrl+V. Images remain in memory
-and are not written to history.
+Windows uses main's selected recording limit and shared 120-minute safety ceiling;
+it no longer has a separate ten-minute collector cap. Short fixtures and boundary
+arithmetic do not establish long-session or physical-device support.
 
-Microphone lookup/opening runs in a supervised child of the same executable.
-The five-second ready deadline includes the first packet; termination and reader
-cleanup have bounded waits. Stalled readers retain one of four permits, reserved
-before spawning, to prevent runaway retries. Error permits a later hotkey retry. Windows device enumeration and preview
-also use supervised children with five-second opening deadlines. Preview sends
-only level pairs, never PCM, and its bounded cleanup releases recording priority.
-The 1249196 guest passed virtual-HDA preview start/stop, forced enumeration
-timeout, two preview timeout/retry rounds with duplicate-command suppression,
-and four default/named-input hotkey timeout/retry rounds. No worker remained.
-The private timeout lab is not enabled in normal launches.
+## Verification
 
-## Local build
+Current receipts, screenshots and foreground HWND/PID are under
+[windows-milestone4](../CrossPlatform/evidence/windows-milestone4/):
 
-The Microsoft build-tools terms were explicitly approved on 2026-11-05.
-xwin 0.10.0 installed the free CRT/SDK under ~/.cache/koett-windows/msvc-sdk.
-The pinned native ASR libraries, including shared encoder patch
-1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3,
-link locally with clang-cl/LLD and the static CRT. No payment or sudo was needed.
+- [5b7b252 final](../CrossPlatform/evidence/windows-milestone4/local-5b7b252/README.md):
+  six final timing/paste-guard tests, all 15 gesture fixtures and video-time parser;
+  actual CPU WAV pin capture with Reduced Motion, physical pill Stop while Shift
+  is held, one image/text delivery into the original Edge window, automatic
+  four-format restoration, and identical static Transcribing crops 400 ms apart.
+- [9bb4c97](../CrossPlatform/evidence/windows-milestone4/local-9bb4c97/README.md),
+  whose tested Rust source matches commit 5707ac9: 20 native tests; default/named
+  opening retries, enumeration/preview faults and normal preview; native UIA
+  choices and physical Escape; InPrivate omission, tray recovery/refusal,
+  newer-copy protection, cancel/repeat, native recording-limit Save,
+  100/150/200%, light/dark and Narrator keyboard navigation.
+- [25a8f3b](../CrossPlatform/evidence/windows-milestone4/local-25a8f3b/README.md):
+  virtual display detach/Extend, finished-frame preservation and unfinished-ink
+  discard; own-window omission and explicit native editor/terminal/YouTube
+  unavailable fields. It also records the private/tray failures fixed later.
+- [8b0e469](../CrossPlatform/evidence/windows-milestone4/local-8b0e469/README.md):
+  portrait / negative-coordinate 168/96-DPI ink, lock/undo, native Edge rich paste
+  (no synthetic receiver insertion), raw History, silence/image-only behavior,
+  pause/cancel/other-key guards and the image-stage newer-copy race.
+- Earlier [foundation](../CrossPlatform/evidence/windows-milestone4/ci-03a7d0a/README.md),
+  [dadf83b](../CrossPlatform/evidence/windows-milestone4/local-dadf83b/README.md),
+  [bee18d5](../CrossPlatform/evidence/windows-milestone4/local-bee18d5/README.md) and
+  [5eb985a](../CrossPlatform/evidence/windows-milestone4/local-5eb985a/README.md)
+  receipts retain the initial capture, exclusion and recovery checks.
 
-scripts/windows_local_build.py uses already installed tools and never downloads
-or accepts terms. The optional build_asr_native.py --target/--toolchain path
-preserves native-host defaults. Builds use four jobs, nice 10 and on-disk cache
-and target directories, without a memory limit. No intermediate CI pushes are
-permitted before M4 is ready for merge.
+In total, 42 distinct targeted tests ran on real Windows across the final two
+builds; the whole suite was not run. Impacted Linux audio: 11 passed, one hardware
+preview test ignored. Local build-tool tests: 22 passed. Windows linking, strict
+all-target Clippy, formatting and generated inventory checks passed. No benchmark
+cohort or intermediate CI push was used.
 
-Shared changes are Windows-conditional audio counters/worker routing and optional
-cross-build tooling; the test-only Windows logic wrapper has no production effect.
-Mac/Linux capture callbacks, defaults and app behavior remain unchanged. Shared
-build-script tests must accompany any final push. Mac source is untouched.
+The guest's original settings/history/last-result hashes, motion preference and
+175% / 1920x1080 + 1280x1024 layout were restored. Narrator was turned off and the
+guest shut down. Host pointer, keyboard, clipboard, installed Koett and data were
+untouched. Narrator keyboard names/actions were checked; speech quality was not.
 
-## Real Windows evidence
+## Build and remaining limits
 
-- [Initial foundation](../CrossPlatform/evidence/windows-milestone4/ci-03a7d0a/README.md):
-  clipboard formats/newer-copy protection, WGC exclusion and physical draw key.
-- [Local dadf83b](../CrossPlatform/evidence/windows-milestone4/local-dadf83b/README.md):
-  14 targeted tests, WAV capture, canvas/pins, three-frame contact sheet, pill
-  Stop while holding Shift, one insertion into the original Notepad and Copy.
-  Notepad cannot receive an image; visible recovery is expected. The early test
-  harness lost the exit code; it records the successful test output honestly.
-- [Local bee18d5](../CrossPlatform/evidence/windows-milestone4/local-bee18d5/README.md):
-  default/named microphone timeout followed by hotkey retry, each around five
-  seconds with no orphan worker; Edge selection/password and staged paste.
-- [Local 5eb985a](../CrossPlatform/evidence/windows-milestone4/local-5eb985a/README.md):
-  16 targeted tests with exit 0; Edge image then text 248 ms apart and stable
-  HWND/PID; two working signed VirtIO display adapters; 1080p Settings at 175%.
-  This is a partial M4 receipt.
-- [Local 8b0e469](../CrossPlatform/evidence/windows-milestone4/local-8b0e469/README.md):
-  tray recovery, changed-target rejection, mixed DPI/portrait/negative-coordinate
-  ink, lock/undo, native rich paste, newer-copy race, raw speech, silence and
-  image-only output, other-key release, pause and cancel. Its native menu
-  accessibility failure was traced to Windows parsing shortcut-only labels as
-  accelerators. A native guest probe proved an explicit tab separator keeps
-  the accessible names; the rebuilt choice journey is still pending. PCI GPU unplug is unsupported by this QEMU device.
+The approved free Microsoft CRT/SDK was installed with xwin 0.10.0 under
+~/.cache/koett-windows/msvc-sdk. The pinned ASR-only sherpa-onnx 1.13.5 libraries
+include shared-encoder patch
+1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3.
+`scripts/windows_local_build.py` uses already installed tools, clang-cl/LLD and
+static CRT; it never accepts terms or downloads tools. Optional native-builder
+--target/--toolchain arguments preserve native-host defaults.
 
-- [Local 1249196](../CrossPlatform/evidence/windows-milestone4/local-1249196/receipt.json):
-  17 native tests exited 0, including delayed-text combined-offer restoration
-  and newer-copy protection; virtual preview and forced microphone stalls
-  passed with bounded cleanup and stable external foreground HWND/PID.
+Builds use four jobs, nice 10, on-disk targets/cache and no memory limit. The guest
+uses four vCPUs, 8 GiB and nice 19; startup requires 12 GiB available and 70% CPU
+idle. It stays off during builds and outside testing. Source/build receipts
+identify private development executables, not signed release packages.
 
-Original guest settings, history and last transcript are backed up and restored
-with hash checks after testing. Only the guest receives input. It runs at nice
-19 with four vCPUs and 8 GiB; the controller requires 12 GiB available and at least
-70% host CPU idle. The guest stays off during builds and outside testing.
+Shared changes are Windows-conditional audio/preview/fixture routing and optional
+cross-build tooling; shared gesture/annotation/storage rules are reused. No Mac
+app source changed. Linux capture behavior/defaults are unchanged, with the
+impacted checks above. Main's recording-limit and shelved-Ask decisions remain.
 
-## Remaining gates
+Edge is the authorized M4 browser gate. Chrome's terms remain pending; Chrome
+and Firefox were not installed or tested. Other UIA providers may omit fields.
+Physical microphones, USB/Bluetooth/sleep, 30-minute live capture, HDR/cable
+hotplug, Qualcomm ARM64 and signed install/update checks remain later gates.
+QEMU PCI GPU unplug is unsupported; Windows display detachment was tested.
+The prior ARM64 CI failure at 3d7e604 was an upstream ONNX Runtime HTTP 504 after
+existing retries; no dependency pin, retry policy or supply-chain policy weakened.
 
-- Run automatic Edge image/text completion and confirm the combined clipboard
-  restores without pressing Copy; repeat with a newer copy after text consumption.
-- Retest changed-app tray restoration and retained recovery destination across
-  a cancelled or silent attempt in another editor.
-- Invoke rebuilt paste choices through UIA, including per-app inheritance;
-  finish private/native/terminal/YouTube context cases with honest missing fields.
-- Detach/reattach the virtual secondary display through Windows; finished frames
-  must survive while unfinished ink is discarded. PCI GPU unplug is unsupported.
-- Exercise new controls at 100/150/200%, live light/dark, reduced motion and
-  Narrator/keyboard; inspect screenshots before calling accessibility complete.
-
-Already passed in the receipts: supervised virtual preview/enumeration timeout,
-repeated default/named microphone hotkeys, native delayed clipboard round trips,
-native rich Edge paste, image/text read gap, image-stage newer-copy race, raw
-History, silent clipboard preservation, image-only output, held-key pause/cancel,
-other-key release, and portrait/negative-coordinate mixed-DPI ink.
-
-Chrome was not installed or tested: its terms remain pending. Edge is the
-authorized Chromium browser for M4 paste checks; Chrome does not block M4.
-Physical microphone/display/HDR/hotplug and long live capture remain distinct
-hardware gates, not claims established by this virtual guest.
-
-The 3d7e604 ARM64 CI failure was an upstream ONNX Runtime HTTP 504 after existing
-retries; the pinned URL returned 200 on recheck. No pin or policy was weakened.
-No large benchmark is part of M4. M4 remains draft and incomplete.
+Native API references: [Raw Input](https://learn.microsoft.com/windows/win32/inputdev/using-raw-input),
+[WGC interop](https://learn.microsoft.com/windows/win32/api/windows.graphics.capture.interop/nn-windows-graphics-capture-interop-igraphicscaptureiteminterop),
+[capture exclusion](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity),
+[clipboard ownership](https://learn.microsoft.com/windows/win32/dataxchg/using-the-clipboard),
+[HTML byte offsets](https://learn.microsoft.com/windows/win32/dataxchg/html-clipboard-format).

@@ -2503,9 +2503,9 @@ fn paste_offered(
     paste_guard::paste_when_ready(
         expected,
         modifiers_are_down,
+        || offer.verify(),
         foreground_paste_target,
         || {
-            offer.verify()?;
             let inserted = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
             if inserted == inputs.len() as u32 {
                 Ok(())

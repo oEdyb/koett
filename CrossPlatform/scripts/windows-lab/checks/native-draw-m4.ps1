@@ -1,10 +1,10 @@
 $ErrorActionPreference='Stop'
 $dir=$env:USERPROFILE+'\KoettM4Local'
 $cases=@(
- @('windows::draw_input::tests',2),@('windows::clipboard::tests',4),
- @('windows::contact_sheet::tests',1),@('windows::paste_timing::tests',1),
- @('windows::pin_policy::tests',1),@('windows::pixels::tests',1),
- @('audio::windows_capture::tests',4),@('audio::windows_capture::preview_proxy::tests',1),@('audio::tests::drawing_clock',1),
+ @('windows::drawing::gesture::tests',15),@('windows::draw_input::tests',2),@('windows::clipboard::tests',4),
+ @('windows::contact_sheet::tests',1),@('windows::paste_timing::tests',1),@('windows::paste_guard::tests',5),
+ @('windows::pin_policy::tests',2),@('windows::pin_policy::video_tests',1),@('windows::drawing_render::tests',1),@('windows::pixels::tests',1),@('windows::foreground::tests',1),
+ @('audio::windows_capture::tests',5),@('audio::windows_capture::preview_proxy::tests',1),@('audio::tests::drawing_clock',1),
  @('audio::fixture::tests::finite_fixture',1))
 $results=@();$passed=$true
 foreach($case in $cases){
