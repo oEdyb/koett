@@ -22,7 +22,7 @@ commits={'old':'c72f83415b1d760c30316f07fc776f09b0ebdc0b','current':'85dde5153e0
 for label,commit in commits.items():
  source=root/(label+'-source');source.mkdir()
  names=subprocess.check_output(['git','ls-tree','--name-only',commit],cwd=repo,text=True).splitlines()
- include=[x for x in ['Package.swift','Package.resolved','Sources','Packaging'] if x in names]
+ include=[x for x in ['Package.swift','Package.resolved','Sources','Packaging','Tests'] if x in names]
  archive=subprocess.check_output(['git','archive',commit,*include],cwd=repo)
  tarfile.open(fileobj=io.BytesIO(archive)).extractall(source,filter='data')
  subprocess.run(['/usr/bin/patch','-p1','-i',str(assets/(label+'-source.patch'))],cwd=source,check=True)
