@@ -161,9 +161,12 @@ pub fn run() -> Result<(), String> {
         [] => Some(runtime::start(settings.clone())),
         [_] if desktop_lab => None,
         [flag, path] if flag == "--dictation-lab-wav" => {
-            Some(runtime::start_wav_lab(settings.clone(), path.into()))
+            Some(runtime::start_wav_lab(settings.clone(), path.into(), false))
         }
-        _ => return Err("Use Koett.exe, --desktop-lab, or --dictation-lab-wav FILE.wav".into()),
+        [flag, path] if flag == "--dictation-lab-asr-failure" => {
+            Some(runtime::start_wav_lab(settings.clone(), path.into(), true))
+        }
+        _ => return Err("Use Koett.exe, --desktop-lab, --dictation-lab-wav FILE.wav, or --dictation-lab-asr-failure FILE.wav".into()),
     };
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),

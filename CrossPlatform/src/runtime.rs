@@ -155,12 +155,19 @@ impl EngineHandle {
 enum CaptureSource {
     Microphone,
     #[cfg(target_os = "windows")]
-    WavFixture(std::path::PathBuf),
+    WavFixture {
+        path: std::path::PathBuf,
+        fail_asr: bool,
+    },
 }
 
 #[cfg(target_os = "windows")]
-pub(crate) fn start_wav_lab(settings: Settings, path: std::path::PathBuf) -> EngineHandle {
-    start_source(settings, CaptureSource::WavFixture(path))
+pub(crate) fn start_wav_lab(
+    settings: Settings,
+    path: std::path::PathBuf,
+    fail_asr: bool,
+) -> EngineHandle {
+    start_source(settings, CaptureSource::WavFixture { path, fail_asr })
 }
 
 pub fn start(settings: Settings) -> EngineHandle {
@@ -753,7 +760,7 @@ fn run(
                         crate::audio::resolve_recording_input(current.microphone.as_deref())
                     }
                     #[cfg(target_os = "windows")]
-                    CaptureSource::WavFixture(_) => Ok(current.microphone.clone()),
+                    CaptureSource::WavFixture { .. } => Ok(current.microphone.clone()),
                 };
                 let mut input_notice = None;
                 match input_resolution.as_ref() {
@@ -794,7 +801,7 @@ fn run(
                             )
                         }
                         #[cfg(target_os = "windows")]
-                        CaptureSource::WavFixture(path) => {
+                        CaptureSource::WavFixture { path, .. } => {
                             MicrophoneRecorder::start_wav_fixture(path)
                         }
                     })
@@ -868,6 +875,12 @@ fn run(
                         .take()
                         .ok_or_else(|| "background transcription is missing".to_string())?;
                     let (audio, warning) = audio?;
+                    #[cfg(target_os = "windows")]
+                    if matches!(&source, CaptureSource::WavFixture { fail_asr: true, .. }) {
+                        drop(session);
+                        transcription.stop_for_windows_lab();
+                        return transcription.transcribe(audio);
+                    }
                     if let Some(warning) = warning {
                         let _ = updates.send(EngineUpdate::Notice(warning));
                         drop(session);

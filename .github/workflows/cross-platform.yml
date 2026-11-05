@@ -112,6 +112,9 @@ jobs:
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
+      - name: Parse Windows lab checks
+        shell: pwsh
+        run: ./scripts/check_powershell.ps1
       - name: Build ASR-only native libraries
         run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
       - name: Test

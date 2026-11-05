@@ -83,3 +83,27 @@ synthetic levels, fixture duration, or a seven-minute long-input CLI probe.
 Guest budget remains 4 vCPU/8 GiB; check at least 12 GiB MemAvailable before
 boot, stop own builds, control only private guest sockets, and fully shut down
 after testing. Keep model/audio/disk/artifacts in the private cache, not git.
+
+## Remaining fault-run checkpoint
+
+`--dictation-lab-asr-failure FILE.wav` is an explicit Windows diagnostic mode.
+It captures actual paced WAV frames, stops the ASR worker at finalization, then
+uses the existing worker-error/audio-retention path. It does not invent a
+transcript or claim that decoding succeeded. Restart normal WAV mode afterward.
+`asr-retention-m2.ps1` checks readable retained audio, unchanged clipboard/editor
+and history after the fault, then no extra retained audio after a successful run.
+
+`busy-storage-m2.ps1` holds an exclusive SQLite lease using the guest's system
+winsqlite3 test helper. It checks that target text appears before unlock and
+before history changes, then that history changes after unlock. The lease has
+a timeout and a finally-release path. It does not replace any system DLL.
+`hotkey-faults-m2.ps1` leases the default chord, checks the tray warning and tray
+record/cancel fallback, then releases it and verifies shortcut recovery after
+restart. Both scripts require the isolated Notepad target and concatenated M2
+helpers. These new checks are prepared, not guest passes yet.
+
+Shared files changed for the diagnostic: `runtime.rs` and
+`transcription/background.rs`. Every new fault branch/API is cfg(windows), and
+normal microphone/WAV capture does not arm it. No main/release branch was edited.
+Windows CI also parses the PowerShell checks before native compilation. The
+local guest stays off while other builds consume the host's headroom.
