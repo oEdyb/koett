@@ -212,7 +212,15 @@ Dictation and all audio transcription stay local.
 
 ## Required checks
 
-Run these after code changes:
+Use targeted local checks while working (development V17/V18). Run tests for
+changed behavior and its callers; syntax-check only scripts or metadata changed.
+For documentation-only changes, run `git diff --check`; skip builds, test suites
+and CI.
+
+When source changes need broad verification, one runner runs the relevant
+platform suite once right before merge. Shared build configuration
+or core changes can affect the full suite. Select from the macOS commands below
+according to the changed files; these are not an after-every-edit checklist:
 
 ```sh
 swift test
@@ -223,7 +231,17 @@ plutil -lint Packaging/Info.plist
 plutil -lint Packaging/Koett.entitlements
 ```
 
-If you install a new build, also verify:
+Keep tests and CI fast. Push to CI only when the PR is ready to merge, after
+impacted local checks.
+Continue independent work while builds run; hand back run URLs when waiting is
+necessary. Never start benchmark cohorts. If a required number is missing, take
+one small targeted measurement.
+
+For a new release candidate, recheck only behavior changed since the last tested
+candidate. Repeat broader acceptance only when a regression or changed shared
+foundation warrants it. Record exactly what ran and what remains untested.
+
+If an installation is authorized and you install a new build, also verify:
 
 ```sh
 codesign --verify --deep --strict --verbose=2 /Applications/Koett.app
@@ -240,9 +258,12 @@ signature so macOS does not request Accessibility approval after each build.
 ## Linux implementation checks
 
 Windows/Linux code lives under `CrossPlatform/`; macOS remains native Swift.
-For Rust changes run `cargo fmt --check`, `cargo test --locked`,
-`cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`,
-and `cargo check --locked --target x86_64-pc-windows-msvc` there.
+Apply the check-selection rules above to Rust changes. Run `cargo fmt --check`
+and targeted tests with `cargo test --locked <test-filter>` there. At the final
+merge gate, run `cargo test --locked` once when the affected scope warrants it;
+select `cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`
+and `cargo check --locked --target x86_64-pc-windows-msvc` only for affected
+platforms and build paths. Documentation-only edits need none of these commands.
 Read `plan.md` and `docs/ui-design.md` before changing the port or history UI.
 Preserve failed-transcript recovery and keep storage off the audio callback.
 
