@@ -10147,6 +10147,33 @@
       "bundled_license_files": [
         {
           "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "6e9567599ef23e09b8dad6e429e5738d4509dfc46b3b21f32841a304d16b29c8",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-protocols-misc",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-protocols-misc@0.3.12",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.12"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
           "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",
           "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
         }
@@ -13272,6 +13299,7 @@
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols-misc@0.3.12",
         "pkg:cargo/wayland-protocols-wlr@0.3.12",
         "pkg:cargo/windows-core@0.62.2",
         "pkg:cargo/windows-numerics@0.3.1",
@@ -14416,6 +14444,16 @@
         "pkg:cargo/wayland-protocols@0.32.13",
         "pkg:cargo/wayland-scanner@0.31.11"
       ],
+      "ref": "pkg:cargo/wayland-protocols-misc@0.3.12"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols@0.32.13",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
       "ref": "pkg:cargo/wayland-protocols-wlr@0.3.12"
     },
     {
@@ -14914,14 +14952,14 @@
   ],
   "inputs": [
     {
-      "bytes": 85484,
+      "bytes": 85831,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "c88edcb59bd5d17fa2bee41be8e2ff0a61e0cb5401ce8184de1ce0ae6ff28171"
+      "sha256": "fe6854de580b509a9c60eff8d2e869ba4462c29b7343fe0741ddaa1b26d5256f"
     },
     {
-      "bytes": 3155,
+      "bytes": 3227,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "38e9f8f5f2376bd981178588bd62118bc698a1dc81efe07aa2ea32ea69e3d181"
+      "sha256": "0d664b149be75bfae89ee2d7734e6f25e4c16ba816ef7205eef0c60fa64d1323"
     },
     {
       "bytes": 5621,
@@ -16392,11 +16430,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 367,
+    "components": 368,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 32,
-    "rust_packages": 345,
+    "rust_packages": 346,
     "swift_packages": 1
   }
 }

@@ -21,6 +21,7 @@ pub enum Update {
     Show(String),
     Settings(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Shortcut(String),
@@ -375,6 +376,7 @@ fn build_window(
     // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
     // so it morphs straight into Done instead of hiding and remapping.
     let mut settling_until = None::<Instant>;
+    let mut delivery_pending = false;
     let sketch = super::sketch::SketchOverlay::new().map(Rc::new);
     let undo_drawing = gtk::gio::SimpleAction::new("undo-drawing", None);
     undo_drawing.set_enabled(false);
@@ -522,7 +524,15 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
+                    Update::DeliveryStarted => {
+                        delivery_pending = true;
+                        settling_until = None;
+                        done_until = None;
+                        recovery_until = None;
+                        closing = false;
+                    }
                     Update::Delivered => {
+                        delivery_pending = false;
                         settling_until = None;
                         if std::mem::take(&mut stopped_at_limit) {
                             done_until = None;
@@ -536,6 +546,7 @@ fn build_window(
                         done_fading = None;
                     }
                     Update::DeliveryFailed => {
+                        delivery_pending = false;
                         settling_until = None;
                         done_until = None;
                         if latest_completed.borrow().is_some() {
@@ -705,6 +716,7 @@ fn build_window(
                             settling_until = Some(Instant::now() + SETTLE);
                         }
                         if recording {
+                            delivery_pending = false;
                             settling_until = None;
                         }
                         if recording && recording_started.is_none() {
@@ -859,7 +871,9 @@ fn build_window(
                 overlay.update(
                     if media_result && recovering {
                         "Media result"
-                    } else if settling_until.is_some_and(|until| Instant::now() < until) {
+                    } else if delivery_pending
+                        || settling_until.is_some_and(|until| Instant::now() < until)
+                    {
                         "Transcribing…"
                     } else {
                         &state

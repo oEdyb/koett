@@ -6569,6 +6569,25 @@
         }
       ],
       "gaps": []
+    },
+    {
+      "name": "wayland-protocols-misc",
+      "version": "0.3.12",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-misc/wayland-protocols-misc-0.3.12.crate"
+        },
+        {
+          "path": "packaging/notices/rust/wayland-protocols-misc-0.3.12/virtual-keyboard-COPYRIGHT",
+          "sha256": "faa5a835a8ca7480c4faafa4bd7cfa11d3f24a3140f88de458f3303f77f33657",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-misc/wayland-protocols-misc-0.3.12.crate"
+        }
+      ],
+      "gaps": []
     }
   ]
 }
