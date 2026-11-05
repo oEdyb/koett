@@ -73,6 +73,9 @@ use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 const HOTKEY_ID: i32 = 1;
 const POLL_TIMER_ID: usize = 1;
+const WM_CHANGE_MODEL: u32 = 0x8054;
+const WM_CHANGE_FORMATTING: u32 = 0x8055;
+const WM_CANCEL_SETUP: u32 = 0x8056;
 const TRAY_MESSAGE: u32 = 0x8001;
 const NIN_KEYSELECT: u32 = NIN_SELECT | NINF_KEY;
 const MENU_CHANGE_SHORTCUT: usize = 1;
@@ -405,6 +408,12 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            WM_CHANGE_MODEL | WM_CHANGE_FORMATTING | WM_CANCEL_SETUP => {
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.processing_request(message, wparam.0);
+                }
+                return Default::default();
+            }
             0x8053 => {
                 if let Ok(mut app) = app_cell.try_borrow_mut()
                     && let Ok(settings) = Settings::load()
@@ -661,6 +670,58 @@ impl WindowsApp {
         self.update_overlay();
     }
 
+    fn processing_request(&mut self, message: u32, value: usize) {
+        use desktop::processing;
+        if message == WM_CANCEL_SETUP {
+            if processing::busy() {
+                crate::model::SWITCH_CANCELLED.store(true, Ordering::Release);
+                crate::formatting::CANCELLED.store(true, Ordering::Release);
+            }
+            return;
+        }
+        if self.status != AppStatus::Ready || self.capture_pending || processing::busy() {
+            if message == WM_CHANGE_MODEL {
+                processing::model_message(
+                    "Stop recording or finish setup before changing models".into(),
+                );
+            } else {
+                processing::formatting_status(
+                    "Stop recording or finish setup before changing formatting".into(),
+                );
+            }
+            return;
+        }
+        let Some(engine) = &self.engine else {
+            return;
+        };
+        if message == WM_CHANGE_MODEL {
+            if let Some(model) = crate::model::LocalModel::ALL.get(value).copied() {
+                processing::model_status("Switching model…".into(), true);
+                if engine
+                    .commands
+                    .send(EngineCommand::SwitchModel(model))
+                    .is_err()
+                {
+                    processing::model_status("Dictation engine is unavailable".into(), false);
+                }
+            }
+        } else if let Some(formatting) = processing::decode_formatting(value) {
+            processing::formatting_status(if formatting.enabled {
+                "Preparing S1-mini…".into()
+            } else {
+                "Raw dictation".into()
+            });
+            processing::formatting_busy(true);
+            if engine
+                .commands
+                .send(EngineCommand::Formatting(formatting))
+                .is_err()
+            {
+                processing::formatting_status("Dictation engine is unavailable".into());
+                processing::formatting_busy(false);
+            }
+        }
+    }
     fn toggle(&mut self) {
         self.recording_intent(RecordingIntent::Toggle);
     }
@@ -711,8 +772,14 @@ impl WindowsApp {
                 .and_then(|engine| engine.updates.try_recv().ok());
             let Some(update) = update else { break };
             match update {
-                EngineUpdate::ActiveModel(_) => {}
+                EngineUpdate::ActiveModel(model) => {
+                    desktop::processing::model_status(format!("Ready: {model}"), false);
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                }
                 EngineUpdate::Notice(message) => {
+                    desktop::processing::notice(&message);
                     let message = message
                         .strip_prefix("@model-notice:")
                         .unwrap_or(&message)
@@ -738,6 +805,9 @@ impl WindowsApp {
                         ),
                         _ => {}
                     }
+                    if status == AppStatus::Ready {
+                        desktop::processing::model_finished();
+                    }
                     self.status = status;
                     self.update_tray();
                     self.update_overlay();
@@ -758,10 +828,11 @@ impl WindowsApp {
                         ModelProgress::Installing => "Installing model".to_string(),
                         ModelProgress::Ready => "Loading model".to_string(),
                     };
+                    desktop::processing::model_status(text.clone(), true);
                     set_wide_array(&mut self.tray.szTip, &format!("Koett — {text}"));
                     let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
                 }
-                EngineUpdate::FormattingBusy(_) => {}
+                EngineUpdate::FormattingBusy(busy) => desktop::processing::formatting_busy(busy),
                 EngineUpdate::TranscriptReady {
                     model,
                     transcript,
