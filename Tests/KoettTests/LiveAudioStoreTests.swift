@@ -68,6 +68,20 @@ final class LiveAudioStoreTests: XCTestCase {
         XCTAssertTrue(store.read(from: frame, maximumFrames: 100).isFinished)
     }
 
+    func testLimitClockContinuesIfConsumerStallsButExcludesPause() throws {
+        let store = LiveAudioStore(sampleRate: 16_000, maximumDuration: 3600)
+        let buffer = try makeBuffer(channels: [[Float](repeating: 0.5, count: 16_000)])
+        for _ in 0..<6 { store.append(buffer) }
+        XCTAssertEqual(store.duration, 5)
+        XCTAssertEqual(store.capturedDuration, 6)
+        XCTAssertEqual(store.droppedFrames, 16_000)
+        store.isPaused = true
+        store.append(buffer)
+        XCTAssertEqual(store.capturedDuration, 6)
+        store.reset()
+        XCTAssertEqual(store.capturedDuration, 0)
+    }
+
     private func makeBuffer(channels: [[Float]]) throws -> AVAudioPCMBuffer {
         let frameCount = channels[0].count
         let format = try XCTUnwrap(AVAudioFormat(

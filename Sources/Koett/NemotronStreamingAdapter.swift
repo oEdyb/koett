@@ -118,6 +118,7 @@ final class LiveAudioStore: Sendable {
     private let state: Mutex<State>
     private let maximumFrames: Int
     private let chunkFrames: Int
+    private let capturedFrameCount = Atomic<Int>(0)
     private let droppedFrameCount = Atomic<Int>(0)
     private let paused = Atomic<Bool>(false)
     var isPaused: Bool {
@@ -150,12 +151,14 @@ final class LiveAudioStore: Sendable {
     }
 
     var duration: TimeInterval { state.withLock { Double($0.frameCount) / sampleRate } }
+    var capturedDuration: TimeInterval { Double(capturedFrameCount.load(ordering: .acquiring)) / sampleRate }
 
     func reset() {
         state.withLock { state in
             state.frameCount = 0
             state.isFinished = false
         }
+        capturedFrameCount.store(0, ordering: .releasing)
         droppedFrameCount.store(0, ordering: .releasing)
         isPaused = false
     }
@@ -168,6 +171,7 @@ final class LiveAudioStore: Sendable {
             return
         }
 
+        _ = capturedFrameCount.wrappingAdd(requestedFrames, ordering: .releasing)
         let channelCount = Int(buffer.format.channelCount)
         let copiedFrames = state.withLockIfAvailable { state in
             guard !state.isFinished else { return 0 }
@@ -263,7 +267,7 @@ final class NemotronLiveRecorder {
         let error: Error?
     }
 
-    var currentTime: TimeInterval { store.duration }
+    var currentTime: TimeInterval { store.capturedDuration }
 
     private let adapter: any StreamingTranscriptionAdapter
     private let input: any MicrophoneCapturing
