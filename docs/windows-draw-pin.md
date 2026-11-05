@@ -1,7 +1,7 @@
 # Windows M4 — draw and pin
 
 M4's software gates passed in the isolated Windows 11 guest. PR #119 is based
-on main d7c8ec4; Windows is not a released platform. Distribution, physical
+on main 6ce37b8 (guest-tested port base d7c8ec4); Windows is not a released platform. Distribution, physical
 hardware and the remaining parity milestones are separate gates.
 
 ## Behavior
@@ -79,7 +79,7 @@ Current receipts, screenshots and foreground HWND/PID are under
   is held, one image/text delivery into the original Edge window, automatic
   four-format restoration, and identical static Transcribing crops 400 ms apart.
 - [9bb4c97](../CrossPlatform/evidence/windows-milestone4/local-9bb4c97/README.md),
-  whose tested Rust source matches commit 5707ac9: 20 native tests; default/named
+  whose tested Rust source matches rebased commit ec90537 (receipt records 5707ac9): 20 native tests; default/named
   opening retries, enumeration/preview faults and normal preview; native UIA
   choices and physical Escape; InPrivate omission, tray recovery/refusal,
   newer-copy protection, cancel/repeat, native recording-limit Save,

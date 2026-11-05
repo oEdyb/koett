@@ -6,6 +6,8 @@ This is a private locally linked MSVC build, not a signed release.
 This build adds only the final drawing-opacity and clipboard-validation order
 changes to the source tested by local-9bb4c97 (source commit 5707ac9). The receipt
 includes its Rust source manifest and exact patched native library hashes.
+After rebasing onto main 6ce37b8, that prior source commit is ec90537; the
+intervening main changes affect only Mac source/docs, not the tested Rust source.
 
 Passed on real Windows:
 
