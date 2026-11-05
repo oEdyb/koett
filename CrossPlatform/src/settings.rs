@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 
 static EDIT_LOCK: Mutex<()> = Mutex::new(());
+/// Free in the default desktops and in Koett; apps rarely bind it.
+pub const DEFAULT_DRAW_LOCK: &str = "Ctrl+Alt+D";
 const ACTIVE_SHORTCUT_COUNT: usize = if cfg!(target_os = "linux") { 3 } else { 1 };
 
 pub struct SettingsEdit {
@@ -66,6 +68,8 @@ pub struct Settings {
     /// Off by default: drawing takes keyboard focus while recording.
     pub draw_while_dictating: bool,
     pub draw_key: DrawKey,
+    /// Toggles draw lock while recording; empty disables it.
+    pub draw_lock_shortcut: String,
     /// Opt-in last resort: when keyboards can't be read, let the drawing overlay
     /// hold keyboard focus while recording, which pauses typing elsewhere.
     pub draw_may_take_keyboard: bool,
@@ -92,6 +96,7 @@ impl Default for Settings {
             image_paste_shortcuts: Default::default(),
             draw_while_dictating: false,
             draw_key: DrawKey::default(),
+            draw_lock_shortcut: DEFAULT_DRAW_LOCK.to_string(),
             draw_may_take_keyboard: false,
             pin_selected_text: true,
             selected_model: crate::model::LocalModel::default(),
@@ -269,6 +274,9 @@ impl Settings {
         if self.draw_key != opened.draw_key {
             merged.draw_key = self.draw_key;
         }
+        if self.draw_lock_shortcut != opened.draw_lock_shortcut {
+            merged.draw_lock_shortcut = self.draw_lock_shortcut;
+        }
         if self.draw_may_take_keyboard != opened.draw_may_take_keyboard {
             merged.draw_may_take_keyboard = self.draw_may_take_keyboard;
         }
@@ -276,6 +284,20 @@ impl Settings {
             merged.pin_selected_text = self.pin_selected_text;
         }
         merged
+    }
+
+    /// The draw-lock chord to use, or `None` when it is off or would also fire
+    /// another Koett shortcut. Not part of `validate_shortcuts`: a new default that
+    /// clashes with an existing shortcut must not block every Settings save.
+    pub fn effective_draw_lock(&self) -> Option<&str> {
+        let lock = self
+            .draw_lock_shortcut
+            .parse::<crate::shortcut::Shortcut>()
+            .ok()?;
+        [&self.shortcut, &self.ask_shortcut, &self.media_shortcut]
+            .into_iter()
+            .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
+            .then_some(self.draw_lock_shortcut.as_str())
     }
 
     pub fn validate_shortcuts(&self) -> Result<(), String> {
@@ -324,6 +346,29 @@ mod tests {
             .unwrap()
             .as_nanos();
         std::env::temp_dir().join(format!("koett-{name}-{nonce}.json"))
+    }
+
+    #[test]
+    fn draw_lock_defaults_on_and_steps_aside_for_another_shortcut() {
+        let old: Settings = serde_json::from_str(r#"{"draw_while_dictating":true}"#).unwrap();
+        assert_eq!(old.draw_lock_shortcut, super::DEFAULT_DRAW_LOCK);
+        let mut settings = Settings {
+            shortcut: String::new(),
+            ask_shortcut: String::new(),
+            media_shortcut: String::new(),
+            ..Settings::default()
+        };
+        assert_eq!(settings.effective_draw_lock(), Some("Ctrl+Alt+D"));
+        settings.ask_shortcut = "Alt+Ctrl+D".into();
+        assert_eq!(
+            settings.effective_draw_lock(),
+            None,
+            "same chord, any order"
+        );
+        assert!(settings.validate_shortcuts().is_ok(), "saving still works");
+        settings.ask_shortcut = String::new();
+        settings.draw_lock_shortcut = String::new();
+        assert_eq!(settings.effective_draw_lock(), None, "cleared");
     }
 
     #[test]

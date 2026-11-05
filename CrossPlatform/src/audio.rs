@@ -312,6 +312,9 @@ impl MicrophoneRecorder {
             .name("koett-audio-collector".to_string())
             .spawn(move || collect_samples(consumer, collector_stop, audio_chunks))
             .map_err(|error| format!("could not start the microphone collector: {error}"))?;
+        if std::env::var_os("KOETT_CAPTURE_TIMINGS").is_some() {
+            eprintln!("capture_ready=true");
+        }
 
         Ok(Self {
             #[cfg(any(target_os = "linux", target_os = "windows"))]

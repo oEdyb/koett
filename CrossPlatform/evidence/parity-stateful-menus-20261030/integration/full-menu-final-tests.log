@@ -1,4 +1,4 @@
-   Compiling koett-engine v0.1.0 (/home/olle/dev/koett/CrossPlatform)
+   Compiling koett-engine v0.1.0 (<build-home>/dev/koett/CrossPlatform)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 2.45s
      Running unittests src/lib.rs (CrossPlatform/target/debug/deps/koett_engine-66874d7becfce6d0)
 

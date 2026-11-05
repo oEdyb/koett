@@ -1,0 +1,49 @@
+{
+  "raw": {
+    "term_recall": 0.3025,
+    "term_hits": 49,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.145,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0,
+    "total_ms": 19741.134978
+  },
+  "cheap": {
+    "term_recall": 0.3765,
+    "term_hits": 61,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1242,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0,
+    "total_ms": 19744.425665
+  },
+  "dual4": {
+    "term_recall": 0.7099,
+    "term_hits": 115,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.0677,
+    "wer_negative": 0.0016,
+    "broken_negatives": 0,
+    "collateral_words": 0,
+    "total_ms": 37703.023674
+  },
+  "context": {
+    "term_recall": 0.7099,
+    "term_hits": 115,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.0656,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0,
+    "total_ms": 21144.149386
+  },
+  "plain_equals_greedy_all_210": true,
+  "header_sha256": "673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920",
+  "bench_binary_sha256": "b5956d2350403585b1222d2d1e550006ba5de2a805ad5dcfd8503689f20eef17"
+}

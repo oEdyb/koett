@@ -69,6 +69,10 @@ def main():
             shutil.copy2(gtk_build / source_name, sources / source_name)
         shutil.copy2(root / "scripts/build_linux_gtk_runtime.py", sources / "build_linux_gtk_runtime.py")
         shutil.copy2(args.asr_runtime.resolve() / "build-receipt.json", sources / "asr-build-receipt.json")
+    sources = destination / "sources"
+    sources.mkdir(exist_ok=True)
+    for source_name in ("build_asr_native.py", "shared_context_patch.py", "shared_context.patch"):
+        shutil.copy2(root / "scripts" / source_name, sources / source_name)
     for filename in ["install.sh", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
         shutil.copy2(root / "packaging/linux" / filename, destination / filename)
     (destination / "install.sh").chmod(0o755)

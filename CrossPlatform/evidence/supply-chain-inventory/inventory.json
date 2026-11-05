@@ -10147,6 +10147,33 @@
       "bundled_license_files": [
         {
           "bytes": 1057,
+          "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "cargo_checksum_sha256": "6e9567599ef23e09b8dad6e429e5738d4509dfc46b3b21f32841a304d16b29c8",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1057,
+          "path": "LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
+        }
+      ],
+      "name": "wayland-protocols-misc",
+      "normalized_declared_license": "MIT",
+      "notice_state": "bundled",
+      "repository": "https://github.com/smithay/wayland-rs",
+      "sbom_ref": "pkg:cargo/wayland-protocols-misc@0.3.12",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.12"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 1057,
           "path": "CrossPlatform/packaging/notices/rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",
           "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161"
         }
@@ -13272,6 +13299,7 @@
         "pkg:cargo/url@2.5.8",
         "pkg:cargo/uuid@1.29.0",
         "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols-misc@0.3.12",
         "pkg:cargo/wayland-protocols-wlr@0.3.12",
         "pkg:cargo/windows-core@0.62.2",
         "pkg:cargo/windows-numerics@0.3.1",
@@ -13948,6 +13976,7 @@
     {
       "dependsOn": [
         "pkg:cargo/bzip2@0.4.4",
+        "pkg:cargo/sha2@0.11.0",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/ureq@2.12.1"
       ],
@@ -14407,6 +14436,16 @@
         "pkg:cargo/wayland-scanner@0.31.11"
       ],
       "ref": "pkg:cargo/wayland-client@0.31.15"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/wayland-backend@0.3.17",
+        "pkg:cargo/wayland-client@0.31.15",
+        "pkg:cargo/wayland-protocols@0.32.13",
+        "pkg:cargo/wayland-scanner@0.31.11"
+      ],
+      "ref": "pkg:cargo/wayland-protocols-misc@0.3.12"
     },
     {
       "dependsOn": [
@@ -14914,19 +14953,19 @@
   ],
   "inputs": [
     {
-      "bytes": 85484,
+      "bytes": 85840,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "c88edcb59bd5d17fa2bee41be8e2ff0a61e0cb5401ce8184de1ce0ae6ff28171"
+      "sha256": "9984fb8af6ac83243c6ec4adaad04f353cb1206acc8ffe3d37e698abef69f336"
     },
     {
-      "bytes": 3155,
+      "bytes": 3227,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "38e9f8f5f2376bd981178588bd62118bc698a1dc81efe07aa2ea32ea69e3d181"
+      "sha256": "0d664b149be75bfae89ee2d7734e6f25e4c16ba816ef7205eef0c60fa64d1323"
     },
     {
-      "bytes": 5621,
+      "bytes": 6089,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "fd35b7bd87146a44d70f7ce4cfa4942a902db6f4c8f13963740971f5dddb473c"
+      "sha256": "47e78b84c4d2033624d239cbf0ae5f4431ba35991bedbc57ed0b994eae408d1f"
     },
     {
       "bytes": 9465,
@@ -14934,19 +14973,34 @@
       "sha256": "2ca81f7052d8ad1020967cf49899cddb6f489f3fbab3911ae5b786e493495d54"
     },
     {
+      "bytes": 10552,
+      "path": "CrossPlatform/scripts/build_asr_native.py",
+      "sha256": "d13c6bbb9d785a94abede4a5a181cba28f22097f5105507fad8901160ef689fa"
+    },
+    {
+      "bytes": 3309,
+      "path": "CrossPlatform/scripts/shared_context.patch",
+      "sha256": "3964a8f3d2542d7acc3eb395a5fffd44336a338f171bcc96fabc6332762ec2ac"
+    },
+    {
+      "bytes": 1480,
+      "path": "CrossPlatform/scripts/shared_context_patch.py",
+      "sha256": "18d70ec0877fdb8e79f0e10bb2deb729e6e6d4c489a79448d00f4681ea0659cd"
+    },
+    {
       "bytes": 18747,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
       "sha256": "e159a1391739db8719271c105c9fb4ed81b9c3d9015d694f25f46f98601bfc71"
     },
     {
-      "bytes": 2184,
+      "bytes": 2501,
       "path": "CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json",
-      "sha256": "de771ec03cbdf908f6b74a4d1679292da36e8ba20a987e6ab7175ca00a036985"
+      "sha256": "add6a866277673104ab197e39b990207c1190198ec147ea5a0004d3a694af2dd"
     },
     {
       "bytes": 2686,
       "path": "CrossPlatform/vendor/sherpa-onnx/koett-provenance.json",
-      "sha256": "00e9037b009d44dd78bde0c48a644a0e01f596c69ec332af4e02b8206023ec63"
+      "sha256": "68922896555f4284f8813b3c14b7a551a23282c826826a51fba4aa9cf5555886"
     },
     {
       "bytes": 11341,
@@ -16392,11 +16446,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 367,
+    "components": 368,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 32,
-    "rust_packages": 345,
+    "rust_packages": 346,
     "swift_packages": 1
   }
 }

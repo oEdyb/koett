@@ -206,11 +206,15 @@ final class RecordingOverlayController: NSObject {
 
     /// Morphs the transcribing pill, in place and at the same size, into the
     /// pasted result with Copy, then fades it out shortly after.
-    func showDone(text: String, png: Data? = nil) {
+    func showDone(text: String, png: Data? = nil, drawingFailed: Bool = false) {
         guard isShowingTranscribing else { return }
         let from = pillView.content
         resultText = text
         resultPNG = png
+        if drawingFailed {
+            showError("Text pasted · Drawing failed", keepUntilClicked: true)
+            return
+        }
         show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
         startMorph(from: from)
         dismiss(after: Self.doneDisplayDuration)
@@ -219,14 +223,14 @@ final class RecordingOverlayController: NSObject {
     /// Replaces the transcribing pill when the text was saved but not pasted.
     /// Returns false when another message already replaced it.
     @discardableResult
-    func showNotPasted(text: String, png: Data? = nil) -> Bool {
+    func showNotPasted(text: String, png: Data? = nil, reason: String? = nil) -> Bool {
         guard isShowingTranscribing else { return false }
         resultText = text
         resultPNG = png
         let from = pillView.content
         show(.notPasted)
         startMorph(from: from)
-        recordFailure("Not pasted · text saved")
+        recordFailure(reason.map { "Not pasted · \($0) · Text saved" } ?? "Not pasted · text saved")
         return true
     }
 

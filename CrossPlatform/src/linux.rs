@@ -110,6 +110,7 @@ enum TrayUpdate {
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
@@ -282,6 +283,7 @@ mod dictionary_view;
 mod escape;
 mod feedback;
 mod fix_word_view;
+mod focus_tokens;
 mod formatting_view;
 mod gnome_focus;
 mod gnome_pill;
@@ -295,6 +297,7 @@ mod menu;
 mod menu_preferences;
 mod models_view;
 mod monitor_layout;
+mod native_keyboard;
 mod output;
 mod permissions_view;
 mod recording_overlay;
@@ -333,14 +336,16 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing"
+            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "draw-lock"
         )
     }) {
         let response = control::request(&command)?;
         println!("{response}");
-        if matches!(command.as_str(), "drawing-status" | "undo-drawing")
-            && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
-                == false
+        if matches!(
+            command.as_str(),
+            "drawing-status" | "undo-drawing" | "draw-lock"
+        ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
+            == false
         {
             std::process::exit(1);
         }
@@ -547,6 +552,9 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::DeliveryFailed => {
                         let _ = worker_ui.send(window::Update::DeliveryFailed);
                     }
+                    TrayUpdate::DeliveryStarted => {
+                        let _ = worker_ui.send(window::Update::DeliveryStarted);
+                    }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
                     }
@@ -675,15 +683,16 @@ fn run_x11(
     // time, so Esc keeps working everywhere else.
     let escape = HotKey::new(None, global_hotkey::hotkey::Code::Escape);
     let mut escape_registered = false;
+    let mut escape_recording = false;
     loop {
         let recording = app.status == AppStatus::Recording;
-        if recording != escape_registered {
-            escape_registered = if recording {
-                hotkeys.register(escape).is_ok()
-            } else {
+        // Once per recording: a failed grab must not retry on every loop.
+        if recording != escape_recording {
+            escape_recording = recording;
+            escape_registered = recording && hotkeys.register(escape).is_ok();
+            if !recording {
                 let _ = hotkeys.unregister(escape);
-                false
-            };
+            }
         }
         while let Ok(action) = actions.try_recv() {
             let (action, paste_request) = match action {
@@ -735,11 +744,13 @@ fn run_x11(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let target = paste_request
                         .as_ref()
                         .map_or_else(|| output.focused_window(), |request| request.target);
                     let pasted = recovery::last_text()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -834,6 +845,10 @@ fn run_x11(
                 let (final_text, warning) = completed_text(text, loaded, &settings);
                 if let Some(warning) = warning {
                     update_tray_status(tray, &format!("@notice:{warning}"));
+                }
+                if nothing_to_deliver(&final_text, false) {
+                    update_tray_status(tray, "@silence");
+                    return Ok(());
                 }
                 cache_completed(tray, &final_text);
                 let delivered = output.deliver(&final_text, target, paste_shortcut);
@@ -1315,7 +1330,12 @@ async fn run_wayland(
             }
         }
         if escape.poll(app.status == AppStatus::Recording) {
-            app.command(EngineCommand::Cancel, || None);
+            if sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire) {
+                // Esc leaves draw lock and keeps the sketch; a second Esc cancels.
+                sketch::ESCAPE_UNLOCK.store(true, std::sync::atomic::Ordering::Release);
+            } else {
+                app.command(EngineCommand::Cancel, || None);
+            }
         }
         for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
             let (action, paste_request) = match action {
@@ -1365,6 +1385,7 @@ async fn run_wayland(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = paste_request
@@ -1382,14 +1403,20 @@ async fn run_wayland(
                             let before_text = output
                                 .as_ref()
                                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-                            let result = match &output {
-                                Some(output) => {
-                                    output.deliver(&text, now, settings.paste_shortcut).await
+                            let result = if let Err(error) = &image_delivery {
+                                Err(error.clone())
+                            } else {
+                                match &output {
+                                    Some(output) => {
+                                        output.deliver(&text, now, settings.paste_shortcut).await
+                                    }
+                                    None if png.is_some() => output::deliver_sketch_text(
+                                        &text,
+                                        now,
+                                        settings.paste_shortcut,
+                                    ),
+                                    None => output::deliver(&text, now, settings.paste_shortcut),
                                 }
-                                None if png.is_some() => {
-                                    output::deliver_sketch_text(&text, now, settings.paste_shortcut)
-                                }
-                                None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             let copied = if let Some(png) = &png {
                                 settle_sketch_text(output.as_ref(), before_text).await;
@@ -1401,6 +1428,7 @@ async fn run_wayland(
                         }
                         Err(error) => Err(error),
                     };
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -1498,7 +1526,7 @@ async fn run_wayland(
             }
             let sketches = sketch::take_keyframes(Duration::from_secs(8));
             let (text, sheet) = sketch_delivery(&spoken, &words, &sketches);
-            if formatted.trim().is_empty() && text.trim().is_empty() {
+            if nothing_to_deliver(&text, sheet.is_some()) {
                 update_tray_status(tray, "@silence");
                 continue;
             }
@@ -1521,12 +1549,16 @@ async fn run_wayland(
             let before_text = output
                 .as_ref()
                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-            let text_delivery = match &output {
-                Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
-                None if sheet.is_some() => {
-                    output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+            let text_delivery = if let Err(error) = &image_delivery {
+                Err(error.clone())
+            } else {
+                match &output {
+                    Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                    None if sheet.is_some() => {
+                        output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+                    }
+                    None => output::deliver(&text, target, settings.paste_shortcut),
                 }
-                None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let mut delivered = image_delivery.and(text_delivery);
             if let Some(png) = &sheet {
@@ -2299,12 +2331,8 @@ impl X11Output {
         if output::WINDOW_ACTIVE.load(std::sync::atomic::Ordering::Acquire) {
             return None;
         }
-        self.connection
-            .get_input_focus()
-            .ok()?
-            .reply()
-            .ok()
-            .map(|reply| reply.focus)
+        let focus = self.connection.get_input_focus().ok()?.reply().ok()?.focus;
+        recovery::x11_window(focus)
     }
 
     fn deliver(
@@ -2623,11 +2651,10 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the contact sheet: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("target window changed".into());
-        }
-        trace.post();
-        self.press(image_paste::for_target(target)?).await?;
+        trace.prepare_paste(target)?;
+        let chord = trace.image_chord(target)?;
+        trace.post()?;
+        self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
             && Instant::now() < deadline
@@ -2679,10 +2706,8 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("Copied · paste into your target application".into());
-        }
-        trace.post();
+        trace.prepare_paste(target)?;
+        trace.post()?;
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result
@@ -2841,6 +2866,12 @@ fn own_words(raw: &str, settings: &Settings) -> String {
     crate::replacements::apply(raw, &settings.replacements)
 }
 
+/// A replacement rule can empty a dictation after the engine saw real speech. Treat
+/// that as silence: delivering it would clear the clipboard and press paste.
+fn nothing_to_deliver(text: &str, has_image: bool) -> bool {
+    text.trim().is_empty() && !has_image
+}
+
 /// Pasted text and optional contact sheet for a dictation with sketches.
 fn sketch_delivery(
     spoken: &str,
@@ -2864,10 +2895,16 @@ fn sketch_delivery(
     }
 }
 
+fn delivery_started(tray: Option<&TrayUpdates>) {
+    if let Some(tray) = tray {
+        let _ = tray.sender.send(TrayUpdate::DeliveryStarted);
+    }
+}
 fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
     if text.trim().is_empty() {
         return;
     }
+    delivery_started(tray);
     if let Some(tray) = tray {
         let _ = tray.sender.send(TrayUpdate::Completed(text.to_owned()));
     }
@@ -2908,6 +2945,32 @@ fn delivery_results(
 mod delivery_tests {
     use super::*;
     #[test]
+    fn an_emptied_dictation_delivers_nothing_unless_it_has_an_image() {
+        let rules = [crate::replacements::Replacement {
+            phrase: "um".into(),
+            replacement: String::new(),
+        }];
+        let emptied = crate::replacements::apply("um", &rules);
+        assert!(nothing_to_deliver(&emptied, false));
+        assert!(nothing_to_deliver(" \n", false));
+        assert!(!nothing_to_deliver(&emptied, true));
+        assert!(!nothing_to_deliver("kept", false));
+    }
+
+    #[test]
+    fn x11_focus_without_a_window_never_passes_the_paste_guard() {
+        // None (0) and PointerRoot (1) would match themselves, and the key would go
+        // to whichever window is under the pointer at paste time.
+        for focus in [0, 1] {
+            let seen = recovery::x11_window(focus);
+            assert_eq!(seen, None);
+            assert!(require_x11_target(seen, seen).is_err());
+        }
+        let window = recovery::x11_window(42);
+        assert_eq!(require_x11_target(window, window), Ok(()));
+    }
+
+    #[test]
     fn x11_focus_guard_preserves_clipboard_only_recovery() {
         assert_eq!(require_x11_target(Some(42), Some(42)), Ok(()));
         for (target, focused) in [
@@ -2928,6 +2991,22 @@ mod delivery_tests {
         }
     }
 
+    #[test]
+    fn result_stays_pending_until_typed_delivery_outcome_including_recovery_failure() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        cache_completed(Some(&tray), "private fixture");
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryStarted)
+        ));
+        assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Completed(_))));
+        report_delivery(Some(&tray), &Err("target changed".into()));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryFailed)
+        ));
+    }
     #[test]
     fn delivery_recovery_is_typed_and_independent_of_storage() {
         let (sender, receiver) = mpsc::channel();
@@ -2964,6 +3043,10 @@ mod delivery_tests {
         assert!(
             error.contains("clipboard failed") && error.contains("history and fallback failed")
         );
+        assert!(matches!(
+            receiver.recv().unwrap(),
+            TrayUpdate::DeliveryStarted
+        ));
         assert!(
             matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
         );

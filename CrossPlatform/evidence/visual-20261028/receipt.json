@@ -2,7 +2,7 @@
   "created_at": "2026-10-29T00:01:39.876102+01:00",
   "branch": "feat/linux-ui-history",
   "base_commit": "c8ac235fc34f53e6a840f7e86668ef6781c9716c",
-  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "binary": "<build-home>/dev/koett/CrossPlatform/target/release/koett",
   "binary_sha256": "f490b1a2b7e63250856f7ff251602bf94a94a312b75ea97ee853539f46fecb04",
   "installed_binary_unchanged_sha256": "6889a603a28d91278c1b373f33e7099da1d7cd0218deec29332e07434de01214",
   "source_sha256": {

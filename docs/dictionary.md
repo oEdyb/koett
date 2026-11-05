@@ -6,11 +6,26 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
 
 ## How it works on Linux
 
+**Release default:** verified native builds share one encoder result between a
+plain greedy decoder and a dictionary-biased beam decoder. The merge keeps plain
+words and adopts only supported dictionary terms. This avoids encoding the same
+audio twice. The four-length production benchmark measured 5.9–9.3% added median
+ASR time, preserving 115/162 terms versus 115/162 for the old acoustic path.
+See the [latency and recall audit](dictionary-latency-2026-11.md) for conditions,
+tail latency and limits.
+
+Older native libraries without the verified capability and CTC 110M models use
+one greedy stream plus cheap spelling, explicit forms and exact-term correction.
+They do not start the slow acoustic sidecar. The selected mode is logged at load.
+The old two-encoder mode is available only to controlled benchmarks through
+`ParakeetTranscriber::load_with_acoustic_dictionary`.
+
 1. **Decoder biasing** (`CrossPlatform/src/transcription/hotwords.rs`). With a
-   non-empty dictionary and a transducer model (Parakeet v2/v3), each utterance
-   decodes twice in one `decode_multiple_streams` batch: plain, and with the
-   terms as sherpa-onnx per-stream hotwords (modified beam search, 4 paths,
-   score 2.0, as the pinned upstream Parakeet TDT example uses).
+   populated dictionary and a transducer model, the explicit native
+   `koett_context` mode encodes identical stream features once. A greedy decoder
+   supplies the base text; a four-path modified beam decoder applies per-stream
+   hotwords with score 2.0. The native capability is bound to the pinned source,
+   patched header, target and linked archive hashes at build time.
 2. **Term adoption** (`CrossPlatform/src/dictionary/merge.rs`). The two word
    sequences are aligned. A differing biased span is used only when it is
    exactly one dictionary term; the term then replaces the plain words closest
@@ -36,8 +51,9 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
    restores it on successful cleanup output. Without cleanup there is one pass.
    Literal replacements run afterwards.
 
-An empty dictionary keeps the original single greedy decode. Parakeet 110M can
-use a verified, already-downloaded v2 transducer sidecar with a 250 ms deadline
+An empty dictionary keeps the original single greedy decode. In explicit
+acoustic benchmarks only, Parakeet 110M can use a verified, already-downloaded
+v2 transducer sidecar with a 250 ms deadline
 and raw CTC fallback. This is acoustic sidecar decoding, not CTC hotwords.
 See [benchmark, setup and limits](ctc-dictionary-benchmark.md). Nemotron streaming
 still gets spelling only. The engine
@@ -160,15 +176,14 @@ Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
 1. **Storage**: `[DictionaryEntry]` as JSON in the preferences (`dictionary`
    key, the same `term`/`sounds_like` fields as Linux settings). Menu →
    Dictionary… edits it, with Import… and Export… in the same text format.
-2. **Vocabulary boosting** (`VocabularyBooster.swift`). FluidAudio has no TDT
-   hotword beam search, so Parakeet's text is rescored with the separate
-   Parakeet CTC 110M model (`VocabularyBoostingSession`, about 100 MB). The
-   model loads in the background only while the dictionary has words and is
-   dropped when it is emptied. Dictation never waits for it: until it is ready,
-   after a failure, or when rescoring takes over 2 s, the plain text is used.
-   The rescored text then goes through the same term adoption as Linux.
-   Rescorer floor: string similarity 0.70 for Parakeet v2 (the Mac app's model)
-   and 0.85 for Parakeet v3; acoustic rescue pass off (`BoostTuning.forModel`).
+2. **Acoustic boosting is disabled by default** (`VocabularyBooster.swift`).
+   The separate Parakeet CTC 110M encoder exceeded the 10% overhead budget at
+   every tested length. No CTC model loads on the normal path. Explicit benchmark
+   callers can construct `VocabularyBooster(enabled: true)`; there is no app toggle.
+   Spelling, sounds-like forms and exact replacements remain active. This trades
+   acoustic term recall for speed; see [the measured latency and recall report](performance-audit-macos-2026-11.md).
+   The experimental rescorer keeps similarity floors 0.70 for v2 and 0.85 for v3,
+   acoustic rescue off, and the 2 s deadline with raw-text fallback.
 3. **Spelling pass** in `DictationSession.prepareDictation`, before the optional
    S1-mini cleanup, so the cleaner sees the right word, and on its output, because
    it can break a term again. Nemotron gets the spelling pass only. Literal
@@ -185,7 +200,7 @@ benchmark transcripts; `DictionaryParityTests` requires identical Swift output.
 Regenerate it whenever `CrossPlatform/src/dictionary` or `corrections/learn.rs`
 changes.
 
-### Mac evidence
+### Mac evidence before acoustic boosting was disabled
 
 Same 210 clips (`synthesize.py`), Parakeet v2 with silence trimming, the 30
 corpus terms, no sounds-like forms. Run with

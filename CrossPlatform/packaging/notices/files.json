@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "components.json",
-      "sha256": "f4bc0dbe0119726f890a1278d4fee63960ff3bfd90dab1a54f996836e894dcf5",
-      "bytes": 255684
+      "sha256": "6428be92fd0a858e3fc2ce23d3eee40d7b4b94a37b5fc5b79309442efcc8ee89",
+      "bytes": 256521
     },
     {
       "path": "data/flashback-sv/NOTICE.md",
@@ -83,8 +83,8 @@
     },
     {
       "path": "native/gtk4/provenance.json",
-      "sha256": "6778501aee585e5ff88bd6c23a62bbf2eb2dd7032d881058a8f9253e9ff7dade",
-      "bytes": 10037
+      "sha256": "d532522b46601a151d3f67fc396d944008eba04ac737b4de11bcf442f423a8e2",
+      "bytes": 10164
     },
     {
       "path": "native/gtk4/source-notices/COPYING",
@@ -2303,8 +2303,8 @@
     },
     {
       "path": "rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt",
-      "sha256": "8d2ab98db4fa43c881be937ef6325563786a487df8f3dbd110a83a7282ee9cdb",
-      "bytes": 1103
+      "sha256": "00b1eecd1f659ecbce03333d5aaf0383bc12dbed76af92dfde2ea55e557e1e83",
+      "bytes": 1583
     },
     {
       "path": "rust/sherpa-onnx-1.13.5/LICENSE",
@@ -2313,8 +2313,8 @@
     },
     {
       "path": "rust/sherpa-onnx-sys-1.13.5/KOETT-MODIFICATIONS.txt",
-      "sha256": "02804b61b7409369d1ca8be6370c3bf7381916ae42171045e266ee094cb97968",
-      "bytes": 495
+      "sha256": "bf68c5dc1bc000e515a4faeda6694053500b7029f123dbd450761b1677043eb6",
+      "bytes": 762
     },
     {
       "path": "rust/sherpa-onnx-sys-1.13.5/LICENSE",
@@ -2890,6 +2890,16 @@
       "path": "rust/wayland-protocols-0.32.13/LICENSE.txt",
       "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
       "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-misc-0.3.12/virtual-keyboard-COPYRIGHT",
+      "sha256": "faa5a835a8ca7480c4faafa4bd7cfa11d3f24a3140f88de458f3303f77f33657",
+      "bytes": 1292
     },
     {
       "path": "rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",

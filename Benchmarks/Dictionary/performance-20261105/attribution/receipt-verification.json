@@ -1,0 +1,11 @@
+{
+  "passed": 28,
+  "files": {
+    "Benchmarks/Dictionary/performance-20261105/attribution/cache-receipts.json": 8,
+    "Benchmarks/Dictionary/performance-20261105/attribution/production-receipts.json": 4,
+    "Benchmarks/Dictionary/performance-20261105/attribution/target-receipts.json": 7,
+    "Benchmarks/Dictionary/performance-20261105/attribution/attested/receipts.json": 9
+  },
+  "uniqueSourceGenerations": 28,
+  "scope": "historical observed receipts and separate hash-bound recheck; no combined performance distribution"
+}

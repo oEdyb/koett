@@ -7,6 +7,7 @@ struct SketchedDictation {
     let rawText: String?
     let sheet: Data?
     let frameCount: Int
+    let drawingFailed: Bool
 }
 
 extension KoettController {
@@ -166,12 +167,14 @@ extension KoettController {
         session: UInt64
     ) async -> SketchedDictation {
         if await !sketchFrames.wait(session, timeout: Self.sketchCaptureWait) {
+            sketchFrames.markCaptureFailed(session)
             fputs("Warning: sketch captures timed out; pasting the finished ones\n", stderr)
             sketchOverlay.abandonPendingCaptures(session)
         }
         let frames = sketchFrames.take(session)
         guard !frames.isEmpty else {
-            return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
+            return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0,
+                                     drawingFailed: sketchFrames.hasFailedCaptures(session))
         }
         let summary = PinContext.annotate(
             SketchLinking.keyframeSummary(finalText: text, words: words, anchors: frames.map(\.start)),
@@ -179,7 +182,8 @@ extension KoettController {
         )
         let sheet = SketchSheet.contactSheet(frames.map(\.image)).flatMap(SketchSheet.png)
         if sheet == nil { fputs("Warning: contact sheet could not be drawn\n", stderr) }
-        return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count)
+        return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count,
+                                 drawingFailed: sheet == nil || sketchFrames.hasFailedCaptures(session))
     }
 
     /// Called after delivery, so the window never takes focus before Command-V.
@@ -192,6 +196,7 @@ extension KoettController {
     func deliverSketch(
         text: String,
         png: Data,
+        prepared: Bool? = nil,
         pasteboard: NSPasteboard = .general,
         persist: () -> TranscriptPersistence.Outcome = {
             TranscriptPersistence.Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
@@ -203,6 +208,12 @@ extension KoettController {
             png: png, text: text, pasteboard: pasteboard,
             postImage: { self.postPasteKey(flags: chord.flags) },
             postText: pasteAtCursor,
+            prepareImage: {
+                if let prepared { return prepared }
+                return await self.pasteCoordinator.prepare(stage: .sketchImage)
+            },
+            prepareText: { await self.pasteCoordinator.prepare(stage: .sketchText) },
+            clipboardFailure: { self.pasteCoordinator.externalFailure($0) },
             persist: persist
         )
     }

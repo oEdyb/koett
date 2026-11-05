@@ -3806,7 +3806,7 @@
         },
         {
           "path": "packaging/notices/rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt",
-          "sha256": "8d2ab98db4fa43c881be937ef6325563786a487df8f3dbd110a83a7282ee9cdb",
+          "sha256": "00b1eecd1f659ecbce03333d5aaf0383bc12dbed76af92dfde2ea55e557e1e83",
           "kind": "reviewed-local-patch-notice"
         }
       ],
@@ -6437,7 +6437,7 @@
       "files": [
         {
           "path": "packaging/notices/rust/sherpa-onnx-sys-1.13.5/KOETT-MODIFICATIONS.txt",
-          "sha256": "02804b61b7409369d1ca8be6370c3bf7381916ae42171045e266ee094cb97968",
+          "sha256": "bf68c5dc1bc000e515a4faeda6694053500b7029f123dbd450761b1677043eb6",
           "kind": "reviewed-local-patch-notice"
         },
         {
@@ -6566,6 +6566,25 @@
           "path": "packaging/notices/rust/wayland-sys-0.31.11/LICENSE.txt",
           "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
           "source_url": "https://static.crates.io/crates/wayland-sys/wayland-sys-0.31.11.crate"
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "name": "wayland-protocols-misc",
+      "version": "0.3.12",
+      "scope": "cargo-source-all-targets-superset",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "packaging/notices/rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+          "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-misc/wayland-protocols-misc-0.3.12.crate"
+        },
+        {
+          "path": "packaging/notices/rust/wayland-protocols-misc-0.3.12/virtual-keyboard-COPYRIGHT",
+          "sha256": "faa5a835a8ca7480c4faafa4bd7cfa11d3f24a3140f88de458f3303f77f33657",
+          "source_url": "https://static.crates.io/crates/wayland-protocols-misc/wayland-protocols-misc-0.3.12.crate"
         }
       ],
       "gaps": []

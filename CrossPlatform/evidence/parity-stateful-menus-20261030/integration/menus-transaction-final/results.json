@@ -1,7 +1,7 @@
 {
   "ok": true,
   "binary_sha256": "5c22c1e3dda4e207b43df245c6444c1dd208ed9996647c1eb26732de5a817f5d",
-  "gtk_library": "/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
+  "gtk_library": "<build-home>/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
   "gtk_sha256": "4c7b561bdea19407b7d795072360b1be6c5f5860d87f315580501c97d9f7d204",
   "final_status": {
     "active_engine": "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",

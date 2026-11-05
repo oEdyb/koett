@@ -14,8 +14,8 @@ copyright texts are in `notices/rust/`; Rust 1.98.0 toolchain notices are in
 in the libsqlite3-sys source notices. License branch choices are recorded in
 the source inventory policy; multiple original license texts are retained.
 Koett locally patches sherpa-onnx 1.13.5 to omit its unused Rust TTS module,
-matching the ASR-only native runtime. Original implementations remain unchanged;
-the modification notice is in `notices/rust/sherpa-onnx-1.13.5/`.
+matching the ASR-only native runtime, and export the reviewed native capability.
+The modification notice is in `notices/rust/sherpa-onnx-1.13.5/`.
 
 The current native sherpa-onnx 1.13.5 build pins source commit
 `3dc7c569f31ca2cd4a20ed6f7db780327e6714c5`, with TTS disabled. It links
@@ -28,6 +28,13 @@ revision, matching static build recipe and dependency notice records are in
 the upstream patches are provided in `notices/native/onnxruntime/SOURCE-ACCESS.md`.
 Historical blocked TTS/eSpeak receipts describe earlier
 control builds, not the inspected ASR-only binary.
+
+Koett also patches `offline-recognizer-transducer-nemo-impl.h` with the explicit
+`koett_context` decoding mode. One encoder output feeds a greedy base and a
+biased decoder; other upstream decoding modes are unchanged. Patched header
+SHA-256: `673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920`.
+The patch, portable patch helper and pinned native build recipe are distributed
+in `sources/`; `native-build-receipt.json` identifies linked library hashes.
 
 The dictionary's common-word list (`src/dictionary/common-words.txt`) is
 derived from SCOWL 2020.12.07 (English and American words, levels 10 and 20) by

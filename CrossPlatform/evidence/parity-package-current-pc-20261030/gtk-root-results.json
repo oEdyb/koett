@@ -1,5 +1,5 @@
 {
-  "library": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689/runtime/gtk/lib/libgtk-4.so.1",
+  "library": "<build-home>/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689/runtime/gtk/lib/libgtk-4.so.1",
   "sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
   "registry_pid": 2824789,
   "rounds": [

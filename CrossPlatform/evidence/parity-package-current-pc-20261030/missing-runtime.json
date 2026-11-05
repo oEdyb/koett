@@ -18,7 +18,7 @@
       ],
       "setup": "Install yt-dlp and FFmpeg on PATH; dictation works without media.",
       "resolved": {
-        "yt-dlp": "/home/olle/.local/bin/yt-dlp",
+        "yt-dlp": "<build-home>/.local/bin/yt-dlp",
         "ffmpeg": "/usr/bin/ffmpeg"
       }
     },

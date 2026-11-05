@@ -1,6 +1,6 @@
 //! Private Wayland exercise of the production fallback delivery functions.
 #[cfg(target_os = "linux")]
-pub use koett_engine::settings;
+pub use koett_engine::{settings, shortcut};
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 #[path = "../src/linux/clipboard_owner.rs"]
@@ -9,6 +9,9 @@ mod clipboard_owner;
 #[allow(dead_code)]
 #[path = "../src/linux/feedback.rs"]
 mod feedback;
+#[cfg(target_os = "linux")]
+#[path = "../src/linux/focus_tokens.rs"]
+mod focus_tokens;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 #[path = "../src/linux/gnome_focus.rs"]
@@ -27,12 +30,21 @@ pub(crate) mod kwin_context;
 mod kwin_focus;
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
+#[path = "../src/linux/native_keyboard.rs"]
+mod native_keyboard;
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
 #[path = "../src/linux/output.rs"]
 mod output;
 #[cfg(target_os = "linux")]
 mod sketch {
+    pub(crate) use crate::keyboard_state as keys;
     pub(crate) use crate::kwin_context;
 }
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+#[path = "../src/linux/sketch/keys.rs"]
+pub(crate) mod keyboard_state;
 #[cfg(target_os = "linux")]
 const APP_ID: &str = "com.olledyberg.Koett";
 #[cfg(target_os = "linux")]
@@ -64,8 +76,16 @@ fn main() {
         let target = output::capture_target();
         assert!(target.is_some());
         output::deliver_image(&png, target).unwrap();
-        output::deliver_sketch_text(text, target, koett_engine::settings::PasteShortcut::CtrlV)
-            .unwrap();
+        output::deliver_sketch_text(
+            text,
+            target,
+            if std::env::args().any(|arg| arg == "--terminal") {
+                koett_engine::settings::PasteShortcut::CtrlShiftV
+            } else {
+                koett_engine::settings::PasteShortcut::CtrlV
+            },
+        )
+        .unwrap();
         std::thread::sleep(Duration::from_millis(700));
         clipboard_owner::replace(clipboard_owner::Payload::bundle(&png, text)).unwrap();
     }

@@ -1,10 +1,8 @@
 use ashpd::zbus;
-use std::collections::HashMap;
 use std::sync::{OnceLock, mpsc};
 use std::time::{Duration, Instant};
 
 const WAIT: Duration = Duration::from_millis(250);
-const LIMIT: usize = 4096;
 
 pub fn desktop() -> bool {
     std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|value| {
@@ -24,7 +22,7 @@ struct Window {
 }
 
 #[derive(Default)]
-struct Identities(HashMap<(String, u32), u32>);
+struct Identities(super::focus_tokens::FocusTokens<(String, u32)>);
 impl Identities {
     fn resolve(&mut self, owner: String, raw: &str) -> Option<(u32, String)> {
         let window: Window = serde_json::from_str(raw).ok()?;
@@ -38,17 +36,7 @@ impl Identities {
         {
             return None;
         }
-        let key = (owner, window.id);
-        let token = if let Some(token) = self.0.get(&key) {
-            *token
-        } else {
-            if self.0.len() >= LIMIT {
-                return None;
-            }
-            let token = u32::try_from(self.0.len() + 1).ok()?;
-            self.0.insert(key, token);
-            token
-        };
+        let token = self.0.token((owner, window.id))?;
         Some((token, window.app))
     }
 }
@@ -177,7 +165,7 @@ mod tests {
         assert_ne!(ids.resolve(":1.2".into(), &window(1)).unwrap().0, first.0);
     }
     #[test]
-    fn invalid_own_unknown_and_exhausted_identities_fail_closed() {
+    fn invalid_own_and_unknown_identities_fail_closed() {
         let mut ids = Identities::default();
         for raw in [
             "null".into(),
@@ -189,12 +177,5 @@ mod tests {
         ] {
             assert!(ids.resolve(":1.1".into(), &raw).is_none());
         }
-        for id in 1..=LIMIT as u32 {
-            assert!(ids.resolve(":1.1".into(), &window(id)).is_some());
-        }
-        assert!(
-            ids.resolve(":1.1".into(), &window(LIMIT as u32 + 1))
-                .is_none()
-        );
     }
 }
