@@ -11,6 +11,7 @@ Require merged source for:
 - #109: keep the Linux model loaded across dictionary edits.
 - #105: Mac acoustic dictionary default/performance change.
 - #110: Mac cached login-status reads.
+- #116: Mac explicit microphone, shortcut and screen capability checks.
 - #112: preserve model destination errors; packaged 8 MiB ENOSPC retest passes.
 - #117: GNOME 46 portal/focus compatibility and packaged extension.
 - Any additional required Mac fixes identified by the Mac release owner.
@@ -23,6 +24,12 @@ Take current Mac readiness, signing/notarization evidence and unresolved GUI
 checks directly from the Mac release owner's handoff. An earlier notarized ZIP
 is a comparison input, not the final ZIP. Neither this document nor Linux CI
 can change the Mac readiness decision.
+
+Current Mac-owner handoff: fixes verified; final release ZIP pending. The
+capability checks were exercised in the clean macOS 15 guest, with all three
+rows showing Ready; final ZIP/source/notary identity and remaining acceptance
+must still come from that owner. The previously notarized candidate is not
+substituted for the final frozen-source artifact.
 
 ## 2. Merge documentation and version changes last
 
@@ -52,7 +59,7 @@ shortcut.
 ## 3. Freeze one source identity
 
 Fetch main after the last merge. Record its full 40-character SHA as `FINAL_SHA`.
-Require #108/#109/#105/#110/#112/#117 merge commits to be ancestors. Record the
+Require #108/#109/#105/#110/#116/#112/#117 merge commits to be ancestors. Record the
 final three merge commits as well. Check out that commit in clean, isolated
 build checkouts on both machines; record clean-tree state.
 
