@@ -15,6 +15,8 @@ def main():
     expected = {f"{clip['id']}-{voice}" for group in ['positive', 'negative']
                 for clip in CORPUS[group] for voice in CORPUS['voices']}
     assert set(records) == expected
+    header = json.loads((ROOT / 'final-context.meta.json').read_text())['header_sha256']
+    assert json.loads((ROOT / 'native-build-receipt.json').read_text())['shared_context_sha256'] == header
     raw = {key: row['raw']['text'] for key, row in records.items()}
     scored = {}
     for method in ['raw', 'cheap', 'dual4', 'context']:
@@ -43,11 +45,22 @@ def main():
     assert set(lengths) == {'5', '30', '120', '600'}
     for seconds, pairs in lengths.items():
         assert len(pairs) == 4  # first pair is warm-up
-        assert all(p['seed']['mode'] == 'shared_encoder' for p in pairs)
+        assert all(p['seed']['mode'] == 'shared_encoder' and p['seed']['header_sha256'] == header for p in pairs)
         median = lambda method: statistics.median(p[method]['elapsed_ms'] for p in pairs[1:])
         overhead = 100 * (median('seed') / median('empty') - 1)
         assert overhead < 10, (seconds, overhead)
         print(f'{seconds}s: {median("empty"):.3f} -> {median("seed"):.3f} ms, +{overhead:.3f}%')
+
+    loaded = json.loads((ROOT / 'production-three-modes.json').read_text())
+    for seconds, rounds in loaded.items():
+        med = lambda mode: statistics.median(r[mode]['elapsed_ms'] for r in rounds[1:])
+        overhead = 100 * (med('seed') / med('empty') - 1)
+        print(f'Contended {seconds}s: +{overhead:.2f}% added; {100*(1-med("seed")/med("legacy")):.2f}% less time vs old')
+        if overhead > 10:
+            print('WARNING: exceeds nominal 10% target under contention')
+    scaling = json.loads((ROOT / 'scaling-shared.json').read_text())
+    large = 100 * (scaling['2000']['warm_median_ms'] / scaling['0']['warm_median_ms'] - 1)
+    print(f'Large 2,000-term vocabulary: +{large:.2f}% (outside the nominal target)')
 
 
 if __name__ == '__main__':

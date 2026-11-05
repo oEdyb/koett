@@ -78,7 +78,27 @@ Load was approximately 2.65–2.86 during these sequential conditions. This does
 not isolate a tiny trie-size effect. The major discontinuity is **zero to one
 term**, when Koett switches from one greedy stream to two beam-search streams.
 The original 5/30/120/600-second measurements and their limitations remain in
-the [workflow audit](performance-audit-2026-11.md).
+the [workflow audit](https://github.com/oEdyb/koett/pull/102).
+
+### Shared-encoder term-count repeat
+
+Same 5-second WAV, one warm-up and five measured runs per list, two threads,
+sequential list sizes; load was 0.98–1.30. Entries beyond the starter list are
+synthetic distractors. This repeat measures latency, not large-vocabulary recall.
+
+| Terms | Shared-build median ms | Worst ms |
+|---:|---:|---:|
+| 0 | 142.3 | 143.7 |
+| 1 | 156.1 | 159.8 |
+| 20 | 156.4 | 157.9 |
+| 200 | 157.6 | 160.2 |
+| 2,000 | 174.4 | 189.5 |
+
+The 20-term list adds 9.91% here; 2,000 terms add **22.56%**. Large vocabularies
+therefore do not meet the nominal 10% target on this probe. The old and new
+scaling runs used different host loads and native builds; do not treat their
+row-to-row difference as a controlled speed ratio. The controlled three-mode
+comparison below supplies that evidence for the starter list.
 
 ## Same-clip method comparison
 
@@ -231,7 +251,7 @@ Raw public-corpus outputs, production measurements and native fingerprint are in
 No private transcript store was exported. The final native core was compiled
 before the final corpus and four-length measurements.
 
-Executed: 425 Rust library tests passed (21 optional tests ignored), then all
+Executed: 426 Rust library tests passed (21 optional tests ignored), then all
 three real-model hotword tests passed separately using copied v2 and CTC models;
 format and Clippy passed. The native patch tests verify exact pinned input,
 idempotence and refusal of unknown source. The stale-archive build probe rejected
@@ -241,5 +261,5 @@ passed. Local Windows checks cannot complete: native Windows archives and MSVC
 Mac result is implied by these Linux checks.
 
 The end-to-end live paste, feature and memory results belong in the
-[workflow audit](performance-audit-2026-11.md); ASR timings above must not be used
+[workflow audit](https://github.com/oEdyb/koett/pull/102); ASR timings above must not be used
 as release-to-visible-text claims.
