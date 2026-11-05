@@ -188,3 +188,5 @@ The caller owns lab cleanup. `--record` uses the private session's audio source.
 Tests must not connect to the visible desktop, host clipboard or physical audio.
 A loader check or model self-test does not establish compositor/permission support.
 Mac execution and native Windows acceptance are separate from Linux verification.
+
+Linux ARM64 archives pass native build and inference CI; ARM64 desktop use is untested.
