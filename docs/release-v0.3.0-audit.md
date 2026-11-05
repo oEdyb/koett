@@ -2,168 +2,160 @@
 
 **Decision: NO-GO. No tag or release was created.**
 
-Audit date: 2026-11-05 UTC. This is an executed partial audit and an explicit
-remaining acceptance matrix, not a certificate that v0.3.0 is ready.
+Audit date: 2026-11-05 UTC. The functional results below are candidate evidence,
+not acceptance of a final release. PASS applies only to the stated observation;
+NOT TESTED includes invalid or incomplete harnesses. A broken lab is not a
+product failure, and a startup test is not a complete first-install journey.
 
-## Build identity and evidence
+## Candidate identity and isolation
 
-Tested the release-style system-runtime archives from
-[CI run 41936332855](https://github.com/oEdyb/koett/actions/runs/41936332855),
-source `eb6f2d6e896497d7e7e1c527aa8bba88ec23ee50`:
+Latest repeated clipboard/drawing checks used the release-style system-runtime
+archives from [CI run 41943679213](https://github.com/oEdyb/koett/actions/runs/41943679213),
+source `f2c3238da6b0c8134c76eba410bc292f2d63f1d5` (the paste-latency merge candidate):
 
-- `Koett-Linux-x86_64-system-runtime-eb6f2d6e.tar.gz`
-- `Koett-Linux-aarch64-system-runtime-eb6f2d6e.tar.gz`
+- `Koett-Linux-x86_64-system-runtime-f2c3238d.tar.gz`
+- `Koett-Linux-aarch64-system-runtime-f2c3238d.tar.gz`
 
-These are CI candidates, not a published v0.3.0. They predate the merged paste
-fix. None of their runtime results establish acceptance of that fix or of the
-final tag. The old upgrade input was the actual v0.2.0-linux.1 x86-64 release.
-Source audit started at `d9215903c5f07403f60c1cd92679280056725cdc`;
-subsequent source checks included main through `61e121e`.
+Both sidecar checksums and native receipt identities were checked. These archives
+predate the merged provenance-path fix and still contain those paths. **Do not
+publish them.** The final approved commit and freshly built assets remain a gate.
 
-[Sanitized receipts](evidence/release-v0.3.0-audit/receipts.json) record hashes,
-commands' observed results and limits. [Privacy findings](evidence/release-v0.3.0-audit/privacy-scan.json)
-list filenames and counts without copying matched private content or OCR text.
-Raw local diagnostic logs are deliberately excluded from this public report.
+Earlier follow-up checks used source `54dc92865bc5b8cb94060b441e1c6e9406ac8cf0`
+from [run 41940218945](https://github.com/oEdyb/koett/actions/runs/41940218945).
+Production changes between those two candidates affect `linux.rs`,
+`linux/clipboard_owner.rs` and `linux/output.rs`; model download, capture and draw
+key modules are unchanged. Model/network evidence below refers to that earlier
+candidate explicitly. Initial installer/adverse-condition checks used
+`eb6f2d6e896497d7e7e1c527aa8bba88ec23ee50` from
+[run 41936332855](https://github.com/oEdyb/koett/actions/runs/41936332855).
+The upgrade input was the actual published v0.2.0-linux.1 x86-64 archive.
 
-PASS means the stated observation was exercised on that artifact. FAIL means a
-requirement is demonstrably unmet. NOT TESTED means no valid acceptance result;
-a broken lab does not become a product failure or a pass. Historical receipts
-elsewhere in this repository are not new results for this candidate.
-
-## Isolation
+[Initial receipts](evidence/release-v0.3.0-audit/receipts.json),
+[initial privacy scan](evidence/release-v0.3.0-audit/privacy-scan.json) and
+[follow-up receipts](evidence/release-v0.3.0-audit/followup.json) distinguish these
+sources. Public receipts contain hashes and observations, not raw screenshots,
+OCR output, local home paths or History text.
 
 No installed Koett, visible desktop, host clipboard, host microphone recording,
-physical keyboard permissions or user configuration was changed. Tests used
-fresh homes/prefixes, disposable containers, private buses/audio and invisible
-compositors. X11 negative tests used UID 1000 and Xvfb, no network, GPU or audio
-devices. Container setup/installer tests also used container root; those are
-identified below and do not prove an ordinary user's entire desktop setup.
+physical keyboard permissions or host group membership was changed. Tests used
+fresh homes, private buses/audio, disposable containers and invisible compositors.
+A named, grabbed virtual keyboard supplied drawing gestures; this does not prove
+physical-keyboard setup on a normal login. Builds/checks used nice 15, two jobs,
+an 8 GiB scope and cache output outside /tmp. No installed app was replaced.
+The desktop lab and test containers were stopped before the performance audit
+received the exclusive desktop slot.
 
-KDE used a new agent-lab session with a new HOME. Its portal services inherit the
-lab's own data directories, so app identification/permission acceptance was not
-valid for that alternate HOME. Do not interpret the resulting portal registration
-errors as a proven defect on a normal installed KDE session.
+## Desktop and architecture coverage
 
-No native release build was made locally. The probe compile checks used nice 15,
-two jobs and an 8 GiB memory scope, with output in a cache directory, never /tmp.
-
-## Architecture and desktop coverage
-
-| Architecture / desktop | Result | Evidence and exact limit |
+| Check | Result | Evidence and limit |
 | --- | --- | --- |
-| x86-64 archive | PASS | SHA-256 matches sidecar; native receipt source matches candidate SHA. |
-| ARM64 archive | PASS | SHA-256 matches sidecar; source matches; extracted file/privacy inventory inspected. |
-| ARM64 execution, every desktop | NOT TESTED | No ARM64 machine or registered ARM64 emulator available. CI inference is separate evidence, not desktop acceptance. |
-| x86-64 KDE Wayland | PASS, limited | Fresh default model downloaded; active engine reached Ready at 10 seconds. Empty History and Settings opened. |
-| KDE permissions/paste/drawing acceptance | NOT TESTED | Portal approval harness timed out; alternate-HOME portal identity mismatch invalidates the setup. Needs a clean full session/user with matching portal environment. |
-| x86-64 niri nested private session | PASS, limited | Actual microphone-fixture ASR consumed by GTK entry and kitty, Unicode and focus guard tested. Model was supplied, not downloaded from zero in this session. |
-| x86-64 GNOME Wayland | NOT TESTED | Headless GNOME container created a socket but shell initialization failed and the app could not open the display. No valid desktop acceptance. |
-| x86-64 plain X11 | PASS, limited | Fresh unprivileged Xvfb sessions, X11 shortcut backend, offline/no-mic/512 MiB startup probes. Xvfb is not a full desktop or hardware session. |
-| GNOME/X11 drawing | NOT TESTED | Source documents no drawing overlay there. Must verify usable ordinary dictation and clear unavailable-drawing feedback on final artifacts; no drawing-support claim. |
+| x86-64 and ARM64 archives | PASS | Latest archives match their sidecar hashes and source receipt. |
+| ARM64 native CI | PASS | Both candidate runs passed the native ARM64 job, including native linking, inference and archive validation. CI is not desktop acceptance. |
+| ARM64 desktop, all environments | NOT TESTED | No ARM64 desktop hardware/emulator journey. Release notes must state ARM64 desktop use is untested. |
+| KDE Wayland lab validity | PASS | Rebuilt with identical fresh HOME/XDG for compositor, portals and app. Native permission dialogs work. The earlier alternate-HOME identity mismatch was a lab defect. |
+| KDE from zero | PASS, limited | Archive installer into fresh HOME; first model download reached Ready; Settings and History exercised. Instrumented private seat, not a new physical-machine login. |
+| niri | PASS, limited | Actual nested niri, private audio, real Chrome and kitty consumers. Model supplied in this session. Static screenshots work; screencast capability is not implied. |
+| GNOME | PASS, limited | Rebuilt real GNOME 51.1 shell with private system bus/logind fixture and software renderer. App UI, Ready model and fixture ASR saving one row work. Drawing unavailable without disrupting dictation. |
+| GNOME complete install/permissions/paste | NOT TESTED | Private logind fixture is not a display-manager login; full permission decisions, shortcut setup and portal paste remain open. |
+| Plain X11 | PASS, limited | Fresh UID-1000 Xvfb startup, shortcut backend, offline and no-mic error handling. Full desktop workflow and unsupported-overlay acceptance remain open. |
 
-## Installation and adverse conditions
+KDE 6.8.2 screenshot capture initially returned a generic backend error because
+the synthetic HOME lacked its Pictures directory. Creating the normal Pictures
+user directory fixed the lab; no application workaround was added. Permission
+Deny and Allow were exercised separately. This does not establish behavior on
+every KDE distribution or on a real user's existing portal permissions.
 
-| Check | Result | Evidence and exact limit |
+## Functional workflow
+
+Unless stated otherwise, desktop results are x86-64 only. None applies to the
+unselected final tag. Latest means the `f2c3238d` candidate above.
+
+| Check | Result | Evidence and limit |
 | --- | --- | --- |
-| README from zero | FAIL | Missing Python in bare Ubuntu makes launcher exit 127. Base package names and optional gtk4-layer-shell prerequisite were not explained sufficiently; this PR adds them. Only a fresh rerun after merge closes this item. |
-| Missing prerequisite rejection | PASS | Bare Ubuntu without Python exits before installing. Extracted-package verifier also exercises a required-loader rejection with no prefix created. This is not a complete missing-package permutation matrix. |
-| Install after runtime packages | PASS | Ubuntu 22.04 disposable container: preflight, installer and installed menu-help succeed. GTK 4.6.9. Container root, no desktop acceptance. |
-| Fresh unprivileged install | PASS | UID 1000 installs into its empty HOME in X11 probes and runs the packaged application. |
-| Archive integrity and spaces in prefix | PASS | Existing archive verifier checks extraction, notices, isolated install in a prefix with spaces/dollar, tamper rejection and missing-loader rejection. |
-| Reinstall / running old process | PASS | Verifier preserves the old process, version target and backup on reinstall. Does not prove quitting/reopening through a real desktop launcher. |
-| Upgrade from v0.2.0-linux.1 | PASS, limited | Actual old archive installed then candidate into same isolated prefix; two version directories retained and synthetic settings marker survives. |
-| Upgrade with real-shaped settings and populated History | NOT TESTED | Marker preservation is not a migration test. No personal data used. Need synthetic old-version dictation/search/export data and restart checks. |
-| No GPU | PASS, limited | Model loads in container without GPU devices with software rendering. No CPU-only inference latency or long recording measured. |
-| No microphone | PASS, limited | Fresh X11 app remains alive and displays a device-format error with Retry after Start. No unplug/replug/recovery sequence. |
-| Small disk / upgrade ENOSPC | PASS, limited | Fill disposable 192 MiB filesystem after old install. Upgrade fails with ENOSPC; old launcher and synthetic data survive; no staging directory remains. Does not exercise model-download ENOSPC. |
-| 512 MiB RAM | PASS, limited | Fresh unprivileged app loads supplied compact model and survives Start's no-mic error. No inference, drawing or sustained memory pressure acceptance. |
-| Other low-RAM models / OOM recovery | NOT TESTED | No validated minimum RAM claim. Need real inference and a model that exceeds the limit, plus restart/recovery. |
-| Manual uninstall | PASS, limited | Remove launcher, desktop entry, icon and versions inside disposable prefix; synthetic user data remains. Instructions added here; Start at login revocation and keyboard ACL removal not exercised. |
-| Fresh v0.3.0 download / final artifact identity | NOT TESTED | Final SHA and release assets not chosen; do not substitute these earlier candidates. |
+| Drawing off by default | PASS | Fresh KDE Settings shows unchecked drawing; ordinary fixture dictation works. |
+| Enable through Settings | PASS | Native pointer toggles drawing; Save and reopen retain the enabled state. Other settings pages/mic switching are not exhaustively accepted. |
+| Hold Shift and move; repeated holds | PASS | KDE and niri real pointer/key gestures produce separate sketches and captured PNGs. Uses grabbed test keyboard, not a physical keyboard. |
+| Shift+click pins | PASS, limited | Latest KDE Chrome/Electron each receive a two-annotation sheet plus linked text and window context. Latest niri Chrome also consumes a sketch and pin. Selection-denied and all context permutations remain open. |
+| Ctrl+Alt+D lock; undo; exit; stop | PASS, limited | Earlier candidate: actual chord locks; two drag strokes form one sketch; right-click undo and chord unlock; image/text consumed. Latest KDE repeats chord/drag/undo/unlock with one captured group and saved result; latest lock-specific consumer export was not separately retained. |
+| Browser image/text paste | PASS, limited | Latest real Chrome fresh profile receives PNG then linked text. Repeat Ctrl+V exposes coherent HTML/plain/image bundle with identical image bytes and text. Custom paste target, not every browser editor. |
+| Electron image/text paste | PASS, limited | Latest actual Electron app receives PNG then linked text; repeat paste preserves exact bundle. Custom editor fixture, not acceptance of every Electron application. |
+| Terminal image/text paste | PASS, limited | Latest niri kitty raw TUI consumes a 30,655-byte 1600×906 PNG through its image-aware Ctrl+V handler; Ctrl+Shift+V text matches saved result. Restored clipboard PNG/text match exactly. A shell alone does not accept images. |
+| niri fallback and clipboard restoration | PASS, limited | Actual Chrome consumption and earlier repeat-paste bundle checked; latest terminal verifies restored image/text. Does not measure stop-to-paste latency or sustained soak. |
+| Focus change before paste | PASS, earlier candidate | Settings steals focus; terminal remains unchanged; final transcript saved and clipboard-only delivery used. Latest latency fix needs its independent performance/focus checks. |
+| Screen capture grant/deny | PASS, limited | Valid KDE native dialogs: denial/timeout preserves dictation text; grant plus normal Pictures directory permits captures. GNOME permission UI remains open. |
+| Keyboard denied | PASS, limited | Revoke access to the owned virtual keyboard before latest app launch: drawing inactive, no image, plain dictation still pasted to Chrome. Restore ACL afterward. No host physical device changed. |
+| Keyboard group access | PASS, kernel scope | Disposable user cannot read before setup; fresh process with private keyboard group can read, cannot write; owner/input group unchanged; restoration removes access. Actual udev hotplug and logout/login not tested. |
+| Microphone permission grant/deny | NOT TESTED | Synthetic private audio and no-device errors do not prove hardware/portal microphone permission decisions. |
+| History search | PASS | Missing query gives No matches; fixture query returns saved rows. |
+| History Copy and Export | PASS, limited | Both produce exact text from saved synthetic database rows; native export chooser writes a file. The two actions selected different rows, so same-selected-row equality is NOT TESTED, not claimed. |
+| Populated old-version History migration | NOT TESTED | Existing upgrade test preserves a marker, not a populated synthetic old database/search/export journey. |
 
-The complete base-runtime package command was actually run in Ubuntu 22.04,
-followed by `--check-runtime`, `install.sh`, `menu-help` and
-`test_package_linux_archive.py`. GTK notice validation requires all 698 indexed
-files. Both archives include 713 regular files, including notices and manifests;
-no settings file, transcript database or transcript archive was found by name.
+Fixture ASR occasionally changes punctuation or repeats a syllable. Clipboard
+comparisons use the actual saved result rather than pretending the recognized
+phrase is a perfect transcript of the source audio.
 
-## Model, permissions and workflow matrix
+## Installation, downloads and adverse conditions
 
-Unless a row explicitly says otherwise, it is NOT TESTED on ARM64 and on the
-final candidate, and does not establish coverage on another desktop.
-
-| Check | Result | Evidence and exact limit |
+| Check | Result | Evidence and limit |
 | --- | --- | --- |
-| First compact-model download | PASS | New KDE HOME using standard XDG paths; busy samples become an active compact engine at 10 seconds. No prepopulated model in that HOME. |
-| Failed network | PASS, limited | Fresh unprivileged X11, no network/model: visible DNS/download error, Retry available, app alive. No successful retry after reconnect. |
-| Slow/interrupted network, cancel/resume | NOT TESTED | No traffic-shaped complete download or interrupted partial-file recovery run. |
-| Microphone permission grant/deny | NOT TESTED | Private synthetic audio and no-device tests do not emulate portal permission decisions. |
-| Keyboard-access setup from a new user | NOT TESTED | No real keyboard device/group/udev ACL grant and fresh login tested. Host membership must not stand in for this. |
-| Keyboard denied, partial access, fallback focus | NOT TESTED | Need devices with controlled ACLs inside a VM/private seat; no host permissions changed. |
-| Screen capture permission grant/deny | NOT TESTED | KDE portal lab setup blocked acceptance; GNOME lab invalid. |
-| Ordinary dictation into GTK | PASS | niri harness plays pinned sample into private audio; GTK consumes exact ASR result once. |
-| Terminal paste | PASS | niri kitty Ctrl+Shift+V consumes exact Unicode once; typing and Enter remain intact. Plain text only. |
-| Browser paste | NOT TESTED | GTK entry is not browser acceptance. Need a real browser with a fresh profile and both image-aware and plain text fields. |
-| Electron paste | NOT TESTED | Need actual Electron app/editor and integrated terminal targets; no generic GTK substitution. |
-| Focus changes before paste | PASS | niri harness moves focus to Settings; terminal unchanged, final text saved and clipboard-only delivery used. Older candidate; repeat with merged fix. |
-| Drawing off by default | PASS, limited | Visible unchecked control on the Draw on screen page in new KDE Settings; plain niri dictation succeeds. |
-| Drawing enabled and disabled through Settings | NOT TESTED | Settings opens and default observed; AT-SPI toggle automation failed. No Save/reopen claim. |
-| Hold Shift and move / release / repeated holds | NOT TESTED | No fresh-artifact drawing gesture acceptance in this audit. Historical drawing evidence is insufficient. |
-| Shift+click pins / selected-text context | NOT TESTED | Need clean browser/app contexts, empty selection and accessibility-denied cases. |
-| Ctrl+Alt+D lock / exit / undo / stop | NOT TESTED | Need full gesture and clipboard result checks on clean supported desktops. |
-| Draw/pin image and text delivery / repeat paste | NOT TESTED | Must inspect consumed image and exact text in browser, terminal image target and Electron. No plain-text test proves this. |
-| Settings | PASS, limited | Opened native Settings and Draw on screen page. Save/reopen, shortcuts, microphone switching and all other pages remain NOT TESTED. |
-| History | PASS, limited | New empty History visible; niri fixture dictations saved. Search, selection, Copy, Export and upgrade migration remain NOT TESTED. |
-| Uninstall / upgrade with desktop autostart | NOT TESTED | File-level test does not prove autostart disable/reenable and desktop launcher refresh. |
+| README base requirements | FAIL, fix proposed here | Initial bare Ubuntu missed Python and optional layer-shell instructions. This PR supplies package names. Full final-README walkthrough remains open. |
+| Runtime package install | PASS, initial candidate | Ubuntu 22.04 base package command, runtime preflight, installer, menu-help and archive verifier pass. Container root for base package setup, not desktop acceptance. |
+| Fresh unprivileged install | PASS | UID 1000 installs into empty HOME and launches packaged app. KDE fresh HOME also uses archive installer. |
+| Archive installer checks | PASS, initial candidate | Integrity rejection, required loader rejection, prefix spaces/dollar, reinstall/backup and running-old-process preservation. |
+| Upgrade from v0.2.0-linux.1 | PASS, limited | Actual old archive then candidate in isolated prefix; version directories and synthetic settings marker retained. Real-shaped populated settings/History still open. |
+| Failed network | PASS | Fresh no-network X11 shows error and Retry while staying alive. |
+| Slow/interrupted network recovery | PASS, earlier follow-up candidate | Container link shaped to 150 ms/2 Mbit/s; partial download appears. 100% packet loss gives receive-body timeout and Retry, removes partial files. Restore link and Retry: Ready in 14.4 s, no partial files. No app-level cancel/resume claim. |
+| No GPU | PASS, limited | Software-rendered GNOME with no GPU devices performs actual CPU fixture ASR and saves one row. No latency/minimum-spec claim. |
+| No microphone | PASS, limited | Fresh X11 stays alive with device-format error and Retry. Unplug/replug recovery remains open. |
+| Small disk upgrade | PASS, initial candidate | Disposable 192 MiB filesystem ENOSPC: old launcher/data survive, no staging leftovers. Model-download ENOSPC remains open. |
+| 512 MiB RAM startup | PASS, limited | Compact model loads and no-mic error remains recoverable. |
+| 512 MiB inference / OOM recovery | NOT TESTED | Attempted private audio graph times out creating its stream; no saved transcript. Invalid inference harness, not evidence of app OOM or acceptable inference. |
+| Manual uninstall | PASS, file scope | Launcher/desktop/icon/version removal in disposable prefix preserves data. Autostart and keyboard ACL revocation not exercised. |
+| Final download/installer/identity | NOT TESTED | Final commit, Mac ZIP and rebuilt Linux assets not yet selected or approved. |
 
-The niri run used `CrossPlatform/scripts/test_linux_paste.py --niri` against the
-extracted archive launcher and the newly downloaded compact model, inside
-agent-lab's private audio/compositor. It is a regression test, not the whole
-README-from-zero journey. Its four assertions are reproduced in the receipts.
+## Public repository and privacy
 
-## Public repository and visitor readiness
-
-| Check | Result | Evidence and exact limit |
+| Check | Result | Evidence and limit |
 | --- | --- | --- |
-| Published download has drawing | FAIL | Latest Mac v0.1.1 and Linux v0.2.0-linux.1 predate drawing. No release made during audit. |
-| Drawing README accuracy | FAIL, pending PR | [PR #90](https://github.com/oEdyb/koett/pull/90) documents controls and honest current download status. Not assumed merged. |
-| Install/update/uninstall docs | FAIL, fix proposed here | Add base package names, gtk4-layer-shell requirement and app-only removal steps; require final README walkthrough. |
-| Issue intake | FAIL, fix proposed | No issue template on audited main. [PR #94](https://github.com/oEdyb/koett/pull/94) adds a safe bug form and private security link. |
-| Security/contact | PASS, limited | SECURITY.md directs private reporting; repository API confirms reporting enabled. Issues enabled for public support. No test vulnerability submitted. |
-| Dependency notices | PASS | 698 canonical files validate; eight notice tests pass for #94. Archive verifier checks notices exactly. Not an independent legal opinion. |
-| Personal paths in packaged notices | FAIL, fix proposed | Both architectures and old release contain build-local paths in GTK provenance. #94 redacts prefixes and updates the index. Previously published files remain unchanged. |
-| Text/source private-content scan | FAIL | 2,646 tracked files scanned; 125 text files contain personal absolute home paths. 52 match author-name patterns, including public attribution/test data. No private-key header or selected provider-key-shaped match. Not a clean privacy certificate. |
-| Committed screenshots | FAIL | OCR covered all 770 tracked images; three contain home-path matches. One browser-address-bar match was visually confirmed. Other image contents require human review; OCR cannot prove absence of personal History text. |
-| Personal History text in source/images | NOT TESTED completely | Filename references are mostly code/docs, not evidence of disclosure. No tracked database/transcript artifact by known filename; full semantic/manual screenshot review not completed. |
-| Secrets across full Git history | NOT TESTED | Current-tree heuristic scan is not a complete secret scan. Repository secret scanning and push protection are enabled; no full-history detector receipt. |
-| Clone size/time | PASS, measured only | Full public clone: 2.67 s on audit network, 33,070,644 bytes Git files and 59,784,104 bytes working tree. One machine/network; not a universal performance guarantee. |
-| CI minimum-Rust gate | FAIL, fix proposed | [Failing job](https://github.com/oEdyb/koett/actions/runs/41940339809/job/126959217376): probe lacks shared focus_tokens module. [PR #95](https://github.com/oEdyb/koett/pull/95) fixes import; local Rust 1.92 and pinned all-target checks, strict lint, format and two token tests pass. Native linking/inference gates remain CI work. |
+| Published download includes drawing | FAIL | Existing stable Mac and Linux downloads predate drawing. No release created. |
+| Drawing-first docs | FAIL, pending merge | [PR #90](https://github.com/oEdyb/koett/pull/90) documents opt-in, controls and honest current-download status. |
+| Support/security intake | PASS | [PR #94](https://github.com/oEdyb/koett/pull/94) merged; bug form and private security link included. Reporting enabled; no report sent. |
+| Notice validation | PASS | Merged notice inventory validates all 700 indexed files; eight notice tests pass. Not a legal opinion. |
+| Packaged personal paths | FAIL for tested archives | Merged #94 redacts provenance, but old candidate archives still contain original paths. Fresh artifacts required. |
+| Current-tree path/screenshot cleanup | FAIL, pending merge | [PR #101](https://github.com/oEdyb/koett/pull/101) redacts 126 text files and removes three inspected screenshots. Original count was 125; later document added one. |
+| Full-history secret scan | PASS, detector scope | Gitleaks 8.30.1: 367 fetched public commits, five findings across four evidence JSON files; original values checked, all library/source SHA-256 digests. No credential confirmed. Not proof of no sensitive prose. |
+| Historical screenshots | PASS, limited review | OCR of 656 unique reachable image blobs flags only same three path screenshots. Those three visually inspected: synthetic browser geometry, empty History/settings error, synthetic drawing target. Account/home/project/test paths exposed; no credential or personal transcript visible in them. |
+| Personal transcript or other sensitive historical content | NOT TESTED exhaustively | No additional credential/private transcript confirmed; OCR and secret detectors cannot certify every pixel or prose passage. No history rewritten. |
+| Clone size/time | PASS, measurement only | Initial full public clone 2.67 s; Git files 33,070,644 bytes, worktree 59,784,104 bytes. One network/time, not a guarantee. |
+| Probe compilation regression | PASS | #93 merged; #95 closed as identical duplicate. #94 subsequently passed all six checks and merged. Earlier failing import is no longer an open source defect. |
+| Linux displayed release version | FAIL, fix proposed | [PR #103](https://github.com/oEdyb/koett/pull/103) changes root package/inventories to 0.3.0; candidate still displays 0.2.0-linux.1. |
 
-No evidence images were removed or altered. Redacting current files does not
-remove existing Git history; do not rewrite public history as an incidental
-cleanup. Public copyright attribution and application IDs are not secrets and
-must not be stripped as if they were private names.
+[Privacy detail in PR #101](https://github.com/oEdyb/koett/pull/101) records exact
+removed filenames, visible contents and detector limits. Stop committing raw
+evidence by default: keep reviewed small receipts/synthetic fixtures in Git;
+use private artifact storage for raw captures. Public CI artifacts need the same
+sanitation as Git. Existing evidence is not deleted wholesale, and history
+rewriting remains a separate owner decision.
 
-## Release gate
+## Remaining release gates
 
-Keep NO-GO until all of the following have fresh evidence:
+1. Merge reviewed docs/privacy/version fixes; finish independent dictionary
+   performance gate (at most 10% overhead or slow acoustic pass disabled by
+   default), stop-to-paste measurements, drawing/pin overhead and live soak.
+2. Select the approved source commit only after fixes land. Rebuild Linux x86-64,
+   Linux ARM64 and Mac ZIP from that identity, verify all checksums/notices and
+   native CI, and repeat changed-path checks on those exact assets. Mac signing,
+   notarization and screen permission acceptance require their own receipt.
+3. Complete final README from zero with physical login/keyboard permissions,
+   full GNOME/X11 ordinary-dictation/paste journeys, populated old-version
+   migration, autostart/uninstall, model ENOSPC and valid low-RAM inference.
+   Explicitly state ARM64 desktop use remains untested unless hardware runs it.
+4. Resolve every remaining NOT TESTED item by valid evidence or an explicit
+   support limitation; do not silently turn a lab probe into full acceptance.
+5. Obtain explicit authorization for the tag and publication. Attach the Mac ZIP
+   alongside both Linux archives and matching checksums. No tag before approval.
 
-1. Choose the final approved SHA after paste and audit fixes. Build both Linux
-   architectures and the Mac ZIP from it. Pass required native CI gates and
-   verify receipt/source/hash identity for every downloaded artifact.
-2. Complete real clean-user KDE, niri, GNOME and plain X11 journeys. Cover every
-   workflow row above, including supported-desktop drawing/pins/lock, final
-   paste fix, browser/Electron/terminal consumers and unsupported-overlay fallback.
-3. Exercise slow/failed/recovered downloads, model ENOSPC, actual CPU-only and
-   low-RAM inference, keyboard/screen permissions, populated upgrade and uninstall.
-   Obtain ARM64 desktop evidence or explicitly narrow the release support claim.
-4. Close repository privacy findings, manually review committed screen content,
-   and produce full-history secret-scan evidence. Do not publish new private
-   snippets in the cleanup PR or in issue reports.
-5. Rerun only the final public README against the final downloaded packages,
-   with no preexisting model, credentials, group membership or private setup.
-
-Decisions: retained the off-by-default drawing behavior; used existing CI
-archives rather than a locally advantaged binary; kept partial checks scoped;
-proposed small independent fixes; did not tag, publish, replace an installed app,
-modify keyboard permissions, or treat historical evidence as fresh verification.
+Decisions: drawing remains opt-in; candidates and final release are distinct;
+raw evidence remains private; no dictionary defaults, installed app, physical
+keyboard access or Git history were changed. The performance audit now owns the
+exclusive lab slot; remaining documentation work needs no desktop load.
