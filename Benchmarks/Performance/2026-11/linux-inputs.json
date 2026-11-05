@@ -1,0 +1,35 @@
+{
+  "model": "pinned int8 Parakeet v2",
+  "model_manifest": "CrossPlatform/model-manifests/parakeet-tdt-600m-v2-int8.json",
+  "model_manifest_sha256": "b6cf2d507f81479466253d88603fa985a6582cf9b55ca8b81fb5692a23c4336d",
+  "clips": {
+    "5": {
+      "sha256": "94e1ef90107cc1b558435261fb62c861622fd9cfc047f335dd117005da38fb6b",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 80000
+    },
+    "30": {
+      "sha256": "4095dfc08041d8f85a7009cc1922eee5bc5ae7b440cb3ba822a2f0a453e3fb19",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 480000
+    },
+    "120": {
+      "sha256": "35bc67f7d6fa01124eabaea0537574e512a4d96b9c8df019d95b17fd6d2760cc",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 1920000
+    },
+    "600": {
+      "sha256": "bae66a0a323d6c9bb8c163bbdaa8bbae73c22ccfdd4022da0dec3b28a594c4cd",
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 9600000
+    }
+  }
+}

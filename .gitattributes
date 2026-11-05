@@ -8,3 +8,7 @@ CrossPlatform/evidence/linux-release-notices-20261030/RUSTSEC-*.html -text -whit
 CrossPlatform/scripts/shared_context.patch whitespace=-blank-at-eol
 # Machine-generated public benchmark receipts; the checker recomputes their claims.
 Benchmarks/Dictionary/2026-11/*.json linguist-generated=true
+
+Benchmarks/Dictionary/2026-11/**/*.json linguist-generated=true
+Benchmarks/Performance/2026-11/**/*.json linguist-generated=true
+Benchmarks/Performance/2026-11/**/*.jsonl linguist-generated=true
