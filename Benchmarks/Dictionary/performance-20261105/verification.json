@@ -2,30 +2,26 @@
   "swift test": {
     "exit_code": 0,
     "evidence": [
-      "Build complete! (2,55 secs)",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
+      "Build complete! (3,07 secs)",
       "\t Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.000) seconds",
-      "\t Executed 1 test, with 0 failures (0 unexpected) in 0.053 (0.053) seconds",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
-      "\t Executed 432 tests, with 11 tests skipped and 0 failures (0 unexpected) in 45.034 (45.056) seconds",
-      "\t Executed 432 tests, with 11 tests skipped and 0 failures (0 unexpected) in 45.034 (45.057) seconds"
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 0.061 (0.061) seconds",
+      "\t Executed 433 tests, with 12 tests skipped and 0 failures (0 unexpected) in 62.345 (62.374) seconds",
+      "\t Executed 433 tests, with 12 tests skipped and 0 failures (0 unexpected) in 62.345 (62.375) seconds"
     ]
   },
   "swift build -c release": {
     "exit_code": 0,
     "evidence": [
-      "Build complete! (57,07 secs)"
+      "Build complete! (59,29 secs)"
     ]
   },
   "swift test -c release --filter DictionaryLatencyTests": {
     "exit_code": 0,
     "evidence": [
-      "Build complete! (79,68 secs)",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
-      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.002) seconds"
+      "Build complete! (142,61 secs)",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.002) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.002) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.003) seconds"
     ]
   },
   "native default-path paired benchmark": {
@@ -64,5 +60,31 @@
       "Packaging/Info.plist: OK",
       "Packaging/Koett.entitlements: OK"
     ]
+  },
+  "generation-guarded actual target validation": {
+    "passed": 8,
+    "total": 8,
+    "unique_requests": 8,
+    "exact_clipboard_receiver_equality": true,
+    "source": "guarded-paste.json",
+    "scope": "disposable macOS15 guest; one sample/build/length; not native M5 latency"
+  },
+  "native vocabulary switches": {
+    "exit_code": 0,
+    "evidence": [
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 13.264 (13.264) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 13.264 (13.264) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 13.264 (13.264) seconds"
+    ]
+  },
+  "native controlled-input target validation": {
+    "passed": 7,
+    "planned": 24,
+    "source": "native-paste.json",
+    "scope": "native M5 input-buffer seam; real recorder Stop/close and actual Command-V target insertion; repeats still running"
+  },
+  "host harness source reconstruction": {
+    "passed": true,
+    "source": "host-patch-verification.json"
   }
 }
