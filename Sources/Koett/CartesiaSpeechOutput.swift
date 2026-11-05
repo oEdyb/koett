@@ -180,8 +180,7 @@ final class CartesiaSpeechOutput {
     private static let sampleRate = 44_100.0
 
     private let session: URLSession
-    private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    private var playback: (engine: AVAudioEngine, player: AVAudioPlayerNode)?
     private let format: AVAudioFormat
     private var socket: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
@@ -206,9 +205,20 @@ final class CartesiaSpeechOutput {
             channels: 1,
             interleaved: false
         )!
+    }
+
+    var hasPreparedAudio: Bool { playback != nil }
+
+    private func playbackNodes() -> (engine: AVAudioEngine, player: AVAudioPlayerNode) {
+        if let playback { return playback }
+        let engine = AVAudioEngine()
+        let player = AVAudioPlayerNode()
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
         engine.prepare()
+        let nodes = (engine: engine, player: player)
+        playback = nodes
+        return nodes
     }
 
     func prepare(apiKey: String, voice: AssistantVoice) {
@@ -271,9 +281,9 @@ final class CartesiaSpeechOutput {
         receiveTask = nil
         socket?.cancel(with: .goingAway, reason: nil)
         socket = nil
-        player.stop()
-        player.reset()
-        engine.stop()
+        playback?.player.stop()
+        playback?.player.reset()
+        playback?.engine.stop()
         spokenLead = SpokenLeadBuffer()
         sentInput = false
     }
@@ -359,7 +369,7 @@ final class CartesiaSpeechOutput {
         }
     }
 
-    private func play(_ data: Data) throws {
+    func play(_ data: Data) throws {
         let bytesPerFrame = MemoryLayout<Float>.size
         guard !data.isEmpty, data.count.isMultiple(of: bytesPerFrame) else {
             throw failure("Cartesia returned invalid audio data.")
@@ -377,6 +387,7 @@ final class CartesiaSpeechOutput {
             count: data.count
         )
 
+        let (engine, player) = playbackNodes()
         if !engine.isRunning {
             try engine.start()
         }
