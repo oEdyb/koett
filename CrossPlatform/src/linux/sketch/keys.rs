@@ -1,12 +1,13 @@
 //! Draw-key state straight from keyboard devices, so the sketch overlay never
 //! needs keyboard focus and typing keeps working while recording.
 //!
-//! Privacy boundary: Koett never reads key events. While recording is active it samples each keyboard's held-key state (`EVIOCGKEY`).
+//! Privacy boundary: Koett never reads key events. During recording or a bounded
+//! pre-paste check it samples each keyboard's held-key state (`EVIOCGKEY`).
 //! The kernel only reports all keys at once, so a sample briefly holds which
 //! keys are down; Koett uses only the Escape/Shift/Ctrl/Alt/Super bits, whether any
 //! other key is down, the draw-lock key the user chose and, while locked, Z. It
 //! stores nothing and wipes the sample with volatile writes right after each poll.
-//! Devices are opened only for that recording.
+//! Devices are opened only for that recording or a bounded pre-paste modifier check.
 //!
 //! Only physical keyboards count. `EVIOCGKEY` reports a device's state even
 //! when another process grabbed it, so a virtual device (uinput: ydotool, test

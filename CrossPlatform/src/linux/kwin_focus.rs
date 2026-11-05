@@ -1,9 +1,7 @@
-use std::collections::HashMap;
 use std::sync::{OnceLock, mpsc};
 use std::time::{Duration, Instant};
 
 const WAIT: Duration = Duration::from_millis(200);
-const LIMIT: usize = 4096;
 const QUERY: &str = r#"
 const w = workspace.activeWindow;
 const result = w && !w.dock && !w.desktopWindow && !w.deleted
@@ -19,7 +17,7 @@ struct Window {
 
 #[derive(Default)]
 struct Identities {
-    tokens: HashMap<(String, uuid::Uuid), u32>,
+    tokens: super::focus_tokens::FocusTokens<(String, uuid::Uuid)>,
 }
 impl Identities {
     fn resolve(&mut self, owner: String, raw: &str) -> Option<(u32, String)> {
@@ -36,17 +34,7 @@ impl Identities {
         {
             return None;
         }
-        let key = (owner, id);
-        let token = if let Some(token) = self.tokens.get(&key) {
-            *token
-        } else {
-            if self.tokens.len() >= LIMIT {
-                return None;
-            }
-            let token = u32::try_from(self.tokens.len() + 1).ok()?;
-            self.tokens.insert(key, token);
-            token
-        };
+        let token = self.tokens.token((owner, id))?;
         Some((token, window.app))
     }
 }
@@ -116,20 +104,10 @@ mod tests {
         assert_eq!(first.1, "org.example.Editor");
     }
     #[test]
-    fn invalid_own_and_exhausted_identities_fail_closed() {
+    fn invalid_and_own_identities_fail_closed() {
         let mut ids = Identities::default();
         for raw in ["null".into(), window(uuid::Uuid::nil()), serde_json::json!({"id":uuid::Uuid::new_v4(),"pid":std::process::id(),"app":"custom-name"}).to_string(), serde_json::json!({"id":uuid::Uuid::new_v4(),"pid":1,"app":"com.olledyberg.Koett"}).to_string()] {
             assert!(ids.resolve(":1.1".into(), &raw).is_none());
         }
-        for _ in 0..LIMIT {
-            assert!(
-                ids.resolve(":1.1".into(), &window(uuid::Uuid::new_v4()))
-                    .is_some()
-            );
-        }
-        assert!(
-            ids.resolve(":1.1".into(), &window(uuid::Uuid::new_v4()))
-                .is_none()
-        );
     }
 }

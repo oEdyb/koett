@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "components.json",
-      "sha256": "f4bc0dbe0119726f890a1278d4fee63960ff3bfd90dab1a54f996836e894dcf5",
-      "bytes": 255684
+      "sha256": "7aa8160ecd7e138513589189c9b726d141100f73434a5005169869848ac1269a",
+      "bytes": 256521
     },
     {
       "path": "data/flashback-sv/NOTICE.md",
@@ -2890,6 +2890,16 @@
       "path": "rust/wayland-protocols-0.32.13/LICENSE.txt",
       "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
       "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-misc-0.3.12/LICENSE.txt",
+      "sha256": "1cb6f4dee8c649f175736380495f0af0c753c87f22d50931692968bb24bf2161",
+      "bytes": 1057
+    },
+    {
+      "path": "rust/wayland-protocols-misc-0.3.12/virtual-keyboard-COPYRIGHT",
+      "sha256": "faa5a835a8ca7480c4faafa4bd7cfa11d3f24a3140f88de458f3303f77f33657",
+      "bytes": 1292
     },
     {
       "path": "rust/wayland-protocols-wlr-0.3.12/LICENSE.txt",

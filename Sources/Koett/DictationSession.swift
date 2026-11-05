@@ -531,11 +531,17 @@ extension KoettController {
         let textReadyAt = ProcessInfo.processInfo.systemUptime
         guard !sketched.text.isEmpty else {
             guard !rawText.isEmpty else {
+                if sketched.drawingFailed, claimDelivery(session) {
+                    recordingOverlay.showError("Drawing failed · No speech", keepUntilClicked: true)
+                }
                 print("No speech detected. Clipboard unchanged.")
                 return .finished
             }
             guard claimDelivery(session) else { return .finished }
             try saveTranscript(prepared)
+            if sketched.drawingFailed {
+                recordingOverlay.showError("Text saved · Drawing failed", keepUntilClicked: true)
+            }
             print("S1-mini removed filler-only text. Clipboard unchanged.")
             return .finished
         }
@@ -551,7 +557,7 @@ extension KoettController {
         } else {
             pastePostedAt = try deliver(final, readyToPaste: readyToPaste)
         }
-        recordingOverlay.showDone(text: final.text, png: sketched.sheet)
+        recordingOverlay.showDone(text: final.text, png: sketched.sheet, drawingFailed: sketched.drawingFailed)
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 

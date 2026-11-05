@@ -110,6 +110,7 @@ enum TrayUpdate {
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
@@ -282,6 +283,7 @@ mod dictionary_view;
 mod escape;
 mod feedback;
 mod fix_word_view;
+mod focus_tokens;
 mod formatting_view;
 mod gnome_focus;
 mod gnome_pill;
@@ -295,6 +297,7 @@ mod menu;
 mod menu_preferences;
 mod models_view;
 mod monitor_layout;
+mod native_keyboard;
 mod output;
 mod permissions_view;
 mod recording_overlay;
@@ -549,6 +552,9 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::DeliveryFailed => {
                         let _ = worker_ui.send(window::Update::DeliveryFailed);
                     }
+                    TrayUpdate::DeliveryStarted => {
+                        let _ = worker_ui.send(window::Update::DeliveryStarted);
+                    }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
                     }
@@ -677,15 +683,16 @@ fn run_x11(
     // time, so Esc keeps working everywhere else.
     let escape = HotKey::new(None, global_hotkey::hotkey::Code::Escape);
     let mut escape_registered = false;
+    let mut escape_recording = false;
     loop {
         let recording = app.status == AppStatus::Recording;
-        if recording != escape_registered {
-            escape_registered = if recording {
-                hotkeys.register(escape).is_ok()
-            } else {
+        // Once per recording: a failed grab must not retry on every loop.
+        if recording != escape_recording {
+            escape_recording = recording;
+            escape_registered = recording && hotkeys.register(escape).is_ok();
+            if !recording {
                 let _ = hotkeys.unregister(escape);
-                false
-            };
+            }
         }
         while let Ok(action) = actions.try_recv() {
             let (action, paste_request) = match action {
@@ -737,11 +744,13 @@ fn run_x11(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let target = paste_request
                         .as_ref()
                         .map_or_else(|| output.focused_window(), |request| request.target);
                     let pasted = recovery::last_text()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -1376,6 +1385,7 @@ async fn run_wayland(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = paste_request
@@ -1412,6 +1422,7 @@ async fn run_wayland(
                         }
                         Err(error) => Err(error),
                     };
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -2630,11 +2641,10 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the contact sheet: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("target window changed".into());
-        }
-        trace.post();
-        self.press(image_paste::for_target(target)?).await?;
+        trace.prepare_paste(target)?;
+        let chord = trace.image_chord(target)?;
+        trace.post()?;
+        self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
             && Instant::now() < deadline
@@ -2686,10 +2696,8 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("Copied · paste into your target application".into());
-        }
-        trace.post();
+        trace.prepare_paste(target)?;
+        trace.post()?;
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result
@@ -2877,10 +2885,16 @@ fn sketch_delivery(
     }
 }
 
+fn delivery_started(tray: Option<&TrayUpdates>) {
+    if let Some(tray) = tray {
+        let _ = tray.sender.send(TrayUpdate::DeliveryStarted);
+    }
+}
 fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
     if text.trim().is_empty() {
         return;
     }
+    delivery_started(tray);
     if let Some(tray) = tray {
         let _ = tray.sender.send(TrayUpdate::Completed(text.to_owned()));
     }
@@ -2968,6 +2982,22 @@ mod delivery_tests {
     }
 
     #[test]
+    fn result_stays_pending_until_typed_delivery_outcome_including_recovery_failure() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        cache_completed(Some(&tray), "private fixture");
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryStarted)
+        ));
+        assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Completed(_))));
+        report_delivery(Some(&tray), &Err("target changed".into()));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryFailed)
+        ));
+    }
+    #[test]
     fn delivery_recovery_is_typed_and_independent_of_storage() {
         let (sender, receiver) = mpsc::channel();
         let tray = TrayUpdates { sender };
@@ -3003,6 +3033,10 @@ mod delivery_tests {
         assert!(
             error.contains("clipboard failed") && error.contains("history and fallback failed")
         );
+        assert!(matches!(
+            receiver.recv().unwrap(),
+            TrayUpdate::DeliveryStarted
+        ));
         assert!(
             matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
         );
