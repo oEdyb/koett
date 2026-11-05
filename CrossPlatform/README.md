@@ -1,8 +1,13 @@
 # Koett for Linux and Windows
 
-Local voice-to-text with configurable shortcuts, models and microphones. Linux has
-native GTK controls, a recording waveform, searchable history, Copy and Export.
+Dictate while drawing on your screen: hold Shift and move to sketch, or
+Shift+click to pin. Koett pastes a numbered image sheet followed by your words.
+Drawing is optional and off by default. Local voice-to-text also has configurable
+shortcuts, models and microphones, with native GTK controls.
 Windows remains a source-build preview. [Mac download](https://github.com/oEdyb/koett/releases/latest).
+
+The published Linux v0.2.0-linux.1 and Mac v0.1.1 downloads do not include drawing.
+The drawing controls below are available in the current source build.
 
 ## Install
 
@@ -24,7 +29,8 @@ Linux preview builds use the distribution's GTK and audio libraries. They are bu
 on Ubuntu 22.04 with GTK 4.6 as the API floor. Run the runtime check even if your
 packages are installed. It reports missing libraries and optional tools without
 changing your system. See the archive's `SYSTEM-RUNTIME.md` for dependencies and
-known toolkit limits. The separate `current-pc` bundle is specific to its build
+known toolkit limits. System GTK 4.24.1 needs upstream accessibility fix
+`21d3eb7` or its distribution backport. The separate `current-pc` bundle is specific to its build
 machine and should not be used as a portable Linux download.
 
 For an isolated install, use `./install.sh --prefix '/a private folder'`.
@@ -34,7 +40,7 @@ Python 3.10+ is required. Verify the archive against its published SHA-256 file.
 
 - **Record:** press `Ctrl+Shift+Space`, speak, then press it again. Hold mode is
   available. Your desktop may manage the shortcut itself.
-- **Models:** Menu → Preferences → Model. Choose compact English, Parakeet v2,
+- **Models:** Settings → Model & formatting. Choose compact English, Parakeet v2,
   multilingual v3 or experimental Nemotron. Missing models download with visible
   progress and Cancel. The default remains 110M English.
 - **Settings:** choose your microphone, check its input meter, set shortcuts and
@@ -47,8 +53,9 @@ Python 3.10+ is required. Verify the archive against its published SHA-256 file.
 
 Wayland uses the desktop's GlobalShortcuts and RemoteDesktop portals when
 available. Otherwise bind `koett toggle` in your compositor; hold mode uses
-`koett start` and `koett stop` with press/release bindings. Koett does not require
-an input group or privileged keyboard daemon. On niri/wlroots, install
+`koett start` and `koett stop` with press/release bindings. Normal dictation does not require
+a keyboard-access group or privileged keyboard daemon. Drawing has a separate
+opt-in setup below. On niri/wlroots, install
 `wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported.
 Automatic paste requires a supported focus check. GNOME Wayland needs the
 explicitly enabled [Koett Shell extension](integrations/gnome/README.md).
@@ -61,7 +68,7 @@ prompt. Drawing remains unavailable on GNOME. Without the extension or portal
 permission, use History/Copy and paste manually. X11 uses native global shortcuts
 and XTest.
 
-Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
+Settings → Dictation → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 backends. Choose the chord your app accepts. Sending it cannot prove the app
 consumed the paste; history and Copy Last preserve the result.
 
@@ -74,6 +81,47 @@ Optional **Ask** sends your question and one screen image to your configured
 provider. It needs `secret-tool` and a session Secret Service. Spoken replies use
 Cartesia when enabled. Rich answers need complete WebKitGTK 6 with its helpers;
 plain text remains available without it. Dictation needs no account or provider.
+
+## Drawing setup
+
+Requires a Wayland desktop with layer-shell: KDE Plasma 6, niri, Sway or
+Hyprland. KDE Plasma 6 has end-to-end drawing verification; the other desktops
+have less verification. GNOME Wayland and X11 cannot show the drawing overlay.
+Use `grim` for capture on niri/wlroots, or a working Screenshot portal on KDE;
+allow screenshot access when asked. Multi-monitor drawing is not hardware-verified.
+
+1. Open **Settings → Draw on screen** and enable **Draw & Pin While Dictating**.
+2. If keyboard access is missing, click **Copy setup command**. Install your
+   distribution's `acl` tools (`setfacl`), run the copied command in a terminal,
+   then log out and back in. Reopen Settings and check keyboard access is ready.
+3. Start dictation, release the recording shortcut keys, then hold **Shift** and
+   move to draw. Release it to finish. **Shift+click** pins a point. Change
+   **Draw key** to Ctrl or Alt if needed.
+4. For several strokes in one sketch, toggle **Ctrl+Alt+D** while recording,
+   then drag with the left button. Toggle again or press Esc to finish the sketch.
+
+The setup creates a `koett-keyboard` group and a udev rule granting that group
+read-only keyboard access. Other apps running as your user can use that access
+too. Koett checks physical keyboard state only during drawing dictations and
+does not read typed text. Without access, drawing stays off unless you explicitly
+enable **If keys can't be read, let drawing take the keyboard**; that fallback
+pauses typing while recording. Normal dictation needs none of this setup.
+
+With draw lock on, clicks do not reach other apps and no pins are dropped.
+Right-click undoes the latest stroke. Ctrl+Z also undoes a stroke, but reaches
+the focused app too. Bind `koett draw-lock` in your desktop if you need to keep
+the lock shortcut out of the focused app. **Menu → Drawing → Undo Last Drawing**
+removes the latest drawing or pin during recording.
+
+**Include Selected Text in Pins** is on by default. Pin context depends on what
+the target app exposes through accessibility. The page-link setup command in
+Settings enables additional browser context; it is separate from keyboard access.
+
+The target must accept image paste. The image sheet is pasted first, then
+speech-linked text; paste support and focus checks vary by desktop as described
+above. Images stay in memory until another completed dictation or app exit.
+Captured screen content is part of the pasted image. Normal dictation and
+drawing recognition stay local; Ask is a separate optional feature.
 
 ## Local data
 
@@ -140,3 +188,5 @@ The caller owns lab cleanup. `--record` uses the private session's audio source.
 Tests must not connect to the visible desktop, host clipboard or physical audio.
 A loader check or model self-test does not establish compositor/permission support.
 Mac execution and native Windows acceptance are separate from Linux verification.
+
+Linux ARM64 archives pass native build and inference CI; ARM64 desktop use is untested.
