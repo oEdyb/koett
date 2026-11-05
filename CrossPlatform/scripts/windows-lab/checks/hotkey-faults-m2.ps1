@@ -55,8 +55,10 @@ try{
  $steps+=Get-LabStep 'tray-recording-remains-available-during-hotkey-conflict'
 }finally{
  [IO.File]::WriteAllText($release,'release');$lease.WaitForExit(5000)|Out-Null
+ [IO.File]::WriteAllText($config,$original,(New-Object Text.UTF8Encoding($false)))
 }
 try{
+ [IO.File]::WriteAllText($config,($settings|ConvertTo-Json -Depth 20),(New-Object Text.UTF8Encoding($false)))
  Send-DictationCommand 4;Start-Sleep -Seconds 1
  $null=Start-Process $exe -ArgumentList @('--dictation-lab-wav',$sample);Start-Sleep -Seconds 8
  Activate-LabEditor $a;$editor.SetFocus()
