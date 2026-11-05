@@ -917,6 +917,11 @@ impl RecordingOverlay {
         layout.append(&overlay);
         let warning = gtk::Label::new(None);
         warning.add_css_class("koett-feedback");
+        // A long microphone name must wrap, never widen the pill.
+        warning.set_wrap(true);
+        warning.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+        warning.set_max_width_chars(34);
+        warning.set_justify(gtk::Justification::Center);
         warning.set_visible(false);
         layout.append(&warning);
         // Fading this parent hides the pill during a drag and leaves the live copy of

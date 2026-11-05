@@ -8,7 +8,7 @@ Source audit: 2026-11-04, `origin/main` at `3d7674e`. **Yes means implemented, n
 |---|---|---|---|---|
 | Local offline ASR, loaded once | Yes, FluidAudio | Yes, sherpa/ORT | Engine + tray shell | Windows CPU/WASAPI live acceptance first; retain offline core |
 | Toggle / hold / configurable shortcuts | Yes, modifier or chord | Yes, desktop-dependent | Chord registration; hold parity unverified | Windows Raw Input for bare modifier/hold; Linux portal/compositor bindings |
-| Selected microphone | Yes | Yes | Native ID selector; emulated endpoint persistence/default/unavailable checks passed | Verify Windows endpoint selection/save/reopen and unavailable-device behavior |
+| Selected microphone | Yes | Sound server sources, shared with other apps; falls back when lost, stalled or silent. ALSA cards with no server | Native ID selector; emulated endpoint persistence/default/unavailable checks passed | Verify Windows endpoint selection/save/reopen and unavailable-device behavior |
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | Shared preview; emulated silent-input stop/close/reacquire passed | Verify Windows close/record release and actual input levels |
 | Recording sounds / actual RMS | Yes | Yes | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
 | Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Basic GDI meter/timer only | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |

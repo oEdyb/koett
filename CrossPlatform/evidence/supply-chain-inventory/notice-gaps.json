@@ -51,6 +51,11 @@
       "reason": "source-license-text-not-found"
     },
     {
+      "component": "pkg:cargo/byteorder@1.5.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
       "component": "pkg:cargo/clipboard-win@5.4.2",
       "group": "rust-package",
       "reason": "source-license-text-not-found"
@@ -59,6 +64,16 @@
       "component": "pkg:cargo/dispatch2@0.3.1",
       "group": "rust-package",
       "reason": "source-license-text-not-found"
+    },
+    {
+      "component": "pkg:cargo/enum-primitive-derive@0.3.0",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
+      "component": "pkg:cargo/futures@0.3.32",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
     },
     {
       "component": "pkg:cargo/jni-macros@0.22.4",
@@ -141,6 +156,11 @@
       "reason": "source-license-text-not-found"
     },
     {
+      "component": "pkg:cargo/pulseaudio@0.3.2",
+      "group": "rust-package",
+      "reason": "license-text-not-bundled"
+    },
+    {
       "component": "pkg:cargo/r-efi@6.0.0",
       "group": "rust-package",
       "reason": "source-license-text-not-found"
@@ -164,6 +184,6 @@
   "schema": 1,
   "status": "known-gaps-block-release-compliance",
   "summary": {
-    "gaps": 32
+    "gaps": 36
   }
 }

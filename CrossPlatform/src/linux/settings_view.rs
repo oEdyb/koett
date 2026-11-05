@@ -128,7 +128,8 @@ pub(super) fn show(
     input.append(Some(""), "System default microphone");
     input.set_active_id(Some(""));
     if let Some(name) = &settings.microphone {
-        input.append(Some(name), name);
+        // Replaced by the mic's real name once the list loads, if it is connected.
+        input.append(Some(name), "Saved microphone (not connected)");
         input.set_active_id(Some(name));
     }
     input.set_tooltip_text(input.active_text().as_deref());

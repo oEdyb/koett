@@ -234,3 +234,12 @@ cancels. In a mode the user entered on purpose, Esc reads as "leave this mode", 
 throwing away the whole dictation is the costliest wrong guess. Ctrl+Z also reaches the
 focused app, since typing must keep working and sampled keys can't be consumed, so
 right-click is the undo that touches nothing else.
+
+## 2026-11-05: Linux captures through the sound server, by source
+
+The list shows sound server sources without monitors, through cpal's pure-Rust PulseAudio
+host, which also serves PipeWire. Raw ALSA remains only with no server. Saved ALSA choices
+move to the same card's source. A failure never changes the saved choice, so a mic that
+returns is used again. Exact digital zero counts as silent only if a stream has never
+produced a non-zero sample, because a noise gate also outputs zero during thinking pauses.
+A source found silent is tried last for 10 minutes, so recordings don't each lose 3 s.

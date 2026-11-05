@@ -238,3 +238,18 @@ Koett cleared the clipboard, pressed paste and saved a blank history row. On X11
 focus guard compared raw focus values, so None and PointerRoot matched themselves and
 Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
 private lab with real speech. Regression tests are in `linux.rs`.
+
+## 2026-11-05: Linux microphones failed when another app used them
+
+Olle: "it just says mic couldnt start", with Discord and Klippt open. The dropdown listed
+raw ALSA entries, and his saved `hw:CARD=4` opened the hardware directly. PipeWire held it
+for those apps, so every open answered busy, measured in under 15 ms. Of 36 entries most
+were plugins, playback devices or repeats. The old fallback also overwrote the saved choice.
+A later silent case came from a default source with no mic linked and a restored target.
+
+Capture now goes through the sound server by source. The lab caught one regression in that
+move: its default buffer delivers up to about 2 s at a time, so stopping lost the last words.
+
+Still not reproduced: the press at 15:09:58 that never logged `microphone=` and left every
+later toggle dead. The busy path returns at once, so it does not explain a hang. Every open
+now has a time limit on its own thread, so a stuck open can't take the engine with it.
