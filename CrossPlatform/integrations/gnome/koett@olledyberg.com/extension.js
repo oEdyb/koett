@@ -76,7 +76,7 @@ export default class Koett extends Extension {
                     ![Meta.WindowType.DESKTOP, Meta.WindowType.DOCK].includes(window.get_window_type()) &&
                     window.showing_on_its_workspace() && app && app.toLowerCase() !== APP.toLowerCase()) {
                     result = {protocol: 1, id: window.get_stable_sequence(),
-                        pid: window.get_pid(), app};
+                        pid: window.get_pid(), app, modifiers: global.get_pointer()[2] >>> 0};
                 }
             }
         } catch {
