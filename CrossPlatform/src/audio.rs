@@ -11,8 +11,11 @@ use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use ringbuf::{HeapProd, HeapRb};
 use sherpa_onnx::Wave;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) mod preview;
+
+#[cfg(any(target_os = "windows", test))]
+mod fixture;
 
 const MAX_RECORDING_DURATION: Duration = Duration::from_secs(10 * 60);
 
@@ -107,7 +110,7 @@ impl AudioLevels {
 }
 
 pub struct MicrophoneRecorder {
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     _capture_priority: preview::RecordingPriority,
     stream: Option<cpal::Stream>,
     collector: Option<thread::JoinHandle<Vec<f32>>>,
@@ -148,7 +151,7 @@ impl MicrophoneRecorder {
             return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
         }
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
         let capture_priority = preview::RecordingPriority::acquire()?;
         let host = cpal::default_host();
         let device = match microphone {
@@ -314,7 +317,7 @@ impl MicrophoneRecorder {
         }
 
         Ok(Self {
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
             _capture_priority: capture_priority,
             stream: Some(stream),
             collector: Some(collector),

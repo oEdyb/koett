@@ -1,0 +1,14 @@
+{
+  "step": "microphone-default-preview",
+  "rect": [
+    720,
+    352,
+    1840,
+    1152
+  ],
+  "focus": {
+    "hwnd": 197370,
+    "process": "Koett",
+    "pid": 6760
+  }
+}

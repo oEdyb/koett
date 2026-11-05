@@ -214,7 +214,7 @@ impl Renderer {
                     draw("Ⅱ", 18.0, 32.0, false);
                 } else if state.drawing {
                     draw("✎", 16.0, 33.0, false);
-                } else if matches!(state.phase, Phase::NotPasted | Phase::Error { .. }) {
+                } else if matches!(state.phase, Phase::NotPasted { .. } | Phase::Error { .. }) {
                     draw("!", 19.0, 30.0, false);
                 } else if matches!(state.phase, Phase::Transcribing) {
                     let index = if reduced { 0 } else { (now / 100) % 8 };
@@ -320,8 +320,17 @@ impl Renderer {
                                 false,
                             );
                         }
-                        Phase::NotPasted => {
-                            draw("Not pasted · saved", 44.0 + shift, 189.0, false);
+                        Phase::NotPasted { saved } => {
+                            draw(
+                                if *saved {
+                                    "Not pasted · saved"
+                                } else {
+                                    "Not pasted · unsaved"
+                                },
+                                44.0 + shift,
+                                189.0,
+                                false,
+                            );
                             draw("Paste", 192.0, 237.0, false);
                             draw("Copy", 245.0, 292.0, false);
                         }
