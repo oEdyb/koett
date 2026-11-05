@@ -2,6 +2,8 @@ import contextlib
 import io
 import json
 import tempfile
+import subprocess
+import urllib.error
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +14,8 @@ from build_asr_native import (
     OPTIONS,
     SOURCE_COMMIT,
     configure_command,
+    configure_with_download_retries,
+    download_archive,
     native_options,
     remove_disabled_tts_stubs,
     stage_libraries,
@@ -20,6 +24,32 @@ from build_asr_native import (
 
 
 class AsrBuildTests(unittest.TestCase):
+    def test_native_configure_retries_only_temporary_download_failures(self):
+        for failure, count in [
+            ('download onnxruntime: HTTP/2 504', 3),
+            ('download: The requested URL returned error: 503', 3),
+            ('download onnxruntime: HTTP/2 404', 1),
+            ('CMake compiler error', 1),
+            ('download HTTP/2 504; SHA256 hash mismatch', 1),
+        ]:
+            with self.subTest(failure=failure), patch('build_asr_native.subprocess.run', return_value=subprocess.CompletedProcess(['cmake'], 1, failure)) as execute, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    configure_with_download_retries(['cmake'])
+                self.assertEqual(execute.call_count, count)
+
+    def test_native_configure_recovers_after_gateway_failure(self):
+        results = [subprocess.CompletedProcess(['cmake'], 1, 'download onnxruntime HTTP/2 504'), subprocess.CompletedProcess(['cmake'], 0, 'configured')]
+        with patch('build_asr_native.subprocess.run', side_effect=results) as execute, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+            configure_with_download_retries(['cmake'])
+            self.assertEqual(execute.call_count, 2)
+
+    def test_source_http_retries_are_bounded_and_permanent_errors_are_fatal(self):
+        for status, count in [(504, 3), (404, 1)]:
+            with patch('build_asr_native.urllib.request.urlopen', side_effect=urllib.error.HTTPError('url', status, 'failure', {}, None)) as request, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(urllib.error.HTTPError):
+                    download_archive('url', Path('never-created'))
+                self.assertEqual(request.call_count, count)
+
     def test_onnx_string_abi_must_match_the_target_and_be_unambiguous(self):
         for target, expected in [('x86_64-unknown-linux-gnu', '0'),
                                  ('aarch64-unknown-linux-gnu', '1')]:

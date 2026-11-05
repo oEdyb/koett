@@ -21,3 +21,7 @@ try {
  }
  Write-Output 'Windows self-test retry policy passed (5 cases)'
 } finally { Remove-Item $root -Recurse -Force }
+
+# The final negative fixture intentionally leaves LASTEXITCODE=1.
+# Report the suite result explicitly instead of leaking that fixture status.
+exit 0
