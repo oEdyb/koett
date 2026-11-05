@@ -45,6 +45,12 @@ hashes. No credential has been confirmed by this scan. That does not prove
 that every form of sensitive information is absent: secret detectors do not
 establish that a transcript, image or personal prose is safe to publish.
 
+A separate OCR pass read all 656 unique image blobs reachable through those
+public refs. It flagged only the same three home-path screenshots; its email,
+author-name and provider-key patterns found no additional images. OCR is not
+a semantic review of every pixel or every transcript. No additional credential
+or personal transcript has been confirmed by these checks.
+
 The screenshot-history review and its remaining limits are recorded in the
 release audit. Do not describe a partial content review as “nothing sensitive
 in history”. No external service was contacted to validate any candidate key.
