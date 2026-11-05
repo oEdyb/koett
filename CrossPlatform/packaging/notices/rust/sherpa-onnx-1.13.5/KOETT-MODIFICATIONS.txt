@@ -21,7 +21,8 @@ TTS libraries or suppressing linker errors. The pinned source/target receipt gua
 and TTS/Piper/eSpeak exclusions remain unchanged.
 
 The separately patched native NeMo header adds the explicit koett_context mode:
-one encoder feeds a greedy base decoder and a biased beam decoder. Other native
+one encoder feeds a greedy base decoder and a biased beam decoder. Empty
+context streams use greedy decoding, so dictionary changes keep the loaded model. Other native
 decoding modes retain upstream behavior. The portable patch and build recipe are
 provided in package sources/. Patched header SHA-256:
-673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920.
+1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3.
