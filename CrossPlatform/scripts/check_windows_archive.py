@@ -16,11 +16,12 @@ def verify(archive):
         with zipfile.ZipFile(archive) as package:
             package.extractall(root)
         source, = [path for path in root.iterdir() if path.is_dir()]
-        for name in ['Koett.exe', 'THIRD_PARTY_NOTICES.md', 'LICENSE', 'native-build-receipt.json']:
+        for name in ['Koett.exe', 'koett-engine.exe', 'THIRD_PARTY_NOTICES.md', 'LICENSE', 'native-build-receipt.json']:
             if not (source / name).is_file():
                 raise ValueError(f'Windows archive is missing {name}')
         verify_notices(source)
-        verify_dependencies(source / "Koett.exe")
+        for executable in ["Koett.exe", "koett-engine.exe"]:
+            verify_dependencies(source / executable)
         return {'archive': str(archive), 'canonical_notices': True,
                 'native_receipt': True, 'runtime_execution': False}
 

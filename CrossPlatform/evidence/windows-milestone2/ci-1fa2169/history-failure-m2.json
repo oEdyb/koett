@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "result": {
+    "editor_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "recovery_text": [
+      "<!-- koett-transcript:cnVzdC0xNzkzODMwMzQ4NzAxMzQxMjAwLTg2ODQtMTI= -->\n## 2026-11-04T22:12:28.701Z\n\nModel: sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8\n\nWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\n\n"
+    ],
+    "phase": "Koett. History failed \u00b7 Copy from tray",
+    "clipboard": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "passed": true,
+    "readonly_restored": true,
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM2b\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 8684,
+      "sha256": "A748F48808A25673D6C61A9F4925C6FB0E5D0138886CD8D8C40FC92F4E823876"
+    },
+    "database_unchanged": true,
+    "new_recovery_files": 1,
+    "steps": [
+      {
+        "step": "history-write-failed-after-real-paste",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "history-failure-did-not-block-paste",
+        "rect": [
+          344,
+          344,
+          2264,
+          1436
+        ],
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        }
+      }
+    ]
+  },
+  "id": "1793833930757501073"
+}
