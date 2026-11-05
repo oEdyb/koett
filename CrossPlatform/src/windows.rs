@@ -1,4 +1,7 @@
+mod capture;
+mod clipboard;
 mod desktop;
+mod draw_input;
 pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
@@ -7,6 +10,7 @@ mod paste_security;
 mod pill;
 mod pill_buttons;
 mod pill_state;
+mod pixels;
 
 use std::cell::{Cell, RefCell};
 use std::mem::size_of;
@@ -17,7 +21,7 @@ use std::time::{Duration, Instant};
 
 use windows::Win32::Foundation::{
     COLORREF, CloseHandle, ERROR_ALREADY_EXISTS, ERROR_FILE_NOT_FOUND, ERROR_SUCCESS, GetLastError,
-    GlobalFree, HANDLE, HWND, POINT, RECT,
+    HANDLE, HWND, POINT, RECT,
 };
 use windows::Win32::Graphics::Gdi::{
     BeginPaint, CreateRoundRectRgn, CreateSolidBrush, DT_CENTER, DT_VCENTER, DeleteObject,
@@ -25,12 +29,7 @@ use windows::Win32::Graphics::Gdi::{
     MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow, PAINTSTRUCT, SetBkMode, SetTextColor,
     SetWindowRgn, TRANSPARENT,
 };
-use windows::Win32::System::DataExchange::{
-    CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
-};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalUnlock};
-use windows::Win32::System::Ole::CF_UNICODETEXT;
 use windows::Win32::System::Registry::{
     HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_OPTION_NON_VOLATILE, REG_SZ, RRF_RT_REG_SZ,
     RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegGetValueW, RegSetValueExW,
@@ -124,6 +123,13 @@ struct WindowsApp {
     shortcut_latch: ShortcutLatch,
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
+    draw_input: Option<draw_input::Monitor>,
+    draw_pointer: POINT,
+    capture_lab: Option<(
+        Instant,
+        u32,
+        std::sync::mpsc::Receiver<Result<pixels::Pixels, String>>,
+    )>,
     capture_pending: bool,
     tray: NOTIFYICONDATAW,
     taskbar_created: u32,
@@ -199,6 +205,9 @@ pub fn run() -> Result<(), String> {
         shortcut_latch: ShortcutLatch::default(),
         levels: None,
         recording_started: None,
+        draw_input: None,
+        draw_pointer: POINT::default(),
+        capture_lab: None,
         capture_pending: false,
         tray: NOTIFYICONDATAW::default(),
         taskbar_created: 0,
@@ -409,6 +418,80 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            0x8058 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.desktop_lab
+                    && app.capture_lab.is_none()
+                {
+                    let sequence = unsafe {
+                        windows::Win32::System::DataExchange::GetClipboardSequenceNumber()
+                    };
+                    if let Err(error) = capture::exclude_own_windows() {
+                        let label = wide(&error);
+                        let _ = unsafe {
+                            windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                hwnd,
+                                PCWSTR(label.as_ptr()),
+                            )
+                        };
+                        return Default::default();
+                    }
+                    let monitor = unsafe {
+                        MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTONEAREST)
+                    }
+                    .0 as usize;
+                    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+                    app.capture_lab = Some((Instant::now(), sequence, rx));
+                    std::thread::spawn(move || {
+                        let _ = tx.send(capture::monitor(monitor));
+                    });
+                }
+                return Default::default();
+            }
+            0x8059 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.desktop_lab
+                {
+                    if wparam.0 == 0 {
+                        app.draw_input = None;
+                    } else if app.status == AppStatus::Recording {
+                        app.draw_input =
+                            draw_input::Monitor::start(hwnd, crate::settings::DrawKey::Shift).ok();
+                    }
+                }
+                return Default::default();
+            }
+            windows::Win32::UI::WindowsAndMessaging::WM_INPUT => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Some(input) = app.draw_input.as_mut()
+                {
+                    input.input(lparam, Instant::now());
+                }
+            }
+            windows::Win32::UI::WindowsAndMessaging::WM_INPUT_DEVICE_CHANGE => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Some(input) = app.draw_input.as_mut()
+                {
+                    input.device_changed();
+                }
+            }
+            0x8057 => {
+                if let Ok(app) = app_cell.try_borrow()
+                    && app.desktop_lab
+                {
+                    let label = wide(&match clipboard::lab_bundle(hwnd, wparam.0) {
+                        Ok(()) => "Clipboard ready".into(),
+                        Err(error) => error,
+                    });
+                    let _ = unsafe {
+                        windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                            hwnd,
+                            PCWSTR(label.as_ptr()),
+                        )
+                    };
+                }
+                return Default::default();
+            }
             WM_CHANGE_MODEL | WM_CHANGE_FORMATTING | WM_CANCEL_SETUP => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     app.processing_request(message, wparam.0);
@@ -450,7 +533,57 @@ unsafe extern "system" fn window_proc(
             }
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    let app = &mut *app;
                     app.poll_updates();
+                    if let Some(input) = app.draw_input.as_mut() {
+                        let mut point = POINT::default();
+                        let _ = unsafe { GetCursorPos(&mut point) };
+                        if point != app.draw_pointer {
+                            input.moved(Instant::now());
+                            app.draw_pointer = point;
+                        }
+                        let state = input.state(Instant::now());
+                        if app.desktop_lab {
+                            let label = wide(&format!(
+                                "Draw key: clicks={} ink={}",
+                                state.protect_clicks, state.ink
+                            ));
+                            let _ = unsafe {
+                                windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                    hwnd,
+                                    windows::core::PCWSTR(label.as_ptr()),
+                                )
+                            };
+                        }
+                    }
+                    if let Some(result) = app.capture_lab.as_ref().and_then(|(started, _, rx)| {
+                        rx.try_recv().ok().or_else(|| {
+                            (started.elapsed() >= Duration::from_secs(3))
+                                .then(|| Err("Screen capture timed out".into()))
+                        })
+                    }) {
+                        let sequence = app
+                            .capture_lab
+                            .as_ref()
+                            .map(|(_, sequence, _)| *sequence)
+                            .unwrap_or(0);
+                        app.capture_lab = None;
+                        let result = result
+                            .and_then(|image| {
+                                clipboard::Bundle::new(&image, "M4 captured display".into())
+                            })
+                            .and_then(|b| b.copy_if_unchanged(hwnd, sequence).map(|_| ()));
+                        let label = wide(&match result {
+                            Ok(()) => "Capture ready".into(),
+                            Err(e) => e,
+                        });
+                        let _ = unsafe {
+                            windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                hwnd,
+                                windows::core::PCWSTR(label.as_ptr()),
+                            )
+                        };
+                    }
                     if app
                         .registered_shortcut
                         .is_none_or(|shortcut| !shortcut_is_down(shortcut))
@@ -668,6 +801,9 @@ impl WindowsApp {
         };
         self.pill_state.set(phase, now);
         self.update_tray();
+        if self.status != AppStatus::Recording {
+            self.draw_input = None;
+        }
         self.update_overlay();
     }
 
@@ -792,6 +928,9 @@ impl WindowsApp {
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {
+                    if status != AppStatus::Recording {
+                        self.draw_input = None;
+                    }
                     self.capture_pending = false;
                     let now = self.clock.elapsed().as_millis() as u64;
                     match &status {
@@ -1588,44 +1727,7 @@ fn windows_shortcut(shortcut: Shortcut) -> (HOT_KEY_MODIFIERS, u32) {
 }
 
 fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
-    let encoded = text.encode_utf16().chain([0]).collect::<Vec<_>>();
-    for _ in 0..10 {
-        if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
-            let result = unsafe { write_open_clipboard(&encoded) };
-            unsafe {
-                let _ = CloseClipboard();
-            }
-            return result;
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    Err("could not open the Windows clipboard".to_string())
-}
-
-unsafe fn write_open_clipboard(encoded: &[u16]) -> Result<(), String> {
-    unsafe { EmptyClipboard() }
-        .map_err(|error| format!("could not clear the Windows clipboard: {error}"))?;
-    let memory = unsafe { GlobalAlloc(GMEM_MOVEABLE, std::mem::size_of_val(encoded)) }
-        .map_err(|error| format!("could not allocate clipboard text: {error}"))?;
-    let destination = unsafe { GlobalLock(memory) }.cast::<u16>();
-    if destination.is_null() {
-        unsafe {
-            let _ = GlobalFree(Some(memory));
-        }
-        return Err("could not lock clipboard text".to_string());
-    }
-    unsafe {
-        ptr::copy_nonoverlapping(encoded.as_ptr(), destination, encoded.len());
-        let _ = GlobalUnlock(memory);
-    }
-    let result = unsafe { SetClipboardData(CF_UNICODETEXT.0.into(), Some(HANDLE(memory.0))) };
-    if let Err(error) = result {
-        unsafe {
-            let _ = GlobalFree(Some(memory));
-        }
-        return Err(format!("could not set clipboard text: {error}"));
-    }
-    Ok(())
+    clipboard::copy_text(owner, text)
 }
 
 fn shortcut_is_down(shortcut: Shortcut) -> bool {

@@ -1,8 +1,7 @@
 # Windows milestones after reliable dictation
 
-M2 (#78) merged as dca0252e8fc8a3cc232e24b94315eb89384fc22f. M3 #113 targets
-main and has completed its software acceptance on real Windows. It awaits
-separate review/merge approval. Main's v0.3.0 source freeze remains 41fca8e;
+M2 (#78) merged as dca0252e8fc8a3cc232e24b94315eb89384fc22f. M3 #113 merged as 8344c545503ddf76f54a62023993f74a1f8020d3 after six green
+checks on 5bdc961 and real Windows software acceptance. Main's v0.3.0 source freeze remains 41fca8e;
 this branch has not changed the frozen release or installed host apps.
 
 ## M3 — words and records
@@ -66,4 +65,4 @@ is not a three-platform release or complete parity claim.
 
 These are requirements carried from the reported Linux lessons, not Windows
 passes. Physical device/display/sleep limitations remain separate from guest
-or fixture evidence. M4 is the next implementation milestone after the M3 merge.
+or fixture evidence. M4 is now in progress on windows-draw-pin, based on the M3 merge; see [M4 acceptance](windows-draw-pin.md).
