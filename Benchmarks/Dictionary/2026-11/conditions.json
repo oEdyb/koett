@@ -1,0 +1,46 @@
+{
+  "machine": "Ryzen 5 9600X, CachyOS x86_64, 12 logical CPUs, 60 GiB RAM",
+  "inference": "CPU, 2 threads for transducer acceptance; no GPU",
+  "isolation": "copied models; offline network namespace; nice 10; 12 GiB scope",
+  "corpus_meta": {
+    "header_sha256": "673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920",
+    "loadavg_start": "2.76 2.36 3.56 1/4585 3411313\n",
+    "mode": "shared_encoder",
+    "threads": 2
+  },
+  "production_load_limit": "Original acceptance did not capture host load per pair. A repeat with load samples is retained separately.",
+  "inputs": {
+    "CrossPlatform/target/performance-audit-20261105/model/encoder.int8.onnx": {
+      "sha256": "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab",
+      "bytes": 652184296
+    },
+    "CrossPlatform/target/performance-audit-20261105/model/decoder.int8.onnx": {
+      "sha256": "b6bb64963457237b900e496ee9994b59294526439fbcc1fecf705b31a15c6b4e",
+      "bytes": 7257753
+    },
+    "CrossPlatform/target/performance-audit-20261105/model/joiner.int8.onnx": {
+      "sha256": "7946164367946e7f9f29a122407c3252b680dbae9a51343eb2488d057c3c43d2",
+      "bytes": 1739080
+    },
+    "CrossPlatform/target/performance-audit-20261105/model/tokens.txt": {
+      "sha256": "ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d",
+      "bytes": 9384
+    },
+    "CrossPlatform/target/performance-audit-20261105/model/silero_vad.onnx": {
+      "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+      "bytes": 643854
+    },
+    "CrossPlatform/target/dictionary-latency/native-shared/build-receipt.json": {
+      "sha256": "8d1eb5644e71fb29d84863ea92182128a312ba29750207166dd884285a1c65c1",
+      "bytes": 1846
+    },
+    "Benchmarks/Dictionary/corpus.json": {
+      "sha256": "b08f7cf15acfb29b4b26d23dd49579318be91f213af4c343609a75585fadde97",
+      "bytes": 6766
+    },
+    "docs/dictionary-seed.txt": {
+      "sha256": "da0a3b1124681ff89a62aead606a58fcb1f8c4145151ece0dd9dccadb3c3556c",
+      "bytes": 547
+    }
+  }
+}

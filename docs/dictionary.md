@@ -6,11 +6,26 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
 
 ## How it works on Linux
 
+**Release default:** verified native builds share one encoder result between a
+plain greedy decoder and a dictionary-biased beam decoder. The merge keeps plain
+words and adopts only supported dictionary terms. This avoids encoding the same
+audio twice. The four-length production benchmark measured 5.9–9.3% added median
+ASR time, preserving 115/162 terms versus 115/162 for the old acoustic path.
+See the [latency and recall audit](dictionary-latency-2026-11.md) for conditions,
+tail latency and limits.
+
+Older native libraries without the verified capability and CTC 110M models use
+one greedy stream plus cheap spelling, explicit forms and exact-term correction.
+They do not start the slow acoustic sidecar. The selected mode is logged at load.
+The old two-encoder mode is available only to controlled benchmarks through
+`ParakeetTranscriber::load_with_acoustic_dictionary`.
+
 1. **Decoder biasing** (`CrossPlatform/src/transcription/hotwords.rs`). With a
-   non-empty dictionary and a transducer model (Parakeet v2/v3), each utterance
-   decodes twice in one `decode_multiple_streams` batch: plain, and with the
-   terms as sherpa-onnx per-stream hotwords (modified beam search, 4 paths,
-   score 2.0, as the pinned upstream Parakeet TDT example uses).
+   populated dictionary and a transducer model, the explicit native
+   `koett_context` mode encodes identical stream features once. A greedy decoder
+   supplies the base text; a four-path modified beam decoder applies per-stream
+   hotwords with score 2.0. The native capability is bound to the pinned source,
+   patched header, target and linked archive hashes at build time.
 2. **Term adoption** (`CrossPlatform/src/dictionary/merge.rs`). The two word
    sequences are aligned. A differing biased span is used only when it is
    exactly one dictionary term; the term then replaces the plain words closest
@@ -36,8 +51,9 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
    restores it on successful cleanup output. Without cleanup there is one pass.
    Literal replacements run afterwards.
 
-An empty dictionary keeps the original single greedy decode. Parakeet 110M can
-use a verified, already-downloaded v2 transducer sidecar with a 250 ms deadline
+An empty dictionary keeps the original single greedy decode. In explicit
+acoustic benchmarks only, Parakeet 110M can use a verified, already-downloaded
+v2 transducer sidecar with a 250 ms deadline
 and raw CTC fallback. This is acoustic sidecar decoding, not CTC hotwords.
 See [benchmark, setup and limits](ctc-dictionary-benchmark.md). Nemotron streaming
 still gets spelling only. The engine

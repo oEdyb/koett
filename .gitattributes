@@ -1,4 +1,10 @@
 # Preserve exact upstream license and provenance bytes, including original line endings.
 CrossPlatform/packaging/notices/** -text -whitespace
 CrossPlatform/vendor/sherpa-onnx/** -text
+CrossPlatform/vendor/sherpa-onnx-sys/** -text
 CrossPlatform/evidence/linux-release-notices-20261030/RUSTSEC-*.html -text -whitespace
+
+# Unified patches contain space-prefixed blank context lines.
+CrossPlatform/scripts/shared_context.patch whitespace=-blank-at-eol
+# Machine-generated public benchmark receipts; the checker recomputes their claims.
+Benchmarks/Dictionary/2026-11/*.json linguist-generated=true

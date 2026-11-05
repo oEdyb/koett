@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::{collections::HashSet, ffi::OsString};
 
 use bzip2::read::BzDecoder;
+use sha2::{Digest, Sha256};
 use tar::Archive;
 
 const RELEASE_BASE_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases/download";
@@ -39,6 +40,7 @@ fn main() {
 }
 
 fn try_main() -> Result<(), DynError> {
+    println!("cargo:rustc-check-cfg=cfg(koett_shared_context)");
     println!("cargo:rerun-if-env-changed=SHERPA_ONNX_LIB_DIR");
     println!("cargo:rerun-if-env-changed=SHERPA_ONNX_ARCHIVE_DIR");
     println!("cargo:rerun-if-env-changed=DOCS_RS");
@@ -72,6 +74,34 @@ fn try_main() -> Result<(), DynError> {
         }
     }
     println!("cargo:rerun-if-changed={}", receipt.display());
+    let context = PathBuf::from(&library_directory).join("koett-context.txt");
+    if context.exists() {
+        println!("cargo:rerun-if-changed={}", context.display());
+        let target = env::var("TARGET")?;
+        let suffix = if target.contains("windows-msvc") {
+            ".lib"
+        } else {
+            ".a"
+        };
+        let prefix = if suffix == ".lib" { "" } else { "lib" };
+        let core =
+            PathBuf::from(&library_directory).join(format!("{prefix}sherpa-onnx-core{suffix}"));
+        let api =
+            PathBuf::from(&library_directory).join(format!("{prefix}sherpa-onnx-c-api{suffix}"));
+        println!("cargo:rerun-if-changed={}", core.display());
+        println!("cargo:rerun-if-changed={}", api.display());
+        let expected = format!(
+            "koett-context-v1\npatch=673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920\nsource=3dc7c569f31ca2cd4a20ed6f7db780327e6714c5\ntarget={target}\ncore={}\napi={}\n",
+            sha256(&core)?,
+            sha256(&api)?
+        );
+        if fs::read_to_string(&context)? != expected {
+            return Err(
+                "stale shared-context native libraries; rerun scripts/build_asr_native.py".into(),
+            );
+        }
+        println!("cargo:rustc-cfg=koett_shared_context");
+    }
 
     let target_os = env::var("CARGO_CFG_TARGET_OS")?;
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH")?;
@@ -97,6 +127,13 @@ fn try_main() -> Result<(), DynError> {
     }
 
     Ok(())
+}
+
+fn sha256(path: &Path) -> Result<String, DynError> {
+    Ok(Sha256::digest(fs::read(path)?)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 fn resolve_link_mode() -> Result<LinkMode, DynError> {
@@ -284,12 +321,10 @@ fn archive_name(
         (LinkMode::Shared, "android", "aarch64" | "arm" | "x86" | "x86_64") => {
             format!("sherpa-onnx-v{version}-android.tar.bz2")
         }
-        _ => {
-            return Err(format!(
+        _ => return Err(format!(
             "Unsupported target for sherpa-onnx prebuilt libs: os={target_os}, arch={target_arch}"
         )
-            .into())
-        }
+        .into()),
     };
 
     Ok(name)

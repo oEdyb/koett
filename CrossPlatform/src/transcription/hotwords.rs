@@ -1,11 +1,10 @@
 //! Bias Parakeet transducers toward dictionary terms.
 //!
-//! Each decode runs two streams in one batch: a plain one and one with the
-//! terms as hotwords. Only the biased stream's dictionary words are kept (see
-//! `dictionary::adopt_terms`), because the boost also changes casing of other
-//! words. An empty dictionary keeps the original greedy decoder. CTC retains
-//! its greedy primary stream and may use the bounded transducer sidecar.
-//! Settings follow the pinned sherpa-onnx Parakeet TDT hotword example.
+//! Verified native builds share one encoder between a greedy base stream and
+//! a biased beam stream. Only supported dictionary terms are adopted; ordinary
+//! words keep the greedy result. Older native builds and CTC use spelling only.
+//! The duplicate-encoder path and CTC sidecar are explicit benchmark options.
+//! An empty dictionary keeps the original greedy decoder.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -54,9 +53,17 @@ impl Bias {
 impl ParakeetTranscriber {
     /// Swap the dictionary; reloads the decoder only when biasing turns on or off.
     pub fn set_dictionary(&mut self, dictionary: &[DictionaryEntry]) -> Result<(), String> {
+        if self.dictionary_mode == super::DictionaryMode::Spelling {
+            return Ok(());
+        }
         let bias = Bias::new(&self.model_directory, dictionary)?;
         if bias.is_some() != self.bias.is_some() {
-            self.recognizer = Self::recognizer(&self.model_directory, self.threads, bias.as_ref())?;
+            self.recognizer = Self::recognizer(
+                &self.model_directory,
+                self.threads,
+                bias.as_ref(),
+                self.dictionary_mode,
+            )?;
         }
         self.bias = bias;
         if self.model_directory.join("model.int8.onnx").is_file() {
@@ -205,7 +212,8 @@ mod model_tests {
     fn dictionary_turns_on_and_off_without_reloading_the_transcriber() {
         let directory = PathBuf::from(std::env::var("KOETT_MODEL_DIR").unwrap());
         let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
-        let mut transcriber = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let mut transcriber =
+            ParakeetTranscriber::load_with_acoustic_dictionary(&directory, 2, &[]).unwrap();
         let plain = transcriber.transcribe(&audio).unwrap().text;
         assert!(!plain.contains("Phoebe"), "{plain}");
 
@@ -217,5 +225,59 @@ mod model_tests {
 
         transcriber.set_dictionary(&[]).unwrap();
         assert_eq!(transcriber.transcribe(&audio).unwrap().text, plain);
+    }
+
+    #[test]
+    #[ignore = "requires KOETT_MODEL_DIR pointing at Parakeet TDT v2"]
+    fn default_dictionary_uses_shared_encoder_or_spelling_without_ctc_sidecar() {
+        let directory = PathBuf::from(std::env::var("KOETT_MODEL_DIR").unwrap());
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let entries = [DictionaryEntry::new("Phoebe", &["Phebe"])];
+        let mut raw = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let expected = raw.transcribe(&audio).unwrap().text;
+        let mut default =
+            ParakeetTranscriber::load_with_dictionary(&directory, 2, &entries).unwrap();
+        assert_eq!(
+            default.bias.is_some(),
+            sherpa_onnx::SHARED_CONTEXT_AVAILABLE
+        );
+        assert!(default.ctc_bias.is_none());
+        let corrected = dictionary::apply(&expected, &entries);
+        assert_eq!(
+            dictionary::apply(&default.transcribe(&audio).unwrap().text, &entries),
+            corrected
+        );
+        default.set_dictionary(&[]).unwrap();
+        assert!(default.bias.is_none());
+        assert_eq!(default.transcribe(&audio).unwrap().text, expected);
+        default.set_dictionary(&entries).unwrap();
+        assert_eq!(
+            default.bias.is_some(),
+            sherpa_onnx::SHARED_CONTEXT_AVAILABLE
+        );
+        assert!(default.ctc_bias.is_none());
+        assert_eq!(
+            dictionary::apply(&default.transcribe(&audio).unwrap().text, &entries),
+            corrected
+        );
+        assert!(corrected.contains("Phoebe"));
+    }
+
+    #[test]
+    #[ignore = "requires KOETT_CTC_MODEL_DIR pointing at a copied Parakeet 110M model"]
+    fn ctc_default_does_not_start_a_second_model_after_dictionary_edits() {
+        let directory = PathBuf::from(std::env::var("KOETT_CTC_MODEL_DIR").unwrap());
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let entries = [DictionaryEntry::new("Phoebe", &["Phebe"])];
+        let mut raw = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let expected = raw.transcribe(&audio).unwrap().text;
+        let mut default =
+            ParakeetTranscriber::load_with_dictionary(&directory, 2, &entries).unwrap();
+        assert!(default.ctc_bias.is_none());
+        assert_eq!(default.transcribe(&audio).unwrap().text, expected);
+        default.set_dictionary(&[]).unwrap();
+        default.set_dictionary(&entries).unwrap();
+        assert!(default.ctc_bias.is_none());
+        assert_eq!(default.transcribe(&audio).unwrap().text, expected);
     }
 }
