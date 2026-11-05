@@ -1090,8 +1090,10 @@ fn load_worker(
     updates: &Sender<EngineUpdate>,
 ) -> Result<TranscriptionWorker, String> {
     if selection == model::LocalModel::Nemotron {
-        if !cfg!(target_os = "linux") {
-            return Err("Nemotron streaming is currently supported on Linux only".into());
+        if !cfg!(any(target_os = "linux", target_os = "windows")) {
+            return Err(
+                "Nemotron streaming is currently supported on Linux and Windows only".into(),
+            );
         }
         let nemotron = crate::transcription::NemotronTranscriber::load(directory)?;
         let backup = model::ensure_model(model::LocalModel::ParakeetV2, cancelled, |progress| {

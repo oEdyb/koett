@@ -1,0 +1,14 @@
+{
+  "step": "everyday-form-requires-add-anyway",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 655530,
+    "process": "Koett",
+    "pid": 5932
+  }
+}

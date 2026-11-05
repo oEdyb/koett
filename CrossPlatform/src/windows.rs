@@ -1,4 +1,5 @@
 mod desktop;
+pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
 mod paste_guard;
@@ -73,6 +74,9 @@ use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 const HOTKEY_ID: i32 = 1;
 const POLL_TIMER_ID: usize = 1;
+const WM_CHANGE_MODEL: u32 = 0x8054;
+const WM_CHANGE_FORMATTING: u32 = 0x8055;
+const WM_CANCEL_SETUP: u32 = 0x8056;
 const TRAY_MESSAGE: u32 = 0x8001;
 const NIN_KEYSELECT: u32 = NIN_SELECT | NINF_KEY;
 const MENU_CHANGE_SHORTCUT: usize = 1;
@@ -84,6 +88,7 @@ const MENU_COPY_LAST: usize = 6;
 const MENU_PAUSE: usize = 7;
 const MENU_CANCEL: usize = 8;
 const MENU_RECORD: usize = 9;
+const MENU_WORDS: usize = 10;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -404,6 +409,12 @@ unsafe extern "system" fn window_proc(
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            WM_CHANGE_MODEL | WM_CHANGE_FORMATTING | WM_CANCEL_SETUP => {
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.processing_request(message, wparam.0);
+                }
+                return Default::default();
+            }
             0x8053 => {
                 if let Ok(mut app) = app_cell.try_borrow_mut()
                     && let Ok(settings) = Settings::load()
@@ -660,6 +671,58 @@ impl WindowsApp {
         self.update_overlay();
     }
 
+    fn processing_request(&mut self, message: u32, value: usize) {
+        use desktop::processing;
+        if message == WM_CANCEL_SETUP {
+            if processing::busy() {
+                crate::model::SWITCH_CANCELLED.store(true, Ordering::Release);
+                crate::formatting::CANCELLED.store(true, Ordering::Release);
+            }
+            return;
+        }
+        if self.status != AppStatus::Ready || self.capture_pending || processing::busy() {
+            if message == WM_CHANGE_MODEL {
+                processing::model_message(
+                    "Stop recording or finish setup before changing models".into(),
+                );
+            } else {
+                processing::formatting_status(
+                    "Stop recording or finish setup before changing formatting".into(),
+                );
+            }
+            return;
+        }
+        let Some(engine) = &self.engine else {
+            return;
+        };
+        if message == WM_CHANGE_MODEL {
+            if let Some(model) = crate::model::LocalModel::ALL.get(value).copied() {
+                processing::model_status("Switching model…".into(), true);
+                if engine
+                    .commands
+                    .send(EngineCommand::SwitchModel(model))
+                    .is_err()
+                {
+                    processing::model_status("Dictation engine is unavailable".into(), false);
+                }
+            }
+        } else if let Some(formatting) = processing::decode_formatting(value) {
+            processing::formatting_status(if formatting.enabled {
+                "Preparing S1-mini…".into()
+            } else {
+                "Raw dictation".into()
+            });
+            processing::formatting_busy(true);
+            if engine
+                .commands
+                .send(EngineCommand::Formatting(formatting))
+                .is_err()
+            {
+                processing::formatting_status("Dictation engine is unavailable".into());
+                processing::formatting_busy(false);
+            }
+        }
+    }
     fn toggle(&mut self) {
         self.recording_intent(RecordingIntent::Toggle);
     }
@@ -710,8 +773,14 @@ impl WindowsApp {
                 .and_then(|engine| engine.updates.try_recv().ok());
             let Some(update) = update else { break };
             match update {
-                EngineUpdate::ActiveModel(_) => {}
+                EngineUpdate::ActiveModel(model) => {
+                    desktop::processing::model_status(format!("Ready: {model}"), false);
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                }
                 EngineUpdate::Notice(message) => {
+                    desktop::processing::notice(&message);
                     let message = message
                         .strip_prefix("@model-notice:")
                         .unwrap_or(&message)
@@ -737,6 +806,9 @@ impl WindowsApp {
                         ),
                         _ => {}
                     }
+                    if status == AppStatus::Ready {
+                        desktop::processing::model_finished();
+                    }
                     self.status = status;
                     self.update_tray();
                     self.update_overlay();
@@ -757,10 +829,11 @@ impl WindowsApp {
                         ModelProgress::Installing => "Installing model".to_string(),
                         ModelProgress::Ready => "Loading model".to_string(),
                     };
+                    desktop::processing::model_status(text.clone(), true);
                     set_wide_array(&mut self.tray.szTip, &format!("Koett — {text}"));
                     let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
                 }
-                EngineUpdate::FormattingBusy(_) => {}
+                EngineUpdate::FormattingBusy(busy) => desktop::processing::formatting_busy(busy),
                 EngineUpdate::TranscriptReady {
                     model,
                     transcript,
@@ -773,7 +846,18 @@ impl WindowsApp {
                     {
                         continue;
                     }
-                    self.deliver(&model, &transcript.text, transcript.raw.as_deref());
+                    match Settings::load() {
+                        Ok(saved) => self.settings.replacements = saved.replacements,
+                        Err(error) => eprintln!(
+                            "Koett: Settings unavailable; using last valid replacements: {error}"
+                        ),
+                    }
+                    let (text, raw) = completed_words(
+                        &transcript.text,
+                        transcript.raw.as_deref(),
+                        &self.settings.replacements,
+                    );
+                    self.deliver(&model, &text, raw.as_deref());
                 }
             }
         }
@@ -1090,6 +1174,12 @@ impl WindowsApp {
             let _ = AppendMenuW(
                 menu,
                 MF_STRING,
+                MENU_WORDS,
+                w!("Dictionary and replacements…"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING,
                 MENU_RECORD,
                 if self.status == AppStatus::Recording {
                     w!("Stop")
@@ -1175,6 +1265,7 @@ impl WindowsApp {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
+            MENU_WORDS => desktop::open_words(self.hwnd),
             MENU_COPY_LAST => {
                 if let Err(e) = copy_text(self.hwnd, &self.last_transcript) {
                     show_fatal_error(&e);
@@ -1610,6 +1701,17 @@ fn wide(value: &str) -> Vec<u16> {
     value.encode_utf16().chain([0]).collect()
 }
 
+// Runtime restores dictionary spelling around optional cleanup. Literal rules run last.
+fn completed_words(
+    text: &str,
+    raw: Option<&str>,
+    rules: &[crate::replacements::Replacement],
+) -> (String, Option<String>) {
+    let final_text = crate::replacements::apply(text, rules);
+    let raw = raw.or_else(|| (final_text != text).then_some(text));
+    (final_text, raw.map(str::to_owned))
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -1617,6 +1719,44 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::{MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT};
 
     use super::{Shortcut, tray_anchor, windows_shortcut};
+
+    #[test]
+    fn replacements_keep_original_asr_and_run_once_after_cleanup() {
+        use crate::replacements::Replacement;
+        let rules = [
+            Replacement {
+                phrase: "old portrait".into(),
+                replacement: "new portrait".into(),
+            },
+            Replacement {
+                phrase: "new portrait".into(),
+                replacement: "wrong cascade".into(),
+            },
+        ];
+        assert_eq!(
+            super::completed_words("old portrait", None, &rules),
+            ("new portrait".into(), Some("old portrait".into()))
+        );
+        assert_eq!(
+            super::completed_words("old portrait", Some("Original ASR"), &rules),
+            ("new portrait".into(), Some("Original ASR".into()))
+        );
+        assert_eq!(
+            super::completed_words("unchanged", None, &rules),
+            ("unchanged".into(), None)
+        );
+        assert_eq!(
+            super::completed_words(
+                "remove",
+                None,
+                &[Replacement {
+                    phrase: "remove".into(),
+                    replacement: String::new()
+                }]
+            ),
+            (String::new(), Some("remove".into()))
+        );
+    }
 
     #[test]
     fn every_window_in_this_process_is_ineligible_for_paste() {
