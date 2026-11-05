@@ -139,6 +139,8 @@ struct Window {
     processing: Option<processing::Controls>,
     correction: Option<correction::Editor>,
     word_entries: Vec<(String, String)>,
+    words_selected: Option<usize>,
+    words_category: bool,
     search: HWND,
     list: HWND,
     detail: HWND,
@@ -238,6 +240,23 @@ fn run(
     let _apartment = Apartment;
     let correction = record.map(correction::Editor::new).transpose()?;
     let correction_view = correction.is_some();
+    struct RestoreOwner(HWND);
+    impl Drop for RestoreOwner {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(self.0, true);
+            }
+        }
+    }
+    let _restore_owner = if correction_view && owner != 0 {
+        let parent = HWND(owner as *mut _);
+        unsafe {
+            let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(parent, false);
+        }
+        Some(RestoreOwner(parent))
+    } else {
+        None
+    };
     let (send, receive) = mpsc::channel();
     let (reply, replies) = mpsc::channel();
     std::thread::spawn(move || {
@@ -311,7 +330,11 @@ fn run(
             CW_USEDEFAULT,
             if settings { 560 } else { 960 },
             if settings { 440 } else { 680 },
-            None,
+            if correction_view && owner != 0 {
+                Some(HWND(owner as *mut _))
+            } else {
+                None
+            },
             None,
             Some(instance.into()),
             None,
@@ -330,6 +353,8 @@ fn run(
             processing: None,
             correction,
             word_entries: vec![],
+            words_selected: None,
+            words_category: false,
             search: HWND::default(),
             list: HWND::default(),
             detail: HWND::default(),
@@ -741,6 +766,9 @@ impl Window {
         }
     }
     fn poll(&mut self) {
+        if self.words {
+            self.words_poll();
+        }
         if let Some(mut editor) = self.correction.take() {
             editor.poll(self);
             self.correction = Some(editor);
@@ -813,13 +841,7 @@ impl Window {
                     }
                 },
                 Reply::Correction(id, result) if id == self.generation => match result {
-                    Ok(Some(record)) => open_kind(
-                        false,
-                        false,
-                        false,
-                        HWND(self.owner as *mut _),
-                        Some(record),
-                    ),
+                    Ok(Some(record)) => open_kind(false, false, false, self.hwnd, Some(record)),
                     Ok(None) => set(self.detail, "Transcript no longer exists"),
                     Err(error) => set(self.detail, &error),
                 },
@@ -1110,6 +1132,20 @@ unsafe extern "system" fn proc(
     lparam: LPARAM,
 ) -> LRESULT {
     if message == WM_CLOSE {
+        WINDOW.with(|cell| {
+            if let Ok(window) = cell.try_borrow()
+                && let Some(window) = window.as_ref()
+                && window.correction.is_some()
+                && window.owner != 0
+            {
+                unsafe {
+                    let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
+                        HWND(window.owner as *mut _),
+                        true,
+                    );
+                }
+            }
+        });
         unsafe {
             let _ = DestroyWindow(hwnd);
         }

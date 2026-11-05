@@ -66,3 +66,26 @@ only in the private guest cache; this is not a bundled runtime dependency.
 These are requirements carried from the reported Linux lessons, not Windows
 passes. Physical device/display/sleep limitations remain separate from guest
 or fixture evidence. M4 follows completion of M3.
+
+## Latest regression fixes awaiting linked retest
+
+The 6165f3f guest passed correction storage, explicit everyday acceptance,
+Dismiss and denied-write preservation through keyboard selection. Pure UIA
+selection revealed stale labels, now fixed with the same selection observation
+used by History. Word category/selection observation was fixed too. Editing a
+selected entry now renames it atomically, rejects rename collisions or stale
+snapshots, and offers New entry. Literal replacement whitespace is preserved.
+Focused tests cover rename, conflict/validation preservation and whitespace.
+
+One shared Rust file now has Windows-only changes: formatting.rs suppresses the
+formatter console and retains a kill-on-close Windows Job. The job implementation
+is Windows-only and Cargo adds only its Windows namespace feature. Mac/Linux
+paths and defaults are unchanged; normal native tests/Clippy/release pass.
+A Windows child-lifetime test compiles and awaits execution in Windows CI.
+
+The official llama.cpp CPU download needed VCRUNTIME140.dll on the clean guest.
+A private test runtime built from pinned MIT source with the existing Zig
+compiler has only system imports and passed --version on Windows; no runtime
+installer/licence decision, host install or global PATH change was needed.
+See the runtime-static receipt; binaries/models remain outside git. This is
+not a bundled dependency or completed formatting end-to-end proof.

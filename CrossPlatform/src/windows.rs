@@ -1,4 +1,5 @@
 mod desktop;
+pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
 mod paste_guard;

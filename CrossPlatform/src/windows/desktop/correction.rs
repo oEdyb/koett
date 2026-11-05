@@ -12,6 +12,7 @@ pub(super) struct Editor {
     learned: Vec<Suggestion>,
     proposals: Vec<Proposal>,
     pending: Option<mpsc::Receiver<Vec<Suggestion>>>,
+    last_selection: Option<(isize, bool)>,
 }
 impl Editor {
     pub(super) fn new(record: crate::history::HistoryRecord) -> Result<Self, String> {
@@ -21,6 +22,7 @@ impl Editor {
             learned: vec![],
             proposals: vec![],
             pending: None,
+            last_selection: None,
         })
     }
     pub(super) fn create(&mut self, w: &mut Window) -> Result<(), String> {
@@ -156,6 +158,7 @@ impl Editor {
                 SendMessageW(w.list, LB_SETCURSEL, Some(WPARAM(0)), None);
             }
         }
+        self.last_selection = None;
         self.selection(w);
         Ok(())
     }
@@ -166,7 +169,21 @@ impl Editor {
             .and_then(|i| self.proposals.get(i))
             .cloned()
     }
-    fn selection(&self, w: &Window) {
+    fn selection(&mut self, w: &Window) {
+        let index = unsafe { SendMessageW(w.list, LB_GETCURSEL, None, None) }.0;
+        let state = (index, self.pending.is_some());
+        if self.last_selection == Some(state) {
+            return;
+        }
+        self.last_selection = Some(state);
+        if let Ok(button) = unsafe { GetDlgItem(Some(w.hwnd), SAVE_CORRECTION as i32) } {
+            unsafe {
+                let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
+                    button,
+                    self.pending.is_none(),
+                );
+            }
+        }
         let selected = self.selected(w);
         for id in [ADD, DISMISS] {
             if let Ok(h) = unsafe { GetDlgItem(Some(w.hwnd), id as i32) } {
@@ -203,6 +220,7 @@ impl Editor {
         );
     }
     pub(super) fn poll(&mut self, w: &Window) {
+        self.selection(w);
         if let Some(learned) = self.pending.as_ref().and_then(|rx| rx.try_recv().ok()) {
             self.pending = None;
             self.learned = learned;
@@ -213,7 +231,7 @@ impl Editor {
     }
     fn action(&mut self, w: &Window, id: usize, notification: u16) -> Result<(), String> {
         match id {
-            SAVE_CORRECTION => {
+            SAVE_CORRECTION if self.pending.is_none() => {
                 let corrected = read(w.detail).replace("\r\n", "\n");
                 if corrected.trim().is_empty() {
                     return Err("Enter the corrected transcript".into());

@@ -11,6 +11,75 @@ const EXPORT_WORDS: usize = 46;
 const WORD_STATUS: usize = 47;
 const TERM_LABEL: usize = 48;
 const FORMS_LABEL: usize = 49;
+const NEW_ENTRY: usize = 50;
+fn save_entry(
+    settings: &mut Settings,
+    prior: Option<&(String, String)>,
+    term: String,
+    forms: String,
+    replacements: bool,
+) -> Result<(), String> {
+    if term.trim().is_empty() {
+        return Err("Enter a term or phrase".into());
+    }
+    let term = if replacements {
+        term
+    } else {
+        term.trim().to_owned()
+    };
+    if let Some((old, old_forms)) = prior {
+        let live = if replacements {
+            settings
+                .replacements
+                .iter()
+                .find(|e| e.phrase == *old)
+                .map(|e| e.replacement.clone())
+        } else {
+            settings
+                .dictionary
+                .iter()
+                .find(|e| e.term == *old)
+                .map(|e| e.sounds_like.join(", "))
+        };
+        if live.as_ref() != Some(old_forms) {
+            return Err("This entry changed elsewhere. Reopen Words to review it.".into());
+        }
+        let collision = if replacements {
+            settings.replacements.iter().any(|e| e.phrase == term)
+        } else {
+            settings.dictionary.iter().any(|e| e.term == term)
+        };
+        if *old != term && collision {
+            return Err("An entry already uses that term or phrase".into());
+        }
+    }
+    if replacements {
+        if term.chars().count() > 4096 || forms.len() > 65536 {
+            return Err("Replacement is too long".into());
+        }
+        let mut next = settings.replacements.clone();
+        next.retain(|e| e.phrase != term && prior.is_none_or(|(old, _)| e.phrase != *old));
+        next.push(crate::replacements::Replacement {
+            phrase: term,
+            replacement: forms,
+        });
+        settings.replacements = next;
+    } else {
+        let mut next = settings.dictionary.clone();
+        next.retain(|e| e.term != term && prior.is_none_or(|(old, _)| e.term != *old));
+        next.push(dictionary::DictionaryEntry {
+            term,
+            sounds_like: forms
+                .split(',')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned)
+                .collect(),
+        });
+        settings.dictionary = dictionary::normalize(next)?;
+    }
+    Ok(())
+}
 impl Window {
     pub(super) fn create_words(&mut self) -> Result<(), String> {
         self.mode = self.control(
@@ -88,6 +157,13 @@ impl Window {
         )?;
         self.control(
             w!("BUTTON"),
+            "New entry",
+            WS_TABSTOP,
+            NEW_ENTRY,
+            [720, 300, 168, 32],
+        )?;
+        self.control(
+            w!("BUTTON"),
             "Import…",
             WS_TABSTOP,
             IMPORT,
@@ -114,6 +190,8 @@ impl Window {
     }
     fn reload_words(&mut self) -> Result<(), String> {
         let settings = Settings::load()?;
+        self.words_category = self.replacements();
+        self.words_selected = None;
         self.word_entries = if self.replacements() {
             settings
                 .replacements
@@ -168,61 +246,48 @@ impl Window {
         }
         Ok(())
     }
+    fn words_selection(&mut self) {
+        let index =
+            usize::try_from(unsafe { SendMessageW(self.list, LB_GETCURSEL, None, None) }.0).ok();
+        if index != self.words_selected {
+            self.words_selected = index;
+            if let Some((term, forms)) = index.and_then(|i| self.word_entries.get(i)) {
+                set(self.search, term);
+                set(self.detail, forms);
+            }
+        }
+    }
+    pub(super) fn words_poll(&mut self) {
+        if self.replacements() != self.words_category
+            && let Err(error) = self.reload_words()
+        {
+            let _ = self.words_status(&error);
+        }
+        self.words_selection();
+    }
     fn words_action(&mut self, id: usize, notification: u16) -> Result<(), String> {
         match id {
             KIND if notification == CBN_SELCHANGE as u16 => self.reload_words()?,
-            LIST if notification == LBN_SELCHANGE as u16 => {
-                let i = unsafe { SendMessageW(self.list, LB_GETCURSEL, None, None) }.0;
-                if let Some((term, forms)) = usize::try_from(i)
-                    .ok()
-                    .and_then(|i| self.word_entries.get(i))
-                {
-                    set(self.search, term);
-                    set(self.detail, forms);
+            LIST if notification == LBN_SELCHANGE as u16 => self.words_selection(),
+            NEW_ENTRY => {
+                unsafe {
+                    SendMessageW(self.list, LB_SETCURSEL, Some(WPARAM(usize::MAX)), None);
+                    let _ =
+                        windows::Win32::UI::Input::KeyboardAndMouse::SetFocus(Some(self.search));
                 }
+                self.words_selected = None;
+                set(self.search, "");
+                set(self.detail, "");
             }
             ACCEPT => {
-                let term = read(self.search).trim().to_owned();
-                let forms = read(self.detail);
-                if term.is_empty() {
-                    return Err("Enter a term or phrase".into());
-                }
+                let term = read(self.search);
+                let forms = read(self.detail).replace("\r\n", "\n");
+                let index =
+                    usize::try_from(unsafe { SendMessageW(self.list, LB_GETCURSEL, None, None) }.0)
+                        .ok();
+                let prior = index.and_then(|i| self.word_entries.get(i));
                 let mut edit = Settings::edit()?;
-                if self.replacements() {
-                    if term.chars().count() > 4096 || forms.len() > 65536 {
-                        return Err("Replacement is too long".into());
-                    }
-                    if let Some(rule) = edit
-                        .settings
-                        .replacements
-                        .iter_mut()
-                        .find(|r| r.phrase == term)
-                    {
-                        rule.replacement = forms;
-                    } else {
-                        edit.settings
-                            .replacements
-                            .push(crate::replacements::Replacement {
-                                phrase: term,
-                                replacement: forms,
-                            });
-                    }
-                } else {
-                    let entry = dictionary::DictionaryEntry {
-                        term,
-                        sounds_like: forms
-                            .split(',')
-                            .map(str::trim)
-                            .filter(|s| !s.is_empty())
-                            .map(str::to_owned)
-                            .collect(),
-                    };
-                    // Saving an exact term explicitly replaces its forms; imports merge.
-                    edit.settings.dictionary.retain(|e| e.term != entry.term);
-                    edit.settings.dictionary.push(entry);
-                    edit.settings.dictionary =
-                        dictionary::normalize(std::mem::take(&mut edit.settings.dictionary))?;
-                }
+                save_entry(&mut edit.settings, prior, term, forms, self.replacements())?;
                 edit.commit()?;
                 drop(edit);
                 self.reload_words()?;
@@ -331,4 +396,89 @@ fn import_path(hwnd: HWND) -> Result<Option<std::path::PathBuf>, String> {
         return Err(format!("Could not choose dictionary file: {error}"));
     }
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn rename_is_atomic_and_conflicts_do_not_discard_words() {
+        let mut settings = Settings {
+            dictionary: vec![dictionary::DictionaryEntry::new("Koett", &["cot"])],
+            ..Settings::default()
+        };
+        let prior = ("Koett".into(), "cot".into());
+        save_entry(
+            &mut settings,
+            Some(&prior),
+            "Kött".into(),
+            "cut".into(),
+            false,
+        )
+        .unwrap();
+        assert_eq!(
+            settings.dictionary,
+            vec![dictionary::DictionaryEntry::new("Kött", &["cut"])]
+        );
+        let snapshot = settings.clone();
+        assert!(
+            save_entry(
+                &mut settings,
+                Some(&prior),
+                "Different".into(),
+                "new".into(),
+                false
+            )
+            .is_err()
+        );
+        assert_eq!(settings, snapshot);
+        let prior = ("Kött".into(), "cut".into());
+        assert!(
+            save_entry(
+                &mut settings,
+                Some(&prior),
+                "x".repeat(81),
+                "new".into(),
+                false
+            )
+            .is_err()
+        );
+        assert_eq!(settings, snapshot);
+    }
+    #[test]
+    fn renaming_to_an_existing_term_preserves_both_entries() {
+        let mut settings = Settings {
+            dictionary: vec![
+                dictionary::DictionaryEntry::new("A", &["ay"]),
+                dictionary::DictionaryEntry::new("B", &["bee"]),
+            ],
+            ..Settings::default()
+        };
+        let snapshot = settings.clone();
+        assert!(
+            save_entry(
+                &mut settings,
+                Some(&("A".into(), "ay".into())),
+                "B".into(),
+                "new".into(),
+                false
+            )
+            .is_err()
+        );
+        assert_eq!(settings, snapshot);
+    }
+    #[test]
+    fn literal_replacement_whitespace_is_preserved() {
+        let mut settings = Settings::default();
+        save_entry(
+            &mut settings,
+            None,
+            " hello ".into(),
+            " world ".into(),
+            true,
+        )
+        .unwrap();
+        assert_eq!(settings.replacements[0].phrase, " hello ");
+        assert_eq!(settings.replacements[0].replacement, " world ");
+    }
 }
