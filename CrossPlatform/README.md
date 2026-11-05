@@ -113,11 +113,6 @@ a manual HTTP(S) URL. Finite direct media, HLS and DASH are supported through
 `~/.local/bin/yt-dlp` and `/usr/bin/ffmpeg`. Live, protected and login-required
 sources are outside the supported scope. A separate result has preview and Copy.
 
-Optional **Ask** sends your question and one screen image to your configured
-provider. It needs `secret-tool` and a session Secret Service. Spoken replies use
-Cartesia when enabled. Rich answers need complete WebKitGTK 6 with its helpers;
-plain text remains available without it. Dictation needs no account or provider.
-
 ## Drawing setup
 
 Requires a Wayland desktop with layer-shell: KDE Plasma 6, niri, Sway or
@@ -157,7 +152,7 @@ The target must accept image paste. The image sheet is pasted first, then
 speech-linked text; paste support and focus checks vary by desktop as described
 above. Images stay in memory until another completed dictation or app exit.
 Captured screen content is part of the pasted image. Normal dictation and
-drawing recognition stay local; Ask is a separate optional feature.
+drawing recognition stay local.
 
 ## Local data
 
