@@ -33,6 +33,11 @@ The controlled seam replaces PCM **before recording-file writes**:
   delivered the entire fixture, plus 150 ms and the pre-Stop modifier normalization.
   Per-receipt injected frames and sample rate are retained.
 
+The old processing tap can affect Audio Queue buffering; its observed maximum
+processing block is 1024 frames. The current input callback keeps its existing
+buffer allocation and file sink. No claim of zero instrumentation cost or exact
+unmodified-release buffer behavior is made.
+
 Thus this measures **native M5 controlled-input Stop → insertion**, excluding
 microphone acquisition, room acoustics and physical keyboard dispatch. It does
 not establish unmodified shipping-binary microphone latency, compositor rendering,
@@ -48,7 +53,9 @@ product files; `AuditFixture.swift` is the one added source file. They:
    are handled in memory. Current permission-onboarding storage is also injected.
 2. Require explicit `KOETT_AUDIT_HOST=1` and the exact private home before startup.
 3. Start the existing delegate once and add file-based Start/Stop/progress/abort
-   controls. They invoke the real production toggle method; startup/loading are
+   controls. The deep private home exceeds the existing production control
+   socket path limit; that CLI control endpoint is not tested. These controls
+   invoke the real production toggle method; startup/loading are
    outside warm timing. Source Stop methods themselves are unchanged.
 4. Normalize synthetic modifier state before the timed Stop. This models released
    shortcut keys without overriding current production paste-readiness checks.
@@ -73,12 +80,15 @@ The original general clipboard representations are held **only in receiver memor
 Before every capture the receiver is emptied and the clipboard receives a fresh
 unrelated UUID sentinel. Acceptance requires all of:
 
-- the current request UUID and a target timestamp after this Stop;
+- a target timestamp after this Stop; the request UUID is driver bookkeeping,
+  not independent source-to-receiver correlation;
 - real paste-event PID equal to this private source app;
 - event-tagged app write generation equal to clipboard generation, newer than sentinel;
 - exactly equal receiver/clipboard payload and the expected **spoken** marker;
 - matching driver/loaded-input/manifest hashes and a completed input generation;
-- at least 50/350/1400/8000 characters at 5/30/120/600 s respectively;
+- reference-completed text length, fixture-specific final phrases and paired
+  build/repeat payload lengths within 1%, checked by `verify-host.py`;
+- source capture generations in order 2/3/4/5, after warm-up generation 1;
 - successful clipboard restoration, compared representation-for-representation in memory.
 
 Nothing adds a nonce to output text. Repeated identical audio cannot satisfy this
@@ -113,8 +123,42 @@ python3 Benchmarks/Dictionary/PasteAudit/Host/prepare-host.py \
 python3 .build/performance/host-repro/run-host.py
 ```
 
+Verify all 24 receipts independently after the collector finishes:
+
+```sh
+python3 Benchmarks/Dictionary/PasteAudit/Host/verify-host.py \
+  .build/performance/host-repro/native-paste.json \
+  .build/performance/guarded-fixtures/manifest.json
+```
+
 The driver, app state, native receipts, warm-ups and logs remain under that private
 root. The source bundles are never installed. After verifying cleanup, unregister
 only these private bundle paths from Launch Services and leave the installed app
 and its data alone. Never copy a Koett History, Last Transcript or real dictionary
 into the test home or report.
+
+## Instrumentation and review limits
+
+Both private source apps are hardened but have **no audio-input entitlement**.
+Only the receiver uses `driver.entitlements`. Existing authorization therefore
+does not prove physical microphone acquisition; buffers can be silent before
+replacement. That acquisition is excluded. No new host permission is granted.
+Future capture protocols should log authorization state before starting.
+
+Old uses the system default input; current selects the built-in microphone.
+A read-only host query during the suite returned `BuiltInMicrophoneDevice` as
+the default input UID. Sample rate alone does not identify the physical device.
+The harness memory defaults override the shortcut to Control-Shift-K, but host
+trials invoke file controls, so neither shortcut dispatch is measured.
+
+The old-only processing tap is destroyed with the queue during real recorder
+Stop. Its extra teardown is **inside** the timer and was not measured separately;
+this can bias against old. Small five-second differences cannot support a faster
+shipping-app verdict. The modifiers were already up before each measured Stop;
+the production 1.5-second modifier-wait branch is not exercised. Stop trials use
+empty dictionaries; populated correction cost is measured separately.
+
+Power/thermal state and the installed Koett event-tap state were not recorded.
+Lengths are in fixed order and there are only three repetitions per cell.
+Cached CTC files are preserved. The strengthened verifier was added after the
+live collector started and checks every saved receipt before final acceptance.

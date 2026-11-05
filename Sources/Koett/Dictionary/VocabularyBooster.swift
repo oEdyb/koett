@@ -38,8 +38,8 @@ public actor VocabularyBooster {
         unload = { await CtcModelCache.shared.clear() }
     }
 
-    init(timeout: Duration = .seconds(2), loader: @escaping Loader) {
-        enabled = true
+    init(enabled: Bool = true, timeout: Duration = .seconds(2), loader: @escaping Loader) {
+        self.enabled = enabled
         self.timeout = timeout
         self.loader = loader
         unload = {}

@@ -28,8 +28,10 @@ final class DictionaryLatencyTests: XCTestCase {
         let manager = AsrManager(config: .default)
         try await manager.loadModels(AsrModels.downloadAndLoad(version: .v2))
         let detector = try await VadManager(config: SpeechTrimmer.detectorConfig)
+        let requested = (env["KOETT_LATENCY_MODES"] ?? "off,spelling,ctc").split(separator: ",").map(String.init)
+        let measuresCTC = requested.contains("ctc")
         let tracker = RescoreTracker()
-        let booster = VocabularyBooster(timeout: .seconds(2), loader: { entries in
+        let booster = VocabularyBooster(enabled: measuresCTC, timeout: .seconds(2), loader: { entries in
             let base = try await CtcModelCache.shared.session(for: entries, tuning: .koett)
             return TrackedRescorer(base: base, tracker: tracker)
         })
@@ -38,10 +40,9 @@ final class DictionaryLatencyTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(500))
         }
         let status = await booster.status
-        XCTAssertEqual(status, .ready)
+        XCTAssertEqual(status, measuresCTC ? .ready : .off)
         let defaultBooster = VocabularyBooster()
         await defaultBooster.update(entries)
-        let requested = (env["KOETT_LATENCY_MODES"] ?? "off,spelling,ctc").split(separator: ",").map(String.init)
         let warm = URL(fileURLWithPath: folder).appendingPathComponent("5s.wav")
         _ = try await DictationTranscriber.transcribe(warm, using: manager, detector: detector, boost: booster.boost)
         var rows: [Row] = []

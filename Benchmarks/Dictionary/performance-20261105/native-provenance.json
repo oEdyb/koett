@@ -1,1 +1,42 @@
-{"scope": "native M5, controlled recorder input; microphone acquisition and keyboard dispatch excluded", "apps": {"v0.1.1-c72f834": {"binarySHA256": "bae2702282b2126ba28fe001b8373a74c7181a5863fd0427b458b6215a8103a5"}, "current-85dde51": {"binarySHA256": "5e1cda162ca8fdb4bc3e6f138a69c44cb93f6c8599c78a8f7a3a0e11667cc14e"}}, "hostUTC": "2026-11-05T05:46:55Z"}
+{
+  "scope": "native M5, controlled recorder input; microphone acquisition and keyboard dispatch excluded",
+  "apps": {
+    "v0.1.1-c72f834": {
+      "binarySHA256": "bae2702282b2126ba28fe001b8373a74c7181a5863fd0427b458b6215a8103a5",
+      "sourceCommit": "c72f83415b1d760c30316f07fc776f09b0ebdc0b"
+    },
+    "current-85dde51": {
+      "binarySHA256": "5e1cda162ca8fdb4bc3e6f138a69c44cb93f6c8599c78a8f7a3a0e11667cc14e",
+      "sourceCommit": "85dde5153e0fd4cf50ed3b91813ffc9166d779fc"
+    }
+  },
+  "hostUTC": "2026-11-05T05:46:55Z",
+  "host": {
+    "hardware": "Apple M5 MacBook Air",
+    "memoryBytes": 25769803776,
+    "macOS": "26.6.2",
+    "build": "25G83",
+    "compiler": "Apple Swift 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)",
+    "VMs": "all stopped during native suite",
+    "audioInputEntitlement": false,
+    "defaultInputUIDReadDuringAndAfterSuite": "BuiltInMicrophoneDevice",
+    "physicalMicAcquisition": "excluded; live buffers replaced before file writes"
+  },
+  "measuredCollectorSHA256": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+  "futureCollectorChange": "Public Host/run-host.py adds the stronger post-capture verifier; frozen measured collector retained as native-measured-collector.py",
+  "consoleSHA256": {
+    "native-0-current-85dde51.log": "9ac1074c9573fd6821e33ee739ced3cf4591773f7a5f202d97680219120ef69d",
+    "native-0-current-85dde51.stderr": "f82ba1ad21a6509c4a12ae6add88b0aaaa64e6a3d64115710c366a0a0397a577",
+    "native-0-v0.1.1-c72f834.log": "dcbef16bbabe1b17db933e9156adcd878ddb28a7fd631e3a05b0bea4d6b3202f",
+    "native-0-v0.1.1-c72f834.stderr": "42bf4d41c75fcee384c7b1ec9af3b1f3745337f4626d3c26af6cfe02df0bb48d",
+    "native-1-current-85dde51.log": "9daa49673a13cf63fba50e105e85f99060517986a21d499d83a752b7e36c0826",
+    "native-1-current-85dde51.stderr": "f82ba1ad21a6509c4a12ae6add88b0aaaa64e6a3d64115710c366a0a0397a577",
+    "native-1-v0.1.1-c72f834.log": "9d27e321e0fab70ce93b28460513c651a12f4380337ef27bb3c67d48c9959c19",
+    "native-1-v0.1.1-c72f834.stderr": "42bf4d41c75fcee384c7b1ec9af3b1f3745337f4626d3c26af6cfe02df0bb48d",
+    "native-2-current-85dde51.log": "4ea1d6a3b7a2ca0168838363a5c9bde0d86cfd7cc1d19e0ddc69aaf759db3e75",
+    "native-2-current-85dde51.stderr": "f82ba1ad21a6509c4a12ae6add88b0aaaa64e6a3d64115710c366a0a0397a577",
+    "native-2-v0.1.1-c72f834.log": "19a9d6108159fa924fc0aa0a6db25ad02706dfb83fbe3ec130a0e38626b18cd3",
+    "native-2-v0.1.1-c72f834.stderr": "42bf4d41c75fcee384c7b1ec9af3b1f3745337f4626d3c26af6cfe02df0bb48d",
+    "native-runs.log": "71027bbf91fbf18ae9a985181b3c126642c9be35d604fc5063cd3df5c287b281"
+  }
+}

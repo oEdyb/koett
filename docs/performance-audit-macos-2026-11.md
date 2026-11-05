@@ -1,10 +1,10 @@
 # Mac performance audit — November 2026
 
-Status: native dictionary latency, corpus recall and vocabulary-switch memory checks
-are verified. The repeated native M5 controlled-input Stop-to-target suite is in
-progress. Eight guarded guest validations also passed. The installed host app,
+Status: all 24 repeated native M5 controlled-input Stop-to-target receipts passed
+independent freshness, reference-length and tail validation. Native dictionary
+latency, corpus recall, vocabulary-switch memory and eight guest validations passed. The installed host app,
 preferences and History were not changed. Host target focus and clipboard were
-used in a private probe; clipboard backups stay in memory and are restored after
+used in the private suite; clipboard backups stay in memory and are restored after
 each accepted receipt. All committed transcript payloads are public synthetic fixtures.
 
 ## Scope and source
@@ -68,12 +68,36 @@ repetitions per length, same warm model/VAD and exact fixtures:
 | 120 s | 555.509 ms | 563.526 ms | +1.44% |
 | 600 s | 2464.218 ms | 2365.109 ms | −4.02% |
 
+This original confirmation process loaded and warmed CTC even for the
+default/off-only comparison. It is a fair paired comparison but not the normal
+production loading state. A fresh process without CTC loading is reported below.
+
 All length medians remain below the 10% budget. One individual 120 s pair was
 +24.80%; the other two were −6.62% and +1.44%. This does not establish a
 per-recording 10% ceiling. Negative differences are run variation,
 not evidence that spelling speeds up ASR. All 12 default transcripts exactly
 matched the first sweep's spelling-only transcripts. Raw repeats and equality
 checks are in `default-latency.json` and `default-summary.json`.
+
+### Fresh default/off process without CTC loading
+
+After the host capture suite, the harness was changed to load/warm CTC only when
+`ctc` is a requested mode. A new release process repeated all four lengths with
+three alternating off/default pairs and no CTC session loading or warm-up:
+
+| Audio | Off median | Default median | Change |
+|---|---:|---:|---:|
+| 5 s | 80.477 ms | 81.529 ms | +1.31% |
+| 30 s | 205.861 ms | 190.362 ms | -7.53% |
+| 120 s | 544.411 ms | 534.448 ms | -1.83% |
+| 600 s | 2366.278 ms | 2372.256 ms | +0.25% |
+
+All 12 default outputs exactly matched the earlier cheap path. This addresses
+normal production loading state while retaining the original fair paired results.
+The run passed in 19.765 s. A nonfatal Core ML `E5RT` zero-shape diagnostic was
+printed; its origin was not localized. All 24 timed calls completed, no late CTC
+work ran, and output equality checks passed. Raw output and every pair are in
+`no-ctc-default-*`. Negative changes are timing variation, not a speedup claim.
 
 A separate three-repeat 600 s probe explicitly measured late CTC work. Visible
 pipeline times were 4453.781, 4516.367 and 4374.282 ms. After those returns, the
@@ -138,7 +162,7 @@ constructors. Each update reached off/ready, settled for 500 ms and processed th
 same five-second fixture through the production transcriber plus spelling.
 All 18 steps passed. These are four reload cycles, not a long-duration leak test.
 
-| Constructor | Default RSS range | Loaded CTC RSS, first → fourth | Empty RSS after load, first → fourth |
+| Constructor | Baseline/default RSS | Loaded CTC RSS, first → fourth | Empty RSS after load, first → fourth |
 |---|---:|---:|---:|
 | New default, acoustic off | 98.797–99.078 MiB | Not loaded | Not loaded |
 | Explicit experimental CTC | 99.031 MiB before load | 111.125 → 111.812 MiB | 106.391 → 107.031 MiB |
@@ -171,7 +195,48 @@ The host comparison uses source builds of public v0.1.1 `c72f834` and current
 `85dde51`, both with the same pinned FluidAudio, raw formatting and empty
 dictionaries. The model and a complete five-second pipeline are warmed before
 each measured group. Three groups per build alternate old/current, current/old,
-old/current. The 24-capture suite is still running; no final median is claimed yet.
+old/current. All 24 measured captures and six warm-ups completed. The independent
+verifier checks 24 unique requests and source generations, six distinct source
+processes, warm-up generation 1 and measured generations 2/3/4/5 in every group.
+Clipboard representations were restored after every accepted capture and at exit.
+
+| Audio | v0.1.1 median (range) | Current median (range) | Median change |
+|---|---:|---:|---:|
+| 5 s | 148.342 ms (148.190–182.756) | 157.781 ms (149.541–216.731) | +6.36% |
+| 30 s | 258.610 ms (253.191–260.984) | 298.920 ms (297.300–368.482) | +15.59% |
+| 120 s | 521.806 ms (514.264–534.283) | 652.968 ms (652.855–710.876) | +25.14% |
+| 600 s | 2134.911 ms (2114.224–2150.451) | 2581.464 ms (2543.667–2720.389) | +20.92% |
+
+Current medians were 6.36%, 15.59%, 25.14% and 20.92% higher. At 30–600 s all
+three current observations exceeded all three old observations in this suite.
+This supports a slower **instrumented controlled-input pipeline** observation,
+not a cause diagnosis or an exact shipping microphone comparison. The five-second
+ranges overlap and include old-only tap teardown bias; no faster claim is made.
+The last current group was slower than its earlier groups, with no power/thermal
+telemetry to attribute the variation.
+
+All three payload lengths were identical within each build/length: old/current
+83/83, 472/472, 1837/1841 and 9157/9154 characters. Final text was checked against
+the marked fixture cutoff, not just the initial 8000-character threshold. Source
+`*-reference.json` spans were shifted by the recorded marker-prefix duration:
+0/8/37/191 complete corpus clips at 5/30/120/600 s, with partial final phrases
+reaching “without the…”, “booking app”, “both” and “Jacob and”. The reference-complete
+text lengths are 35/436/1828/9221 characters including the marker. Accepted output
+must retain at least 97% of that length, contain the final phrases, and differ by
+at most 1% in length across builds/repeats. These are completeness guards with
+known ASR errors, not proof of word-for-word reference accuracy. The full output,
+all timings and per-request reference checks are in `native-paste.json` and
+`native-summary.json`. UUIDs are unique bookkeeping; source/event generations
+supply independent freshness.
+
+Original same-invocation latency logs are retained in
+`native-same-invocation-stages.json`, including six warm-ups. They report production
+Stop-to-ASR-start, ASR/frontend, text preparation, delivery and paste-post stages,
+paired by request with the measured receiver timestamp. No stage sums substitute
+for the measured Stop-to-insertion endpoint. Original production console logs
+and collector cleanup are preserved in `native-console/`, with SHA-256 hashes
+in provenance. The same nonfatal E5RT zero-shape diagnostic appears during model
+startup in these logs; all 30 warm/measured source invocations completed.
 
 The input seam replaces PCM immediately before recorder file writes. Old uses a
 real input `AudioQueueProcessingTap`; current replaces its live input buffer before
@@ -204,7 +269,24 @@ uses a stopped-recorder private offset probed on macOS 26.6.2 / `25G83`, guarded
 against other builds; this harness code is not part of the product. Apple’s
 [Audio Queue Services](https://developer.apple.com/documentation/audiotoolbox/audio-queue-services)
 provides the processing-tap API; the installed SDK describes input processing
-before encoding and implicit tap disposal with the queue.
+before encoding and implicit tap disposal with the queue. The old tap may change
+Audio Queue buffering (observed maximum block: 1024 frames); this is not a claim
+of zero instrumentation cost or exact unmodified-release buffering. Its implicit
+tap destruction happens inside real Stop and adds unmeasured old-only teardown;
+small five-second differences cannot establish a faster shipping-app verdict.
+
+The hardened private source apps have no audio-input entitlement. Their existing
+permission attribution does not prove acoustic acquisition; the input can be
+silent before replacement. Old uses default input, current built-in input; a
+read-only query during the suite confirmed default UID `BuiltInMicrophoneDevice`.
+Memory defaults override the shortcut to Control-Shift-K, but the host uses file
+controls. Request UUIDs are driver bookkeeping, not independent correlation;
+source PID, ordered capture generations, event-tagged clipboard generation and
+actual payload provide the freshness evidence. Every final receipt also passes
+reference-completed length, final-phrase and cross-build length checks.
+Modifiers were normalized up, so the production 1.5 s wait branch is not tested.
+Power/thermal state and the installed app's event-tap state were not recorded.
+Fixed length order and three repetitions limit the distribution evidence.
 
 Both source apps are private Developer ID builds with the existing app’s
 designated requirement and Launch Services attribution; no host permission grant
@@ -296,11 +378,14 @@ use different endpoints and cannot be treated as target-insertion measurements.
 
 ## Verification
 
-- `swift test`: 433 tests, 12 optional tests skipped, zero failures (62.375 s).
+- `swift test`: 434 tests, 12 optional tests skipped, zero failures (44.565 s).
   Covers default-off behavior and the existing contracts; not a target paste receipt.
-- `swift build -c release`: passed (59.29 s); no host installation performed.
+- `swift build -c release`: passed (58.71 s); no host installation performed.
 - `git diff --check`, `zsh -n install-macos.sh`, both packaging plist lints: passed.
-- Independent review is pending. No CI watch or host installation was performed.
+- A read-only Opus 5.5 review of `5ef3c30` found no runtime/default correctness
+  blockers; its receipt, test and disclosure findings are addressed in this report
+  and the final verifier. The subsequent changes have not had another model review.
+  No CI watch or host installation was performed.
 
 ## Decisions and limits
 
@@ -320,5 +405,6 @@ Private reproducible outputs live in the audit worktree's `.build/performance/`:
 `full-paste.json` (provisional), `corpus/`, native timing JSON and gate logs.
 The native controlled-input suite writes its raw receipts, warm-ups, source logs
 and provenance beneath `.build/performance/host/`. No private dictionary or History
-export was used. The guest is stopped; the exclusive native measurement slot
-remains held until the native suite and cleanup finish.
+export was used. The exclusive native measurement slot
+was held through the native suite and final verification, then explicitly released. The source apps and
+receiver exited after verified clipboard restoration; the guest remains stopped.

@@ -39,7 +39,7 @@ Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,Es
 | Download verification / progress / offline reuse | Yes | Yes | Engine + tray progress | Native Windows progress/cancel/retry, checksums and atomic activation |
 | CPU / GPU / ARM64 | Apple Silicon local runtime | CPU path | CPU candidate, accelerators unverified | Native Windows x64/ARM64 CPU first; WinML/CUDA/QNN only after graph/device benchmarks |
 | Dictionary editor, import/export | Yes | Yes | Shared parsing/storage; no UI | Windows native Words page; same exchange format |
-| Acoustic dictionary bias + adoption | v2 CTC sidecar boost; Nemotron spelling only | v2/v3 transducer hotwords; 110M optional bounded v2 sidecar; Nemotron spelling only | Same engine limitation as Linux | Bounded CTC rescorer/optional transducer sidecar for 110M; investigate Nemotron bias; spelling-only must stay labeled |
+| Acoustic dictionary bias + adoption | Cheap spelling/forms by default; v2 CTC sidecar experimental and default-off; Nemotron spelling only | v2/v3 transducer hotwords; 110M optional bounded v2 sidecar; Nemotron spelling only | Same engine limitation as Linux | Bounded CTC rescorer/optional transducer sidecar for 110M; investigate Nemotron bias; spelling-only must stay labeled |
 | Spelling around S1-mini | Before and after | Before and after, with raw recovery preserved | Shared Rust order | Align Rust pre/post passes to Mac using fixture/corpus checks |
 | Literal replacements | Yes | Yes | Engine; no UI | Expose Windows editor; replacements remain final stage |
 | Fix a word / accepted learning suggestions | Yes | Yes | Shared correction modules; no UI | Windows history action, explicit Add/Dismiss, everyday-word warning |

@@ -120,6 +120,7 @@ try:
     emit('CAPTURE '+version+' repeat='+str(repeat)+' length='+str(fixture['seconds']))
     value=trial(fixture);value.update(version=version,repeat=repeat)
     rows.append(value);write(root/'native-paste.json',rows)
+    subprocess.run([sys.executable,str(worktree/'Benchmarks/Dictionary/PasteAudit/Host/verify-host.py'),str(root/'native-paste.json'),str(worktree/'Benchmarks/Dictionary/performance-20261105/guarded-fixture-manifest.json'),'--allow-partial','--output',str(root/'native-summary.json')],check=True,stdout=subprocess.DEVNULL)
     emit('VERIFIED '+version+' '+str(fixture['seconds'])+'s '+str(round(value['milliseconds'],3))+'ms chars='+str(len(value['text']))+' generation='+str(value['captureGeneration'])+' clipboard-restored='+str(value['clipboardRestored']))
     time.sleep(3)
  emit('ALL 24 NATIVE RECEIPTS VERIFIED')
