@@ -1,0 +1,57 @@
+WARMUP v0.1.1-c72f834 repeat=0
+CAPTURE v0.1.1-c72f834 repeat=0 length=5
+VERIFIED v0.1.1-c72f834 5s 182.756ms chars=83 generation=2 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=0 length=30
+VERIFIED v0.1.1-c72f834 30s 260.984ms chars=472 generation=3 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=0 length=120
+VERIFIED v0.1.1-c72f834 120s 514.264ms chars=1837 generation=4 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=0 length=600
+VERIFIED v0.1.1-c72f834 600s 2114.224ms chars=9157 generation=5 clipboard-restored=True
+WARMUP current-85dde51 repeat=0
+CAPTURE current-85dde51 repeat=0 length=5
+VERIFIED current-85dde51 5s 157.781ms chars=83 generation=2 clipboard-restored=True
+CAPTURE current-85dde51 repeat=0 length=30
+VERIFIED current-85dde51 30s 298.92ms chars=472 generation=3 clipboard-restored=True
+CAPTURE current-85dde51 repeat=0 length=120
+VERIFIED current-85dde51 120s 652.855ms chars=1841 generation=4 clipboard-restored=True
+CAPTURE current-85dde51 repeat=0 length=600
+VERIFIED current-85dde51 600s 2543.667ms chars=9154 generation=5 clipboard-restored=True
+WARMUP current-85dde51 repeat=1
+CAPTURE current-85dde51 repeat=1 length=5
+VERIFIED current-85dde51 5s 149.541ms chars=83 generation=2 clipboard-restored=True
+CAPTURE current-85dde51 repeat=1 length=30
+VERIFIED current-85dde51 30s 297.3ms chars=472 generation=3 clipboard-restored=True
+CAPTURE current-85dde51 repeat=1 length=120
+VERIFIED current-85dde51 120s 652.968ms chars=1841 generation=4 clipboard-restored=True
+CAPTURE current-85dde51 repeat=1 length=600
+VERIFIED current-85dde51 600s 2581.464ms chars=9154 generation=5 clipboard-restored=True
+WARMUP v0.1.1-c72f834 repeat=1
+CAPTURE v0.1.1-c72f834 repeat=1 length=5
+VERIFIED v0.1.1-c72f834 5s 148.342ms chars=83 generation=2 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=1 length=30
+VERIFIED v0.1.1-c72f834 30s 258.61ms chars=472 generation=3 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=1 length=120
+VERIFIED v0.1.1-c72f834 120s 534.283ms chars=1837 generation=4 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=1 length=600
+VERIFIED v0.1.1-c72f834 600s 2150.451ms chars=9157 generation=5 clipboard-restored=True
+WARMUP v0.1.1-c72f834 repeat=2
+CAPTURE v0.1.1-c72f834 repeat=2 length=5
+VERIFIED v0.1.1-c72f834 5s 148.19ms chars=83 generation=2 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=2 length=30
+VERIFIED v0.1.1-c72f834 30s 253.191ms chars=472 generation=3 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=2 length=120
+VERIFIED v0.1.1-c72f834 120s 521.806ms chars=1837 generation=4 clipboard-restored=True
+CAPTURE v0.1.1-c72f834 repeat=2 length=600
+VERIFIED v0.1.1-c72f834 600s 2134.911ms chars=9157 generation=5 clipboard-restored=True
+WARMUP current-85dde51 repeat=2
+CAPTURE current-85dde51 repeat=2 length=5
+VERIFIED current-85dde51 5s 216.731ms chars=83 generation=2 clipboard-restored=True
+CAPTURE current-85dde51 repeat=2 length=30
+VERIFIED current-85dde51 30s 368.482ms chars=472 generation=3 clipboard-restored=True
+CAPTURE current-85dde51 repeat=2 length=120
+VERIFIED current-85dde51 120s 710.876ms chars=1841 generation=4 clipboard-restored=True
+CAPTURE current-85dde51 repeat=2 length=600
+VERIFIED current-85dde51 600s 2720.389ms chars=9154 generation=5 clipboard-restored=True
+ALL 24 NATIVE RECEIPTS VERIFIED
+CLEANUP {"clipboardRestored": true, "stopped": true}
+RECEIPTS 24 PRIVATE /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/host

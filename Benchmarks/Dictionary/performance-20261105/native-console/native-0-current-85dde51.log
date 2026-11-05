@@ -1,0 +1,29 @@
+Checking microphone and Accessibility access...
+Loading Parakeet v2...
+E5RT encountered an STL exception. msg = Failed to PropagateInputTensorShapes: std::runtime_error during type inference for ios17.slice_by_index: zero shape error.Warming Parakeet v2...
+Ready with Parakeet. Use the menu-bar icon to change the mode or shortcut.
+MICROPHONE MacBook Air Microphone [BuiltInMicrophoneDevice]
+RECORDING
+TRANSCRIBING
+PASTE POSTED (83 characters)
+LATENCY release-to-ASR-start 68.6ms | ASR 78.3ms | cleanup 0.1ms | delivery 0.9ms | release-to-paste-post 147.8ms
+MICROPHONE MacBook Air Microphone [BuiltInMicrophoneDevice]
+RECORDING
+TRANSCRIBING
+PASTE POSTED (83 characters)
+LATENCY release-to-ASR-start 71.5ms | ASR 76.6ms | cleanup 0.0ms | delivery 5.3ms | release-to-paste-post 153.5ms
+MICROPHONE MacBook Air Microphone [BuiltInMicrophoneDevice]
+RECORDING
+TRANSCRIBING
+PASTE POSTED (472 characters)
+LATENCY release-to-ASR-start 85.3ms | ASR 208.3ms | cleanup 0.1ms | delivery 0.6ms | release-to-paste-post 294.4ms
+MICROPHONE MacBook Air Microphone [BuiltInMicrophoneDevice]
+RECORDING
+TRANSCRIBING
+PASTE POSTED (1841 characters)
+LATENCY release-to-ASR-start 85.4ms | ASR 562.2ms | cleanup 0.6ms | delivery 0.7ms | release-to-paste-post 648.8ms
+MICROPHONE MacBook Air Microphone [BuiltInMicrophoneDevice]
+RECORDING
+TRANSCRIBING
+PASTE POSTED (9154 characters)
+LATENCY release-to-ASR-start 78.7ms | ASR 2452.7ms | cleanup 2.6ms | delivery 0.6ms | release-to-paste-post 2534.6ms

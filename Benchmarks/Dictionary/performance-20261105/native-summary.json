@@ -1,0 +1,497 @@
+{
+  "scope": "native M5 controlled recorder input; real Stop/close to hidden NSTextView insertion; microphone acquisition/physical key dispatch/rendering excluded",
+  "complete": true,
+  "accepted": 24,
+  "uniqueRequests": 24,
+  "uniqueSourceGenerations": 24,
+  "allClipboardRestorationsVerified": true,
+  "noInterveningClipboardOwnershipChange": true,
+  "tailAndReferenceCoverageVerified": true,
+  "captureGenerationOrderVerified": true,
+  "referenceCoverage": [
+    {
+      "requestID": "C5497064-CA1D-4DB7-8541-4056118CCCF4",
+      "seconds": 5,
+      "version": "v0.1.1-c72f834",
+      "repeat": 0,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "A1CF662D-D75C-4009-AEE6-88889943C783",
+      "seconds": 30,
+      "version": "v0.1.1-c72f834",
+      "repeat": 0,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "2E90DCE7-422B-41B8-9E45-8763152B280D",
+      "seconds": 120,
+      "version": "v0.1.1-c72f834",
+      "repeat": 0,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1837,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "6583845C-8843-49BD-B2D0-7C3F40C21DAC",
+      "seconds": 600,
+      "version": "v0.1.1-c72f834",
+      "repeat": 0,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9157,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "1A172EF8-F9B9-407B-A573-1B56B38AB627",
+      "seconds": 5,
+      "version": "current-85dde51",
+      "repeat": 0,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "589D9779-C661-4184-B467-7EA325F3AA91",
+      "seconds": 30,
+      "version": "current-85dde51",
+      "repeat": 0,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "96081A94-03C4-4BFB-A836-2E17E50ACEAD",
+      "seconds": 120,
+      "version": "current-85dde51",
+      "repeat": 0,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1841,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "88274E28-7C61-44FA-A545-EADAC50DF2DB",
+      "seconds": 600,
+      "version": "current-85dde51",
+      "repeat": 0,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9154,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "F828EC29-2B3D-4447-8DC4-ACB703085F01",
+      "seconds": 5,
+      "version": "current-85dde51",
+      "repeat": 1,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "2D453501-D36B-42D8-9E33-BCAB2F15A879",
+      "seconds": 30,
+      "version": "current-85dde51",
+      "repeat": 1,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "4B6C8F25-0D39-4A93-B9F8-69438938C7C8",
+      "seconds": 120,
+      "version": "current-85dde51",
+      "repeat": 1,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1841,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "BC70BEC4-6B59-4AE8-8292-CD823A3AAA10",
+      "seconds": 600,
+      "version": "current-85dde51",
+      "repeat": 1,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9154,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "E50617B9-F3BC-4CE0-BB2F-31848723EE13",
+      "seconds": 5,
+      "version": "v0.1.1-c72f834",
+      "repeat": 1,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "1094E8EA-A31C-4606-921B-FE674C3F9C65",
+      "seconds": 30,
+      "version": "v0.1.1-c72f834",
+      "repeat": 1,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "C538FB86-11E6-41D0-A43B-4D5C2E1DB730",
+      "seconds": 120,
+      "version": "v0.1.1-c72f834",
+      "repeat": 1,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1837,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "1787B8B5-5B38-4364-905F-6D01CF9BC320",
+      "seconds": 600,
+      "version": "v0.1.1-c72f834",
+      "repeat": 1,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9157,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "8DC329DE-3333-4CFF-9D18-4EC233F4FBE9",
+      "seconds": 5,
+      "version": "v0.1.1-c72f834",
+      "repeat": 2,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "09C1D2E7-5BB5-4894-A474-82FF897F063A",
+      "seconds": 30,
+      "version": "v0.1.1-c72f834",
+      "repeat": 2,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "1E4AC391-4A42-4292-8C6E-59FB0065E842",
+      "seconds": 120,
+      "version": "v0.1.1-c72f834",
+      "repeat": 2,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1837,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "0A0FF075-7E00-4379-BCB6-50E59D34CEAE",
+      "seconds": 600,
+      "version": "v0.1.1-c72f834",
+      "repeat": 2,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9157,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "D48B5D52-1A8E-42C4-B1F1-9358A73CEADE",
+      "seconds": 5,
+      "version": "current-85dde51",
+      "repeat": 2,
+      "referenceCompletedClips": 0,
+      "referenceCompletedCharacters": 35,
+      "targetCharacters": 83,
+      "tailAnchors": [
+        "turns my voice into text without the clock"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "24352D26-BC1B-4BEE-9DA2-8D735EB31143",
+      "seconds": 30,
+      "version": "current-85dde51",
+      "repeat": 2,
+      "referenceCompletedClips": 8,
+      "referenceCompletedCharacters": 436,
+      "targetCharacters": 472,
+      "tailAnchors": [
+        "wants a demo of the booking app"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "49AC48FE-0A08-40EC-B80D-E1DDF7A9A5D9",
+      "seconds": 120,
+      "version": "current-85dde51",
+      "repeat": 2,
+      "referenceCompletedClips": 37,
+      "referenceCompletedCharacters": 1828,
+      "targetCharacters": 1841,
+      "tailAnchors": [
+        "faster than the other providers",
+        "both"
+      ],
+      "tailVerified": true
+    },
+    {
+      "requestID": "8EDD0999-E34D-466D-BF59-A4DB73B1A125",
+      "seconds": 600,
+      "version": "current-85dde51",
+      "repeat": 2,
+      "referenceCompletedClips": 191,
+      "referenceCompletedCharacters": 9221,
+      "targetCharacters": 9154,
+      "tailAnchors": [
+        "to write the tests",
+        "to review them",
+        "on Linux Jacob and"
+      ],
+      "tailVerified": true
+    }
+  ],
+  "lengths": [
+    {
+      "seconds": 5,
+      "builds": {
+        "v0.1.1-c72f834": {
+          "count": 3,
+          "milliseconds": [
+            182.75575002189726,
+            148.34158343728632,
+            148.19004165474325
+          ],
+          "targetCharacters": [
+            83,
+            83,
+            83
+          ],
+          "medianMilliseconds": 148.34158343728632,
+          "minimumMilliseconds": 148.19004165474325,
+          "maximumMilliseconds": 182.75575002189726
+        },
+        "current-85dde51": {
+          "count": 3,
+          "milliseconds": [
+            157.78050001244992,
+            149.54116672743112,
+            216.73133329022676
+          ],
+          "targetCharacters": [
+            83,
+            83,
+            83
+          ],
+          "medianMilliseconds": 157.78050001244992,
+          "minimumMilliseconds": 149.54116672743112,
+          "maximumMilliseconds": 216.73133329022676
+        }
+      },
+      "medianChangePercent": 6.362960645592719
+    },
+    {
+      "seconds": 30,
+      "builds": {
+        "v0.1.1-c72f834": {
+          "count": 3,
+          "milliseconds": [
+            260.98408340476453,
+            258.60970828216523,
+            253.1910416437313
+          ],
+          "targetCharacters": [
+            472,
+            472,
+            472
+          ],
+          "medianMilliseconds": 258.60970828216523,
+          "minimumMilliseconds": 253.1910416437313,
+          "maximumMilliseconds": 260.98408340476453
+        },
+        "current-85dde51": {
+          "count": 3,
+          "milliseconds": [
+            298.92045841552317,
+            297.3004999803379,
+            368.48183325491846
+          ],
+          "targetCharacters": [
+            472,
+            472,
+            472
+          ],
+          "medianMilliseconds": 298.92045841552317,
+          "minimumMilliseconds": 297.3004999803379,
+          "maximumMilliseconds": 368.48183325491846
+        }
+      },
+      "medianChangePercent": 15.587485249925525
+    },
+    {
+      "seconds": 120,
+      "builds": {
+        "v0.1.1-c72f834": {
+          "count": 3,
+          "milliseconds": [
+            514.2639167606831,
+            534.2832083115354,
+            521.8062499770895
+          ],
+          "targetCharacters": [
+            1837,
+            1837,
+            1837
+          ],
+          "medianMilliseconds": 521.8062499770895,
+          "minimumMilliseconds": 514.2639167606831,
+          "maximumMilliseconds": 534.2832083115354
+        },
+        "current-85dde51": {
+          "count": 3,
+          "milliseconds": [
+            652.8550416696817,
+            652.9677916551009,
+            710.8763750875369
+          ],
+          "targetCharacters": [
+            1841,
+            1841,
+            1841
+          ],
+          "medianMilliseconds": 652.9677916551009,
+          "minimumMilliseconds": 652.8550416696817,
+          "maximumMilliseconds": 710.8763750875369
+        }
+      },
+      "medianChangePercent": 25.136061839767198
+    },
+    {
+      "seconds": 600,
+      "builds": {
+        "v0.1.1-c72f834": {
+          "count": 3,
+          "milliseconds": [
+            2114.224166725762,
+            2150.450583314523,
+            2134.911416680552
+          ],
+          "targetCharacters": [
+            9157,
+            9157,
+            9157
+          ],
+          "medianMilliseconds": 2134.911416680552,
+          "minimumMilliseconds": 2114.224166725762,
+          "maximumMilliseconds": 2150.450583314523
+        },
+        "current-85dde51": {
+          "count": 3,
+          "milliseconds": [
+            2543.667124933563,
+            2581.4644583733752,
+            2720.388791640289
+          ],
+          "targetCharacters": [
+            9154,
+            9154,
+            9154
+          ],
+          "medianMilliseconds": 2581.4644583733752,
+          "minimumMilliseconds": 2543.667124933563,
+          "maximumMilliseconds": 2720.388791640289
+        }
+      },
+      "medianChangePercent": 20.916701189745023
+    }
+  ]
+}
