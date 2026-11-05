@@ -263,3 +263,107 @@ Mac result is implied by these Linux checks.
 The end-to-end live paste, feature and memory results belong in the
 [workflow audit](https://github.com/oEdyb/koett/pull/102); ASR timings above must not be used
 as release-to-visible-text claims.
+
+## Vocabulary switches and memory
+
+The first shared-encoder candidate still recreated its recognizer when the
+dictionary became empty or populated. In the private live workflow, repeated
+switching raised process RSS from roughly 0.9 GiB to 2.1 GiB; reducing the whole
+compositor/app/target scope to 2 GiB then triggered an OOM kill. This is a real
+failed pressure test, not passing leak evidence.
+
+The follow-up keeps the same shared recognizer resident. Its explicit native
+mode uses the greedy decoder for a single stream without a context graph;
+per-recording hotwords select the shared greedy/biased path when populated.
+A real-model test points the transcriber's model path at a nonexistent directory
+after loading, then switches between empty and populated lists three times.
+Every transcription succeeds, empty output equals greedy, and the acoustic
+Phoebe recovery remains. This proves switches do not reopen model/token files.
+The final native header fingerprint is
+`1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3`.
+Earlier tables retain the previous header's measurements rather than relabeling
+them as this follow-up. Fresh latency receipts follow; live pressure evidence is added after completion.
+
+### Final model-reuse build repeat
+
+The final header above was rebuilt and retested at **absolute nice 10**, offline
+(loopback only), two CPU threads, copied models, one warm-up plus three rotating
+measured production pairs. The transcriber, conservative term adoption and final
+spelling pass are included. All three engines live in one process to alternate
+methods. The benchmark records its selected mode, native fingerprint, process
+priority and load at each measurement. An earlier follow-up run inherited a
+higher service priority despite `nice -n 10`; its timing was replaced, not used
+as final evidence.
+
+| Exact audio | Empty median / worst ms | Shared median / worst ms | Legacy acoustic median / worst ms | Shared added median |
+|---|---:|---:|---:|---:|
+| 5 s | 141.25 / 141.81 | 154.64 / 158.19 | 289.93 / 290.45 | 9.47% |
+| 30 s | 798.77 / 803.17 | 882.03 / 887.75 | 1,533.00 / 1,544.56 | 10.42% |
+| 2 min | 3,271.46 / 3,275.45 | 3,559.17 / 3,583.41 | 6,148.43 / 6,151.25 | 8.79% |
+| 10 min | 16,495.34 / 16,544.50 | 17,740.57 / 17,844.31 | 30,984.94 / 31,153.91 | 7.55% |
+
+This is near the requested **about 10%** target, with 30 seconds slightly above
+10%; it is not a strict all-run ceiling. The selected release policy retains
+shared encoding for verified transducer builds because it preserves the acoustic
+recall while removing most of the duplicate encoder work. Compact CTC and
+missing-capability builds keep spelling only.
+
+The same 210-clip final-build repeat again recovers **49 raw, 61 spelling,
+115 legacy acoustic, 115 shared** terms, with identical recovered occurrences
+for both acoustic methods. Both shared base paths match raw greedy on every
+clip. There are no additional false terms, damaged negatives or lost ordinary
+words against raw. Total times: spelling **19.8021 s**, legacy **37.7820 s**,
+shared **21.1520 s**: **6.82%** added time and **44.02% less than legacy**.
+Per-clip overhead p50/p90/p99/max is **7.24/9.68/13.83/17.78%**; added time
+median/max is **6.60/16.82 ms**. One inference per method per clip remains a
+limitation; the synthetic corpus was used during development.
+
+A regular file substituted for the vocabulary cache directory also produced
+successful dictation, exit 0, with `dictionary_mode=spelling_only`. Cache setup
+failure therefore does not prevent ordinary dictation.
+
+[Raw receipts and recomputation](../Benchmarks/Dictionary/2026-11/model-reuse/).
+Run `python3 Benchmarks/Dictionary/2026-11/model-reuse/check.py` from the repo root.
+
+### Live memory acceptance
+
+The installed-style private app built from `129c462` (SHA-256
+`a7466efe361186ba5b78b080c185e3da3e838f332d62cb4c63445453d5a77ec6`)
+completed six alternating empty/populated five-second live dictations with
+**1,393,148 KiB RSS before and after**. It logged model selection only once.
+This demonstrates stable vocabulary switching, not lower general idle memory
+than the first candidate, whose RSS was sampled after a longer session.
+
+The whole private compositor/app/target scope then passed a fresh live paste
+with a **2 GiB hard maximum, no swap and no artificial high watermark**, with
+no new OOM events. The earlier candidate had been OOM-killed with both the 2 GiB
+maximum and a 768 MiB high watermark after vocabulary switches.
+
+A harsher, separate **768 MiB high watermark** throttled the approximately
+1.5 GiB working set enough that the fixture could not verify idle within 60 s;
+no new dictation started. No OOM occurred, and the app answered idle again after
+restoring the scope limits. That case fails responsiveness; it is not labeled
+a successful low-memory run. The final both-limits case survived but failed
+responsiveness; the separate hard-limit-only case passed. This is not an
+identical-condition before/after responsiveness comparison. The raw failure and successful hard-limit case
+are both retained. These are artificial cgroup limits, not a claim about every
+low-memory host.
+
+### Release packaging and platform limits
+
+Local Linux packaging now rejects a missing native receipt or a source/header
+fingerprint that does not match the reviewed shared decoder. This prevents a
+stale developer cache from silently packaging spelling-only recognition while
+claiming the acoustic benchmark's recall. The receipt must describe the native
+libraries linked into the supplied binary. A normal developer build may still
+fall back to spelling only; this remains logged.
+
+The native builder can upgrade the known first shared patch directly from its
+SHA-verified source archive. Unknown edited headers still fail closed. The
+model-reuse real-model test asserts the capability rather than returning early.
+
+These latency and recall receipts use v2 on Linux x86-64. They do not measure
+v3, Windows or ARM64 performance. The current CI self-test loads the compact CTC
+model and asserts that the native capability was compiled. It does not execute
+either NeMo contextual branch; successful compilation alone does not establish
+seeded transducer execution on those targets. Keep those platform runtime gates explicit.

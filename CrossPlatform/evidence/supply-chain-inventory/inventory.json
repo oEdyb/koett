@@ -14965,7 +14965,7 @@
     {
       "bytes": 6089,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "47e78b84c4d2033624d239cbf0ae5f4431ba35991bedbc57ed0b994eae408d1f"
+      "sha256": "3932d8c8d204b3bc90f5ff67a2018760e8e034b1320ed2093da975aa86776903"
     },
     {
       "bytes": 9465,
@@ -14973,19 +14973,19 @@
       "sha256": "2ca81f7052d8ad1020967cf49899cddb6f489f3fbab3911ae5b786e493495d54"
     },
     {
-      "bytes": 10552,
+      "bytes": 11351,
       "path": "CrossPlatform/scripts/build_asr_native.py",
-      "sha256": "d13c6bbb9d785a94abede4a5a181cba28f22097f5105507fad8901160ef689fa"
+      "sha256": "ace1b87e9587a08a39e4fc6cd1ea8b5da2a2ab1bb405a901f8cda6e816b99fc2"
     },
     {
-      "bytes": 3309,
+      "bytes": 3655,
       "path": "CrossPlatform/scripts/shared_context.patch",
-      "sha256": "3964a8f3d2542d7acc3eb395a5fffd44336a338f171bcc96fabc6332762ec2ac"
+      "sha256": "6f202d99882b67f8a17abbe6f84e0f2efe61a811d53ce6c1cc99852ded322f4b"
     },
     {
       "bytes": 1480,
       "path": "CrossPlatform/scripts/shared_context_patch.py",
-      "sha256": "18d70ec0877fdb8e79f0e10bb2deb729e6e6d4c489a79448d00f4681ea0659cd"
+      "sha256": "c654032d61ae8b3370914ac8f3c4434961306823b9da808dc6a28bd658fd0fe3"
     },
     {
       "bytes": 18747,
@@ -14995,7 +14995,7 @@
     {
       "bytes": 2501,
       "path": "CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json",
-      "sha256": "add6a866277673104ab197e39b990207c1190198ec147ea5a0004d3a694af2dd"
+      "sha256": "9b73b715143cb28a2eaa0a54d257ccd81d3e9f8ac4305f540ce96024ef614f0c"
     },
     {
       "bytes": 2686,

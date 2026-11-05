@@ -73,6 +73,17 @@ fn decode(
     }
 }
 
+fn process_nice() -> Option<i32> {
+    fs::read_to_string("/proc/self/stat")
+        .ok()?
+        .rsplit_once(") ")?
+        .1
+        .split_whitespace()
+        .nth(16)?
+        .parse()
+        .ok()
+}
+
 fn main() -> Result<(), String> {
     if !sherpa_onnx::SHARED_CONTEXT_AVAILABLE {
         return Err("requires the reviewed shared-context native build".into());
@@ -100,7 +111,7 @@ fn main() -> Result<(), String> {
     let out = Path::new(&args[3]);
     let parent = out.parent().ok_or("output folder")?;
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    fs::write(out.with_extension("meta.json"), serde_json::json!({"mode":"shared_encoder","header_sha256":sherpa_onnx::SHARED_CONTEXT_SHA256,"threads":2,"loadavg_start":fs::read_to_string("/proc/loadavg").ok()}).to_string()).map_err(|e|e.to_string())?;
+    fs::write(out.with_extension("meta.json"), serde_json::json!({"process_nice":process_nice(),"mode":"shared_encoder","header_sha256":sherpa_onnx::SHARED_CONTEXT_SHA256,"threads":2,"loadavg_start":fs::read_to_string("/proc/loadavg").ok()}).to_string()).map_err(|e|e.to_string())?;
     let vocab = parent.join("vocabulary.txt");
     let tokens = fs::read_to_string(model.join("tokens.txt")).map_err(|e| e.to_string())?;
     let vocabulary = tokens
@@ -151,16 +162,22 @@ fn main() -> Result<(), String> {
         let audio = AudioRecording::read_wav(file)?;
         let mut record = serde_json::Map::new();
         // Rotate the inference order per clip to spread changing host load.
-        for step in 0..3 {
-            let method = (i + step) % 3;
+        for step in 0..4 {
+            let method = (i + step) % 4;
             let (name, index, hot, dual) = match method {
                 0 => ("raw", 0, "", false),
                 1 => ("dual4", 1, hotwords.as_str(), true),
-                _ => ("context", 2, hotwords.as_str(), true),
+                2 => ("context", 2, hotwords.as_str(), true),
+                _ => ("empty_context", 2, "", false),
             };
             let start = Instant::now();
             let (text, plain) = decode(&engines[index], &audio, hot, dual, &dictionary)?;
             let elapsed = start.elapsed().as_secs_f64() * 1000.0;
+            let plain = if name == "empty_context" {
+                Some(text.clone())
+            } else {
+                plain
+            };
             if name == "raw" {
                 let start = Instant::now();
                 let spelling = dictionary::apply(&text, &dictionary);
@@ -181,7 +198,9 @@ fn main() -> Result<(), String> {
                 serde_json::json!({"text":text,"ms":elapsed,"plain":plain}),
             );
         }
-        if record["context"]["plain"] != record["raw"]["text"] {
+        if record["context"]["plain"] != record["raw"]["text"]
+            || record["empty_context"]["plain"] != record["raw"]["text"]
+        {
             return Err(format!(
                 "shared plain stream differs from greedy: {}",
                 file.display()
