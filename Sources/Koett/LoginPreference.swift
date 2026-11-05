@@ -15,6 +15,13 @@ struct LoginPreference {
     static func shouldRegister(in defaults: UserDefaults) -> Bool {
         defaults.object(forKey: key) as? Bool ?? true
     }
+
+    static func unregisterIfRegistered(status: SMAppService.Status, unregister: () throws -> Void) throws {
+        switch status {
+        case .notRegistered, .notFound: return
+        default: try unregister()
+        }
+    }
 }
 
 extension KoettController {
