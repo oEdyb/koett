@@ -57,6 +57,7 @@ pub(super) struct Monitor {
 pub(super) struct State {
     pub protect_clicks: bool,
     pub ink: bool,
+    pub discard: bool,
 }
 
 impl Monitor {
@@ -139,6 +140,7 @@ impl Monitor {
         State {
             protect_clicks: !self.gate.spoiled && self.gate.since.is_some(),
             ink: active,
+            discard: self.gate.spoiled,
         }
     }
 

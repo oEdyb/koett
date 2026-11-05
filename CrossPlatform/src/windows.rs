@@ -1,7 +1,10 @@
 mod capture;
 mod clipboard;
+mod contact_sheet;
 mod desktop;
 mod draw_input;
+mod drawing;
+mod drawing_render;
 pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
@@ -88,6 +91,8 @@ const MENU_PAUSE: usize = 7;
 const MENU_CANCEL: usize = 8;
 const MENU_RECORD: usize = 9;
 const MENU_WORDS: usize = 10;
+const MENU_DRAW: usize = 11;
+const MENU_UNDO_DRAW: usize = 12;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -124,6 +129,10 @@ struct WindowsApp {
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
     draw_input: Option<draw_input::Monitor>,
+    drawing: Option<drawing::Board>,
+    pending_result: Option<EngineUpdate>,
+    staged: Option<StagedPaste>,
+    last_bundle: Option<clipboard::Bundle>,
     draw_pointer: POINT,
     capture_lab: Option<PendingCapture>,
     capture_pending: bool,
@@ -135,6 +144,15 @@ struct PendingCapture {
     started: Instant,
     clipboard_sequence: u32,
     result: std::sync::mpsc::Receiver<Result<pixels::Pixels, String>>,
+}
+
+struct StagedPaste {
+    offer: clipboard::Offer,
+    target: PasteTarget,
+    started: Instant,
+    model: String,
+    text: String,
+    raw: Option<String>,
 }
 
 pub fn run() -> Result<(), String> {
@@ -208,6 +226,10 @@ pub fn run() -> Result<(), String> {
         levels: None,
         recording_started: None,
         draw_input: None,
+        drawing: None,
+        pending_result: None,
+        staged: None,
+        last_bundle: None,
         draw_pointer: POINT::default(),
         capture_lab: None,
         capture_pending: false,
@@ -416,6 +438,13 @@ unsafe extern "system" fn window_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_RENDERFORMAT {
+        clipboard::render(wparam.0 as u32);
+        return Default::default();
+    }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_DESTROYCLIPBOARD {
+        clipboard::forget_delayed();
+    }
     let app_cell = APP.load(Ordering::Acquire);
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
@@ -463,6 +492,7 @@ unsafe extern "system" fn window_proc(
                     } else if app.status == AppStatus::Recording {
                         app.draw_input =
                             draw_input::Monitor::start(hwnd, crate::settings::DrawKey::Shift).ok();
+                        app.drawing = drawing::Board::new().ok();
                     }
                 }
                 return Default::default();
@@ -472,6 +502,10 @@ unsafe extern "system" fn window_proc(
                     && let Some(input) = app.draw_input.as_mut()
                 {
                     input.input(lparam, Instant::now());
+                }
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.poll_drawing();
+                    app.poll_staged();
                 }
             }
             windows::Win32::UI::WindowsAndMessaging::WM_INPUT_DEVICE_CHANGE => {
@@ -541,6 +575,8 @@ unsafe extern "system" fn window_proc(
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     let app = &mut *app;
                     app.poll_updates();
+                    app.poll_drawing();
+                    app.poll_staged();
                     if let Some(input) = app.draw_input.as_mut() {
                         let mut point = POINT::default();
                         let _ = unsafe { GetCursorPos(&mut point) };
@@ -745,6 +781,33 @@ unsafe extern "system" fn shortcut_proc(
 }
 
 impl WindowsApp {
+    fn poll_drawing(&mut self) {
+        let now = Instant::now();
+        let paused = self.levels.as_ref().is_some_and(AudioLevels::paused);
+        let state = if paused {
+            draw_input::State {
+                discard: true,
+                ..Default::default()
+            }
+        } else {
+            self.draw_input
+                .as_mut()
+                .map_or_else(Default::default, |input| input.state(now))
+        };
+        let audio_ms = self.levels.as_ref().map_or(0, AudioLevels::recorded_ms);
+        if let Some(board) = self.drawing.as_mut() {
+            board.update(state, audio_ms, now);
+            if let Some(message) = board.notice.take() {
+                set_wide_array(&mut self.tray.szInfoTitle, "Drawing unavailable");
+                set_wide_array(&mut self.tray.szInfo, &message);
+                self.tray.uFlags |= windows::Win32::UI::Shell::NIF_INFO;
+                let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
+                self.tray.uFlags &= !windows::Win32::UI::Shell::NIF_INFO;
+            }
+        }
+        self.pill_state.drawing = state.ink;
+    }
+
     fn lab_phase(&mut self, command: usize) {
         use pill_state::Phase;
         let now = self.clock.elapsed().as_millis() as u64;
@@ -885,6 +948,12 @@ impl WindowsApp {
             }
             return;
         }
+        if self.pending_result.is_some() || self.staged.is_some() {
+            return;
+        }
+        if self.capture_pending && intent != RecordingIntent::Stop {
+            return;
+        }
         if intent == RecordingIntent::Stop {
             if let Some(engine) = &self.engine {
                 let _ = engine.commands.send(EngineCommand::Stop);
@@ -904,18 +973,39 @@ impl WindowsApp {
             self.paste_target = foreground_paste_target();
             self.capture_pending = true;
         }
-        if let Some(engine) = &self.engine {
-            let _ = engine.commands.send(intent.into());
+        if let Some(engine) = &self.engine
+            && engine.commands.send(intent.into()).is_err()
+        {
+            self.capture_pending = false;
+            self.pill_state.set(
+                pill_state::Phase::Error {
+                    message: "Dictation engine is unavailable; restart Koett".into(),
+                    rescue: false,
+                },
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.update_overlay();
         }
     }
 
     fn poll_updates(&mut self) {
         loop {
-            let update = self
-                .engine
-                .as_ref()
-                .and_then(|engine| engine.updates.try_recv().ok());
+            let update = if !self.drawing.as_ref().is_some_and(drawing::Board::busy)
+                && self.pending_result.is_some()
+            {
+                self.pending_result.take()
+            } else {
+                self.engine
+                    .as_ref()
+                    .and_then(|engine| engine.updates.try_recv().ok())
+            };
             let Some(update) = update else { break };
+            if matches!(update, EngineUpdate::TranscriptReady { .. })
+                && self.drawing.as_ref().is_some_and(drawing::Board::busy)
+            {
+                self.pending_result = Some(update);
+                continue;
+            }
             match update {
                 EngineUpdate::ActiveModel(model) => {
                     desktop::processing::model_status(format!("Ready: {model}"), false);
@@ -937,6 +1027,13 @@ impl WindowsApp {
                 }
                 EngineUpdate::Status(status) => {
                     if status != AppStatus::Recording {
+                        let audio_ms = self.levels.as_ref().map_or(0, AudioLevels::recorded_ms);
+                        if let Some(board) = self.drawing.as_mut() {
+                            board.stop(
+                                audio_ms,
+                                status != AppStatus::Transcribing && status != AppStatus::Ready,
+                            );
+                        }
                         self.draw_input = None;
                     }
                     self.capture_pending = false;
@@ -968,6 +1065,30 @@ impl WindowsApp {
                     self.meter = meter::Meter::default();
                     self.levels = Some(levels);
                     self.recording_started = Some(Instant::now());
+                    self.drawing = None;
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                    if self.settings.draw_while_dictating {
+                        match drawing::Board::new().and_then(|board| {
+                            draw_input::Monitor::start(self.hwnd, self.settings.draw_key)
+                                .map(|input| (board, input))
+                        }) {
+                            Ok((board, input)) => {
+                                self.drawing = Some(board);
+                                self.draw_input = Some(input);
+                            }
+                            Err(error) => {
+                                self.pill_state.set(
+                                    pill_state::Phase::Error {
+                                        message: error,
+                                        rescue: false,
+                                    },
+                                    self.clock.elapsed().as_millis() as u64,
+                                );
+                            }
+                        }
+                    }
                     self.update_overlay();
                 }
                 EngineUpdate::ModelProgress(progress) => {
@@ -1008,7 +1129,7 @@ impl WindowsApp {
                         transcript.raw.as_deref(),
                         &self.settings.replacements,
                     );
-                    self.deliver(&model, &text, raw.as_deref());
+                    self.deliver(&model, &text, raw.as_deref(), &transcript.words);
                 }
             }
         }
@@ -1109,7 +1230,7 @@ impl WindowsApp {
             }
             pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
                 if x >= 245 {
-                    if copy_text(self.hwnd, &self.last_transcript).is_ok() {
+                    if self.copy_last().is_ok() {
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
                         self.pill_state.copy(now);
@@ -1212,7 +1333,102 @@ impl WindowsApp {
         }
     }
 
-    fn deliver(&mut self, model: &str, text: &str, raw: Option<&str>) {
+    fn copy_last(&self) -> Result<(), String> {
+        if let Some(bundle) = &self.last_bundle {
+            bundle.copy(self.hwnd).map(|_| ())
+        } else {
+            copy_text(self.hwnd, &self.last_transcript)
+        }
+    }
+    fn poll_staged(&mut self) {
+        let Some(staged) = self.staged.as_ref() else {
+            return;
+        };
+        let (offer, read_at) = clipboard::rendered(staged.offer, staged.target.pid);
+        let ready = read_at.is_some_and(|at| at.elapsed() >= Duration::from_millis(200))
+            || staged.started.elapsed() >= Duration::from_millis(1500);
+        if !ready {
+            return;
+        }
+        let staged = self.staged.take().expect("staged paste exists");
+        let result = if foreground_paste_target() != Some(staged.target) {
+            Err("Focus changed; text was not pasted".into())
+        } else {
+            offer
+                .replace_with_text(&staged.text)
+                .and_then(|_| paste(staged.target))
+        };
+        self.record_delivery(
+            &staged.model,
+            &staged.text,
+            staged.raw.as_deref(),
+            result.err(),
+        );
+    }
+
+    fn deliver(
+        &mut self,
+        model: &str,
+        text: &str,
+        raw: Option<&str>,
+        words: &[crate::annotation::TimedWord],
+    ) {
+        let frames = self
+            .drawing
+            .as_mut()
+            .map(drawing::Board::take_frames)
+            .unwrap_or_default();
+        if !frames.is_empty() {
+            let anchors = frames
+                .iter()
+                .map(|frame| {
+                    if frame.pin {
+                        frame.end_ms as f32 / 1000.0
+                    } else {
+                        frame.start_ms.min(frame.end_ms) as f32 / 1000.0
+                    }
+                })
+                .collect::<Vec<_>>();
+            let summary = crate::annotation::keyframe_summary(text, words, &anchors);
+            let result = contact_sheet::compose(&frames)
+                .and_then(|image| clipboard::Bundle::new(&image, summary.clone()));
+            match result {
+                Ok(bundle) => {
+                    self.last_transcript = summary.clone();
+                    let result = self
+                        .paste_target
+                        .ok_or_else(|| "No external paste target".to_string())
+                        .and_then(|target| {
+                            if foreground_paste_target() != Some(target) {
+                                return Err("Focus changed; drawing was not pasted".into());
+                            }
+                            let offer = bundle.image_first(self.hwnd)?;
+                            paste(target)?;
+                            Ok((offer, target))
+                        });
+                    self.last_bundle = Some(bundle);
+                    match result {
+                        Ok((offer, target)) => {
+                            self.staged = Some(StagedPaste {
+                                offer,
+                                target,
+                                started: Instant::now(),
+                                model: model.into(),
+                                text: summary,
+                                raw: raw.map(str::to_owned),
+                            });
+                        }
+                        Err(error) => self.record_delivery(model, &summary, raw, Some(error)),
+                    }
+                }
+                Err(error) => {
+                    self.last_bundle = None;
+                    self.record_delivery(model, text, raw, Some(error));
+                }
+            }
+            return;
+        }
+        self.last_bundle = None;
         if text.trim().is_empty() {
             self.pill_state.set(
                 pill_state::Phase::Hidden,
@@ -1228,6 +1444,15 @@ impl WindowsApp {
             })
             .and_then(paste)
             .err();
+        self.record_delivery(model, text, raw, delivery_error);
+    }
+    fn record_delivery(
+        &mut self,
+        model: &str,
+        text: &str,
+        raw: Option<&str>,
+        delivery_error: Option<String>,
+    ) {
         self.last_transcript = text.to_string();
         let failed = delivery_error.is_some();
         let storage = history::append_transcript_with_raw_resilient(model, text, raw);
@@ -1324,6 +1549,33 @@ impl WindowsApp {
             let _ = AppendMenuW(menu, MF_STRING, MENU_SETTINGS, w!("Settings"));
             let _ = AppendMenuW(
                 menu,
+                MF_STRING
+                    | if self.settings.draw_while_dictating {
+                        MF_CHECKED
+                    } else {
+                        Default::default()
+                    }
+                    | if self.status == AppStatus::Recording {
+                        MF_DISABLED
+                    } else {
+                        Default::default()
+                    },
+                MENU_DRAW,
+                w!("Draw while dictating"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING
+                    | if self.drawing.is_none() {
+                        MF_DISABLED
+                    } else {
+                        Default::default()
+                    },
+                MENU_UNDO_DRAW,
+                w!("Undo drawing"),
+            );
+            let _ = AppendMenuW(
+                menu,
                 MF_STRING,
                 MENU_WORDS,
                 w!("Dictionary and replacements…"),
@@ -1417,8 +1669,25 @@ impl WindowsApp {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
             MENU_WORDS => desktop::open_words(self.hwnd),
+            MENU_DRAW => {
+                if self.status != AppStatus::Recording {
+                    if let Err(error) = Settings::update(|settings| {
+                        settings.draw_while_dictating = !settings.draw_while_dictating
+                    }) {
+                        show_fatal_error(&error);
+                    }
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                }
+            }
+            MENU_UNDO_DRAW => {
+                if let Some(board) = self.drawing.as_mut() {
+                    board.undo();
+                }
+            }
             MENU_COPY_LAST => {
-                if let Err(e) = copy_text(self.hwnd, &self.last_transcript) {
+                if let Err(e) = self.copy_last() {
                     show_fatal_error(&e);
                 }
             }

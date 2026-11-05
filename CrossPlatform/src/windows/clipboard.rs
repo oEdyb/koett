@@ -3,8 +3,15 @@ use base64::Engine;
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
+use std::time::Instant;
 static NEXT: AtomicU64 = AtomicU64::new(1);
 thread_local! { static LAB: RefCell<Option<(Bundle, Offer)>> = const { RefCell::new(None) }; }
+thread_local! { static DELAYED: RefCell<Option<Delayed>> = const { RefCell::new(None) }; }
+struct Delayed {
+    offer: Offer,
+    formats: Vec<(u32, Vec<u8>)>,
+    reader: Option<(u32, Instant)>,
+}
 use windows::Win32::{
     Foundation::{GlobalFree, HANDLE, HGLOBAL, HWND},
     System::{
@@ -25,6 +32,51 @@ pub(super) struct Bundle {
 }
 
 impl Bundle {
+    pub fn image_first(&self, owner: HWND) -> Result<Offer, String> {
+        let png_format = image_formats()?.0;
+        let marker_format = unsafe { RegisterClipboardFormatW(w!("Koett.DrawingOffer")) };
+        if marker_format == 0 {
+            return Err("Could not register clipboard ownership marker".into());
+        }
+        let mut marker = [0; 16];
+        marker[..4].copy_from_slice(&std::process::id().to_le_bytes());
+        marker[4..12].copy_from_slice(&NEXT.fetch_add(1, Ordering::Relaxed).to_le_bytes());
+        let prepared = Memory::new(&marker)?;
+        unsafe { OpenClipboard(Some(owner)) }.map_err(|e| e.to_string())?;
+        let open = Open;
+        unsafe { EmptyClipboard() }.map_err(|e| e.to_string())?;
+        prepared.give(marker_format)?;
+        for format in [png_format, CF_DIBV5.0.into()] {
+            // A successful delayed offer returns NULL too; inspect last-error.
+            unsafe {
+                windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(
+                    0,
+                ));
+                let _ = SetClipboardData(format, None);
+            }
+            let error = unsafe { windows::Win32::Foundation::GetLastError() };
+            if error.0 != 0 {
+                return Err(format!("Could not offer drawing: {}", error.0));
+            }
+        }
+        drop(open);
+        let offer = Offer {
+            owner,
+            sequence: unsafe { GetClipboardSequenceNumber() },
+            marker,
+        };
+        DELAYED.with(|slot| {
+            *slot.borrow_mut() = Some(Delayed {
+                offer,
+                formats: vec![
+                    (png_format, self.png.clone()),
+                    (CF_DIBV5.0.into(), self.dib.clone()),
+                ],
+                reader: None,
+            })
+        });
+        Ok(offer)
+    }
     pub fn new(image: &Pixels, text: String) -> Result<Self, String> {
         validate_text(&text)?;
         let png = image.png()?;
@@ -60,6 +112,65 @@ impl Bundle {
             condition,
         )
     }
+}
+
+pub(super) fn render(format: u32) {
+    DELAYED.with(|slot| {
+        let Ok(mut state) = slot.try_borrow_mut() else {
+            return;
+        };
+        let Some(state) = state.as_mut() else {
+            return;
+        };
+        if unsafe { GetClipboardOwner() }.ok() != Some(state.offer.owner) {
+            return;
+        }
+        let Some((_, bytes)) = state.formats.iter().find(|(id, _)| *id == format) else {
+            return;
+        };
+        let reader = unsafe { GetOpenClipboardWindow() }.ok().and_then(|hwnd| {
+            let mut pid = 0;
+            unsafe {
+                windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(
+                    hwnd,
+                    Some(&mut pid),
+                );
+            }
+            (pid != 0 && pid != std::process::id()).then_some(pid)
+        });
+        if Memory::new(bytes)
+            .and_then(|memory| memory.give(format))
+            .is_ok()
+        {
+            state.offer.sequence = unsafe { GetClipboardSequenceNumber() };
+            if let Some(pid) = reader {
+                state.reader = Some((pid, Instant::now()));
+            }
+        }
+    });
+}
+pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>) {
+    DELAYED.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .filter(|state| state.offer.marker == offer.marker)
+            .map_or((offer, None), |state| {
+                (
+                    state.offer,
+                    state
+                        .reader
+                        .filter(|(pid, _)| *pid == target_pid)
+                        .map(|(_, at)| at),
+                )
+            })
+    })
+}
+pub(super) fn forget_delayed() {
+    DELAYED.with(|slot| {
+        if let Ok(mut slot) = slot.try_borrow_mut() {
+            *slot = None;
+        }
+    });
 }
 
 #[derive(Clone, Copy)]

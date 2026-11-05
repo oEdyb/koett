@@ -755,6 +755,8 @@ fn run(
                 ));
             }
             EngineCommand::Toggle | EngineCommand::Start if status == AppStatus::Ready => {
+                #[cfg(target_os = "windows")]
+                send_status(&updates, &AppStatus::Starting);
                 let mut current = match Settings::load() {
                     Ok(current) => {
                         settings = current.clone();

@@ -78,3 +78,26 @@ Private `--desktop-lab` messages, to KoettOwnerWindow:
 These messages are ignored by normal product launches. During exclusion tests,
 use the private QEMU framebuffer for UI evidence: normal capture APIs correctly
 omit Koett's excluded windows. Image capture remains memory-only in the app.
+
+## Canvas and delivery implementation
+
+The next checkpoint adds per-display nonactivating layered Direct2D canvases,
+the existing Mac/Linux gesture fixtures, bounded WGC frame collection, numbered
+contact sheets, captured-audio anchors and image-first delayed rendering.
+The text stage waits for a target-PID read plus 200 ms, or a 1.5-second unknown-
+reader fallback. Ownership and target checks still guard the text stage.
+Settings and tray expose Draw while dictating, and the tray exposes Undo.
+These paths require native guest verification; context reading, complete repeat
+paste, draw-lock/shortcut controls and timeline integration are still underway.
+
+Windows physical microphone lookup/opening now runs in a supervised child of
+the same executable, with a five-second ready deadline covering the first audio
+packet. Timeout kills and reaps that worker before returning an error. The app
+rejects duplicate starts while opening, and a later toggle may retry. Audio IPC
+is memory-only with bounded packets, finite samples and a ten-minute capture
+limit. Pause discards packets before metering, timing or ASR. This replaces no
+Mac/Linux capture behavior. Shared audio.rs/runtime.rs additions are Windows-
+conditional; a small resolver extraction leaves the Linux algorithm intact.
+`--microphone-open-timeout-lab` injects a stalled child for the private guest
+journey; it is never active in normal launches. Windows tests cover process
+timeout/termination followed by a responsive worker and corrupt IPC rejection.

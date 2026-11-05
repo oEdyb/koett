@@ -18,6 +18,8 @@ pub(crate) mod preview;
 
 #[cfg(any(target_os = "windows", test))]
 mod fixture;
+#[cfg(target_os = "windows")]
+pub mod windows_capture;
 
 /// The longest choice in Settings. Each recording's own limit comes from there.
 pub(crate) const MAX_RECORDING_DURATION: Duration = Duration::from_secs(120 * 60);
@@ -132,6 +134,8 @@ impl AudioLevels {
 }
 
 pub struct MicrophoneRecorder {
+    #[cfg(target_os = "windows")]
+    process: Option<windows_capture::Process>,
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     _capture_priority: preview::RecordingPriority,
     stream: Option<cpal::Stream>,
@@ -159,9 +163,14 @@ impl MicrophoneRecorder {
     pub fn start_streaming_with_device(
         microphone: Option<&str>,
     ) -> Result<(Self, Receiver<Vec<f32>>), String> {
-        let (sender, receiver) = mpsc::channel();
-        let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
-        Ok((recorder, receiver))
+        #[cfg(target_os = "windows")]
+        return windows_capture::start(microphone);
+        #[cfg(not(target_os = "windows"))]
+        {
+            let (sender, receiver) = mpsc::channel();
+            let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
+            Ok((recorder, receiver))
+        }
     }
 
     fn start_inner(
@@ -345,6 +354,8 @@ impl MicrophoneRecorder {
         }
 
         Ok(Self {
+            #[cfg(target_os = "windows")]
+            process: None,
             #[cfg(any(target_os = "linux", target_os = "windows"))]
             _capture_priority: capture_priority,
             stream: Some(stream),
@@ -376,6 +387,8 @@ impl MicrophoneRecorder {
     pub fn finish_with_warning(mut self) -> Result<(AudioRecording, Option<String>), String> {
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
+        #[cfg(target_os = "windows")]
+        self.process.take();
         let samples = self
             .collector
             .take()
@@ -409,6 +422,8 @@ impl Drop for MicrophoneRecorder {
     fn drop(&mut self) {
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
+        #[cfg(target_os = "windows")]
+        self.process.take();
         if let Some(collector) = self.collector.take() {
             let _ = collector.join();
         }
@@ -552,6 +567,13 @@ fn replacement_input<'a>(devices: &'a [InputDevice], default: Option<&str>) -> O
 }
 
 pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>, String> {
+    #[cfg(target_os = "windows")]
+    return windows_capture::resolve(selected);
+    #[cfg(not(target_os = "windows"))]
+    resolve_recording_input_native(selected)
+}
+
+fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<String>, String> {
     let Some(selected) = selected else {
         return Ok(None);
     };

@@ -16,6 +16,12 @@ pub(super) struct Pixels {
 }
 
 impl Pixels {
+    pub fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
+    pub fn bytes(&self) -> &[u8] {
+        &self.bgra
+    }
     pub fn new(width: u32, height: u32, bgra: Vec<u8>) -> Result<Self, String> {
         let pixels = (width as usize).checked_mul(height as usize);
         if width == 0
