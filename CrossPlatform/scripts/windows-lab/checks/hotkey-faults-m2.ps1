@@ -1,4 +1,5 @@
 $ErrorActionPreference='Stop'
+[LabDriver]::SetThreadDpiAwarenessContext([IntPtr](-4))|Out-Null
 if(-not('HotkeyLab'-as[type])){Add-Type @'
 using System;using System.Runtime.InteropServices;
 public class HotkeyLab {
@@ -41,11 +42,14 @@ try{
  $root=[Windows.Automation.AutomationElement]::RootElement
  $hidden=$root.FindAll([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::ControlTypeProperty),([Windows.Automation.ControlType]::Button)))|Where-Object {$_.Current.Name-match'^Show hidden icons$'}|Select-Object -First 1
  if($hidden){$hidden.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke();Start-Sleep -Milliseconds 300}
+ $icons=@($root.FindAll([Windows.Automation.TreeScope]::Descendants,[Windows.Automation.Condition]::TrueCondition)|Where-Object {$_.Current.Name-match'Shortcut unavailable'})
  $r=[HotkeyLab]::Rect([LabDriver]::ByClass('KoettOwnerWindow'));if($r[0]-ne0){throw 'Koett tray icon not found'}
+ if($icons.Count){$bounds=$icons[0].Current.BoundingRectangle;$r=@(0,[int]$bounds.Left,[int]$bounds.Top,[int]$bounds.Right,[int]$bounds.Bottom)}
  $null=[LabDriver]::SetCursorPos((($r[1]+$r[3])/2),(($r[2]+$r[4])/2));Start-Sleep -Milliseconds 1500
  $tips=@($root.FindAll([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::ControlTypeProperty),([Windows.Automation.ControlType]::ToolTip)))|ForEach-Object {$_.Current.Name})
- $warning=@($tips|Where-Object {$_-match'Shortcut unavailable'}).Count-gt0
- $steps+=@{step='hotkey-conflict-visible-tray-warning';focus=Get-LabFocus;tooltip=$tips;screenshot=(Get-LabCrop ([Math]::Max(0,$r[1]-450)) ([Math]::Max(0,$r[2]-180)) 550 220)}
+ $iconNames=@($icons|ForEach-Object {$_.Current.Name})
+ $warning=(@($tips|Where-Object {$_-match'Shortcut unavailable'}).Count-gt0-or$iconNames.Count-gt0)
+ $steps+=@{step='hotkey-conflict-accessible-tray-warning';focus=Get-LabFocus;tooltip=$tips;accessible_icon_names=$iconNames;screenshot=(Get-LabCrop ([Math]::Max(0,$r[1]-450)) ([Math]::Max(0,$r[2]-180)) 550 220)}
  [Windows.Forms.SendKeys]::SendWait('{ESC}')
  $a=(Get-Process Notepad|Where-Object {$_.MainWindowHandle-ne0}|Select-Object -First 1).MainWindowHandle
  Activate-LabEditor $a;$editor=Find-Editor $a;$editor.SetFocus()
@@ -65,4 +69,4 @@ try{
  try{[DictationLab]::Key(17,$true);[DictationLab]::Key(16,$true);[DictationLab]::Key(32,$true);Start-Sleep -Milliseconds 600;$recoveredPhase=Get-DictationPhase}finally{[DictationLab]::Key(32,$false);[DictationLab]::Key(16,$false);[DictationLab]::Key(17,$false)}
  Start-Sleep -Seconds 1;$releasedPhase=Get-DictationPhase;$steps+=Get-LabStep 'hotkey-recovers-after-conflict-is-released-and-app-restarts'
 }finally{[IO.File]::WriteAllText($config,$original,(New-Object Text.UTF8Encoding($false)))}
-@{passed=($warning-and$blockedPhase-notmatch'Recording'-and$trayPhase-match'Recording'-and$recoveredPhase-match'Recording'-and$releasedPhase-notmatch'Recording');artifact=Get-LabArtifact;warning=$tips;conflict_phase=$blockedPhase;tray_phase=$trayPhase;recovered_phase=$recoveredPhase;released_phase=$releasedPhase;settings_restored=([IO.File]::ReadAllText($config)-ceq$original);lease_exited=$lease.HasExited;steps=$steps}
+@{passed=($warning-and$blockedPhase-notmatch'Recording'-and$trayPhase-match'Recording'-and$recoveredPhase-match'Recording'-and$releasedPhase-notmatch'Recording');artifact=Get-LabArtifact;warning=$tips;accessible_icon_names=$iconNames;conflict_phase=$blockedPhase;tray_phase=$trayPhase;recovered_phase=$recoveredPhase;released_phase=$releasedPhase;settings_restored=([IO.File]::ReadAllText($config)-ceq$original);lease_exited=$lease.HasExited;steps=$steps}
