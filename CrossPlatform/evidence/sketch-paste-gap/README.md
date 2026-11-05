@@ -34,7 +34,8 @@ its own ephemeral bootstrap credential and sent **no messages**. Its responsive
 composer was expanded before tests. All inputs/focus/clipboard activity remained
 inside the private `koett-paste-focus` lab, with copied model paths.
 
-`measurements.json` contains individual event and visible-arrival samples. The
+`cases.jsonl` contains individual event and visible-arrival samples;
+`measurements.json` contains the summary and host metadata. The
 baseline compiled main's original output.rs against the same owner/native-key
 backend as the candidate; the only timing difference is the image wait. Host
 before timing is real; after timing is private-lab evidence, not a host install.
