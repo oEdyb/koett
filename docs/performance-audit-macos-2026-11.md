@@ -49,6 +49,30 @@ optional cleanup, clipboard, target checks, event posting and target insertion.
 CTC retains the production 2 s deadline: at 600 s it times out and returns the same
 text as spelling-only after adding approximately two seconds.
 
+### Post-change default-path confirmation
+
+The actual new default booster callback (disabled, with the same dictionary) plus
+spelling was measured against no callback and no spelling. Three alternating
+repetitions per length, same warm model/VAD and exact fixtures:
+
+| Audio | Off median | New default median | Observed change |
+|---|---:|---:|---:|
+| 5 s | 76.109 ms | 75.786 ms | −0.42% |
+| 30 s | 201.009 ms | 198.148 ms | −1.42% |
+| 120 s | 555.509 ms | 563.526 ms | +1.44% |
+| 600 s | 2464.218 ms | 2365.109 ms | −4.02% |
+
+All lengths remain below the 10% budget. Negative differences are run variation,
+not evidence that spelling speeds up ASR. All 12 default transcripts exactly
+matched the first sweep's spelling-only transcripts. Raw repeats and equality
+checks are in `default-latency.json` and `default-summary.json`.
+
+A separate three-repeat 600 s probe explicitly measured late CTC work. Visible
+pipeline times were 4453.781, 4516.367 and 4374.282 ms. After those returns, the
+CTC tasks still ran for **6973.435, 6282.961 and 5986.941 ms** before completing.
+These are external drain waits, excluded from visible latency. All three late
+results were discarded by the production deadline. See `late-ctc.json`.
+
 Term occurrences recovered identically across the three repetitions:
 
 | Audio | Expected completed-span terms | Off | Spelling only | CTC + spelling |
@@ -94,8 +118,8 @@ No private dictionary, transcript history or microphone recording was read.
 Disable acoustic boosting by default; keep spelling, sounds-like forms and exact
 replacements. Only explicit experimental/benchmark callers may enable CTC.
 The tested cheap path meets the 10% latency budget at every length. It does not
-preserve CTC's term recall at 30 and 120 s; this is the user's explicitly authorized
-speed/recall fallback, not a claim that both original requirements were achieved.
+preserve CTC's term recall at 30 and 120 s; this is a speed/recall
+tradeoff. Both original requirements were not achieved.
 
 ## Old/current actual-target paste
 
@@ -132,16 +156,15 @@ without an Edit/Paste menu were discarded. Sources and the reproducible protocol
 are in `Benchmarks/Dictionary/PasteAudit/`. The target source adds a guest-account
 guard after the measured target-v2 build; insertion/receipt behavior is identical.
 
- The filmed August 18 source commit is unknown. The fallback baseline is
+The filmed August 18 source commit is unknown. The fallback baseline is
 public v0.1.1, exact source `c72f83415b1d760c30316f07fc776f09b0ebdc0b`.
 The video's 118.5 ms Koett paste-post figure and 481 ms Wispr finished-state figure
 use different endpoints and cannot be treated as target-insertion measurements.
 
 ## Verification
 
-- `swift test`: 432 tests, 11 optional tests skipped, zero failures (79.131 s).
+- `swift test`: 432 tests, 11 optional tests skipped, zero failures (45.057 s, final isolated-home run).
   Covers default-off behavior and the existing contracts; not a target paste receipt.
-- `swift build -c release`: passed (94.41 s); no host installation performed.
+- `swift build -c release`: passed (57.07 s, final isolated-home run); no host installation performed.
 - `git diff --check`, `zsh -n install-macos.sh`, both packaging plist lints: passed.
-- Independent provider review was not run: this task explicitly forbids more subagents.
-  The PR remains a draft while measurements finish.
+- Independent review is pending. The PR remains a draft while measurements finish.

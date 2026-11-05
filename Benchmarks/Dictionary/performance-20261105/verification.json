@@ -1,0 +1,68 @@
+{
+  "swift test": {
+    "exit_code": 0,
+    "evidence": [
+      "Build complete! (2,55 secs)",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.000) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 0.053 (0.053) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.000 (0.000) seconds",
+      "\t Executed 432 tests, with 11 tests skipped and 0 failures (0 unexpected) in 45.034 (45.056) seconds",
+      "\t Executed 432 tests, with 11 tests skipped and 0 failures (0 unexpected) in 45.034 (45.057) seconds"
+    ]
+  },
+  "swift build -c release": {
+    "exit_code": 0,
+    "evidence": [
+      "Build complete! (57,07 secs)"
+    ]
+  },
+  "swift test -c release --filter DictionaryLatencyTests": {
+    "exit_code": 0,
+    "evidence": [
+      "Build complete! (79,68 secs)",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds",
+      "\t Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.002) seconds"
+    ]
+  },
+  "native default-path paired benchmark": {
+    "exit_code": 0,
+    "evidence": [
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 20.652 (20.652) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 20.652 (20.653) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 20.652 (20.653) seconds"
+    ]
+  },
+  "native 600-second CTC drain benchmark": {
+    "exit_code": 0,
+    "evidence": [
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 33.463 (33.463) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 33.463 (33.463) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 33.463 (33.464) seconds"
+    ]
+  },
+  "210-clip dictionary corpus benchmark": {
+    "exit_code": 0,
+    "evidence": [
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 50.553 (50.553) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 50.553 (50.553) seconds",
+      "\t Executed 1 test, with 0 failures (0 unexpected) in 50.553 (50.553) seconds"
+    ]
+  },
+  "git diff --check": {
+    "exit_code": 0
+  },
+  "zsh -n install-macos.sh": {
+    "exit_code": 0
+  },
+  "plutil -lint Packaging/Info.plist Packaging/Koett.entitlements": {
+    "exit_code": 0,
+    "output": [
+      "Packaging/Info.plist: OK",
+      "Packaging/Koett.entitlements: OK"
+    ]
+  }
+}

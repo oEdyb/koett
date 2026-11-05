@@ -10,6 +10,7 @@ final class DictionaryLatencyTests: XCTestCase {
         let mode: String
         let milliseconds: Double
         let text: String
+        let lateRescoreMilliseconds: Double
     }
 
     func testWarmPairedLatency() async throws {
@@ -41,7 +42,9 @@ final class DictionaryLatencyTests: XCTestCase {
         let warm = URL(fileURLWithPath: folder).appendingPathComponent("5s.wav")
         _ = try await DictationTranscriber.transcribe(warm, using: manager, detector: detector, boost: booster.boost)
         var rows: [Row] = []
-        for seconds in [5, 30, 120, 600] {
+        let lengths = (env["KOETT_LATENCY_SECONDS"] ?? "5,30,120,600").split(separator: ",").compactMap { Int($0) }
+        XCTAssertFalse(lengths.isEmpty)
+        for seconds in lengths {
             let url = URL(fileURLWithPath: folder).appendingPathComponent("\(seconds)s.wav")
             for pair in 0..<3 {
                 let modes = pair % 2 == 0 ? requested : Array(requested.reversed())
@@ -58,14 +61,18 @@ final class DictionaryLatencyTests: XCTestCase {
                     let text = mode == "off" ? result.text : DictionarySpelling.apply(result.text, entries: entries)
                     let elapsed = ContinuousClock.now - start
                     let ms = Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15
-                    rows.append(Row(seconds: seconds, pair: pair, mode: mode, milliseconds: ms, text: text))
-                    let encoder = JSONEncoder()
-                    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                    try encoder.encode(rows).write(to: URL(fileURLWithPath: output), options: .atomic)
-                    print("LATENCY \(seconds)s pair=\(pair) \(mode) \(ms)ms")
+                    let drainStart = ContinuousClock.now
+                    let late = await tracker.active > 0
                     while await tracker.active > 0 {
                         try await Task.sleep(for: .milliseconds(100))
                     }
+                    let drained = ContinuousClock.now - drainStart
+                    let drainMS = late ? Double(drained.components.seconds) * 1_000 + Double(drained.components.attoseconds) / 1e15 : 0
+                    rows.append(Row(seconds: seconds, pair: pair, mode: mode, milliseconds: ms, text: text, lateRescoreMilliseconds: drainMS))
+                    let encoder = JSONEncoder()
+                    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                    try encoder.encode(rows).write(to: URL(fileURLWithPath: output), options: .atomic)
+                    print("LATENCY \(seconds)s pair=\(pair) \(mode) \(ms)ms late-rescore=\(drainMS)ms")
                 }
             }
         }
