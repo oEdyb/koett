@@ -188,6 +188,58 @@ these earlier NOT TESTED rows for candidate `f2c3238d`:
   names; capacity failure occurs before digest validation. This supersedes the
   earlier ENOSPC diagnostic FAIL. Final-asset rerun remains separate.
 
+## Interactive GNOME VM follow-up
+
+**PASS, local compatibility build — GNOME 46 Wayland dictation and native paste.**
+[Receipt](evidence/release-v0.3.0-audit/gnome46-compatibility.json).
+
+The bounded follow-up used QEMU/KVM, four virtual CPUs, 7,680 MiB guest RAM,
+a real virtual keyboard/tablet and a fresh generic Ubuntu 24.04.4 live user.
+The ISO SHA-256 matched the official sidecar. No second OS image or model was
+downloaded. The model/audio were copied fixtures. All VM files remain in private
+cache storage. The initial live desktop used X11; the accepted run explicitly
+used the real Wayland login and native Wayland GTK clients. Stale activation
+environment from the live session was corrected before acceptance.
+
+Two real compatibility failures were found, rather than accepted as lab limits:
+
+- The optional focus extension declared only Shell 51 compatibility. Ubuntu's
+  Shell 46 therefore supplied no guarded target identity.
+- Ubuntu's portal lacked the newer host Registry interface. Koett rejected the
+  whole paste session before showing its otherwise available permission dialog.
+
+[PR #117](https://github.com/oEdyb/koett/pull/117) adds Shell 46 focus support and
+skips only the exact missing Registry interface. Other registration errors still
+fail. Unsupported pill APIs remain disabled on Shell 46; drawing remains
+unsupported. Linux packages now include the optional extension and setup guide.
+The desktop extension must be explicitly installed/enabled and the user must log
+out/in. GNOME's settings backend configured a custom `koett toggle` shortcut;
+QEMU Ctrl+Shift+Space actually started and stopped recording in the focused editor.
+
+The native Remote Desktop dialog was approved with both Remote Interaction and
+Clipboard Access enabled. Accessibility checkbox/Share actions completed the
+permission grant after the pointer attempt did not. These were the real portal
+controls, not a mocked grant. Koett captured the editor's focus token and required
+the same token immediately before posting paste. GNOME Text Editor received the
+recognized result. Its actual native Save dialog wrote 124 transcript bytes plus
+its normal final newline; this matches the latest History result exactly.
+An initial accessibility-text probe lacked the editor text interface, so file
+content and the visible editor—not that failed probe—establish consumption.
+
+The release build was made in the existing Ubuntu 22.04 build container under
+nice 10, four jobs and a 12 GiB build scope. Two focus identity/safety tests pass;
+one old named-lab test is skipped. The local archive installer verifier passes
+extraction, loader validation, isolated install, spaces/dollar in prefix,
+reinstall/backup, old-process preservation and tamper rejection. All four GNOME
+integration files appear in the archive manifest with correct hashes.
+
+This supersedes the headless GNOME paste NOT TESTED result for this specific
+local fix. It is not final-asset acceptance: #117 still needs review/native CI
+and a packaged approved-source rerun. Shell 51 behavior has historical evidence;
+this VM is not a new Shell 51 test. Permission denial/recovery was not separately
+accepted here. No host desktop, installed app, physical keyboard/mic, tag or
+publication was changed. The Mac audit below is preserved from main.
+
 ## Remaining release gates
 
 1. Merge reviewed docs/privacy/version fixes; finish independent dictionary
@@ -198,7 +250,8 @@ these earlier NOT TESTED rows for candidate `f2c3238d`:
    native CI, and repeat changed-path checks on those exact assets. Mac signing,
    notarization and screen permission acceptance require their own receipt.
 3. Complete final README from zero with physical login/keyboard permissions,
-   full GNOME shortcut/permission acceptance and packaged ENOSPC-fix retest.
+   review/CI and approved-package acceptance of the GNOME compatibility fix.
+   The packaged ENOSPC fix now passes; GNOME local-build acceptance is above.
    Targeted X11, populated upgrade, autostart/uninstall and short low-RAM inference
    now pass within the scopes above.
    Explicitly state ARM64 desktop use remains untested unless hardware runs it.
