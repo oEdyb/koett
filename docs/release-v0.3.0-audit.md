@@ -122,7 +122,7 @@ phrase is a perfect transcript of the source audio.
 | Support/security intake | PASS | [PR #94](https://github.com/oEdyb/koett/pull/94) merged; bug form and private security link included. Reporting enabled; no report sent. |
 | Notice validation | PASS | Merged notice inventory validates all 700 indexed files; eight notice tests pass. Not a legal opinion. |
 | Packaged personal paths | FAIL for tested archives | Merged #94 redacts provenance, but old candidate archives still contain original paths. Fresh artifacts required. |
-| Current-tree path/screenshot cleanup | FAIL, pending merge | [PR #101](https://github.com/oEdyb/koett/pull/101) redacts 126 text files and removes three inspected screenshots. Original count was 125; later document added one. |
+| Current-tree path/screenshot cleanup | PASS, current-tree scope | [PR #101](https://github.com/oEdyb/koett/pull/101) merged: redacts 126 text files and removes three inspected screenshots. Original count was 125; later document added one. |
 | Full-history secret scan | PASS, detector scope | Gitleaks 8.30.1: 367 fetched public commits, five findings across four evidence JSON files; original values checked, all library/source SHA-256 digests. No credential confirmed. Not proof of no sensitive prose. |
 | Historical screenshots | PASS, limited review | OCR of 656 unique reachable image blobs flags only same three path screenshots. Those three visually inspected: synthetic browser geometry, empty History/settings error, synthetic drawing target. Account/home/project/test paths exposed; no credential or personal transcript visible in them. |
 | Personal transcript or other sensitive historical content | NOT TESTED exhaustively | No additional credential/private transcript confirmed; OCR and secret detectors cannot certify every pixel or prose passage. No history rewritten. |
@@ -137,6 +137,47 @@ use private artifact storage for raw captures. Public CI artifacts need the same
 sanitation as Git. Existing evidence is not deleted wholesale, and history
 rewriting remains a separate owner decision.
 
+## Targeted resumed checks
+
+[Resumed receipts](evidence/release-v0.3.0-audit/resumed-gates.json) supersede
+these earlier NOT TESTED rows for candidate `f2c3238d`:
+
+- **PASS — populated upgrade/History:** installed actual v0.2.0-linux.1,
+  initialized its database, inserted three synthetic records, then installed the
+  candidate. Settings survived; all three records remained after restart;
+  database integrity returned `ok`; native History search displayed the records.
+  This is synthetic migration evidence, not import of personal data.
+- **PASS — autostart/uninstall, file and app scope:** menu-login on/off created
+  and removed the desktop entry, which points to the stable installed launcher.
+  App restarted successfully. Documented app removal removed launcher, icon,
+  desktop entry and versions while preserving settings and database bytes.
+  Actual display-manager login and physical-keyboard ACL revocation remain scoped
+  hardware/session limits.
+- **PASS — 512 MiB short inference:** repaired the private audio harness using
+  PulseAudio. One copied compact-model sample was recorded and recognized; one
+  row saved; app alive; container memory peak 450,969,600 bytes. No GPU or physical
+  audio devices. This supersedes the earlier failed harness attempt. It is not
+  a minimum-memory promise, other-model OOM test or long recording benchmark.
+- **PASS — X11 ordinary dictation/paste:** fresh Xvfb session, private audio,
+  one sample, actual GTK text field receives exact saved text. No GPU. Drawing
+  unavailable as expected. This verifies native X11 delivery in a synthetic
+  session, not every X11 window manager or application.
+- **FAIL — model destination ENOSPC diagnostic:** 8 MiB disposable data
+  filesystem, copied real model release cache, network disabled. App remains
+  alive, shows Retry and removes partial files, but cache write ENOSPC is hidden
+  by a later DNS error. [Fix #112](https://github.com/oEdyb/koett/pull/112)
+  preserves destination errors without trying another source. Two targeted
+  cache-routing tests pass; native CI and integrated packaged-app retest remain
+  required. No new model download or large benchmark was used.
+
+- **NOT TESTED — complete GNOME paste journey:** latest candidate installs,
+  reaches Ready and saves one sample transcript in real headless GNOME; drawing
+  stays unavailable. The native GTK consumer did not receive the result.
+  Delivery reports `clipboard_pending`: the programmatic start/stop harness
+  lacks an actual focused-user input serial. This is not a valid substitute for
+  native Record interaction. Full GNOME paste/shortcut permission acceptance
+  needs an interactive login/session; no product-failure claim from this probe.
+
 ## Remaining release gates
 
 1. Merge reviewed docs/privacy/version fixes; finish independent dictionary
@@ -147,8 +188,9 @@ rewriting remains a separate owner decision.
    native CI, and repeat changed-path checks on those exact assets. Mac signing,
    notarization and screen permission acceptance require their own receipt.
 3. Complete final README from zero with physical login/keyboard permissions,
-   full GNOME/X11 ordinary-dictation/paste journeys, populated old-version
-   migration, autostart/uninstall, model ENOSPC and valid low-RAM inference.
+   full GNOME shortcut/permission acceptance and packaged ENOSPC-fix retest.
+   Targeted X11, populated upgrade, autostart/uninstall and short low-RAM inference
+   now pass within the scopes above.
    Explicitly state ARM64 desktop use remains untested unless hardware runs it.
 4. Resolve every remaining NOT TESTED item by valid evidence or an explicit
    support limitation; do not silently turn a lab probe into full acceptance.

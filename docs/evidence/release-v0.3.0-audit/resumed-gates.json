@@ -1,0 +1,60 @@
+{
+  "candidate_source": "f2c3238da6b0c8134c76eba410bc292f2d63f1d5",
+  "scope": "Targeted candidate checks; final asset README rerun pending. One audio sample, three synthetic upgrade rows; no performance cohort.",
+  "upgrade_history_autostart_uninstall": {
+    "old_populated_rows": 3,
+    "settings_preserved_by_installer": true,
+    "upgraded_fixture_rows": 3,
+    "fts_search_rows": 3,
+    "database_integrity": "ok",
+    "history_gui_search_visible": true,
+    "login_enable_exit": 0,
+    "autostart_created": true,
+    "autostart_stable_launcher": true,
+    "login_disable_exit": 0,
+    "autostart_removed": true,
+    "restart_alive": true,
+    "restart_fixture_rows": 3,
+    "uninstall_launcher_removed": true,
+    "uninstall_history_preserved": true,
+    "uninstall_settings_preserved": true,
+    "autostart_after_uninstall": false
+  },
+  "low_ram_inference": {
+    "memory_limit_bytes": 536870912,
+    "gpu_devices_present": false,
+    "physical_audio_devices_present": false,
+    "saved_rows": 1,
+    "recognized_portrait_fixture": true,
+    "app_alive": true,
+    "memory_peak_bytes": 450969600,
+    "success": true
+  },
+  "x11": {
+    "memory_limit_bytes": 2147483648,
+    "gpu_devices_present": false,
+    "physical_audio_devices_present": false,
+    "target_consumed_exact_saved_text": true,
+    "saved_rows": 1,
+    "recognized_portrait_fixture": true,
+    "app_alive": true,
+    "memory_peak_bytes": 428232704,
+    "success": true
+  },
+  "disk_full_model_restore": {
+    "app_alive": true,
+    "enospc_in_log": true,
+    "retry_visible": true,
+    "partial_files": 0,
+    "scope": "8 MiB data filesystem, copied real model release cache, network disabled",
+    "visible_errors": [
+      "DNS error replaces destination ENOSPC; diagnostic path omitted"
+    ]
+  },
+  "gnome": {
+    "shell_alive_after_app": true,
+    "dictation_saved_rows": 1,
+    "manual_native_paste_matches_saved_result": false,
+    "scope": "Real GNOME headless shell, private logind fixture; model ready, ASR saves row, drawing unavailable. Paste not accepted: no native focus/input serial, delivery clipboard_pending. Needs valid interactive session; not claimed as product failure or full journey pass."
+  }
+}
