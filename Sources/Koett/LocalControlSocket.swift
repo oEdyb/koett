@@ -69,7 +69,9 @@ enum LocalControlSocket {
         try line.withUnsafeBytes { bytes in
             var offset = 0
             while offset < bytes.count {
-                let count = Darwin.write(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                // A client can disconnect before a reply. Suppress SIGPIPE on
+                // each send so it becomes a recoverable EPIPE instead of app exit.
+                let count = Darwin.send(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset, MSG_NOSIGNAL)
                 guard count > 0 else { throw failure("Control reply could not be delivered.") }
                 offset += count
             }

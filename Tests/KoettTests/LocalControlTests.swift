@@ -33,6 +33,14 @@ final class LocalControlTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
     }
 
+    func testDisconnectedPeerCannotTerminateTheProcess() throws {
+        var descriptors: [Int32] = [-1, -1]
+        XCTAssertEqual(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors), 0)
+        defer { Darwin.close(descriptors[0]) }
+        Darwin.close(descriptors[1])
+        XCTAssertThrowsError(try LocalControlSocket.writeLine(Data("fixture".utf8), to: descriptors[0]))
+    }
+
     func testExistingFileIsNeverRemoved() throws {
         let url = socketURL()
         let directory = url.deletingLastPathComponent()
