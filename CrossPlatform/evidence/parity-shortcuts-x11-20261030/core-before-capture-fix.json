@@ -1,5 +1,5 @@
 {
-  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "binary": "<build-home>/dev/koett/CrossPlatform/target/release/koett",
   "sha256": "fe19ea3bb54dcd1f5145aa404c059d32fba6f4dfaa81dccf33b5423c3e77eb1e",
   "display": ":1",
   "checks": [

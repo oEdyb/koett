@@ -73,7 +73,7 @@ Reproduce from repository root after starting the named lab:
 agent-lab run koett-last-recovery -- python3 \
   CrossPlatform/evidence/parity-last-recovery-20261030/native-fixture.py \
   --lab koett-last-recovery \
-  --binary /home/olle/dev/koett/CrossPlatform/target/release/koett \
+  --binary <build-home>/dev/koett/CrossPlatform/target/release/koett \
   --output /tmp/koett-last-recovery-new --theme light --renderer cairo
 ```
 

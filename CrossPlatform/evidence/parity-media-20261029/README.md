@@ -33,11 +33,11 @@ Reproduce (choose a new nonexistent output directory):
 ```sh
 agent-lab start koett-media
 agent-lab run koett-media -- env \
-  PYTHONPATH=/home/olle/dev/koett/CrossPlatform/scripts \
-  PATH=/tmp/koett-format-eval/llama-b11981:/home/olle/.local/bin:/usr/bin \
+  PYTHONPATH=<build-home>/dev/koett/CrossPlatform/scripts \
+  PATH=/tmp/koett-format-eval/llama-b11981:<build-home>/.local/bin:/usr/bin \
   LD_LIBRARY_PATH=/tmp/koett-native-host-abi0/lib \
-  /usr/bin/python3 /home/olle/dev/koett/CrossPlatform/evidence/parity-media-20261029/formatting-postreview-fixture.py \
-  --lab koett-media --binary /home/olle/dev/koett/CrossPlatform/target/debug/koett \
+  /usr/bin/python3 <build-home>/dev/koett/CrossPlatform/evidence/parity-media-20261029/formatting-postreview-fixture.py \
+  --lab koett-media --binary <build-home>/dev/koett/CrossPlatform/target/debug/koett \
   --output /tmp/koett-media-format-proof-new --theme light
 agent-lab stop koett-media
 ```
