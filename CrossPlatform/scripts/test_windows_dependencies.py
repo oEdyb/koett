@@ -40,6 +40,7 @@ class DependencyTests(unittest.TestCase):
                 with zipfile.ZipFile(archive, 'w') as package:
                     package.writestr('Koett/Koett.exe', executable('KERNEL32.dll'))
                     package.writestr('Koett/koett-engine.exe', executable(dependency))
+                    package.writestr('Koett/koett-transcribe-engine.exe', executable(dependency))
                     for name in ['THIRD_PARTY_NOTICES.md', 'LICENSE', 'native-build-receipt.json']:
                         package.writestr('Koett/' + name, 'fixture')
                 with patch('check_windows_archive.verify_notices'):

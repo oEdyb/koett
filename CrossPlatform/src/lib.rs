@@ -4,6 +4,7 @@ pub mod corrections;
 pub mod dictionary;
 pub mod formatting;
 pub mod history;
+pub mod media_source;
 pub mod model;
 pub mod paths;
 pub mod pin_context;
