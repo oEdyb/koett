@@ -195,7 +195,7 @@ impl MicrophoneRecorder {
 
         #[cfg(any(target_os = "linux", target_os = "windows"))]
         let capture_priority = preview::RecordingPriority::acquire()?;
-        let host = cpal::default_host();
+        let host = audio_host();
         let device = match microphone {
             None => host
                 .default_input_device()
@@ -340,6 +340,53 @@ impl MicrophoneRecorder {
     }
 }
 
+/// A dropped Pulse client leaves its connection open: the library's reactor sleeps with
+/// no timeout and nothing wakes it, so each host costs one socket and one thread until
+/// the server hits its client limit and refuses every app on the desktop. So the process
+/// keeps one host. It is replaced only when the server has dropped it, which also ends
+/// the old reactor.
+#[cfg(target_os = "linux")]
+static SHARED_HOST: Mutex<Option<Arc<cpal::Host>>> = Mutex::new(None);
+/// When connecting last failed. A stuck server would otherwise cost a socket per try.
+#[cfg(target_os = "linux")]
+static HOST_FAILED: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+#[cfg(target_os = "linux")]
+const HOST_RETRY: Duration = Duration::from_secs(5);
+
+/// The audio host: the shared sound server connection when there is one, else ALSA.
+#[cfg(target_os = "linux")]
+pub(crate) fn audio_host() -> Arc<cpal::Host> {
+    let mut shared = SHARED_HOST.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(host) = shared.as_ref() {
+        return host.clone();
+    }
+    let mut failed = HOST_FAILED.lock().unwrap_or_else(|e| e.into_inner());
+    if failed.is_some_and(|at| at.elapsed() < HOST_RETRY)
+        && let Ok(host) = cpal::host_from_id(cpal::HostId::Alsa)
+    {
+        return Arc::new(host);
+    }
+    let host = Arc::new(cpal::default_host());
+    if host.id() == cpal::HostId::PulseAudio {
+        *shared = Some(host.clone());
+        *failed = None;
+    } else {
+        *failed = Some(std::time::Instant::now());
+    }
+    host
+}
+
+#[cfg(not(target_os = "linux"))]
+pub(crate) fn audio_host() -> Arc<cpal::Host> {
+    Arc::new(cpal::default_host())
+}
+
+/// The server dropped the connection, so the next use makes a new one.
+#[cfg(target_os = "linux")]
+fn forget_audio_host() {
+    *SHARED_HOST.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
 /// A running recorder, its audio, and a notice if it is not on the chosen mic.
 #[cfg(target_os = "linux")]
 pub type StartedInput = (MicrophoneRecorder, Receiver<Vec<f32>>, Option<String>);
@@ -366,6 +413,7 @@ impl MicrophoneRecorder {
         selected: Option<&str>,
         notify: impl Fn(String) + Send + 'static,
     ) -> Result<StartedInput, String> {
+        let chosen = inputs::effective_choice(selected);
         let ((mut recorder, receiver), current, notice) =
             inputs::start_first_working(selected, |candidate: Option<String>| {
                 let (sender, receiver) = mpsc::channel();
@@ -377,7 +425,7 @@ impl MicrophoneRecorder {
             let flag = stop.clone();
             let handle = thread::Builder::new()
                 .name("koett-mic-watch".into())
-                .spawn(move || watch_input(live, current, flag, notify))
+                .spawn(move || watch_input(live, chosen, current, flag, notify))
                 .map_err(|error| format!("could not watch the microphone: {error}"))?;
             recorder.watcher = Some((stop, handle));
         }
@@ -411,7 +459,7 @@ fn open_replacement(
     generation: u32,
     probe: StreamProbe,
 ) -> Result<cpal::Stream, String> {
-    let host = cpal::default_host();
+    let host = audio_host();
     let device = match id {
         None => host.default_input_device(),
         Some(id) => host.device_by_id(&id.parse::<cpal::DeviceId>().map_err(|e| e.to_string())?),
@@ -438,6 +486,7 @@ fn open_replacement(
 #[cfg(target_os = "linux")]
 fn watch_input(
     live: LiveInput,
+    chosen: Option<String>,
     mut current: Option<String>,
     stop: Arc<AtomicBool>,
     notify: impl Fn(String),
@@ -451,6 +500,7 @@ fn watch_input(
     let mut listening_since = sink.elapsed_ms();
     let mut gave_up = false;
     let mut silence_reported = false;
+    let checking = Arc::new(AtomicBool::new(false));
     while !stop.load(Ordering::Acquire) {
         thread::sleep(Duration::from_millis(200));
         ticks = ticks.wrapping_add(1);
@@ -462,14 +512,25 @@ fn watch_input(
         let errored = sink.stream_error.lock().is_ok_and(|error| error.is_some());
         let stalled = now.saturating_sub(sink.last_audio.load(Ordering::Acquire)) > STREAM_STALL;
         // Listing goes over the server's socket, so check for a gone source only now and then.
+        // A check stuck on a frozen server is left alone rather than joined by another.
         let gone = ticks.is_multiple_of(5)
             && current.as_deref().is_some_and(|id| {
-                let id = id.to_string();
+                if checking.swap(true, Ordering::AcqRel) {
+                    return false;
+                }
+                let (id, checking) = (id.to_string(), checking.clone());
                 inputs::bounded(Duration::from_secs(1), move || {
-                    input_devices().map(|list| list.iter().any(|device| device.id == id))
+                    let listed =
+                        input_devices().map(|list| list.iter().any(|device| device.id == id));
+                    checking.store(false, Ordering::Release);
+                    listed
                 })
                 .is_some_and(|listed| listed.is_ok_and(|listed| !listed))
             });
+        // Working on the chosen mic again: the next problem is a new one worth saying.
+        if current == chosen && active.signal.load(Ordering::Acquire) {
+            inputs::settle_situation();
+        }
         let failed = errored || stalled || gone;
         let silent = !failed
             && !silence_reported
@@ -528,9 +589,13 @@ fn watch_input(
             );
             if silent {
                 inputs::remember_silent(current.as_deref());
-                notify(inputs::silent_notice(candidate.as_deref(), &devices));
-            } else {
-                notify(inputs::lost_notice(candidate.as_deref(), &devices));
+            }
+            if inputs::announce(chosen.as_deref(), candidate.as_deref()) {
+                notify(if silent {
+                    inputs::silent_notice(candidate.as_deref(), &devices)
+                } else {
+                    inputs::lost_notice(candidate.as_deref(), &devices)
+                });
             }
             current = candidate;
             gave_up = false;
@@ -545,7 +610,9 @@ fn watch_input(
             // Nothing better: keep recording and say so once.
             silence_reported = true;
             eprintln!("microphone_silent no replacement");
-            notify("This mic is silent".into());
+            if inputs::announce(chosen.as_deref(), Some(inputs::NOTHING_BETTER)) {
+                notify("This mic is silent".into());
+            }
         } else {
             // Nothing works: the recording keeps what it has and says so at the end.
             if !gave_up {
@@ -783,7 +850,7 @@ pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>,
     let Some(selected) = selected else {
         return Ok(None);
     };
-    let host = cpal::default_host();
+    let host = audio_host();
     let id = selected
         .parse::<cpal::DeviceId>()
         .map_err(|e| format!("Invalid microphone ID: {e}"))?;
@@ -800,9 +867,8 @@ pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>,
         .ok_or_else(|| "No microphone is available. Connect an input and retry".into())
 }
 
-pub fn input_devices() -> Result<Vec<InputDevice>, String> {
-    let all = cpal::default_host()
-        .input_devices()
+fn list_devices(host: &cpal::Host) -> Result<Vec<InputDevice>, String> {
+    host.input_devices()
         .map_err(|e| e.to_string())?
         .map(|device| {
             Ok(InputDevice {
@@ -810,7 +876,21 @@ pub fn input_devices() -> Result<Vec<InputDevice>, String> {
                 label: device.description().map_err(|e| e.to_string())?.to_string(),
             })
         })
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect()
+}
+
+pub fn input_devices() -> Result<Vec<InputDevice>, String> {
+    let host = audio_host();
+    let listed = list_devices(&host);
+    #[cfg(target_os = "linux")]
+    let listed = match listed {
+        Err(_) if host.id() == cpal::HostId::PulseAudio => {
+            forget_audio_host();
+            list_devices(&audio_host())
+        }
+        listed => listed,
+    };
+    let all = listed?;
     #[cfg(target_os = "linux")]
     return Ok(inputs::microphones(all));
     #[cfg(not(target_os = "linux"))]

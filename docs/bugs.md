@@ -253,3 +253,18 @@ move: its default buffer delivers up to about 2 s at a time, so stopping lost th
 Still not reproduced: the press at 15:09:58 that never logged `microphone=` and left every
 later toggle dead. The busy path returns at once, so it does not explain a hang. Every open
 now has a time limit on its own thread, so a stuck open can't take the engine with it.
+
+## 2026-11-05: Koett starved every PulseAudio app on Olle's PC
+
+Build `6434858` reached 54 connections after about 12 minutes against pipewire-pulse's limit
+of 64, and the journal showed connections refused 216 times, so other apps and `pactl` failed
+too. A dropped Pulse client in `pulseaudio` 0.3.2 stays open: its reactor sleeps with no timeout
+and nothing wakes it, unless the drop lands before the reactor finishes the last reply. Koett
+made a host per listing and open, and listed every 3 s. Measured: one socket and one thread per
+host with a 20 ms delay before the drop, none without it. The lab now shows 1 to 21 clients in a
+minute on the old build, and 1 throughout 123 recordings on the new one. Koett keeps one host
+per process and lists on request. The read-back after install looked once, so it could not see this.
+
+The refused connections also made a working mic look missing, which caused a false notice on
+every recording. A failed list no longer counts against the chosen mic, a fallback is said once
+per situation, and saved `alsa:pipewire` never shows a notice.

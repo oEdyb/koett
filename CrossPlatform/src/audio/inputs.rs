@@ -16,6 +16,33 @@ const START_BUDGET: Duration = Duration::from_secs(6);
 /// each lose their first seconds, short enough that a fixed mic comes back by itself.
 const SILENT_MEMORY: Duration = Duration::from_secs(600);
 
+/// The fallback last told to the user: which choice, and what is used instead. Lives for
+/// the app run, so a mic that stays missing is mentioned once, not on every recording.
+static SITUATION: Mutex<Option<(Option<String>, Option<String>)>> = Mutex::new(None);
+/// Stands in for the fallback when a silent mic has nothing better to move to.
+pub(super) const NOTHING_BETTER: &str = "nothing better";
+
+/// Whether this fallback is news. Saying it again needs the situation to change.
+pub(super) fn announce(chosen: Option<&str>, used: Option<&str>) -> bool {
+    let situation = (chosen.map(str::to_string), used.map(str::to_string));
+    let Ok(mut last) = SITUATION.lock() else {
+        return true;
+    };
+    if last.as_ref() == Some(&situation) {
+        return false;
+    }
+    *last = Some(situation);
+    eprintln!("microphone_notice_shown");
+    true
+}
+
+/// The chosen mic is back and has produced real audio.
+pub(super) fn settle_situation() {
+    if let Ok(mut last) = SITUATION.lock() {
+        *last = None;
+    }
+}
+
 /// The source last found silent, by id, with `None` meaning the system default.
 static SILENT: Mutex<Option<(Option<String>, Instant)>> = Mutex::new(None);
 
@@ -37,7 +64,7 @@ fn silent_source() -> Option<Option<String>> {
 fn default_id() -> Option<String> {
     use cpal::traits::{DeviceTrait, HostTrait};
     bounded(OPEN_TIMEOUT, || {
-        cpal::default_host()
+        super::audio_host()
             .default_input_device()?
             .id()
             .ok()
@@ -174,6 +201,13 @@ pub fn migrated_input(saved: Option<&str>) -> Option<Option<String>> {
     .flatten()
 }
 
+/// The choice that matters: the ALSA names for the server default mean no choice at all.
+pub(super) fn effective_choice(selected: Option<&str>) -> Option<String> {
+    selected
+        .filter(|id| !means_system_default(id))
+        .map(str::to_string)
+}
+
 /// What to try, in order: the user's choice, the system default, then the rest.
 /// `None` is the system default. A source recently found silent goes last.
 fn candidates(
@@ -182,7 +216,10 @@ fn candidates(
     silent: &[Option<String>],
 ) -> Vec<Option<String>> {
     let mut order = Vec::new();
-    if let Some(selected) = selected.filter(|id| devices.iter().any(|device| device.id == *id)) {
+    // A raw ALSA choice is not in the list, but only opening it can tell if it works.
+    if let Some(selected) = selected
+        .filter(|id| id.starts_with("alsa:") || devices.iter().any(|device| device.id == *id))
+    {
         order.push(Some(selected.to_string()));
     }
     order.push(None);
@@ -220,7 +257,7 @@ pub(super) fn silent_notice(used: Option<&str>, devices: &[InputDevice]) -> Stri
 /// Runs `work` on its own thread and stops waiting after `limit`. A stuck audio
 /// call then costs one parked thread and never the engine, which is what keeps
 /// every later press working.
-pub(super) fn bounded<T: Send + 'static>(
+pub fn bounded<T: Send + 'static>(
     limit: Duration,
     work: impl FnOnce() -> T + Send + 'static,
 ) -> Option<T> {
@@ -289,17 +326,35 @@ pub(super) fn start_first_working<T: Send + 'static>(
     open: impl Fn(Option<String>) -> Result<T, String> + Clone + Send + 'static,
 ) -> Result<(T, Option<String>, Option<String>), String> {
     let started = Instant::now();
-    let devices = bounded(OPEN_TIMEOUT, super::input_devices)
-        .and_then(Result::ok)
-        .unwrap_or_default();
-    first_working(
+    let selected = effective_choice(selected);
+    let selected = selected.as_deref();
+    let devices = usable_list(
+        selected,
+        bounded(OPEN_TIMEOUT, super::input_devices).and_then(Result::ok),
+    );
+    let (opened, used, notice) = first_working(
         selected,
         &devices,
         &silent_names(silent_source(), default_id()),
         OPEN_TIMEOUT,
         START_BUDGET.saturating_sub(started.elapsed()),
         open,
-    )
+    )?;
+    let notice = notice.filter(|_| announce(selected, used.as_deref()));
+    Ok((opened, used, notice))
+}
+
+/// A list that could not be read says nothing about the chosen mic, so still try it.
+fn usable_list(selected: Option<&str>, listed: Option<Vec<InputDevice>>) -> Vec<InputDevice> {
+    listed.unwrap_or_else(|| {
+        selected
+            .map(|id| InputDevice {
+                id: id.to_string(),
+                label: id.to_string(),
+            })
+            .into_iter()
+            .collect()
+    })
 }
 
 /// Candidates for replacing a mic that failed during a recording.
@@ -324,6 +379,8 @@ pub(super) fn lost_notice(used: Option<&str>, devices: &[InputDevice]) -> String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    static SITUATION_TESTS: Mutex<()> = Mutex::new(());
 
     fn device(id: &str, label: &str) -> InputDevice {
         InputDevice {
@@ -439,6 +496,52 @@ mod tests {
             None
         );
         assert_eq!(migrated_source("alsa:jack", CARDS, &devices), None);
+    }
+
+    #[test]
+    fn a_fallback_is_said_once_until_the_situation_changes() {
+        let _serial = SITUATION_TESTS.lock().unwrap();
+        settle_situation();
+        let mic = Some("rode");
+        assert!(announce(mic, None), "the first time");
+        assert!(!announce(mic, None), "the next recording");
+        assert!(!announce(mic, None), "and the one after");
+        assert!(announce(mic, Some("obsbot")), "the fallback changed");
+        assert!(!announce(mic, Some("obsbot")));
+        settle_situation();
+        assert!(
+            announce(mic, Some("obsbot")),
+            "it came back, then went again"
+        );
+        settle_situation();
+    }
+
+    #[test]
+    fn a_list_that_failed_does_not_make_the_chosen_mic_look_missing() {
+        // On Olle's PC the server refused connections, so every mic looked missing.
+        let devices = usable_list(Some("pulseaudio:rode"), None);
+        assert_eq!(
+            candidates(Some("pulseaudio:rode"), &devices, &[]),
+            [Some("pulseaudio:rode".to_string()), None]
+        );
+        assert!(usable_list(None, None).is_empty());
+        let listed = usable_list(Some("gone"), Some(vec![device("a", "A")]));
+        assert_eq!(ids(&listed), ["a"], "a list that worked is believed");
+    }
+
+    #[test]
+    fn saved_server_names_are_no_choice_even_with_no_server() {
+        // ALSA-only mode was where alsa:pipewire reported unavailable on every recording.
+        assert_eq!(effective_choice(Some("alsa:pipewire")), None);
+        assert_eq!(effective_choice(Some("alsa:default")), None);
+        assert_eq!(effective_choice(None), None);
+        assert_eq!(effective_choice(Some("a")).as_deref(), Some("a"));
+        let devices = [device("alsa:sysdefault:CARD=USB", "USB")];
+        // A raw ALSA id off the list still gets tried first.
+        assert_eq!(
+            candidates(Some("alsa:hw:CARD=4,DEV=0"), &devices, &[])[0].as_deref(),
+            Some("alsa:hw:CARD=4,DEV=0")
+        );
     }
 
     #[test]

@@ -167,7 +167,7 @@ fn player(
     cancel: Arc<AtomicBool>,
     failed: Arc<AtomicBool>,
 ) -> Result<cpal::Stream, String> {
-    let device = cpal::default_host()
+    let device = crate::audio::audio_host()
         .default_output_device()
         .ok_or("No speech output device")?;
     let config = cpal::StreamConfig {
