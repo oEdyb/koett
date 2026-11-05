@@ -8,7 +8,16 @@ Windows remains a source-build preview. [Mac download](https://github.com/oEdyb/
 
 Choose the matching **Linux system-runtime** archive from
 [Releases](https://github.com/oEdyb/koett/releases). Extract it, then run these
-commands from the extracted folder:
+commands from the extracted folder. Install Python 3.10+ first; the launcher and
+installer require it. On Ubuntu 22.04 the base runtime packages are:
+
+```sh
+sudo apt-get install python3 libgtk-4-1 libasound2 libudev1 libxkbcommon0 \
+  libwayland-client0 libx11-6 libxcb-shape0 libxcb-xfixes0
+```
+
+Other distributions use different package names. The runtime check remains
+required after installing these packages:
 
 ```sh
 ./koett --check-runtime
@@ -24,11 +33,37 @@ Linux preview builds use the distribution's GTK and audio libraries. They are bu
 on Ubuntu 22.04 with GTK 4.6 as the API floor. Run the runtime check even if your
 packages are installed. It reports missing libraries and optional tools without
 changing your system. See the archive's `SYSTEM-RUNTIME.md` for dependencies and
-known toolkit limits. The separate `current-pc` bundle is specific to its build
-machine and should not be used as a portable Linux download.
+known toolkit limits. Drawing and the floating recording pill also need
+**gtk4-layer-shell** (`libgtk4-layer-shell.so.0`) from your distribution; this is
+a separate library from GTK4. A successful base runtime check does not prove it
+is installed or that your desktop supports drawing. niri/wlroots drawing also
+needs `grim` for screen capture. System GTK 4.24.1 needs upstream accessibility
+fix `21d3eb7` or its distribution backport. The separate `current-pc` bundle is
+specific to its build machine and should not be used as a portable Linux download.
 
 For an isolated install, use `./install.sh --prefix '/a private folder'`.
 Python 3.10+ is required. Verify the archive against its published SHA-256 file.
+
+## Update or uninstall
+
+To update, verify and extract the new archive, run its runtime check and installer
+with the same prefix, then quit and reopen Koett. Installing does not stop the
+old process. Previous application versions and your data are retained.
+
+To uninstall the default installation, turn off **Start at login** in Settings,
+quit Koett and remove these application files:
+
+```sh
+rm -f "$HOME/.local/bin/koett" \
+  "$HOME/.local/share/applications/com.olledyberg.Koett.desktop" \
+  "$HOME/.local/share/icons/hicolor/scalable/apps/com.olledyberg.Koett.svg"
+rm -rf "$HOME/.local/lib/koett"
+```
+
+For a custom prefix, replace `$HOME/.local` with that prefix. Settings, models
+and transcripts are kept. Remove any compositor shortcuts you added separately.
+Uninstalling does not revoke optional keyboard permissions; the
+`koett-keyboard` group and its udev rule are separate system configuration.
 
 ## Use
 
@@ -50,9 +85,9 @@ available. Otherwise bind `koett toggle` in your compositor; hold mode uses
 `koett start` and `koett stop` with press/release bindings. Koett does not require
 an input group or privileged keyboard daemon. On niri/wlroots, install
 `wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported.
-Automatic paste needs a focus check, which only niri and X11 offer here. Elsewhere
-Koett copies the text and shows Not pasted, with Paste to send it to the focused app. X11
-uses native global shortcuts and XTest.
+Automatic paste also needs a supported focus check. If Koett cannot establish
+the target, it copies the text and shows Not pasted, with Paste to send it to the
+focused app. X11 uses native global shortcuts and XTest.
 
 Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 backends. Choose the chord your app accepts. Sending it cannot prove the app
