@@ -369,6 +369,14 @@ fn restore_cached_release(
             Ok(()) => return Ok(true),
             Err(error) => {
                 check_cancelled(cancelled)?;
+                // These prefixes belong to write_verified_download's destination
+                // operations. Another source cannot fix a full or unwritable disk.
+                if ["could not create ", "could not write ", "could not finish "]
+                    .iter()
+                    .any(|prefix| error.starts_with(prefix))
+                {
+                    return Err(error);
+                }
                 eprintln!("Cached release unavailable; trying another source: {error}");
             }
         }
