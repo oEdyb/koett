@@ -83,7 +83,8 @@ extension KoettController {
             stopAfterCaptureFailure()
             return
         }
-        checkRecordingLimit(elapsed: nemotronRecorder?.currentTime ?? recorder.currentTime)
+        // Either input can stop delivering independently; the healthy clock still enforces the cap.
+        checkRecordingLimit(elapsed: max(nemotronRecorder?.currentTime ?? 0, recorder.currentTime))
     }
 
     private func stopAfterCaptureFailure() {
