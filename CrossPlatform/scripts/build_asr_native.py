@@ -11,6 +11,8 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
+from shared_context_patch import PATCHED_SHA256, apply_shared_context
+
 SOURCE_COMMIT = "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5"
 SOURCE_SHA256 = "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c"
 SOURCE_URL = f"https://codeload.github.com/k2-fsa/sherpa-onnx/tar.gz/{SOURCE_COMMIT}"
@@ -125,6 +127,10 @@ def prepare_source(root):
     if not original.exists():
         shutil.copyfile(api, original)
     api.write_text(remove_disabled_tts_stubs(original.read_text()))
+    context = source / 'sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
+    patched = apply_shared_context(context.read_text()).encode()
+    if context.read_bytes() != patched:
+        context.write_bytes(patched)
     return source
 
 
@@ -133,6 +139,8 @@ def stage_libraries(build, root, target):
     destination.mkdir(exist_ok=True)
     marker = destination / "koett-asr-only.txt"
     marker.unlink(missing_ok=True)
+    capability = destination / 'koett-context.txt'
+    capability.unlink(missing_ok=True)
     for path in destination.iterdir():
         if any(term in path.name.lower() for term in ("piper", "espeak", "ucd")):
             raise ValueError(f"forbidden native component: {path.name}")
@@ -151,6 +159,14 @@ def stage_libraries(build, root, target):
     receipt = {"schema_version": 1, "source_commit": SOURCE_COMMIT,
                "source_sha256": SOURCE_SHA256, "target": target,
                "cmake_options": native_options(target), "libraries": files}
+    context = root / f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
+    if context.exists() and sha256(context) == PATCHED_SHA256:
+        core = 'sherpa-onnx-core.lib' if 'windows' in target else 'libsherpa-onnx-core.a'
+        api = 'sherpa-onnx-c-api.lib' if 'windows' in target else 'libsherpa-onnx-c-api.a'
+        if b'koett_context' not in (destination / core).read_bytes():
+            raise ValueError('shared-context source was not compiled into the native core archive')
+        receipt['shared_context_sha256'] = PATCHED_SHA256
+        capability.write_bytes(f'koett-context-v1\npatch={PATCHED_SHA256}\nsource={SOURCE_COMMIT}\ntarget={target}\ncore={files[core]}\napi={files[api]}\n'.encode())
     (root / "build-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     marker.write_bytes(
         f"koett-asr-only-v1\nsource={SOURCE_COMMIT}\ntarget={target}\n".encode())

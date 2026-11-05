@@ -15404,6 +15404,7 @@
     {
       "dependsOn": [
         "pkg:cargo/bzip2@0.4.4",
+        "pkg:cargo/sha2@0.11.0",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/ureq@2.12.1"
       ],

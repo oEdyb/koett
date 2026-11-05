@@ -13976,6 +13976,7 @@
     {
       "dependsOn": [
         "pkg:cargo/bzip2@0.4.4",
+        "pkg:cargo/sha2@0.11.0",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/ureq@2.12.1"
       ],
@@ -14952,9 +14953,9 @@
   ],
   "inputs": [
     {
-      "bytes": 85831,
+      "bytes": 85840,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "fe6854de580b509a9c60eff8d2e869ba4462c29b7343fe0741ddaa1b26d5256f"
+      "sha256": "9984fb8af6ac83243c6ec4adaad04f353cb1206acc8ffe3d37e698abef69f336"
     },
     {
       "bytes": 3227,
@@ -14962,9 +14963,9 @@
       "sha256": "0d664b149be75bfae89ee2d7734e6f25e4c16ba816ef7205eef0c60fa64d1323"
     },
     {
-      "bytes": 5621,
+      "bytes": 6089,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "fd35b7bd87146a44d70f7ce4cfa4942a902db6f4c8f13963740971f5dddb473c"
+      "sha256": "47e78b84c4d2033624d239cbf0ae5f4431ba35991bedbc57ed0b994eae408d1f"
     },
     {
       "bytes": 9465,
@@ -14972,19 +14973,34 @@
       "sha256": "2ca81f7052d8ad1020967cf49899cddb6f489f3fbab3911ae5b786e493495d54"
     },
     {
+      "bytes": 9021,
+      "path": "CrossPlatform/scripts/build_asr_native.py",
+      "sha256": "d553a173088cc207ad28fd473df2fc4fef887780b7d544f682e90e5655e1fae6"
+    },
+    {
+      "bytes": 3309,
+      "path": "CrossPlatform/scripts/shared_context.patch",
+      "sha256": "3964a8f3d2542d7acc3eb395a5fffd44336a338f171bcc96fabc6332762ec2ac"
+    },
+    {
+      "bytes": 1480,
+      "path": "CrossPlatform/scripts/shared_context_patch.py",
+      "sha256": "18d70ec0877fdb8e79f0e10bb2deb729e6e6d4c489a79448d00f4681ea0659cd"
+    },
+    {
       "bytes": 18747,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
       "sha256": "e159a1391739db8719271c105c9fb4ed81b9c3d9015d694f25f46f98601bfc71"
     },
     {
-      "bytes": 2184,
+      "bytes": 2501,
       "path": "CrossPlatform/vendor/sherpa-onnx-sys/koett-provenance.json",
-      "sha256": "de771ec03cbdf908f6b74a4d1679292da36e8ba20a987e6ab7175ca00a036985"
+      "sha256": "add6a866277673104ab197e39b990207c1190198ec147ea5a0004d3a694af2dd"
     },
     {
       "bytes": 2686,
       "path": "CrossPlatform/vendor/sherpa-onnx/koett-provenance.json",
-      "sha256": "00e9037b009d44dd78bde0c48a644a0e01f596c69ec332af4e02b8206023ec63"
+      "sha256": "68922896555f4284f8813b3c14b7a551a23282c826826a51fba4aa9cf5555886"
     },
     {
       "bytes": 11341,

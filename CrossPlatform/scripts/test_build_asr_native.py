@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import io
 import json
 import tempfile
@@ -20,6 +21,32 @@ from build_asr_native import (
 
 
 class AsrBuildTests(unittest.TestCase):
+    def test_context_capability_requires_matching_source_and_is_revoked_when_stale(self):
+        target = 'x86_64-pc-windows-msvc'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / 'build'
+            build.mkdir()
+            for name in LIBRARIES:
+                (build / f'{name}.lib').write_bytes(b'private archive fixture koett_context')
+            context = root / f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
+            context.parent.mkdir(parents=True)
+            context.write_bytes(b'patched native source fixture')
+            digest = hashlib.sha256(context.read_bytes()).hexdigest()
+            with patch('build_asr_native.PATCHED_SHA256', digest), contextlib.redirect_stdout(io.StringIO()):
+                stage_libraries(build, root, target)
+                marker = (root / 'lib/koett-context.txt').read_text()
+                self.assertIn(f'patch={digest}\n', marker)
+                self.assertIn(f'source={SOURCE_COMMIT}\n', marker)
+                self.assertIn(f'target={target}\n', marker)
+                self.assertIn('core=', marker)
+                self.assertIn('api=', marker)
+                self.assertEqual(json.loads((root / 'build-receipt.json').read_text())['shared_context_sha256'], digest)
+                context.write_bytes(b'changed native source')
+                stage_libraries(build, root, target)
+                self.assertFalse((root / 'lib/koett-context.txt').exists())
+                self.assertNotIn('shared_context_sha256', json.loads((root / 'build-receipt.json').read_text()))
+
     def test_onnx_string_abi_must_match_the_target_and_be_unambiguous(self):
         for target, expected in [('x86_64-unknown-linux-gnu', '0'),
                                  ('aarch64-unknown-linux-gnu', '1')]:
