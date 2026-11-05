@@ -34,3 +34,26 @@ USB/Bluetooth transitions, sleep/driver behavior and 30-minute live capture
 remain unverified. Additional software edge cases listed in the prior audit
 (desktop silent/short/no samples, destroyed target, clipboard contention) have
 not been newly run here and are not hardware limitations.
+
+## Remaining software audit closed
+
+The same executable passed the additional edge-cases-m2.ps1 run:
+
+- Three-second silent WAV: empty editor, clipboard sentinel unchanged, no
+  history change or additional retained audio.
+- 100 ms silent WAV: same invariants; no spurious result.
+- Zero-sample WAV: visible “the recording contains no audio”; same invariants.
+  This proves the no-audio software path, not a physical WASAPI callback loss.
+- Original target destroyed after recording: foreground Notepad stayed empty;
+  persistent Not pasted / Saved; Copy recovered the expected transcript.
+- Separate process held the clipboard through delivery retries: visible
+  Not pasted / Saved, empty target. After release, invoking Paste delivered
+  exactly the expected paragraph once. The lease exited.
+
+All five returned passed:true. Screenshots and foreground HWND/PID are in
+edge-cases/, detailed assertions in edge-cases-result.json. No product fix was
+needed. This supersedes the additional-software-cases paragraph above.
+M2 software gates are complete; PR is ready for review/merge approval, not a
+hardware certification. Physical mic fidelity, USB/Bluetooth disconnect/change,
+real sleep/driver behavior and thirty-minute live capture remain scoped limits.
+The guest was fully shut down after testing. No main or release changes.

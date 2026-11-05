@@ -3,7 +3,7 @@
 This work starts from main after PR #52 merged as
 fcaffcc9893c1d9bbf5d1e2ed5af3cc1b4f115b9. M1's four review fixes and ordinary
 Paste/changed-target regression passed on the real guest; see its final receipt.
-M2 is **in progress**, not a dictation-readiness claim.
+M2 software gates passed in the private Windows guest; physical hardware limits remain.
 
 ## Current checkpoint
 
@@ -107,3 +107,7 @@ Shared files changed for the diagnostic: `runtime.rs` and
 normal microphone/WAV capture does not arm it. No main/release branch was edited.
 Windows CI also parses the PowerShell checks before native compilation. The
 local guest stays off while other builds consume the host's headroom.
+
+## Software gate completion
+
+[Final software receipts](../CrossPlatform/evidence/windows-milestone2/ci-72ca2ae/README.md) close ASR retention, busy storage, hotkey conflict, desktop silence/short/no samples, destroyed target and clipboard contention. Earlier draft/readiness paragraphs above are historical checkpoints. PR #78 is ready for review; hardware limitations remain as listed. No big benchmarks were run. M3 continues on a branch based on #78.
