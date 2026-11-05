@@ -1,0 +1,36 @@
+{
+  "baseSource": {
+    "old": "c72f83415b1d760c30316f07fc776f09b0ebdc0b",
+    "current": "85dde5153e0fd4cf50ed3b91813ffc9166d779fc"
+  },
+  "operatingSystemBuild": "25G83",
+  "inputSource": "public synthetic PCM before recorder file write",
+  "oldInputRate": 16000,
+  "currentInputRate": 48000,
+  "productionStopMethodsReplaced": false,
+  "physicalKeyboardStopMeasured": false,
+  "microphoneAccuracyMeasured": false,
+  "samplePreludeSeconds": 0.3,
+  "minimumReceiverCharacters": {
+    "5": 50,
+    "30": 350,
+    "120": 1400,
+    "600": 8000
+  },
+  "files": {
+    "current-source.patch": "618b508107597483493e712e24ee90815e07aa54abf9768ea28fc66b0a369e19",
+    "FixtureInput.c": "4ae322d01ad7df52553c6602c5a30c7bc4d9b7cd01011de646776e35435ca16e",
+    "AuditFixture.swift": "4b7498cacff8521cd478e1cd12be44c1961010b893b37bc80aa5425cceae84a3",
+    "HostDriver.swift": "5560bde9e4563efde2a0eb82ade05568bb5a7da6bac41a1d0922845b8ff08cf0",
+    "README.md": "540c5ac5c9c196381bb54b71732f069d18dc93e771d086f14724b3e9161a5ded",
+    "old-source.patch": "d7b9ebe74309fbae87397e2d185e0e630a131c6c08c67f4c1381f8c6fdd939e9",
+    "driver.entitlements": "fd056e1424ef1c493f3bbe961b05d6d1b91264d0cc5f77b1d3d26e05c601e3ad",
+    "run-host.py": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+    "prepare-host.py": "414b541b70ee82746d337bffc888ebbc77bd7ce2701f52e89264bb1627b7d91d"
+  },
+  "compiler": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "signedRequirement": "identifier \"com.olledyberg.Koett\" and Developer ID team LF8KF3G42Q",
+  "privateAppEntitlements": "none",
+  "driverLanguageMode": "Swift 5",
+  "nativeBinaryProvenance": "native-provenance.json"
+}
