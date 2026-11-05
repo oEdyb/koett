@@ -1,0 +1,5 @@
+{
+  "cacheSourceReconstruction": true,
+  "productionSourceReconstruction": true,
+  "caution": "cache source was reconstructed from recorded transformations after historical binary overwrite; historical binary SHA was not recorded; fresh attested recheck binds rebuilt executable"
+}

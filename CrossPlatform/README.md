@@ -50,9 +50,16 @@ available. Otherwise bind `koett toggle` in your compositor; hold mode uses
 `koett start` and `koett stop` with press/release bindings. Koett does not require
 an input group or privileged keyboard daemon. On niri/wlroots, install
 `wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported.
-Automatic paste needs a focus check, which only niri and X11 offer here. Elsewhere
-Koett copies the text and shows Not pasted, with Paste to send it to the focused app. X11
-uses native global shortcuts and XTest.
+Automatic paste requires a supported focus check. GNOME Wayland needs the
+explicitly enabled [Koett Shell extension](integrations/gnome/README.md).
+The Linux archive includes its files; copy them as described there, log out/in,
+and enable the extension. GNOME 46 supplies focus checks; GNOME 51 also supplies
+the recording pill. Other Shell versions need verification. If GlobalShortcuts
+is unavailable, add a custom GNOME keyboard shortcut running `koett toggle`.
+Allow both **Remote Interaction** and **Clipboard Access** in the Remote Desktop
+prompt. Drawing remains unavailable on GNOME. Without the extension or portal
+permission, use History/Copy and paste manually. X11 uses native global shortcuts
+and XTest.
 
 Settings → Text → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 backends. Choose the chord your app accepts. Sending it cannot prove the app

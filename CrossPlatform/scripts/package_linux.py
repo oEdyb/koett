@@ -96,6 +96,7 @@ def main():
     for filename in ["README.md", "THIRD_PARTY_NOTICES.md"]:
         shutil.copy2(root / filename, destination / filename)
     shutil.copy2(root.parent / "LICENSE", destination / "LICENSE")
+    shutil.copytree(root / "integrations/gnome", destination / "integrations/gnome")
     receipt = {"kind": "linux-preview-candidate" if args.flavor == "system-runtime" else "local-candidate-not-public-release", "flavor": args.flavor,
                "runtime": "app-scoped CachyOS GTK and llama; ASR statically linked" if args.flavor == "current-pc" else "host GTK >= 4.6, ALSA and ELF dependencies; ASR statically linked; llama optional", "source_revision": revision,
                "source_dirty": dirty, "binary_sha256": digest(binary),

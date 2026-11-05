@@ -54,6 +54,7 @@ final class KoettController: NSObject {
     let nemotronAdapter: NemotronStreamingAdapter?
     private(set) var startSound: AVAudioPlayer?
     private(set) var stopSound: AVAudioPlayer?
+    var loginPreference = LoginPreference()
     var recordingMode: RecordingMode
     var dictationShortcut: ShortcutBinding
     var mediaShortcut: ShortcutBinding
