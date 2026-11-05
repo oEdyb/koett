@@ -24,6 +24,15 @@ class SherpaWrapperTests(unittest.TestCase):
             with self.subTest(path=name):
                 self.assertEqual(hashlib.sha256((VENDOR / name).read_bytes()).hexdigest(), digest)
 
+    def test_sys_source_matches_its_reviewed_provenance(self):
+        vendor = ROOT / 'vendor/sherpa-onnx-sys'
+        provenance = json.loads((vendor / 'koett-provenance.json').read_text())
+        self.assertEqual(set(provenance['modified_files']), {'Cargo.toml', 'build.rs', 'src/lib.rs'})
+        self.assertEqual(set(provenance['patched_files']), set(provenance['modified_files']))
+        for name, digest in {**provenance['upstream_files'], **provenance['patched_files']}.items():
+            with self.subTest(path=name):
+                self.assertEqual(hashlib.sha256((vendor / name).read_bytes()).hexdigest(), digest)
+
     def test_distributed_patch_notice_matches_the_source_notice(self):
         notice = ROOT / 'packaging/notices/rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt'
         self.assertEqual(notice.read_bytes(), (VENDOR / 'KOETT-PATCH.md').read_bytes())

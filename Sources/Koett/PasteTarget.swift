@@ -18,12 +18,15 @@ struct PasteTarget {
         return Self(identity: identity(of: app), window: focusedWindow(app.processIdentifier))
     }
 
-    var isCurrent: Bool {
-        guard let app = NSWorkspace.shared.frontmostApplication, !app.isTerminated,
-              identity == Self.identity(of: app) else { return false }
-        guard let window else { return true }
-        guard let current = Self.focusedWindow(app.processIdentifier) else { return false }
-        return CFEqual(window, current)
+    var isCurrent: Bool { failure == nil }
+
+    var failure: PasteBlockReason? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return .noTarget }
+        guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return .ownApp }
+        guard !app.isTerminated, identity == Self.identity(of: app) else { return .focusChanged }
+        guard let window else { return nil }
+        guard let current = Self.focusedWindow(app.processIdentifier) else { return .targetNotReady }
+        return CFEqual(window, current) ? nil : .windowChanged
     }
 
     private static func identity(of app: NSRunningApplication) -> PasteTargetIdentity {

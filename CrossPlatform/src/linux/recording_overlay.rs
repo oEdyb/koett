@@ -1,6 +1,7 @@
 //! Optional GTK layer-shell feedback. The shim must precede libwayland in the
 //! dynamic loader's symbol scope; late dlopen alone is insufficient. See
 //! https://github.com/wmww/gtk4-layer-shell/blob/main/linking.md.
+mod position;
 use gtk4::{self as gtk, glib::translate::ToGlibPtr, prelude::*};
 use libloading::Library;
 use std::os::unix::process::CommandExt;
@@ -100,6 +101,36 @@ impl LayerShell {
         Ok(())
     }
 
+    fn position(
+        &self,
+        window: &gtk::Window,
+        monitor: &gtk::gdk::Monitor,
+        x: i32,
+        y: i32,
+    ) -> Result<(), libloading::Error> {
+        self.choose_monitor(window, Some(monitor))?;
+        self.margins(window, x, y)
+    }
+
+    /// Moves a layer window within its current output. Changing the monitor
+    /// remaps the surface, so a live drag uses this and never `position`.
+    fn margins(&self, window: &gtk::Window, x: i32, y: i32) -> Result<(), libloading::Error> {
+        type EdgeFn = unsafe extern "C" fn(*mut gtk::ffi::GtkWindow, i32, i32);
+        // SAFETY: upstream C signatures; edges left=0 right=1 top=2 bottom=3.
+        unsafe {
+            let anchor = self.0.get::<EdgeFn>(b"gtk_layer_set_anchor\0")?;
+            let margin = self.0.get::<EdgeFn>(b"gtk_layer_set_margin\0")?;
+            let pointer = window.to_glib_none().0;
+            for edge in 0..4 {
+                anchor(pointer, edge, i32::from(edge == 0 || edge == 2));
+                margin(pointer, edge, 0);
+            }
+            margin(pointer, 0, x);
+            margin(pointer, 2, y);
+        }
+        Ok(())
+    }
+
     /// Full-monitor overlay surface. Enums: overlay=3, keyboard none=0 or
     /// exclusive=1, edges left=0 right=1 top=2 bottom=3.
     pub(super) fn cover(
@@ -135,6 +166,7 @@ impl LayerShell {
             }
             zone(pointer, -1);
         }
+        super::output::track_layer_keyboard(window, exclusive_keyboard);
         Ok(())
     }
 
@@ -165,12 +197,18 @@ impl LayerShell {
             let keyboard = self.0.get::<IntFn>(b"gtk_layer_set_keyboard_mode\0")?;
             keyboard(window.to_glib_none().0, mode);
         }
+        super::output::track_layer_keyboard(window, mode == 1);
         Ok(())
     }
 }
 
+/// The pencil follows a live stroke, and stays for the whole of a draw lock.
+fn shows_pencil(pill: &Pill) -> bool {
+    pill.timeline.drawing() || super::sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire)
+}
+
 enum PillLayer {
-    Layer(LayerShell),
+    Layer(Rc<LayerShell>),
     Gnome,
 }
 
@@ -179,7 +217,7 @@ impl PillLayer {
         if super::gnome_pill::available() {
             return Ok(Self::Gnome);
         }
-        Ok(Self::Layer(LayerShell::load()?))
+        Ok(Self::Layer(Rc::new(LayerShell::load()?)))
     }
 
     fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
@@ -442,7 +480,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     }
     let palette = if pill.dark { &DARK } else { &LIGHT };
     let (ar, ag, ab) = palette.accent;
-    let drawing = pill.phase == Phase::Recording && pill.timeline.drawing();
+    let drawing = pill.phase == Phase::Recording && shows_pencil(pill);
     let radius = height / 2.0;
     rounded(
         context,
@@ -503,7 +541,7 @@ fn paint_body(
     palette: &Palette,
 ) -> Result<(), gtk::cairo::Error> {
     let (ar, ag, ab) = palette.accent;
-    let drawing = phase == Phase::Recording && pill.timeline.drawing();
+    let drawing = phase == Phase::Recording && shows_pencil(pill);
     context.set_source_rgb(ar, ag, ab);
     context.set_line_cap(gtk::cairo::LineCap::Round);
     context.set_line_join(gtk::cairo::LineJoin::Round);
@@ -881,7 +919,15 @@ impl RecordingOverlay {
         warning.add_css_class("koett-feedback");
         warning.set_visible(false);
         layout.append(&warning);
-        window.set_child(Some(&layout));
+        // Fading this parent hides the pill during a drag and leaves the live copy of
+        // `layout` intact; GTK ignores opacity on the window itself.
+        let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        shell.append(&layout);
+        window.set_child(Some(&shell));
+        if let PillLayer::Layer(layer) = &layer_shell {
+            position::apply(&window, layer);
+            position::attach(&window, &shell, &layout, layer.clone());
+        }
         Some(Self {
             window,
             drawing,
@@ -1129,6 +1175,9 @@ impl RecordingOverlay {
         );
         self.drawing.set_content_height(height);
         self.window.set_default_size(WIDTH, height);
+        if let PillLayer::Layer(layer) = &self.layer_shell {
+            position::apply(&self.window, layer);
+        }
 
         // States with buttons take the pointer (hover actions while recording
         // or transcribing); the pill never takes keyboard focus.

@@ -1240,6 +1240,11 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
 pub const LIMIT_NOTICE: &str = "Stopped at the 10-minute limit";
 
 fn recording_limit_reached(updates: &Sender<EngineUpdate>) -> EngineCommand {
+    if std::env::var_os("KOETT_CAPTURE_TIMINGS").is_some()
+        && let Ok(elapsed) = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+    {
+        eprintln!("capture_limit_stop_unix_ns={}", elapsed.as_nanos());
+    }
     let _ = updates.send(EngineUpdate::Notice(LIMIT_NOTICE.to_string()));
     EngineCommand::Toggle
 }

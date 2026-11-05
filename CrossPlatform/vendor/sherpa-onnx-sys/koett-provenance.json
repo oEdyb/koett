@@ -2,7 +2,9 @@
   "upstream_crate_sha256": "c1541926ecf70b3d806467a2f100d3d879eef7fd34f8b307028bb074871d7493",
   "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
   "modified_files": [
-    "build.rs"
+    "Cargo.toml",
+    "build.rs",
+    "src/lib.rs"
   ],
   "upstream_files": {
     ".cargo_vcs_info.json": "c88e20df7cbba88518cb1aa7e1ca9d9226da79b2052369da1940ca90c434d844",
@@ -26,5 +28,10 @@
     "src/tts.rs": "d1a949a60edc3f670ece52246b5083869f81fefcc9ea9b9ea7c1a4280df094f7",
     "src/vad.rs": "d1e93356889a7dcd524172ccff22acdf7b87c8e0f1a4f77f1e35fa5e5768a13d",
     "src/wave.rs": "3610968cfb6511db142449f391850e96d02253f607eb940a90d285cf60b5440d"
+  },
+  "patched_files": {
+    "Cargo.toml": "dbb4b9af01df49836cc202cd27fc94d5592fa434930ffce2861cd9050c6e42a5",
+    "build.rs": "67bb341a19184017dc097963b91b96a9302c382d6bda23dbfc267a30b27e697c",
+    "src/lib.rs": "6bd9e0e08457f59dab141ea0a42559b2d41bf415f2385c9578ad705dcf9df6ef"
   }
 }

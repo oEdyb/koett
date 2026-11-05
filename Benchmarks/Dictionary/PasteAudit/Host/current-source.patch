@@ -1,0 +1,154 @@
+--- a/Sources/Koett/DictationSession.swift
++++ b/Sources/Koett/DictationSession.swift
+@@ -616,6 +616,7 @@
+                 let pasteboard = NSPasteboard.general
+                 pasteboard.clearContents()
+                 let written = pasteboard.setString(text, forType: .string)
++                AuditPasteGeneration.generation = pasteboard.changeCount
+                 if !written { self.pasteCoordinator.externalFailure(.clipboardUnavailable) }
+                 return written
+             },
+@@ -676,6 +677,7 @@
+ 
+     func postPasteEvent(flags: CGEventFlags) -> Bool {
+         guard let events = PasteEvents.make(flags: flags) else { return false }
++        events.down.setIntegerValueField(.eventSourceUserData, value: Int64(AuditPasteGeneration.generation))
+         events.down.post(tap: .cghidEventTap)
+         events.up.post(tap: .cghidEventTap)
+         return true
+@@ -733,3 +735,5 @@
+         }
+     }
+ }
++
++@MainActor enum AuditPasteGeneration { static var generation = 0; static var targetPID: Int32 = 0 }
+--- a/Sources/Koett/KoettApp.swift
++++ b/Sources/Koett/KoettApp.swift
+@@ -24,6 +24,14 @@
+ 
+     @MainActor
+     static func main() {
++        setbuf(stdout, nil)
++        let auditEnvironment = ProcessInfo.processInfo.environment
++        guard auditEnvironment["KOETT_AUDIT_HOST"] == "1",
++              let auditRoot = auditEnvironment["KOETT_AUDIT_ROOT"],
++              NSHomeDirectory() == auditRoot + "/home" else {
++            fputs("Private host audit: explicit opt-in and isolated home required\n", stderr)
++            return
++        }
+         let arguments = CommandLine.arguments.dropFirst()
+ 
+         if let flag = arguments.firstIndex(of: "--control") {
+@@ -125,9 +133,17 @@
+         }
+ 
+         do {
+-            let speechEngine = SpeechEngine.selected(arguments: Array(arguments), defaults: .standard)
++            let auditDefaults = AuditDefaults()
++            auditDefaults.register(defaults: [
++                "dictationShortcut": Data([123, 34, 107, 101, 121, 67, 111, 100, 101, 115, 34, 58, 32, 91, 52, 48, 93, 44, 32, 34, 109, 111, 100, 105, 102, 105, 101, 114, 115, 82, 97, 119, 86, 97, 108, 117, 101, 34, 58, 32, 51, 57, 51, 50, 49, 54, 44, 32, 34, 107, 101, 121, 78, 97, 109, 101, 34, 58, 32, 34, 75, 34, 44, 32, 34, 109, 111, 100, 105, 102, 105, 101, 114, 79, 110, 108, 121, 34, 58, 32, 102, 97, 108, 115, 101, 125]),
++                "pauseMedia": false, "s1MiniEnabled": false, "dictionary": Data("[]".utf8),
++                "recordingMode": "toggle", "drawWhileDictating": false,
++                "microphoneUID": ProcessInfo.processInfo.environment["KOETT_AUDIT_INPUT_UID"]!,
++                "pinSelectedText": false,
++            ])
++            let speechEngine = SpeechEngine.selected(arguments: Array(arguments), defaults: auditDefaults)
+             let controller = try KoettController(
+-                defaults: .standard,
++                defaults: auditDefaults,
+                 speechEngine: speechEngine,
+                 pasteDiagnostics: PasteDiagnostics(directory: URL.applicationSupportDirectory
+                     .appendingPathComponent("Koett/Diagnostics", isDirectory: true))
+@@ -137,6 +153,7 @@
+             application.setActivationPolicy(.accessory)
+             EditMenu.install(into: application)
+             application.delegate = delegate
++            delegate.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
+             application.run()
+             withExtendedLifetime(delegate) {}
+         } catch {
+@@ -181,12 +198,50 @@
+ @MainActor
+ private final class KoettDelegate: NSObject, NSApplicationDelegate {
+     private let controller: KoettController
++    private var auditStarted = false
++    private var auditTimer: Timer?
+ 
+     init(controller: KoettController) {
+         self.controller = controller
+     }
+ 
+     func applicationDidFinishLaunching(_ notification: Notification) {
++        guard !auditStarted else { return }; auditStarted = true
++        let auditRoot = URL(fileURLWithPath: ProcessInfo.processInfo.environment["KOETT_AUDIT_ROOT"]!)
++        auditTimer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { [weak self] _ in
++            MainActor.assumeIsolated {
++                guard let self,
++                    let data = try? Data(contentsOf: auditRoot.appendingPathComponent("app-command.json")),
++                    let command = try? JSONSerialization.jsonObject(with: data) as? [String: String] else { return }
++                try? FileManager.default.removeItem(at: auditRoot.appendingPathComponent("app-command.json"))
++                AuditPasteGeneration.targetPID = Int32(command["targetPID"] ?? "0") ?? 0
++                let phase = String(describing: self.controller.state)
++                let name = command["command"] ?? ""
++                if ["start", "stop", "neutral"].contains(name),
++                    NSWorkspace.shared.frontmostApplication?.processIdentifier == AuditPasteGeneration.targetPID {
++                    let source = CGEventSource(stateID: .privateState)!
++                    let event = CGEvent(keyboardEventSource: source, virtualKey: 55, keyDown: false)!
++                    event.type = .flagsChanged; event.flags = []
++                    event.post(tap: .cghidEventTap)
++                    usleep(20_000)
++                }
++                let now = ProcessInfo.processInfo.systemUptime
++                var ok = name == "progress" || name == "neutral"
++                if name == "start", phase == "ready", let path = command["fixture"] {
++                    do { try AuditFixture.prepare(path); self.controller.toggleRecording(eventTimestamp: now); ok = true }
++                    catch { fputs("Audit fixture could not load\n", stderr) }
++                }
++                if name == "abort", phase == "recording" {
++                    self.controller.recorder?.stop(); self.controller.recorder = nil
++                    if let url = self.controller.recordingURL { self.controller.cleanup(url) }
++                    self.controller.recordingURL = nil; self.controller.state = .ready; ok = true
++                }
++                if name == "stop", phase == "recording" { self.controller.toggleRecording(eventTimestamp: now); ok = true }
++                let ack: [String: Any] = ["requestID": command["requestID"] ?? "", "uptime": now, "priorPhase": phase, "ok": ok,
++                    "fixtureFinished": auditFinished() != 0, "framesInjected": auditFrames(), "fixtureSHA256": AuditFixture.sha, "captureGeneration": AuditFixture.generation, "inputSampleRate": auditInputRate(), "appClipboardGeneration": AuditPasteGeneration.generation]
++                try! JSONSerialization.data(withJSONObject: ack).write(to: auditRoot.appendingPathComponent("app-ack.json"), options: .atomic)
++            }
++        }
+         controller.installMenu()
+         controller.startLocalControl()
+         print("Checking microphone and Accessibility access...")
+--- a/Sources/Koett/MicrophoneRecorder.swift
++++ b/Sources/Koett/MicrophoneRecorder.swift
+@@ -50,7 +50,10 @@
+         sink = try MicrophoneFileSink(url: url, inputFormat: input.format)
+         let sink = sink
+         do {
+-            try input.start { buffer in sink.append(buffer) }
++            try input.start { buffer in
++                auditFill(buffer.mutableAudioBufferList, buffer.frameLength, buffer.format.sampleRate)
++                sink.append(buffer)
++            }
+             isRecording = true
+         } catch {
+             input.stop()
+--- a/Sources/Koett/PermissionOnboarding.swift
++++ b/Sources/Koett/PermissionOnboarding.swift
+@@ -4,7 +4,7 @@
+     static let permissionsOnboardedKey = "permissionsOnboarded"
+ 
+     func makePermissionsWindow() -> PermissionsWindowController {
+-        let model = PermissionsModel(center: PermissionCenter())
++        let model = PermissionsModel(center: PermissionCenter(defaults: microphoneDefaults))
+         model.onRelaunch = { [weak self] in self?.relaunchForPermissions() }
+         return PermissionsWindowController(model: model)
+     }
+@@ -18,7 +18,7 @@
+     /// itself as soon as both are allowed.
+     func waitForPermissions() async {
+         let center = permissionsWindow.model.center
+-        let defaults = UserDefaults.standard
++        let defaults = microphoneDefaults
+         if !defaults.bool(forKey: Self.permissionsOnboardedKey) {
+             defaults.set(true, forKey: Self.permissionsOnboardedKey)
+             if !center.allGranted { showPermissions() }

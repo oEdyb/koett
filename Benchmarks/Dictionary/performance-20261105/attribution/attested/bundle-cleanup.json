@@ -1,0 +1,27 @@
+[
+  {
+    "ownedBundle": "Old.app",
+    "exitCode": 1,
+    "output": "failed to scan /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/Old.app: -10814\n from spotlight"
+  },
+  {
+    "ownedBundle": "CacheBound.app",
+    "exitCode": 1,
+    "output": "failed to scan /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/CacheBound.app: -10814\n from spotlight"
+  },
+  {
+    "ownedBundle": "ProductionFrozen.app",
+    "exitCode": 1,
+    "output": "failed to scan /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/ProductionFrozen.app: -10814\n from spotlight"
+  },
+  {
+    "ownedBundle": "Driver.app",
+    "exitCode": 1,
+    "output": "failed to scan /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/Driver.app: -10814\n from spotlight"
+  },
+  {
+    "ownedBundle": "Current.app",
+    "exitCode": 1,
+    "output": "failed to scan /Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/Current.app: -10814\n from spotlight"
+  }
+]

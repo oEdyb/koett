@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-05",
+  "host": {
+    "macOS": "26.6.2",
+    "build": "25G83",
+    "architecture": "arm64",
+    "chip": "Apple M5"
+  },
+  "coldLoader": {
+    "result": "pass",
+    "fixture": "generated speech, 3.320453514739229 seconds",
+    "exactSyntheticTextMatch": true,
+    "scope": "parakeet-baseline using pinned FluidAudio; not app onboarding"
+  },
+  "networkInterruption": {
+    "result": "recovery pass",
+    "throttleBytesPerSecondPerConnection": 524288,
+    "proxyDownloadBytesBeforeInterruption": 318205917,
+    "partialFileRetained": true,
+    "subsequentLoadAndExactTranscription": true,
+    "cachedLoadWithRegistryUnreachable": true,
+    "httpRangeResumeIndependentlyObserved": false,
+    "appRetryUI": "not tested"
+  },
+  "pasteTiming": {
+    "measurements": {
+      "small": {
+        "imageToTextPostMilliseconds": 191.215916,
+        "imageIntakeToTextInsertionMilliseconds": 199.80000007152557,
+        "attachmentAcceptedToTextInsertionMilliseconds": 198.20000004768372,
+        "textBytesAfterTwoRepeats": 183,
+        "acceptedImages": 3
+      },
+      "large": {
+        "imageToTextPostMilliseconds": 177.63074999999998,
+        "imageIntakeToTextInsertionMilliseconds": 177.39999997615814,
+        "attachmentAcceptedToTextInsertionMilliseconds": 175.69999992847443,
+        "textBytesAfterTwoRepeats": 183,
+        "acceptedImages": 3
+      }
+    },
+    "imageReadWaitSamples": [
+      {
+        "milliseconds": 164.826583,
+        "postSucceeded": true,
+        "preReadBeforePost": false
+      },
+      {
+        "milliseconds": 167.413791,
+        "postSucceeded": true,
+        "preReadBeforePost": false
+      },
+      {
+        "milliseconds": 161.531042,
+        "postSucceeded": true,
+        "preReadBeforePost": false
+      },
+      {
+        "milliseconds": 1672.771917,
+        "postSucceeded": true,
+        "preReadBeforePost": true
+      },
+      {
+        "milliseconds": 1668.430083,
+        "postSucceeded": true,
+        "preReadBeforePost": true
+      },
+      {
+        "milliseconds": 1671.339167,
+        "postSucceeded": true,
+        "preReadBeforePost": true
+      }
+    ],
+    "scope": "native macOS paste into hidden Electron/T3 editor; DOM timestamps, not visible screen presentation; generated fixtures"
+  },
+  "upgrade": {
+    "oldVersion": "0.1.1",
+    "newVersion": "0.3.0",
+    "legacyFixtureSource": "c72f834 TranscriptStore.swift",
+    "legacyBytesPreserved": true,
+    "preferencesPreserved": true,
+    "lastTranscriptPreserved": true,
+    "importedCountsAcrossTwoLaunches": [
+      1,
+      1
+    ],
+    "legacyImportShape": "Both markerless entries retained verbatim as one searchable Imported archive row, per intentional ambiguity fallback",
+    "appRemoved": true,
+    "historyRemainsAfterRemoval": true,
+    "scope": "isolated Applications directory; no real TCC migration or old-app dictation"
+  }
+}

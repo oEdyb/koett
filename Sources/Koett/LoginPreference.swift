@@ -3,6 +3,14 @@ import ServiceManagement
 
 struct LoginPreference {
     static let key = "startAtLogin"
+    private var cachedStatus: SMAppService.Status?
+
+    mutating func menuStatus(refresh: Bool, read: () -> SMAppService.Status) -> SMAppService.Status {
+        if !refresh, let cachedStatus { return cachedStatus }
+        let status = read()
+        cachedStatus = status
+        return status
+    }
 
     static func shouldRegister(in defaults: UserDefaults) -> Bool {
         defaults.object(forKey: key) as? Bool ?? true
@@ -11,11 +19,16 @@ struct LoginPreference {
 
 extension KoettController {
     func loginMenuItem() -> NSMenuItem {
-        let status = SMAppService.mainApp.status
-        let item = menuItem(title: status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login",
-                            action: #selector(toggleStartAtLogin), selected: status == .enabled)
-        item.isEnabled = state == .ready
+        let item = menuItem(title: "Start at Login", action: #selector(toggleStartAtLogin), selected: false)
+        refreshLoginMenuItem(item, refresh: state == .ready)
         return item
+    }
+
+    func refreshLoginMenuItem(_ item: NSMenuItem, refresh: Bool = true) {
+        let status = loginPreference.menuStatus(refresh: refresh) { SMAppService.mainApp.status }
+        item.title = status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login"
+        item.state = status == .enabled ? .on : .off
+        item.isEnabled = state == .ready
     }
 
     @objc func toggleStartAtLogin() {

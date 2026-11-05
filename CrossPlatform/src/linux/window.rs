@@ -6,14 +6,22 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DrawingRequest {
+    Status,
+    Undo,
+    ToggleLock,
+}
+
 pub enum Update {
-    DrawingCommand(bool, Sender<serde_json::Value>, Instant),
+    DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
     Show(String),
     Settings(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Shortcut(String),
@@ -368,6 +376,7 @@ fn build_window(
     // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
     // so it morphs straight into Done instead of hiding and remapping.
     let mut settling_until = None::<Instant>;
+    let mut delivery_pending = false;
     let sketch = super::sketch::SketchOverlay::new().map(Rc::new);
     let undo_drawing = gtk::gio::SimpleAction::new("undo-drawing", None);
     undo_drawing.set_enabled(false);
@@ -435,10 +444,22 @@ fn build_window(
                     }
                 }
                 match update {
-                    Update::DrawingCommand(undo, reply, expires) => {
+                    Update::DrawingCommand(request, reply, expires) => {
                         let value = if Instant::now() >= expires {
                             serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
-                        } else if undo {
+                        } else if request == DrawingRequest::ToggleLock {
+                            if recording_started.is_some()
+                                && sketch.as_ref().is_some_and(|sketch| sketch.toggle_lock())
+                            {
+                                sketch
+                                    .as_ref()
+                                    .map_or(serde_json::json!({"ok":true}), |sketch| {
+                                        sketch.status()
+                                    })
+                            } else {
+                                serde_json::json!({"ok":false,"error":{"code":"no_drawing_session","message":"Draw lock needs a recording with drawing on"}})
+                            }
+                        } else if request == DrawingRequest::Undo {
                             if recording_started.is_some()
                                 && sketch.as_ref().is_some_and(|sketch| sketch.undo_last())
                             {
@@ -503,7 +524,15 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
+                    Update::DeliveryStarted => {
+                        delivery_pending = true;
+                        settling_until = None;
+                        done_until = None;
+                        recovery_until = None;
+                        closing = false;
+                    }
                     Update::Delivered => {
+                        delivery_pending = false;
                         settling_until = None;
                         if std::mem::take(&mut stopped_at_limit) {
                             done_until = None;
@@ -517,6 +546,7 @@ fn build_window(
                         done_fading = None;
                     }
                     Update::DeliveryFailed => {
+                        delivery_pending = false;
                         settling_until = None;
                         done_until = None;
                         if latest_completed.borrow().is_some() {
@@ -686,6 +716,7 @@ fn build_window(
                             settling_until = Some(Instant::now() + SETTLE);
                         }
                         if recording {
+                            delivery_pending = false;
                             settling_until = None;
                         }
                         if recording && recording_started.is_none() {
@@ -840,7 +871,9 @@ fn build_window(
                 overlay.update(
                     if media_result && recovering {
                         "Media result"
-                    } else if settling_until.is_some_and(|until| Instant::now() < until) {
+                    } else if delivery_pending
+                        || settling_until.is_some_and(|until| Instant::now() < until)
+                    {
                         "Transcribing…"
                     } else {
                         &state

@@ -85,7 +85,8 @@ extension KoettController: NSMenuDelegate {
 
     func performLastTranscriptAction(_ action: PendingLastTranscriptAction) {
         guard state == .ready else { return }
-        if case .paste(let text) = action, text == lastTranscript, let png = lastTranscriptImage {
+        if case .paste(let text) = action {
+            let png = text == lastTranscript ? lastTranscriptImage : nil
             automaticPasteTarget = PasteTarget.capture()
             state = .transcribing
             recordingOverlay.showTranscribing()
@@ -93,34 +94,30 @@ extension KoettController: NSMenuDelegate {
                 guard let self else { return }
                 defer { self.state = .ready }
                 do {
-                    _ = try await self.deliverSketch(text: text, png: png)
+                    if let png {
+                        _ = try await self.deliverSketch(text: text, png: png)
+                    } else {
+                        let ready = await self.pasteCoordinator.prepare(stage: .manual)
+                        try LastTranscriptDelivery.paste(text,
+                            writeToClipboard: self.writeToGeneralPasteboard,
+                            postPaste: { ready && self.pasteAtCursor() })
+                    }
                     self.recordingOverlay.showDone(text: text, png: png)
                 } catch {
-                    self.recordingOverlay.showNotPasted(text: text, png: png)
-                    fputs("Error: \(error.localizedDescription)\n", stderr)
+                    let reason = self.pasteCoordinator.lastFailure?.message
+                    if !self.recordingOverlay.showNotPasted(text: text, png: png, reason: reason) {
+                        self.recordingOverlay.showError(reason ?? error.localizedDescription, keepUntilClicked: true)
+                    }
                 }
             }
             return
         }
+        guard case .copy(let text) = action else { return }
         do {
-            switch action {
-            case .copy(let text):
-                try LastTranscriptDelivery.copy(
-                    text,
-                    writeToClipboard: writeToGeneralPasteboard
-                )
-                recordingOverlay.showTransientStatus("Last transcript copied")
-            case .paste(let text):
-                try LastTranscriptDelivery.paste(
-                    text,
-                    writeToClipboard: writeToGeneralPasteboard,
-                    postPaste: pasteAtCursor
-                )
-                recordingOverlay.showTransientStatus("Last transcript pasted")
-            }
+            try LastTranscriptDelivery.copy(text, writeToClipboard: writeToGeneralPasteboard)
+            recordingOverlay.showTransientStatus("Last transcript copied")
         } catch {
             recordingOverlay.showError(error.localizedDescription)
-            fputs("Error: \(error.localizedDescription)\n", stderr)
         }
     }
 

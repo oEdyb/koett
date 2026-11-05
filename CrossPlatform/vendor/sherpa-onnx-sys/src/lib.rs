@@ -4,6 +4,13 @@
 
 use std::os::raw::c_char;
 
+pub const SHARED_CONTEXT_AVAILABLE: bool = cfg!(koett_shared_context);
+pub const SHARED_CONTEXT_SHA256: Option<&str> = if SHARED_CONTEXT_AVAILABLE {
+    Some("673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920")
+} else {
+    None
+};
+
 extern "C" {
     pub fn SherpaOnnxGetVersionStr() -> *const c_char;
     pub fn SherpaOnnxGetGitSha1() -> *const c_char;

@@ -9,6 +9,9 @@ listener, permission prompt, transcript content or API key is exposed.
 Run `/Applications/Koett.app/Contents/MacOS/koett --control COMMAND [ARG]`.
 Omitting COMMAND requests status. Each invocation returns one JSON object:
 `ok`, `phase`, `model`, optional `paused`, optional `error: {code, message}`.
+Status also includes `pasteAccessGranted` and, after an attempt, a text-free
+`paste` diagnostic with an ISO-8601 timestamp; `pasteLogError` reports log I/O
+failure. See [paste readiness](mac-paste-readiness.md).
 Exit 0 means accepted; nonzero means rejected. An accepted asynchronous command
 is not a paste receipt or a completed-media receipt. Read status until ready,
 and use the existing pill/history to inspect the result. Do not poll during
