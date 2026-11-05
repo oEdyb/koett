@@ -15,7 +15,7 @@ with a matching hash and Windows shut down. This is not complete M3 proof.
 
 Implemented Windows-only candidates:
 
-- Native Words supports bounded shared dictionary text/JSON import, canonical
+- Native Words supports bounded shared plain-text dictionary import, canonical
   text export, explicit Save/Remove, and literal phrase replacements. Imports
   merge only after acceptance. Settings edits preserve unrelated changes.
 - History Fix a word now edits a transcript correction in the shared Corrections

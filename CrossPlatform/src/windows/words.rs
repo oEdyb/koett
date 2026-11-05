@@ -316,7 +316,7 @@ fn import_path(hwnd: HWND) -> Result<Option<std::path::PathBuf>, String> {
         hwndOwner: hwnd,
         lpstrFile: windows::core::PWSTR(file.as_mut_ptr()),
         nMaxFile: file.len() as u32,
-        lpstrFilter: w!("Dictionary files\0*.txt;*.json\0All files\0*.*\0\0"),
+        lpstrFilter: w!("Dictionary files\0*.txt\0All files\0*.*\0\0"),
         Flags: OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR,
         ..Default::default()
     };

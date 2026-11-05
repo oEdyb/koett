@@ -1,13 +1,11 @@
 $ErrorActionPreference='Stop'
 function Word-Control([string]$id){$wordRoot.FindFirst([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::AutomationIdProperty),$id))}
 function Finish-File([string]$title,[string]$path){
- $edit=$null;for($i=0;$i-lt50-and!$edit;$i++){
-  $d=[LabDriver]::ByTitle($title)
-  if($d-ne[IntPtr]::Zero){$r=[Windows.Automation.AutomationElement]::FromHandle($d);$edit=$r.FindFirst([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::AutomationIdProperty),'1001'))}
-  if(!$edit){Start-Sleep -Milliseconds 100}
- }
- if(!$edit){throw "File dialog unavailable: $title"}
- $edit.SetFocus();[Windows.Forms.SendKeys]::SendWait('^a');[Windows.Forms.SendKeys]::SendWait($path);[Windows.Forms.SendKeys]::SendWait('{TAB}')
+ $d=[IntPtr]::Zero;for($i=0;$i-lt50-and$d-eq[IntPtr]::Zero;$i++){Start-Sleep -Milliseconds 100;$d=[LabDriver]::ByTitle($title)}
+ if($d-eq[IntPtr]::Zero){throw "File dialog unavailable: $title"}
+ Activate-LabEditor $d
+ # Standard native File name mnemonic works for both legacy Open and modern Save.
+ [Windows.Forms.SendKeys]::SendWait('%n');[Windows.Forms.SendKeys]::SendWait('^a');[Windows.Forms.SendKeys]::SendWait($path);[Windows.Forms.SendKeys]::SendWait('{TAB}')
  $null=[LabDriver]::PostMessage($d,0x111,[IntPtr]1,[IntPtr]::Zero);Start-Sleep -Milliseconds 300
 }
 function Confirm-Import([string]$name){
@@ -19,8 +17,8 @@ function Confirm-Import([string]$name){
  $button.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke();Start-Sleep -Milliseconds 300
 }
 $config=$env:APPDATA+'\DybergCo\Koett\config\settings.json';$original=[IO.File]::ReadAllText($config);$originalHash=(Get-FileHash $config).Hash;$readOnly=(Get-Item $config).IsReadOnly
-$source=$env:USERPROFILE+'\m3-import.txt';$export=$env:USERPROFILE+'\m3-dictionary-export.txt';$invalid=$env:USERPROFILE+'\m3-invalid.json'
-[IO.File]::WriteAllText($source,"KoettCase = coat case`nÅTerm = err term",(New-Object Text.UTF8Encoding($false)));[IO.File]::WriteAllText($invalid,'{');if(Test-Path $export){Remove-Item $export}
+$source=$env:USERPROFILE+'\m3-import.txt';$export=$env:USERPROFILE+'\m3-dictionary-export.txt';$invalid=$env:USERPROFILE+'\m3-invalid.txt'
+[IO.File]::WriteAllText($source,"KoettCase = coat case`nÅTerm = err term",(New-Object Text.UTF8Encoding($false)));[IO.File]::WriteAllText($invalid,'= invalid form');if(Test-Path $export){Remove-Item $export}
 $cases=@();$steps=@()
 try{
  Send-DictationCommand 10;Start-Sleep -Seconds 1;$words=[LabDriver]::ByTitle('Koett Words');$wordRoot=[Windows.Automation.AutomationElement]::FromHandle($words);Activate-LabEditor $words
@@ -42,7 +40,7 @@ try{
  $null=Invoke-LabButton $words 'Save entry';Start-Sleep -Milliseconds 300
  $status=(Word-Control '47').Current.Name;$cases+=@{case='settings-write-failure-preserves-file';passed=((Get-FileHash $config).Hash-eq$hash-and$status-match'could not save');status=$status}
  $steps+=Get-LabWindowStep 'word-save-failure-visible-and-preserves-settings' $words
-}finally{
+}catch{throw ($_.Exception.Message+" at "+$_.ScriptStackTrace)}finally{
  (Get-Item $config).IsReadOnly=$false
  if([LabDriver]::ByTitle('Koett Words')-ne[IntPtr]::Zero){$null=[LabDriver]::PostMessage([LabDriver]::ByTitle('Koett Words'),0x10,[IntPtr]::Zero,[IntPtr]::Zero);Start-Sleep -Milliseconds 200}
  [IO.File]::WriteAllText($config,$original,(New-Object Text.UTF8Encoding($false)));(Get-Item $config).IsReadOnly=$readOnly
