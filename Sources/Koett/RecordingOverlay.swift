@@ -206,11 +206,15 @@ final class RecordingOverlayController: NSObject {
 
     /// Morphs the transcribing pill, in place and at the same size, into the
     /// pasted result with Copy, then fades it out shortly after.
-    func showDone(text: String, png: Data? = nil) {
+    func showDone(text: String, png: Data? = nil, drawingFailed: Bool = false) {
         guard isShowingTranscribing else { return }
         let from = pillView.content
         resultText = text
         resultPNG = png
+        if drawingFailed {
+            showError("Text pasted · Drawing failed", keepUntilClicked: true)
+            return
+        }
         show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
         startMorph(from: from)
         dismiss(after: Self.doneDisplayDuration)
