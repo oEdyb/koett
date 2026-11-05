@@ -1,0 +1,14 @@
+{
+  "step": "terminal-receipt-saved-without-execution",
+  "rect": [
+    36,
+    49,
+    2408,
+    1345
+  ],
+  "focus": {
+    "hwnd": 131972,
+    "process": "WindowsTerminal",
+    "pid": 7116
+  }
+}

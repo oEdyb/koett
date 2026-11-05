@@ -1,0 +1,14 @@
+{
+  "step": "history-failure-did-not-block-paste",
+  "rect": [
+    344,
+    344,
+    2264,
+    1436
+  ],
+  "focus": {
+    "hwnd": 131254,
+    "process": "Notepad",
+    "pid": 8092
+  }
+}

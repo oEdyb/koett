@@ -5,6 +5,9 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import time
+import urllib.error
 import shutil
 import subprocess
 import tarfile
@@ -102,6 +105,37 @@ def remove_disabled_tts_stubs(contents):
     raise ValueError("pinned TTS guard is not balanced")
 
 
+def download_archive(url, path):
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response, path.open("wb") as output:
+                shutil.copyfileobj(response, output)
+            return
+        except urllib.error.HTTPError as error:
+            if error.code not in (429, 502, 503, 504) or attempt == 2:
+                raise
+            print(f"Temporary source download HTTP {error.code}; retry {attempt + 1} of 2", flush=True)
+            time.sleep(2)
+
+
+def configure_with_download_retries(command):
+    # FetchContent downloads ONNX Runtime during configuration. Reconfigure in
+    # the same directory so successful verified dependencies remain cached.
+    for attempt in range(3):
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        print(result.stdout, end="", flush=True)
+        if result.returncode == 0:
+            return
+        temporary_http = re.search(
+            r"(?:HTTP/[0-9.]+\s+|requested URL returned error:\s*)(429|502|503|504)\b",
+            result.stdout, re.IGNORECASE,
+        )
+        integrity_failure = re.search(r"hash mismatch|does not match expected|checksum mismatch", result.stdout, re.IGNORECASE)
+        if attempt == 2 or not temporary_http or integrity_failure or "download" not in result.stdout.lower():
+            raise subprocess.CalledProcessError(result.returncode, command, output=result.stdout)
+        print(f"Temporary native dependency download failure; retry {attempt + 1} of 2", flush=True)
+        time.sleep(2)
+
 def prepare_context_header(archive, context):
     contents = context.read_text()
     if hashlib.sha256(contents.encode()).hexdigest() == PREVIOUS_CONTEXT_SHA256:
@@ -122,8 +156,7 @@ def prepare_source(root):
     archive = root / "source.tar.gz"
     if not archive.exists():
         temporary = archive.with_suffix(".download")
-        with urllib.request.urlopen(SOURCE_URL, timeout=60) as response, temporary.open("wb") as output:
-            shutil.copyfileobj(response, output)
+        download_archive(SOURCE_URL, temporary)
         if sha256(temporary) != SOURCE_SHA256:
             raise ValueError("sherpa source checksum mismatch")
         temporary.replace(archive)
@@ -202,7 +235,7 @@ def main():
     root.mkdir(parents=True, exist_ok=True)
     source = prepare_source(root)
     build = root / "build"
-    subprocess.run(configure_command(source, build, target, args.generator), check=True)
+    configure_with_download_retries(configure_command(source, build, target, args.generator))
     subprocess.run(["cmake", "--build", str(build), "--target", "sherpa-onnx-c-api",
                     "--config", "Release", "--parallel", str(args.jobs)], check=True)
     stage_libraries(build, root, target)

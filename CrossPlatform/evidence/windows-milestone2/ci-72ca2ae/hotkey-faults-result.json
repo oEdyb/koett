@@ -1,0 +1,18 @@
+{
+  "recovered_phase": "Koett Recording",
+  "lease_exited": true,
+  "tray_phase": "Koett Recording",
+  "passed": true,
+  "accessible_icon_names": [
+    "Koett Koett \u2014 Shortcut unavailable \u2014 click Koett to change it"
+  ],
+  "released_phase": "Koett",
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM2d\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 2672,
+    "sha256": "F76957A65485FFCAEE8333153F88CE9438E0F68E0A9928B34EBC40277A52C7E3"
+  },
+  "conflict_phase": "Koett",
+  "warning": [],
+  "settings_restored": true
+}

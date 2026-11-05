@@ -4,7 +4,7 @@ pub enum Phase {
     Recording,
     Transcribing,
     Done(String),
-    NotPasted,
+    NotPasted { saved: bool },
     Error { message: String, rescue: bool },
 }
 
@@ -109,7 +109,7 @@ impl State {
         self.hovered
             || matches!(
                 self.phase,
-                Phase::Done(_) | Phase::NotPasted | Phase::Error { .. }
+                Phase::Done(_) | Phase::NotPasted { .. } | Phase::Error { .. }
             )
     }
 }
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn rescue_never_times_out() {
         let mut s = State::default();
-        s.set(Phase::NotPasted, 0);
+        s.set(Phase::NotPasted { saved: true }, 0);
         assert_eq!(s.opacity(90000, true), 1.0);
         s.set(
             Phase::Error {
@@ -186,5 +186,47 @@ mod tests {
         s.copy(20);
         assert_eq!(s.opacity(1019, true), 1.0);
         assert_eq!(s.opacity(1020, true), 0.0);
+    }
+}
+
+pub fn delivery_result(text: String, pasted: bool, saved: bool, history_warning: bool) -> Phase {
+    if !pasted {
+        Phase::NotPasted { saved }
+    } else if !saved || history_warning {
+        Phase::Error {
+            message: "History failed · Copy from tray".into(),
+            rescue: true,
+        }
+    } else {
+        Phase::Done(text)
+    }
+}
+#[cfg(test)]
+mod delivery_tests {
+    use super::*;
+    #[test]
+    fn delivery_failure_keeps_actions_for_every_storage_outcome() {
+        for saved in [false, true] {
+            for warning in [false, true] {
+                assert!(
+                    matches!(delivery_result("text".into(), false, saved, warning), Phase::NotPasted { saved: actual } if actual == saved)
+                );
+            }
+        }
+    }
+    #[test]
+    fn successful_delivery_still_surfaces_storage_failure() {
+        assert!(matches!(
+            delivery_result("text".into(), true, true, false),
+            Phase::Done(_)
+        ));
+        assert!(matches!(
+            delivery_result("text".into(), true, true, true),
+            Phase::Error { rescue: true, .. }
+        ));
+        assert!(matches!(
+            delivery_result("text".into(), true, false, true),
+            Phase::Error { rescue: true, .. }
+        ));
     }
 }

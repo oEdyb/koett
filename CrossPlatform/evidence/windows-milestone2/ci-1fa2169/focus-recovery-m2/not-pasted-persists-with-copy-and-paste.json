@@ -1,0 +1,17 @@
+{
+  "step": "not-pasted-persists-with-copy-and-paste",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 131720
+  },
+  "focus": {
+    "hwnd": 66512,
+    "process": "powershell",
+    "pid": 8892
+  },
+  "visible": true
+}

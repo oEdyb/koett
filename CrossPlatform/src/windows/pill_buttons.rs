@@ -99,8 +99,8 @@ impl Snapshot {
             let show = match action.id {
                 101 | 103 => active,
                 102 => active && matches!(state.phase, Phase::Recording),
-                104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted),
-                105 => matches!(state.phase, Phase::NotPasted),
+                104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted { .. }),
+                105 => matches!(state.phase, Phase::NotPasted { .. }),
                 _ => false,
             };
             if show {
@@ -121,7 +121,12 @@ impl Snapshot {
                     "Koett Done. {}",
                     preview.chars().take(80).collect::<String>()
                 ),
-                Phase::NotPasted => "Koett Not pasted. Saved".into(),
+                Phase::NotPasted { saved } => if *saved {
+                    "Koett Not pasted. Saved"
+                } else {
+                    "Koett Not pasted. Not saved. Copy to keep"
+                }
+                .into(),
                 Phase::Error { message, .. } => format!("Koett. {message}"),
             },
         }
@@ -263,7 +268,10 @@ mod tests {
         assert_eq!(Snapshot::new(&state).mask, 0b10000);
         state.copy(4);
         assert_eq!(Snapshot::new(&state).label(4), "Copied");
-        state.set(Phase::NotPasted, 5);
+        state.set(Phase::NotPasted { saved: true }, 5);
         assert_eq!(Snapshot::new(&state).mask, 0b11000);
+        state.set(Phase::NotPasted { saved: false }, 6);
+        assert_eq!(Snapshot::new(&state).mask, 0b11000);
+        assert!(Snapshot::new(&state).name.contains("Not saved"));
     }
 }
