@@ -266,7 +266,7 @@ pub fn capture_target() -> Option<u32> {
     target
 }
 
-const PASTE_WAIT: std::time::Duration = std::time::Duration::from_millis(1000);
+const PASTE_WAIT: std::time::Duration = std::time::Duration::from_millis(2000);
 const PASTE_SETTLE: std::time::Duration = std::time::Duration::from_millis(25);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -595,6 +595,40 @@ mod target_tests {
             focused: id,
             own_window: false,
             modifiers,
+        }
+    }
+    #[test]
+    fn stop_modifiers_release_after_the_old_timeout_then_paste_once() {
+        for modifier in [1, 2, 4] {
+            let mut gate = PasteGate::new(Some(74));
+            assert_eq!(
+                gate.observe(sample(Some(74), Some(modifier)), Duration::ZERO),
+                Decision::Wait("modifiers_held")
+            );
+            assert_eq!(
+                gate.observe(
+                    sample(Some(74), Some(modifier)),
+                    Duration::from_millis(1100)
+                ),
+                Decision::Wait("modifiers_held")
+            );
+            assert!(Duration::from_millis(1250) < PASTE_WAIT);
+            assert_eq!(
+                gate.observe(sample(Some(74), Some(0)), Duration::from_millis(1250)),
+                Decision::Wait("settling")
+            );
+            assert_eq!(
+                gate.observe(sample(Some(74), Some(0)), Duration::from_millis(1300)),
+                Decision::Post
+            );
+            assert_eq!(
+                post_refusal(Some(74), sample(Some(74), Some(modifier))),
+                Some("modifiers_held_before_post")
+            );
+            assert_eq!(
+                post_refusal(Some(74), sample(Some(75), Some(0))),
+                Some("focus_changed_before_post")
+            );
         }
     }
     #[test]

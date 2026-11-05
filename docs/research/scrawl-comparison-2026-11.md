@@ -6,7 +6,7 @@ Research date: 2026-11-05. **Recommendation: shorten the image-to-text gap, not 
 
 - Koett: fetched `origin/main`, inspected `61e121e13044a7eb1df8d4ebf3fb8b1a889884d3`, including Mac Swift and Linux Rust. These are source capabilities, not a claim about the currently installed binaries.
 - Scrawl main: `b5fa070` (2026-11-01 UTC), latest stable [v0.3.14](https://github.com/kitlangton/scrawl/releases/tag/v0.3.14). Linux: separate draft branch `feat/linux`, `79b131599662ac872fe8ab07e98728a6d93d46a0`, shipped as [Linux preview 4](https://github.com/kitlangton/scrawl/releases/tag/linux-preview-4), based on 0.3.13. Do not infer Linux behavior from main's unsupported-platform stubs.
-- Cloned separately into `/home/olle/.cache/koett-research/scrawl-2026-11-05-1793838266`. Read README, release history, recent commits, all issue bodies returned by the paginated issues API (excluding PRs), selected issue comments, and relevant source. No Scrawl build, execution, installation or benchmark.
+- Cloned separately into `<build-home>/.cache/koett-research/scrawl-2026-11-05-1793838266`. Read README, release history, recent commits, all issue bodies returned by the paginated issues API (excluding PRs), selected issue comments, and relevant source. No Scrawl build, execution, installation or benchmark.
 - **Verified** below means source/API inspection. User reports are attributed. All real-app latency, accuracy, permission flow, hardware and compatibility outcomes are **unverified in this research**. Existing Koett receipts are historical evidence, not fresh tests.
 - Behavior and ideas only. No Scrawl implementation, assets, icons or branding are copied into Koett.
 

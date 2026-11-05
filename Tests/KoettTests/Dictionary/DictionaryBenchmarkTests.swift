@@ -53,7 +53,7 @@ final class DictionaryBenchmarkTests: XCTestCase {
         let names = (environment["KOETT_DICTIONARY_BENCH_TUNINGS"] ?? "koett").split(separator: ",").map(String.init)
         for name in names {
             let tuning = try XCTUnwrap(Self.tunings[name], name)
-            let booster = VocabularyBooster(timeout: .seconds(10), tuning: tuning)
+            let booster = VocabularyBooster(enabled: true, timeout: .seconds(10), tuning: tuning)
             await booster.update(dictionary)
             for _ in 0..<600 where await booster.status == .loading {
                 try await Task.sleep(for: .milliseconds(500))

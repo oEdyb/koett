@@ -76,11 +76,11 @@ From repository root, start only the isolated lab, then run:
 ```sh
 agent-lab start koett-release-copy
 agent-lab run koett-release-copy -- env COPY_V3=1 COPY_SKIP_REPRO=1 \
-  LD_LIBRARY_PATH=/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib:/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib \
+  LD_LIBRARY_PATH=<build-home>/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib:<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib \
   /usr/bin/python3 CrossPlatform/evidence/linux-release-native-copy-20261030/probe.py \
   --lab koett-release-copy \
-  --binary /home/olle/.cache/koett/private-tests/release-copy-bin/koett-final-selection \
-  --output /home/olle/.cache/koett/private-tests/release-copy-NEW-UNUSED-DIRECTORY \
+  --binary <build-home>/.cache/koett/private-tests/release-copy-bin/koett-final-selection \
+  --output <build-home>/.cache/koett/private-tests/release-copy-NEW-UNUSED-DIRECTORY \
   --theme dark
 agent-lab stop koett-release-copy
 ```

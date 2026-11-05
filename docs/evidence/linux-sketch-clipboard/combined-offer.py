@@ -3,11 +3,11 @@
 import os,subprocess,time,json,re,urllib.request
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-root=Path('/home/olle/.cache/koett-repeat-replay')
+root=Path(str(Path.home() / '.cache/koett-repeat-replay'))
 assert os.environ.get('AGENT_LAB_RUNTIME','').endswith('/koett-repeat-replay')
 text='- #1 (0:00) “clipboard regression”'
-server=subprocess.Popen(['/home/olle/.local/bin/t3','--mode','desktop','--port','17973','--base-dir',str(root/'t3data'),'--no-browser','--auto-bootstrap-project-from-cwd',str(root)],stdout=(root/'t3.log').open('w'),stderr=subprocess.STDOUT)
-def input_(*args):subprocess.run(['/home/olle/.local/share/agent-lab/input',*args],check=True,capture_output=True)
+server=subprocess.Popen([str(Path.home() / '.local/bin/t3'),'--mode','desktop','--port','17973','--base-dir',str(root/'t3data'),'--no-browser','--auto-bootstrap-project-from-cwd',str(root)],stdout=(root/'t3.log').open('w'),stderr=subprocess.STDOUT)
+def input_(*args):subprocess.run([str(Path.home() / '.local/share/agent-lab/input'),*args],check=True,capture_output=True)
 def wait(check,label,seconds=30):
  end=time.monotonic()+seconds
  while time.monotonic()<end:
@@ -22,7 +22,7 @@ try:
   # The offer remains owned by the production Copy helper throughout the target tests.
   ps=[]
   try:
-   probe=subprocess.Popen(['/home/olle/.cache/koett-repeat/target/debug/examples/sketch_clipboard_probe',str(root/'fixture.png'),'--explicit'],stdout=(root/(mode+'-probe.log')).open('w'),stderr=subprocess.STDOUT);ps.append(probe)
+   probe=subprocess.Popen([str(Path.home() / '.cache/koett-repeat/target/debug/examples/sketch_clipboard_probe'),str(root/'fixture.png'),'--explicit'],stdout=(root/(mode+'-probe.log')).open('w'),stderr=subprocess.STDOUT);ps.append(probe)
    time.sleep(.8);input_('key','57')
    wait(lambda:'Ready' in (root/(mode+'-probe.log')).read_text(),'offer')
    types=subprocess.check_output(['wl-paste','--list-types'],text=True).splitlines()
@@ -42,7 +42,7 @@ try:
     page=browser.contexts[0].pages[0]
     page.goto('http://127.0.0.1:17973');time.sleep(.8)
     if page.get_by_role('button',name='Continue',exact=True).count():
-     paired=subprocess.run(['/home/olle/.local/bin/t3','pair','--base-dir',str(root/'t3data'),'--ttl','5m'],check=True,capture_output=True,text=True)
+     paired=subprocess.run([str(Path.home() / '.local/bin/t3'),'pair','--base-dir',str(root/'t3data'),'--ttl','5m'],check=True,capture_output=True,text=True)
      token=re.search(r'Token: ([A-Z0-9]+)',paired.stdout).group(1)
      page.get_by_role('textbox').fill(token);page.get_by_role('button',name='Continue',exact=True).click()
     editor=page.locator('[contenteditable="true"]').first;editor.wait_for(timeout=20000)

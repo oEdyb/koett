@@ -11,7 +11,7 @@ Novel features can follow; none were specified for this implementation.
 
 ## Repository state
 
-Fresh checkout: `/home/olle/dev/koett`. `origin/main` is `6a4dfb5`;
+Fresh checkout: `<build-home>/dev/koett`. `origin/main` is `6a4dfb5`;
 `origin/feat/windows-linux-v0.1` is `e85d0d0`. Main contains the Swift macOS app.
 The draft branch contains the Rust Windows/Linux application in `CrossPlatform/`.
 `origin/codex/overnight-2026-10-03` contains newer macOS recovery work and needs
@@ -74,11 +74,11 @@ The repository pins Rust 1.98.0; this machine's default Rust is 1.94.0.
 
 - [Voxtype source](https://github.com/peteonrails/voxtype/tree/dc499ad47444ba6ea80d8750aa3581c23120821c): hold/toggle, replacements, media control and output adapters. Transfer behavior selectively; define deterministic replacement precedence and safe resume ownership.
 - [SQLite FTS5](https://www.sqlite.org/fts5.html) and [transaction semantics](https://www.sqlite.org/transactional.html).
-- [GTK4 Rust API](https://gtk-rs.org/gtk4-rs/stable/latest/docs/gtk4/): proposed Linux window toolkit, upstream 0.11.5 at research time. Cached docs also exist under `/home/olle/docs/gtk4-rs/`.
+- [GTK4 Rust API](https://gtk-rs.org/gtk4-rs/stable/latest/docs/gtk4/): proposed Linux window toolkit, upstream 0.11.5 at research time. Cached docs also exist under `<build-home>/docs/gtk4-rs/`.
 - [rusqlite](https://docs.rs/rusqlite/0.41.0/rusqlite/): proposed exact Rust dependency; verify bundled SQLite FTS5 support and MSRV before adoption.
 - [GlobalShortcuts portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.GlobalShortcuts.html), including Activated/Deactivated.
 - [MPRIS Player interface](https://specifications.freedesktop.org/mpris/latest/Player_Interface.html).
-- Existing ashpd and zbus docs: `/home/olle/docs/ashpd/`, `/home/olle/docs/zbus/`; read the exact pinned APIs before changing calls.
+- Existing ashpd and zbus docs: `<build-home>/docs/ashpd/`, `<build-home>/docs/zbus/`; read the exact pinned APIs before changing calls.
 
 Two delegated research tasks inspected the code and Voxtype documentation. They
 made no changes. Parent verified the local desktop capabilities and storage code.

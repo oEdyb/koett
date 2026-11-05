@@ -3,10 +3,10 @@
 import os,subprocess,time,json,re,urllib.request
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-root=Path('/home/olle/.cache/koett-repeat-replay')
+root=Path(str(Path.home() / '.cache/koett-repeat-replay'))
 assert os.environ.get('AGENT_LAB_RUNTIME','').endswith('/koett-repeat-replay')
 text='- #1 (0:00) “fallback clipboard regression”\nsecond line @AGENTS.md'
-server=subprocess.Popen(['/home/olle/.local/bin/t3','--mode','desktop','--port','17973','--base-dir',str(root/'fallback-t3-fresh'),'--no-browser','--auto-bootstrap-project-from-cwd',str(root)],stdout=(root/'t3.log').open('w'),stderr=subprocess.STDOUT)
+server=subprocess.Popen([str(Path.home() / '.local/bin/t3'),'--mode','desktop','--port','17973','--base-dir',str(root/'fallback-t3-fresh'),'--no-browser','--auto-bootstrap-project-from-cwd',str(root)],stdout=(root/'t3.log').open('w'),stderr=subprocess.STDOUT)
 def input_(*args):
  if args[0]=='chord':
   command=['wtype','-M','ctrl']
@@ -15,7 +15,7 @@ def input_(*args):
   if '42' in args:command+=['-m','shift']
   command+=['-m','ctrl'];subprocess.run(command,check=True)
  else:
-  subprocess.run(['/home/olle/.local/share/agent-lab/input',*args],env={**os.environ,'WAYLAND_DISPLAY':'wayland-agent-lab'},check=True,capture_output=True)
+  subprocess.run([str(Path.home() / '.local/share/agent-lab/input'),*args],env={**os.environ,'WAYLAND_DISPLAY':'wayland-agent-lab'},check=True,capture_output=True)
 def wait(check,label,seconds=30):
  end=time.monotonic()+seconds
  while time.monotonic()<end:
@@ -37,7 +37,7 @@ try:
     page=browser.contexts[0].pages[0]
     page.goto('http://127.0.0.1:17973');time.sleep(.8)
     if page.get_by_role('button',name='Continue',exact=True).count():
-     paired=subprocess.run(['/home/olle/.local/bin/t3','pair','--base-dir',str(root/'fallback-t3-fresh'),'--ttl','5m'],check=True,capture_output=True,text=True)
+     paired=subprocess.run([str(Path.home() / '.local/bin/t3'),'pair','--base-dir',str(root/'fallback-t3-fresh'),'--ttl','5m'],check=True,capture_output=True,text=True)
      token=re.search(r'Token: ([A-Z0-9]+)',paired.stdout).group(1)
      page.get_by_role('textbox').fill(token);page.get_by_role('button',name='Continue',exact=True).click()
     editor=page.locator('[contenteditable="true"]').first;editor.wait_for(timeout=20000)
@@ -46,7 +46,7 @@ try:
     editor.click();page.keyboard.press('Control+a');page.keyboard.press('Backspace')
     assert page.evaluate('document.hasFocus() && document.activeElement.isContentEditable')
     page.evaluate('window.probeKeys=0;window.probePastes=[];document.addEventListener("keydown",e=>{if(e.ctrlKey && e.key.toLowerCase()==="v")probeKeys++});document.addEventListener("paste",e=>probePastes.push([...e.clipboardData.types]))')
-    probe=subprocess.Popen(['/home/olle/.cache/koett-repeat/target/debug/examples/fallback_clipboard_probe',str(root/'fixture.png'),'--clipboard-only'],stdin=subprocess.PIPE,stdout=(root/'fallback-probe.log').open('w'),stderr=(root/'fallback-delivery.log').open('w'));ps.append(probe)
+    probe=subprocess.Popen([str(Path.home() / '.cache/koett-repeat/target/debug/examples/fallback_clipboard_probe'),str(root/'fixture.png'),'--clipboard-only'],stdin=subprocess.PIPE,stdout=(root/'fallback-probe.log').open('w'),stderr=(root/'fallback-delivery.log').open('w'));ps.append(probe)
     wait(lambda:'Ready' in (root/'fallback-probe.log').read_text(),'automatic delivery')
     types=subprocess.check_output(['wl-paste','--list-types'],text=True).splitlines()
     assert all(m in types for m in ['image/png','text/html','text/plain;charset=utf-8','text/plain']),types
