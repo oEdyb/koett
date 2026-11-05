@@ -26,7 +26,7 @@ extension KoettController {
 
     func startRecordingIfReady() {
         guard canStartSession else { return }
-        assistantSpeech.stop()
+        if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         do {
             try startRecording()
         } catch {
