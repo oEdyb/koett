@@ -1,0 +1,10 @@
+CAPTURE production 5s repeat=0
+VERIFIED production 5s 165.5858332524076ms
+CAPTURE production 5s repeat=1
+VERIFIED production 5s 137.5058749690652ms
+CAPTURE production 5s repeat=2
+VERIFIED production 5s 181.3392082694918ms
+CAPTURE production 120s repeat=3
+VERIFIED production 120s 638.1688333349302ms
+ALL 4 PRODUCTION FIX RECEIPTS PASSED; outputs identical
+CLEANUP {"clipboardRestored": true, "stopped": true}

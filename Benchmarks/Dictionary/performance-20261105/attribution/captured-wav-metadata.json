@@ -1,0 +1,145 @@
+[
+  {
+    "name": "koett-95002B86-FC34-44AF-80C6-68C16BFA8784.wav",
+    "logicalBytes": 355668,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 351572,
+    "frames": 87893
+  },
+  {
+    "name": "koett-B8C22A72-EC64-4AA7-A549-94DD15367150.wav",
+    "logicalBytes": 356352,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352256,
+    "frames": 88064
+  },
+  {
+    "name": "koett-F9009265-67DE-4138-823F-C46B00B8A09A.wav",
+    "logicalBytes": 356352,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352256,
+    "frames": 88064
+  },
+  {
+    "name": "koett-72E741F9-0CD8-4CA0-9998-E46F5C3F2158.wav",
+    "logicalBytes": 356352,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352256,
+    "frames": 88064
+  },
+  {
+    "name": "koett-03E9110F-7F2E-41E4-A0EB-8867705890E6.wav",
+    "logicalBytes": 356352,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352256,
+    "frames": 88064
+  },
+  {
+    "name": "koett-BA083C5B-DDFD-4298-9627-035718AF6765.wav",
+    "logicalBytes": 355668,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 351572,
+    "frames": 87893
+  },
+  {
+    "name": "koett-5EA355EB-62E1-4603-A0AF-2ED8E6F459BE.wav",
+    "logicalBytes": 355668,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 351572,
+    "frames": 87893
+  },
+  {
+    "name": "koett-3061877B-A0B8-4748-AE0B-91B9430BAD61.wav",
+    "logicalBytes": 357036,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352940,
+    "frames": 88235
+  },
+  {
+    "name": "koett-7D2C6361-02E1-42F9-8566-5891720188B0.wav",
+    "logicalBytes": 357716,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 353620,
+    "frames": 88405
+  },
+  {
+    "name": "koett-2BF266A3-FB4B-4EA7-9106-A0F29F485155.wav",
+    "logicalBytes": 357036,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352940,
+    "frames": 88235
+  },
+  {
+    "name": "koett-E0FD08DD-D2BD-4FF4-A032-C542F1FCC820.wav",
+    "logicalBytes": 358400,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 354304,
+    "frames": 88576
+  },
+  {
+    "name": "koett-D2BEF765-2276-4CBD-B9B6-78D130C78253.wav",
+    "logicalBytes": 355668,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 351572,
+    "frames": 87893
+  },
+  {
+    "name": "koett-7101424C-6F55-4FDF-9A25-AC06C710AD69.wav",
+    "logicalBytes": 357036,
+    "formatCode": 3,
+    "channels": 1,
+    "sampleRate": 16000,
+    "bitsPerSample": 32,
+    "blockAlign": 4,
+    "dataBytes": 352940,
+    "frames": 88235
+  }
+]

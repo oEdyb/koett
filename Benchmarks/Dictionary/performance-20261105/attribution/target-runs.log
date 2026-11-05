@@ -1,0 +1,21 @@
+CAPTURE baseline 5s repeat=0
+VERIFIED baseline 5s 154.56054161768407ms
+CAPTURE retained 5s repeat=0
+VERIFIED retained 5s 167.88966674357653ms
+CAPTURE retained 5s repeat=1
+VERIFIED retained 5s 149.80233332607895ms
+CAPTURE baseline 5s repeat=1
+VERIFIED baseline 5s 155.13075003400445ms
+CAPTURE baseline 5s repeat=2
+VERIFIED baseline 5s 184.5638332888484ms
+CAPTURE retained 5s repeat=2
+VERIFIED retained 5s 148.50612496957183ms
+CAPTURE retained 120s repeat=3
+VERIFIED retained 120s 639.2576666548848ms
+CLEANUP {"clipboardRestored": true, "stopped": true}
+Traceback (most recent call last):
+  File "/Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/run-targeted.py", line 53, in <module>
+    time.sleep(2)
+    ~~~~~~~~~~^^^
+  File "/Users/olle/.t3/worktrees/local-voice-input/audit-macos-performance-2026-11/.build/performance/attribution/run-targeted.py", line 87, in cancelled
+KeyboardInterrupt: signal 15

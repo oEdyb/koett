@@ -1,0 +1,878 @@
+{
+  "scope": "native M5 same frozen marked WAVs; file-ASR component ablations, not Stop-to-target",
+  "rows": 60,
+  "lengths": [
+    {
+      "seconds": 5,
+      "modes": {
+        "legacy-url": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.031083,
+            "transcriptionTotal": 71.129834
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.114125,
+              "transcriptionTotal": 71.129834
+            },
+            {
+              "plainPreparation": 0.031083,
+              "transcriptionTotal": 71.567208
+            },
+            {
+              "plainPreparation": 0.028542,
+              "transcriptionTotal": 70.634458
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "legacy-split": {
+          "mediansMilliseconds": {
+            "ASR": 71.396417,
+            "fileReadAndConversion": 0.236417,
+            "plainPreparation": 0.028875,
+            "sourceTimingRemap": 0.001459,
+            "transcriptionTotal": 71.815458
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 71.396417,
+              "fileReadAndConversion": 0.236417,
+              "plainPreparation": 0.02825,
+              "sourceTimingRemap": 0.001542,
+              "transcriptionTotal": 71.815458
+            },
+            {
+              "ASR": 73.17025,
+              "fileReadAndConversion": 0.250709,
+              "plainPreparation": 0.0335,
+              "sourceTimingRemap": 0.001459,
+              "transcriptionTotal": 73.598417
+            },
+            {
+              "ASR": 70.4255,
+              "fileReadAndConversion": 0.205541,
+              "plainPreparation": 0.028875,
+              "sourceTimingRemap": 0.001375,
+              "transcriptionTotal": 70.803125
+            }
+          ],
+          "samplesBefore": [
+            80000,
+            80000,
+            80000
+          ],
+          "samplesAfter": [
+            80000,
+            80000,
+            80000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-split": {
+          "mediansMilliseconds": {
+            "ASR": 71.286708,
+            "VAD": 3.637084,
+            "fileReadAndConversion": 0.160417,
+            "join": 0.025334,
+            "plainPreparation": 0.033208,
+            "sourceTimingRemap": 0.001375,
+            "transcriptionTotal": 75.296541
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 70.604041,
+              "VAD": 3.768625,
+              "fileReadAndConversion": 0.160417,
+              "join": 0.025334,
+              "plainPreparation": 0.034291,
+              "sourceTimingRemap": 0.001542,
+              "transcriptionTotal": 74.745709
+            },
+            {
+              "ASR": 71.286708,
+              "VAD": 3.637084,
+              "fileReadAndConversion": 0.166417,
+              "join": 0.024083,
+              "plainPreparation": 0.030666,
+              "sourceTimingRemap": 0.001333,
+              "transcriptionTotal": 75.296541
+            },
+            {
+              "ASR": 71.90025,
+              "VAD": 3.614666,
+              "fileReadAndConversion": 0.152542,
+              "join": 0.026541,
+              "plainPreparation": 0.033208,
+              "sourceTimingRemap": 0.001375,
+              "transcriptionTotal": 75.869292
+            }
+          ],
+          "samplesBefore": [
+            80000,
+            80000,
+            80000
+          ],
+          "samplesAfter": [
+            80000,
+            80000,
+            80000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-no-vad": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.035708,
+            "transcriptionTotal": 68.748834
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.049166,
+              "transcriptionTotal": 66.920375
+            },
+            {
+              "plainPreparation": 0.03025,
+              "transcriptionTotal": 70.676375
+            },
+            {
+              "plainPreparation": 0.035708,
+              "transcriptionTotal": 68.748834
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-production": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.032291,
+            "transcriptionTotal": 75.076375
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.032291,
+              "transcriptionTotal": 75.076375
+            },
+            {
+              "plainPreparation": 0.032375,
+              "transcriptionTotal": 74.494833
+            },
+            {
+              "plainPreparation": 0.02825,
+              "transcriptionTotal": 75.354333
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        }
+      },
+      "productionMatchesSplit": true
+    },
+    {
+      "seconds": 30,
+      "modes": {
+        "legacy-url": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.142,
+            "transcriptionTotal": 165.204667
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.12175,
+              "transcriptionTotal": 164.136708
+            },
+            {
+              "plainPreparation": 0.176708,
+              "transcriptionTotal": 165.204667
+            },
+            {
+              "plainPreparation": 0.142,
+              "transcriptionTotal": 187.223625
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "legacy-split": {
+          "mediansMilliseconds": {
+            "ASR": 177.960666,
+            "fileReadAndConversion": 0.744083,
+            "plainPreparation": 0.13075,
+            "sourceTimingRemap": 0.002334,
+            "transcriptionTotal": 178.914542
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 289.476666,
+              "fileReadAndConversion": 0.672417,
+              "plainPreparation": 0.142333,
+              "sourceTimingRemap": 0.002875,
+              "transcriptionTotal": 290.344375
+            },
+            {
+              "ASR": 177.960666,
+              "fileReadAndConversion": 0.75725,
+              "plainPreparation": 0.13075,
+              "sourceTimingRemap": 0.002334,
+              "transcriptionTotal": 178.914542
+            },
+            {
+              "ASR": 173.203041,
+              "fileReadAndConversion": 0.744083,
+              "plainPreparation": 0.119042,
+              "sourceTimingRemap": 0.002042,
+              "transcriptionTotal": 174.165333
+            }
+          ],
+          "samplesBefore": [
+            480000,
+            480000,
+            480000
+          ],
+          "samplesAfter": [
+            480000,
+            480000,
+            480000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-split": {
+          "mediansMilliseconds": {
+            "ASR": 181.005583,
+            "VAD": 21.222666,
+            "fileReadAndConversion": 0.36425,
+            "join": 0.159,
+            "plainPreparation": 0.121917,
+            "sourceTimingRemap": 0.002167,
+            "transcriptionTotal": 203.048375
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 184.111375,
+              "VAD": 20.97625,
+              "fileReadAndConversion": 0.36425,
+              "join": 0.159,
+              "plainPreparation": 0.120709,
+              "sourceTimingRemap": 0.002083,
+              "transcriptionTotal": 205.825
+            },
+            {
+              "ASR": 181.005583,
+              "VAD": 21.222666,
+              "fileReadAndConversion": 0.45425,
+              "join": 0.139541,
+              "plainPreparation": 0.121917,
+              "sourceTimingRemap": 0.002167,
+              "transcriptionTotal": 203.048375
+            },
+            {
+              "ASR": 176.396667,
+              "VAD": 21.335542,
+              "fileReadAndConversion": 0.326667,
+              "join": 0.180667,
+              "plainPreparation": 0.132208,
+              "sourceTimingRemap": 0.002334,
+              "transcriptionTotal": 198.431292
+            }
+          ],
+          "samplesBefore": [
+            480000,
+            480000,
+            480000
+          ],
+          "samplesAfter": [
+            480000,
+            480000,
+            480000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-no-vad": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.13325,
+            "transcriptionTotal": 162.912041
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.13325,
+              "transcriptionTotal": 158.267833
+            },
+            {
+              "plainPreparation": 0.136916,
+              "transcriptionTotal": 162.912041
+            },
+            {
+              "plainPreparation": 0.1195,
+              "transcriptionTotal": 167.541792
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-production": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.130417,
+            "transcriptionTotal": 201.625625
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.132375,
+              "transcriptionTotal": 205.115334
+            },
+            {
+              "plainPreparation": 0.120458,
+              "transcriptionTotal": 201.625625
+            },
+            {
+              "plainPreparation": 0.130417,
+              "transcriptionTotal": 176.803917
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        }
+      },
+      "productionMatchesSplit": true
+    },
+    {
+      "seconds": 120,
+      "modes": {
+        "legacy-url": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.606041,
+            "transcriptionTotal": 454.28325
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.606041,
+              "transcriptionTotal": 438.305375
+            },
+            {
+              "plainPreparation": 0.551083,
+              "transcriptionTotal": 454.28325
+            },
+            {
+              "plainPreparation": 1.205083,
+              "transcriptionTotal": 463.48575
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "legacy-split": {
+          "mediansMilliseconds": {
+            "ASR": 453.268542,
+            "fileReadAndConversion": 2.720084,
+            "plainPreparation": 0.57,
+            "sourceTimingRemap": 0.008208,
+            "transcriptionTotal": 456.280958
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 453.268542,
+              "fileReadAndConversion": 2.679125,
+              "plainPreparation": 0.614792,
+              "sourceTimingRemap": 0.00775,
+              "transcriptionTotal": 456.280958
+            },
+            {
+              "ASR": 447.873916,
+              "fileReadAndConversion": 2.720084,
+              "plainPreparation": 0.542583,
+              "sourceTimingRemap": 0.008208,
+              "transcriptionTotal": 450.90825
+            },
+            {
+              "ASR": 471.016959,
+              "fileReadAndConversion": 3.422167,
+              "plainPreparation": 0.57,
+              "sourceTimingRemap": 0.008875,
+              "transcriptionTotal": 474.890625
+            }
+          ],
+          "samplesBefore": [
+            1920000,
+            1920000,
+            1920000
+          ],
+          "samplesAfter": [
+            1920000,
+            1920000,
+            1920000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-split": {
+          "mediansMilliseconds": {
+            "ASR": 452.935416,
+            "VAD": 82.654666,
+            "fileReadAndConversion": 1.023875,
+            "join": 0.642416,
+            "plainPreparation": 0.577333,
+            "sourceTimingRemap": 0.009,
+            "transcriptionTotal": 537.59375
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 449.7785,
+              "VAD": 81.674125,
+              "fileReadAndConversion": 1.022625,
+              "join": 0.648334,
+              "plainPreparation": 0.567958,
+              "sourceTimingRemap": 0.008,
+              "transcriptionTotal": 533.436292
+            },
+            {
+              "ASR": 452.935416,
+              "VAD": 82.654666,
+              "fileReadAndConversion": 1.058917,
+              "join": 0.642416,
+              "plainPreparation": 0.581625,
+              "sourceTimingRemap": 0.009,
+              "transcriptionTotal": 537.59375
+            },
+            {
+              "ASR": 465.876833,
+              "VAD": 83.172375,
+              "fileReadAndConversion": 1.023875,
+              "join": 0.601833,
+              "plainPreparation": 0.577333,
+              "sourceTimingRemap": 0.009958,
+              "transcriptionTotal": 550.954083
+            }
+          ],
+          "samplesBefore": [
+            1920000,
+            1920000,
+            1920000
+          ],
+          "samplesAfter": [
+            1920000,
+            1920000,
+            1920000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-no-vad": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.573875,
+            "transcriptionTotal": 452.954792
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.586417,
+              "transcriptionTotal": 448.186541
+            },
+            {
+              "plainPreparation": 0.573875,
+              "transcriptionTotal": 452.954792
+            },
+            {
+              "plainPreparation": 0.546042,
+              "transcriptionTotal": 461.089166
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-production": {
+          "mediansMilliseconds": {
+            "plainPreparation": 0.570291,
+            "transcriptionTotal": 537.76175
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 0.562125,
+              "transcriptionTotal": 533.0565
+            },
+            {
+              "plainPreparation": 0.601042,
+              "transcriptionTotal": 556.325208
+            },
+            {
+              "plainPreparation": 0.570291,
+              "transcriptionTotal": 537.76175
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        }
+      },
+      "productionMatchesSplit": true
+    },
+    {
+      "seconds": 600,
+      "modes": {
+        "legacy-url": {
+          "mediansMilliseconds": {
+            "plainPreparation": 4.423416,
+            "transcriptionTotal": 2019.726625
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 2.397417,
+              "transcriptionTotal": 1968.339959
+            },
+            {
+              "plainPreparation": 4.87625,
+              "transcriptionTotal": 2019.726625
+            },
+            {
+              "plainPreparation": 4.423416,
+              "transcriptionTotal": 2135.377709
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "legacy-split": {
+          "mediansMilliseconds": {
+            "ASR": 1996.842042,
+            "fileReadAndConversion": 12.578208,
+            "plainPreparation": 2.6405,
+            "sourceTimingRemap": 0.025375,
+            "transcriptionTotal": 2009.782542
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 1996.842042,
+              "fileReadAndConversion": 12.284833,
+              "plainPreparation": 3.125042,
+              "sourceTimingRemap": 0.025375,
+              "transcriptionTotal": 2009.782542
+            },
+            {
+              "ASR": 1914.871459,
+              "fileReadAndConversion": 12.578208,
+              "plainPreparation": 2.427375,
+              "sourceTimingRemap": 0.024,
+              "transcriptionTotal": 1928.089125
+            },
+            {
+              "ASR": 2109.71975,
+              "fileReadAndConversion": 16.238666,
+              "plainPreparation": 2.6405,
+              "sourceTimingRemap": 0.038334,
+              "transcriptionTotal": 2126.80575
+            }
+          ],
+          "samplesBefore": [
+            9600000,
+            9600000,
+            9600000
+          ],
+          "samplesAfter": [
+            9600000,
+            9600000,
+            9600000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-split": {
+          "mediansMilliseconds": {
+            "ASR": 2046.233042,
+            "VAD": 430.444875,
+            "fileReadAndConversion": 4.917084,
+            "join": 2.851667,
+            "plainPreparation": 2.669708,
+            "sourceTimingRemap": 0.031333,
+            "transcriptionTotal": 2484.795167
+          },
+          "allMilliseconds": [
+            {
+              "ASR": 2046.233042,
+              "VAD": 430.444875,
+              "fileReadAndConversion": 4.811541,
+              "join": 2.70625,
+              "plainPreparation": 2.713833,
+              "sourceTimingRemap": 0.031333,
+              "transcriptionTotal": 2484.795167
+            },
+            {
+              "ASR": 1914.25575,
+              "VAD": 433.129916,
+              "fileReadAndConversion": 4.981375,
+              "join": 2.851667,
+              "plainPreparation": 2.482458,
+              "sourceTimingRemap": 0.026417,
+              "transcriptionTotal": 2356.588167
+            },
+            {
+              "ASR": 2081.934625,
+              "VAD": 422.382625,
+              "fileReadAndConversion": 4.917084,
+              "join": 3.369125,
+              "plainPreparation": 2.669708,
+              "sourceTimingRemap": 0.042542,
+              "transcriptionTotal": 2513.719458
+            }
+          ],
+          "samplesBefore": [
+            9600000,
+            9600000,
+            9600000
+          ],
+          "samplesAfter": [
+            9600000,
+            9600000,
+            9600000
+          ],
+          "pieces": [
+            1,
+            1,
+            1
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-no-vad": {
+          "mediansMilliseconds": {
+            "plainPreparation": 2.730334,
+            "transcriptionTotal": 2126.073792
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 3.669875,
+              "transcriptionTotal": 2158.909042
+            },
+            {
+              "plainPreparation": 2.730334,
+              "transcriptionTotal": 2126.073792
+            },
+            {
+              "plainPreparation": 2.564834,
+              "transcriptionTotal": 2036.64775
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        },
+        "current-production": {
+          "mediansMilliseconds": {
+            "plainPreparation": 2.777833,
+            "transcriptionTotal": 2564.120166
+          },
+          "allMilliseconds": [
+            {
+              "plainPreparation": 2.682583,
+              "transcriptionTotal": 2672.108917
+            },
+            {
+              "plainPreparation": 2.777833,
+              "transcriptionTotal": 2564.120166
+            },
+            {
+              "plainPreparation": 2.89675,
+              "transcriptionTotal": 2468.537958
+            }
+          ],
+          "samplesBefore": [
+            0,
+            0,
+            0
+          ],
+          "samplesAfter": [
+            0,
+            0,
+            0
+          ],
+          "pieces": [
+            0,
+            0,
+            0
+          ],
+          "uniqueOutputs": 1
+        }
+      },
+      "productionMatchesSplit": true
+    }
+  ]
+}

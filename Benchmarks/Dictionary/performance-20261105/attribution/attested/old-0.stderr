@@ -1,0 +1,2 @@
+AUDIT_RECORDER_TAP rate=16000 channels=1 maxFrames=1024
+AUDIT_RECORDER_TAP rate=16000 channels=1 maxFrames=1024
