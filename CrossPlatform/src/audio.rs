@@ -17,7 +17,8 @@ pub(crate) mod preview;
 #[cfg(any(target_os = "windows", test))]
 mod fixture;
 
-const MAX_RECORDING_DURATION: Duration = Duration::from_secs(10 * 60);
+/// The longest choice in Settings. Each recording's own limit comes from there.
+pub(crate) const MAX_RECORDING_DURATION: Duration = Duration::from_secs(120 * 60);
 
 pub struct AudioRecording {
     pub sample_rate: i32,
@@ -148,7 +149,9 @@ impl MicrophoneRecorder {
         microphone: Option<&str>,
     ) -> Result<Self, String> {
         if maximum_duration.is_zero() || maximum_duration > MAX_RECORDING_DURATION {
-            return Err("maximum recording duration must be between 0 and 600 seconds".to_string());
+            return Err(
+                "maximum recording duration must be between 0 and 7200 seconds".to_string(),
+            );
         }
 
         #[cfg(any(target_os = "linux", target_os = "windows"))]
@@ -389,7 +392,7 @@ impl Drop for MicrophoneRecorder {
 
 pub fn capture_default_microphone(duration: Duration) -> Result<AudioRecording, String> {
     if duration.is_zero() || duration > MAX_RECORDING_DURATION {
-        return Err("microphone duration must be between 0 and 600 seconds".to_string());
+        return Err("microphone duration must be between 0 and 7200 seconds".to_string());
     }
     let recorder = MicrophoneRecorder::start()?;
     thread::sleep(duration);

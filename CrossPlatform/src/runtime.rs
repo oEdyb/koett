@@ -280,6 +280,8 @@ fn run(
         preparation = Some(start_formatting(settings.formatting, updates.clone()));
     }
     let mut capture_started = None::<std::time::Instant>;
+    let mut recording_limit = Duration::from_secs(60 * 60);
+    let mut limit_warned = false;
     let mut recorder = None;
     let mut background: Option<BackgroundSession> = None;
     #[cfg(target_os = "linux")]
@@ -464,15 +466,22 @@ fn run(
         let command = if capture_start {
             EngineCommand::Start
         } else if status == AppStatus::Recording {
-            match commands.recv_timeout(
-                Duration::from_secs(10 * 60).saturating_sub(
-                    capture_started
-                        .map(|started| started.elapsed())
-                        .unwrap_or_default(),
-                ),
-            ) {
+            match commands.recv_timeout(until_next_limit_step(
+                recording_limit,
+                capture_started
+                    .map(|started| started.elapsed())
+                    .unwrap_or_default(),
+                limit_warned,
+            )) {
                 Ok(command) => command,
-                Err(RecvTimeoutError::Timeout) => recording_limit_reached(&updates),
+                Err(RecvTimeoutError::Timeout) if !limit_warned => {
+                    limit_warned = true;
+                    let _ = updates.send(EngineUpdate::Notice(LIMIT_WARNING.to_string()));
+                    continue;
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    recording_limit_reached(&updates, recording_limit)
+                }
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         } else {
@@ -823,6 +832,9 @@ fn run(
                     Ok((started, session)) => {
                         sessions.begin();
                         capture_started = Some(std::time::Instant::now());
+                        recording_limit =
+                            Duration::from_secs(u64::from(current.recording_limit_minutes) * 60);
+                        limit_warned = false;
                         let levels = started.levels();
                         recorder = Some(started);
                         background = Some(session);
@@ -1242,15 +1254,34 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
         .expect("an error can recover");
 }
 
-pub const LIMIT_NOTICE: &str = "Stopped at the 10-minute limit";
+pub const LIMIT_WARNING: &str = "1 minute left";
+const LIMIT_WARNING_BEFORE: Duration = Duration::from_secs(60);
 
-fn recording_limit_reached(updates: &Sender<EngineUpdate>) -> EngineCommand {
+fn limit_notice(limit: Duration) -> String {
+    format!("Stopped at the {}-minute limit", limit.as_secs() / 60)
+}
+
+pub fn is_limit_notice(text: &str) -> bool {
+    text.starts_with("Stopped at the ") && text.ends_with("-minute limit")
+}
+
+/// How long to wait for a command before the warning, then before the stop.
+fn until_next_limit_step(limit: Duration, elapsed: Duration, warned: bool) -> Duration {
+    if warned {
+        limit
+    } else {
+        limit.saturating_sub(LIMIT_WARNING_BEFORE)
+    }
+    .saturating_sub(elapsed)
+}
+
+fn recording_limit_reached(updates: &Sender<EngineUpdate>, limit: Duration) -> EngineCommand {
     if std::env::var_os("KOETT_CAPTURE_TIMINGS").is_some()
         && let Ok(elapsed) = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
     {
         eprintln!("capture_limit_stop_unix_ns={}", elapsed.as_nanos());
     }
-    let _ = updates.send(EngineUpdate::Notice(LIMIT_NOTICE.to_string()));
+    let _ = updates.send(EngineUpdate::Notice(limit_notice(limit)));
     EngineCommand::Toggle
 }
 
@@ -1291,17 +1322,36 @@ type MediaOperation = (
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     #[test]
     fn recording_limit_stops_the_recording_and_says_why() {
         let (updates, received) = std::sync::mpsc::channel();
         assert!(matches!(
-            super::recording_limit_reached(&updates),
+            super::recording_limit_reached(&updates, Duration::from_secs(60 * 60)),
             super::EngineCommand::Toggle
         ));
         assert!(matches!(
             received.try_recv(),
-            Ok(super::EngineUpdate::Notice(message)) if message == super::LIMIT_NOTICE
+            Ok(super::EngineUpdate::Notice(message))
+                if message == "Stopped at the 60-minute limit"
+                    && super::is_limit_notice(&message)
         ));
+        assert!(!super::is_limit_notice(super::LIMIT_WARNING));
+    }
+
+    #[test]
+    fn the_warning_comes_a_minute_before_the_stop() {
+        let limit = Duration::from_secs(60 * 60);
+        let wait = |elapsed, warned| {
+            super::until_next_limit_step(limit, Duration::from_secs(elapsed), warned).as_secs()
+        };
+        assert_eq!(wait(0, false), 59 * 60);
+        assert_eq!(wait(11 * 60, false), 48 * 60);
+        assert_eq!(wait(59 * 60, false), 0);
+        assert_eq!(wait(59 * 60, true), 60);
+        assert_eq!(wait(60 * 60, true), 0);
+        assert_eq!(wait(61 * 60, true), 0);
     }
 
     use std::path::Path;

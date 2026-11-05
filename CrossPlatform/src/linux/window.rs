@@ -408,7 +408,7 @@ fn build_window(
     let mut recovery_until = None::<Instant>;
     let mut notice_until = None::<Instant>;
     let mut pill_message = None::<(String, Instant)>;
-    let mut stopped_at_limit = false;
+    let mut stopped_at_limit = None::<String>;
     let mut feedback = super::feedback::CaptureFeedback::default();
     let mut audio_levels = None::<crate::audio::AudioLevels>;
     gtk::glib::timeout_add_local(Duration::from_millis(80), {
@@ -545,12 +545,10 @@ fn build_window(
                     Update::Delivered => {
                         delivery_pending = false;
                         settling_until = None;
-                        if std::mem::take(&mut stopped_at_limit) {
+                        if let Some(limit_notice) = stopped_at_limit.take() {
                             done_until = None;
-                            pill_message = Some((
-                                crate::runtime::LIMIT_NOTICE.to_string(),
-                                Instant::now() + PILL_MESSAGE_DURATION,
-                            ));
+                            pill_message =
+                                Some((limit_notice, Instant::now() + PILL_MESSAGE_DURATION));
                         } else {
                             done_until = Some(Instant::now() + DONE_DURATION);
                         }
@@ -673,7 +671,7 @@ fn build_window(
                         done_until = None;
                         done_fading = None;
                         recovery_until = None;
-                        stopped_at_limit = false;
+                        stopped_at_limit = None;
                     }
                     Update::Status(message) if message.starts_with("@error:") => {
                         let error = message.trim_start_matches("@error:");
@@ -688,8 +686,12 @@ fn build_window(
                         let phase = message
                             .trim_start_matches("@notice:")
                             .trim_start_matches("@model-notice:");
-                        if phase == crate::runtime::LIMIT_NOTICE {
-                            stopped_at_limit = true;
+                        if crate::runtime::is_limit_notice(phase) {
+                            stopped_at_limit = Some(phase.to_string());
+                        }
+                        if phase == crate::runtime::LIMIT_WARNING {
+                            pill_message =
+                                Some((phase.to_string(), Instant::now() + PILL_MESSAGE_DURATION));
                         }
                         if phase == "Dictation cancelled" {
                             settling_until = None;
@@ -740,7 +742,7 @@ fn build_window(
                             notice = None;
                             notice_until = None;
                             pill_message = None;
-                            stopped_at_limit = false;
+                            stopped_at_limit = None;
                         }
                         if !recording {
                             if recording_started.is_some() {
