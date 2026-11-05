@@ -65,6 +65,7 @@ def environment(sdk, native, cache):
                   CC_x86_64_pc_windows_msvc=shutil.which('clang-cl') or 'clang-cl',
                   AR_x86_64_pc_windows_msvc=shutil.which('llvm-lib') or 'llvm-lib',
                   CFLAGS_x86_64_pc_windows_msvc=' '.join(f'/imsvc"{path}"' for path in includes),
+                  CC_SHELL_ESCAPED_FLAGS='1',
                   CARGO_PROFILE_DEV_DEBUG='0')
     flags = ['-C', 'target-feature=+crt-static']
     for library in libraries:

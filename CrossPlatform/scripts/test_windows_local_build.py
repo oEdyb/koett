@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import shlex
 from pathlib import Path
 import tempfile
 import unittest
@@ -40,6 +41,11 @@ class LocalWindowsBuildTests(unittest.TestCase):
         self.assertIn('target-feature=+crt-static', env['CARGO_ENCODED_RUSTFLAGS'])
         self.assertIn(str(self.sdk / 'sdk/lib/um/x86_64'), env['CARGO_ENCODED_RUSTFLAGS'])
         self.assertTrue(Path(env['TMPDIR']).is_dir())
+        self.assertEqual(env['CC_SHELL_ESCAPED_FLAGS'], '1')
+        self.assertEqual(shlex.split(env['CFLAGS_x86_64_pc_windows_msvc']), [
+            '/imsvc' + str(self.sdk / name)
+            for name in ('crt/include', 'sdk/include/ucrt', 'sdk/include/um', 'sdk/include/shared')
+        ])
 
     def test_coff_library_case_alias_uses_the_existing_sdk_library(self):
         library = self.sdk / 'sdk/lib/um/x86_64/pathcch.lib'
