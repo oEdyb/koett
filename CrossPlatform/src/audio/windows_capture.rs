@@ -239,9 +239,9 @@ fn start_proxy(
                     break;
                 }
             };
-            if samples.len() + chunk.len() > rate as usize * 600 {
+            if recording_limit_exceeded(samples.len(), chunk.len(), rate) {
                 if let Ok(mut stored) = worker_error.lock() {
-                    *stored = Some("Recording reached its ten-minute limit".into());
+                    *stored = Some("Recording reached its maximum duration".into());
                 }
                 break;
             }
@@ -271,6 +271,11 @@ fn start_proxy(
         },
         receive,
     ))
+}
+
+fn recording_limit_exceeded(captured: usize, incoming: usize, sample_rate: u32) -> bool {
+    captured.saturating_add(incoming) as u64
+        > u64::from(sample_rate) * MAX_RECORDING_DURATION.as_secs()
 }
 
 fn read_chunk(reader: &mut impl Read) -> Result<Option<Vec<f32>>, String> {
@@ -388,6 +393,14 @@ pub fn helper() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn recording_limit_accepts_an_hour_and_rejects_past_the_shared_maximum() {
+        assert!(!recording_limit_exceeded(60 * 60 * 16_000, 320, 16_000));
+        let maximum = MAX_RECORDING_DURATION.as_secs() as usize * 16_000;
+        assert!(!recording_limit_exceeded(maximum - 320, 320, 16_000));
+        assert!(recording_limit_exceeded(maximum, 1, 16_000));
+        assert!(recording_limit_exceeded(usize::MAX, 1, 16_000));
+    }
     #[test]
     fn stalled_reader_cleanup_has_a_deadline() {
         let (release, wait) = mpsc::channel();

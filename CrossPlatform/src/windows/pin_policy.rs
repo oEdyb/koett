@@ -1,4 +1,12 @@
 use crate::pin_context::URL_LIMIT;
+pub(super) fn private_indicator(name: &str) -> bool {
+    ["InPrivate", "Incognito", "Private browsing"]
+        .iter()
+        .any(|label| {
+            name.strip_prefix(label)
+                .is_some_and(|suffix| suffix.chars().next().is_none_or(|c| !c.is_alphanumeric()))
+        })
+}
 pub(super) fn web_url(raw: &str) -> Option<String> {
     if raw.chars().count() > URL_LIMIT {
         return None;
@@ -45,6 +53,26 @@ pub(super) fn youtube_time(raw: &str, seconds: f64) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn browser_private_labels_allow_descriptions_and_counts_at_word_boundaries() {
+        for name in [
+            "InPrivate",
+            "InPrivate browsing",
+            "InPrivate (2)",
+            "Incognito, 2 tabs",
+            "Private browsing",
+        ] {
+            assert!(private_indicator(name), "{name}");
+        }
+        for name in [
+            "Not InPrivate",
+            "InPrivateX",
+            "Private browsingPublic",
+            "Profile 1",
+        ] {
+            assert!(!private_indicator(name), "{name}");
+        }
+    }
     #[test]
     fn urls_are_explicit_web_values_and_video_times_cannot_be_guessed() {
         assert!(web_url("Settings - https://example.com").is_none());

@@ -582,14 +582,14 @@ impl Window {
                 "Recording limit",
                 Default::default(),
                 0,
-                [528, 224, 200, 24],
+                [24, 268, 200, 24],
             )?;
             self.recording_limit = self.control(
                 w!("COMBOBOX"),
                 "",
                 WS_TABSTOP | WINDOW_STYLE(CBS_DROPDOWNLIST as u32),
                 35,
-                [528, 252, 212, 140],
+                [24, 300, 212, 140],
             )?;
             for minutes in crate::settings::RECORDING_LIMIT_CHOICES {
                 let label = super::wide(&format!("{minutes} minutes"));
@@ -619,7 +619,7 @@ impl Window {
                 "Start at login",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 STARTUP,
-                [24, 252, 240, 32],
+                [24, 224, 240, 32],
             )?;
             self.theme.apply_checkbox(self.startup);
             let draw = self.control(
@@ -627,7 +627,7 @@ impl Window {
                 "Draw while dictating",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 40,
-                [24, 300, 488, 32],
+                [300, 300, 212, 32],
             )?;
             self.theme.apply_checkbox(draw);
             unsafe {

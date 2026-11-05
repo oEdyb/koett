@@ -14,7 +14,6 @@ fn main() {
     {
         eprintln!("Ask is not available in this build");
         std::process::exit(1);
-
     }
     if let Err(error) = koett_engine::windows::run() {
         koett_engine::windows::show_fatal_error(&error);

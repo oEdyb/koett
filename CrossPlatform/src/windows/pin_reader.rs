@@ -1,4 +1,4 @@
-use super::pin_policy::{video_seconds, web_url, youtube_time};
+use super::pin_policy::{private_indicator, video_seconds, web_url, youtube_time};
 use crate::pin_context::{PinContext, SELECTION_LIMIT, TITLE_LIMIT, clean};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
@@ -186,9 +186,7 @@ impl Snapshot {
                     let id = element.CurrentAutomationId()?.to_string();
                     if browser
                         && !in_document
-                        && ["InPrivate", "Incognito", "Private browsing"]
-                            .iter()
-                            .any(|label| name == *label || name.starts_with(&format!("{label} (")))
+                        && private_indicator(&name)
                         && (kind == UIA_ButtonControlTypeId || kind == UIA_TextControlTypeId)
                     {
                         private = true;

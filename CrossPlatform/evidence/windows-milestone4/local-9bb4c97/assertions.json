@@ -1,0 +1,22 @@
+{
+  "native_twenty_exit_zero": true,
+  "private_fields_omitted": true,
+  "two_frames_one_image_then_text": true,
+  "original_foreground": true,
+  "read_gap_at_least_200ms": true,
+  "m4-mic-timeouts-9bb4c97": true,
+  "m4-preview-timeouts-9bb4c97": true,
+  "m4-menu-four-9bb4c97": true,
+  "m4-menu-cancel-9bb4c97": true,
+  "m4-tray-positive-text-qmp-9bb4c97": true,
+  "m4-tray-refusal-proof-9bb4c97": true,
+  "m4-auto-bundle-9bb4c97": true,
+  "m4-cancel-other-9bb4c97": true,
+  "m4-repeat-count-corrected-9bb4c97": true,
+  "m4-scales-9bb4c97": true,
+  "m4-theme-9bb4c97": true,
+  "m4-narrator-live-9bb4c97": true,
+  "m4-limit-prefs-9bb4c97": true,
+  "m4-preview-positive-9bb4c97": true,
+  "newer_copy_wins": true
+}
