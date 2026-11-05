@@ -38,6 +38,13 @@ Sources: [GNOME extension lifecycle](https://gjs.guide/extensions/overview/anato
 [Shell 51.1 session/modal state](https://github.com/GNOME/gnome-shell/blob/51.1/js/ui/main.js),
 [Mutter stable window sequence](https://mutter.gnome.org/meta/method.Window.get_stable_sequence.html).
 
+The focus reply also supplies the current modifier mask. Koett waits for the
+recording shortcut's Shift/Control/Alt/Super keys to be released before pasting,
+and checks again immediately before posting. Lock keys do not block paste.
+Update the app and copied extension together, then log out/in. An older
+extension without modifier state keeps automatic paste unavailable; Copy/History
+remain usable.
+
 ## Recording pill
 
 The optional Shell 51 extension supplies a nonactivating recording pill for
