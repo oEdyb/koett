@@ -1,0 +1,18 @@
+{
+  "old": {
+    "binaryUnchangedAfterRun": true,
+    "sourceFilesUnchangedAfterRun": true
+  },
+  "baseline": {
+    "binaryUnchangedAfterRun": true,
+    "sourceFilesUnchangedAfterRun": true
+  },
+  "cached": {
+    "binaryUnchangedAfterRun": true,
+    "sourceFilesUnchangedAfterRun": true
+  },
+  "production": {
+    "binaryUnchangedAfterRun": true,
+    "sourceFilesUnchangedAfterRun": true
+  }
+}

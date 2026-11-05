@@ -1,0 +1,25 @@
+{
+  "testedCodeHead": "05847ad995599ede16e5fda0f7446eed30020470",
+  "command": "swift test",
+  "completedTests": 442,
+  "optionalSkips": 13,
+  "failures": 0,
+  "durationSeconds": 60.957,
+  "exitCode": 0,
+  "githubChecks": {
+    "105": [],
+    "110": []
+  },
+  "mergeGate": "Local Swift results; GitHub reports no CI checks on either PR.",
+  "initialAttempts": "Two full attempts terminated with SIGPIPE at oversized-control rejection. Isolated LocalControlTests passed4/4. A failing regression proved validation followed connection; existing payload size validation was moved before socket creation. Complete suite then passed.",
+  "cacheReview": "Opus approved cache runtime at d1b689a; later socket preflight reorder covered by regression and full suite.",
+  "testedFileSHA256": {
+    "Sources/Koett/Koett.swift": "d260a6c23a75d41a24f1db44a4aa77139a1fb5cfbf8c4bc99edd14679dfe9234",
+    "Sources/Koett/LoginPreference.swift": "50009ddfb7e522d64d299d63988690773c9c41d84d476b2eeae68d3c04c2e4b1",
+    "Sources/Koett/MicrophoneMenu.swift": "e1a5d1f4f6a980af11f8e6a57846587fca0655adfc06b1e11b02ecf391ae92ba",
+    "Sources/Koett/LocalControlSocket.swift": "6c2f4bfc39c68993f640af0d2ac644bbffcb364e81733cd45500d2c1351a6980",
+    "Tests/KoettTests/LocalControlTests.swift": "db9ec2bf180815d50f16a1745f9e31018d92cc63dbf0d44f29cda8cfec690fe8"
+  },
+  "installedAppChanged": false,
+  "performanceCohortAdded": false
+}

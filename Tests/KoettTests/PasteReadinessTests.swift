@@ -92,9 +92,23 @@ final class PasteReadinessTests: XCTestCase {
         XCTAssertNotEqual(source.sourceStateID, .hidSystemState)
         XCTAssertNotEqual(source.sourceStateID, .combinedSessionState)
         XCTAssertEqual(events.down.flags, .maskCommand)
-        XCTAssertEqual(events.up.flags, .maskCommand)
+        XCTAssertTrue(events.up.flags.isEmpty)
         XCTAssertEqual(events.down.type, .keyDown)
         XCTAssertEqual(events.up.type, .keyUp)
+    }
+
+    func testPasteChordEndsBeforePreparingTheSketchTextStage() async throws {
+        for flags in [CGEventFlags.maskCommand, .maskControl] {
+            let events = try XCTUnwrap(PasteEvents.make(flags: flags))
+            XCTAssertEqual(events.down.flags, flags)
+            let coordinator = PasteCoordinator(
+                snapshot: { PasteSnapshot(physicalFlags: events.up.flags.rawValue) },
+                postEvent: { _ in true }
+            )
+            let ready = await coordinator.prepare(stage: .sketchText)
+            XCTAssertTrue(ready, "The image chord must finish before text readiness is checked")
+            XCTAssertTrue(coordinator.post(flags: .maskCommand))
+        }
     }
 
     func testFocusIsRecheckedImmediatelyBeforePosting() async {

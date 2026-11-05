@@ -664,3 +664,27 @@ fn v3_catalog_is_distinct_valid_and_serializable_without_changing_default() {
     assert!(super::validate_model_files(&directory, &v3.files, &AtomicBool::new(false)).is_err());
     fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn cache_destination_failure_preserves_error_without_trying_another_source() {
+    let directory = temporary_directory("cache-destination-failure");
+    fs::create_dir_all(&directory).unwrap();
+    let cache = directory.join("cached");
+    fs::write(&cache, b"cached model").unwrap();
+    for operation in ["create", "write", "finish"] {
+        let expected = format!("could not {operation} model.part: No space left on device");
+        let mut attempts = 0;
+        let error = super::restore_cached_release(
+            vec![cache.clone(), cache.clone()],
+            &AtomicBool::new(false),
+            |_| {
+                attempts += 1;
+                Err(expected.clone())
+            },
+        )
+        .unwrap_err();
+        assert_eq!(error, expected);
+        assert_eq!(attempts, 1);
+    }
+    fs::remove_dir_all(directory).unwrap();
+}
