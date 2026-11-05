@@ -84,6 +84,7 @@ const MENU_COPY_LAST: usize = 6;
 const MENU_PAUSE: usize = 7;
 const MENU_CANCEL: usize = 8;
 const MENU_RECORD: usize = 9;
+const MENU_WORDS: usize = 10;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -1090,6 +1091,12 @@ impl WindowsApp {
             let _ = AppendMenuW(
                 menu,
                 MF_STRING,
+                MENU_WORDS,
+                w!("Dictionary and replacements…"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING,
                 MENU_RECORD,
                 if self.status == AppStatus::Recording {
                     w!("Stop")
@@ -1175,6 +1182,7 @@ impl WindowsApp {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
+            MENU_WORDS => desktop::open_words(self.hwnd),
             MENU_COPY_LAST => {
                 if let Err(e) = copy_text(self.hwnd, &self.last_transcript) {
                     show_fatal_error(&e);

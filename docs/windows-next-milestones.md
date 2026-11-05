@@ -61,3 +61,28 @@ and full-search export use the selected view; rows without stored raw text fall
 back to the final transcript. No new ASR or formatting work runs to view history.
 Focused tests cover final/raw selection and legacy fallback. Metadata checked;
 linked tests and guest UI checks remain pending the rebuilt Windows artifact.
+
+## Current native Words implementation
+
+Tray Dictionary and replacements opens native controls for entries, term/phrase,
+sounds-like/replacement text, Save and Remove. Dictionary import reuses the
+bounded shared text/JSON parser, merges only after explicit acceptance and uses
+a native picker. Export writes the canonical text format atomically. Editing
+uses Settings::edit, preserving unrelated concurrent settings. No model is loaded
+by the window. Current main chooses shared-encoder decoding only when supported;
+CTC uses spelling defaults. No experimental second pass is enabled here.
+
+History export/raw/copy/filter/cancel/legacy fallback now have real guest evidence
+under evidence/windows-milestone3/ci-34d2dbe. The native Words UI and the small
+History search/list spacing correction are newer and still require their linked
+artifact, guest interaction, accessibility and scaling checks. Fix a word,
+explicit suggestion acceptance, formatting/raw fallback and model switching
+remain open; M3 is not complete. #78 merged as dca0252; #113 targets main.
+
+History Fix a word now reads the explicit UTF-16 selection from the native
+transcript control and opens Words with that heard form populated. Nothing is
+saved until Save entry. Missing/invalid selections show a local status message;
+an existing Words edit is left intact. Focused tests cover emoji boundaries and
+invalid selections. This implementation is compiled only until its guest run.
+Optional formatting/raw fallback, model switching and remaining suggestion
+acceptance/corpus checks are still open. No performance benchmark was added.

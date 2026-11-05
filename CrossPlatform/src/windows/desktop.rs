@@ -1,4 +1,6 @@
 mod microphone;
+#[path = "words.rs"]
+mod words;
 use crate::{
     history::{HistoryCursor, HistoryStore, HistorySummary},
     settings::Settings,
@@ -16,6 +18,8 @@ use windows::Win32::{
 };
 use windows::core::{PCWSTR, w};
 
+static WORDS_OPEN: AtomicBool = AtomicBool::new(false);
+static WORDS_HWND: AtomicUsize = AtomicUsize::new(0);
 static HISTORY_OPEN: AtomicBool = AtomicBool::new(false);
 static SETTINGS_OPEN: AtomicBool = AtomicBool::new(false);
 static HISTORY_HWND: AtomicUsize = AtomicUsize::new(0);
@@ -46,6 +50,7 @@ const NEXT_PAGE: usize = 14;
 const EXPORT_RESULTS: usize = 15;
 const EXPORT_STATUS: usize = 16;
 const SHOW_RAW: usize = 17;
+const FIX_WORD: usize = 18;
 const SHORTCUT: usize = 20;
 const STARTUP: usize = 21;
 const SAVE: usize = 22;
@@ -79,6 +84,18 @@ fn history_page(
         _ => None,
     };
     Ok(Page { rows, next })
+}
+fn selected_word(text: &str, start: usize, end: usize) -> Result<String, String> {
+    let units: Vec<u16> = text.encode_utf16().collect();
+    let selection = units
+        .get(start..end)
+        .filter(|s| !s.is_empty())
+        .ok_or("Select the word to fix in the transcript")?;
+    let heard = String::from_utf16(selection).map_err(|_| "Select a complete word")?;
+    if heard.trim().is_empty() || heard.chars().count() > crate::dictionary::MAX_TERM_CHARS {
+        return Err("Select a word or short phrase to fix".into());
+    }
+    Ok(heard.trim().to_owned())
 }
 fn record_text(record: crate::history::HistoryRecord, raw: bool) -> String {
     if raw {
@@ -121,6 +138,8 @@ struct Window {
     hwnd: HWND,
     owner: usize,
     settings: bool,
+    words: bool,
+    word_entries: Vec<(String, String)>,
     search: HWND,
     list: HWND,
     detail: HWND,
@@ -139,13 +158,23 @@ struct Window {
     page_pending: bool,
 }
 
+pub(super) fn open_words(owner: HWND) {
+    open_kind(false, true, owner, None);
+}
 pub(super) fn open(settings: bool, owner: HWND) {
-    let flag = if settings {
+    open_kind(settings, false, owner, None);
+}
+fn open_kind(settings: bool, words: bool, owner: HWND, heard: Option<String>) {
+    let flag = if words {
+        &WORDS_OPEN
+    } else if settings {
         &SETTINGS_OPEN
     } else {
         &HISTORY_OPEN
     };
-    let slot = if settings {
+    let slot = if words {
+        &WORDS_HWND
+    } else if settings {
         &SETTINGS_HWND
     } else {
         &HISTORY_HWND
@@ -170,13 +199,13 @@ pub(super) fn open(settings: bool, owner: HWND) {
             }
         }
         let _reset = Reset(flag, slot);
-        if let Err(error) = run(settings, owner) {
+        if let Err(error) = run(settings, words, owner, heard) {
             super::show_fatal_error(&error);
         }
     });
 }
 
-fn run(settings: bool, owner: usize) -> Result<(), String> {
+fn run(settings: bool, words: bool, owner: usize, heard: Option<String>) -> Result<(), String> {
     use windows::Win32::System::Com::{COINIT_APARTMENTTHREADED, CoInitializeEx, CoUninitialize};
     unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok() }.map_err(|e| e.to_string())?;
     struct Apartment;
@@ -238,7 +267,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         let hwnd = CreateWindowExW(
             WS_EX_CONTROLPARENT,
             class,
-            if settings {
+            if words {
+                w!("Koett Words")
+            } else if settings {
                 w!("Koett Settings")
             } else {
                 w!("Koett History")
@@ -262,6 +293,8 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             hwnd,
             owner,
             settings,
+            words,
+            word_entries: vec![],
             search: HWND::default(),
             list: HWND::default(),
             detail: HWND::default(),
@@ -280,7 +313,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             page_pending: false,
         };
         PAINT.with(|paint| paint.set(Some(PaintTheme::from(&window.theme))));
-        (if settings {
+        (if words {
+            &WORDS_HWND
+        } else if settings {
             &SETTINGS_HWND
         } else {
             &HISTORY_HWND
@@ -289,6 +324,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         window.theme.apply(hwnd);
         window.refresh_font();
         window.create()?;
+        if words && let Some(heard) = heard {
+            set(window.detail, &heard);
+        }
         window.actions_enabled(false);
         window.layout();
         WINDOW.with(|w| *w.borrow_mut() = Some(window));
@@ -401,6 +439,9 @@ impl Window {
         }
     }
     fn create(&mut self) -> Result<(), String> {
+        if self.words {
+            return self.create_words();
+        }
         if self.settings {
             let settings = Settings::load()?;
             self.control(
@@ -504,8 +545,8 @@ impl Window {
                 w!("STATIC"),
                 "Transcripts",
                 Default::default(),
-                0,
-                [24, 66, 280, 20],
+                25,
+                [24, 88, 280, 20],
             )?;
             self.list = self.control(
                 w!("LISTBOX"),
@@ -515,7 +556,7 @@ impl Window {
                     | WS_VSCROLL
                     | WINDOW_STYLE(LBS_NOTIFY as u32 | LBS_NOINTEGRALHEIGHT as u32),
                 LIST,
-                [24, 88, 280, 480],
+                [24, 116, 280, 452],
             )?;
             self.control(
                 w!("STATIC"),
@@ -573,6 +614,13 @@ impl Window {
                 [552, 32, 180, 32],
             )?;
             self.theme.apply_checkbox(raw);
+            self.control(
+                w!("BUTTON"),
+                "Fix a word…",
+                WS_TABSTOP,
+                FIX_WORD,
+                [744, 32, 160, 32],
+            )?;
             self.search();
         }
         Ok(())
@@ -725,6 +773,10 @@ impl Window {
         }
     }
     fn command(&mut self, id: usize, notification: u16) {
+        if self.words {
+            self.words_command(id, notification);
+            return;
+        }
         if self
             .microphone
             .as_mut()
@@ -738,6 +790,31 @@ impl Window {
             NEXT_PAGE if !self.page_pending => {
                 if let Some(cursor) = self.next_cursor.clone() {
                     self.load_page(Some(cursor));
+                }
+            }
+            FIX_WORD => {
+                let result = (|| {
+                    if WORDS_OPEN.load(Ordering::Acquire) {
+                        return Err("Close Words before starting another correction".to_string());
+                    }
+                    let mut start = 0u32;
+                    let mut end = 0u32;
+                    unsafe {
+                        SendMessageW(
+                            self.detail,
+                            windows::Win32::UI::Controls::EM_GETSEL,
+                            Some(WPARAM((&mut start as *mut u32) as usize)),
+                            Some(LPARAM((&mut end as *mut u32) as isize)),
+                        );
+                    }
+                    let heard = selected_word(&read(self.detail), start as usize, end as usize)?;
+                    open_kind(false, true, HWND(self.owner as *mut _), Some(heard));
+                    Ok(())
+                })();
+                if let Err(error) = result
+                    && let Ok(status) = unsafe { GetDlgItem(Some(self.hwnd), EXPORT_STATUS as i32) }
+                {
+                    set(status, &error);
                 }
             }
             SHOW_RAW => {
@@ -834,6 +911,10 @@ impl Window {
         }
     }
     fn layout(&self) {
+        if self.words {
+            self.words_layout();
+            return;
+        }
         for (child, [x, y, w, h]) in &self.controls {
             unsafe {
                 let _ = MoveWindow(
@@ -870,7 +951,9 @@ impl Window {
                     (COPY, left + 24, 32, 100, 32),
                     (EXPORT, left + 136, 32, 100, 32),
                     (SHOW_RAW, left + 248, 32, 180, 32),
+                    (FIX_WORD, left + 432, 32, 160, 32),
                     (24, left + 24, 66, (r.right - left - 48).max(80), 20),
+                    (25, 24, 88, left - 24, 20),
                 ] {
                     if let Ok(child) = GetDlgItem(Some(self.hwnd), id as i32) {
                         let _ = MoveWindow(
@@ -894,9 +977,9 @@ impl Window {
                 let _ = MoveWindow(
                     self.list,
                     self.scale(24),
-                    self.scale(88),
+                    self.scale(116),
                     self.scale(left - 24),
-                    self.scale(height),
+                    self.scale((height - 28).max(60)),
                     true,
                 );
                 let _ = MoveWindow(
@@ -1070,8 +1153,11 @@ fn export(hwnd: HWND, text: &str) -> Result<(), String> {
     Ok(())
 }
 fn export_path(hwnd: HWND) -> Result<Option<std::path::PathBuf>, String> {
+    export_path_named(hwnd, "Transcript.txt")
+}
+fn export_path_named(hwnd: HWND, filename: &str) -> Result<Option<std::path::PathBuf>, String> {
     let mut file = [0u16; 32768];
-    for (dest, src) in file.iter_mut().zip("Transcript.txt".encode_utf16()) {
+    for (dest, src) in file.iter_mut().zip(filename.encode_utf16()) {
         *dest = src;
     }
     let initial = directories::UserDirs::new()
@@ -1121,6 +1207,13 @@ mod tests {
     use super::*;
     use crate::history::HistoryRecord;
 
+    #[test]
+    fn correction_selection_uses_utf16_and_rejects_missing_or_split_characters() {
+        assert_eq!(selected_word("😀 cot", 3, 6).unwrap(), "cot");
+        assert!(selected_word("😀 cot", 0, 1).is_err());
+        assert!(selected_word("cot", 1, 1).is_err());
+        assert!(selected_word("cot", 0, 99).is_err());
+    }
     #[test]
     fn raw_history_is_explicit_and_legacy_rows_remain_readable() {
         let mut record = HistoryRecord {
