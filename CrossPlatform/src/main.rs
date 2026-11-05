@@ -250,8 +250,8 @@ fn parse_arguments() -> Result<Arguments, String> {
         let seconds = values[2]
             .parse::<f64>()
             .map_err(|_| "microphone duration must be a positive number".to_string())?;
-        if !seconds.is_finite() || seconds <= 0.0 || seconds > 600.0 {
-            return Err("microphone duration must be between 0 and 600 seconds".to_string());
+        if !seconds.is_finite() || seconds <= 0.0 || seconds > 7200.0 {
+            return Err("microphone duration must be between 0 and 7200 seconds".to_string());
         }
         Input::Microphone(Duration::from_secs_f64(seconds))
     } else {

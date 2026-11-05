@@ -781,6 +781,10 @@ impl WindowsApp {
                 }
                 EngineUpdate::Notice(message) => {
                     desktop::processing::notice(&message);
+                    if message == crate::runtime::LIMIT_WARNING {
+                        let now = self.clock.elapsed().as_millis() as u64;
+                        self.pill_state.show_notice(&message, now);
+                    }
                     let message = message
                         .strip_prefix("@model-notice:")
                         .unwrap_or(&message)

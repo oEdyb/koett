@@ -50,6 +50,22 @@ pub enum DrawKey {
     Alt,
 }
 
+pub const RECORDING_LIMIT_CHOICES: [u32; 4] = [10, 30, 60, 120];
+const DEFAULT_RECORDING_LIMIT_MINUTES: u32 = 60;
+
+/// Anything but one of the choices becomes the default, so a hand-edited value
+/// can neither reject the whole settings file nor set an unsupported limit.
+fn recording_limit_or_default<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<u32, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(value
+        .as_u64()
+        .and_then(|minutes| u32::try_from(minutes).ok())
+        .filter(|minutes| RECORDING_LIMIT_CHOICES.contains(minutes))
+        .unwrap_or(DEFAULT_RECORDING_LIMIT_MINUTES))
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -60,6 +76,8 @@ pub struct Settings {
     pub start_at_login: bool,
     pub microphone: Option<String>,
     pub recording_mode: RecordingMode,
+    #[serde(deserialize_with = "recording_limit_or_default")]
+    pub recording_limit_minutes: u32,
     pub replacements: Vec<crate::replacements::Replacement>,
     pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
@@ -93,6 +111,7 @@ impl Default for Settings {
             start_at_login: true,
             microphone: None,
             recording_mode: RecordingMode::Toggle,
+            recording_limit_minutes: DEFAULT_RECORDING_LIMIT_MINUTES,
             replacements: Vec::new(),
             dictionary: Vec::new(),
             pause_media: false,
@@ -260,6 +279,9 @@ impl Settings {
         if self.recording_mode != opened.recording_mode {
             merged.recording_mode = self.recording_mode;
         }
+        if self.recording_limit_minutes != opened.recording_limit_minutes {
+            merged.recording_limit_minutes = self.recording_limit_minutes;
+        }
         if self.start_at_login != opened.start_at_login {
             merged.start_at_login = self.start_at_login;
         }
@@ -371,6 +393,55 @@ mod tests {
             .unwrap()
             .as_nanos();
         std::env::temp_dir().join(format!("koett-{name}-{nonce}.json"))
+    }
+
+    #[test]
+    fn recording_limit_is_valid_from_any_settings_file() {
+        let path = temporary_file("recording-limit");
+        for (saved, minutes) in [
+            (r#"{"shortcut":"Ctrl+Shift+Space"}"#, 60),
+            (r#"{"recording_limit_minutes":10}"#, 10),
+            (r#"{"recording_limit_minutes":120}"#, 120),
+            (r#"{"recording_limit_minutes":7}"#, 60),
+            (r#"{"recording_limit_minutes":0}"#, 60),
+            (r#"{"recording_limit_minutes":-5}"#, 60),
+            (r#"{"recording_limit_minutes":99999999999}"#, 60),
+            (r#"{"recording_limit_minutes":"long"}"#, 60),
+            (r#"{"recording_limit_minutes":null}"#, 60),
+        ] {
+            std::fs::write(&path, saved).unwrap();
+            assert_eq!(
+                super::Settings::load_from(&path)
+                    .unwrap()
+                    .recording_limit_minutes,
+                minutes,
+                "{saved}"
+            );
+        }
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn editor_keeps_a_recording_limit_changed_elsewhere() {
+        let opened = super::Settings::default();
+        let mut current = opened.clone();
+        current.recording_limit_minutes = 120;
+        let merged = opened.clone().merge_editor(&opened, current);
+        assert_eq!(merged.recording_limit_minutes, 120);
+        let mut edited = opened.clone();
+        edited.recording_limit_minutes = 10;
+        let merged = edited.merge_editor(&opened, opened.clone());
+        assert_eq!(merged.recording_limit_minutes, 10);
+    }
+
+    #[test]
+    fn the_capture_ceiling_allows_every_choice() {
+        for minutes in super::RECORDING_LIMIT_CHOICES {
+            assert!(
+                std::time::Duration::from_secs(u64::from(minutes) * 60)
+                    <= crate::audio::MAX_RECORDING_DURATION
+            );
+        }
     }
 
     #[test]
