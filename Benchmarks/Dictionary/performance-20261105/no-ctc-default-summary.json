@@ -1,0 +1,39 @@
+{
+  "CTCLoadedOrWarmed": false,
+  "repetitionsPerModeLength": 3,
+  "allDefaultOutputsEqualEarlierCheapPath": true,
+  "lengths": [
+    {
+      "seconds": 5,
+      "mediansMilliseconds": {
+        "off": 80.476833,
+        "default": 81.529375
+      },
+      "changePercent": 1.3078819838747924
+    },
+    {
+      "seconds": 30,
+      "mediansMilliseconds": {
+        "off": 205.861416,
+        "default": 190.362416
+      },
+      "changePercent": -7.528851351143917
+    },
+    {
+      "seconds": 120,
+      "mediansMilliseconds": {
+        "off": 544.410709,
+        "default": 534.447625
+      },
+      "changePercent": -1.8300676006724137
+    },
+    {
+      "seconds": 600,
+      "mediansMilliseconds": {
+        "off": 2366.277916,
+        "default": 2372.256083
+      },
+      "changePercent": 0.2526401045108706
+    }
+  ]
+}

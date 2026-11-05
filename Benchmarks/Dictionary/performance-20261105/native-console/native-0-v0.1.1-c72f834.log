@@ -1,0 +1,24 @@
+Checking microphone and Accessibility access...
+Loading Parakeet v2...
+E5RT encountered an STL exception. msg = Failed to PropagateInputTensorShapes: std::runtime_error during type inference for ios17.slice_by_index: zero shape error.Warming Parakeet v2...
+Ready with Parakeet. Use the menu-bar icon to change the mode or shortcut.
+RECORDING
+TRANSCRIBING
+PASTE POSTED (83 characters)
+LATENCY release-to-ASR-start 46.7ms | ASR 106.7ms | cleanup 0.0ms | delivery 1.9ms | release-to-paste-post 155.3ms
+RECORDING
+TRANSCRIBING
+PASTE POSTED (83 characters)
+LATENCY release-to-ASR-start 49.1ms | ASR 121.8ms | cleanup 0.0ms | delivery 1.0ms | release-to-paste-post 171.9ms
+RECORDING
+TRANSCRIBING
+PASTE POSTED (472 characters)
+LATENCY release-to-ASR-start 47.4ms | ASR 204.2ms | cleanup 0.0ms | delivery 0.4ms | release-to-paste-post 252.1ms
+RECORDING
+TRANSCRIBING
+PASTE POSTED (1837 characters)
+LATENCY release-to-ASR-start 49.4ms | ASR 461.5ms | cleanup 0.0ms | delivery 0.3ms | release-to-paste-post 511.3ms
+RECORDING
+TRANSCRIBING
+PASTE POSTED (9157 characters)
+LATENCY release-to-ASR-start 47.8ms | ASR 2039.5ms | cleanup 0.0ms | delivery 0.5ms | release-to-paste-post 2087.8ms
