@@ -1,6 +1,6 @@
 # Workflow performance audit — November 2026
 
-**Draft: Linux workflow measurements and fixes are complete. The M5 old/current target-paste comparison is still running; this report is not yet the final video verdict.**
+**Verdict: slower than the v0.1.1 fallback in the native M5 controlled-input workflow: +6.36%, +15.59%, +25.14% and +20.92% median Stop-to-target time at 5/30/120/600 s.** The filmed executable is not known. The dictionary doubling is fixed on Linux and disabled by default on Mac; these fixes do not justify a new “faster than the video” claim.
 
 This audits the proposed v0.3.0 build; no v0.3.0 tag or public release is implied.
 The comparison uses measured endpoints, not vendor speed claims. First-install,
@@ -42,47 +42,37 @@ include finalization and real delivery; file-ASR numbers are kept separate.
 
 ## Mac: v0.1.1 fallback versus current
 
-The same-M5 old/current actual-target comparison is still in progress in
-[Mac audit #105](https://github.com/oEdyb/koett/pull/105). No VM timing is
-presented as native M5/Neural Engine performance, and separate ASR/paste timers
-are not summed into an invented end-to-end measurement.
+**Slower in the measured native M5 controlled-input pipeline.** The exact filmed executable is unknown; this compares the explicitly permitted public v0.1.1 fallback. Three repeats per build and length, six alternating build groups, identical SHA-verified PCM per length, raw formatting, empty dictionary, same pinned FluidAudio 0.15.6. Current measured source `85dde51`; final default/test/report source `3998053`.
 
-The completed native dictionary audit used pinned FluidAudio 0.15.6, copied
-models and identical synthetic fixtures, three alternating repetitions per
-length. It confirms an extra **separate CTC encoder**, not reuse of the default
-0.6B encoder. These are file-transcription timings, excluding capture and paste:
-
-| Audio | Off median / worst ms | CTC + spelling median / worst ms | Added median |
+| Audio | v0.1.1 median / worst ms | Current median / worst ms | Median change |
 |---|---:|---:|---:|
-| 5 s | 75.41 / 77.01 | 211.73 / 219.18 | 180.78% |
-| 30 s | 184.46 / 186.03 | 706.76 / 728.30 | 283.16% |
-| 2 min | 477.08 / 490.10 | 2,334.43 / 2,363.61 | 389.31% |
-| 10 min | 2,055.41 / 2,058.42 | 4,056.22 / 4,111.89 | 97.34% |
+| 5 s | 148.34 / 182.76 | 157.78 / 216.73 | +6.36% |
+| 30 s | 258.61 / 260.98 | 298.92 / 368.48 | +15.59% |
+| 120 s | 521.81 / 534.28 | 652.97 / 710.88 | +25.14% |
+| 600 s | 2,134.91 / 2,150.45 | 2,581.46 / 2,720.39 | +20.92% |
 
-The two-second deadline drops a late result; it does not cancel inference.
-The separate-encoder path fails the target and is disabled by default in #105.
-Cheap spelling/forms/exact corrections remain. Fresh same-corpus recall is
-**49 raw, 61 cheap, 117 acoustic / 162**; disabling it loses 56 recovered
-occurrences. There were no false terms or worsened negatives in this synthetic
-corpus. An independent audit recomputed the timing medians/worsts from
-the committed JSON and checked the default's source guard; these are measured
-Koett results rather than FluidAudio speed claims.
+At 30–600 s every current observation exceeded every old observation. Five-second ranges overlap. These timers begin before the real Stop method and end after a foreign `NSTextView.super.paste` consumes the result. The harness substitutes controlled PCM before recorder writes, then retains real Stop/close, transcription, preparation, paste-readiness checks, clipboard and Command-V. It is not a sum of component times or a file-ASR substitute.
 
-A separate post-change run compares the actual disabled callback plus spelling
-against off, on the same warm model/VAD. Its own controls differ from the first
-run above; do not use columns across runs to calculate an overhead:
+This excludes acoustic microphone acquisition, physical-key dispatch and compositor pixels. Old capture uses an AudioQueue processing tap at 16 kHz; current input is 48 kHz and writes a 16 kHz file. The old-only tap teardown is inside Stop and can bias small differences against old. Private hardened source apps lack an audio-input entitlement; pre-substitution input can be silent. Current forces built-in input; a read-only query confirmed the system default was built-in too. Modifiers were normalized up before timing; the 1.5-second held-key wait branch was not exercised. Fixed length order, three repetitions, and absent thermal/power telemetry limit generalization.
 
-| Audio | Off median / worst ms | New default median / worst ms |
-|---|---:|---:|
-| 5 s | 76.11 / 77.76 | 75.79 / 77.11 |
-| 30 s | 201.01 / 201.55 | 198.15 / 213.87 |
-| 2 min | 555.51 / 596.63 | 563.53 / 677.84 |
-| 10 min | 2,464.22 / 2,547.12 | 2,365.11 / 2,425.87 |
+Root independently recomputed all 24 receipt durations and cell medians, checked unique requests and ordered source generations 2–5, same fixture hash per length, matching source PIDs, exactly one clipboard generation advance, exact receiver/clipboard equality, restoration, injected-frame lower bounds, final normalized phrase anchors, at least 97% reference-completed length and at most 1% cross-build/repeat length variation. These guards establish fresh and sufficiently complete synthetic payloads; they do not certify human-speech accuracy.
 
-[Raw Mac receipts at the inspected source](https://github.com/oEdyb/koett/tree/99b47f3cf694a1103058b5e4a1e9c7355f64e0b7/Benchmarks/Dictionary/performance-20261105).
-Individual pairs can exceed 10%; these observations do not establish a per-run
-ceiling. Actual-target old/current timings, fresh Mac resource/feature costs and
-the resulting video verdict will replace this pending section.
+Same-invocation production stages localize the regression to Stop/frontend processing rather than spelling or delivery. The stage medians below are descriptive; their sums are not used as the end-to-end endpoint.
+
+| Audio | Stop → ASR start old / current ms | ASR/frontend old / current ms | Current text preparation ms |
+|---|---:|---:|---:|
+| 5 s | 44.6 / 71.5 | 98.6 / 76.6 | 0.0 |
+| 30 s | 47.4 / 85.3 | 199.9 / 210.2 | 0.1 |
+| 120 s | 49.4 / 85.4 | 463.9 / 562.2 | 0.5 |
+| 600 s | 47.9 / 83.9 | 2078.7 / 2482.0 | 2.5 |
+
+Recompute the frozen comparison with `python3 Benchmarks/Performance/2026-11/check-mac.py` (fetch the Mac audit branch first if needed). Original [24 raw receipts](https://github.com/oEdyb/koett/blob/3998053ffe7c5ee451476fcffb03cd8742796193/Benchmarks/Dictionary/performance-20261105/native-paste.json), [stage receipts](https://github.com/oEdyb/koett/blob/3998053ffe7c5ee451476fcffb03cd8742796193/Benchmarks/Dictionary/performance-20261105/native-same-invocation-stages.json), [harness and exact source patches](https://github.com/oEdyb/koett/blob/3998053ffe7c5ee451476fcffb03cd8742796193/Benchmarks/Dictionary/PasteAudit/Host/), and [full Mac report](https://github.com/oEdyb/koett/blob/3998053ffe7c5ee451476fcffb03cd8742796193/docs/performance-audit-macos-2026-11.md) bind this result to the tested source. Eight single real-capture/BlackHole guest validations also passed, but VM Core ML timings are excluded from the native verdict.
+
+Mac's separate acoustic encoder added 180.78%, 283.16%, 389.31% and 97.34% to median file-transcription time at the four lengths. At 600 s it hit the two-second deadline; inference continued another 5.99–6.97 s after the returned result and was discarded. Default acoustic boosting is disabled. Cheap correction recovers 61/162 synthetic term occurrences versus 117/162 with experimental acoustic boosting, losing 56 recovered occurrences. This is an explicit speed/recall tradeoff.
+
+A fresh process that never loaded CTC repeated three alternating off/default pairs per length: default median changes +1.31%, −7.53%, −1.83%, +0.25%; all 12 default outputs matched the earlier cheap path. Negative changes are timing variation. The disabled callback plus spelling measured 0.613–1.433 ms in nine additional 120 s probes. This establishes cheap correction overhead, not acoustic equivalence or a per-recording ceiling.
+
+The Mac passed 434 Swift tests with 12 optional skips, release build and required static/packaging checks. Independent review found no runtime/default blocker at `5ef3c30`; the final test/verifier/disclosure fixes passed local gates and were not reviewed again. Current native capture-ready/launch CPU/full-app memory/drawing measurements were not repeated on Mac; the equivalent fresh Linux measurements below and the Mac's historical receipts do not fill those platform-specific gaps.
 
 
 ## Linux isolation and source
@@ -276,7 +266,7 @@ It is retained as earlier engine evidence, not substituted for the live soak.
 
 ## Release gate and truthful camera claims
 
-Linux-only measured claim: with the 20-term starter dictionary, three warm five-second takes on the rebuilt binary pasted in 346.26 ms median / 396.39 ms worst through the private target. No new M5 old/current speed claim is supported until its comparison is complete.
+Truthful measured claim: “In our controlled M5 test, five seconds of speech pasted in 158 ms median, and ten minutes in 2.58 seconds. The current pipeline was slower than v0.1.1 in this test.” State that audio was controlled through an instrumented recorder and that microphone/key latency was excluded. For Linux, the rebuilt five-second live repeat was 346 ms median / 396 ms worst, with the 20-term seed, and the 100-dictation soak had unchanged sampled memory. The Linux shared dictionary recovered the same 115/162 terms as the slow pass, with 7.55–10.42% median file-transcription overhead across the four lengths.
 
 Do not renew the historical 4.1× Wispr comparison. The old endpoints were unequal and no new competitor benchmark was performed. Linux ten-minute timings include ASR during recording and an automatic hard stop; do not present file-ASR times as Stop latency. The 30 s dictionary median is 10.42% above empty and the large-list/loaded probes exceed 10%; no strict universal ceiling is supported.
 
