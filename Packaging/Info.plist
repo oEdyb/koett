@@ -21,9 +21,9 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Koett uses the microphone for dictation, Ask, input level previews, and permission checks.</string>
+    <string>Koett uses the microphone for dictation, input level previews, and permission checks.</string>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>Koett captures the screen when you draw, pin, or ask a screen-aware question.</string>
+    <string>Koett captures the screen when you draw or pin.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Koett reads the current browser tab URL only when you start media transcription.</string>
 </dict>

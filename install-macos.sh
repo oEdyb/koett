@@ -155,20 +155,6 @@ mv "$incoming_app" "$app_path"
 new_app_installed=1
 codesign --verify --deep --strict "$app_path"
 
-if [[ -f "$project_dir/.env" ]]; then
-    groq_api_key=""
-    while IFS= read -r line; do
-        if [[ "$line" == GROQ_API_KEY=* ]]; then
-            groq_api_key=${line#GROQ_API_KEY=}
-            break
-        fi
-    done < "$project_dir/.env"
-    if [[ -n "$groq_api_key" ]]; then
-        GROQ_API_KEY="$groq_api_key" \
-            "$app_path/Contents/MacOS/koett" --import-groq-key-if-missing
-    fi
-fi
-
 "$app_path/Contents/MacOS/koett" --register-login
 open -n -g "$app_path"
 
