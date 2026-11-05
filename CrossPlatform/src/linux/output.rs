@@ -266,6 +266,9 @@ pub fn capture_target() -> Option<u32> {
     target
 }
 
+// Both supported paste chords include Control. Other held modifiers can change
+// the command (for example Ctrl+Shift+V), so they must still release.
+const PASTE_CONTROL_MASK: u8 = 2;
 const PASTE_WAIT: std::time::Duration = std::time::Duration::from_millis(1000);
 const PASTE_SETTLE: std::time::Duration = std::time::Duration::from_millis(25);
 
@@ -278,7 +281,7 @@ struct Sample {
 fn post_refusal(expected: Option<u32>, sample: Sample) -> Option<&'static str> {
     if sample.own_window || expected.is_none() || sample.focused != expected {
         Some("focus_changed_before_post")
-    } else if sample.modifiers.is_some_and(|mask| mask != 0) {
+    } else if sample.modifiers.is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0) {
         Some("modifiers_held_before_post")
     } else {
         None
@@ -325,7 +328,7 @@ impl PasteGate {
             self.stable = None;
             return Decision::Refuse("focus_changed");
         }
-        if sample.modifiers.is_some_and(|mask| mask != 0) {
+        if sample.modifiers.is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0) {
             self.stable = None;
             return Decision::Wait("modifiers_held");
         }
@@ -598,6 +601,31 @@ mod target_tests {
         }
     }
     #[test]
+    fn held_control_is_compatible_with_both_supported_paste_chords() {
+        // Both Ctrl+V and Ctrl+Shift+V already require Control. Do not mistake
+        // the stop shortcut's held Control for an incompatible extra modifier.
+        let mut gate = PasteGate::new(Some(74));
+        assert_eq!(
+            gate.observe(sample(Some(74), Some(2)), Duration::ZERO),
+            Decision::Wait("settling")
+        );
+        assert_eq!(
+            gate.observe(sample(Some(74), Some(2)), Duration::from_millis(30)),
+            Decision::Post
+        );
+        assert_eq!(post_refusal(Some(74), sample(Some(74), Some(2))), None);
+        assert_eq!(
+            post_refusal(Some(74), sample(Some(75), Some(2))),
+            Some("focus_changed_before_post")
+        );
+        for extra in [1, 4, 8] {
+            assert_eq!(
+                post_refusal(Some(74), sample(Some(74), Some(2 | extra))),
+                Some("modifiers_held_before_post")
+            );
+        }
+    }
+    #[test]
     fn focus_and_modifiers_are_checked_again_after_keyboard_setup() {
         assert_eq!(post_refusal(Some(42), sample(Some(42), Some(0))), None);
         assert_eq!(post_refusal(Some(42), sample(Some(42), None)), None);
@@ -605,7 +633,7 @@ mod target_tests {
             post_refusal(Some(42), sample(Some(43), Some(0))),
             Some("focus_changed_before_post")
         );
-        for mask in [1, 2, 4, 8] {
+        for mask in [1, 4, 8] {
             assert_eq!(
                 post_refusal(Some(42), sample(Some(42), Some(mask))),
                 Some("modifiers_held_before_post")
@@ -661,7 +689,7 @@ mod target_tests {
     }
     #[test]
     fn each_held_modifier_waits_for_a_clean_stable_release() {
-        for held in [1, 2, 4, 8, 15] {
+        for held in [1, 4, 8, 15] {
             let mut gate = PasteGate::new(Some(42));
             assert_eq!(
                 gate.observe(sample(Some(42), Some(held)), Duration::ZERO),
