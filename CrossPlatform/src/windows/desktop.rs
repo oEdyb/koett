@@ -45,14 +45,15 @@ const EXPORT: usize = 13;
 const NEXT_PAGE: usize = 14;
 const EXPORT_RESULTS: usize = 15;
 const EXPORT_STATUS: usize = 16;
+const SHOW_RAW: usize = 17;
 const SHORTCUT: usize = 20;
 const STARTUP: usize = 21;
 const SAVE: usize = 22;
 const CHANGE_SHORTCUT: usize = 23;
 enum Query {
     Search(u64, String, Option<HistoryCursor>),
-    Get(u64, String),
-    Export(String, std::path::PathBuf),
+    Get(u64, String, bool),
+    Export(String, std::path::PathBuf, bool),
 }
 enum Reply {
     Rows(u64, Result<Page, String>),
@@ -79,9 +80,16 @@ fn history_page(
     };
     Ok(Page { rows, next })
 }
+fn record_text(record: crate::history::HistoryRecord, raw: bool) -> String {
+    if raw {
+        record.raw_text.unwrap_or(record.text)
+    } else {
+        record.text
+    }
+}
 // Read every matching page on the history worker, independent of the visible page.
 // Bound the in-memory export explicitly; exceeding it never creates a partial file.
-fn export_results(store: &HistoryStore, query: &str) -> Result<(String, usize), String> {
+fn export_results(store: &HistoryStore, query: &str, raw: bool) -> Result<(String, usize), String> {
     use std::fmt::Write as _;
     let mut text = String::new();
     let mut count = 0;
@@ -92,21 +100,12 @@ fn export_results(store: &HistoryStore, query: &str) -> Result<(String, usize), 
             let record = store
                 .get(&row.id)?
                 .ok_or("Transcript changed during export; retry")?;
-            if text
-                .len()
-                .saturating_add(record.text.len())
-                .saturating_add(256)
-                > 8 * 1024 * 1024
-            {
+            let date = timestamp(record.created_at_ms);
+            let content = record_text(record, raw);
+            if text.len().saturating_add(content.len()).saturating_add(256) > 8 * 1024 * 1024 {
                 return Err("Export exceeds 8 MiB; narrow the search and export again".into());
             }
-            writeln!(
-                text,
-                "{}\n{}\n",
-                timestamp(record.created_at_ms),
-                record.text
-            )
-            .map_err(|e| e.to_string())?;
+            writeln!(text, "{date}\n{content}\n").map_err(|e| e.to_string())?;
             count += 1;
         }
         cursor = page.next;
@@ -131,6 +130,7 @@ struct Window {
     rows: Vec<HistorySummary>,
     selected_key: Option<String>,
     selected_text: Option<String>,
+    show_raw: bool,
     query: mpsc::Sender<Query>,
     replies: mpsc::Receiver<Reply>,
     generation: u64,
@@ -194,9 +194,9 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         let store = HistoryStore::open_default();
         for query in receive {
             let result = match query {
-                Query::Export(text, path) => {
+                Query::Export(text, path, raw) => {
                     Reply::Exported(store.as_ref().map_err(Clone::clone).and_then(|store| {
-                        let (text, count) = export_results(store, &text)?;
+                        let (text, count) = export_results(store, &text, raw)?;
                         write_export(&path, &text)?;
                         Ok(count)
                     }))
@@ -208,13 +208,13 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
                         .map_err(Clone::clone)
                         .and_then(|s| history_page(s, &text, before.as_ref())),
                 ),
-                Query::Get(id, key) => Reply::Text(
+                Query::Get(id, key, raw) => Reply::Text(
                     id,
                     store
                         .as_ref()
                         .map_err(Clone::clone)
                         .and_then(|s| s.get(&key))
-                        .map(|r| r.map(|r| r.text).unwrap_or_default()),
+                        .map(|r| r.map(|r| record_text(r, raw)).unwrap_or_default()),
                 ),
             };
             if reply.send(result).is_err() {
@@ -271,6 +271,7 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
             rows: vec![],
             selected_key: None,
             selected_text: None,
+            show_raw: false,
             query: send,
             replies,
             generation: 0,
@@ -564,6 +565,14 @@ impl Window {
                 EXPORT_STATUS,
                 [328, 580, 580, 40],
             )?;
+            let raw = self.control(
+                w!("BUTTON"),
+                "Raw transcript",
+                WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
+                SHOW_RAW,
+                [552, 32, 180, 32],
+            )?;
+            self.theme.apply_checkbox(raw);
             self.search();
         }
         Ok(())
@@ -625,7 +634,9 @@ impl Window {
             self.actions_enabled(false);
             if let Some(key) = key {
                 self.generation += 1;
-                let _ = self.query.send(Query::Get(self.generation, key));
+                let _ = self
+                    .query
+                    .send(Query::Get(self.generation, key, self.show_raw));
             }
         }
     }
@@ -729,6 +740,13 @@ impl Window {
                     self.load_page(Some(cursor));
                 }
             }
+            SHOW_RAW => {
+                if let Ok(button) = unsafe { GetDlgItem(Some(self.hwnd), SHOW_RAW as i32) } {
+                    self.show_raw = unsafe { SendMessageW(button, BM_GETCHECK, None, None) }.0 != 0;
+                    self.selected_key = None;
+                    self.selection_changed();
+                }
+            }
             COPY => {
                 if let Some(text) = &self.selected_text
                     && let Err(e) = super::copy_text(self.hwnd, text)
@@ -747,7 +765,7 @@ impl Window {
                 Ok(Some(path)) => {
                     if self
                         .query
-                        .send(Query::Export(read(self.search), path))
+                        .send(Query::Export(read(self.search), path, self.show_raw))
                         .is_ok()
                     {
                         unsafe {
@@ -851,6 +869,7 @@ impl Window {
                     ),
                     (COPY, left + 24, 32, 100, 32),
                     (EXPORT, left + 136, 32, 100, 32),
+                    (SHOW_RAW, left + 248, 32, 180, 32),
                     (24, left + 24, 66, (r.right - left - 48).max(80), 20),
                 ] {
                     if let Ok(child) = GetDlgItem(Some(self.hwnd), id as i32) {
@@ -983,6 +1002,8 @@ unsafe extern "system" fn proc(
                         window.theme.apply(hwnd);
                         if window.settings {
                             window.theme.apply_checkbox(window.startup);
+                        } else if let Ok(raw) = unsafe { GetDlgItem(Some(hwnd), SHOW_RAW as i32) } {
+                            window.theme.apply_checkbox(raw);
                         }
                     }
                     unsafe {
@@ -1101,6 +1122,20 @@ mod tests {
     use crate::history::HistoryRecord;
 
     #[test]
+    fn raw_history_is_explicit_and_legacy_rows_remain_readable() {
+        let mut record = HistoryRecord {
+            id: "raw".into(),
+            created_at_ms: 0,
+            model: "fixture".into(),
+            text: "Formatted".into(),
+            raw_text: Some("raw words".into()),
+        };
+        assert_eq!(record_text(record.clone(), false), "Formatted");
+        assert_eq!(record_text(record.clone(), true), "raw words");
+        record.raw_text = None;
+        assert_eq!(record_text(record, true), "Formatted");
+    }
+    #[test]
     fn history_pages_reach_all_rows_and_restart_for_new_search() {
         let path = std::env::temp_dir().join(format!(
             "koett-windows-pages-{}.sqlite3",
@@ -1136,7 +1171,7 @@ mod tests {
             ids.iter().collect::<std::collections::HashSet<_>>().len(),
             110
         );
-        let (exported, count) = export_results(&store, "").unwrap();
+        let (exported, count) = export_results(&store, "", false).unwrap();
         assert_eq!(count, 110);
         assert_eq!(exported.matches("entry ").count(), 110);
         let output = path.with_extension("txt");
@@ -1144,11 +1179,11 @@ mod tests {
         write_export(&output, &exported).unwrap();
         assert_eq!(std::fs::read_to_string(&output).unwrap(), exported);
         std::fs::remove_file(output).unwrap();
-        let (filtered_export, count) = export_results(&store, "entry 003").unwrap();
+        let (filtered_export, count) = export_results(&store, "entry 003", false).unwrap();
         assert_eq!(count, 1);
         assert!(filtered_export.contains("entry 003"));
         assert_eq!(
-            export_results(&store, "no-such-entry").unwrap(),
+            export_results(&store, "no-such-entry", false).unwrap(),
             (String::new(), 0)
         );
         let filtered = history_page(&store, "entry 003", None).unwrap();

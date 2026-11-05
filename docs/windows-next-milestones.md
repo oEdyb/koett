@@ -55,3 +55,9 @@ This is a Windows-only first checkpoint, not M3 completion. Dictionary editing,
 Fix a word/acceptance, replacements, formatting/raw fallback and model switching
 remain open. Do not expose the current slow dictionary decoder path. Use small
 focused fixtures and timing checks; no big benchmarks.
+
+Native History also has an explicit Raw transcript checkbox. Copy, single export
+and full-search export use the selected view; rows without stored raw text fall
+back to the final transcript. No new ASR or formatting work runs to view history.
+Focused tests cover final/raw selection and legacy fallback. Metadata checked;
+linked tests and guest UI checks remain pending the rebuilt Windows artifact.
