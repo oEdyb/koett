@@ -76,8 +76,16 @@ fn main() {
         let target = output::capture_target();
         assert!(target.is_some());
         output::deliver_image(&png, target).unwrap();
-        output::deliver_sketch_text(text, target, koett_engine::settings::PasteShortcut::CtrlV)
-            .unwrap();
+        output::deliver_sketch_text(
+            text,
+            target,
+            if std::env::args().any(|arg| arg == "--terminal") {
+                koett_engine::settings::PasteShortcut::CtrlShiftV
+            } else {
+                koett_engine::settings::PasteShortcut::CtrlV
+            },
+        )
+        .unwrap();
         std::thread::sleep(Duration::from_millis(700));
         clipboard_owner::replace(clipboard_owner::Payload::bundle(&png, text)).unwrap();
     }
