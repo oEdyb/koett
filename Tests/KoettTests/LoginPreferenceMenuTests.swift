@@ -28,7 +28,7 @@ final class LoginPreferenceMenuTests: XCTestCase {
         XCTAssertEqual(reads, 1)
     }
 
-    func testMenuOpeningOrReadyRefreshesExternallyChangedStatus() {
+    func testExplicitRefreshUpdatesExternallyChangedStatus() {
         var preference = LoginPreference()
         _ = preference.menuStatus(refresh: true) { .enabled }
         let status = preference.menuStatus(refresh: true) { .requiresApproval }

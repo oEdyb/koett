@@ -1,0 +1,206 @@
+--- a/Sources/Koett/DictationSession.swift
++++ b/Sources/Koett/DictationSession.swift
+@@ -205,10 +205,15 @@
+     }
+ 
+     func stopRecording(releaseEventTimestamp: TimeInterval) {
++        let begin = ProcessInfo.processInfo.systemUptime
+         mediaPauseTask?.cancel()
++        let media = ProcessInfo.processInfo.systemUptime
+         recordingOverlay.stop()
++        let overlay = ProcessInfo.processInfo.systemUptime
+         sketchOverlay.finish()
++        let sketch = ProcessInfo.processInfo.systemUptime
+         let session = activeDictationID ?? beginDictationSession()
++        print("STOP_ENTRY mediaMS=\((media-begin)*1000) overlayMS=\((overlay-media)*1000) sketchMS=\((sketch-overlay)*1000) sessionMS=\((ProcessInfo.processInfo.systemUptime-sketch)*1000)")
+         switch speechEngine {
+         case .parakeet, .parakeetV3, .parakeet110m:
+             stopParakeetRecording(releaseEventTimestamp: releaseEventTimestamp, session: session)
+@@ -220,12 +225,19 @@
+     private func stopParakeetRecording(releaseEventTimestamp: TimeInterval, session: UInt64) {
+         guard let recorder, let url = recordingURL else { return }
+         let duration = recorder.currentTime
++        let stopBegan = ProcessInfo.processInfo.systemUptime
+         recorder.stop()
++        print("RECORDER_STOP_TOTAL_MS \((ProcessInfo.processInfo.systemUptime-stopBegan)*1000)")
+         self.recorder = nil
+         recordingURL = nil
+-        guard !handleMicrophoneFailure(recorder, url: url) else { return }
++        let checked = ProcessInfo.processInfo.systemUptime
++        let microphoneFailed = handleMicrophoneFailure(recorder, url: url)
++        let beforeState = ProcessInfo.processInfo.systemUptime
++        guard !microphoneFailed else { return }
+         state = .transcribing
++        let afterState = ProcessInfo.processInfo.systemUptime
+         play(stopSound)
++        print("STOP_STATE failureCheckMS=\((beforeState-checked)*1000) stateMS=\((afterState-beforeState)*1000) playMS=\((ProcessInfo.processInfo.systemUptime-afterState)*1000)")
+         print("TRANSCRIBING")
+ 
+         guard duration >= 0.25 else {
+@@ -237,7 +249,9 @@
+             return
+         }
+ 
++        let overlayStart = ProcessInfo.processInfo.systemUptime
+         recordingOverlay.showTranscribing()
++        print("STOP_SHOW_TRANSCRIBING_MS \((ProcessInfo.processInfo.systemUptime-overlayStart)*1000)")
+         dictationTask = Task { @MainActor [weak self] in
+             await self?.transcribe(url, releaseEventTimestamp: releaseEventTimestamp, session: session)
+         }
+@@ -684,6 +698,11 @@
+     }
+ 
+     func cleanup(_ url: URL) {
++        if let root = ProcessInfo.processInfo.environment["KOETT_AUDIT_ROOT"] {
++            let folder = URL(fileURLWithPath: root).appendingPathComponent("captured-wavs")
++            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
++            try? FileManager.default.copyItem(at: url, to: folder.appendingPathComponent(url.lastPathComponent))
++        }
+         do {
+             try FileManager.default.removeItem(at: url)
+         } catch {
+--- a/Sources/Koett/Koett.swift
++++ b/Sources/Koett/Koett.swift
+@@ -54,6 +54,7 @@
+     let nemotronAdapter: NemotronStreamingAdapter?
+     let startSound: AVAudioPlayer
+     let stopSound: AVAudioPlayer
++    var loginPreference = LoginPreference()
+     var recordingMode: RecordingMode
+     var dictationShortcut: ShortcutBinding
+     var mediaShortcut: ShortcutBinding
+@@ -82,8 +83,11 @@
+     var state = State.loading {
+         didSet {
+             if state != oldValue {
++                let menuStart = ProcessInfo.processInfo.systemUptime
+                 rebuildMenu()
++                let menuEnd = ProcessInfo.processInfo.systemUptime
+                 refreshMicrophoneMonitorTarget()
++                if state == .transcribing { print("STATE_OBSERVER menuMS=\((menuEnd-menuStart)*1000) microphoneRefreshMS=\((ProcessInfo.processInfo.systemUptime-menuEnd)*1000)") }
+                 if state == .ready {
+                     activeDictationID = nil
+                     automaticPasteTarget = nil
+@@ -229,18 +233,22 @@
+         let modelName = speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName
+         setSetupStatus(.checkingModel(modelName))
+         print("Loading \(modelName)...")
++        let modelLoadBegan = ProcessInfo.processInfo.systemUptime
+         let models = try await AsrModels.downloadAndLoad(
+             version: speechEngine.parakeetVersion,
+             progressHandler: fluidAudioProgressHandler(model: modelName)
+         )
+         setSetupStatus(.loadingModel(modelName))
+         try await manager.loadModels(models)
++        print("STARTUP_MODEL_LOAD_MS \((ProcessInfo.processInfo.systemUptime-modelLoadBegan)*1000)")
++        let modelWarmBegan = ProcessInfo.processInfo.systemUptime
+         setSetupStatus(.warmingModel(modelName))
+         print("Warming \(modelName)...")
+         let decoderLayers = await manager.decoderLayerCount
+         var decoderState = TdtDecoderState.make(decoderLayers: decoderLayers)
+         let silence = [Float](repeating: 0, count: 4_800)
+         _ = try await manager.transcribe(silence, decoderState: &decoderState)
++        print("STARTUP_ASR_WARM_MS \((ProcessInfo.processInfo.systemUptime-modelWarmBegan)*1000)")
+         startLoadingSpeechDetector()
+         let booster = vocabularyBooster
+         let dictionary = dictionaryStore.entries
+--- a/Sources/Koett/KoettMenu.swift
++++ b/Sources/Koett/KoettMenu.swift
+@@ -92,7 +92,9 @@
+         nemotronItem.isEnabled = canChangeModel
+         menu.addItem(nemotronItem)
+ 
++        let micBegan = ProcessInfo.processInfo.systemUptime
+         menu.addItem(microphoneMenuItem())
++        print("MIC_MENU_MS \((ProcessInfo.processInfo.systemUptime-micBegan)*1000)")
+         let pauseMedia = menuItem(title: "Pause Supported Media While Recording", action: #selector(togglePauseMedia),
+                                   selected: microphoneDefaults.bool(forKey: "pauseMedia"))
+         pauseMedia.isEnabled = state == .ready
+--- a/Sources/Koett/LoginPreference.swift
++++ b/Sources/Koett/LoginPreference.swift
+@@ -3,6 +3,14 @@
+ 
+ struct LoginPreference {
+     static let key = "startAtLogin"
++    private var cachedStatus: SMAppService.Status?
++
++    mutating func menuStatus(refresh: Bool, read: () -> SMAppService.Status) -> SMAppService.Status {
++        if !refresh, let cachedStatus { return cachedStatus }
++        let status = read()
++        cachedStatus = status
++        return status
++    }
+ 
+     static func shouldRegister(in defaults: UserDefaults) -> Bool {
+         defaults.object(forKey: key) as? Bool ?? true
+@@ -11,11 +19,18 @@
+ 
+ extension KoettController {
+     func loginMenuItem() -> NSMenuItem {
+-        let status = SMAppService.mainApp.status
+-        let item = menuItem(title: status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login",
+-                            action: #selector(toggleStartAtLogin), selected: status == .enabled)
++        let item = menuItem(title: "Start at Login", action: #selector(toggleStartAtLogin), selected: false)
++        refreshLoginMenuItem(item, refresh: state == .ready)
++        return item
++    }
++
++    func refreshLoginMenuItem(_ item: NSMenuItem, refresh: Bool = true) {
++        let began = ProcessInfo.processInfo.systemUptime
++        let status = loginPreference.menuStatus(refresh: refresh) { SMAppService.mainApp.status }
++        print("LOGIN_STATUS_MS \((ProcessInfo.processInfo.systemUptime-began)*1000)")
++        item.title = status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login"
++        item.state = status == .enabled ? .on : .off
+         item.isEnabled = state == .ready
+-        return item
+     }
+ 
+     @objc func toggleStartAtLogin() {
+--- a/Sources/Koett/MicrophoneInput.swift
++++ b/Sources/Koett/MicrophoneInput.swift
+@@ -134,9 +134,13 @@
+     }
+ 
+     isolated deinit {
++        let began = ProcessInfo.processInfo.systemUptime
+         AudioOutputUnitStop(unit)
++        let stopped = ProcessInfo.processInfo.systemUptime
+         AudioUnitUninitialize(unit)
++        let uninitialized = ProcessInfo.processInfo.systemUptime
+         AudioComponentInstanceDispose(unit)
++        print("INPUT_DEINIT stopMS=\((stopped-began)*1000) uninitializeMS=\((uninitialized-stopped)*1000) disposeMS=\((ProcessInfo.processInfo.systemUptime-uninitialized)*1000)")
+     }
+ 
+     nonisolated private static let render: AURenderCallback = { context, flags, time, _, frames, _ in
+--- a/Sources/Koett/MicrophoneMenu.swift
++++ b/Sources/Koett/MicrophoneMenu.swift
+@@ -38,7 +38,12 @@
+     }
+ 
+     func menuNeedsUpdate(_ menu: NSMenu) {
+-        if menu === statusItem?.menu { refreshSketchPasteChordItem(in: menu) }
++        if menu === statusItem?.menu {
++            refreshSketchPasteChordItem(in: menu)
++            if let item = menu.items.first(where: { $0.action == #selector(toggleStartAtLogin) }) {
++                refreshLoginMenuItem(item)
++            }
++        }
+         guard menu === statusItem?.menu,
+               let item = menu.items.first(where: { $0.submenu?.title == "Microphone" }) else { return }
+         refreshMicrophoneMenu(item)
+--- a/Sources/Koett/MicrophoneRecorder.swift
++++ b/Sources/Koett/MicrophoneRecorder.swift
+@@ -64,9 +64,13 @@
+ 
+     func stop() {
+         guard isRecording else { return }
++        let began = ProcessInfo.processInfo.systemUptime
+         input.stop()
++        let stopped = ProcessInfo.processInfo.systemUptime
+         sink.close()
++        let closed = ProcessInfo.processInfo.systemUptime
+         isRecording = false
++        print("RECORDER_PARTS inputStopMS=\((stopped-began)*1000) fileCloseMS=\((closed-stopped)*1000)")
+     }
+ 
+     func markUnavailable() {

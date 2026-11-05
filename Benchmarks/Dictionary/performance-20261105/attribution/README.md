@@ -33,3 +33,22 @@ only format/size metadata is committed. Resource counters describe the private
 process under the PCM seam (including fixture/control work), not an installed-app
 soak or all accelerator memory. Disk counts are logical bytes, not APFS clone
 physical growth. The final report contains the release recommendation and limits.
+
+
+The exact executed harness/collector source and reproduction protocol are in
+`Benchmarks/Dictionary/PasteAudit/Attribution`. The historical prototype executable
+was overwritten before hashing; `historical-provenance.json` records that limit.
+A separate nine-receipt pre-hashed recheck in `attested/` adds old startup/resource
+comparisons and current settled post-target counters. It reuses the frozen final
+production binary; the rebuilt prototype hash is not assigned to earlier runs.
+
+Idle measurements follow a full five-second ASR/paste warm-up and three idle
+seconds. Historical recording `before/after` counters bound only recording before
+Stop. New `postMeasuredTargetIdle` counters follow measured ASR/target delivery and
+three ready-state idle seconds. Resource phases are not interchangeable.
+
+The earlier final-production five-second median is165.586ms/worst181.339ms,
+with one120-second638.169ms observation. The separate attested same-binary cohort
+has its own values; these are not pooled. The consistent baseline→cached ASR rise
+is an unresolved contention/work shift, not merely random noise. No guaranteed
+end-to-end gain or complete v0.1.1-regression fix is claimed.
