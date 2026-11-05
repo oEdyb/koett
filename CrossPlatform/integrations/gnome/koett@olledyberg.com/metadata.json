@@ -3,6 +3,7 @@
   "name": "Koett",
   "description": "Recording feedback and original-window checks for Koett on GNOME Wayland.",
   "shell-version": [
+    "46",
     "51"
   ],
   "version": 2,

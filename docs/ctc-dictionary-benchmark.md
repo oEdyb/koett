@@ -1,5 +1,12 @@
 # Parakeet 110M acoustic dictionary bias
 
+**Release policy (2026-11-05):** the sidecar below is benchmark-only. Normal
+110M dictation keeps greedy ASR and spelling corrections, even with v2 present.
+The historical holdout recovered 30/108 terms with spelling versus 76/108 with
+the bounded sidecar: 46 fewer. This is historical evidence, not a new rerun.
+The fresh 210-clip rerun recovered 45/162 with spelling versus 111/162 with the
+bounded sidecar (66 fewer); see [current latency work](dictionary-latency-2026-11.md).
+
 Measured 2026-11-04, Linux x86_64, Ryzen 5 9600X, CPU execution. Rust 1.94.0;
 pinned sherpa-onnx 1.13.5 and existing int8 model manifests. No dependency upgrade.
 No new audio was synthesized or sent to a service for these measurements.

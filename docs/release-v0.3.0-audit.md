@@ -492,9 +492,12 @@ support is intentionally outside the advertised artifact.
 
 Checks requiring the user's live screen if not reproduced in isolation: full T3
 chat Cmd+V and draft state, physical Option/Shift gestures, real microphone/device
-handoff, monthly ScreenCaptureKit prompt, mixed-DPI/multiple displays and player
-controls. No such interaction is claimed by the generated fixtures.
+handoff, mixed-DPI/multiple displays and player controls. The existing capture-bypass
+prompt was exercised in the guest, including actual Allow. No such interaction is claimed by the generated fixtures.
 
-Follow-up requests: correct the stale comparison claim that Mac lacks undo
-(the actual menu/CLI and pin undo pass), add explicit actual permission capability
-checks, and finish image-to-text timing validation, each in its own change.
+Follow-up changes: [Mac undo verification](macos-drawing-undo-verification.md)
+corrects the stale comparison; menu/CLI and pin undo pass. The separate
+[permission capability checks](macos-permission-capability-checks.md) add explicit
+real-input/event-tap/still checks with no mandatory onboarding step. All three
+checks pass in the private guest build; post-check capture/paste also passes.
+Image-consumption timeout tuning remains deferred until slow-reader proof.

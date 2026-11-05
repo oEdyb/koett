@@ -3806,7 +3806,7 @@
         },
         {
           "path": "packaging/notices/rust/sherpa-onnx-1.13.5/KOETT-MODIFICATIONS.txt",
-          "sha256": "8d2ab98db4fa43c881be937ef6325563786a487df8f3dbd110a83a7282ee9cdb",
+          "sha256": "479333d26248b337770d06f0a02c2c577ee736411a183860f96c2cd67eeafdee",
           "kind": "reviewed-local-patch-notice"
         }
       ],
@@ -6437,7 +6437,7 @@
       "files": [
         {
           "path": "packaging/notices/rust/sherpa-onnx-sys-1.13.5/KOETT-MODIFICATIONS.txt",
-          "sha256": "02804b61b7409369d1ca8be6370c3bf7381916ae42171045e266ee094cb97968",
+          "sha256": "bf68c5dc1bc000e515a4faeda6694053500b7029f123dbd450761b1677043eb6",
           "kind": "reviewed-local-patch-notice"
         },
         {

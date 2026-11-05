@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class PermissionsModel: ObservableObject {
     @Published var rows: [PermissionRow] = []
+    @Published private(set) var isChecking = false
     let center: PermissionCenter
     var onRelaunch: () -> Void = {}
 
@@ -19,14 +20,22 @@ final class PermissionsModel: ObservableObject {
     }
 
     func perform(_ action: PermissionRow.Action, for kind: PermissionKind) {
-        center.perform(action, for: kind)
+        if action == .check {
+            Task { await checkCapabilities([kind]) }
+        } else {
+            center.perform(action, for: kind)
+            refresh()
+        }
+    }
+
+    func checkCapabilities(_ kinds: [PermissionKind] = PermissionKind.allCases) async {
+        guard !isChecking else { return }
+        isChecking = true
+        defer { isChecking = false }
+        await center.checkCapabilities(kinds)
         refresh()
     }
 
-    func probe() async {
-        await center.probeScreenRecording()
-        refresh()
-    }
 }
 
 /// A small window listing each permission with a live status. System Settings
@@ -76,7 +85,6 @@ final class PermissionsWindowController: NSObject, NSWindowDelegate {
             MainActor.assumeIsolated {
                 guard let model = self?.model else { return }
                 model.refresh()
-                Task { await model.probe() }
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -94,6 +102,10 @@ struct PermissionsView: View {
                 PermissionRowView(row: row, perform: { model.perform($0, for: row.kind) }, relaunch: model.onRelaunch)
             }
             HStack {
+                Button(model.isChecking ? "Checking…" : "Check Permissions") {
+                    Task { await model.checkCapabilities() }
+                }
+                .disabled(model.isChecking)
                 Spacer()
                 Button("Done", action: close)
                     .keyboardShortcut(.defaultAction)
@@ -118,13 +130,23 @@ private struct PermissionRowView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(row.kind.title).font(.headline)
-                Text(row.kind.purpose).font(.callout).foregroundStyle(.secondary)
+                Text(row.capability == false ? "Check failed" : row.kind.purpose)
+                    .font(.callout).foregroundStyle(row.capability == false ? Color.red : Color.secondary)
             }
             .fixedSize()
             Spacer()
             if row.allowed {
-                Label("Allowed", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                if row.capability == false {
+                    if row.kind == .screenRecording {
+                        Button("Relaunch", action: relaunch)
+                            .accessibilityLabel("Relaunch Koett")
+                    }
+                    Button("Retry", action: { perform(.check) })
+                        .accessibilityLabel("Retry \(row.kind.title) check")
+                } else {
+                    Label(row.capability == true ? "Ready" : "Allowed", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
             } else {
                 if row.offersRelaunch {
                     Button("Relaunch", action: relaunch)
