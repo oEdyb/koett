@@ -1,180 +1,324 @@
-# November 2026 workflow performance audit
+# Workflow performance audit — November 2026
 
-**Release gate: NO-GO for a renewed speed claim. Comparison with the video is
-undetermined, not demonstrated faster, equal, or slower.** This is a partial
-executed audit. The missing end-to-end comparison remains required before
-calling the full audit complete. No release, installed-app change, or production
-performance fix was made.
+**Draft: Linux workflow measurements and fixes are complete. The M5 old/current target-paste comparison is still running; this report is not yet the final video verdict.**
 
-## Baseline recovered
+This audits the proposed v0.3.0 build; no v0.3.0 tag or public release is implied.
+The comparison uses measured endpoints, not vendor speed claims. First-install,
+permissions and distribution gates remain in the separate release audit.
 
-Vault source: `Agent/02 - Content/YouTube/Completed/2026-08-13 Koett vs Wispr Flow/2026-08-13 YouTube Koett vs Wispr Flow.md`.
-Recording card: same directory, `2026-08-13 YouTube Koett vs Wispr Flow Recording Card.md`.
-The upload note records publication scheduled for **2026-08-18 18:30 CEST**,
-YouTube `https://youtu.be/0xVRE7eX8Ns`, title *Can a Free Local App Replace Wispr Flow?*,
-and the selected thumbnail claim **“4× FASTER”**.
+## Video baseline
 
-The published-description text saved there says:
+The archived recording card for *Can a Free Local App Replace Wispr Flow?*
+records a scheduled publication of **2026-08-18 at 18:30 CEST** and the selected
+thumbnail **“4× FASTER”**. [Video](https://youtu.be/0xVRE7eX8Ns).
+Its saved published description says:
 
 > In my controlled five-run test on my M5 Mac, Koett’s median release-to-paste time was 118.5 ms. Wispr Flow’s was 481 ms, so Koett was about 4.1× faster in this test. Both got every word right.
 
-The recording card specifies the same Mac, microphone, sentence, and five runs.
-The repository's [historical receipt](verification-receipts.md) narrows the
-endpoint: Koett measured **paste-post**, Wispr its **finished-processing state**.
-Neither is a timestamp proving text insertion in the target application. The
-old 4.1× ratio therefore does not establish a symmetric target-receipt comparison.
+The repository's [historical receipt](verification-receipts.md) qualifies the
+endpoints: Koett **paste-post**, Wispr **finished processing**. Neither is a
+receipt proving target insertion. Do not renew the 4.1× comparison from these
+unequal endpoints, or compare 118.5 ms directly with a new target-receipt timer.
 
-The exact filmed executable/commit was not recovered. Use **v0.1.1,
-`c72f83415b1d760c30316f07fc776f09b0ebdc0b`**, only as an explicitly labeled
-fallback. Its local git commit date is August 26, after the scheduled upload;
-do not describe it as the proven filmed binary. No old-versus-new run happened
-on Linux: v0.1.1 is the native Apple Silicon application.
+The exact filmed executable was not recovered. The permitted fallback is
+**v0.1.1, `c72f83415b1d760c30316f07fc776f09b0ebdc0b`**. Its recorded git date is
+after the video's scheduled publication, so it is a fallback rather than a
+proven identification of the filmed binary. v0.1.1 has no Linux implementation.
+The same-machine old/current release comparison therefore belongs to the Mac.
 
-## Isolation and source
+## What the timers mean
 
-Linux source frozen at `c0343aef15dbb517b4d201e221d70c9666b1e6ca` (PR #99).
-This branch started at `49efd70` and was fast-forwarded before measurement.
-The installed private candidate's `candidate.json` independently names this
-same source, with app binary SHA-256
-`d9d52e6797c73b63c87ab7b181f532c48891d8e43af154c53c08a8864f662d32`.
-The benchmark builds the engine from that source; it does **not** run the
-installed desktop bundle or certify its runtime integration.
-
-Host: CachyOS Linux x86_64, Ryzen 5 9600X, 12 logical CPUs, approximately 60 GiB
-RAM. Initial reconnaissance load average was **35.12 / 18.61 / 14.68**. Other
-jobs remained active; these are contended-machine observations, not idle-system
-performance promises. The raw receipt records load at benchmark start/end.
-
-Models were copied into this worktree's ignored `CrossPlatform/target/` tree.
-No installed settings, transcript content, clipboard, microphone, pointer or
-focus was changed. No transcript text is emitted or retained by the runner.
-The inference subprocesses run in a network namespace with only loopback.
-Build/run use `nice -n 10` and a `MemoryMax=12G` scope; build jobs are limited to
-four. Build output is in the worktree, never `/tmp`.
-
-Read-only disk accounting: the current-PC installed-style bundle contains
-**275,473,457 logical file bytes**, including its **55,247,512-byte** app binary.
-The copied v2 model tree contains **662,073,040 logical file bytes**, including
-the test sample and generated bias vocabulary. This is file content size, not
-unique allocated disk blocks (the model copy can share reflink blocks). Other
-optional models are excluded. No same-definition old Mac bundle measurement
-was obtained.
-
-## Measurement coverage
-
-| Requested measurement | Current evidence | Missing acceptance |
+| Endpoint | Meaning | Limits |
 |---|---|---|
-| Same-Mac old/current 5 s, 30 s, 2 min, 10 min stop-to-insert | Historical 118.5 ms paste-post only | All paired target-consumption timings, medians/worst cases |
-| Shortcut press to actual capture-ready | Not measured | Real shortcut and microphone opening timestamps |
-| Launch to ready; app idle/recording CPU and RAM | Not measured | App process measurements in an exclusive lab |
-| Model load, empty/seed dictionary ASR | Runner and raw receipt below | App capture, paste, storage and UI overhead |
-| 100 rapid dictations / leak soak | 100 sequential offline inferences only | Live sessions, lifecycle transitions and settled app RAM |
-| Offline | Network-disabled local inference | Full desktop flow including delivery/recovery |
-| CPU load / low memory | Naturally contended host; 12 GiB cap | Controlled idle/load pairs and actual low-memory recovery |
-| Drawing/pins on/off; overlay startup | Not measured here | Paired real app runs, including capture readiness |
-| Image-to-text gap | Historical Mac release-audit measurements below | Fresh current-build target-consumption measurements |
+| Capture ready | Audio stream has started and collector exists | Linux software command/key issuance includes launch and polling overhead; not USB latency |
+| File ASR | Inference plus the explicitly stated correction step | Excludes recording, delivery, storage and UI |
+| Stop to target text | Actual text appended to the private target, after normal app processing and paste | Target is a controlled receiver, not every editor |
+| Image to text | Target has decoded/appended PNG, then appended text | Distinct from clipboard offer or paste-post |
+| Ten-minute Linux Stop | The app's automatic 600 s stop request, timestamped in the runtime | The hard recording limit prevents a manual stop after full 600 s playback |
 
-The sole authorized Mac child was interrupted: the Mac release auditor was
-running a VM, so performance measurements were deferred. The PC also had an
-active `koett-clean-kde` release-test lab; this audit did not open a competing
-lab or borrow its input/clipboard. Neither interruption is a passing gate.
+Linux transcribes segments while recording. Ten minutes of file ASR taking
+seconds does not mean the live app waits that long after Stop. The live timers
+include finalization and real delivery; file-ASR numbers are kept separate.
 
-The release audit is absent from this main snapshot. Its original was read via
-`git show 25ee1c3:docs/release-v0.3.0-audit.md`; the Linux version via
-`origin/audit/linux-first-install`. The video checklist was read from main.
-First-install gates are intentionally left to those owners.
+## Mac: v0.1.1 fallback versus current
 
-## Existing image delivery evidence (not rerun)
+The same-M5 old/current actual-target comparison is still in progress in
+[Mac audit #105](https://github.com/oEdyb/koett/pull/105). No VM timing is
+presented as native M5/Neural Engine performance, and separate ASR/paste timers
+are not summed into an invented end-to-end measurement.
 
-Mac release audit `25ee1c3` records image-intake-to-text-insertion of **199.8 ms**
-for a small image and **177.4 ms** for a 3.70 MB PNG. Its no-new-read-callback
-fallback took **1,668.4–1,672.8 ms**, three runs. That identifies a slow path,
-not a measured regression against the filmed version, which lacked drawing.
-Linux PR #99 already changes sketch paste latency; this audit did not duplicate
-or re-prove that fix. Do not combine Mac and Linux values into one claim.
+The completed native dictionary audit used pinned FluidAudio 0.15.6, copied
+models and identical synthetic fixtures, three alternating repetitions per
+length. It confirms an extra **separate CTC encoder**, not reuse of the default
+0.6B encoder. These are file-transcription timings, excluding capture and paste:
 
-## Fresh Linux results — 2026-11-05 UTC
-
-[Raw metrics and fixture/binary hashes](../Benchmarks/Performance/2026-11/linux-asr.json).
-Two CPU inference threads, no GPU inference. Empty and seeded conditions used
-the identical WAV bytes and copied Parakeet v2. Three runs per cell. Values
-below are **internal ASR milliseconds**, excluding file read, capture, delivery,
-storage, dictionary spelling replacement and UI. They are not stop-to-saved or
-stop-to-pasted measurements.
-
-| Audio | Empty median / worst (ms) | Seed median / worst (ms) | Seed median penalty |
+| Audio | Off median / worst ms | CTC + spelling median / worst ms | Added median |
 |---|---:|---:|---:|
-| 5 seconds | 150.8 / 153.6 | 298.4 / 305.4 | +147.6 ms; 1.98× |
-| 30 seconds | 842.4 / 935.6 | 1,613.8 / 1,695.4 | +771.4 ms; 1.92× |
-| 2 minutes | 3,659.8 / 4,476.9 | 6,780.1 / 7,118.6 | +3,120.3 ms; 1.85× |
-| 10 minutes | 18,256.0 / 20,010.0 | 34,207.2 / 38,656.1 | +15,951.2 ms; 1.87× |
+| 5 s | 75.41 / 77.01 | 211.73 / 219.18 | 180.78% |
+| 30 s | 184.46 / 186.03 | 706.76 / 728.30 | 283.16% |
+| 2 min | 477.08 / 490.10 | 2,334.43 / 2,363.61 | 389.31% |
+| 10 min | 2,055.41 / 2,058.42 | 4,056.22 / 4,111.89 | 97.34% |
 
-Model-load observations: **1,012.8 ms empty / 1,007.5 ms seeded**, one process
-each. These are warm-filesystem observations, not repeated cold-launch medians.
-Sampled peak process RSS: **1,245,596 KiB empty / 1,283,212 KiB seeded**;
-the difference was 37,616 KiB. This run did not reproduce the historical near
-2 GB dictionary peak. Comparing these peaks with old idle measurements would
-mix endpoints and workloads.
+The two-second deadline drops a late result; it does not cancel inference.
+The separate-encoder path fails the target and is disabled by default in #105.
+Cheap spelling/forms/exact corrections remain. Fresh same-corpus recall is
+**49 raw, 61 cheap, 117 acoustic / 162**; disabling it loses 56 recovered
+occurrences. There were no false terms or worsened negatives in this synthetic
+corpus. An independent audit recomputed the timing medians/worsts from
+the committed JSON and checked the default's source guard; these are measured
+Koett results rather than FluidAudio speed claims.
 
-The independent **100-inference** run completed all 100 without a process error.
-Median ASR **146.25 ms**, worst **162.5 ms**. Median sampled RSS over the first
-ten and last ten completions was identical: **1,100,732 KiB**. This finds no
-RSS growth at those checkpoints for this workload; it does not rule out app,
-capture, clipboard, drawing, allocator or longer-duration leaks. It performs no
-transcript correctness assertions. The 10-minute probes likewise test decoding,
-not ten minutes of uninterrupted real microphone capture.
+A separate post-change run compares the actual disabled callback plus spelling
+against off, on the same warm model/VAD. Its own controls differ from the first
+run above; do not use columns across runs to calculate an overhead:
 
-Host load averaged **15.09 / 18.26 / 15.58** at start and **7.50 / 12.59 / 13.83**
-at end (1/5/15-minute averages). Seed ran second while load declined; randomized
-or alternating process pairs on an idle machine are required for a stronger
-causal estimate. The observed 1.85–1.98× ASR cost is consistent with the old
-dictionary slowdown, but cannot validate its 0.32/0.60-second app endpoints.
-The current `hotwords.rs` selects modified beam search with four active paths,
-and decodes both plain and biased streams; that is a concrete extra-work cause.
-Whether the seed is worth this cost remains an accuracy/product decision:
-this performance probe intentionally does not score recognition quality.
+| Audio | Off median / worst ms | New default median / worst ms |
+|---|---:|---:|
+| 5 s | 76.11 / 77.76 | 75.79 / 77.11 |
+| 30 s | 201.01 / 201.55 | 198.15 / 213.87 |
+| 2 min | 555.51 / 596.63 | 563.53 / 677.84 |
+| 10 min | 2,464.22 / 2,547.12 | 2,365.11 / 2,425.87 |
 
-Verification: the wrapped `cargo build --release --locked --bin koett-engine`
-returned 0 in **1m 38s**. The network-disabled runner returned 0 with 124
-inference records. A separate receipt check recomputed all eight median/worst
-summaries and checked all expected counts. WAV headers verify exact durations,
-mono, 16-bit PCM. Python syntax and `git diff --check` pass. No production app
-source changed; full Swift/Rust application suites and cross-platform release
-gates were not rerun and are not implied by these checks.
+[Raw Mac receipts at the inspected source](https://github.com/oEdyb/koett/tree/99b47f3cf694a1103058b5e4a1e9c7355f64e0b7/Benchmarks/Dictionary/performance-20261105).
+Individual pairs can exceed 10%; these observations do not establish a per-run
+ceiling. Actual-target old/current timings, fresh Mac resource/feature costs and
+the resulting video verdict will replace this pending section.
 
-## Release decisions and truthful camera claims
 
-- Keep raw dictation, Parakeet v2 and drawing off as the comparison control.
-- Do not change dictionary behavior based only on speed: adoption runs a plain
-  and a hotword stream with four-path beam search. Removing one can change text.
-  Correctness needs a held-out accuracy check before a latency optimization.
-- The previous 0.32 s versus 0.60 s stop-to-saved observation is historical,
-  six runs each at load about 2. Fresh ASR numbers cannot validate that endpoint.
-- A truthful retrospective is “In my earlier five-run M5 test, Koett posted its
-  paste after a median 118.5 milliseconds.” Do not renew “four times faster” as
-  a current comparison or promise all users that latency.
-- Before release: obtain an exclusive Mac slot, identify or label the fallback
-  old build, replay identical audio into private destinations, timestamp actual
-  insertion, and close every missing acceptance row above. No regression fix PR
-  is justified without a reproduced cause and paired before/after measurements.
+## Linux isolation and source
 
-## Reproduction
+Host: **Ryzen 5 9600X, 12 logical CPUs, approximately 60 GiB RAM, CachyOS x86_64**.
+Inference uses two CPU threads and the pinned int8 Parakeet v2 model; no GPU.
+The final app adds the dictionary fix to main `e812567` (including paste fix #104).
+The repeated full workflow below first used `6e32bd2` (app
+`ed149ec10ca15bf019df877c215d4cc00f71a470474113aa2267098134542a96`).
+The model-reuse follow-up is `129c462`, app
+`a7466efe361186ba5b78b080c185e3da3e838f332d62cb4c63445453d5a77ec6`.
+Final-build repeats are separately identified; older measurements are not
+relabeled as that binary.
 
-`Benchmarks/performance_audit.py` repeats the copied model's official speech
-sample to exact 5/30/120/600-second PCM WAVs. These are dense repeated fixtures,
-not diverse human speech or live capture. Three interleaved duration runs use
-one model per dictionary condition; empty runs precede seeded runs, so thermal
-and load drift are confounders. A separate empty-dictionary process performs
-100 sequential 5-second inferences. It records model load, internal ASR timing,
-10 ms sampled RSS and hashes, while discarding stdout text. RSS near a completed
-decode is neither settled idle memory nor proof that the app leaks or does not.
+One owned invisible KWin lab contains nested niri and an Electron 43 target.
+The app is installed through its real installer into a private prefix, with
+private HOME/settings and copied models. App and target have only loopback in
+their network namespace. No installed app, user dictation, host focus, pointer
+or clipboard is used. Audit exports contain counters, synthetic test IDs and
+hashes, never private transcript-store text.
 
-```sh
-systemd-run --user --scope -p MemoryMax=12G nice -n 10 \
-  bwrap --bind / / --dev /dev --proc /proc --unshare-net -- \
-  python3 Benchmarks/performance_audit.py \
-  --binary CrossPlatform/target/release/koett-engine \
-  --model CrossPlatform/target/performance-audit-20261105/model \
-  --dictionary docs/dictionary-seed.txt \
-  --output CrossPlatform/target/performance-audit-20261105/run
-```
+The niri native clipboard/virtual-keyboard path is measured. A filtered proxy
+allows only the outer KDE screenshot service, keeping its RemoteDesktop and
+Clipboard interfaces out of the nested session. Earlier mixed-portal timings
+were **discarded**: the outer clipboard could differ from niri's and stale text
+could satisfy a weak receiver check. Every final synthetic dictation now has a
+unique literal-replacement marker; the target must receive that exact marker,
+exactly one text event, and a hash matching the retained clipboard when checked.
+This fixture marker does not change audio or acoustic decoding.
+
+The final four-length live repeat ran without another owned ASR benchmark or build. Each case records observed host load. The client inherits a 4 GiB ancestor high watermark and 6 GiB maximum; the separate root agent budget can impose further limits. These are not unconstrained idle-host guarantees. Raw dictation is selected; optional S1-mini, Ask and media are off. No speech model or dependency pin changes.
+
+Builds and standalone probes use `CARGO_BUILD_JOBS=4`, `nice -n 10` and a 12 GiB
+scope; build/cache output is in the worktree or cache, never `/tmp`. The live
+client scope is capped at 12 GiB; the app is launched at absolute nice 10. The
+separate constrained-memory case changes only this owned scope and restores it.
+CPU percentages use **100% for one logical CPU**, not the entire 12-CPU host.
+
+## Linux full app: Stop to real target text
+
+Final model-reuse app, three measured trials per length:
+
+| Audio | Control to capture-ready median / worst ms | Stop to target median / worst ms | Recording CPU median / worst % |
+|---|---|---|---|
+| 5 s | 41.38 / 50.86 | 367.11 / 404.69 | 3.90 / 4.70 |
+| 30 s | 41.29 / 52.12 | 179.42 / 221.23 | 11.22 / 11.26 |
+| 120 s | 52.39 / 53.15 | 206.24 / 210.00 | 11.96 / 12.10 |
+| 600 s | 50.64 / 53.08 | 280.75 / 288.70 | 12.33 / 12.36 |
+
+Earlier shared candidate V1 under changing host/ancestor pressure (retained):
+
+| Audio | Stop to target median / worst ms | Observed 1-minute load range |
+|---|---|---|
+| 5 s | 373.22 / 737.85 | 0.56–13.57 |
+| 30 s | 204.25 / 250.10 | 0.63–8.87 |
+| 120 s | 204.69 / 229.95 | 0.92–2.10 |
+| 600 s | 273.17 / 18,521.47 | 0.66–14.67 |
+
+
+The 5/30/120 s public WAVs play through the private PipeWire sink into real CPAL
+capture. For ten minutes, the 600 s source continues until the app's hard limit;
+the app's timestamp identifies the automatic Stop. Audio playback can lag wall
+time under load, so this is a 600 s live capture, not proof that every source
+frame played before cutoff. Exact 600 s audio is separately covered by file ASR.
+No manual Stop time after an already completed automatic paste is accepted.
+
+## Feature cost, startup and resources
+
+| 5 s case | Stop to text median / worst ms | Drawing surfaces ready median / worst ms | Image to text median / worst ms | Recording CPU median / worst % |
+|---|---|---|---|---|
+| Drawing off | 367.11 / 404.69 | — | — | 3.90 / 4.70 |
+| Drawing on, no ink | 356.69 / 393.31 | 143.35 / 168.15 | — | 4.15 / 4.32 |
+| One drawing | 729.61 / 743.90 | 182.44 / 187.36 | 288.35 / 296.42 | 5.45 / 5.64 |
+| One pin | 729.73 / 765.23 | 128.53 / 163.28 | 263.97 / 264.34 | 5.50 / 5.51 |
+
+Dictionary live comparison: one warm-up then three measured takes per list, empty block followed by the public 20-term seed block:
+
+| Terms | Stop to target median / worst ms |
+|---|---|
+| 0 | 328.10 / 328.64 |
+| 20 | 358.22 / 412.75 |
+
+Drawing readiness means `drawing-status` has created surfaces, not measured first screen paint. One stroke/pin is made while recording, before WAV playback. These are single-image cases, not complex multi-monitor canvases. Both PNGs were decoded and visually checked; the next plain take removed the image offer.
+
+| Fresh GUI process metric | Three-run observation |
+|---|---|
+| Launch to engine ready, median / worst ms | 985.23 / 1,004.41 |
+| Idle CPU median / worst % (two-second samples) | 0.50 / 0.50 |
+| Idle RSS median / worst KiB | 1,104,752.00 / 1,126,664.00 |
+
+
+Three F8/F9 cycles through the private desktop and compositor binding passed: press-to-capture-ready median / worst **193.35 / 209.06 ms**; Stop-key-to-target **463.68 / 501.02 ms**. These include the Python input bridge, compositor dispatch and CLI IPC, so they are upper bounds rather than physical-key latency. The fixture does not measure the default portal shortcut; the release audit owns that platform gate.
+
+Copied-model load: three fresh CLI processes per condition, warm filesystem cache, same 5 s WAV, absolute nice 10. The recognizer/VAD timer excludes cache preparation; peak RSS includes the following decode. These are not cold disk measurements.
+
+| Engine | Terms | Model load median / worst ms | Maximum process peak RSS KiB |
+|---|---|---|---|
+| Original Linux engine | 0 | 908.80 / 914.10 | 1103984 |
+| Original Linux engine | 20 | 885.40 / 888.60 | 1138316 |
+| Final model-reuse engine | 0 | 890.80 / 897.00 | 1089256 |
+| Final model-reuse engine | 20 | 873.50 / 893.80 | 1088320 |
+
+No general RAM reduction is inferred from this table.
+
+| Logical file content | Bytes |
+|---|---|
+| Original installed-style fixture bundle | 275473457 |
+| Original app binary | 55247512 |
+| Final audited installed-style fixture bundle | 276422359 |
+| Final app binary | 55697672 |
+| Copied v2 model, VAD and sample | 662073040 |
+| Copied compact CTC model | 132576354 |
+| Rebuilt checked fixture bundle | 276423806 |
+| Rebuilt app binary | 55698080 |
+
+These are content bytes, not unique allocated blocks; copied models can share reflink blocks. The model tree includes the VAD, token file, official sample and verification metadata, but no generated BPE vocabulary. Optional models/runtimes outside these paths are excluded.
+
+## Dictionary regression: cause, fix and accuracy
+
+The old implementation encoded the same segment twice in one two-stream batch.
+The near-doubling appears when the first term enables it, not from dictionary
+size alone. The reviewed extension shares one encoder result between a greedy
+base and four-path trie-biased decoding, adopting only supported dictionary
+terms. It keeps one model resident when the list becomes empty or populated.
+
+Final same-clip results, 210 synthetic clips / 162 expected terms: raw **49**,
+spelling **61**, old acoustic **115**, shared **115**, with identical recovered
+occurrences for the acoustic methods. Shared adds **6.82%** aggregate time over
+spelling and uses **44.02% less time** than legacy. There are no added false
+terms, worsened negatives or lost ordinary words against greedy. The old beam
+base had slightly lower negative WER (0.16% versus greedy/shared 0.28%); this is
+not a claim of better ordinary-word accuracy than old beam decoding.
+
+![Dictionary processing time](../Benchmarks/Performance/2026-11/dictionary-cpu.png)
+
+| Exact audio | Empty median / worst ms | Shared median / worst ms | Legacy median / worst ms | Added median |
+|---|---|---|---|---|
+| 5 s | 141.25 / 141.81 | 154.64 / 158.19 | 289.93 / 290.45 | 9.47% |
+| 30 s | 798.77 / 803.17 | 882.03 / 887.75 | 1,533.00 / 1,544.56 | 10.42% |
+| 120 s | 3,271.46 / 3,275.45 | 3,559.17 / 3,583.41 | 6,148.43 / 6,151.25 | 8.79% |
+| 600 s | 16,495.34 / 16,544.50 | 17,740.57 / 17,844.31 | 30,984.94 / 31,153.91 | 7.55% |
+
+One warm-up plus three rotating measured pairs; production transcription and
+spelling included. Absolute nice 10 and loopback-only networking were recorded.
+The 30 s cell slightly exceeds 10%. Per-clip overhead p50/p90/p99/max is
+7.24/9.68/13.83/17.78%; added time median/max is 6.60/16.82 ms, with one inference
+per method per clip. The corpus was used during development, with no untouched
+human-speech holdout.
+
+Earlier candidate V1 probes remain relevant limits: under load 17.76–19.13,
+30 s added **15.18%**; a 2,000-term list added **22.56%** at 5 s. Those are not
+relabelled as final-build measurements. A single biased stream was rejected:
+118/162 terms, but four damaged negatives and eleven lost ordinary words.
+
+Compact CTC stays spelling-only: **45/162** versus **111/162** with the bounded
+v2 sidecar plus spelling (66 lost recovered occurrences). An 18.59 s sidecar
+probe added 126.3% and returned raw after its deadline. Mac loses 56 recovered
+occurrences when its separate encoder is disabled: **117 → 61/162**. These
+tradeoffs are explicit, not acoustic-equivalent post-correction claims.
+
+[Research, rejected methods, scaling and source receipts](dictionary-latency-2026-11.md)
+cover current sherpa hotword tries, CTC word spotting, FluidAudio's
+VocabularyBoostingSession and shipping text-correction precedent. No pin or
+speech-model default changed. Packaging rejects a missing/stale reviewed native
+receipt; developer builds without the capability use logged spelling fallback.
+v3 and Windows/ARM64 seeded-transducer execution remain unmeasured here.
+
+## Live robustness and pressure
+
+A passed delivery means exactly one fresh target insertion, not a latency pass.
+One earlier ten-minute trial took **18,521.47 ms** after Stop under host load
+14.67 and observed ancestor memory throttling. Its three-run median was 273.17 ms.
+This slow tail is retained, not discarded as an outlier. The private client
+inherits an ancestor 4 GiB high watermark and 6 GiB maximum; setting its own
+12 GiB maximum does not remove those limits.
+
+The V1 candidate grew to **2,187,368 KiB RSS** after dictionary clear/refill and its 2 GiB maximum plus 768 MiB high watermark caused two OOM kills. Final-build six empty/populated live takes stayed at **1,393,148 → 1,393,148 KiB RSS**. The identical both-limits case survived but failed the idle check; the separate 2 GiB hard-limit-only case pasted in **405.05 ms**, without new OOM events. Conditions differ, so this is not a passing identical-condition responsiveness A/B.
+
+All **100 live five-second dictations** reached the target once with the correct per-case marker. Stop-to-target median / worst: **359.81 / 414.74 ms**. First-ten / last-ten median sampled app RSS: **1,458,928 / 1,458,928 KiB**. This is bounded evidence over this run, not a claim that no longer-duration leak can exist. Ten rapid start/cancel cycles passed; the later CPU-test dictations demonstrate that recording recovered. Private store counts match **151 expected / 151 saved** results in the main matrix and CPU tail. Only row counts were queried; no text columns were read/exported. Failed WAV count: 0. A later rebuilt binary (`b49fb0bf600a4dfaed03e8f298dfcdd29bc1c3a1b10be749906aa8b011b2fe1a`) passed seven further actual-target cases, including drawing/pin images and a following plain take. Its three warm 5 s results were **346.26 / 396.39 ms** median / worst; total private saved count became **158**, exactly expected. Runtime dictation code is unchanged since `129c462`; subsequent source changes concern packaging, tests and documentation. The long-run numbers remain attached to their original app hash.
+
+| Controlled 5 s load | Stop to target median / worst ms |
+|---|---|
+| Immediately before load | 369.11 / 380.02 |
+| Eight CPU workers, absolute nice 10 verified | 444.19 / 587.81 |
+
+The 768 MiB high-watermark test failed its 60-second idle check through severe throttling; no dictation started and no OOM occurred. The app answered idle after limits were restored. The separate 2 GiB hard-maximum/no-swap/no-high-watermark case passed. Limits were restored in `finally`. All long and soak sessions used cached local models in a loopback-only namespace; normal dictation and target delivery worked offline.
+
+An earlier offline-only soak also completed 100 inferences, median 146.25 ms,
+worst 162.5 ms, with equal first/last-ten median sampled RSS of 1,100,732 KiB.
+It is retained as earlier engine evidence, not substituted for the live soak.
+
+## Release gate and truthful camera claims
+
+Linux-only measured claim: with the 20-term starter dictionary, three warm five-second takes on the rebuilt binary pasted in 346.26 ms median / 396.39 ms worst through the private target. No new M5 old/current speed claim is supported until its comparison is complete.
+
+Do not renew the historical 4.1× Wispr comparison. The old endpoints were unequal and no new competitor benchmark was performed. Linux ten-minute timings include ASR during recording and an automatic hard stop; do not present file-ASR times as Stop latency. The 30 s dictionary median is 10.42% above empty and the large-list/loaded probes exceed 10%; no strict universal ceiling is supported.
+
+The historical Mac image-to-text measurements were 177–200 ms normally and
+1.668–1.673 s in the no-new-read fallback. Keep them historical unless the Mac
+comparison above supplies fresh equivalent measurements. Drawing did not exist
+in the filmed baseline, so its cost is added functionality rather than proof
+that old plain dictation regressed.
+
+Source changes: [Mac default #105](https://github.com/oEdyb/koett/pull/105), [shared encoder #108](https://github.com/oEdyb/koett/pull/108), [model reuse and packaging #109](https://github.com/oEdyb/koett/pull/109). This report: [#102](https://github.com/oEdyb/koett/pull/102). Merge/CI/release ownership remains external to this audit; no merge, install into the user prefix, tag or release was performed.
+
+## Verification and reproduction
+
+The final rebased Linux source passed **426 Rust library tests** (22 optional
+tests ignored), then **all four real-model hotword tests** separately, format,
+Clippy and the release build. Python native-build/patch/provenance, workflow pins,
+notice and inventory checks passed. The copied native source patch is tested
+against its pinned header and for idempotence/refusal of changed source.
+
+Local Windows checks were attempted and cannot complete: native Windows
+archives and MSVC `lib.exe` are absent. Windows native compilation and runtime
+remain CI gates; no local Windows result is claimed. Swift results belong to
+the Mac comparison above. CI results are not claimed here.
+
+Public file-ASR receipts: [original before-fix run](../Benchmarks/Performance/2026-11/linux-asr.json),
+[dictionary method receipts](../Benchmarks/Dictionary/2026-11), and
+[final model-load repeat](../Benchmarks/Performance/2026-11/linux-live/model-load.json).
+Run `python3 Benchmarks/Dictionary/2026-11/check.py` to recompute recall, medians,
+capability identity and the explicitly reported contention/large-list warnings.
+
+Final live numeric receipts are in [linux-live](../Benchmarks/Performance/2026-11/linux-live/); the earlier candidate is in [linux-live-v1](../Benchmarks/Performance/2026-11/linux-live-v1/). The [executed fixture](../Benchmarks/Performance/LinuxFixture/) explains private setup, nonce acceptance and the rejected stale-clipboard method. [Audio hashes](../Benchmarks/Performance/2026-11/linux-inputs.json) bind the live and file-ASR inputs. Recompute with `python3 Benchmarks/Performance/2026-11/check.py` and `python3 Benchmarks/Dictionary/2026-11/model-reuse/check.py`.
+
+The fixture uses dense repeated public speech; it is not a natural ten-minute
+conversation, a human accuracy certification, a multi-monitor/hotplug test or a
+claim about every desktop/editor. First-install/permissions and the broader
+platform matrix stay with the release audit. No installed user app/data was
+changed and no private transcript-store content was exported.
+
+## Decisions and remaining gates
+
+- Keep raw dictation and the existing model/dependency pins.
+- Use verified shared encoding for transducer dictionaries: the about-10% target is interpreted as a nominal median target, with the 10.42% cell and larger tails stated explicitly. It is not a strict bound.
+- Disable the slow Mac and compact-CTC acoustic paths by default; retain cheap correction and disclose the recovered-term loss.
+- Preserve first-install, permissions, hardware, v3 and unreleased-platform gates in the release audit. The private target does not stand in for every editor or physical microphone.
+- No new competitor speed ratio is supported.
