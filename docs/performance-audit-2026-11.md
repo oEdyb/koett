@@ -326,7 +326,7 @@ comparison above supplies fresh equivalent measurements. Drawing did not exist
 in the filmed baseline, so its cost is added functionality rather than proof
 that old plain dictation regressed.
 
-Source changes: [Mac default #105](https://github.com/oEdyb/koett/pull/105), [Mac menu cache #110](https://github.com/oEdyb/koett/pull/110), [shared encoder #108](https://github.com/oEdyb/koett/pull/108), [model reuse and packaging #109](https://github.com/oEdyb/koett/pull/109). This report: [#102](https://github.com/oEdyb/koett/pull/102). Merge/CI/release ownership remains external to this audit; no merge, install into the user prefix, tag or release was performed.
+Source changes: [Mac default #105](https://github.com/oEdyb/koett/pull/105), [Mac menu cache #110](https://github.com/oEdyb/koett/pull/110), [shared encoder #108](https://github.com/oEdyb/koett/pull/108), [model reuse and packaging #109](https://github.com/oEdyb/koett/pull/109). This report: [#102](https://github.com/oEdyb/koett/pull/102). Merge/CI/release ownership remains external to this audit; no pull request merge, install into the user prefix, tag or release was performed.
 
 ## Verification and reproduction
 
@@ -364,3 +364,20 @@ changed and no private transcript-store content was exported.
 - Include the Mac default-off and menu-cache changes plus the Linux shared-encoder/model-reuse changes in the release candidate after required CI and review gates. The audit does not merge or publish them.
 - Keep silence detection enabled; the dense-clip VAD cost is measured and the final menu cache has not demonstrated restored release parity.
 - No new competitor speed ratio is supported.
+
+## Branch refresh after the Mac merge
+
+Main `c2eb0a6` contains #105 and the earlier #107 audio-setup fix; #110 was not
+merged at the refresh. #108 is now `24a863f`; #109 is `4cb5275`. Both conflicts
+were confined to the same `docs/feature-parity.md` row: the resolution retains
+Mac default-off acoustic boosting, Linux shared encoding and the unmeasured-v3
+qualification. Their CrossPlatform trees are byte-identical to the previously
+reviewed/tested `bd94ea1` and `f1aad2f`, respectively.
+
+Normal checks ran separately on both refreshed branches: 426 library tests
+passed (21 ignored on #108, 22 on #109), `cargo fmt --check`, Clippy with warnings
+denied and locked release build all passed. No ignored/model/latency benchmark
+was run. These are correctness/build checks under the PC's later concurrent
+release-worker/Windows-guest load, not new performance measurements. New-head CI
+must complete; the earlier six green CI checks belong to the previous heads.
+Merge order is #108, then #109, then this report (#102).
