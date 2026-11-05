@@ -402,6 +402,9 @@ fn run(
             if result == -1 {
                 return Err("Windows message loop failed".into());
             }
+            if tab_from_multiline(hwnd, &message) {
+                continue;
+            }
             if !IsDialogMessageW(hwnd, &message).as_bool() {
                 let _ = TranslateMessage(&message);
                 DispatchMessageW(&message);
@@ -1316,8 +1319,124 @@ fn timestamp(milliseconds: i64) -> String {
         .unwrap_or_default()
 }
 
+// Multiline EDIT requests Tab as text even inside IsDialogMessage. These are
+// form fields: Tab/Shift+Tab must reach the next action, including in History.
+fn tab_from_multiline(window: HWND, message: &MSG) -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        GetKeyState, SetFocus, VK_CONTROL, VK_MENU, VK_SHIFT, VK_TAB,
+    };
+    if message.message != WM_KEYDOWN || message.wParam.0 != VK_TAB.0 as usize {
+        return false;
+    }
+    unsafe {
+        if GetKeyState(VK_CONTROL.0 as i32) < 0 || GetKeyState(VK_MENU.0 as i32) < 0 {
+            return false;
+        }
+        let mut class = [0u16; 16];
+        let length = GetClassNameW(message.hwnd, &mut class);
+        if length != 4
+            || !String::from_utf16_lossy(&class[..4]).eq_ignore_ascii_case("Edit")
+            || GetWindowLongPtrW(message.hwnd, GWL_STYLE) & ES_MULTILINE as isize == 0
+        {
+            return false;
+        }
+        if let Ok(next) = GetNextDlgTabItem(
+            window,
+            Some(message.hwnd),
+            GetKeyState(VK_SHIFT.0 as i32) < 0,
+        ) {
+            let _ = SetFocus(Some(next));
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn multiline_tab_reaches_the_next_enabled_form_action() {
+        use super::*;
+        unsafe {
+            let parent = CreateWindowExW(
+                Default::default(),
+                w!("STATIC"),
+                w!("Form"),
+                WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                0,
+                0,
+                320,
+                200,
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            let edit = CreateWindowExW(
+                Default::default(),
+                w!("EDIT"),
+                w!("Text"),
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP | WINDOW_STYLE(ES_MULTILINE as u32),
+                0,
+                0,
+                100,
+                40,
+                Some(parent),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            let _disabled = CreateWindowExW(
+                Default::default(),
+                w!("BUTTON"),
+                w!("Disabled"),
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_DISABLED,
+                0,
+                50,
+                100,
+                30,
+                Some(parent),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            let button = CreateWindowExW(
+                Default::default(),
+                w!("BUTTON"),
+                w!("Save"),
+                WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+                0,
+                90,
+                100,
+                30,
+                Some(parent),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            let message = MSG {
+                hwnd: edit,
+                message: WM_KEYDOWN,
+                wParam: WPARAM(9),
+                ..MSG::default()
+            };
+            assert!(tab_from_multiline(parent, &message));
+            assert_eq!(
+                windows::Win32::UI::Input::KeyboardAndMouse::GetFocus(),
+                button
+            );
+            let letter = MSG {
+                wParam: WPARAM(65),
+                ..message
+            };
+            assert!(!tab_from_multiline(parent, &letter));
+            DestroyWindow(parent).unwrap();
+        }
+    }
     use super::*;
     use crate::history::HistoryRecord;
 

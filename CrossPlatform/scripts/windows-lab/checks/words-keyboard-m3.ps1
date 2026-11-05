@@ -4,8 +4,8 @@ $cases=[Collections.Generic.List[object]]::new();$steps=[Collections.Generic.Lis
 function KC([IntPtr]$w,[string]$id){[Windows.Automation.AutomationElement]::FromHandle($w).FindFirst([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::AutomationIdProperty),$id))}
 function Tabs([string]$name,[IntPtr]$w,[string[]]$required){
  Activate-LabEditor $w;$seen=@()
- for($i=0;$i-lt22;$i++){[Windows.Forms.SendKeys]::SendWait('{TAB}');Start-Sleep -Milliseconds 80;$e=[Windows.Automation.AutomationElement]::FocusedElement;$seen+=@{id=$e.Current.AutomationId;name=$e.Current.Name;type=$e.Current.ControlType.ProgrammaticName}}
- $ids=@($seen|ForEach-Object id);$missing=@($required|Where-Object {$_-notin$ids})
+ for($i=0;$i-lt22;$i++){[Windows.Forms.SendKeys]::SendWait('{TAB}');Start-Sleep -Milliseconds 80;$e=[Windows.Automation.AutomationElement]::FocusedElement;$parents=@();$parent=$e;for($j=0;$j-lt3-and$parent;$j++){$parent=[Windows.Automation.TreeWalker]::ControlViewWalker.GetParent($parent);if($parent){$parents+=$parent.Current.AutomationId}};$seen+=@{id=$e.Current.AutomationId;name=$e.Current.Name;type=$e.Current.ControlType.ProgrammaticName;class=$e.Current.ClassName;ancestor_ids=$parents}}
+ $ids=@($seen|ForEach-Object {$_.id;$_.ancestor_ids});$missing=@($required|Where-Object {$_-notin$ids})
  $cases.Add(@{case=$name;passed=($missing.Count-eq0);missing=$missing;navigation=$seen})
  $steps.Add((Get-LabWindowStep $name $w))
 }
@@ -24,6 +24,6 @@ try{
  $running=$null-ne(Get-Process Narrator -ErrorAction SilentlyContinue)
 }finally{
  $fix=[LabDriver]::ByTitle('Koett Fix a word');if($fix-ne[IntPtr]::Zero){$null=[LabDriver]::PostMessage($fix,0x10,[IntPtr]::Zero,[IntPtr]::Zero)}
- if(!$already){Get-Process Narrator -ErrorAction SilentlyContinue|Stop-Process}
+ # Narrator runs with UIAccess; guest Win+Ctrl+Enter closes it after the check.
 }
 @{passed=($running-and@($cases|Where-Object {!$_.passed}).Count-eq0);narrator_running_during_navigation=$running;scope='Native keyboard/UIA exposure with Narrator running; spoken pronunciation is not independently transcribed';cases=$cases;artifact=Get-LabArtifact;steps=$steps}

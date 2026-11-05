@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {
+      "status": "could not save C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json: Access is denied. (os error 5)",
+      "case": "formatter-settings-denial-preserves-raw-and-reaps-candidate",
+      "children": 0,
+      "passed": true
+    },
+    {
+      "status": "Raw active: S1-mini setup cancelled",
+      "case": "formatter-cancel-preserves-raw-and-reaps-candidate",
+      "before_cancel": "Checking S1-mini\u2026",
+      "children": 0,
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Latest\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 4924,
+    "sha256": "B70ECF4FE49D2E955B97A8EE49C592703E7275B7DAA982AD3C7ED49E7A7C4089"
+  },
+  "passed": true
+}

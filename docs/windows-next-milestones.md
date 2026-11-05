@@ -114,3 +114,18 @@ before clipboard/paste/history. It keeps original ASR text and reuses the
 existing empty-result clipboard-preservation guard. A focused Windows test
 covers original/raw preservation, no cascading and empty output. Linux/Mac code
 is untouched by this fix; the linked WAV/empty-result re-run remains required.
+
+Additional guest gates passed: full-search History export/raw Copy/legacy
+fallback re-run, missing formatting runtime, denied formatter settings writes
+and setup cancellation, all with preserved Raw mode/child cleanup. Narrator
+navigation found multiline EDIT consumed Tab; native form navigation is now
+explicit for Tab/Shift+Tab (other editing/modifier keys keep native behavior).
+A rapid UIA selection could adopt an everyday form before its warning refreshed;
+Add now requires the current warning to have been presented. Native Windows
+regression tests cover both fixes; linked execution is still required.
+
+Post-main native verification: 431 tests passed, 22 ignored, strict Clippy,
+release build, formatting/diff and 10 inventory/16 native-builder/8 workflow-pin
+checks passed. Windows all-target metadata Clippy passed for the latest fixes;
+this is compilation, not execution. Swift/AppKit SDK checks are not available
+on this Linux host. No physical hardware or broad accuracy benchmark is claimed.

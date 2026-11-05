@@ -252,6 +252,12 @@ impl Editor {
             LIST if notification == LBN_SELCHANGE as u16 => self.selection(w),
             ADD if self.pending.is_none() => {
                 let p = self.selected(w).ok_or("Select a suggestion")?;
+                let index = unsafe { SendMessageW(w.list, LB_GETCURSEL, None, None) }.0;
+                let warn_first = needs_warning(p.everyday, index, self.last_selection);
+                self.selection(w);
+                if warn_first {
+                    return Err("Review the everyday-word warning, then choose Add anyway".into());
+                }
                 let mut edit = Settings::edit()?;
                 edit.settings.dictionary = crate::dictionary::add_form(
                     &edit.settings.dictionary,
@@ -283,8 +289,21 @@ impl Editor {
     }
 }
 
+fn needs_warning(everyday: bool, index: isize, presented: Option<(isize, bool)>) -> bool {
+    everyday && presented != Some((index, false))
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn everyday_adoption_requires_the_current_warning_to_be_presented() {
+        assert!(super::needs_warning(true, 2, None));
+        assert!(super::needs_warning(true, 2, Some((0, false))));
+        assert!(super::needs_warning(true, 2, Some((2, true))));
+        assert!(!super::needs_warning(true, 2, Some((2, false))));
+        assert!(!super::needs_warning(false, 2, None));
+    }
+
     #[test]
     fn dictionary_and_corrections_match_the_swift_parity_fixture() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(concat!(

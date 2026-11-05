@@ -11,6 +11,8 @@ function Scale-To([int]$percent){
 }
 function Snapshot([string]$label,[IntPtr]$w,[int]$width,[int]$height,[int]$percent,[int]$light){
  Activate-LabEditor $w;$null=[LabDriver]::PostMessage($w,0x31A,[IntPtr]::Zero,[IntPtr]::Zero);Start-Sleep -Milliseconds 250
+ $root=[Windows.Automation.AutomationElement]::FromHandle($w)
+ foreach($combo in $root.FindAll([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::ControlTypeProperty),([Windows.Automation.ControlType]::ComboBox)))){$e=$combo.GetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern);if($e.Current.ExpandCollapseState-eq[Windows.Automation.ExpandCollapseState]::Expanded){$e.Collapse()}}
  $r=[LabDriver]::RectOf($w);$dpi=[LabDriver]::GetDpiForWindow($w)
  $cases.Add(@{case=$label;percent=$percent;light=$light;dpi=$dpi;rect=$r;passed=($dpi-eq96*$percent/100-and$r[2]-$r[0]-eq$width*$percent/100-and$r[3]-$r[1]-eq$height*$percent/100)})
  $steps.Add((Get-LabWindowStep ($label+'-'+$percent+'-'+$(if($light){'light'}else{'dark'})) $w))
