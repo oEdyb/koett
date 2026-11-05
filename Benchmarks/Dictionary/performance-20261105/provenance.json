@@ -21,5 +21,8 @@
     "120s.wav": "13543ee16e4821861839eb8408131f678699b8d52a8e01be9a730ba281572367",
     "600s.wav": "267950119d39aff345f4ce5e9f5519fa1f73bf06009972751c797a76a533a48a"
   },
-  "fixtureSHA256VerifiedInGuest": true
+  "fixtureSHA256VerifiedInGuest": true,
+  "installedHostAppSourceReadOnly": "9707d70",
+  "installedHostAppInternalVersionReadOnly": "0.1.1",
+  "installedHostAppNotBenchmarkTarget": true
 }

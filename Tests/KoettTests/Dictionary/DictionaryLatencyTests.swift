@@ -1,5 +1,6 @@
 import FluidAudio
 import Foundation
+import Synchronization
 @testable import Koett
 import XCTest
 
@@ -11,6 +12,8 @@ final class DictionaryLatencyTests: XCTestCase {
         let milliseconds: Double
         let text: String
         let lateRescoreMilliseconds: Double
+        let spellingMilliseconds: Double
+        let disabledCallbackMilliseconds: Double
     }
 
     func testWarmPairedLatency() async throws {
@@ -51,14 +54,24 @@ final class DictionaryLatencyTests: XCTestCase {
                 for mode in modes {
                     let start = ContinuousClock.now
                     let result: ASRResult
+                    let callbackCost = Mutex<Double>(0)
                     if mode == "ctc" {
                         result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector, boost: booster.boost)
                     } else if mode == "default" {
-                        result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector, boost: defaultBooster.boost)
+                        result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector, boost: { text, timings, samples in
+                            let started = ContinuousClock.now
+                            let value = await defaultBooster.boost(text: text, timings: timings, samples: samples)
+                            let duration = ContinuousClock.now - started
+                            callbackCost.withLock { $0 = Double(duration.components.seconds) * 1_000 + Double(duration.components.attoseconds) / 1e15 }
+                            return value
+                        })
                     } else {
                         result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector)
                     }
+                    let spellingStart = ContinuousClock.now
                     let text = mode == "off" ? result.text : DictionarySpelling.apply(result.text, entries: entries)
+                    let spellingTime = ContinuousClock.now - spellingStart
+                    let spellingMS = mode == "off" ? 0 : Double(spellingTime.components.seconds) * 1_000 + Double(spellingTime.components.attoseconds) / 1e15
                     let elapsed = ContinuousClock.now - start
                     let ms = Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15
                     let drainStart = ContinuousClock.now
@@ -68,7 +81,7 @@ final class DictionaryLatencyTests: XCTestCase {
                     }
                     let drained = ContinuousClock.now - drainStart
                     let drainMS = late ? Double(drained.components.seconds) * 1_000 + Double(drained.components.attoseconds) / 1e15 : 0
-                    rows.append(Row(seconds: seconds, pair: pair, mode: mode, milliseconds: ms, text: text, lateRescoreMilliseconds: drainMS))
+                    rows.append(Row(seconds: seconds, pair: pair, mode: mode, milliseconds: ms, text: text, lateRescoreMilliseconds: drainMS, spellingMilliseconds: spellingMS, disabledCallbackMilliseconds: callbackCost.withLock { $0 }))
                     let encoder = JSONEncoder()
                     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
                     try encoder.encode(rows).write(to: URL(fileURLWithPath: output), options: .atomic)

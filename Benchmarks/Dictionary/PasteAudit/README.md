@@ -34,3 +34,24 @@ No app code, ASR, pasteboard delivery, paste guards or storage is stubbed here.
 This checks a simple native text target, not a browser, T3, rich image paste, the
 physical Option keys or a human microphone. VM Core ML results are not native
 M5/ANE latency and cannot reproduce the video's absolute number.
+
+## Generation-guarded validation
+
+`GuardedTarget.swift` and `GuardedStopDriver.swift` supersede the initial receipt
+probe for acceptance. Run the driver with `<marked.wav> <expected spoken marker>`.
+The target never adds a marker to text. The marker must survive real playback,
+capture, ASR, clipboard delivery and `NSTextView.paste`.
+
+Before each capture, the driver clears the receiver and puts a fresh UUID sentinel
+on the guest clipboard. It writes a unique request ID, then records and stops as
+before. A receipt is accepted only when its request ID matches, its timestamp is
+after Stop, clipboard changeCount advanced, clipboard and receiver text are exactly
+equal, both contain the expected spoken marker, and the sentinel is absent.
+SHA-256 of the played WAV is checked against the frozen fixture manifest.
+
+`prepare-guarded.py` uses offline macOS speech synthesis for four public test
+phrases and prepends each to the existing corpus fixture, truncating the tail to
+preserve its length. Old/current use identical bytes for each length. The first
+24 unguarded timings remain exploratory and must not be presented as acceptance
+numbers. The file-ASR dictionary evaluation does not use clipboard plumbing and
+is unaffected.

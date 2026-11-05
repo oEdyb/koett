@@ -115,6 +115,15 @@ of recall on this corpus. Spelling still adds 12/162 versus no dictionary.
 Raw synthetic transcripts and score receipts are in `performance-20261105/`.
 No private dictionary, transcript history or microphone recording was read.
 
+### Additional 120 s variability check
+
+Nine extra paired runs had whole-pipeline differences from −25.69% to +14.10%
+(median −0.79%). The timed disabled callback itself took 0.0011–0.0020 ms;
+spelling took 0.612–1.431 ms. Combined correction cost was **0.613–1.433 ms**.
+All nine default outputs matched the original spelling-only output. The whole
+ASR timing variation is therefore reported separately from measured correction
+cost; no per-recording latency ceiling is claimed. Raw data: `variance-*.json`.
+
 ## Decision
 
 Disable acoustic boosting by default; keep spelling, sounds-like forms and exact
@@ -125,14 +134,21 @@ tradeoff. Both original requirements were not achieved.
 
 ## Old/current actual-target paste
 
-In progress: 19 actual inserted-text receipts are saved. All v0.1.1 trials are
-complete. Its 5/30/120/600 s medians are 1429.140, 1544.347, 5650.981 and
-26519.603 ms. The 600 s repetitions are 29292.883, 26519.603 and 25363.956 ms.
+**Acceptance validation is being rerun with explicit generation guards.** The
+first 24 trials had actual `NSTextView` insertion receipts, but did not record
+clipboard generation or require a spoken marker. They are now **provisional,
+not acceptance performance results**. All 24 raw values, including the 93.317 s
+outlier, are retained in `provisional-unguarded-paste.json`; do not use their
+medians as the final comparison.
 
-Current 5 s repetitions are 1193.840, 1252.939 and 1221.464 ms; 30 s repetitions
-are 2043.145, 1699.995 and 1617.347 ms. Its first 120 s trial is 5108.346 ms.
-Current long trials remain in progress; no complete comparison is claimed yet.
-These are target text-insertion receipts, not app event-post times.
+Fresh fixtures prepend a public synthetic spoken marker, retain exact 5/30/120/600 s
+lengths and use identical SHA-256-verified WAVs for the two builds. Each capture
+has a unique request UUID. The driver first puts an unrelated UUID sentinel on
+the **guest** clipboard, then requires a later clipboard generation, exact equality
+between clipboard and receiver text, the expected audio-derived marker in both,
+and a target timestamp after the actual Stop event. No marker is appended by the
+app or receiver. App code remains unchanged. One fresh paired validation per
+length is running; this establishes freshness, not a latency distribution.
 
 The disposable Tart guest runs macOS 15.7.7, four virtual CPUs and 8 GiB on the
 same M5 host. BlackHole routes the exact synthetic WAV through the actual microphone
@@ -146,9 +162,15 @@ cache. Startup/model loading are outside the warm timer. The timer begins before
 posting stop-key-down and ends at completed text insertion, including real recorder
 stop and delivery. It does not measure compositor rendering, human microphone
 accuracy, onboarding, physical keys, T3/browser editors or rich-image paste.
+The tested Parakeet capture paths do not auto-stop at 600 s: v0.1.1 uses
+`AVAudioRecorder.record()` without a duration, and current `MicrophoneRecorder`
+has no time cap. The 600 s storage bound in `NemotronStreamingAdapter` is not
+used by this Parakeet test. The driver therefore posts the actual manual stop.
 No app pipeline method is replaced. VM Core ML performance is not native M5
 performance, so these values cannot validate a native 118.5 ms historical claim.
 
+The installed host app identifies source `9707d70` (internal version 0.1.1);
+it was neither replaced nor used as the benchmark target.
 Current test source is `85dde51`; public v0.1.1 is identified by the released ZIP's
 SHA-256 and executable UUID in the provenance receipt. Current is a private ad hoc
 signed bundle; test grants have no code requirement and are not signature-upgrade
