@@ -203,6 +203,13 @@ missing automatic paste cannot be assigned a Mac cause from absent evidence.
 The held-modifier wait and visible Not pasted recovery are already implemented;
 physical Option and pill-stop trials in T3/Chrome still need runtime verification.
 
+- [PR #114](https://github.com/oEdyb/koett/pull/114), merged as
+  `c43b4e5ffb0821c1b40e63e71de57e5ade1545c7`: disconnected control clients can
+  raise SIGPIPE while Koett replies. Each socket send now suppresses SIGPIPE,
+  returning an error. A closed-peer regression reproduces the old process exit;
+  438 tests (15 skips), release/static gates pass. PR #111 rebased on this fix
+  passes 439 tests (15 skips), release/static gates.
+
 ## Release gate
 
 **GO** only for the measured signature/notarization, isolated launch,
@@ -219,5 +226,6 @@ chat Cmd+V and draft state, physical Option/Shift gestures, real microphone/devi
 handoff, monthly ScreenCaptureKit prompt, mixed-DPI/multiple displays and player
 controls. No such interaction is claimed by the generated fixtures.
 
-Follow-up requests after this audit: Mac drawing undo, actual permission
-capability checks, and measured image-to-text paste timing, each in its own change.
+Follow-up requests: correct the stale comparison claim that Mac lacks undo
+(the actual menu/CLI and pin undo pass), add explicit actual permission capability
+checks, and finish image-to-text timing validation, each in its own change.
