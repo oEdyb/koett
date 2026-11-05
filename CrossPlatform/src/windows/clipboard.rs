@@ -33,49 +33,14 @@ pub(super) struct Bundle {
 
 impl Bundle {
     pub fn image_first(&self, owner: HWND) -> Result<Offer, String> {
-        let png_format = image_formats()?.0;
-        let marker_format = unsafe { RegisterClipboardFormatW(w!("Koett.DrawingOffer")) };
-        if marker_format == 0 {
-            return Err("Could not register clipboard ownership marker".into());
-        }
-        let mut marker = [0; 16];
-        marker[..4].copy_from_slice(&std::process::id().to_le_bytes());
-        marker[4..12].copy_from_slice(&NEXT.fetch_add(1, Ordering::Relaxed).to_le_bytes());
-        let prepared = Memory::new(&marker)?;
-        unsafe { OpenClipboard(Some(owner)) }.map_err(|e| e.to_string())?;
-        let open = Open;
-        unsafe { EmptyClipboard() }.map_err(|e| e.to_string())?;
-        prepared.give(marker_format)?;
-        for format in [png_format, CF_DIBV5.0.into()] {
-            // A successful delayed offer returns NULL too; inspect last-error.
-            unsafe {
-                windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(
-                    0,
-                ));
-                let _ = SetClipboardData(format, None);
-            }
-            let error = unsafe { windows::Win32::Foundation::GetLastError() };
-            if error.0 != 0 {
-                return Err(format!("Could not offer drawing: {}", error.0));
-            }
-        }
-        drop(open);
-        let offer = Offer {
+        deferred(
             owner,
-            sequence: unsafe { GetClipboardSequenceNumber() },
-            marker,
-        };
-        DELAYED.with(|slot| {
-            *slot.borrow_mut() = Some(Delayed {
-                offer,
-                formats: vec![
-                    (png_format, self.png.clone()),
-                    (CF_DIBV5.0.into(), self.dib.clone()),
-                ],
-                reader: Vec::new(),
-            })
-        });
-        Ok(offer)
+            vec![
+                (image_formats()?.0, self.png.clone()),
+                (CF_DIBV5.0.into(), self.dib.clone()),
+            ],
+            Condition::Any,
+        )
     }
     pub fn new(image: &Pixels, text: String) -> Result<Self, String> {
         validate_text(&text)?;
@@ -98,6 +63,9 @@ impl Bundle {
     }
     pub fn copy_if_unchanged(&self, owner: HWND, sequence: u32) -> Result<Offer, String> {
         self.publish(owner, Condition::Sequence(sequence))
+    }
+    pub fn restore(&self, offer: Offer) -> Result<Offer, String> {
+        self.publish(offer.owner, Condition::Offer(offer))
     }
     fn publish(&self, owner: HWND, condition: Condition) -> Result<Offer, String> {
         let formats = image_formats()?;
@@ -144,6 +112,9 @@ pub(super) fn render(format: u32) {
         {
             state.offer.sequence = unsafe { GetClipboardSequenceNumber() };
             let pid = reader.unwrap_or(0);
+            if std::env::var_os("KOETT_CLIPBOARD_TRACE").is_some() {
+                eprintln!("drawing_clipboard_read format={format} pid={pid}");
+            }
             if state.reader.len() < 8 && !state.reader.iter().any(|(seen, _)| *seen == pid) {
                 state.reader.push((pid, Instant::now()));
             }
@@ -156,15 +127,13 @@ pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>
             .as_ref()
             .filter(|state| state.offer.marker == offer.marker)
             .map_or((offer, None, false), |state| {
-                (
-                    state.offer,
-                    state
-                        .reader
-                        .iter()
-                        .find(|(pid, _)| *pid == target_pid)
-                        .map(|(_, at)| *at),
-                    !state.reader.is_empty(),
-                )
+                let read = state
+                    .reader
+                    .iter()
+                    .find(|(pid, _)| *pid == target_pid)
+                    .or_else(|| state.reader.iter().find(|(pid, _)| *pid == 0))
+                    .map(|(_, at)| *at);
+                (state.offer, read, read.is_some())
             })
     })
 }
@@ -201,6 +170,19 @@ impl Offer {
             &[(CF_UNICODETEXT.0.into(), &utf16(text)?)],
             Condition::Offer(self),
         )
+    }
+    pub fn replace_with_delayed_text(self, text: &str) -> Result<Offer, String> {
+        deferred(
+            self.owner,
+            vec![(CF_UNICODETEXT.0.into(), utf16(text)?)],
+            Condition::Offer(self),
+        )
+    }
+    pub fn unchanged(self) -> bool {
+        unsafe {
+            GetClipboardOwner().ok() == Some(self.owner)
+                && GetClipboardSequenceNumber() == self.sequence
+        }
     }
     fn current(self) -> bool {
         unsafe {
@@ -345,6 +327,64 @@ enum Condition {
     Offer(Offer),
 }
 
+fn deferred(
+    owner: HWND,
+    formats: Vec<(u32, Vec<u8>)>,
+    expected: Condition,
+) -> Result<Offer, String> {
+    let marker_format = unsafe { RegisterClipboardFormatW(w!("Koett.DrawingOffer")) };
+    if marker_format == 0 {
+        return Err("Could not register clipboard ownership marker".into());
+    }
+    let mut marker = [0; 16];
+    marker[..4].copy_from_slice(&std::process::id().to_le_bytes());
+    marker[4..12].copy_from_slice(&NEXT.fetch_add(1, Ordering::Relaxed).to_le_bytes());
+    let prepared = Memory::new(&marker)?;
+    let mut open = None;
+    for _ in 0..10 {
+        if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
+            open = Some(Open);
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let open = open.ok_or("Could not open the Windows clipboard")?;
+    let changed = match expected {
+        Condition::Any => false,
+        Condition::Sequence(sequence) => (unsafe { GetClipboardSequenceNumber() }) != sequence,
+        Condition::Offer(offer) => !offer.current(),
+    };
+    if changed {
+        return Err("Clipboard changed; the newer copy was preserved".into());
+    }
+    unsafe { EmptyClipboard() }.map_err(|e| e.to_string())?;
+    prepared.give(marker_format)?;
+    for (format, _) in &formats {
+        unsafe {
+            windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(0));
+            let _ = SetClipboardData(*format, None);
+        }
+        let error = unsafe { windows::Win32::Foundation::GetLastError() };
+        if error.0 != 0 {
+            return Err(format!("Could not offer clipboard data: {}", error.0));
+        }
+    }
+    drop(open);
+    let offer = Offer {
+        owner,
+        sequence: unsafe { GetClipboardSequenceNumber() },
+        marker,
+    };
+    DELAYED.with(|slot| {
+        *slot.borrow_mut() = Some(Delayed {
+            offer,
+            formats,
+            reader: Vec::new(),
+        });
+    });
+    Ok(offer)
+}
+
 fn publish(owner: HWND, formats: &[(u32, &[u8])], expected: Condition) -> Result<Offer, String> {
     let mut marker = [0u8; 16];
     marker[..4].copy_from_slice(&std::process::id().to_le_bytes());
@@ -440,6 +480,37 @@ pub(super) fn lab_bundle(owner: HWND, action: usize) -> Result<(), String> {
 mod tests {
     use super::*;
     #[test]
+    fn rendered_receipts_ignore_known_observers_and_accept_anonymous_reads() {
+        let offer = Offer {
+            owner: HWND::default(),
+            sequence: 0,
+            marker: [1; 16],
+        };
+        let first = Instant::now();
+        DELAYED.with(|slot| {
+            *slot.borrow_mut() = Some(Delayed {
+                offer,
+                formats: vec![],
+                reader: vec![(42, first)],
+            });
+        });
+        let (_, read, requested) = rendered(offer, 7);
+        assert_eq!(read, None);
+        assert!(!requested);
+        DELAYED.with(|slot| {
+            slot.borrow_mut().as_mut().unwrap().reader.push((0, first));
+        });
+        let (_, read, requested) = rendered(offer, 7);
+        assert_eq!(read, Some(first));
+        assert!(requested);
+        let target = first + Duration::from_millis(20);
+        DELAYED.with(|slot| {
+            slot.borrow_mut().as_mut().unwrap().reader.push((7, target));
+        });
+        assert_eq!(rendered(offer, 7).1, Some(target));
+        forget_delayed();
+    }
+    #[test]
     fn native_bundle_round_trip_and_newer_copy_preservation() {
         use windows::Win32::System::Com::*;
         use windows::Win32::UI::WindowsAndMessaging::*;
@@ -485,8 +556,33 @@ mod tests {
                 assert!(!unsafe { GetClipboardData(format) }.unwrap().is_invalid());
             }
         }
+        let text = offer.replace_with_delayed_text("staged ÅÄÖ").unwrap();
+        assert!(unsafe { IsClipboardFormatAvailable(image_formats().unwrap().0) }.is_err());
+        unsafe { OpenClipboard(Some(owner)) }.unwrap();
+        {
+            let _open = Open;
+            render(CF_UNICODETEXT.0.into());
+            assert!(
+                !unsafe { GetClipboardData(CF_UNICODETEXT.0.into()) }
+                    .unwrap()
+                    .is_invalid()
+            );
+        }
+        let (text, read, _) = rendered(text, std::process::id());
+        assert!(read.is_some());
+        let combined = bundle.restore(text).unwrap();
+        for format in [
+            image_formats().unwrap().0,
+            image_formats().unwrap().1,
+            CF_DIBV5.0.into(),
+            CF_UNICODETEXT.0.into(),
+        ] {
+            assert!(unsafe { IsClipboardFormatAvailable(format) }.is_ok());
+        }
+        let text = combined.replace_with_delayed_text("second text").unwrap();
         let sequence = unsafe { GetClipboardSequenceNumber() };
         copy_text(owner, "new user copy").unwrap();
+        assert!(bundle.restore(text).is_err());
         assert!(bundle.copy_if_unchanged(owner, sequence).is_err());
         assert!(
             offer

@@ -816,7 +816,7 @@ fn run(
                         }
                         #[cfg(target_os = "windows")]
                         CaptureSource::WavFixture { path, .. } => {
-                            MicrophoneRecorder::start_wav_fixture(path)
+                            crate::audio::windows_capture::start_wav_proxy(path)
                         }
                     })
                     .and_then(|(started, audio_chunks)| {

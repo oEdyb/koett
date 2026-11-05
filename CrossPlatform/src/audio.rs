@@ -595,7 +595,7 @@ fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<Strin
     let id = selected
         .parse::<cpal::DeviceId>()
         .map_err(|e| format!("Invalid microphone ID: {e}"))?;
-    let devices = input_devices()?;
+    let devices = input_devices_native()?;
     if devices.iter().any(|device| device.id == id.to_string()) {
         return Ok(Some(selected.into()));
     }
@@ -609,6 +609,13 @@ fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<Strin
 }
 
 pub fn input_devices() -> Result<Vec<InputDevice>, String> {
+    #[cfg(target_os = "windows")]
+    return windows_capture::devices();
+    #[cfg(not(target_os = "windows"))]
+    input_devices_native()
+}
+
+fn input_devices_native() -> Result<Vec<InputDevice>, String> {
     cpal::default_host()
         .input_devices()
         .map_err(|e| e.to_string())?

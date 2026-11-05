@@ -5,6 +5,7 @@ mod desktop;
 mod draw_input;
 mod drawing;
 mod drawing_render;
+mod foreground;
 pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
@@ -22,6 +23,7 @@ mod pixels;
 use std::cell::{Cell, RefCell};
 use std::mem::size_of;
 use std::ptr;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 use std::time::{Duration, Instant};
@@ -60,11 +62,11 @@ use windows::Win32::UI::Shell::{
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
     DestroyWindow, DispatchMessageW, GetClientRect, GetCursorPos, GetForegroundWindow, GetMessageW,
-    GetWindowThreadProcessId, HWND_TOPMOST, IDI_APPLICATION, KillTimer, LoadIconW, MA_NOACTIVATE,
-    MF_CHECKED, MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage,
-    RegisterClassExW, RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL,
-    SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow,
-    TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
+    GetWindowThreadProcessId, HWND_TOPMOST, IDI_APPLICATION, IsWindowVisible, KillTimer, LoadIconW,
+    MA_NOACTIVATE, MF_CHECKED, MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW,
+    PostQuitMessage, RegisterClassExW, RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE,
+    SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos,
+    ShowWindow, TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
     WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
     WM_MOUSEACTIVATE, WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW,
     WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP,
@@ -97,6 +99,7 @@ const MENU_RECORD: usize = 9;
 const MENU_WORDS: usize = 10;
 const MENU_DRAW: usize = 11;
 const MENU_UNDO_DRAW: usize = 12;
+const MENU_PASTE_LAST: usize = 13;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -117,6 +120,7 @@ struct WindowsApp {
     settings: Settings,
     status: AppStatus,
     paste_target: Option<PasteTarget>,
+    last_target: Option<PasteTarget>,
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     last_render_error: Cell<Option<Instant>>,
@@ -139,7 +143,8 @@ struct WindowsApp {
     pill_pressed: bool,
     pending_result: Option<EngineUpdate>,
     staged: Option<StagedPaste>,
-    last_bundle: Option<clipboard::Bundle>,
+    last_bundle: Option<Rc<clipboard::Bundle>>,
+    clipboard_restore: Option<ClipboardRestore>,
     draw_pointer: POINT,
     capture_lab: Option<PendingCapture>,
     capture_pending: bool,
@@ -162,6 +167,14 @@ struct StagedPaste {
     raw: Option<String>,
     saved: Option<bool>,
     text_shortcut: crate::settings::PasteShortcut,
+}
+
+struct ClipboardRestore {
+    bundle: Rc<clipboard::Bundle>,
+    offer: clipboard::Offer,
+    target_pid: u32,
+    started: Instant,
+    posted: bool,
 }
 
 pub fn run() -> Result<(), String> {
@@ -220,6 +233,7 @@ pub fn run() -> Result<(), String> {
             AppStatus::Starting
         },
         paste_target: None,
+        last_target: None,
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
         last_render_error: Cell::new(None),
@@ -243,6 +257,7 @@ pub fn run() -> Result<(), String> {
         pending_result: None,
         staged: None,
         last_bundle: None,
+        clipboard_restore: None,
         draw_pointer: POINT::default(),
         capture_lab: None,
         capture_pending: false,
@@ -415,6 +430,16 @@ unsafe fn run_message_loop(
         return Err("could not start the Koett event timer".to_string());
     }
     drop(app);
+    let _foreground = match foreground::Tracker::start() {
+        Ok(tracker) => Some(tracker),
+        Err(error) => {
+            eprintln!("Koett: {error}");
+            app_cell
+                .borrow_mut()
+                .notify_drawing("Tray Paste unavailable. Use Paste in the pill.");
+            None
+        }
+    };
     if let Some(error) = startup_warning {
         show_fatal_error(&format!(
             "Koett started, but start at login could not be enabled: {error}"
@@ -611,7 +636,10 @@ unsafe extern "system" fn window_proc(
             }
             WM_HOTKEY if wparam.0 == HOTKEY_ID as usize => {
                 if let Ok(mut app) = app_cell.try_borrow_mut()
-                    && matches!(app.status, AppStatus::Ready | AppStatus::Recording)
+                    && matches!(
+                        app.status,
+                        AppStatus::Ready | AppStatus::Recording | AppStatus::Error(_)
+                    )
                 {
                     let mode = app.settings.recording_mode;
                     if let Some(intent) = app.shortcut_latch.press(mode) {
@@ -953,11 +981,13 @@ impl WindowsApp {
             }
             3 => {
                 self.status = AppStatus::Ready;
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab result".into();
                 Phase::Done(self.last_transcript.clone())
             }
             4 => {
                 self.status = AppStatus::Ready;
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab recovery".into();
                 Phase::NotPasted { saved: true }
             }
@@ -984,6 +1014,7 @@ impl WindowsApp {
                 return;
             }
             12 => {
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab media result".into();
                 self.pill_state
                     .set(Phase::Done(self.last_transcript.clone()), now);
@@ -1480,28 +1511,62 @@ impl WindowsApp {
         }
     }
 
+    fn refresh_paste_preferences(&mut self) {
+        if let Ok(settings) = Settings::load() {
+            self.settings.paste_shortcut = settings.paste_shortcut;
+            self.settings.image_paste_shortcuts = settings.image_paste_shortcuts;
+        }
+    }
+    fn can_repeat_paste(&self) -> bool {
+        !self.last_transcript.is_empty()
+            && self.staged.is_none()
+            && self.pending_result.is_none()
+            && !self.capture_pending
+            && matches!(self.status, AppStatus::Ready | AppStatus::Error(_))
+    }
+    fn post_image(
+        &mut self,
+        bundle: &Rc<clipboard::Bundle>,
+        target: PasteTarget,
+    ) -> Result<clipboard::Offer, String> {
+        if foreground_paste_target() != Some(target) {
+            return Err("Focus changed; drawing was not pasted".into());
+        }
+        let offer = bundle.image_first(self.hwnd)?;
+        if let Err(error) = paste_offered(
+            target,
+            offer,
+            paste_chord::image(&self.settings, target.pid),
+        ) {
+            self.clipboard_restore = Some(ClipboardRestore {
+                bundle: Rc::clone(bundle),
+                offer,
+                target_pid: target.pid,
+                started: Instant::now(),
+                posted: false,
+            });
+            return Err(error);
+        }
+        Ok(offer)
+    }
     fn repeat_paste(&mut self) {
-        if self.staged.is_some() {
+        if !self.can_repeat_paste() {
             return;
         }
+        self.refresh_paste_preferences();
         let saved = match self.pill_state.phase {
             pill_state::Phase::NotPasted { saved } => saved,
             _ => true,
         };
         let result = self
-            .paste_target
+            .last_target
             .ok_or_else(|| "No external paste target".to_string())
             .and_then(|target| {
                 if foreground_paste_target() != Some(target) {
                     return Err("Focus changed; not pasted".into());
                 }
-                if let Some(bundle) = &self.last_bundle {
-                    let offer = bundle.image_first(self.hwnd)?;
-                    paste_offered(
-                        target,
-                        offer,
-                        paste_chord::image(&self.settings, target.pid),
-                    )?;
+                if let Some(bundle) = self.last_bundle.clone() {
+                    let offer = self.post_image(&bundle, target)?;
                     self.staged = Some(StagedPaste {
                         offer,
                         target,
@@ -1559,7 +1624,48 @@ impl WindowsApp {
             copy_text(self.hwnd, &self.last_transcript)
         }
     }
+    fn poll_clipboard_restore(&mut self) {
+        let Some(restore) = self.clipboard_restore.as_ref() else {
+            return;
+        };
+        let (offer, read, _) = clipboard::rendered(restore.offer, restore.target_pid);
+        if !offer.unchanged() {
+            self.clipboard_restore = None;
+            return;
+        }
+        if restore.posted && !paste_timing::text_ready(restore.started, read, Instant::now()) {
+            return;
+        }
+        let restore = self
+            .clipboard_restore
+            .take()
+            .expect("clipboard restoration exists");
+        if let Err(error) = restore.bundle.restore(offer)
+            && offer.unchanged()
+        {
+            eprintln!("Koett: Clipboard recovery failed: {error}");
+            self.notify_drawing(
+                "Image and text could not be kept on the clipboard. Use tray Copy.",
+            );
+            if matches!(self.pill_state.phase, pill_state::Phase::Done(_))
+                && self
+                    .last_bundle
+                    .as_ref()
+                    .is_some_and(|bundle| Rc::ptr_eq(bundle, &restore.bundle))
+            {
+                self.pill_state.set(
+                    pill_state::Phase::Error {
+                        message: "Clipboard unavailable · use tray Copy".into(),
+                        rescue: true,
+                    },
+                    self.clock.elapsed().as_millis() as u64,
+                );
+                self.update_overlay();
+            }
+        }
+    }
     fn poll_staged(&mut self) {
+        self.poll_clipboard_restore();
         let Some(staged) = self.staged.as_ref() else {
             return;
         };
@@ -1570,12 +1676,27 @@ impl WindowsApp {
             return;
         }
         let staged = self.staged.take().expect("staged paste exists");
+        self.clipboard_restore = self.last_bundle.as_ref().map(|bundle| ClipboardRestore {
+            bundle: Rc::clone(bundle),
+            offer,
+            target_pid: staged.target.pid,
+            started: Instant::now(),
+            posted: false,
+        });
         let result = if foreground_paste_target() != Some(staged.target) {
             Err("Focus changed; text was not pasted".into())
         } else {
             offer
-                .replace_with_text(&staged.text)
-                .and_then(|offer| paste_offered(staged.target, offer, staged.text_shortcut))
+                .replace_with_delayed_text(&staged.text)
+                .and_then(|offer| {
+                    let result = paste_offered(staged.target, offer, staged.text_shortcut);
+                    if let Some(restore) = self.clipboard_restore.as_mut() {
+                        restore.offer = offer;
+                        restore.started = Instant::now();
+                        restore.posted = result.is_ok();
+                    }
+                    result
+                })
         };
         let result = result.and_then(|()| {
             if image_requested {
@@ -1614,12 +1735,14 @@ impl WindowsApp {
         raw: Option<&str>,
         words: &[crate::annotation::TimedWord],
     ) {
+        self.refresh_paste_preferences();
         let frames = self
             .drawing
             .as_mut()
             .map(drawing::Board::take_frames)
             .unwrap_or_default();
         if !frames.is_empty() {
+            let raw = raw.or(Some(text));
             let anchors = frames
                 .iter()
                 .map(|frame| frame.start_ms.min(frame.end_ms) as f32 / 1000.0)
@@ -1644,23 +1767,16 @@ impl WindowsApp {
                 .and_then(|image| clipboard::Bundle::new(&image, summary.clone()));
             match result {
                 Ok(bundle) => {
+                    let bundle = Rc::new(bundle);
+                    self.last_bundle = Some(Rc::clone(&bundle));
                     self.last_transcript = summary.clone();
                     let result = self
                         .paste_target
                         .ok_or_else(|| "No external paste target".to_string())
                         .and_then(|target| {
-                            if foreground_paste_target() != Some(target) {
-                                return Err("Focus changed; drawing was not pasted".into());
-                            }
-                            let offer = bundle.image_first(self.hwnd)?;
-                            paste_offered(
-                                target,
-                                offer,
-                                paste_chord::image(&self.settings, target.pid),
-                            )?;
-                            Ok((offer, target))
+                            self.post_image(&bundle, target)
+                                .map(|offer| (offer, target))
                         });
-                    self.last_bundle = Some(bundle);
                     match result {
                         Ok((offer, target)) => {
                             self.staged = Some(StagedPaste {
@@ -1713,6 +1829,7 @@ impl WindowsApp {
         self.status = AppStatus::Ready;
         let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
         self.last_transcript = text.to_string();
+        self.last_target = self.paste_target;
         let failed = delivery_error.is_some();
         let storage = history::append_transcript_with_raw_resilient(model, text, raw);
         let saved = storage.is_ok();
@@ -1782,6 +1899,7 @@ impl WindowsApp {
     }
 
     fn show_menu(&mut self, anchor: Option<POINT>) {
+        let menu_target = foreground::menu_target();
         unsafe {
             let Ok(menu) = CreatePopupMenu() else { return };
             let status = wide(&format!("Status: {}", status_text(&self.status)));
@@ -1864,6 +1982,16 @@ impl WindowsApp {
             );
             let _ = AppendMenuW(
                 menu,
+                if !self.can_repeat_paste() {
+                    MF_STRING | MF_DISABLED
+                } else {
+                    MF_STRING
+                },
+                MENU_PASTE_LAST,
+                w!("Paste last transcript"),
+            );
+            let _ = AppendMenuW(
+                menu,
                 if self.status == AppStatus::Recording {
                     MF_STRING
                 } else {
@@ -1919,9 +2047,24 @@ impl WindowsApp {
                     None,
                 )
                 .0 as usize;
+                if selected == 0 {
+                    let current = GetForegroundWindow();
+                    if current == self.hwnd || foreground::is_tray(current) {
+                        let _ = Shell_NotifyIconW(NIM_SETFOCUS, &self.tray);
+                    }
+                } else if !matches!(
+                    selected,
+                    MENU_CHANGE_SHORTCUT | MENU_SETTINGS | MENU_WORDS | MENU_OPEN_HISTORY
+                ) && let Some(target) = menu_target
+                    && external_paste_target(target.hwnd) == Some(target)
+                {
+                    let current = GetForegroundWindow();
+                    if current == self.hwnd || foreground::is_tray(current) {
+                        let _ = SetForegroundWindow(target.hwnd);
+                    }
+                }
                 self.handle_menu(selected);
             }
-            let _ = Shell_NotifyIconW(NIM_SETFOCUS, &self.tray);
             let _ = DestroyMenu(menu);
         }
     }
@@ -1955,6 +2098,7 @@ impl WindowsApp {
                     show_fatal_error(&e);
                 }
             }
+            MENU_PASTE_LAST => self.repeat_paste(),
             MENU_RECORD => self.toggle(),
             MENU_PAUSE => {
                 if let Some(levels) = &self.levels {
@@ -2312,8 +2456,13 @@ fn shortcut_is_down(shortcut: Shortcut) -> bool {
 fn external_paste_target(hwnd: HWND) -> Option<PasteTarget> {
     let mut pid = 0;
     unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
-    (!hwnd.is_invalid() && pid != 0 && pid != std::process::id())
-        .then_some(PasteTarget { hwnd, pid })
+    (!hwnd.is_invalid()
+        && pid != 0
+        && pid != std::process::id()
+        && unsafe { IsWindowVisible(hwnd) }.as_bool()
+        && unsafe { windows::Win32::UI::WindowsAndMessaging::GetShellWindow() } != hwnd
+        && !foreground::is_tray(hwnd))
+    .then_some(PasteTarget { hwnd, pid })
 }
 
 fn foreground_paste_target() -> Option<PasteTarget> {

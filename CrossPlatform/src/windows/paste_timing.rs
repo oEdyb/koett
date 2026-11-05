@@ -1,8 +1,10 @@
 use std::time::{Duration, Instant};
 
 pub(super) fn text_ready(started: Instant, target_read: Option<Instant>, now: Instant) -> bool {
-    target_read.is_some_and(|at| now.saturating_duration_since(at) >= Duration::from_millis(200))
-        || now.saturating_duration_since(started) >= Duration::from_millis(1500)
+    match target_read {
+        Some(at) => now.saturating_duration_since(at.max(started)) >= Duration::from_millis(200),
+        None => now.saturating_duration_since(started) >= Duration::from_millis(1500),
+    }
 }
 
 #[cfg(test)]
@@ -29,5 +31,26 @@ mod tests {
         ));
         assert!(text_ready(start, None, start + Duration::from_millis(1500)));
         assert!(!text_ready(start, Some(read), start));
+        assert!(!text_ready(
+            read,
+            Some(start),
+            read + Duration::from_millis(199)
+        ));
+        assert!(text_ready(
+            read,
+            Some(start),
+            read + Duration::from_millis(200)
+        ));
+        let late = start + Duration::from_millis(1490);
+        assert!(!text_ready(
+            start,
+            Some(late),
+            start + Duration::from_millis(1500)
+        ));
+        assert!(text_ready(
+            start,
+            Some(late),
+            late + Duration::from_millis(200)
+        ));
     }
 }

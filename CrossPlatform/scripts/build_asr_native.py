@@ -69,16 +69,21 @@ def validate_onnx_cpp_abi(target, symbols):
         raise ValueError(f"ONNX Runtime C++ ABI mismatch for {target}: expected {expected}, found {sorted(actual)}")
 
 
-def configure_command(source, build, target, generator=None):
+def configure_command(source, build, target, generator=None, toolchain=None):
     command = ["cmake", "-S", str(source), "-B", str(build)]
     if "windows-msvc" in target:
         if not target.startswith("x86_64-"):
             raise ValueError(f"unsupported Windows native target: {target}")
-        if generator:
+        if toolchain:
+            command.extend(["-G", generator or "Ninja"])
+        elif generator:
             command.extend(["-G", generator])
-        command.extend(["-A", "x64"])
+        if not toolchain:
+            command.extend(["-A", "x64"])
     else:
         command.extend(["-G", generator or "Ninja"])
+    if toolchain:
+        command.append(f"-DCMAKE_TOOLCHAIN_FILE={Path(toolchain).resolve()}")
     return command + [f"-D{key}={value}" for key, value in native_options(target).items()]
 
 
@@ -211,7 +216,7 @@ def stage_libraries(build, root, target):
     if context.exists() and sha256(context) == PATCHED_SHA256:
         core = 'sherpa-onnx-core.lib' if 'windows' in target else 'libsherpa-onnx-core.a'
         api = 'sherpa-onnx-c-api.lib' if 'windows' in target else 'libsherpa-onnx-c-api.a'
-        if b'koett_context' not in (destination / core).read_bytes():
+        if not shared_context_compiled((destination / core).read_bytes(), target):
             raise ValueError('shared-context source was not compiled into the native core archive')
         receipt['shared_context_sha256'] = PATCHED_SHA256
         capability.write_bytes(f'koett-context-v1\npatch={PATCHED_SHA256}\nsource={SOURCE_COMMIT}\ntarget={target}\ncore={files[core]}\napi={files[api]}\n'.encode())
@@ -221,21 +226,44 @@ def stage_libraries(build, root, target):
     print(json.dumps(receipt, indent=2))
 
 
+def shared_context_compiled(contents, target):
+    if b'koett_context' in contents:
+        return True
+    if target != 'x86_64-pc-windows-msvc':
+        return False
+    # clang-cl folds the exact 13-byte comparison into two overlapping x64
+    # movabs constants instead of emitting a string. Keep requiring both halves
+    # in the same short instruction sequence; the source checksum is separate.
+    prefix = b'\x48\xb9koett_co'
+    suffix = b'\x48\xba_context'
+    offset = contents.find(prefix)
+    while offset != -1:
+        if suffix in contents[offset + len(prefix):offset + 48]:
+            return True
+        offset = contents.find(prefix, offset + len(prefix))
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path,
                         default=Path(__file__).resolve().parents[1] / "native-build")
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 2, 8))
     parser.add_argument("--generator", help="CMake generator; Windows defaults to installed Visual Studio")
+    parser.add_argument("--target", help="Explicit Rust target for a cross build")
+    parser.add_argument("--toolchain", type=Path, help="CMake toolchain file for a cross build")
     args = parser.parse_args()
     host = subprocess.check_output(["rustc", "-vV"], text=True)
-    target = next(line.removeprefix("host: ") for line in host.splitlines()
+    host_target = next(line.removeprefix("host: ") for line in host.splitlines()
                   if line.startswith("host: "))
+    target = args.target or host_target
+    if target != host_target and not args.toolchain:
+        parser.error("a cross target requires --toolchain")
     root = args.root.resolve()
     root.mkdir(parents=True, exist_ok=True)
     source = prepare_source(root)
     build = root / "build"
-    configure_with_download_retries(configure_command(source, build, target, args.generator))
+    configure_with_download_retries(configure_command(source, build, target, args.generator, args.toolchain))
     subprocess.run(["cmake", "--build", str(build), "--target", "sherpa-onnx-c-api",
                     "--config", "Release", "--parallel", str(args.jobs)], check=True)
     stage_libraries(build, root, target)

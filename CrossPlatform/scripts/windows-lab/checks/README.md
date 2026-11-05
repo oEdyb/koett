@@ -46,3 +46,36 @@ Elevated start requests guest UAC consent; do not provide host input or add a
 privileged Koett helper. Always restore readonly attributes and shut down.
 The 1fa2169 artifact intentionally fails elevated-test and combined-failure;
 the rebuilt fixes must pass those gates. See the current M2 receipt for scope.
+
+## M4 local Windows checks
+
+Use the approved local MSVC SDK/CRT and `scripts/windows_local_build.py` to link
+locally. The guest must remain off during host builds. Install the application
+and targeted native test executable into the guest-only lab directory, verify
+their SHA-256 hashes, and record the exact source manifest with every receipt.
+Do not substitute a compile result for a guest result.
+
+M4 checks use the concatenated `helpers.ps1` and `dictation-helpers.ps1` prefix:
+
+- `native-draw-m4.ps1` runs only impacted native groups, with bounded waits and
+  an actual exit code per group. Set its test-executable path for the lab build.
+- `microphone-opening-m4.ps1` requires `--microphone-open-timeout-lab` and the
+  Ctrl+Shift+Space toggle shortcut. It retries default/named input twice each,
+  checks visible timeout and cleanup, and restores the guest settings file.
+- `microphone-preview-timeout-m4.ps1` uses that same fault launch. It checks
+  enumeration, preview retry and duplicate-command suppression in real Settings.
+- `paste-shortcuts-m4.ps1` uses normal `--desktop-lab`, with Edge open. It invokes
+  native choices through UIA and checks text/default/per-app/inherited values.
+  It restores preferences even after failure.
+
+Serve `fixtures/draw-pin-m4.html` only through the private guest transfer server.
+The normal receiver records image and text as separate events. A case beginning
+`copy-native` leaves Edge's native rich paste enabled; use it to verify actual
+HTML/image/text insertion instead of the fixture's synthetic insertion path.
+Only test fixture contents belong in these receipts. Use real private RFB/QMP
+keyboard input for physical draw-key checks; SendInput must not arm drawing.
+
+Keep Chrome explicitly untested until its terms are approved. Edge is the
+approved Chromium browser gate. Physical microphone, HDR and cable hotplug
+claims require separate hardware verification. Restore settings/history/last
+result hashes and display layout, then shut down the guest after testing.

@@ -1,5 +1,6 @@
 mod correction;
 mod microphone;
+mod paste_shortcuts;
 pub(super) mod processing;
 #[path = "words.rs"]
 mod words;
@@ -697,9 +698,16 @@ impl Window {
                 "Read selected text at pins",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 43,
-                [24, 412, 488, 32],
+                [24, 412, 264, 32],
             )?;
             self.theme.apply_checkbox(selected);
+            self.control(
+                w!("BUTTON"),
+                "Paste shortcuts…",
+                WS_TABSTOP,
+                44,
+                [300, 412, 212, 32],
+            )?;
             unsafe {
                 SendMessageW(
                     selected,
@@ -1062,6 +1070,18 @@ impl Window {
                 Err(error) => super::show_fatal_error(&error),
             },
             34 => open_kind(true, false, true, HWND(self.owner as *mut _), None),
+            44 => {
+                let result = unsafe { GetDlgItem(Some(self.hwnd), 44) }
+                    .map_err(|e| e.to_string())
+                    .and_then(|anchor| paste_shortcuts::show(self.hwnd, anchor));
+                set(
+                    self.detail,
+                    match &result {
+                        Ok(()) => "",
+                        Err(error) => error,
+                    },
+                );
+            }
             CHANGE_SHORTCUT => unsafe {
                 let _ = PostMessageW(
                     Some(HWND(self.owner as *mut _)),
@@ -1356,7 +1376,11 @@ unsafe extern "system" fn proc(
                             processing.theme(&window.theme);
                         }
                         if window.settings && !window.processing_view {
-                            window.theme.apply_checkbox(window.startup);
+                            for id in [STARTUP, 40, 43] {
+                                if let Ok(checkbox) = unsafe { GetDlgItem(Some(hwnd), id as i32) } {
+                                    window.theme.apply_checkbox(checkbox);
+                                }
+                            }
                         } else if let Ok(raw) = unsafe { GetDlgItem(Some(hwnd), SHOW_RAW as i32) } {
                             window.theme.apply_checkbox(raw);
                         }

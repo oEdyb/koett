@@ -1,5 +1,7 @@
+mod preview_proxy;
 use super::*;
 use crate::windows::formatting_job::Job;
+pub(super) use preview_proxy::Capture as Preview;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::windows::{io::AsRawHandle, process::CommandExt};
 use std::process::{Child, ChildStdout, Command, Stdio};
@@ -10,6 +12,7 @@ const HELPER: &str = "--windows-microphone-worker";
 pub(crate) struct Process {
     child: Child,
     _job: Job,
+    _lease: Arc<ReaderLease>,
 }
 impl Process {
     fn stop(&mut self) {
@@ -31,10 +34,13 @@ impl Drop for Process {
     }
 }
 static READERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-struct ReaderLease;
+struct ReaderLease(&'static std::sync::atomic::AtomicUsize);
 impl ReaderLease {
     fn take() -> Result<Self, String> {
-        READERS
+        Self::take_from(&READERS)
+    }
+    fn take_from(counter: &'static std::sync::atomic::AtomicUsize) -> Result<Self, String> {
+        counter
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
                 (n < 4).then_some(n + 1)
             })
@@ -42,12 +48,12 @@ impl ReaderLease {
                 "Windows microphone workers are still closing. Retry after the device recovers."
                     .to_string()
             })?;
-        Ok(Self)
+        Ok(Self(counter))
     }
 }
 impl Drop for ReaderLease {
     fn drop(&mut self) {
-        READERS.fetch_sub(1, Ordering::AcqRel);
+        self.0.fetch_sub(1, Ordering::AcqRel);
     }
 }
 pub(super) fn join<T>(worker: thread::JoinHandle<T>) -> Result<T, String> {
@@ -72,6 +78,7 @@ pub fn helper_requested() -> bool {
 }
 
 fn spawn(mode: &str, microphone: Option<&str>) -> Result<Process, String> {
+    let lease = Arc::new(ReaderLease::take()?);
     let mut executable = std::env::current_exe().map_err(|e| e.to_string())?;
     executable.set_file_name("koett.exe");
     let config = serde_json::to_string(&microphone).map_err(|e| e.to_string())?;
@@ -91,8 +98,15 @@ fn spawn(mode: &str, microphone: Option<&str>) -> Result<Process, String> {
         .stderr(Stdio::null())
         .spawn()
         .map_err(|e| format!("Could not start microphone worker: {e}"))?;
-    let (child, job) = job.supervise(child)?;
-    let mut process = Process { child, _job: job };
+    let mut process = Process {
+        child,
+        _job: job,
+        _lease: lease,
+    };
+    process
+        ._job
+        .attach(&process.child)
+        .map_err(|error| format!("Could not supervise microphone worker: {error}"))?;
     let input = process
         .child
         .stdin
@@ -129,7 +143,7 @@ fn ready_with_timeout<T: serde::de::DeserializeOwned + Send + 'static>(
         .stdout
         .take()
         .ok_or("Missing microphone output pipe")?;
-    let lease = ReaderLease::take()?;
+    let lease = Arc::clone(&process._lease);
     let (tx, rx) = mpsc::sync_channel(1);
     let reader = thread::spawn(move || {
         let _lease = lease;
@@ -145,9 +159,18 @@ fn ready_with_timeout<T: serde::de::DeserializeOwned + Send + 'static>(
         Err(_) => {
             process.stop();
             let _ = join(reader);
-            Err("Microphone opening timed out after 5 seconds. Choose an input and retry.".into())
+            Err("Microphone timed out. Try again.".into())
         }
     }
+}
+
+pub(super) fn devices() -> Result<Vec<InputDevice>, String> {
+    let mut process = spawn("devices", None)?;
+    let (devices, _) = ready::<Vec<(String, String)>>(&mut process)?;
+    Ok(devices
+        .into_iter()
+        .map(|(id, label)| InputDevice { id, label })
+        .collect())
 }
 
 pub(super) fn resolve(selected: Option<&str>) -> Result<Option<String>, String> {
@@ -161,8 +184,22 @@ pub(super) fn resolve(selected: Option<&str>) -> Result<Option<String>, String> 
 pub(super) fn start(
     microphone: Option<&str>,
 ) -> Result<(MicrophoneRecorder, Receiver<Vec<f32>>), String> {
+    start_proxy(microphone, "stream")
+}
+pub(crate) fn start_wav_proxy(
+    path: &Path,
+) -> Result<(MicrophoneRecorder, Receiver<Vec<f32>>), String> {
+    start_proxy(
+        Some(path.to_str().ok_or("WAV fixture path is not UTF-8")?),
+        "fixture",
+    )
+}
+fn start_proxy(
+    microphone: Option<&str>,
+    mode: &str,
+) -> Result<(MicrophoneRecorder, Receiver<Vec<f32>>), String> {
     let priority = preview::RecordingPriority::acquire()?;
-    let mut process = spawn("stream", microphone)?;
+    let mut process = spawn(mode, microphone)?;
     let (rate, mut output) = ready::<u32>(&mut process)?;
     if !(8_000..=384_000).contains(&rate) {
         return Err("Microphone reported an unsupported sample rate".into());
@@ -175,14 +212,24 @@ pub(super) fn start(
     let worker_stop = stop.clone();
     let worker_error = stream_error.clone();
     let (send, receive) = mpsc::channel();
-    let lease = ReaderLease::take()?;
+    let lease = Arc::clone(&process._lease);
+    let finite = mode == "fixture";
     let collector = thread::spawn(move || {
         let _lease = lease;
         let mut samples = Vec::new();
         loop {
             let chunk = read_chunk(&mut output);
             let chunk = match chunk {
-                Ok(chunk) => chunk,
+                Ok(Some(chunk)) => chunk,
+                Ok(None) => {
+                    if !finite
+                        && !worker_stop.load(Ordering::Acquire)
+                        && let Ok(mut stored) = worker_error.lock()
+                    {
+                        *stored = Some("Microphone ended before Stop".into());
+                    }
+                    break;
+                }
                 Err(error) => {
                     if !worker_stop.load(Ordering::Acquire)
                         && let Ok(mut stored) = worker_error.lock()
@@ -226,10 +273,13 @@ pub(super) fn start(
     ))
 }
 
-fn read_chunk(reader: &mut impl Read) -> Result<Vec<f32>, String> {
+fn read_chunk(reader: &mut impl Read) -> Result<Option<Vec<f32>>, String> {
     let mut count = [0; 4];
     reader.read_exact(&mut count).map_err(|e| e.to_string())?;
     let count = u32::from_le_bytes(count) as usize;
+    if count == u32::MAX as usize {
+        return Ok(None);
+    }
     if !(1..=2048).contains(&count) {
         return Err("Invalid microphone packet length".into());
     }
@@ -244,7 +294,7 @@ fn read_chunk(reader: &mut impl Read) -> Result<Vec<f32>, String> {
     if samples.iter().any(|sample| !sample.is_finite()) {
         return Err("Invalid microphone samples".into());
     }
-    Ok(samples)
+    Ok(Some(samples))
 }
 
 pub fn helper() -> Result<(), String> {
@@ -263,14 +313,42 @@ pub fn helper() -> Result<(), String> {
         )
         .map_err(|e| e.to_string());
     }
-    if mode != "stream" {
-        return Err("Unknown microphone mode".into());
+    if mode == "devices" {
+        let devices = input_devices_native().map(|devices| {
+            devices
+                .into_iter()
+                .map(|device| (device.id, device.label))
+                .collect::<Vec<_>>()
+        });
+        writeln!(
+            output,
+            "{}",
+            serde_json::to_string(&devices).map_err(|e| e.to_string())?
+        )
+        .map_err(|e| e.to_string())?;
+        return Ok(());
     }
-    let (send, receive) = mpsc::channel();
-    let opened =
-        MicrophoneRecorder::start_inner(MAX_RECORDING_DURATION, Some(send), microphone.as_deref());
-    let recorder = match opened {
-        Ok(recorder) => recorder,
+    if mode == "preview" {
+        return preview_proxy::serve(&mut output, microphone.as_deref());
+    }
+    let opened = match mode.as_str() {
+        "stream" => {
+            let (send, receive) = mpsc::channel();
+            MicrophoneRecorder::start_inner(
+                MAX_RECORDING_DURATION,
+                Some(send),
+                microphone.as_deref(),
+            )
+            .map(|recorder| (recorder, receive))
+        }
+        "fixture" => microphone
+            .as_deref()
+            .ok_or_else(|| "Missing WAV fixture".to_string())
+            .and_then(|path| MicrophoneRecorder::start_wav_fixture(Path::new(path))),
+        _ => return Err("Unknown microphone mode".into()),
+    };
+    let (recorder, receive) = match opened {
+        Ok(opened) => opened,
         Err(error) => {
             writeln!(
                 output,
@@ -299,6 +377,10 @@ pub fn helper() -> Result<(), String> {
         output.write_all(&packet).map_err(|e| e.to_string())?;
         output.flush().map_err(|e| e.to_string())?;
     }
+    output
+        .write_all(&u32::MAX.to_le_bytes())
+        .map_err(|e| e.to_string())?;
+    output.flush().map_err(|e| e.to_string())?;
     drop(recorder);
     Ok(())
 }
@@ -331,7 +413,11 @@ mod tests {
                 .spawn()
                 .unwrap();
             let (child, job) = job.supervise(child).unwrap();
-            let mut process = Process { child, _job: job };
+            let mut process = Process {
+                child,
+                _job: job,
+                _lease: Arc::new(ReaderLease::take().unwrap()),
+            };
             if script.starts_with("Start-Sleep") {
                 let start = std::time::Instant::now();
                 assert!(
@@ -352,7 +438,40 @@ mod tests {
         bytes.extend_from_slice(&f32::NAN.to_le_bytes());
         assert!(read_chunk(&mut bytes.as_slice()).is_err());
         bytes[4..].copy_from_slice(&0.25_f32.to_le_bytes());
-        assert_eq!(read_chunk(&mut bytes.as_slice()).unwrap(), [0.25]);
+        assert_eq!(read_chunk(&mut bytes.as_slice()).unwrap(), Some(vec![0.25]));
+        assert!(
+            read_chunk(&mut &u32::MAX.to_le_bytes()[..])
+                .unwrap()
+                .is_none()
+        );
         assert!(json_line::<u32>(&mut &b"123"[..]).is_err());
+    }
+    #[test]
+    fn stalled_readers_keep_the_spawn_budget_until_they_exit() {
+        static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let mut releases = Vec::new();
+        for _ in 0..4 {
+            let process_lease = Arc::new(ReaderLease::take_from(&COUNTER).unwrap());
+            let reader_lease = Arc::clone(&process_lease);
+            let (release, wait) = mpsc::channel();
+            let reader = thread::spawn(move || {
+                let _lease = reader_lease;
+                let _ = wait.recv();
+            });
+            drop(process_lease);
+            releases.push((release, reader));
+        }
+        assert!(ReaderLease::take_from(&COUNTER).is_err());
+        let (release, reader) = releases.pop().unwrap();
+        release.send(()).unwrap();
+        reader.join().unwrap();
+        let retry = ReaderLease::take_from(&COUNTER).unwrap();
+        assert!(ReaderLease::take_from(&COUNTER).is_err());
+        drop(retry);
+        for (release, reader) in releases {
+            release.send(()).unwrap();
+            reader.join().unwrap();
+        }
+        assert_eq!(COUNTER.load(Ordering::Acquire), 0);
     }
 }

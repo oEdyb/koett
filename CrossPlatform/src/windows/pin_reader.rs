@@ -57,12 +57,23 @@ impl Snapshot {
             }
             .is_ok()
                 && cloaked == 0;
-            if pid != std::process::id()
-                && visible
+            if visible
                 && unsafe { IsWindowVisible(window) }.as_bool()
                 && unsafe { GetWindowRect(window, &mut rect) }.is_ok()
                 && inside(rect, point)
             {
+                if pid == std::process::id() {
+                    let mut class = [0; 64];
+                    let count = unsafe { GetClassNameW(window, &mut class) };
+                    if !matches!(
+                        String::from_utf16_lossy(&class[..count.max(0) as usize]).as_str(),
+                        "KoettDrawingCanvas" | "KoettOverlayWindow"
+                    ) {
+                        return None;
+                    }
+                    window = unsafe { GetWindow(window, GW_HWNDNEXT) }.ok()?;
+                    continue;
+                }
                 return Some(Self {
                     hwnd: window.0 as usize,
                     pid,
@@ -135,12 +146,16 @@ impl Snapshot {
             }
             let walker = automation.ControlViewWalker()?;
             let deadline = Instant::now() + Duration::from_millis(800);
-            let mut queue = std::collections::VecDeque::from([root]);
+            let mut queue = std::collections::VecDeque::from([(root, false)]);
             let mut context = PinContext {
                 app: clean(self.app.as_deref(), TITLE_LIMIT),
                 title: clean(Some(&self.title), TITLE_LIMIT),
                 ..Default::default()
             };
+            let browser = matches!(
+                context.app.as_deref(),
+                Some("msedge" | "chrome" | "firefox")
+            );
             let mut private = false;
             let mut password = automation
                 .GetFocusedElement()
@@ -153,7 +168,7 @@ impl Snapshot {
                 });
             let mut examined = 0;
             let mut video_time = None;
-            while let Some(element) = queue.pop_front() {
+            while let Some((element, in_document)) = queue.pop_front() {
                 if examined >= 96 || Instant::now() >= deadline {
                     break;
                 }
@@ -161,22 +176,29 @@ impl Snapshot {
                 let bounds = element.CurrentBoundingRectangle()?;
                 // Failed password queries are never treated as non-password.
                 let is_password = element.CurrentIsPassword()?.as_bool();
+                let kind = element.CurrentControlType()?;
+                let document = kind == UIA_DocumentControlTypeId;
                 if is_password && inside(bounds, self.point) {
                     password = true;
                 }
                 if !is_password {
-                    let kind = element.CurrentControlType()?;
                     let name = element.CurrentName()?.to_string();
                     let id = element.CurrentAutomationId()?.to_string();
-                    if ["InPrivate", "Incognito", "Private browsing"]
-                        .iter()
-                        .any(|label| name == *label || name.starts_with(&format!("{label} (")))
+                    if browser
+                        && !in_document
+                        && ["InPrivate", "Incognito", "Private browsing"]
+                            .iter()
+                            .any(|label| name == *label || name.starts_with(&format!("{label} (")))
                         && (kind == UIA_ButtonControlTypeId || kind == UIA_TextControlTypeId)
                     {
                         private = true;
                     }
-                    if (matches!(id.as_str(), "addressEditBox" | "urlbar-input")
-                        || name == "Address and search bar")
+                    if browser
+                        && context.url.is_none()
+                        && !in_document
+                        && (document && inside(bounds, self.point)
+                            || matches!(id.as_str(), "addressEditBox" | "urlbar-input")
+                            || name == "Address and search bar")
                         && let Ok(value) = element
                             .GetCurrentPatternAs::<IUIAutomationValuePattern>(UIA_ValuePatternId)
                             .and_then(|p| p.CurrentValue())
@@ -228,7 +250,7 @@ impl Snapshot {
                         break;
                     }
                     child = walker.GetNextSiblingElement(&element).ok();
-                    queue.push_back(element);
+                    queue.push_back((element, in_document || document));
                 }
             }
             if password {
@@ -237,6 +259,8 @@ impl Snapshot {
                 context.image = None;
             }
             if private {
+                context.title = None;
+                context.image = None;
                 context.url = None;
                 context.link = None;
                 context.selection = None;
@@ -260,7 +284,9 @@ impl Snapshot {
                     "Selection unavailable"
                 });
             }
-            if let Some(url) = context.url.as_deref() {
+            if let Some(url) = context.url.as_deref()
+                && youtube_time(url, 0.0).is_some()
+            {
                 if let Some(time) = video_time.and_then(|time| youtube_time(url, time)) {
                     context.url = Some(time);
                 } else {
