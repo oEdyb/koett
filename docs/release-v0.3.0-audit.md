@@ -7,6 +7,24 @@ not acceptance of a final release. PASS applies only to the stated observation;
 NOT TESTED includes invalid or incomplete harnesses. A broken lab is not a
 product failure, and a startup test is not a complete first-install journey.
 
+## Final-candidate staging status
+
+All planned product fixes are merged, including M2/#78, performance #102/#108/
+#109, Mac #105/#110/#111/#114/#115/#116 and GNOME #117/#118. The GNOME stop-key
+fix passed all six native CI checks and review before merge. Its packaged retest
+will use the final candidate instead of another intermediate package.
+
+The source is not frozen at this staging snapshot. Merge the updated final
+changes in order (#90, this audit, then #103 version metadata), with each head
+green. M3/#113 stays outside this release. Announce the full frozen SHA immediately,
+build Mac and Linux from it, and test those exact assets. Record post-freeze
+results in separate evidence so the shared source identity cannot drift.
+
+The historical FAIL/NOT TESTED rows below retain their original candidate scope;
+the later superseding receipts identify what was fixed and verified. The final
+release remains NO-GO until final-asset acceptance, Mac readiness and the explicit
+release decision. No tag or publication is authorized by this staging report.
+
 ## Candidate identity and isolation
 
 Latest repeated clipboard/drawing checks used the release-style system-runtime
