@@ -1403,14 +1403,20 @@ async fn run_wayland(
                             let before_text = output
                                 .as_ref()
                                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-                            let result = match &output {
-                                Some(output) => {
-                                    output.deliver(&text, now, settings.paste_shortcut).await
+                            let result = if let Err(error) = &image_delivery {
+                                Err(error.clone())
+                            } else {
+                                match &output {
+                                    Some(output) => {
+                                        output.deliver(&text, now, settings.paste_shortcut).await
+                                    }
+                                    None if png.is_some() => output::deliver_sketch_text(
+                                        &text,
+                                        now,
+                                        settings.paste_shortcut,
+                                    ),
+                                    None => output::deliver(&text, now, settings.paste_shortcut),
                                 }
-                                None if png.is_some() => {
-                                    output::deliver_sketch_text(&text, now, settings.paste_shortcut)
-                                }
-                                None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             let copied = if let Some(png) = &png {
                                 settle_sketch_text(output.as_ref(), before_text).await;
@@ -1543,12 +1549,16 @@ async fn run_wayland(
             let before_text = output
                 .as_ref()
                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-            let text_delivery = match &output {
-                Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
-                None if sheet.is_some() => {
-                    output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+            let text_delivery = if let Err(error) = &image_delivery {
+                Err(error.clone())
+            } else {
+                match &output {
+                    Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                    None if sheet.is_some() => {
+                        output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+                    }
+                    None => output::deliver(&text, target, settings.paste_shortcut),
                 }
-                None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let mut delivered = image_delivery.and(text_delivery);
             if let Some(png) = &sheet {
