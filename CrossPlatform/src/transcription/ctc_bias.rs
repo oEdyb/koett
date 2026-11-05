@@ -10,7 +10,13 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub const BUDGET: Duration = Duration::from_millis(250);
+/// Base wait for the sidecar, plus an allowance per second of audio, because its
+/// decode time grows with length. Without the allowance every unit from about 6 s to
+/// 20 s paid the whole wait and then kept the raw text. The cap bounds what a slow
+/// CPU can add to one unit before falling back.
+const BUDGET: Duration = Duration::from_millis(250);
+const BUDGET_PER_SECOND: Duration = Duration::from_millis(40);
+const BUDGET_CAP: Duration = Duration::from_millis(1000);
 const LOADING: u8 = 0;
 const READY: u8 = 1;
 const BUSY: u8 = 2;
@@ -36,13 +42,20 @@ pub(super) struct Sidecar {
     dictionary: Vec<DictionaryEntry>,
 }
 
+fn budget(samples: usize, sample_rate: i32) -> Duration {
+    let seconds = samples as f64 / f64::from(sample_rate.max(1));
+    (BUDGET + BUDGET_PER_SECOND.mul_f64(seconds)).min(BUDGET_CAP)
+}
+
 pub fn status() -> &'static str {
     match WORKER.get() {
         None => "inactive; requires dictionary terms and a downloaded Parakeet v2 model",
         Some(None) => "unavailable; raw CTC fallback",
         Some(Some(worker)) => match worker.state.load(Ordering::Acquire) {
             LOADING => "loading; raw CTC fallback",
-            READY => "cached worker ready; 110M dictionary requests have a 250 ms deadline",
+            READY => {
+                "cached worker ready; 110M dictionary requests have a deadline of 250 ms to 1 s by length"
+            }
             BUSY => "busy; raw CTC fallback for overlapping requests",
             _ => "failed; raw CTC fallback until restart",
         },
@@ -67,7 +80,7 @@ impl Sidecar {
     }
 
     pub fn refine(&self, raw: &str, sample_rate: i32, samples: &[f32]) -> String {
-        let deadline = Instant::now() + BUDGET;
+        let deadline = Instant::now() + budget(samples.len(), sample_rate);
         if raw.trim().is_empty() || samples.len() > MAX_SAMPLES || sample_rate <= 0 {
             return raw.into();
         }
@@ -172,6 +185,22 @@ impl Worker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn the_budget_grows_with_audio_and_never_passes_its_cap() {
+        let at = |seconds: usize| budget(seconds * 16_000, 16_000).as_millis();
+        assert_eq!(at(0), 250);
+        assert_eq!(at(5), 450);
+        assert_eq!(at(10), 650);
+        assert_eq!(at(18), 970);
+        assert_eq!(at(20), 1000);
+        assert_eq!(at(600), 1000);
+        assert_eq!(
+            budget(16_000, 0),
+            BUDGET_CAP,
+            "an invalid rate stays bounded"
+        );
+    }
+
     #[test]
     fn late_failed_and_disconnected_results_cannot_replace_raw() {
         let (send, receive) = mpsc::channel();
