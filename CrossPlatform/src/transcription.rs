@@ -137,6 +137,21 @@ impl ParakeetTranscriber {
         dictionary: &[crate::dictionary::DictionaryEntry],
         dictionary_mode: DictionaryMode,
     ) -> Result<Self, String> {
+        let mut dictionary_mode = dictionary_mode;
+        let vocabulary = if dictionary_mode == DictionaryMode::Shared {
+            match hotwords::write_vocabulary(model_directory) {
+                Ok(path) => Some(path),
+                Err(error) => {
+                    eprintln!(
+                        "Dictionary acoustic setup unavailable; using spelling only: {error}"
+                    );
+                    dictionary_mode = DictionaryMode::Spelling;
+                    None
+                }
+            }
+        } else {
+            None
+        };
         eprintln!(
             "dictionary_mode={}",
             match dictionary_mode {
@@ -146,13 +161,18 @@ impl ParakeetTranscriber {
             }
         );
         let bias = if dictionary_mode != DictionaryMode::Spelling {
-            hotwords::Bias::new(model_directory, dictionary)?
+            hotwords::Bias::new(model_directory, dictionary)
         } else {
             None
         };
         let started = Instant::now();
-        let recognizer =
-            Self::recognizer(model_directory, threads, bias.as_ref(), dictionary_mode)?;
+        let recognizer = Self::recognizer(
+            model_directory,
+            threads,
+            bias.as_ref(),
+            dictionary_mode,
+            vocabulary.as_deref(),
+        )?;
         let vad = load_vad(model_directory)?;
         Ok(Self {
             recognizer,
@@ -177,6 +197,7 @@ impl ParakeetTranscriber {
         threads: i32,
         bias: Option<&hotwords::Bias>,
         dictionary_mode: DictionaryMode,
+        vocabulary: Option<&Path>,
     ) -> Result<OfflineRecognizer, String> {
         let tokens = required_file(model_directory, "tokens.txt")?;
 
@@ -205,11 +226,13 @@ impl ParakeetTranscriber {
             };
             config.model_config.model_type = Some("nemo_transducer".to_string());
         }
-        if let Some(bias) = bias {
-            bias.configure(&mut config)?;
-            if dictionary_mode == DictionaryMode::Shared {
-                config.decoding_method = Some("koett_context".into());
-            }
+        if dictionary_mode == DictionaryMode::Shared {
+            hotwords::configure_shared(
+                vocabulary.ok_or("Shared vocabulary was not prepared")?,
+                &mut config,
+            )?;
+        } else if let Some(bias) = bias {
+            bias.configure(model_directory, &mut config)?;
         }
         OfflineRecognizer::create(&config)
             .ok_or_else(|| "sherpa-onnx could not load the model".to_string())
@@ -239,6 +262,15 @@ fn load_vad(model_directory: &Path) -> Result<Option<VoiceActivityDetector>, Str
 }
 
 impl ParakeetTranscriber {
+    /// The selected policy, including graceful spelling-only cache fallback.
+    pub fn dictionary_mode(&self) -> &'static str {
+        match self.dictionary_mode {
+            DictionaryMode::Spelling => "spelling_only",
+            DictionaryMode::Shared => "shared_encoder",
+            DictionaryMode::Experimental => "experimental_two_stream",
+        }
+    }
+
     pub fn model_load(&self) -> Duration {
         self.model_load
     }

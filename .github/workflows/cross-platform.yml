@@ -120,6 +120,10 @@ jobs:
         run: ./scripts/check_powershell.ps1
       - name: Build ASR-only native libraries
         run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
+      - name: Require Windows shared-context native patch
+        shell: pwsh
+        run: >-
+          python -c "import json; from pathlib import Path; import sys; sys.path.insert(0, 'scripts'); from shared_context_patch import PATCHED_SHA256; receipt=json.loads(Path('native-build/build-receipt.json').read_text()); assert receipt['target']=='x86_64-pc-windows-msvc'; assert receipt['shared_context_sha256']==PATCHED_SHA256; assert ('patch='+PATCHED_SHA256+'\n') in Path('native-build/lib/koett-context.txt').read_text()"
       - name: Test
         run: cargo test --locked
       - name: Lint

@@ -31,7 +31,7 @@
   },
   "patched_files": {
     "Cargo.toml": "dbb4b9af01df49836cc202cd27fc94d5592fa434930ffce2861cd9050c6e42a5",
-    "build.rs": "67bb341a19184017dc097963b91b96a9302c382d6bda23dbfc267a30b27e697c",
-    "src/lib.rs": "6bd9e0e08457f59dab141ea0a42559b2d41bf415f2385c9578ad705dcf9df6ef"
+    "build.rs": "df15dcedb186e778d078fcf06eebdf48595feb742691025a7d43af6c82335607",
+    "src/lib.rs": "a087e8aa5c45cde1e07fb50b1873c750d2ce087d589e214ad1722bb0ec4c6de5"
   }
 }

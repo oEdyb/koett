@@ -5,6 +5,8 @@ import json
 import tempfile
 import subprocess
 import urllib.error
+
+import tarfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -18,6 +20,7 @@ from build_asr_native import (
     configure_with_download_retries,
     download_archive,
     native_options,
+    prepare_context_header,
     remove_disabled_tts_stubs,
     stage_libraries,
     validate_onnx_cpp_abi,
@@ -50,6 +53,30 @@ class AsrBuildTests(unittest.TestCase):
                 with self.assertRaises(urllib.error.HTTPError):
                     download_archive('url', Path('never-created'))
                 self.assertEqual(request.call_count, count)
+
+    def test_known_context_patch_upgrades_without_overwriting_unknown_edits(self):
+        from shared_context_patch import PATCHED_SHA256
+        original = Path(__file__).with_name('fixtures').joinpath('offline-recognizer-transducer-nemo-impl.h').read_text().encode()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / 'source.tar.gz'
+            context = root / 'offline-recognizer-transducer-nemo-impl.h'
+            with tarfile.open(archive, 'w:gz') as package:
+                member = tarfile.TarInfo(f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/{context.name}')
+                member.size = len(original)
+                package.addfile(member, io.BytesIO(original))
+            prior = b'known prior context patch fixture'
+            context.write_bytes(prior)
+            with patch('build_asr_native.PREVIOUS_CONTEXT_SHA256', hashlib.sha256(prior).hexdigest()):
+                prepare_context_header(archive, context)
+            self.assertEqual(hashlib.sha256(context.read_bytes()).hexdigest(), PATCHED_SHA256)
+            modified = context.stat().st_mtime_ns
+            prepare_context_header(archive, context)
+            self.assertEqual(context.stat().st_mtime_ns, modified)
+            context.write_bytes(b'unknown local edit')
+            with self.assertRaisesRegex(ValueError, 'unrecognized NeMo source'):
+                prepare_context_header(archive, context)
+            self.assertEqual(context.read_bytes(), b'unknown local edit')
 
     def test_context_capability_requires_matching_source_and_is_revoked_when_stale(self):
         target = 'x86_64-pc-windows-msvc'

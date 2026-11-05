@@ -1,5 +1,5 @@
---- a/offline-recognizer-transducer-nemo-impl.h
-+++ b/offline-recognizer-transducer-nemo-impl.h
+--- a/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
++++ b/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
 @@ -15,6 +15,7 @@
  #include <vector>
  
@@ -45,14 +45,19 @@
          features_length_shape.data(), features_length_shape.size());
  
      Ort::Value x = PadSequence(model_->Allocator(), features_pointer, 0);
-@@ -202,8 +210,19 @@
+@@ -202,8 +210,24 @@
  
      Ort::Value encoder_out = Transpose12(model_->Allocator(), &t[0]);
  
 -    auto results =
 -        decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
 +    std::vector<OfflineTransducerDecoderResult> results;
-+    if (shared) {
++    if (config_.decoding_method == "koett_context" && n == 1 &&
++        !ss[0]->GetContextGraph()) {
++      OfflineTransducerGreedySearchNeMoDecoder greedy(
++          model_.get(), config_.blank_penalty, model_->IsTDT());
++      results = greedy.Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    } else if (shared) {
 +      OfflineTransducerGreedySearchNeMoDecoder greedy(
 +          model_.get(), config_.blank_penalty, model_->IsTDT());
 +      auto plain = greedy.Decode(Clone(model_->Allocator(), &encoder_out),

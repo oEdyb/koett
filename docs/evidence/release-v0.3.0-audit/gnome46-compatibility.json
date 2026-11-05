@@ -1,0 +1,51 @@
+{
+  "environment": {
+    "distribution": "Ubuntu 24.04.4 LTS",
+    "shell": "GNOME 46.0",
+    "session": "Wayland",
+    "user": "fresh generic live-session user",
+    "virtualization": "QEMU/KVM",
+    "vcpus": 4,
+    "guest_ram_mib": 7680,
+    "host_scope_memory_limit_gib": 10,
+    "image_sha256": "3a4c9877b483ab46d7c3fbe165a0db275e1ae3cfe56a5657e5a47c2f99a99d1e",
+    "image_source": "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso"
+  },
+  "base_commit": "270ab7c18e1c4b2d9a7a4a1e3bcb9084b6a3bf4c",
+  "runtime_patch_sha256": "07129809e627c364625665bd0101728e308ba4e3fa84c605336d9221afcc0fd6",
+  "local_binary_sha256": "953d6a55ac4308f406748c462a5838f3678ac7a330838207231f7600624b0e11",
+  "model": "copied compact cache; no new model download",
+  "input": "QEMU keyboard custom Ctrl+Shift+Space binding; native accessibility checkbox/Share actions for permission grant",
+  "permission_grant": {
+    "remote_interaction": true,
+    "clipboard_access": true
+  },
+  "target": "GNOME Text Editor native Wayland",
+  "saved_document": {
+    "editor_saved_bytes": 125,
+    "history_bytes": 124,
+    "exact_bytes": false,
+    "exact_with_editor_final_newline": true,
+    "editor_sha256": "db83e526122f603ffe131a83dc8d34dc869f40c286c19e02519c6dd2219cd248",
+    "history_sha256": "723975d3bf058b60717427ecd088874a67dcedaaf670ea06f5477a1e5a9edd1b",
+    "method": "QEMU Ctrl+S, native Save dialog; GNOME Text Editor wrote actual pasted document"
+  },
+  "focus_guard": {
+    "backend": "gnome extension",
+    "captured_token": 1,
+    "paste_token": 1,
+    "portal_delivery": "ok"
+  },
+  "extension": {
+    "shell46_focus": "active",
+    "shell46_pill": false,
+    "shell51": "existing support retained; not a new Shell 51 runtime acceptance"
+  },
+  "limits": [
+    "Local compatibility build, not final release artifact",
+    "No GNOME drawing support",
+    "Custom shortcut set through normal GNOME settings backend; actual virtual key used",
+    "Permission denial recovery not separately accepted in this VM",
+    "Physical keyboard/microphone and ARM64 desktop not tested"
+  ]
+}

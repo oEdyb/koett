@@ -5,6 +5,17 @@ use koett_engine::{
 };
 use std::{collections::BTreeMap, fs, path::Path, time::Instant};
 
+fn process_nice() -> Option<i32> {
+    fs::read_to_string("/proc/self/stat")
+        .ok()?
+        .rsplit_once(") ")?
+        .1
+        .split_whitespace()
+        .nth(16)?
+        .parse()
+        .ok()
+}
+
 fn main() -> Result<(), String> {
     if !sherpa_onnx::SHARED_CONTEXT_AVAILABLE {
         return Err("requires the reviewed shared-context native build".into());
@@ -23,6 +34,11 @@ fn main() -> Result<(), String> {
         ParakeetTranscriber::load_with_dictionary(Path::new(&args[0]), 2, &entries)?,
         ParakeetTranscriber::load_with_acoustic_dictionary(Path::new(&args[0]), 2, &entries)?,
     ];
+    if engines[1].dictionary_mode() != "shared_encoder" {
+        return Err(
+            "dictionary cache preparation failed; refusing to time spelling fallback".into(),
+        );
+    }
     let mut results = BTreeMap::new();
     for seconds in [5, 30, 120, 600] {
         let audio =
@@ -37,7 +53,7 @@ fn main() -> Result<(), String> {
                 let raw = engines[index].transcribe(&audio)?.text;
                 let correction_start = Instant::now();
                 let text = dictionary::apply(&raw, if index == 0 { &[] } else { &entries });
-                pair.insert(match index { 0 => "empty", 1 => "seed", _ => "legacy" }.into(), serde_json::json!({"loadavg_start":load_start,"loadavg_end":fs::read_to_string("/proc/loadavg").ok(),"elapsed_ms":start.elapsed().as_secs_f64()*1000.0,"spelling_ms":correction_start.elapsed().as_secs_f64()*1000.0,"text":text,"mode":match index { 0 => "greedy", 1 => "shared_encoder", _ => "experimental_two_stream" },"header_sha256":sherpa_onnx::SHARED_CONTEXT_SHA256}));
+                pair.insert(match index { 0 => "empty", 1 => "seed", _ => "legacy" }.into(), serde_json::json!({"process_nice":process_nice(),"actual_dictionary_mode":engines[index].dictionary_mode(),"loadavg_start":load_start,"loadavg_end":fs::read_to_string("/proc/loadavg").ok(),"elapsed_ms":start.elapsed().as_secs_f64()*1000.0,"spelling_ms":correction_start.elapsed().as_secs_f64()*1000.0,"text":text,"mode":match index { 0 => "greedy", 1 => "shared_encoder", _ => "experimental_two_stream" },"header_sha256":sherpa_onnx::SHARED_CONTEXT_SHA256}));
             }
             pairs.push(pair);
         }
