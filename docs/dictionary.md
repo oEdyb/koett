@@ -160,15 +160,14 @@ Same rules, ported to Swift in `Sources/Koett/Dictionary/`:
 1. **Storage**: `[DictionaryEntry]` as JSON in the preferences (`dictionary`
    key, the same `term`/`sounds_like` fields as Linux settings). Menu →
    Dictionary… edits it, with Import… and Export… in the same text format.
-2. **Vocabulary boosting** (`VocabularyBooster.swift`). FluidAudio has no TDT
-   hotword beam search, so Parakeet's text is rescored with the separate
-   Parakeet CTC 110M model (`VocabularyBoostingSession`, about 100 MB). The
-   model loads in the background only while the dictionary has words and is
-   dropped when it is emptied. Dictation never waits for it: until it is ready,
-   after a failure, or when rescoring takes over 2 s, the plain text is used.
-   The rescored text then goes through the same term adoption as Linux.
-   Rescorer floor: string similarity 0.70 for Parakeet v2 (the Mac app's model)
-   and 0.85 for Parakeet v3; acoustic rescue pass off (`BoostTuning.forModel`).
+2. **Acoustic boosting is disabled by default** (`VocabularyBooster.swift`).
+   The separate Parakeet CTC 110M encoder exceeded the 10% overhead budget at
+   every tested length. No CTC model loads on the normal path. Explicit benchmark
+   callers can construct `VocabularyBooster(enabled: true)`; there is no app toggle.
+   Spelling, sounds-like forms and exact replacements remain active. This trades
+   acoustic term recall for speed; see [the measured latency and recall report](performance-audit-macos-2026-11.md).
+   The experimental rescorer keeps similarity floors 0.70 for v2 and 0.85 for v3,
+   acoustic rescue off, and the 2 s deadline with raw-text fallback.
 3. **Spelling pass** in `DictationSession.prepareDictation`, before the optional
    S1-mini cleanup, so the cleaner sees the right word, and on its output, because
    it can break a term again. Nemotron gets the spelling pass only. Literal
@@ -185,7 +184,7 @@ benchmark transcripts; `DictionaryParityTests` requires identical Swift output.
 Regenerate it whenever `CrossPlatform/src/dictionary` or `corrections/learn.rs`
 changes.
 
-### Mac evidence
+### Mac evidence before acoustic boosting was disabled
 
 Same 210 clips (`synthesize.py`), Parakeet v2 with silence trimming, the 30
 corpus terms, no sounds-like forms. Run with

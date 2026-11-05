@@ -5,7 +5,8 @@ import Synchronization
 /// CTC vocabulary boosting for dictionary terms (FluidAudio
 /// `VocabularyBoostingSession`, Parakeet CTC 110M, about 100 MB).
 ///
-/// The model loads in the background only while the dictionary has words.
+/// Acoustic boosting is experimental and disabled by default after latency testing.
+/// When explicitly enabled, the model loads only while the dictionary has words.
 /// `boost` never waits for it: until the session for the current dictionary is
 /// ready, or after any failure or timeout, dictation keeps the plain text.
 public actor VocabularyBooster {
@@ -18,6 +19,7 @@ public actor VocabularyBooster {
 
     public typealias Loader = @Sendable ([DictionaryEntry]) async throws -> any VocabularyRescoring
 
+    private let enabled: Bool
     private let loader: Loader
     private let unload: @Sendable () async -> Void
     private let timeout: Duration
@@ -29,13 +31,15 @@ public actor VocabularyBooster {
     public private(set) var status = Status.off
     private var onStatus: (@Sendable (Status) -> Void)?
 
-    public init(timeout: Duration = .seconds(2), tuning: BoostTuning = .koett) {
+    public init(enabled: Bool = false, timeout: Duration = .seconds(2), tuning: BoostTuning = .koett) {
+        self.enabled = enabled
         self.timeout = timeout
         loader = { try await CtcModelCache.shared.session(for: $0, tuning: tuning) }
         unload = { await CtcModelCache.shared.clear() }
     }
 
     init(timeout: Duration = .seconds(2), loader: @escaping Loader) {
+        enabled = true
         self.timeout = timeout
         self.loader = loader
         unload = {}
@@ -48,6 +52,7 @@ public actor VocabularyBooster {
 
     /// Point the booster at a dictionary. An empty one unloads the model.
     public func update(_ entries: [DictionaryEntry]) {
+        guard enabled else { return }
         guard entries != self.entries || (status == .off && !entries.isEmpty) else { return }
         self.entries = entries
         generation += 1
