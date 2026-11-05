@@ -83,8 +83,8 @@
     },
     {
       "path": "native/gtk4/provenance.json",
-      "sha256": "6778501aee585e5ff88bd6c23a62bbf2eb2dd7032d881058a8f9253e9ff7dade",
-      "bytes": 10037
+      "sha256": "d532522b46601a151d3f67fc396d944008eba04ac737b4de11bcf442f423a8e2",
+      "bytes": 10164
     },
     {
       "path": "native/gtk4/source-notices/COPYING",
