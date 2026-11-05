@@ -764,7 +764,7 @@ fn run(
                     crate::audio::inputs::migrated_input(current.microphone.as_deref())
                 {
                     let previous = current.microphone.clone();
-                    current.microphone = Some(migrated);
+                    current.microphone = migrated;
                     let saved = Settings::update(|latest| {
                         if latest.microphone == previous {
                             latest.microphone = current.microphone.clone();

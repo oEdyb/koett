@@ -129,7 +129,11 @@ pub(super) fn show(
     }
     input.append(Some(""), "System default microphone");
     input.set_active_id(Some(""));
-    if let Some(name) = &settings.microphone {
+    if let Some(name) = settings
+        .microphone
+        .as_ref()
+        .filter(|name| !crate::audio::inputs::means_system_default(name))
+    {
         // Replaced by the mic's real name once the list loads, if it is connected.
         input.append(Some(name), "Saved microphone (not connected)");
         input.set_active_id(Some(name));

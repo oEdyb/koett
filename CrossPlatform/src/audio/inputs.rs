@@ -143,16 +143,33 @@ fn migrated_source(saved: &str, cards: &str, devices: &[InputDevice]) -> Option<
         .map(|device| device.id.clone())
 }
 
-/// The new id when `saved` is an ALSA id that a sound server source now covers.
-pub fn migrated_input(saved: Option<&str>) -> Option<String> {
+/// ALSA names that only hand audio to the sound server's default, so they mean
+/// "system default" and never named a mic.
+pub fn means_system_default(id: &str) -> bool {
+    matches!(id, "alsa:default" | "alsa:pipewire" | "alsa:pulse")
+}
+
+/// What an ALSA choice becomes once a sound server is in use: `Some(None)` for the
+/// system default, `Some(Some(id))` for the same card's source, `None` to leave it.
+pub fn migrated_input(saved: Option<&str>) -> Option<Option<String>> {
     let saved = saved?;
     if !saved.starts_with("alsa:") {
         return None;
     }
     let saved = saved.to_string();
     bounded(OPEN_TIMEOUT, move || {
+        let devices = super::input_devices().ok()?;
+        if !devices
+            .iter()
+            .any(|device| device.id.starts_with(PULSE_PREFIX))
+        {
+            return None;
+        }
+        if means_system_default(&saved) {
+            return Some(None);
+        }
         let cards = std::fs::read_to_string("/proc/asound/cards").ok()?;
-        migrated_source(&saved, &cards, &super::input_devices().ok()?)
+        migrated_source(&saved, &cards, &devices).map(Some)
     })
     .flatten()
 }
@@ -422,6 +439,17 @@ mod tests {
             None
         );
         assert_eq!(migrated_source("alsa:jack", CARDS, &devices), None);
+    }
+
+    #[test]
+    fn alsa_names_for_the_server_default_are_not_a_mic() {
+        // Olle's PC had alsa:pipewire saved by hand.
+        for id in ["alsa:pipewire", "alsa:pulse", "alsa:default"] {
+            assert!(means_system_default(id), "{id}");
+        }
+        for id in ["alsa:hw:CARD=4,DEV=0", "alsa:jack", "pulseaudio:pipewire"] {
+            assert!(!means_system_default(id), "{id}");
+        }
     }
 
     #[test]
