@@ -1,0 +1,19 @@
+{
+  "source_commit": "6e32bd2",
+  "native_header_sha256": "673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920",
+  "app_sha256": "ed149ec10ca15bf019df877c215d4cc00f71a470474113aa2267098134542a96",
+  "live_soak_count": 100,
+  "soak_rss_first10_median_kib": 940748.0,
+  "soak_rss_last10_median_kib": 942236.0,
+  "after_clear_rss_kib": 1475464,
+  "after_refill_rss_kib": 2187368,
+  "max_sampled_rss_kib": 2187444,
+  "max_process_hwm_kib": 2244332,
+  "max_scope_bytes": 2303889408,
+  "budget_bytes": 2147483648,
+  "oom_kills": 2,
+  "unit_result": "oom-kill",
+  "history_rows_before": 18,
+  "history_rows_after": 150,
+  "history_text_exported": false
+}

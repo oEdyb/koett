@@ -1,0 +1,389 @@
+[
+  {
+    "mode": "old",
+    "repeat": 0,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 1069.557375041768,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0020116249797866,
+      "processCPUPercentOneCore": 0.04432394561459966,
+      "before": {
+        "monotonic": 947492.836005416,
+        "userNanoseconds": 16321788,
+        "systemNanoseconds": 8648325,
+        "residentBytes": 127549440,
+        "physicalFootprintBytes": 37307208
+      },
+      "after": {
+        "monotonic": 947495.838017041,
+        "userNanoseconds": 17204955,
+        "systemNanoseconds": 9095768,
+        "residentBytes": 124665856,
+        "physicalFootprintBytes": 35816264
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.002610541996546,
+      "processCPUPercentOneCore": 0.039496664099881264,
+      "before": {
+        "monotonic": 947501.703069583,
+        "userNanoseconds": 27579461,
+        "systemNanoseconds": 15738273,
+        "residentBytes": 126926848,
+        "physicalFootprintBytes": 36668232
+      },
+      "after": {
+        "monotonic": 947504.705680125,
+        "userNanoseconds": 28367128,
+        "systemNanoseconds": 16136537,
+        "residentBytes": 126484480,
+        "physicalFootprintBytes": 35849032
+      }
+    },
+    "privateAppLogicalBytes": 18281342
+  },
+  {
+    "mode": "production",
+    "repeat": 0,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 1005.0285829929635,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0034085410879925,
+      "processCPUPercentOneCore": 0.053736212637104444,
+      "before": {
+        "monotonic": 947512.01538075,
+        "userNanoseconds": 20766557,
+        "systemNanoseconds": 8402345,
+        "residentBytes": 164020224,
+        "physicalFootprintBytes": 44893072
+      },
+      "after": {
+        "monotonic": 947515.018789291,
+        "userNanoseconds": 21904324,
+        "systemNanoseconds": 8878496,
+        "residentBytes": 163708928,
+        "physicalFootprintBytes": 43451280
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.004588874988258,
+      "processCPUPercentOneCore": 0.061759963749025454,
+      "before": {
+        "monotonic": 947520.866058166,
+        "userNanoseconds": 34960734,
+        "systemNanoseconds": 15795564,
+        "residentBytes": 163414016,
+        "physicalFootprintBytes": 44680080
+      },
+      "after": {
+        "monotonic": 947523.870647041,
+        "userNanoseconds": 36244060,
+        "systemNanoseconds": 16367871,
+        "residentBytes": 163119104,
+        "physicalFootprintBytes": 43287440
+      }
+    },
+    "privateAppLogicalBytes": 21145034
+  },
+  {
+    "mode": "old",
+    "repeat": 1,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 578.2335000112653,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0051095000235364,
+      "processCPUPercentOneCore": 0.041854381678609345,
+      "before": {
+        "monotonic": 947530.760010875,
+        "userNanoseconds": 15711511,
+        "systemNanoseconds": 8059062,
+        "residentBytes": 127680512,
+        "physicalFootprintBytes": 37290824
+      },
+      "after": {
+        "monotonic": 947533.765120375,
+        "userNanoseconds": 16564392,
+        "systemNanoseconds": 8463951,
+        "residentBytes": 127254528,
+        "physicalFootprintBytes": 36471624
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.004202042007819,
+      "processCPUPercentOneCore": 0.042293992954974935,
+      "before": {
+        "monotonic": 947539.741429708,
+        "userNanoseconds": 27053925,
+        "systemNanoseconds": 15453730,
+        "residentBytes": 126877696,
+        "physicalFootprintBytes": 37045064
+      },
+      "after": {
+        "monotonic": 947542.74563175,
+        "userNanoseconds": 27919520,
+        "systemNanoseconds": 15858732,
+        "residentBytes": 126435328,
+        "physicalFootprintBytes": 36225864
+      }
+    },
+    "privateAppLogicalBytes": 18281342
+  },
+  {
+    "mode": "production",
+    "repeat": 1,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 660.6325840111822,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0048969589406624,
+      "processCPUPercentOneCore": 0.05623294319535325,
+      "before": {
+        "monotonic": 947549.805985291,
+        "userNanoseconds": 20776658,
+        "systemNanoseconds": 8108699,
+        "residentBytes": 164184064,
+        "physicalFootprintBytes": 44565368
+      },
+      "after": {
+        "monotonic": 947552.81088225,
+        "userNanoseconds": 21925824,
+        "systemNanoseconds": 8649275,
+        "residentBytes": 163889152,
+        "physicalFootprintBytes": 43139960
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.0050877089379355,
+      "processCPUPercentOneCore": 0.05542606943038812,
+      "before": {
+        "monotonic": 947558.654364541,
+        "userNanoseconds": 35603833,
+        "systemNanoseconds": 15721146,
+        "residentBytes": 164544512,
+        "physicalFootprintBytes": 44630904
+      },
+      "after": {
+        "monotonic": 947561.65945225,
+        "userNanoseconds": 36754748,
+        "systemNanoseconds": 16235833,
+        "residentBytes": 164200448,
+        "physicalFootprintBytes": 43172728
+      }
+    },
+    "privateAppLogicalBytes": 21145034
+  },
+  {
+    "mode": "old",
+    "repeat": 2,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 484.73791708238423,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0045342090306804,
+      "processCPUPercentOneCore": 0.04657344209275771,
+      "before": {
+        "monotonic": 947568.387785041,
+        "userNanoseconds": 14999891,
+        "systemNanoseconds": 7900292,
+        "residentBytes": 127664128,
+        "physicalFootprintBytes": 37094216
+      },
+      "after": {
+        "monotonic": 947571.39231925,
+        "userNanoseconds": 15931731,
+        "systemNanoseconds": 8367767,
+        "residentBytes": 127238144,
+        "physicalFootprintBytes": 36275016
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.000319791957736,
+      "processCPUPercentOneCore": 0.03903453902278219,
+      "before": {
+        "monotonic": 947577.281385166,
+        "userNanoseconds": 25566881,
+        "systemNanoseconds": 14830567,
+        "residentBytes": 126926848,
+        "physicalFootprintBytes": 36913992
+      },
+      "after": {
+        "monotonic": 947580.281704958,
+        "userNanoseconds": 26349078,
+        "systemNanoseconds": 15219531,
+        "residentBytes": 126484480,
+        "physicalFootprintBytes": 36094792
+      }
+    },
+    "privateAppLogicalBytes": 18281342
+  },
+  {
+    "mode": "production",
+    "repeat": 2,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 543.3685410534963,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0050983340479434,
+      "processCPUPercentOneCore": 0.055663236741633794,
+      "before": {
+        "monotonic": 947587.072647291,
+        "userNanoseconds": 20829679,
+        "systemNanoseconds": 8473121,
+        "residentBytes": 164216832,
+        "physicalFootprintBytes": 44680080
+      },
+      "after": {
+        "monotonic": 947590.077745625,
+        "userNanoseconds": 22009022,
+        "systemNanoseconds": 8966513,
+        "residentBytes": 163905536,
+        "physicalFootprintBytes": 43238288
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.005081000039354,
+      "processCPUPercentOneCore": 0.06244800056888398,
+      "before": {
+        "monotonic": 947595.986924666,
+        "userNanoseconds": 34740542,
+        "systemNanoseconds": 15611496,
+        "residentBytes": 164593664,
+        "physicalFootprintBytes": 44860304
+      },
+      "after": {
+        "monotonic": 947598.992005666,
+        "userNanoseconds": 36042272,
+        "systemNanoseconds": 16186379,
+        "residentBytes": 164233216,
+        "physicalFootprintBytes": 43402128
+      }
+    },
+    "privateAppLogicalBytes": 21145034
+  },
+  {
+    "mode": "baseline",
+    "repeat": 0,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 1101.1269589653239,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.002076582983136,
+      "processCPUPercentOneCore": 0.05650035743973318,
+      "before": {
+        "monotonic": 947606.416826333,
+        "userNanoseconds": 20342035,
+        "systemNanoseconds": 8222329,
+        "residentBytes": 164429824,
+        "physicalFootprintBytes": 45286264
+      },
+      "after": {
+        "monotonic": 947609.418902916,
+        "userNanoseconds": 21521934,
+        "systemNanoseconds": 8738614,
+        "residentBytes": 164134912,
+        "physicalFootprintBytes": 43844472
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.003084999974817,
+      "processCPUPercentOneCore": 0.06820669411678912,
+      "before": {
+        "monotonic": 947615.269948083,
+        "userNanoseconds": 34487866,
+        "systemNanoseconds": 15506255,
+        "residentBytes": 163692544,
+        "physicalFootprintBytes": 44417912
+      },
+      "after": {
+        "monotonic": 947618.273033083,
+        "userNanoseconds": 35902695,
+        "systemNanoseconds": 16139731,
+        "residentBytes": 163512320,
+        "physicalFootprintBytes": 43631480
+      }
+    },
+    "privateAppLogicalBytes": 21144122
+  },
+  {
+    "mode": "cached",
+    "repeat": 0,
+    "seconds": 5,
+    "launchToReadyLogMilliseconds": 562.4777500052005,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.005107041914016,
+      "processCPUPercentOneCore": 0.0632385460316117,
+      "before": {
+        "monotonic": 947625.060259958,
+        "userNanoseconds": 19921364,
+        "systemNanoseconds": 8342261,
+        "residentBytes": 164216832,
+        "physicalFootprintBytes": 44696464
+      },
+      "after": {
+        "monotonic": 947628.065367,
+        "userNanoseconds": 21237501,
+        "systemNanoseconds": 8926510,
+        "residentBytes": 164085760,
+        "physicalFootprintBytes": 43860880
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.004443374928087,
+      "processCPUPercentOneCore": 0.05358353608639849,
+      "before": {
+        "monotonic": 947633.952161208,
+        "userNanoseconds": 34202920,
+        "systemNanoseconds": 15757680,
+        "residentBytes": 163872768,
+        "physicalFootprintBytes": 45155216
+      },
+      "after": {
+        "monotonic": 947636.956604583,
+        "userNanoseconds": 35328355,
+        "systemNanoseconds": 16242132,
+        "residentBytes": 163512320,
+        "physicalFootprintBytes": 43697040
+      }
+    },
+    "privateAppLogicalBytes": 21144122
+  },
+  {
+    "mode": "production",
+    "repeat": 3,
+    "seconds": 120,
+    "launchToReadyLogMilliseconds": 555.9064579429105,
+    "idleAfterFiveSecondWarmup": {
+      "intervalSeconds": 3.0017499999376014,
+      "processCPUPercentOneCore": 0.05403964354239094,
+      "before": {
+        "monotonic": 947643.725209041,
+        "userNanoseconds": 20048604,
+        "systemNanoseconds": 8518326,
+        "residentBytes": 163921920,
+        "physicalFootprintBytes": 43959160
+      },
+      "after": {
+        "monotonic": 947646.726959041,
+        "userNanoseconds": 21192466,
+        "systemNanoseconds": 8996599,
+        "residentBytes": 163807232,
+        "physicalFootprintBytes": 43139960
+      }
+    },
+    "postMeasuredTargetIdle": {
+      "intervalSeconds": 3.002382665988989,
+      "processCPUPercentOneCore": 0.048368318151132225,
+      "before": {
+        "monotonic": 947768.08624075,
+        "userNanoseconds": 333513141,
+        "systemNanoseconds": 156656727,
+        "residentBytes": 207912960,
+        "physicalFootprintBytes": 62309264
+      },
+      "after": {
+        "monotonic": 947771.088623416,
+        "userNanoseconds": 334522080,
+        "systemNanoseconds": 157099990,
+        "residentBytes": 207519744,
+        "physicalFootprintBytes": 60818320
+      }
+    },
+    "privateAppLogicalBytes": 21145034
+  }
+]

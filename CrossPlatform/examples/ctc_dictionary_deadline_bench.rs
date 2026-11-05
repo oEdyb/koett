@@ -34,7 +34,7 @@ fn main() -> Result<(), String> {
         .map(|t| DictionaryEntry::new(t, &[]))
         .collect();
     let mut engine =
-        ParakeetTranscriber::load_with_dictionary(Path::new(&args[0]), 2, &dictionary)?;
+        ParakeetTranscriber::load_with_acoustic_dictionary(Path::new(&args[0]), 2, &dictionary)?;
     let sample = AudioRecording::read_wav(&Path::new(&args[0]).join("test_wavs/0.wav"))?;
     let start = Instant::now();
     let cold = engine.transcribe(&sample)?;

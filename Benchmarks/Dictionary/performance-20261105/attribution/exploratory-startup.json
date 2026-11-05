@@ -1,0 +1,7 @@
+{
+  "launchToReadyMilliseconds": 13141.534916940145,
+  "phase": "earlier retained-recorder exploration, not final production cohort",
+  "fullResourceSeriesRetained": false,
+  "source": "first baseline resource row printed during audit before later probe reused resources.json",
+  "limitation": "Complete early resource series was overwritten. This one retained observation is not included in cached-launch summary and does not establish cold-start performance."
+}

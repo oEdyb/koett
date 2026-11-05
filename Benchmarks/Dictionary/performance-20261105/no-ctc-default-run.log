@@ -1,0 +1,35 @@
+Test Suite 'Selected tests' started at 2026-11-05 08:08:26.713.
+Test Suite 'KoettTests.xctest' started at 2026-11-05 08:08:26.714.
+Test Suite 'DictionaryLatencyTests' started at 2026-11-05 08:08:26.714.
+Test Case '-[KoettTests.DictionaryLatencyTests testWarmPairedLatency]' started.
+Test Case '-[KoettTests.DictionaryLatencyTests testWarmPairedLatency]' passed (19.764 seconds).
+Test Suite 'DictionaryLatencyTests' passed at 2026-11-05 08:08:46.478.
+	 Executed 1 test, with 0 failures (0 unexpected) in 19.764 (19.764) seconds
+Test Suite 'KoettTests.xctest' passed at 2026-11-05 08:08:46.478.
+	 Executed 1 test, with 0 failures (0 unexpected) in 19.764 (19.764) seconds
+Test Suite 'Selected tests' passed at 2026-11-05 08:08:46.478.
+	 Executed 1 test, with 0 failures (0 unexpected) in 19.764 (19.765) seconds
+E5RT encountered an STL exception. msg = Failed to PropagateInputTensorShapes: std::runtime_error during type inference for ios17.slice_by_index: zero shape error.LATENCY 5s pair=0 off 80.476833ms late-rescore=0.0ms
+LATENCY 5s pair=0 default 83.516458ms late-rescore=0.0ms
+LATENCY 5s pair=1 default 79.651042ms late-rescore=0.0ms
+LATENCY 5s pair=1 off 80.928333ms late-rescore=0.0ms
+LATENCY 5s pair=2 off 78.047833ms late-rescore=0.0ms
+LATENCY 5s pair=2 default 81.529375ms late-rescore=0.0ms
+LATENCY 30s pair=0 off 184.692459ms late-rescore=0.0ms
+LATENCY 30s pair=0 default 190.362416ms late-rescore=0.0ms
+LATENCY 30s pair=1 default 185.163917ms late-rescore=0.0ms
+LATENCY 30s pair=1 off 209.171917ms late-rescore=0.0ms
+LATENCY 30s pair=2 off 205.861416ms late-rescore=0.0ms
+LATENCY 30s pair=2 default 204.13275ms late-rescore=0.0ms
+LATENCY 120s pair=0 off 536.294125ms late-rescore=0.0ms
+LATENCY 120s pair=0 default 534.447625ms late-rescore=0.0ms
+LATENCY 120s pair=1 default 531.658208ms late-rescore=0.0ms
+LATENCY 120s pair=1 off 674.546916ms late-rescore=0.0ms
+LATENCY 120s pair=2 off 544.410709ms late-rescore=0.0ms
+LATENCY 120s pair=2 default 539.732834ms late-rescore=0.0ms
+LATENCY 600s pair=0 off 2501.75175ms late-rescore=0.0ms
+LATENCY 600s pair=0 default 2464.1835419999998ms late-rescore=0.0ms
+LATENCY 600s pair=1 default 2328.086708ms late-rescore=0.0ms
+LATENCY 600s pair=1 off 2321.551792ms late-rescore=0.0ms
+LATENCY 600s pair=2 off 2366.277916ms late-rescore=0.0ms
+LATENCY 600s pair=2 default 2372.256083ms late-rescore=0.0ms

@@ -2,7 +2,7 @@
 
 ## Evidence and limits
 
-- Repository: `/Users/olle/dev/local-voice-input`, macOS (`Darwin`), branch `main`.
+- Repository: `<build-home>/dev/local-voice-input`, macOS (`Darwin`), branch `main`.
 - Exact checked-out HEAD: **`10a2a7662762aa43db5cd91df6f1f13ba4a149bd`** (`docs: record installed build with meter audio fix`).
 - Locally stored `origin/main` resolves to that same SHA; ahead/behind **0/0**. Origin URL: `https://github.com/oEdyb/koett.git`. No network verification of live GitHub was performed; no fetch.
 - Checkout clean before and after research. AGENTS takeover commit/remote snapshot is stale; prefer the above Git facts and current source.
@@ -108,7 +108,7 @@ The Linux description supplied was dictation/history/meter/waveform/models 110M/
 
 ## Latest locally available skill/reference guidance
 
-Canonical local skills repository `/Users/olle/dev/skills`, origin `https://github.com/oEdyb/skills.git`, HEAD **`de6ef52`** (2026-10-29). It has existing uncommitted changes, including development references; these were read and preserved. This is the latest **local working-copy guidance**, not a claim about live remote state. No fetch/cloud lookup or skill write.
+Canonical local skills repository `<build-home>/dev/skills`, origin `https://github.com/oEdyb/skills.git`, HEAD **`de6ef52`** (2026-10-29). It has existing uncommitted changes, including development references; these were read and preserved. This is the latest **local working-copy guidance**, not a claim about live remote state. No fetch/cloud lookup or skill write.
 
 Relevant sources:
 - `skills/development/SKILL.md`, `references/context.md`: inspect actual repo foundation/current files first, preserve existing work, pin dependencies, prove real behavior before completion.
@@ -116,7 +116,7 @@ Relevant sources:
 - Working-copy addition **F26**: every screen speaks once; cut taglines, helper text and duplicate secondary labels, retain real field/error/accessibility labels. `references/frontend.md:26`. F27: changing ornament alone cannot rescue wrong structure; change the named problem visibly.
 - F25 (clarified 2026-10-28): no decorative status dots; a real recording/live-state indicator is meaningful. F28: neutral surfaces/one accent, coherent spacing/icon/type system, no emoji or AI badges. These are web/app general rules; **actual Mac source uses native system type and `YOU`**, so do not misrepresent the guideline as a description of current Koett.
 - F1: cannot claim visual completion from source; Linux implementation still needs actual Linux captures examined after final changes. Mac physical-session capture was explicitly prohibited here.
-- `references/frontend-local-library.md` now routes to **UI Atlas first** (`/Users/olle/dev/ui-atlas/atlas`), search/board/get and image judgment; offline fallback `/Users/olle/dev/skills/tools/ui-library/library.py`. Only explicit fetch downloads source; inspect reuse terms/dependencies. No Atlas service or network started in this research. Native Mac Koett source is the primary parity reference; new web component catalogs are not a reason to replace its native architecture.
+- `references/frontend-local-library.md` now routes to **UI Atlas first** (`<build-home>/dev/ui-atlas/atlas`), search/board/get and image judgment; offline fallback `<build-home>/dev/skills/tools/ui-library/library.py`. Only explicit fetch downloads source; inspect reuse terms/dependencies. No Atlas service or network started in this research. Native Mac Koett source is the primary parity reference; new web component catalogs are not a reason to replace its native architecture.
 - `frontend-component-sources.md` new local entries: symbools is noncommercial study only (do not ship/trace/adapt trademark marks); EasyUI is React/Tailwind/Framer Motion, not a native Mac/Linux parity implementation. They do not override native project constraints.
 
 ## Implementation handoff

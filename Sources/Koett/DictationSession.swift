@@ -647,7 +647,8 @@ extension KoettController {
         }
     }
 
-    func play(_ player: AVAudioPlayer) {
+    func play(_ player: AVAudioPlayer?) {
+        guard let player else { return }
         player.stop()
         player.currentTime = 0
         _ = player.play()

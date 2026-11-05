@@ -828,7 +828,7 @@ mod tests {
     fn only_web_addresses_become_links() {
         assert!(web_url("https://example.com/a").is_some());
         assert!(web_url("http://example.com/").is_some());
-        assert!(web_url("file:///home/olle/secret.txt").is_none());
+        assert!(web_url("file:///home/example/secret.txt").is_none());
         assert!(web_url("data:text/html,x").is_none());
         assert!(web_url("not a url").is_none());
     }

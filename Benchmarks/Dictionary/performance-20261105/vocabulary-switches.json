@@ -1,0 +1,344 @@
+[
+  {
+    "after" : {
+      "peakRSSBytes" : 103596032,
+      "physicalFootprintBytes" : 29606560,
+      "rssBytes" : 103596032
+    },
+    "before" : {
+      "peakRSSBytes" : 103038976,
+      "physicalFootprintBytes" : 29590176,
+      "rssBytes" : 103038976
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 102.34775,
+    "readyMilliseconds" : 0.081959000000000004,
+    "status" : "off",
+    "step" : 0,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.00033399999999999999
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103825408,
+      "physicalFootprintBytes" : 29622944,
+      "rssBytes" : 103825408
+    },
+    "before" : {
+      "peakRSSBytes" : 103776256,
+      "physicalFootprintBytes" : 29639328,
+      "rssBytes" : 103776256
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 112.76858300000001,
+    "readyMilliseconds" : 0.140292,
+    "status" : "off",
+    "step" : 1,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.0030000000000000001
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "before" : {
+      "peakRSSBytes" : 103825408,
+      "physicalFootprintBytes" : 29622944,
+      "rssBytes" : 103825408
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 88.541624999999996,
+    "readyMilliseconds" : 0.090207999999999997,
+    "status" : "off",
+    "step" : 2,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.00095799999999999998
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "before" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 92.609166999999999,
+    "readyMilliseconds" : 0.067208000000000004,
+    "status" : "off",
+    "step" : 3,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.00095799999999999998
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "before" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 90.984458000000004,
+    "readyMilliseconds" : 0.084250000000000005,
+    "status" : "off",
+    "step" : 4,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.00079100000000000004
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "before" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 87.352917000000005,
+    "readyMilliseconds" : 0.070374999999999993,
+    "status" : "off",
+    "step" : 5,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.00079199999999999995
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29688480,
+      "rssBytes" : 103890944
+    },
+    "before" : {
+      "peakRSSBytes" : 103874560,
+      "physicalFootprintBytes" : 29672096,
+      "rssBytes" : 103874560
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 91.561958000000004,
+    "readyMilliseconds" : 0.072166999999999995,
+    "status" : "off",
+    "step" : 6,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.00079199999999999995
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29606560,
+      "rssBytes" : 103809024
+    },
+    "before" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29688480,
+      "rssBytes" : 103890944
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 91.345584000000002,
+    "readyMilliseconds" : 0.069000000000000006,
+    "status" : "off",
+    "step" : 7,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.00079199999999999995
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29606560,
+      "rssBytes" : 103809024
+    },
+    "before" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29606560,
+      "rssBytes" : 103809024
+    },
+    "enabled" : false,
+    "pipelineMilliseconds" : 93.122583000000006,
+    "readyMilliseconds" : 0.065625000000000003,
+    "status" : "off",
+    "step" : 8,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.00087500000000000002
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29606560,
+      "rssBytes" : 103841792
+    },
+    "before" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29622944,
+      "rssBytes" : 103825408
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 91.249499999999998,
+    "readyMilliseconds" : 0.082250000000000004,
+    "status" : "off",
+    "step" : 0,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.018124999999999999
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 127860736,
+      "physicalFootprintBytes" : 34112160,
+      "rssBytes" : 116523008
+    },
+    "before" : {
+      "peakRSSBytes" : 103890944,
+      "physicalFootprintBytes" : 29622944,
+      "rssBytes" : 103858176
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 210.868167,
+    "readyMilliseconds" : 333.632791,
+    "status" : "ready",
+    "step" : 1,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.0081250000000000003
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 127860736,
+      "physicalFootprintBytes" : 29704864,
+      "rssBytes" : 111558656
+    },
+    "before" : {
+      "peakRSSBytes" : 127860736,
+      "physicalFootprintBytes" : 34112160,
+      "rssBytes" : 116523008
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 91.221457999999998,
+    "readyMilliseconds" : 0.107791,
+    "status" : "off",
+    "step" : 2,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.034375000000000003
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 129777664,
+      "physicalFootprintBytes" : 34095800,
+      "rssBytes" : 116899840
+    },
+    "before" : {
+      "peakRSSBytes" : 127860736,
+      "physicalFootprintBytes" : 29704864,
+      "rssBytes" : 111558656
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 244.009208,
+    "readyMilliseconds" : 273.82104199999998,
+    "status" : "ready",
+    "step" : 3,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.005875
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 129777664,
+      "physicalFootprintBytes" : 29754040,
+      "rssBytes" : 111869952
+    },
+    "before" : {
+      "peakRSSBytes" : 129777664,
+      "physicalFootprintBytes" : 34095800,
+      "rssBytes" : 116899840
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 132.23379199999999,
+    "readyMilliseconds" : 0.109292,
+    "status" : "off",
+    "step" : 4,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.039167
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 129957888,
+      "physicalFootprintBytes" : 34128568,
+      "rssBytes" : 117080064
+    },
+    "before" : {
+      "peakRSSBytes" : 129777664,
+      "physicalFootprintBytes" : 29754040,
+      "rssBytes" : 111869952
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 243.154583,
+    "readyMilliseconds" : 276.13962500000002,
+    "status" : "ready",
+    "step" : 5,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.0084589999999999995
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 129957888,
+      "physicalFootprintBytes" : 29803192,
+      "rssBytes" : 112050176
+    },
+    "before" : {
+      "peakRSSBytes" : 129957888,
+      "physicalFootprintBytes" : 34128568,
+      "rssBytes" : 117080064
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 130.43549999999999,
+    "readyMilliseconds" : 0.10112500000000001,
+    "status" : "off",
+    "step" : 6,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.035125000000000003
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 130138112,
+      "physicalFootprintBytes" : 34112184,
+      "rssBytes" : 117243904
+    },
+    "before" : {
+      "peakRSSBytes" : 129957888,
+      "physicalFootprintBytes" : 29803192,
+      "rssBytes" : 112050176
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 254.19841600000001,
+    "readyMilliseconds" : 267.97066599999999,
+    "status" : "ready",
+    "step" : 7,
+    "terms" : 20,
+    "updateCallMilliseconds" : 0.0087910000000000002
+  },
+  {
+    "after" : {
+      "peakRSSBytes" : 130138112,
+      "physicalFootprintBytes" : 29803192,
+      "rssBytes" : 112230400
+    },
+    "before" : {
+      "peakRSSBytes" : 130138112,
+      "physicalFootprintBytes" : 34128568,
+      "rssBytes" : 117260288
+    },
+    "enabled" : true,
+    "pipelineMilliseconds" : 122.646333,
+    "readyMilliseconds" : 0.10375,
+    "status" : "off",
+    "step" : 8,
+    "terms" : 0,
+    "updateCallMilliseconds" : 0.036749999999999998
+  }
+]

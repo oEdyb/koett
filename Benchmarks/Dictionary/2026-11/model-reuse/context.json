@@ -1,0 +1,5462 @@
+{
+  "n01-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 99.963261,
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "context": {
+      "ms": 108.829933,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "dual4": {
+      "ms": 194.143231,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "empty_context": {
+      "ms": 98.875115,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "raw": {
+      "ms": 99.945381,
+      "plain": null,
+      "text": "I bought a coat and a new pair of boots."
+    }
+  },
+  "n01-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 79.306487,
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "context": {
+      "ms": 86.706654,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "dual4": {
+      "ms": 150.88775900000002,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "empty_context": {
+      "ms": 77.253663,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "raw": {
+      "ms": 79.289587,
+      "plain": null,
+      "text": "I bought a coat and a new pair of boots."
+    }
+  },
+  "n01-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 80.433363,
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "context": {
+      "ms": 87.66592,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "dual4": {
+      "ms": 152.166855,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "empty_context": {
+      "ms": 80.420884,
+      "plain": "I bought a coat and a new pair of boots.",
+      "text": "I bought a coat and a new pair of boots."
+    },
+    "raw": {
+      "ms": 80.415813,
+      "plain": null,
+      "text": "I bought a coat and a new pair of boots."
+    }
+  },
+  "n02-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 97.090661,
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "context": {
+      "ms": 104.047879,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "dual4": {
+      "ms": 180.990782,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "empty_context": {
+      "ms": 95.357636,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "raw": {
+      "ms": 97.075321,
+      "plain": null,
+      "text": "The parrot sat on the kitchen counter."
+    }
+  },
+  "n02-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 73.21023699999999,
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "context": {
+      "ms": 78.703169,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "dual4": {
+      "ms": 132.378198,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "empty_context": {
+      "ms": 77.66784200000001,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "raw": {
+      "ms": 73.19455699999999,
+      "plain": null,
+      "text": "The parrot sat on the kitchen counter."
+    }
+  },
+  "n02-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 78.700549,
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "context": {
+      "ms": 86.672684,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "dual4": {
+      "ms": 150.38265,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "empty_context": {
+      "ms": 77.871601,
+      "plain": "The parrot sat on the kitchen counter.",
+      "text": "The parrot sat on the kitchen counter."
+    },
+    "raw": {
+      "ms": 78.685589,
+      "plain": null,
+      "text": "The parrot sat on the kitchen counter."
+    }
+  },
+  "n03-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 87.12090199999999,
+      "text": "She sent a short note to the team."
+    },
+    "context": {
+      "ms": 93.754321,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "dual4": {
+      "ms": 163.358679,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "empty_context": {
+      "ms": 86.630554,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "raw": {
+      "ms": 87.10614199999999,
+      "plain": null,
+      "text": "She sent a short note to the team."
+    }
+  },
+  "n03-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 69.960057,
+      "text": "she sent a short note to the team."
+    },
+    "context": {
+      "ms": 72.20036,
+      "plain": "she sent a short note to the team.",
+      "text": "she sent a short note to the team."
+    },
+    "dual4": {
+      "ms": 127.99089199999999,
+      "plain": "she sent a short note to the team.",
+      "text": "she sent a short note to the team."
+    },
+    "empty_context": {
+      "ms": 67.85795399999999,
+      "plain": "she sent a short note to the team.",
+      "text": "she sent a short note to the team."
+    },
+    "raw": {
+      "ms": 69.944927,
+      "plain": null,
+      "text": "she sent a short note to the team."
+    }
+  },
+  "n03-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 77.22382400000001,
+      "text": "She sent a short note to the team."
+    },
+    "context": {
+      "ms": 84.848469,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "dual4": {
+      "ms": 151.775736,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "empty_context": {
+      "ms": 77.433153,
+      "plain": "She sent a short note to the team.",
+      "text": "She sent a short note to the team."
+    },
+    "raw": {
+      "ms": 77.207514,
+      "plain": null,
+      "text": "She sent a short note to the team."
+    }
+  },
+  "n04-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 98.43345599999999,
+      "text": "We need a group decision before lunch."
+    },
+    "context": {
+      "ms": 103.43646,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "dual4": {
+      "ms": 186.107407,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "empty_context": {
+      "ms": 94.613479,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "raw": {
+      "ms": 98.41862599999999,
+      "plain": null,
+      "text": "We need a group decision before lunch."
+    }
+  },
+  "n04-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 74.50164199999999,
+      "text": "We need a group decision before launch."
+    },
+    "context": {
+      "ms": 84.80414999999999,
+      "plain": "We need a group decision before launch.",
+      "text": "We need a group decision before launch."
+    },
+    "dual4": {
+      "ms": 145.96219499999998,
+      "plain": "We need a group decision before launch.",
+      "text": "We need a group decision before launch."
+    },
+    "empty_context": {
+      "ms": 73.290686,
+      "plain": "We need a group decision before launch.",
+      "text": "We need a group decision before launch."
+    },
+    "raw": {
+      "ms": 74.485362,
+      "plain": null,
+      "text": "We need a group decision before launch."
+    }
+  },
+  "n04-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 81.492921,
+      "text": "We need a group decision before lunch."
+    },
+    "context": {
+      "ms": 87.268002,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "dual4": {
+      "ms": 152.353884,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "empty_context": {
+      "ms": 81.878538,
+      "plain": "We need a group decision before lunch.",
+      "text": "We need a group decision before lunch."
+    },
+    "raw": {
+      "ms": 81.477471,
+      "plain": null,
+      "text": "We need a group decision before lunch."
+    }
+  },
+  "n05-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 96.149823,
+      "text": "The Queen visited the city last summer."
+    },
+    "context": {
+      "ms": 98.307886,
+      "plain": "The Queen visited the city last summer.",
+      "text": "The Queen visited the city last summer."
+    },
+    "dual4": {
+      "ms": 177.982583,
+      "plain": "The Queen visited the city last summer.",
+      "text": "The Queen visited the city last summer."
+    },
+    "empty_context": {
+      "ms": 93.136033,
+      "plain": "The Queen visited the city last summer.",
+      "text": "The Queen visited the city last summer."
+    },
+    "raw": {
+      "ms": 96.133423,
+      "plain": null,
+      "text": "The Queen visited the city last summer."
+    }
+  },
+  "n05-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 75.35837,
+      "text": "The queen visited the city last summer."
+    },
+    "context": {
+      "ms": 83.388194,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "dual4": {
+      "ms": 143.520342,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "empty_context": {
+      "ms": 78.39948,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "raw": {
+      "ms": 75.34411,
+      "plain": null,
+      "text": "The queen visited the city last summer."
+    }
+  },
+  "n05-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 83.320265,
+      "text": "The queen visited the city last summer."
+    },
+    "context": {
+      "ms": 90.49458200000001,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "dual4": {
+      "ms": 157.393178,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "empty_context": {
+      "ms": 85.099588,
+      "plain": "The queen visited the city last summer.",
+      "text": "The queen visited the city last summer."
+    },
+    "raw": {
+      "ms": 83.304905,
+      "plain": null,
+      "text": "The queen visited the city last summer."
+    }
+  },
+  "n06-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 95.443866,
+      "text": "He drove the cart across the field."
+    },
+    "context": {
+      "ms": 101.478166,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "dual4": {
+      "ms": 182.01526,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "empty_context": {
+      "ms": 91.785337,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "raw": {
+      "ms": 95.425676,
+      "plain": null,
+      "text": "He drove the cart across the field."
+    }
+  },
+  "n06-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 75.04947,
+      "text": "He drove the cart across the field."
+    },
+    "context": {
+      "ms": 80.201045,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "dual4": {
+      "ms": 138.895137,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "empty_context": {
+      "ms": 72.80336799999999,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "raw": {
+      "ms": 75.03297,
+      "plain": null,
+      "text": "He drove the cart across the field."
+    }
+  },
+  "n06-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 77.977361,
+      "text": "He drove the cart across the field."
+    },
+    "context": {
+      "ms": 84.70105,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "dual4": {
+      "ms": 146.856142,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "empty_context": {
+      "ms": 77.41454300000001,
+      "plain": "He drove the cart across the field.",
+      "text": "He drove the cart across the field."
+    },
+    "raw": {
+      "ms": 77.962671,
+      "plain": null,
+      "text": "He drove the cart across the field."
+    }
+  },
+  "n07-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 102.739332,
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "context": {
+      "ms": 105.12466500000001,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "dual4": {
+      "ms": 191.48137,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "empty_context": {
+      "ms": 99.140704,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "raw": {
+      "ms": 102.723112,
+      "plain": null,
+      "text": "Hold on, I will call you back in a minute."
+    }
+  },
+  "n07-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.279375,
+      "text": "Hold on. I will call you back in a minute."
+    },
+    "context": {
+      "ms": 90.786321,
+      "plain": "Hold on. I will call you back in a minute.",
+      "text": "Hold on. I will call you back in a minute."
+    },
+    "dual4": {
+      "ms": 165.60777199999998,
+      "plain": "Hold on. I will call you back in a minute.",
+      "text": "Hold on. I will call you back in a minute."
+    },
+    "empty_context": {
+      "ms": 88.468588,
+      "plain": "Hold on. I will call you back in a minute.",
+      "text": "Hold on. I will call you back in a minute."
+    },
+    "raw": {
+      "ms": 89.264115,
+      "plain": null,
+      "text": "Hold on. I will call you back in a minute."
+    }
+  },
+  "n07-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 84.55552,
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "context": {
+      "ms": 86.748114,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "dual4": {
+      "ms": 154.05858899999998,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "empty_context": {
+      "ms": 80.493573,
+      "plain": "Hold on, I will call you back in a minute.",
+      "text": "Hold on, I will call you back in a minute."
+    },
+    "raw": {
+      "ms": 84.53937,
+      "plain": null,
+      "text": "Hold on, I will call you back in a minute."
+    }
+  },
+  "n08-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 109.09966299999999,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "context": {
+      "ms": 115.804471,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "dual4": {
+      "ms": 204.05177899999998,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "empty_context": {
+      "ms": 108.974612,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "raw": {
+      "ms": 109.083523,
+      "plain": null,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    }
+  },
+  "n08-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.463375,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "context": {
+      "ms": 94.895628,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "dual4": {
+      "ms": 173.90371499999998,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "empty_context": {
+      "ms": 87.63461,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "raw": {
+      "ms": 89.448845,
+      "plain": null,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    }
+  },
+  "n08-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 89.883273,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "context": {
+      "ms": 96.242823,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "dual4": {
+      "ms": 172.36879,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "empty_context": {
+      "ms": 93.28729299999999,
+      "plain": "Jacob and Matthias went fishing on Sunday.",
+      "text": "Jacob and Matthias went fishing on Sunday."
+    },
+    "raw": {
+      "ms": 89.867053,
+      "plain": null,
+      "text": "Jacob and Matthias went fishing on Sunday."
+    }
+  },
+  "n09-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 92.665025,
+      "text": "The old coat hangs behind the door."
+    },
+    "context": {
+      "ms": 98.249897,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "dual4": {
+      "ms": 175.12271099999998,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "empty_context": {
+      "ms": 91.726478,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "raw": {
+      "ms": 92.646215,
+      "plain": null,
+      "text": "The old coat hangs behind the door."
+    }
+  },
+  "n09-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 72.537318,
+      "text": "The old coat hangs behind the door."
+    },
+    "context": {
+      "ms": 77.17357399999999,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "dual4": {
+      "ms": 136.56105499999998,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "empty_context": {
+      "ms": 71.56341200000001,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "raw": {
+      "ms": 72.521428,
+      "plain": null,
+      "text": "The old coat hangs behind the door."
+    }
+  },
+  "n09-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 75.645979,
+      "text": "The old coat hangs behind the door."
+    },
+    "context": {
+      "ms": 82.49748799999999,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "dual4": {
+      "ms": 144.1311,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "empty_context": {
+      "ms": 74.870361,
+      "plain": "The old coat hangs behind the door.",
+      "text": "The old coat hangs behind the door."
+    },
+    "raw": {
+      "ms": 75.631199,
+      "plain": null,
+      "text": "The old coat hangs behind the door."
+    }
+  },
+  "n10-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 97.03674,
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "context": {
+      "ms": 102.069105,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "dual4": {
+      "ms": 200.197192,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "empty_context": {
+      "ms": 96.613123,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "raw": {
+      "ms": 97.02014,
+      "plain": null,
+      "text": "Cloud storage is cheaper than it used to be."
+    }
+  },
+  "n10-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 78.823619,
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "context": {
+      "ms": 83.60785399999999,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "dual4": {
+      "ms": 147.30352,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "empty_context": {
+      "ms": 77.588183,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "raw": {
+      "ms": 78.805139,
+      "plain": null,
+      "text": "Cloud storage is cheaper than it used to be."
+    }
+  },
+  "n10-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 87.962999,
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "context": {
+      "ms": 92.852454,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "dual4": {
+      "ms": 165.431883,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "empty_context": {
+      "ms": 87.082152,
+      "plain": "Cloud storage is cheaper than it used to be.",
+      "text": "Cloud storage is cheaper than it used to be."
+    },
+    "raw": {
+      "ms": 87.94713,
+      "plain": null,
+      "text": "Cloud storage is cheaper than it used to be."
+    }
+  },
+  "n11-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 96.892951,
+      "text": "Fortunately the train arrived on time."
+    },
+    "context": {
+      "ms": 99.968961,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "dual4": {
+      "ms": 180.140936,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "empty_context": {
+      "ms": 94.22329,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "raw": {
+      "ms": 96.878501,
+      "plain": null,
+      "text": "Fortunately the train arrived on time."
+    }
+  },
+  "n11-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 75.558309,
+      "text": "Fortunately the train arrived on time."
+    },
+    "context": {
+      "ms": 85.639597,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "dual4": {
+      "ms": 150.923069,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "empty_context": {
+      "ms": 75.680439,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "raw": {
+      "ms": 75.542819,
+      "plain": null,
+      "text": "Fortunately the train arrived on time."
+    }
+  },
+  "n11-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 86.301075,
+      "text": "Fortunately the train arrived on time."
+    },
+    "context": {
+      "ms": 92.441525,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "dual4": {
+      "ms": 161.444466,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "empty_context": {
+      "ms": 86.548424,
+      "plain": "Fortunately the train arrived on time.",
+      "text": "Fortunately the train arrived on time."
+    },
+    "raw": {
+      "ms": 86.285085,
+      "plain": null,
+      "text": "Fortunately the train arrived on time."
+    }
+  },
+  "n12-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 99.044715,
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "context": {
+      "ms": 105.596404,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "dual4": {
+      "ms": 189.82208500000002,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "empty_context": {
+      "ms": 97.705758,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "raw": {
+      "ms": 99.029825,
+      "plain": null,
+      "text": "The tower was built more than a hundred years ago."
+    }
+  },
+  "n12-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 87.231772,
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "context": {
+      "ms": 95.670135,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "dual4": {
+      "ms": 164.728765,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "empty_context": {
+      "ms": 89.104266,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "raw": {
+      "ms": 87.216812,
+      "plain": null,
+      "text": "The tower was built more than a hundred years ago."
+    }
+  },
+  "n12-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 96.91046100000001,
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "context": {
+      "ms": 102.951042,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "dual4": {
+      "ms": 179.434698,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "empty_context": {
+      "ms": 94.510849,
+      "plain": "The tower was built more than a hundred years ago.",
+      "text": "The tower was built more than a hundred years ago."
+    },
+    "raw": {
+      "ms": 96.89469100000001,
+      "plain": null,
+      "text": "The tower was built more than a hundred years ago."
+    }
+  },
+  "n13-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 104.47158699999999,
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "context": {
+      "ms": 110.49328799999999,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "dual4": {
+      "ms": 199.099885,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "empty_context": {
+      "ms": 103.634619,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "raw": {
+      "ms": 104.45301699999999,
+      "plain": null,
+      "text": "Please fix the typo in the second paragraph."
+    }
+  },
+  "n13-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 86.84339299999999,
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "context": {
+      "ms": 93.108184,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "dual4": {
+      "ms": 164.869345,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "empty_context": {
+      "ms": 86.201585,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "raw": {
+      "ms": 86.82682299999999,
+      "plain": null,
+      "text": "Please fix the typo in the second paragraph."
+    }
+  },
+  "n13-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.872114,
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "context": {
+      "ms": 100.61605,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "dual4": {
+      "ms": 182.28839,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "empty_context": {
+      "ms": 93.756271,
+      "plain": "Please fix the typo in the second paragraph.",
+      "text": "Please fix the typo in the second paragraph."
+    },
+    "raw": {
+      "ms": 95.857084,
+      "plain": null,
+      "text": "Please fix the typo in the second paragraph."
+    }
+  },
+  "n14-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 89.43272499999999,
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "context": {
+      "ms": 94.70616799999999,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "dual4": {
+      "ms": 170.867025,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "empty_context": {
+      "ms": 88.738118,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "raw": {
+      "ms": 89.417435,
+      "plain": null,
+      "text": "The weather in the bay was calm and sunny."
+    }
+  },
+  "n14-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 78.14080200000001,
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "context": {
+      "ms": 84.153982,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "dual4": {
+      "ms": 147.15596,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "empty_context": {
+      "ms": 78.935709,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "raw": {
+      "ms": 78.125262,
+      "plain": null,
+      "text": "The weather in the bay was calm and sunny."
+    }
+  },
+  "n14-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 78.87733799999998,
+      "text": "The weather in the bay was calm and sunny, but"
+    },
+    "context": {
+      "ms": 87.011503,
+      "plain": "The weather in the bay was calm and sunny, but",
+      "text": "The weather in the bay was calm and sunny, but"
+    },
+    "dual4": {
+      "ms": 149.30623400000002,
+      "plain": "The weather in the bay was calm and sunny.",
+      "text": "The weather in the bay was calm and sunny."
+    },
+    "empty_context": {
+      "ms": 79.076528,
+      "plain": "The weather in the bay was calm and sunny, but",
+      "text": "The weather in the bay was calm and sunny, but"
+    },
+    "raw": {
+      "ms": 78.85792799999999,
+      "plain": null,
+      "text": "The weather in the bay was calm and sunny, but"
+    }
+  },
+  "n15-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 104.350848,
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "context": {
+      "ms": 110.134889,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "dual4": {
+      "ms": 203.740391,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "empty_context": {
+      "ms": 103.392181,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "raw": {
+      "ms": 104.334958,
+      "plain": null,
+      "text": "I want to grow tomatoes in the garden this year."
+    }
+  },
+  "n15-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 75.505589,
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "context": {
+      "ms": 82.187788,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "dual4": {
+      "ms": 143.85631199999997,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "empty_context": {
+      "ms": 78.625709,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "raw": {
+      "ms": 75.490509,
+      "plain": null,
+      "text": "I want to grow tomatoes in the garden this year."
+    }
+  },
+  "n15-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 89.32411499999999,
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "context": {
+      "ms": 97.18778,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "dual4": {
+      "ms": 174.85949300000001,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "empty_context": {
+      "ms": 89.40754600000001,
+      "plain": "I want to grow tomatoes in the garden this year.",
+      "text": "I want to grow tomatoes in the garden this year."
+    },
+    "raw": {
+      "ms": 89.308915,
+      "plain": null,
+      "text": "I want to grow tomatoes in the garden this year."
+    }
+  },
+  "n16-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 104.59825699999999,
+      "text": "The super base price does not include tax."
+    },
+    "context": {
+      "ms": 111.58974500000001,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "dual4": {
+      "ms": 204.908897,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "empty_context": {
+      "ms": 103.830968,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "raw": {
+      "ms": 104.58326699999999,
+      "plain": null,
+      "text": "The super base price does not include tax."
+    }
+  },
+  "n16-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 88.73493699999999,
+      "text": "The super base price does not include tax."
+    },
+    "context": {
+      "ms": 96.516453,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "dual4": {
+      "ms": 172.438071,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "empty_context": {
+      "ms": 88.17917899999999,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "raw": {
+      "ms": 88.720047,
+      "plain": null,
+      "text": "The super base price does not include tax."
+    }
+  },
+  "n16-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.842145,
+      "text": "The super base price does not include tax."
+    },
+    "context": {
+      "ms": 102.931412,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "dual4": {
+      "ms": 181.353912,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "empty_context": {
+      "ms": 93.14497300000001,
+      "plain": "The super base price does not include tax.",
+      "text": "The super base price does not include tax."
+    },
+    "raw": {
+      "ms": 95.827415,
+      "plain": null,
+      "text": "The super base price does not include tax."
+    }
+  },
+  "n17-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 92.55940499999998,
+      "text": "Can you send me the code from yesterday?"
+    },
+    "context": {
+      "ms": 98.296258,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "dual4": {
+      "ms": 180.031206,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "empty_context": {
+      "ms": 91.639837,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "raw": {
+      "ms": 92.54343499999999,
+      "plain": null,
+      "text": "Can you send me the code from yesterday?"
+    }
+  },
+  "n17-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 68.38663199999999,
+      "text": "Can you send me the code from yesterday?"
+    },
+    "context": {
+      "ms": 75.895078,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "dual4": {
+      "ms": 125.434051,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "empty_context": {
+      "ms": 68.713261,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "raw": {
+      "ms": 68.37235199999999,
+      "plain": null,
+      "text": "Can you send me the code from yesterday?"
+    }
+  },
+  "n17-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 75.07447100000002,
+      "text": "Can you send me the code from yesterday?"
+    },
+    "context": {
+      "ms": 81.163441,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "dual4": {
+      "ms": 141.30982,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "empty_context": {
+      "ms": 74.134504,
+      "plain": "Can you send me the code from yesterday?",
+      "text": "Can you send me the code from yesterday?"
+    },
+    "raw": {
+      "ms": 75.05941100000001,
+      "plain": null,
+      "text": "Can you send me the code from yesterday?"
+    }
+  },
+  "n18-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 85.940786,
+      "text": "That matters more than the deadline."
+    },
+    "context": {
+      "ms": 89.769284,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "dual4": {
+      "ms": 157.522688,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "empty_context": {
+      "ms": 82.583107,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "raw": {
+      "ms": 85.926056,
+      "plain": null,
+      "text": "That matters more than the deadline."
+    }
+  },
+  "n18-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 69.84311799999999,
+      "text": "That matters more than the deadline."
+    },
+    "context": {
+      "ms": 76.031918,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "dual4": {
+      "ms": 127.365324,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "empty_context": {
+      "ms": 71.484672,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "raw": {
+      "ms": 69.82864799999999,
+      "plain": null,
+      "text": "That matters more than the deadline."
+    }
+  },
+  "n18-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 74.471913,
+      "text": "That matters more than the deadline."
+    },
+    "context": {
+      "ms": 80.435994,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "dual4": {
+      "ms": 136.351305,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "empty_context": {
+      "ms": 74.287144,
+      "plain": "That matters more than the deadline.",
+      "text": "That matters more than the deadline."
+    },
+    "raw": {
+      "ms": 74.457723,
+      "plain": null,
+      "text": "That matters more than the deadline."
+    }
+  },
+  "n19-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 95.046857,
+      "text": "The audio was too fluid to follow."
+    },
+    "context": {
+      "ms": 103.38722,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "dual4": {
+      "ms": 187.485972,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "empty_context": {
+      "ms": 94.614909,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "raw": {
+      "ms": 95.032317,
+      "plain": null,
+      "text": "The audio was too fluid to follow."
+    }
+  },
+  "n19-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 76.096688,
+      "text": "The audio was too fluid to follow."
+    },
+    "context": {
+      "ms": 79.65077600000001,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "dual4": {
+      "ms": 138.464769,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "empty_context": {
+      "ms": 77.680383,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "raw": {
+      "ms": 76.081738,
+      "plain": null,
+      "text": "The audio was too fluid to follow."
+    }
+  },
+  "n19-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 75.532079,
+      "text": "The audio was too fluid to follow."
+    },
+    "context": {
+      "ms": 81.232921,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "dual4": {
+      "ms": 141.688289,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "empty_context": {
+      "ms": 74.746722,
+      "plain": "The audio was too fluid to follow.",
+      "text": "The audio was too fluid to follow."
+    },
+    "raw": {
+      "ms": 75.517679,
+      "plain": null,
+      "text": "The audio was too fluid to follow."
+    }
+  },
+  "n20-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 92.65582500000001,
+      "text": "We ordered a pizza and some salad."
+    },
+    "context": {
+      "ms": 100.757869,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "dual4": {
+      "ms": 176.937956,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "empty_context": {
+      "ms": 92.287966,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "raw": {
+      "ms": 92.641265,
+      "plain": null,
+      "text": "We ordered a pizza and some salad."
+    }
+  },
+  "n20-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 74.841681,
+      "text": "We ordered a pizza and some salad."
+    },
+    "context": {
+      "ms": 80.60650299999999,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "dual4": {
+      "ms": 141.50740000000002,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "empty_context": {
+      "ms": 74.299974,
+      "plain": "We ordered a pizza and some salad.",
+      "text": "We ordered a pizza and some salad."
+    },
+    "raw": {
+      "ms": 74.82533099999999,
+      "plain": null,
+      "text": "We ordered a pizza and some salad."
+    }
+  },
+  "n20-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 74.37993300000001,
+      "text": "we ordered a pizza and some salad,"
+    },
+    "context": {
+      "ms": 80.245925,
+      "plain": "we ordered a pizza and some salad,",
+      "text": "we ordered a pizza and some salad,"
+    },
+    "dual4": {
+      "ms": 140.680992,
+      "plain": "we ordered a pizza and some salad,",
+      "text": "we ordered a pizza and some salad,"
+    },
+    "empty_context": {
+      "ms": 73.912904,
+      "plain": "we ordered a pizza and some salad,",
+      "text": "we ordered a pizza and some salad,"
+    },
+    "raw": {
+      "ms": 74.36552400000001,
+      "plain": null,
+      "text": "we ordered a pizza and some salad,"
+    }
+  },
+  "n21-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 100.31474999999999,
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "context": {
+      "ms": 107.519298,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "dual4": {
+      "ms": 194.42361,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "empty_context": {
+      "ms": 98.983395,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "raw": {
+      "ms": 100.29831999999999,
+      "plain": null,
+      "text": "The meeting starts at nine tomorrow morning."
+    }
+  },
+  "n21-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 75.26554100000001,
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "context": {
+      "ms": 83.147146,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "dual4": {
+      "ms": 142.97295400000002,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "empty_context": {
+      "ms": 76.91540400000001,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "raw": {
+      "ms": 75.250881,
+      "plain": null,
+      "text": "The meeting starts at nine tomorrow morning."
+    }
+  },
+  "n21-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 83.958613,
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "context": {
+      "ms": 92.734974,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "dual4": {
+      "ms": 158.686834,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "empty_context": {
+      "ms": 82.75210700000001,
+      "plain": "The meeting starts at nine tomorrow morning.",
+      "text": "The meeting starts at nine tomorrow morning."
+    },
+    "raw": {
+      "ms": 83.943753,
+      "plain": null,
+      "text": "The meeting starts at nine tomorrow morning."
+    }
+  },
+  "n22-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 98.769946,
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "context": {
+      "ms": 103.43177100000001,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "dual4": {
+      "ms": 189.031847,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "empty_context": {
+      "ms": 95.722275,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "raw": {
+      "ms": 98.75308600000001,
+      "plain": null,
+      "text": "Her sister moved to Gothenburg in the spring."
+    }
+  },
+  "n22-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 78.31692000000001,
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "context": {
+      "ms": 85.626727,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "dual4": {
+      "ms": 151.479198,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "empty_context": {
+      "ms": 79.23843799999999,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "raw": {
+      "ms": 78.30226,
+      "plain": null,
+      "text": "Her sister moved to Gothenburg in the spring."
+    }
+  },
+  "n22-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 87.10626300000001,
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "context": {
+      "ms": 94.497739,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "dual4": {
+      "ms": 168.577333,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "empty_context": {
+      "ms": 86.182675,
+      "plain": "Her sister moved to Gothenburg in the spring.",
+      "text": "Her sister moved to Gothenburg in the spring."
+    },
+    "raw": {
+      "ms": 87.090753,
+      "plain": null,
+      "text": "Her sister moved to Gothenburg in the spring."
+    }
+  },
+  "n23-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 86.978873,
+      "text": "The Highland cattle stood in the rain."
+    },
+    "context": {
+      "ms": 90.416442,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "dual4": {
+      "ms": 165.721493,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "empty_context": {
+      "ms": 84.379871,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "raw": {
+      "ms": 86.964603,
+      "plain": null,
+      "text": "The Highland cattle stood in the rain."
+    }
+  },
+  "n23-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 71.00153399999999,
+      "text": "The Highland cattle stood in the rain."
+    },
+    "context": {
+      "ms": 76.894455,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "dual4": {
+      "ms": 134.98017000000002,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "empty_context": {
+      "ms": 70.76845499999999,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "raw": {
+      "ms": 70.986994,
+      "plain": null,
+      "text": "The Highland cattle stood in the rain."
+    }
+  },
+  "n23-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 76.567226,
+      "text": "The Highland cattle stood in the rain."
+    },
+    "context": {
+      "ms": 82.169438,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "dual4": {
+      "ms": 143.332964,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "empty_context": {
+      "ms": 74.598172,
+      "plain": "The Highland cattle stood in the rain.",
+      "text": "The Highland cattle stood in the rain."
+    },
+    "raw": {
+      "ms": 76.551856,
+      "plain": null,
+      "text": "The Highland cattle stood in the rain."
+    }
+  },
+  "n24-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 89.43443500000001,
+      "text": "Put the kettle on and make some tea."
+    },
+    "context": {
+      "ms": 94.48822,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "dual4": {
+      "ms": 161.91815400000002,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "empty_context": {
+      "ms": 89.443525,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "raw": {
+      "ms": 89.419065,
+      "plain": null,
+      "text": "Put the kettle on and make some tea."
+    }
+  },
+  "n24-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 70.79819499999999,
+      "text": "put the kettle on, and make some tea."
+    },
+    "context": {
+      "ms": 76.47921600000001,
+      "plain": "put the kettle on, and make some tea.",
+      "text": "put the kettle on, and make some tea."
+    },
+    "dual4": {
+      "ms": 131.611891,
+      "plain": "put the kettle on, and make some tea.",
+      "text": "put the kettle on, and make some tea."
+    },
+    "empty_context": {
+      "ms": 69.955447,
+      "plain": "put the kettle on, and make some tea.",
+      "text": "put the kettle on, and make some tea."
+    },
+    "raw": {
+      "ms": 70.783935,
+      "plain": null,
+      "text": "put the kettle on, and make some tea."
+    }
+  },
+  "n24-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 76.878365,
+      "text": "Put the kettle on and make some tea."
+    },
+    "context": {
+      "ms": 80.340704,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "dual4": {
+      "ms": 138.509069,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "empty_context": {
+      "ms": 73.982604,
+      "plain": "Put the kettle on and make some tea.",
+      "text": "Put the kettle on and make some tea."
+    },
+    "raw": {
+      "ms": 76.863225,
+      "plain": null,
+      "text": "Put the kettle on and make some tea."
+    }
+  },
+  "n25-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 101.011448,
+      "text": "The car was parked outside the hotel."
+    },
+    "context": {
+      "ms": 104.363888,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "dual4": {
+      "ms": 187.888782,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "empty_context": {
+      "ms": 97.506709,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "raw": {
+      "ms": 100.996089,
+      "plain": null,
+      "text": "The car was parked outside the hotel."
+    }
+  },
+  "n25-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 74.011014,
+      "text": "The car was parked outside the hotel."
+    },
+    "context": {
+      "ms": 80.457194,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "dual4": {
+      "ms": 141.571979,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "empty_context": {
+      "ms": 73.797075,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "raw": {
+      "ms": 73.996584,
+      "plain": null,
+      "text": "The car was parked outside the hotel."
+    }
+  },
+  "n25-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 81.53703,
+      "text": "The car was parked outside the hotel."
+    },
+    "context": {
+      "ms": 85.816137,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "dual4": {
+      "ms": 147.69603,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "empty_context": {
+      "ms": 79.283777,
+      "plain": "The car was parked outside the hotel.",
+      "text": "The car was parked outside the hotel."
+    },
+    "raw": {
+      "ms": 81.52148,
+      "plain": null,
+      "text": "The car was parked outside the hotel."
+    }
+  },
+  "n26-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 77.55888300000001,
+      "text": "Can you look at the budget again?"
+    },
+    "context": {
+      "ms": 80.584463,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "dual4": {
+      "ms": 141.088411,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "empty_context": {
+      "ms": 77.11942400000001,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "raw": {
+      "ms": 77.544234,
+      "plain": null,
+      "text": "Can you look at the budget again?"
+    }
+  },
+  "n26-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 76.738216,
+      "text": "Can you look at the budget again?"
+    },
+    "context": {
+      "ms": 68.77604099999999,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "dual4": {
+      "ms": 134.95325,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "empty_context": {
+      "ms": 62.766830999999996,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "raw": {
+      "ms": 76.719336,
+      "plain": null,
+      "text": "Can you look at the budget again?"
+    }
+  },
+  "n26-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 69.21819,
+      "text": "Can you look at the budget again?"
+    },
+    "context": {
+      "ms": 73.802195,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "dual4": {
+      "ms": 128.342161,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "empty_context": {
+      "ms": 70.297605,
+      "plain": "Can you look at the budget again?",
+      "text": "Can you look at the budget again?"
+    },
+    "raw": {
+      "ms": 69.20223,
+      "plain": null,
+      "text": "Can you look at the budget again?"
+    }
+  },
+  "n27-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 100.5513,
+      "text": "We should hire another designer next quarter."
+    },
+    "context": {
+      "ms": 104.808347,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "dual4": {
+      "ms": 187.13573399999999,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "empty_context": {
+      "ms": 99.614842,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "raw": {
+      "ms": 100.5369,
+      "plain": null,
+      "text": "We should hire another designer next quarter."
+    }
+  },
+  "n27-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 79.482007,
+      "text": "we should hire another designer next quarter."
+    },
+    "context": {
+      "ms": 83.504883,
+      "plain": "we should hire another designer next quarter.",
+      "text": "we should hire another designer next quarter."
+    },
+    "dual4": {
+      "ms": 149.681674,
+      "plain": "we should hire another designer next quarter.",
+      "text": "we should hire another designer next quarter."
+    },
+    "empty_context": {
+      "ms": 79.39401699999999,
+      "plain": "we should hire another designer next quarter.",
+      "text": "we should hire another designer next quarter."
+    },
+    "raw": {
+      "ms": 79.465547,
+      "plain": null,
+      "text": "we should hire another designer next quarter."
+    }
+  },
+  "n27-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 90.284583,
+      "text": "We should hire another designer next quarter."
+    },
+    "context": {
+      "ms": 95.408136,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "dual4": {
+      "ms": 167.65466600000002,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "empty_context": {
+      "ms": 87.678381,
+      "plain": "We should hire another designer next quarter.",
+      "text": "We should hire another designer next quarter."
+    },
+    "raw": {
+      "ms": 90.269283,
+      "plain": null,
+      "text": "We should hire another designer next quarter."
+    }
+  },
+  "n28-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 103.284561,
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "context": {
+      "ms": 106.675021,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "dual4": {
+      "ms": 195.300287,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "empty_context": {
+      "ms": 99.545633,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "raw": {
+      "ms": 103.269481,
+      "plain": null,
+      "text": "The parakeets in the park are loud in the morning."
+    }
+  },
+  "n28-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.475135,
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "context": {
+      "ms": 96.953311,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "dual4": {
+      "ms": 173.680217,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "empty_context": {
+      "ms": 89.654495,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "raw": {
+      "ms": 89.458405,
+      "plain": null,
+      "text": "The parakeets in the park are loud in the morning."
+    }
+  },
+  "n28-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 92.697305,
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "context": {
+      "ms": 101.09973799999999,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "dual4": {
+      "ms": 181.00686399999998,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "empty_context": {
+      "ms": 91.571028,
+      "plain": "The parakeets in the park are loud in the morning.",
+      "text": "The parakeets in the park are loud in the morning."
+    },
+    "raw": {
+      "ms": 92.681545,
+      "plain": null,
+      "text": "The parakeets in the park are loud in the morning."
+    }
+  },
+  "n29-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 88.812398,
+      "text": "Thanks, that sounds good to me."
+    },
+    "context": {
+      "ms": 94.70141799999999,
+      "plain": "Thanks, that sounds good to me.",
+      "text": "Thanks, that sounds good to me."
+    },
+    "dual4": {
+      "ms": 170.842826,
+      "plain": "Thanks, that sounds good to me.",
+      "text": "Thanks, that sounds good to me."
+    },
+    "empty_context": {
+      "ms": 88.577448,
+      "plain": "Thanks, that sounds good to me.",
+      "text": "Thanks, that sounds good to me."
+    },
+    "raw": {
+      "ms": 88.79683800000001,
+      "plain": null,
+      "text": "Thanks, that sounds good to me."
+    }
+  },
+  "n29-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 65.035073,
+      "text": "Thanks. That sounds good to me."
+    },
+    "context": {
+      "ms": 69.270709,
+      "plain": "Thanks. That sounds good to me.",
+      "text": "Thanks. That sounds good to me."
+    },
+    "dual4": {
+      "ms": 117.803745,
+      "plain": "Thanks. That sounds good to me.",
+      "text": "Thanks. That sounds good to me."
+    },
+    "empty_context": {
+      "ms": 63.163809,
+      "plain": "Thanks. That sounds good to me.",
+      "text": "Thanks. That sounds good to me."
+    },
+    "raw": {
+      "ms": 65.022063,
+      "plain": null,
+      "text": "Thanks. That sounds good to me."
+    }
+  },
+  "n29-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 63.940276999999995,
+      "text": "Thanks that sounds good to me."
+    },
+    "context": {
+      "ms": 68.69030099999999,
+      "plain": "Thanks that sounds good to me.",
+      "text": "Thanks that sounds good to me."
+    },
+    "dual4": {
+      "ms": 121.550223,
+      "plain": "Thanks that sounds good to me.",
+      "text": "Thanks that sounds good to me."
+    },
+    "empty_context": {
+      "ms": 64.425055,
+      "plain": "Thanks that sounds good to me.",
+      "text": "Thanks that sounds good to me."
+    },
+    "raw": {
+      "ms": 63.926047,
+      "plain": null,
+      "text": "Thanks that sounds good to me."
+    }
+  },
+  "n30-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 103.619179,
+      "text": "Remember to back up your files every week."
+    },
+    "context": {
+      "ms": 105.068456,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "dual4": {
+      "ms": 197.254592,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "empty_context": {
+      "ms": 103.598541,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "raw": {
+      "ms": 103.60432,
+      "plain": null,
+      "text": "Remember to back up your files every week."
+    }
+  },
+  "n30-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 88.24453899999999,
+      "text": "Remember to back up your files every week."
+    },
+    "context": {
+      "ms": 90.87662,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "dual4": {
+      "ms": 166.51777,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "empty_context": {
+      "ms": 84.97622000000001,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "raw": {
+      "ms": 88.22819899999999,
+      "plain": null,
+      "text": "Remember to back up your files every week."
+    }
+  },
+  "n30-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 92.715455,
+      "text": "Remember to back up your files every week."
+    },
+    "context": {
+      "ms": 94.32551000000001,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "dual4": {
+      "ms": 174.91983299999998,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "empty_context": {
+      "ms": 91.72107799999999,
+      "plain": "Remember to back up your files every week.",
+      "text": "Remember to back up your files every week."
+    },
+    "raw": {
+      "ms": 92.700405,
+      "plain": null,
+      "text": "Remember to back up your files every week."
+    }
+  },
+  "p01-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 114.712635,
+      "text": "Coit turns my voice into text without the cloud."
+    },
+    "context": {
+      "ms": 124.226395,
+      "plain": "Coit turns my voice into text without the cloud.",
+      "text": "Koett turns my voice into text without the cloud."
+    },
+    "dual4": {
+      "ms": 216.469921,
+      "plain": "Coit turns my voice into text without the cloud.",
+      "text": "Koett turns my voice into text without the cloud."
+    },
+    "empty_context": {
+      "ms": 113.01437,
+      "plain": "Coit turns my voice into text without the cloud.",
+      "text": "Coit turns my voice into text without the cloud."
+    },
+    "raw": {
+      "ms": 114.695915,
+      "plain": null,
+      "text": "Coit turns my voice into text without the cloud."
+    }
+  },
+  "p01-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 96.881752,
+      "text": "Cote turns my voice into text without the cloud."
+    },
+    "context": {
+      "ms": 109.16578200000001,
+      "plain": "Cote turns my voice into text without the cloud.",
+      "text": "Koett turns my voice into text without the cloud."
+    },
+    "dual4": {
+      "ms": 189.11967800000002,
+      "plain": "Cote turns my voice into text without the cloud.",
+      "text": "Koett turns my voice into text without the cloud."
+    },
+    "empty_context": {
+      "ms": 97.37264900000001,
+      "plain": "Cote turns my voice into text without the cloud.",
+      "text": "Cote turns my voice into text without the cloud."
+    },
+    "raw": {
+      "ms": 96.866472,
+      "plain": null,
+      "text": "Cote turns my voice into text without the cloud."
+    }
+  },
+  "p01-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 99.301124,
+      "text": "COTE turns my voice into text without the cloud."
+    },
+    "context": {
+      "ms": 103.721041,
+      "plain": "COTE turns my voice into text without the cloud.",
+      "text": "COTE turns my voice into text without the cloud."
+    },
+    "dual4": {
+      "ms": 187.314933,
+      "plain": "Cote turns my voice into text without the cloud.",
+      "text": "Cote turns my voice into text without the cloud."
+    },
+    "empty_context": {
+      "ms": 98.01888699999999,
+      "plain": "COTE turns my voice into text without the cloud.",
+      "text": "COTE turns my voice into text without the cloud."
+    },
+    "raw": {
+      "ms": 99.285804,
+      "plain": null,
+      "text": "COTE turns my voice into text without the cloud."
+    }
+  },
+  "p02-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 120.30105699999999,
+      "text": "Open Coet and press the option key to start dictating."
+    },
+    "context": {
+      "ms": 127.99491299999998,
+      "plain": "Open Coet and press the option key to start dictating.",
+      "text": "Open Koett and press the option key to start dictating."
+    },
+    "dual4": {
+      "ms": 230.560146,
+      "plain": "Open co-ed and press the option key to start dictating.",
+      "text": "Open Koett and press the option key to start dictating."
+    },
+    "empty_context": {
+      "ms": 118.633852,
+      "plain": "Open Coet and press the option key to start dictating.",
+      "text": "Open Coet and press the option key to start dictating."
+    },
+    "raw": {
+      "ms": 120.28427699999999,
+      "plain": null,
+      "text": "Open Coet and press the option key to start dictating."
+    }
+  },
+  "p02-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 105.28243499999999,
+      "text": "open Code and press the Option key to start dictating."
+    },
+    "context": {
+      "ms": 113.897288,
+      "plain": "open Code and press the Option key to start dictating.",
+      "text": "open Code and press the Option key to start dictating."
+    },
+    "dual4": {
+      "ms": 201.524939,
+      "plain": "open code and press the option key to start dictating.",
+      "text": "open code and press the option key to start dictating."
+    },
+    "empty_context": {
+      "ms": 105.107575,
+      "plain": "open Code and press the Option key to start dictating.",
+      "text": "open Code and press the Option key to start dictating."
+    },
+    "raw": {
+      "ms": 105.266685,
+      "plain": null,
+      "text": "open Code and press the Option key to start dictating."
+    }
+  },
+  "p02-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 103.68548,
+      "text": "Open Code and press the Option key to start dictating."
+    },
+    "context": {
+      "ms": 111.52119400000001,
+      "plain": "Open Code and press the Option key to start dictating.",
+      "text": "Open Code and press the Option key to start dictating."
+    },
+    "dual4": {
+      "ms": 199.686735,
+      "plain": "Open code and press the option key to start dictating.",
+      "text": "Open code and press the option key to start dictating."
+    },
+    "empty_context": {
+      "ms": 105.966152,
+      "plain": "Open Code and press the Option key to start dictating.",
+      "text": "Open Code and press the Option key to start dictating."
+    },
+    "raw": {
+      "ms": 103.6695,
+      "plain": null,
+      "text": "Open Code and press the Option key to start dictating."
+    }
+  },
+  "p03-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 105.184715,
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "context": {
+      "ms": 118.94993099999999,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "dual4": {
+      "ms": 199.064967,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "empty_context": {
+      "ms": 107.21203899999999,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "raw": {
+      "ms": 105.167885,
+      "plain": null,
+      "text": "The Parakeet model runs locally on the laptop."
+    }
+  },
+  "p03-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 94.40949,
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "context": {
+      "ms": 101.68606600000001,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "dual4": {
+      "ms": 180.005086,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "empty_context": {
+      "ms": 93.340613,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "raw": {
+      "ms": 94.39465,
+      "plain": null,
+      "text": "The Parakeet model runs locally on the laptop."
+    }
+  },
+  "p03-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.559696,
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "context": {
+      "ms": 101.99626500000001,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "dual4": {
+      "ms": 183.706735,
+      "plain": "The parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "empty_context": {
+      "ms": 94.537799,
+      "plain": "The Parakeet model runs locally on the laptop.",
+      "text": "The Parakeet model runs locally on the laptop."
+    },
+    "raw": {
+      "ms": 95.544746,
+      "plain": null,
+      "text": "The Parakeet model runs locally on the laptop."
+    }
+  },
+  "p04-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 106.55954,
+      "text": "We compiled Sherparonx from the pin source tag."
+    },
+    "context": {
+      "ms": 114.313647,
+      "plain": "We compiled Sherparonx from the pin source tag.",
+      "text": "We compiled Sherparonx from the pin source tag."
+    },
+    "dual4": {
+      "ms": 205.18939699999999,
+      "plain": "We compiled Sherparonx from the pin source tag.",
+      "text": "We compiled Sherparonx from the pin source tag."
+    },
+    "empty_context": {
+      "ms": 105.54867399999999,
+      "plain": "We compiled Sherparonx from the pin source tag.",
+      "text": "We compiled Sherparonx from the pin source tag."
+    },
+    "raw": {
+      "ms": 106.54487,
+      "plain": null,
+      "text": "We compiled Sherparonx from the pin source tag."
+    }
+  },
+  "p04-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.550794,
+      "text": "We compiled Sherpalonx from the pin source tag."
+    },
+    "context": {
+      "ms": 99.952202,
+      "plain": "We compiled Sherpalonx from the pin source tag.",
+      "text": "We compiled Sherpalonx from the pin source tag."
+    },
+    "dual4": {
+      "ms": 178.302073,
+      "plain": "we compiled sherpalonx from the pin source tag.",
+      "text": "we compiled sherpalonx from the pin source tag."
+    },
+    "empty_context": {
+      "ms": 89.20874500000001,
+      "plain": "We compiled Sherpalonx from the pin source tag.",
+      "text": "We compiled Sherpalonx from the pin source tag."
+    },
+    "raw": {
+      "ms": 89.534554,
+      "plain": null,
+      "text": "We compiled Sherpalonx from the pin source tag."
+    }
+  },
+  "p04-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.745876,
+      "text": "We compiled Sherbonx from the pin source tag."
+    },
+    "context": {
+      "ms": 102.740283,
+      "plain": "We compiled Sherbonx from the pin source tag.",
+      "text": "We compiled Sherbonx from the pin source tag."
+    },
+    "dual4": {
+      "ms": 185.54441999999997,
+      "plain": "We compiled Sherbongs from the pin source tag.",
+      "text": "We compiled Sherbongs from the pin source tag."
+    },
+    "empty_context": {
+      "ms": 94.59416800000001,
+      "plain": "We compiled Sherbonx from the pin source tag.",
+      "text": "We compiled Sherbonx from the pin source tag."
+    },
+    "raw": {
+      "ms": 95.729776,
+      "plain": null,
+      "text": "We compiled Sherbonx from the pin source tag."
+    }
+  },
+  "p05-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 121.24573400000001,
+      "text": "Nematron streams partial results every half second."
+    },
+    "context": {
+      "ms": 128.030323,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "dual4": {
+      "ms": 233.900775,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "empty_context": {
+      "ms": 119.41937,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nematron streams partial results every half second."
+    },
+    "raw": {
+      "ms": 121.22615400000001,
+      "plain": null,
+      "text": "Nematron streams partial results every half second."
+    }
+  },
+  "p05-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 100.409381,
+      "text": "Nematron streams partial results every half second."
+    },
+    "context": {
+      "ms": 107.729687,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "dual4": {
+      "ms": 203.445632,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "empty_context": {
+      "ms": 100.111321,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nematron streams partial results every half second."
+    },
+    "raw": {
+      "ms": 100.394351,
+      "plain": null,
+      "text": "Nematron streams partial results every half second."
+    }
+  },
+  "p05-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 108.231965,
+      "text": "Nematron streams partial results every half second."
+    },
+    "context": {
+      "ms": 117.028067,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "dual4": {
+      "ms": 206.656613,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nemotron streams partial results every half second."
+    },
+    "empty_context": {
+      "ms": 108.772874,
+      "plain": "Nematron streams partial results every half second.",
+      "text": "Nematron streams partial results every half second."
+    },
+    "raw": {
+      "ms": 108.215435,
+      "plain": null,
+      "text": "Nematron streams partial results every half second."
+    }
+  },
+  "p06-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 136.293936,
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "context": {
+      "ms": 130.123196,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "dual4": {
+      "ms": 231.49783299999999,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "empty_context": {
+      "ms": 121.77126200000001,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "raw": {
+      "ms": 136.278226,
+      "plain": null,
+      "text": "On the Mac we use fluid audio for speech recognition."
+    }
+  },
+  "p06-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 104.499987,
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "context": {
+      "ms": 112.90851,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "dual4": {
+      "ms": 203.957531,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "empty_context": {
+      "ms": 103.369952,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "raw": {
+      "ms": 104.482397,
+      "plain": null,
+      "text": "On the Mac we use fluid audio for speech recognition."
+    }
+  },
+  "p06-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 109.99524000000001,
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "context": {
+      "ms": 116.484799,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "dual4": {
+      "ms": 211.523167,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "empty_context": {
+      "ms": 109.506121,
+      "plain": "On the Mac we use fluid audio for speech recognition.",
+      "text": "On the Mac we use FluidAudio for speech recognition."
+    },
+    "raw": {
+      "ms": 109.97948000000001,
+      "plain": null,
+      "text": "On the Mac we use fluid audio for speech recognition."
+    }
+  },
+  "p07-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 110.389708,
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "context": {
+      "ms": 117.179236,
+      "plain": "Send the backlink report to Nordic Rank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "dual4": {
+      "ms": 211.133339,
+      "plain": "Send the backlink report to Nordic Rank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "empty_context": {
+      "ms": 108.03254700000001,
+      "plain": "Send the backlink report to Nordic Rank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "raw": {
+      "ms": 110.373948,
+      "plain": null,
+      "text": "Send the backlink report to Nordic Rank by Friday."
+    }
+  },
+  "p07-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 103.128112,
+      "text": "Send the backlink report to Nordikrank by Friday."
+    },
+    "context": {
+      "ms": 109.037563,
+      "plain": "Send the backlink report to Nordikrank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "dual4": {
+      "ms": 195.445627,
+      "plain": "Send the backlink report to Nordicrank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "empty_context": {
+      "ms": 101.882226,
+      "plain": "Send the backlink report to Nordikrank by Friday.",
+      "text": "Send the backlink report to Nordikrank by Friday."
+    },
+    "raw": {
+      "ms": 103.110172,
+      "plain": null,
+      "text": "Send the backlink report to Nordikrank by Friday."
+    }
+  },
+  "p07-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 98.952815,
+      "text": "Send the backlink report to Nordegrank by Friday."
+    },
+    "context": {
+      "ms": 108.924444,
+      "plain": "Send the backlink report to Nordegrank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "dual4": {
+      "ms": 193.449414,
+      "plain": "Send the backlink report to Nordicrank by Friday.",
+      "text": "Send the backlink report to Nordicrank by Friday."
+    },
+    "empty_context": {
+      "ms": 98.01425800000001,
+      "plain": "Send the backlink report to Nordegrank by Friday.",
+      "text": "Send the backlink report to Nordegrank by Friday."
+    },
+    "raw": {
+      "ms": 98.93761500000001,
+      "plain": null,
+      "text": "Send the backlink report to Nordegrank by Friday."
+    }
+  },
+  "p08-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 103.15096199999999,
+      "text": "I logged into Hoggia to check the invoices."
+    },
+    "context": {
+      "ms": 112.749292,
+      "plain": "I logged into Hoggia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "dual4": {
+      "ms": 199.349995,
+      "plain": "I logged into Hoggia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "empty_context": {
+      "ms": 102.712973,
+      "plain": "I logged into Hoggia to check the invoices.",
+      "text": "I logged into Hoggia to check the invoices."
+    },
+    "raw": {
+      "ms": 103.135832,
+      "plain": null,
+      "text": "I logged into Hoggia to check the invoices."
+    }
+  },
+  "p08-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 83.978033,
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "context": {
+      "ms": 92.066287,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "dual4": {
+      "ms": 158.699855,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "empty_context": {
+      "ms": 82.584598,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "raw": {
+      "ms": 83.960933,
+      "plain": null,
+      "text": "I logged into Hogia to check the invoices."
+    }
+  },
+  "p08-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 90.35883199999999,
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "context": {
+      "ms": 98.810905,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "dual4": {
+      "ms": 174.71463400000002,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "empty_context": {
+      "ms": 91.29581,
+      "plain": "I logged into Hogia to check the invoices.",
+      "text": "I logged into Hogia to check the invoices."
+    },
+    "raw": {
+      "ms": 90.339012,
+      "plain": null,
+      "text": "I logged into Hogia to check the invoices."
+    }
+  },
+  "p09-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 104.799217,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "context": {
+      "ms": 110.73340800000001,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "dual4": {
+      "ms": 203.21334299999998,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "empty_context": {
+      "ms": 102.839082,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "raw": {
+      "ms": 104.781367,
+      "plain": null,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    }
+  },
+  "p09-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 86.852794,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "context": {
+      "ms": 92.767254,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "dual4": {
+      "ms": 163.72694900000002,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "empty_context": {
+      "ms": 86.57443400000001,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "raw": {
+      "ms": 86.836974,
+      "plain": null,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    }
+  },
+  "p09-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 94.572349,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "context": {
+      "ms": 111.388586,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "dual4": {
+      "ms": 188.62644,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Yakob wants a demo of the booking app tomorrow."
+    },
+    "empty_context": {
+      "ms": 97.960348,
+      "plain": "Jakob wants a demo of the booking app tomorrow.",
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    },
+    "raw": {
+      "ms": 94.554629,
+      "plain": null,
+      "text": "Jakob wants a demo of the booking app tomorrow."
+    }
+  },
+  "p10-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 100.52459,
+      "text": "Motios paid the last three invoices."
+    },
+    "context": {
+      "ms": 104.998326,
+      "plain": "Motios paid the last three invoices.",
+      "text": "Motios paid the last three invoices."
+    },
+    "dual4": {
+      "ms": 186.393847,
+      "plain": "Motios paid the last three invoices.",
+      "text": "Motios paid the last three invoices."
+    },
+    "empty_context": {
+      "ms": 96.810862,
+      "plain": "Motios paid the last three invoices.",
+      "text": "Motios paid the last three invoices."
+    },
+    "raw": {
+      "ms": 100.50958,
+      "plain": null,
+      "text": "Motios paid the last three invoices."
+    }
+  },
+  "p10-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.921714,
+      "text": "Matyas paid the last three invoices."
+    },
+    "context": {
+      "ms": 95.92545500000001,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "dual4": {
+      "ms": 168.04369499999999,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "empty_context": {
+      "ms": 88.393818,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "raw": {
+      "ms": 89.906914,
+      "plain": null,
+      "text": "Matyas paid the last three invoices."
+    }
+  },
+  "p10-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 84.63109,
+      "text": "Matyas paid the last three invoices."
+    },
+    "context": {
+      "ms": 91.810998,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "dual4": {
+      "ms": 159.793731,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "empty_context": {
+      "ms": 84.95458,
+      "plain": "Matyas paid the last three invoices.",
+      "text": "Matyas paid the last three invoices."
+    },
+    "raw": {
+      "ms": 84.61588,
+      "plain": null,
+      "text": "Matyas paid the last three invoices."
+    }
+  },
+  "p11-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 115.380353,
+      "text": "Hi, this is Old Dieberg calling about the meeting."
+    },
+    "context": {
+      "ms": 121.284694,
+      "plain": "Hi, this is Old Dieberg calling about the meeting.",
+      "text": "Hi, this is Old Dyberg calling about the meeting."
+    },
+    "dual4": {
+      "ms": 220.650068,
+      "plain": "Hi, this is Old Dieberg calling about the meeting.",
+      "text": "Hi, this is Old Dyberg calling about the meeting."
+    },
+    "empty_context": {
+      "ms": 110.311829,
+      "plain": "Hi, this is Old Dieberg calling about the meeting.",
+      "text": "Hi, this is Old Dieberg calling about the meeting."
+    },
+    "raw": {
+      "ms": 115.362533,
+      "plain": null,
+      "text": "Hi, this is Old Dieberg calling about the meeting."
+    }
+  },
+  "p11-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 94.79423899999999,
+      "text": "Hi. This is all Diberg calling about the meeting."
+    },
+    "context": {
+      "ms": 103.62746100000001,
+      "plain": "Hi. This is all Diberg calling about the meeting.",
+      "text": "Hi. This is all Diberg calling about the meeting."
+    },
+    "dual4": {
+      "ms": 183.535316,
+      "plain": "Hi. This is all Diberg calling about the meeting.",
+      "text": "Hi. This is all Diberg calling about the meeting."
+    },
+    "empty_context": {
+      "ms": 93.73435099999999,
+      "plain": "Hi. This is all Diberg calling about the meeting.",
+      "text": "Hi. This is all Diberg calling about the meeting."
+    },
+    "raw": {
+      "ms": 94.779529,
+      "plain": null,
+      "text": "Hi. This is all Diberg calling about the meeting."
+    }
+  },
+  "p11-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 97.357261,
+      "text": "Hi this is Aldiberg calling about the meeting."
+    },
+    "context": {
+      "ms": 103.03554199999999,
+      "plain": "Hi this is Aldiberg calling about the meeting.",
+      "text": "Hi this is Aldiberg calling about the meeting."
+    },
+    "dual4": {
+      "ms": 184.862921,
+      "plain": "Hi this is Aldiberg calling about the meeting.",
+      "text": "Hi this is Aldiberg calling about the meeting."
+    },
+    "empty_context": {
+      "ms": 94.3608,
+      "plain": "Hi this is Aldiberg calling about the meeting.",
+      "text": "Hi this is Aldiberg calling about the meeting."
+    },
+    "raw": {
+      "ms": 97.34185099999999,
+      "plain": null,
+      "text": "Hi this is Aldiberg calling about the meeting."
+    }
+  },
+  "p12-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 97.13046100000001,
+      "text": "All will review the pull request tonight."
+    },
+    "context": {
+      "ms": 103.303281,
+      "plain": "All will review the pull request tonight.",
+      "text": "All will review the pull request tonight."
+    },
+    "dual4": {
+      "ms": 183.728656,
+      "plain": "All will review the pull request tonight.",
+      "text": "All will review the pull request tonight."
+    },
+    "empty_context": {
+      "ms": 95.699675,
+      "plain": "All will review the pull request tonight.",
+      "text": "All will review the pull request tonight."
+    },
+    "raw": {
+      "ms": 97.115351,
+      "plain": null,
+      "text": "All will review the pull request tonight."
+    }
+  },
+  "p12-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 78.58856999999999,
+      "text": "All will review the poll request tonight."
+    },
+    "context": {
+      "ms": 85.158559,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "dual4": {
+      "ms": 148.429438,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "empty_context": {
+      "ms": 78.034233,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "raw": {
+      "ms": 78.57409999999999,
+      "plain": null,
+      "text": "All will review the poll request tonight."
+    }
+  },
+  "p12-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 86.344895,
+      "text": "All will review the poll request tonight."
+    },
+    "context": {
+      "ms": 94.15858,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "dual4": {
+      "ms": 163.665599,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "empty_context": {
+      "ms": 85.432979,
+      "plain": "All will review the poll request tonight.",
+      "text": "All will review the poll request tonight."
+    },
+    "raw": {
+      "ms": 86.329955,
+      "plain": null,
+      "text": "All will review the poll request tonight."
+    }
+  },
+  "p13-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 111.33849599999999,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "context": {
+      "ms": 121.426483,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "dual4": {
+      "ms": 212.376284,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "empty_context": {
+      "ms": 112.140454,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "raw": {
+      "ms": 111.323296,
+      "plain": null,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    }
+  },
+  "p13-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 100.073552,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "context": {
+      "ms": 107.608708,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "dual4": {
+      "ms": 192.658987,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "empty_context": {
+      "ms": 98.76297600000001,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "raw": {
+      "ms": 100.057952,
+      "plain": null,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    }
+  },
+  "p13-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 99.762073,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "context": {
+      "ms": 106.501471,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "dual4": {
+      "ms": 193.729503,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "empty_context": {
+      "ms": 99.653483,
+      "plain": "The cluster runs on Kubernetes with three nodes.",
+      "text": "The cluster runs on Kubernetes with three nodes."
+    },
+    "raw": {
+      "ms": 99.745793,
+      "plain": null,
+      "text": "The cluster runs on Kubernetes with three nodes."
+    }
+  },
+  "p14-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 132.904897,
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "context": {
+      "ms": 141.030351,
+      "plain": "Store the bookings in PostgreSQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "dual4": {
+      "ms": 248.028952,
+      "plain": "Store the bookings in PostgreSQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "empty_context": {
+      "ms": 131.480612,
+      "plain": "Store the bookings in PostgreSQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "raw": {
+      "ms": 132.887807,
+      "plain": null,
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    }
+  },
+  "p14-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 124.180676,
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "context": {
+      "ms": 133.36427600000002,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "dual4": {
+      "ms": 236.936956,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "empty_context": {
+      "ms": 124.298024,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "raw": {
+      "ms": 124.16237600000001,
+      "plain": null,
+      "text": "Store the bookings in PostgresQL instead of a flat file."
+    }
+  },
+  "p14-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 124.607724,
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "context": {
+      "ms": 132.05993999999998,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "dual4": {
+      "ms": 239.22647899999998,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "empty_context": {
+      "ms": 122.60206,
+      "plain": "Store the bookings in PostgresQL instead of a flat file.",
+      "text": "Store the bookings in PostgreSQL instead of a flat file."
+    },
+    "raw": {
+      "ms": 124.591094,
+      "plain": null,
+      "text": "Store the bookings in PostgresQL instead of a flat file."
+    }
+  },
+  "p15-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 126.353008,
+      "text": "Tori bundles the web view into a small desktop app."
+    },
+    "context": {
+      "ms": 131.102533,
+      "plain": "Tori bundles the web view into a small desktop app.",
+      "text": "Tori bundles the web view into a small desktop app."
+    },
+    "dual4": {
+      "ms": 239.744078,
+      "plain": "Tori bundles the web view into a small desktop app.",
+      "text": "Tori bundles the web view into a small desktop app."
+    },
+    "empty_context": {
+      "ms": 122.37248100000001,
+      "plain": "Tori bundles the web view into a small desktop app.",
+      "text": "Tori bundles the web view into a small desktop app."
+    },
+    "raw": {
+      "ms": 126.33610900000001,
+      "plain": null,
+      "text": "Tori bundles the web view into a small desktop app."
+    }
+  },
+  "p15-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 113.976728,
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "context": {
+      "ms": 121.123695,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "dual4": {
+      "ms": 219.603241,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "empty_context": {
+      "ms": 111.908974,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "raw": {
+      "ms": 113.95956799999999,
+      "plain": null,
+      "text": "Towery bundles the web view into a small desktop app."
+    }
+  },
+  "p15-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 108.448375,
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "context": {
+      "ms": 112.10311300000001,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "dual4": {
+      "ms": 207.13256099999998,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "empty_context": {
+      "ms": 103.347452,
+      "plain": "Towery bundles the web view into a small desktop app.",
+      "text": "Towery bundles the web view into a small desktop app."
+    },
+    "raw": {
+      "ms": 108.431285,
+      "plain": null,
+      "text": "Towery bundles the web view into a small desktop app."
+    }
+  },
+  "p16-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 113.687498,
+      "text": "The settings window is written in GTK4."
+    },
+    "context": {
+      "ms": 121.24858400000001,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "dual4": {
+      "ms": 218.677905,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "empty_context": {
+      "ms": 114.780265,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "raw": {
+      "ms": 113.671058,
+      "plain": null,
+      "text": "The settings window is written in GTK4."
+    }
+  },
+  "p16-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 102.298505,
+      "text": "The settings window is written in GTK4."
+    },
+    "context": {
+      "ms": 106.36958200000001,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "dual4": {
+      "ms": 192.606827,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "empty_context": {
+      "ms": 100.088752,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "raw": {
+      "ms": 102.283015,
+      "plain": null,
+      "text": "The settings window is written in GTK4."
+    }
+  },
+  "p16-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 98.130897,
+      "text": "The settings window is written in GTK4."
+    },
+    "context": {
+      "ms": 105.006316,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "dual4": {
+      "ms": 189.27662800000002,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "empty_context": {
+      "ms": 96.74221299999999,
+      "plain": "The settings window is written in GTK4.",
+      "text": "The settings window is written in GTK4."
+    },
+    "raw": {
+      "ms": 98.115227,
+      "plain": null,
+      "text": "The settings window is written in GTK4."
+    }
+  },
+  "p17-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 108.418285,
+      "text": "Superbase handles the login and the database."
+    },
+    "context": {
+      "ms": 111.656925,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Superbase handles the login and the database."
+    },
+    "dual4": {
+      "ms": 204.147531,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Superbase handles the login and the database."
+    },
+    "empty_context": {
+      "ms": 105.404915,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Superbase handles the login and the database."
+    },
+    "raw": {
+      "ms": 108.352835,
+      "plain": null,
+      "text": "Superbase handles the login and the database."
+    }
+  },
+  "p17-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 97.71942,
+      "text": "Superbase handles the login and the database."
+    },
+    "context": {
+      "ms": 104.366918,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Supabase handles the login and the database."
+    },
+    "dual4": {
+      "ms": 191.38753,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Supabase handles the login and the database."
+    },
+    "empty_context": {
+      "ms": 97.59881,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Superbase handles the login and the database."
+    },
+    "raw": {
+      "ms": 97.70398,
+      "plain": null,
+      "text": "Superbase handles the login and the database."
+    }
+  },
+  "p17-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.40414700000001,
+      "text": "Superbase handles the login and the database."
+    },
+    "context": {
+      "ms": 102.04334499999999,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Supabase handles the login and the database."
+    },
+    "dual4": {
+      "ms": 182.732259,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Supabase handles the login and the database."
+    },
+    "empty_context": {
+      "ms": 94.43231,
+      "plain": "Superbase handles the login and the database.",
+      "text": "Superbase handles the login and the database."
+    },
+    "raw": {
+      "ms": 95.388067,
+      "plain": null,
+      "text": "Superbase handles the login and the database."
+    }
+  },
+  "p18-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 95.996335,
+      "text": "The landing page is built with Sveltkit."
+    },
+    "context": {
+      "ms": 102.279814,
+      "plain": "The landing page is built with Sveltkit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "dual4": {
+      "ms": 182.47981,
+      "plain": "The landing page is built with Sveltkit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "empty_context": {
+      "ms": 94.42505,
+      "plain": "The landing page is built with Sveltkit.",
+      "text": "The landing page is built with Sveltkit."
+    },
+    "raw": {
+      "ms": 95.981945,
+      "plain": null,
+      "text": "The landing page is built with Sveltkit."
+    }
+  },
+  "p18-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 78.089922,
+      "text": "The landing page is built with SvelteKit."
+    },
+    "context": {
+      "ms": 84.163702,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "dual4": {
+      "ms": 147.35437100000001,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "empty_context": {
+      "ms": 77.150675,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "raw": {
+      "ms": 78.075242,
+      "plain": null,
+      "text": "The landing page is built with Svelte Kit."
+    }
+  },
+  "p18-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 78.235772,
+      "text": "The landing page is built with SvelteKit."
+    },
+    "context": {
+      "ms": 86.93571399999999,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "dual4": {
+      "ms": 150.88299999999998,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "empty_context": {
+      "ms": 77.910561,
+      "plain": "The landing page is built with Svelte Kit.",
+      "text": "The landing page is built with SvelteKit."
+    },
+    "raw": {
+      "ms": 78.220742,
+      "plain": null,
+      "text": "The landing page is built with Svelte Kit."
+    }
+  },
+  "p19-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 123.234058,
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "context": {
+      "ms": 134.39015400000002,
+      "plain": "Export the receipts to Fortnox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "dual4": {
+      "ms": 242.80399699999998,
+      "plain": "Export the receipts to Fortnox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "empty_context": {
+      "ms": 123.50930699999999,
+      "plain": "Export the receipts to Fortnox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "raw": {
+      "ms": 123.215738,
+      "plain": null,
+      "text": "Export the receipts to Fortnox before the end of the month."
+    }
+  },
+  "p19-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 111.876294,
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    },
+    "context": {
+      "ms": 119.63946,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "dual4": {
+      "ms": 212.107785,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "empty_context": {
+      "ms": 110.745298,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    },
+    "raw": {
+      "ms": 111.858264,
+      "plain": null,
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    }
+  },
+  "p19-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 125.66585,
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    },
+    "context": {
+      "ms": 126.340818,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "dual4": {
+      "ms": 232.108242,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fortnox before the end of the month."
+    },
+    "empty_context": {
+      "ms": 120.496808,
+      "plain": "Export the receipts to Fort Knox before the end of the month.",
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    },
+    "raw": {
+      "ms": 125.64596,
+      "plain": null,
+      "text": "Export the receipts to Fort Knox before the end of the month."
+    }
+  },
+  "p20-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 110.88614799999999,
+      "text": "Skaterverkit sent a letter about the VAT return."
+    },
+    "context": {
+      "ms": 119.041701,
+      "plain": "Skaterverkit sent a letter about the VAT return.",
+      "text": "Skatteverket sent a letter about the VAT return."
+    },
+    "dual4": {
+      "ms": 213.04505300000002,
+      "plain": "Skaterverkit sent a letter about the VAT return.",
+      "text": "Skatteverket sent a letter about the VAT return."
+    },
+    "empty_context": {
+      "ms": 116.849498,
+      "plain": "Skaterverkit sent a letter about the VAT return.",
+      "text": "Skaterverkit sent a letter about the VAT return."
+    },
+    "raw": {
+      "ms": 110.870268,
+      "plain": null,
+      "text": "Skaterverkit sent a letter about the VAT return."
+    }
+  },
+  "p20-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 94.842529,
+      "text": "Scadeverkett sent a letter about the VAT return."
+    },
+    "context": {
+      "ms": 102.278155,
+      "plain": "Scadeverkett sent a letter about the VAT return.",
+      "text": "Scadeverkett sent a letter about the VAT return."
+    },
+    "dual4": {
+      "ms": 182.702888,
+      "plain": "Scataverk had sent a letter about the VAT return.",
+      "text": "Scataverk had sent a letter about the VAT return."
+    },
+    "empty_context": {
+      "ms": 96.014175,
+      "plain": "Scadeverkett sent a letter about the VAT return.",
+      "text": "Scadeverkett sent a letter about the VAT return."
+    },
+    "raw": {
+      "ms": 94.826639,
+      "plain": null,
+      "text": "Scadeverkett sent a letter about the VAT return."
+    }
+  },
+  "p20-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 100.57691,
+      "text": "Skaterverkett sent a letter about the VAT return."
+    },
+    "context": {
+      "ms": 108.905543,
+      "plain": "Skaterverkett sent a letter about the VAT return.",
+      "text": "Skaterverkett sent a letter about the VAT return."
+    },
+    "dual4": {
+      "ms": 202.695426,
+      "plain": "Scatterwork had sent a letter about the VAT return.",
+      "text": "Scatterwork had sent a letter about the VAT return."
+    },
+    "empty_context": {
+      "ms": 99.50880400000001,
+      "plain": "Skaterverkett sent a letter about the VAT return.",
+      "text": "Skaterverkett sent a letter about the VAT return."
+    },
+    "raw": {
+      "ms": 100.55902999999999,
+      "plain": null,
+      "text": "Skaterverkett sent a letter about the VAT return."
+    }
+  },
+  "p21-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 100.066282,
+      "text": "I am taking the train to Gotborg on Monday."
+    },
+    "context": {
+      "ms": 106.26020199999999,
+      "plain": "I am taking the train to Gotborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "dual4": {
+      "ms": 193.06252600000002,
+      "plain": "I am taking the train to Gotborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "empty_context": {
+      "ms": 100.425121,
+      "plain": "I am taking the train to Gotborg on Monday.",
+      "text": "I am taking the train to Gotborg on Monday."
+    },
+    "raw": {
+      "ms": 100.050252,
+      "plain": null,
+      "text": "I am taking the train to Gotborg on Monday."
+    }
+  },
+  "p21-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 85.804658,
+      "text": "I am taking the train to Godeborg on Monday."
+    },
+    "context": {
+      "ms": 94.47832000000001,
+      "plain": "I am taking the train to Godeborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "dual4": {
+      "ms": 161.402016,
+      "plain": "I am taking the train to Godeborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "empty_context": {
+      "ms": 82.626387,
+      "plain": "I am taking the train to Godeborg on Monday.",
+      "text": "I am taking the train to Godeborg on Monday."
+    },
+    "raw": {
+      "ms": 85.788538,
+      "plain": null,
+      "text": "I am taking the train to Godeborg on Monday."
+    }
+  },
+  "p21-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 90.856341,
+      "text": "I am taking the train to Gattaborg on Monday."
+    },
+    "context": {
+      "ms": 96.664182,
+      "plain": "I am taking the train to Gattaborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "dual4": {
+      "ms": 172.89571,
+      "plain": "I am taking the train to Godborg on Monday.",
+      "text": "I am taking the train to Göteborg on Monday."
+    },
+    "empty_context": {
+      "ms": 91.36861,
+      "plain": "I am taking the train to Gattaborg on Monday.",
+      "text": "I am taking the train to Gattaborg on Monday."
+    },
+    "raw": {
+      "ms": 90.838521,
+      "plain": null,
+      "text": "I am taking the train to Gattaborg on Monday."
+    }
+  },
+  "p22-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 84.805921,
+      "text": "Let's grab a few after the call."
+    },
+    "context": {
+      "ms": 89.594315,
+      "plain": "Let's grab a few after the call.",
+      "text": "Let's grab a few after the call."
+    },
+    "dual4": {
+      "ms": 163.952069,
+      "plain": "Let's grab a few after the call.",
+      "text": "Let's grab a few after the call."
+    },
+    "empty_context": {
+      "ms": 84.68817,
+      "plain": "Let's grab a few after the call.",
+      "text": "Let's grab a few after the call."
+    },
+    "raw": {
+      "ms": 84.789591,
+      "plain": null,
+      "text": "Let's grab a few after the call."
+    }
+  },
+  "p22-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 67.793224,
+      "text": "Let's grab a fek after the call."
+    },
+    "context": {
+      "ms": 73.062117,
+      "plain": "Let's grab a fek after the call.",
+      "text": "Let's grab a fika after the call."
+    },
+    "dual4": {
+      "ms": 125.145062,
+      "plain": "Let's grab a fek after the call.",
+      "text": "Let's grab a fika after the call."
+    },
+    "empty_context": {
+      "ms": 67.336437,
+      "plain": "Let's grab a fek after the call.",
+      "text": "Let's grab a fek after the call."
+    },
+    "raw": {
+      "ms": 67.778504,
+      "plain": null,
+      "text": "Let's grab a fek after the call."
+    }
+  },
+  "p22-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 76.51993700000001,
+      "text": "Let's grab a fek after the call."
+    },
+    "context": {
+      "ms": 81.160282,
+      "plain": "Let's grab a fek after the call.",
+      "text": "Let's grab a fika after the call."
+    },
+    "dual4": {
+      "ms": 142.53000699999998,
+      "plain": "Let's grab a Fika after the call.",
+      "text": "Let's grab a fika after the call."
+    },
+    "empty_context": {
+      "ms": 74.92755199999999,
+      "plain": "Let's grab a fek after the call.",
+      "text": "Let's grab a fek after the call."
+    },
+    "raw": {
+      "ms": 76.50483700000001,
+      "plain": null,
+      "text": "Let's grab a fek after the call."
+    }
+  },
+  "p23-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 111.788224,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "context": {
+      "ms": 117.576157,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "dual4": {
+      "ms": 214.529758,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "empty_context": {
+      "ms": 110.678949,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "raw": {
+      "ms": 111.771155,
+      "plain": null,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    }
+  },
+  "p23-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 101.437558,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "context": {
+      "ms": 108.380465,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "dual4": {
+      "ms": 196.574335,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "empty_context": {
+      "ms": 101.648927,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "raw": {
+      "ms": 101.421398,
+      "plain": null,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    }
+  },
+  "p23-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 96.957402,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "context": {
+      "ms": 106.13520199999999,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "dual4": {
+      "ms": 187.99375199999997,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "empty_context": {
+      "ms": 96.119274,
+      "plain": "The server is a small Hetzner machine in Helsinki.",
+      "text": "The server is a small Hetzner machine in Helsinki."
+    },
+    "raw": {
+      "ms": 96.941332,
+      "plain": null,
+      "text": "The server is a small Hetzner machine in Helsinki."
+    }
+  },
+  "p24-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 120.86734700000001,
+      "text": "Cartesa reads the first sentence of the answer out loud."
+    },
+    "context": {
+      "ms": 132.54312900000002,
+      "plain": "Cartesa reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "dual4": {
+      "ms": 238.89614,
+      "plain": "Cartesa reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "empty_context": {
+      "ms": 122.36376,
+      "plain": "Cartesa reads the first sentence of the answer out loud.",
+      "text": "Cartesa reads the first sentence of the answer out loud."
+    },
+    "raw": {
+      "ms": 120.850627,
+      "plain": null,
+      "text": "Cartesa reads the first sentence of the answer out loud."
+    }
+  },
+  "p24-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 105.892803,
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "context": {
+      "ms": 112.25363300000001,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "dual4": {
+      "ms": 201.998488,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "empty_context": {
+      "ms": 102.780343,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "raw": {
+      "ms": 105.875863,
+      "plain": null,
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    }
+  },
+  "p24-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 104.675787,
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "context": {
+      "ms": 112.350883,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "dual4": {
+      "ms": 200.481293,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "empty_context": {
+      "ms": 102.869323,
+      "plain": "Cartesia reads the first sentence of the answer out loud.",
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    },
+    "raw": {
+      "ms": 104.658348,
+      "plain": null,
+      "text": "Cartesia reads the first sentence of the answer out loud."
+    }
+  },
+  "p25-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 108.440215,
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "context": {
+      "ms": 112.327883,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "dual4": {
+      "ms": 208.38068800000002,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "empty_context": {
+      "ms": 104.16118900000001,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "raw": {
+      "ms": 108.423395,
+      "plain": null,
+      "text": "Ask uses Grok because it answers very quickly."
+    }
+  },
+  "p25-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 94.941268,
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "context": {
+      "ms": 101.901436,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "dual4": {
+      "ms": 180.900365,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "empty_context": {
+      "ms": 94.35496,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "raw": {
+      "ms": 94.926068,
+      "plain": null,
+      "text": "Ask uses Grok because it answers very quickly."
+    }
+  },
+  "p25-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 100.288861,
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "context": {
+      "ms": 107.835528,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "dual4": {
+      "ms": 195.572778,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Groq because it answers very quickly."
+    },
+    "empty_context": {
+      "ms": 99.545283,
+      "plain": "Ask uses Grok because it answers very quickly.",
+      "text": "Ask uses Grok because it answers very quickly."
+    },
+    "raw": {
+      "ms": 100.274121,
+      "plain": null,
+      "text": "Ask uses Grok because it answers very quickly."
+    }
+  },
+  "p26-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 137.856612,
+      "text": "The default model is Quen with 27 billion parameters."
+    },
+    "context": {
+      "ms": 139.497846,
+      "plain": "The default model is Quen with 27 billion parameters.",
+      "text": "The default model is Qwen with 27 billion parameters."
+    },
+    "dual4": {
+      "ms": 248.40621,
+      "plain": "The default model is Quen with 27 billion parameters.",
+      "text": "The default model is Qwen with 27 billion parameters."
+    },
+    "empty_context": {
+      "ms": 129.13822,
+      "plain": "The default model is Quen with 27 billion parameters.",
+      "text": "The default model is Quen with 27 billion parameters."
+    },
+    "raw": {
+      "ms": 137.839222,
+      "plain": null,
+      "text": "The default model is Quen with 27 billion parameters."
+    }
+  },
+  "p26-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 121.910322,
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "context": {
+      "ms": 126.487128,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "dual4": {
+      "ms": 235.400432,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "empty_context": {
+      "ms": 115.943322,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "raw": {
+      "ms": 121.89411199999999,
+      "plain": null,
+      "text": "The default model is quin with twenty seven billion parameters."
+    }
+  },
+  "p26-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 122.375171,
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "context": {
+      "ms": 119.89738799999999,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is Qwen with twenty seven billion parameters."
+    },
+    "dual4": {
+      "ms": 230.97505600000002,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is Qwen with twenty seven billion parameters."
+    },
+    "empty_context": {
+      "ms": 113.488189,
+      "plain": "The default model is quin with twenty seven billion parameters.",
+      "text": "The default model is quin with twenty seven billion parameters."
+    },
+    "raw": {
+      "ms": 122.352831,
+      "plain": null,
+      "text": "The default model is quin with twenty seven billion parameters."
+    }
+  },
+  "p27-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 108.251126,
+      "text": "Save the notes in Obsidian under the project folder."
+    },
+    "context": {
+      "ms": 114.760165,
+      "plain": "Save the notes in Obsidian under the project folder.",
+      "text": "Save the notes in Obsidian under the project folder."
+    },
+    "dual4": {
+      "ms": 207.095572,
+      "plain": "Save the notes in Obsidian under the project folder.",
+      "text": "Save the notes in Obsidian under the project folder."
+    },
+    "empty_context": {
+      "ms": 111.977124,
+      "plain": "Save the notes in Obsidian under the project folder.",
+      "text": "Save the notes in Obsidian under the project folder."
+    },
+    "raw": {
+      "ms": 108.233726,
+      "plain": null,
+      "text": "Save the notes in Obsidian under the project folder."
+    }
+  },
+  "p27-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 96.16457400000002,
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "context": {
+      "ms": 103.04567200000001,
+      "plain": "Save the notes in Obsidian under the Project folder.",
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "dual4": {
+      "ms": 189.321239,
+      "plain": "Save the notes in Obsidian under the project folder.",
+      "text": "Save the notes in Obsidian under the project folder."
+    },
+    "empty_context": {
+      "ms": 95.718726,
+      "plain": "Save the notes in Obsidian under the Project folder.",
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "raw": {
+      "ms": 96.14898400000001,
+      "plain": null,
+      "text": "Save the notes in Obsidian under the Project folder."
+    }
+  },
+  "p27-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 99.731054,
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "context": {
+      "ms": 107.03651,
+      "plain": "Save the notes in Obsidian under the Project folder.",
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "dual4": {
+      "ms": 193.170985,
+      "plain": "Save the notes in Obsidian under the Project folder.",
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "empty_context": {
+      "ms": 98.974925,
+      "plain": "Save the notes in Obsidian under the Project folder.",
+      "text": "Save the notes in Obsidian under the Project folder."
+    },
+    "raw": {
+      "ms": 99.715054,
+      "plain": null,
+      "text": "Save the notes in Obsidian under the Project folder."
+    }
+  },
+  "p28-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 106.20765300000001,
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "context": {
+      "ms": 110.969857,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "dual4": {
+      "ms": 199.094327,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "empty_context": {
+      "ms": 104.634597,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "raw": {
+      "ms": 106.193263,
+      "plain": null,
+      "text": "Global shortcuts work differently on Wayland."
+    }
+  },
+  "p28-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 89.26852600000001,
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "context": {
+      "ms": 96.039194,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "dual4": {
+      "ms": 171.897794,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "empty_context": {
+      "ms": 88.33351,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "raw": {
+      "ms": 89.252256,
+      "plain": null,
+      "text": "Global shortcuts work differently on Wayland."
+    }
+  },
+  "p28-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.537826,
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "context": {
+      "ms": 99.715863,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "dual4": {
+      "ms": 177.868574,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "empty_context": {
+      "ms": 92.127678,
+      "plain": "Global shortcuts work differently on Wayland.",
+      "text": "Global shortcuts work differently on Wayland."
+    },
+    "raw": {
+      "ms": 95.523496,
+      "plain": null,
+      "text": "Global shortcuts work differently on Wayland."
+    }
+  },
+  "p29-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 109.447672,
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "context": {
+      "ms": 117.809165,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "dual4": {
+      "ms": 213.499262,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "empty_context": {
+      "ms": 110.858338,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "raw": {
+      "ms": 109.432002,
+      "plain": null,
+      "text": "My desktop is Hyperland with a single monitor."
+    }
+  },
+  "p29-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 92.58465599999998,
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "context": {
+      "ms": 96.21091399999999,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "dual4": {
+      "ms": 173.642998,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "empty_context": {
+      "ms": 91.861468,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "raw": {
+      "ms": 92.56945599999999,
+      "plain": null,
+      "text": "My desktop is Hyperland with a single monitor."
+    }
+  },
+  "p29-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 95.53849600000001,
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "context": {
+      "ms": 103.213792,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyprland with a single monitor."
+    },
+    "dual4": {
+      "ms": 200.165295,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyprland with a single monitor."
+    },
+    "empty_context": {
+      "ms": 95.753246,
+      "plain": "My desktop is Hyperland with a single monitor.",
+      "text": "My desktop is Hyperland with a single monitor."
+    },
+    "raw": {
+      "ms": 95.522507,
+      "plain": null,
+      "text": "My desktop is Hyperland with a single monitor."
+    }
+  },
+  "p30-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 110.865327,
+      "text": "Ask Claude to write the tests and codecs to review them."
+    },
+    "context": {
+      "ms": 119.234442,
+      "plain": "Ask Claude to write the tests and codecs to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "dual4": {
+      "ms": 215.820064,
+      "plain": "Ask Claude to write the tests and codecs to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "empty_context": {
+      "ms": 110.38097900000001,
+      "plain": "Ask Claude to write the tests and codecs to review them.",
+      "text": "Ask Claude to write the tests and codecs to review them."
+    },
+    "raw": {
+      "ms": 110.849087,
+      "plain": null,
+      "text": "Ask Claude to write the tests and codecs to review them."
+    }
+  },
+  "p30-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 102.738914,
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "context": {
+      "ms": 108.741495,
+      "plain": "Ask Claude to write the tests and codex to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "dual4": {
+      "ms": 196.969334,
+      "plain": "Ask Claude to write the tests and codex to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "empty_context": {
+      "ms": 101.697026,
+      "plain": "Ask Claude to write the tests and codex to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "raw": {
+      "ms": 102.722984,
+      "plain": null,
+      "text": "Ask Claude to write the tests and codex to review them."
+    }
+  },
+  "p30-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 101.900177,
+      "text": "Ask Claude to write the tests and codec to review them."
+    },
+    "context": {
+      "ms": 109.860051,
+      "plain": "Ask Claude to write the tests and codec to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "dual4": {
+      "ms": 199.088707,
+      "plain": "Ask Claude to write the tests and codec to review them.",
+      "text": "Ask Claude to write the tests and Codex to review them."
+    },
+    "empty_context": {
+      "ms": 109.072653,
+      "plain": "Ask Claude to write the tests and codec to review them.",
+      "text": "Ask Claude to write the tests and codec to review them."
+    },
+    "raw": {
+      "ms": 101.883897,
+      "plain": null,
+      "text": "Ask Claude to write the tests and codec to review them."
+    }
+  },
+  "p31-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 109.261793,
+      "text": "Run Parakeet through Sherprons on Linux."
+    },
+    "context": {
+      "ms": 113.16456099999999,
+      "plain": "Run Parakeet through Sherprons on Linux.",
+      "text": "Run Parakeet through Sherprons on Linux."
+    },
+    "dual4": {
+      "ms": 202.396766,
+      "plain": "Run Parakeet through Sherprons on Linux.",
+      "text": "Run Parakeet through Sherprons on Linux."
+    },
+    "empty_context": {
+      "ms": 105.41424500000001,
+      "plain": "Run Parakeet through Sherprons on Linux.",
+      "text": "Run Parakeet through Sherprons on Linux."
+    },
+    "raw": {
+      "ms": 109.246783,
+      "plain": null,
+      "text": "Run Parakeet through Sherprons on Linux."
+    }
+  },
+  "p31-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 90.386343,
+      "text": "Run Parakeet through Sherpalonx on Linux."
+    },
+    "context": {
+      "ms": 98.133208,
+      "plain": "Run Parakeet through Sherpalonx on Linux.",
+      "text": "Run Parakeet through Sherpalonx on Linux."
+    },
+    "dual4": {
+      "ms": 175.16134399999999,
+      "plain": "Run Parakeet through Sherpalonx on Linux.",
+      "text": "Run Parakeet through Sherpalonx on Linux."
+    },
+    "empty_context": {
+      "ms": 91.02777099999999,
+      "plain": "Run Parakeet through Sherpalonx on Linux.",
+      "text": "Run Parakeet through Sherpalonx on Linux."
+    },
+    "raw": {
+      "ms": 90.372153,
+      "plain": null,
+      "text": "Run Parakeet through Sherpalonx on Linux."
+    }
+  },
+  "p31-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 89.623325,
+      "text": "Run Parakeet through Sherbonks on Linux."
+    },
+    "context": {
+      "ms": 97.212962,
+      "plain": "Run Parakeet through Sherbonks on Linux.",
+      "text": "Run Parakeet through Sherbonks on Linux."
+    },
+    "dual4": {
+      "ms": 172.209743,
+      "plain": "Run Parakeet through Sherbonks on Linux.",
+      "text": "Run Parakeet through Sherbonks on Linux."
+    },
+    "empty_context": {
+      "ms": 90.550782,
+      "plain": "Run Parakeet through Sherbonks on Linux.",
+      "text": "Run Parakeet through Sherbonks on Linux."
+    },
+    "raw": {
+      "ms": 89.608415,
+      "plain": null,
+      "text": "Run Parakeet through Sherbonks on Linux."
+    }
+  },
+  "p32-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 99.927463,
+      "text": "Jakob and all met in Goatborg for a fek."
+    },
+    "context": {
+      "ms": 110.02014,
+      "plain": "Jakob and all met in Goatborg for a fek.",
+      "text": "Yakob and all met in Göteborg for a fika."
+    },
+    "dual4": {
+      "ms": 198.678448,
+      "plain": "Jakob and all met in Goatborg for a feca.",
+      "text": "Yakob and all met in Göteborg for a fika."
+    },
+    "empty_context": {
+      "ms": 98.732517,
+      "plain": "Jakob and all met in Goatborg for a fek.",
+      "text": "Jakob and all met in Goatborg for a fek."
+    },
+    "raw": {
+      "ms": 99.91176300000001,
+      "plain": null,
+      "text": "Jakob and all met in Goatborg for a fek."
+    }
+  },
+  "p32-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 90.173463,
+      "text": "Jacob and Almed and got aboard for Afika."
+    },
+    "context": {
+      "ms": 96.143764,
+      "plain": "Jacob and Almed and got aboard for Afika.",
+      "text": "Yakob and Almed and got aboard for Afika."
+    },
+    "dual4": {
+      "ms": 174.392307,
+      "plain": "Jacob and all Medin got aboard for Afika.",
+      "text": "Yakob and all Medin got aboard for Afika."
+    },
+    "empty_context": {
+      "ms": 86.63715499999999,
+      "plain": "Jacob and Almed and got aboard for Afika.",
+      "text": "Jacob and Almed and got aboard for Afika."
+    },
+    "raw": {
+      "ms": 90.157634,
+      "plain": null,
+      "text": "Jacob and Almed and got aboard for Afika."
+    }
+  },
+  "p32-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 92.546436,
+      "text": "Jakob and all met in Gataborg for a fika."
+    },
+    "context": {
+      "ms": 98.08587800000001,
+      "plain": "Jakob and all met in Gataborg for a Fika.",
+      "text": "Yakob and all met in Göteborg for a fika."
+    },
+    "dual4": {
+      "ms": 179.606749,
+      "plain": "Jakob and all met in Godeborg for a fek.",
+      "text": "Yakob and all met in Göteborg for a fika."
+    },
+    "empty_context": {
+      "ms": 90.335593,
+      "plain": "Jakob and all met in Gataborg for a Fika.",
+      "text": "Jakob and all met in Gataborg for a fika."
+    },
+    "raw": {
+      "ms": 92.530736,
+      "plain": null,
+      "text": "Jakob and all met in Gataborg for a Fika."
+    }
+  },
+  "p33-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 113.680549,
+      "text": "Move the database from Superbase to a Hetzna server."
+    },
+    "context": {
+      "ms": 122.49972100000001,
+      "plain": "Move the database from Superbase to a Hetzna server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "dual4": {
+      "ms": 220.87440899999999,
+      "plain": "Move the database from Superbase to a Hetzna server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "empty_context": {
+      "ms": 113.672118,
+      "plain": "Move the database from Superbase to a Hetzna server.",
+      "text": "Move the database from Superbase to a Hetzna server."
+    },
+    "raw": {
+      "ms": 113.663729,
+      "plain": null,
+      "text": "Move the database from Superbase to a Hetzna server."
+    }
+  },
+  "p33-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 108.63283499999999,
+      "text": "Move the database from Superbase to a Hetzner server."
+    },
+    "context": {
+      "ms": 118.08603500000001,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "dual4": {
+      "ms": 208.445898,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "empty_context": {
+      "ms": 108.597005,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Superbase to a Hetzner server."
+    },
+    "raw": {
+      "ms": 108.61646499999999,
+      "plain": null,
+      "text": "Move the database from Superbase to a Hetzner server."
+    }
+  },
+  "p33-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 106.345962,
+      "text": "Move the database from Superbase to a Hetzner server."
+    },
+    "context": {
+      "ms": 121.834753,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "dual4": {
+      "ms": 212.56265399999998,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Supabase to a Hetzner server."
+    },
+    "empty_context": {
+      "ms": 112.253383,
+      "plain": "Move the database from Superbase to a Hetzner server.",
+      "text": "Move the database from Superbase to a Hetzner server."
+    },
+    "raw": {
+      "ms": 106.329712,
+      "plain": null,
+      "text": "Move the database from Superbase to a Hetzner server."
+    }
+  },
+  "p34-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 98.07804900000001,
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "context": {
+      "ms": 100.79272,
+      "plain": "Nordic rank pays through Fortnox.",
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "dual4": {
+      "ms": 184.444364,
+      "plain": "Nordic rank pays through Fortnox.",
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "empty_context": {
+      "ms": 95.242257,
+      "plain": "Nordic rank pays through Fortnox.",
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "raw": {
+      "ms": 98.064209,
+      "plain": null,
+      "text": "Nordic rank pays through Fortnox."
+    }
+  },
+  "p34-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 73.548416,
+      "text": "Nordicrank pays through four knocks."
+    },
+    "context": {
+      "ms": 79.977607,
+      "plain": "Nordicrank pays through four knocks.",
+      "text": "Nordicrank pays through four knocks."
+    },
+    "dual4": {
+      "ms": 139.946066,
+      "plain": "Nordicrank pays through four knocks.",
+      "text": "Nordicrank pays through four knocks."
+    },
+    "empty_context": {
+      "ms": 73.439006,
+      "plain": "Nordicrank pays through four knocks.",
+      "text": "Nordicrank pays through four knocks."
+    },
+    "raw": {
+      "ms": 73.534476,
+      "plain": null,
+      "text": "Nordicrank pays through four knocks."
+    }
+  },
+  "p34-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 78.129501,
+      "text": "Nordicrank pays through Fort Knox."
+    },
+    "context": {
+      "ms": 82.920467,
+      "plain": "Nordic Rank pays through Fort Knox.",
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "dual4": {
+      "ms": 149.855544,
+      "plain": "Nordic Rank pays through Fort Knox.",
+      "text": "Nordicrank pays through Fortnox."
+    },
+    "empty_context": {
+      "ms": 79.319769,
+      "plain": "Nordic Rank pays through Fort Knox.",
+      "text": "Nordicrank pays through Fort Knox."
+    },
+    "raw": {
+      "ms": 78.115391,
+      "plain": null,
+      "text": "Nordic Rank pays through Fort Knox."
+    }
+  },
+  "p35-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 104.70298700000001,
+      "text": "Motios asked whether Coet works on Wayland."
+    },
+    "context": {
+      "ms": 112.419342,
+      "plain": "Motios asked whether Coet works on Wayland.",
+      "text": "Motios asked whether Coet works on Wayland."
+    },
+    "dual4": {
+      "ms": 200.127075,
+      "plain": "Motios asked whether Coet works on Wayland.",
+      "text": "Motios asked whether Coet works on Wayland."
+    },
+    "empty_context": {
+      "ms": 103.767061,
+      "plain": "Motios asked whether Coet works on Wayland.",
+      "text": "Motios asked whether Coet works on Wayland."
+    },
+    "raw": {
+      "ms": 104.688297,
+      "plain": null,
+      "text": "Motios asked whether Coet works on Wayland."
+    }
+  },
+  "p35-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 83.746664,
+      "text": "Matthias asked whether Coat works on Wayland."
+    },
+    "context": {
+      "ms": 91.3064,
+      "plain": "Matthias asked whether Coat works on Wayland.",
+      "text": "Matthias asked whether Coat works on Wayland."
+    },
+    "dual4": {
+      "ms": 159.89800100000002,
+      "plain": "Matthias asked whether Coat works on Wayland.",
+      "text": "Matthias asked whether Coat works on Wayland."
+    },
+    "empty_context": {
+      "ms": 83.830984,
+      "plain": "Matthias asked whether Coat works on Wayland.",
+      "text": "Matthias asked whether Coat works on Wayland."
+    },
+    "raw": {
+      "ms": 83.731774,
+      "plain": null,
+      "text": "Matthias asked whether Coat works on Wayland."
+    }
+  },
+  "p35-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 87.428043,
+      "text": "Madhyas asked whether Coat works on Wayland."
+    },
+    "context": {
+      "ms": 94.649519,
+      "plain": "Madhyas asked whether Coat works on Wayland.",
+      "text": "Madhyas asked whether Coat works on Wayland."
+    },
+    "dual4": {
+      "ms": 173.24150899999998,
+      "plain": "Madhyas asked whether coat works on Wayland.",
+      "text": "Madhyas asked whether coat works on Wayland."
+    },
+    "empty_context": {
+      "ms": 87.744911,
+      "plain": "Madhyas asked whether Coat works on Wayland.",
+      "text": "Madhyas asked whether Coat works on Wayland."
+    },
+    "raw": {
+      "ms": 87.413233,
+      "plain": null,
+      "text": "Madhyas asked whether Coat works on Wayland."
+    }
+  },
+  "p36-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 109.13422299999999,
+      "text": "Compare Nematron with Parakeet on the same clips."
+    },
+    "context": {
+      "ms": 119.64036,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "dual4": {
+      "ms": 211.248749,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "empty_context": {
+      "ms": 108.532225,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nematron with Parakeet on the same clips."
+    },
+    "raw": {
+      "ms": 109.119233,
+      "plain": null,
+      "text": "Compare Nematron with Parakeet on the same clips."
+    }
+  },
+  "p36-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 96.653533,
+      "text": "Compare Nimitron with Parakeet on the same clips."
+    },
+    "context": {
+      "ms": 104.608418,
+      "plain": "Compare Nimitron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "dual4": {
+      "ms": 180.534157,
+      "plain": "Compare Nimitron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "empty_context": {
+      "ms": 96.72697199999999,
+      "plain": "Compare Nimitron with Parakeet on the same clips.",
+      "text": "Compare Nimitron with Parakeet on the same clips."
+    },
+    "raw": {
+      "ms": 96.637633,
+      "plain": null,
+      "text": "Compare Nimitron with Parakeet on the same clips."
+    }
+  },
+  "p36-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 100.37298100000001,
+      "text": "Compare Nematron with Parakeet on the same clips."
+    },
+    "context": {
+      "ms": 111.478646,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "dual4": {
+      "ms": 199.345587,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nemotron with Parakeet on the same clips."
+    },
+    "empty_context": {
+      "ms": 99.365824,
+      "plain": "Compare Nematron with Parakeet on the same clips.",
+      "text": "Compare Nematron with Parakeet on the same clips."
+    },
+    "raw": {
+      "ms": 100.358241,
+      "plain": null,
+      "text": "Compare Nematron with Parakeet on the same clips."
+    }
+  },
+  "p37-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 107.01859,
+      "text": "Grok serves Quenn faster than the other providers."
+    },
+    "context": {
+      "ms": 112.861981,
+      "plain": "Grok serves Quenn faster than the other providers.",
+      "text": "Groq serves Qwen faster than the other providers."
+    },
+    "dual4": {
+      "ms": 206.564383,
+      "plain": "Grok serves Quenn faster than the other providers.",
+      "text": "Groq serves Qwen faster than the other providers."
+    },
+    "empty_context": {
+      "ms": 105.351006,
+      "plain": "Grok serves Quenn faster than the other providers.",
+      "text": "Grok serves Quenn faster than the other providers."
+    },
+    "raw": {
+      "ms": 107.00295,
+      "plain": null,
+      "text": "Grok serves Quenn faster than the other providers."
+    }
+  },
+  "p37-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 97.093012,
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "context": {
+      "ms": 102.152496,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "dual4": {
+      "ms": 185.52879,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "empty_context": {
+      "ms": 93.586303,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "raw": {
+      "ms": 97.076862,
+      "plain": null,
+      "text": "Grok serves Quinn faster than the other providers."
+    }
+  },
+  "p37-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 98.853596,
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "context": {
+      "ms": 106.046203,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Groq serves Quinn faster than the other providers."
+    },
+    "dual4": {
+      "ms": 195.17798,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Groq serves Quinn faster than the other providers."
+    },
+    "empty_context": {
+      "ms": 98.346718,
+      "plain": "Grok serves Quinn faster than the other providers.",
+      "text": "Grok serves Quinn faster than the other providers."
+    },
+    "raw": {
+      "ms": 98.838296,
+      "plain": null,
+      "text": "Grok serves Quinn faster than the other providers."
+    }
+  },
+  "p38-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 108.85354399999999,
+      "text": "Hogia and Skaterverkit both need the same numbers."
+    },
+    "context": {
+      "ms": 117.299598,
+      "plain": "Hogia and Skaterverkit both need the same numbers.",
+      "text": "Hogia and Skaterverkit both need the same numbers."
+    },
+    "dual4": {
+      "ms": 215.92055399999998,
+      "plain": "Hogia and Skaterverkit both need the same numbers.",
+      "text": "Hogia and Skaterverkit both need the same numbers."
+    },
+    "empty_context": {
+      "ms": 108.71376500000001,
+      "plain": "Hogia and Skaterverkit both need the same numbers.",
+      "text": "Hogia and Skaterverkit both need the same numbers."
+    },
+    "raw": {
+      "ms": 108.83886399999999,
+      "plain": null,
+      "text": "Hogia and Skaterverkit both need the same numbers."
+    }
+  },
+  "p38-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 103.191082,
+      "text": "Hogia and Skatoverkit both need the same numbers."
+    },
+    "context": {
+      "ms": 111.98844299999999,
+      "plain": "Hogia and Skatoverkit both need the same numbers.",
+      "text": "Hogia and Skatteverket both need the same numbers."
+    },
+    "dual4": {
+      "ms": 201.868059,
+      "plain": "Hogia and Skatoverkit both need the same numbers.",
+      "text": "Hogia and Skatteverket both need the same numbers."
+    },
+    "empty_context": {
+      "ms": 102.352186,
+      "plain": "Hogia and Skatoverkit both need the same numbers.",
+      "text": "Hogia and Skatoverkit both need the same numbers."
+    },
+    "raw": {
+      "ms": 103.176092,
+      "plain": null,
+      "text": "Hogia and Skatoverkit both need the same numbers."
+    }
+  },
+  "p38-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 96.503633,
+      "text": "Hogea and Scatterverkit both need the same numbers."
+    },
+    "context": {
+      "ms": 104.211029,
+      "plain": "Hogea and Scatterverkit both need the same numbers.",
+      "text": "Hogia and Scatterverkit both need the same numbers."
+    },
+    "dual4": {
+      "ms": 190.341415,
+      "plain": "Hogia and Scatterverkit both need the same numbers.",
+      "text": "Hogia and Scatterverkit both need the same numbers."
+    },
+    "empty_context": {
+      "ms": 95.110828,
+      "plain": "Hogea and Scatterverkit both need the same numbers.",
+      "text": "Hogea and Scatterverkit both need the same numbers."
+    },
+    "raw": {
+      "ms": 96.488993,
+      "plain": null,
+      "text": "Hogea and Scatterverkit both need the same numbers."
+    }
+  },
+  "p39-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 103.261102,
+      "text": "Claude wrote the Tauri prototype last week."
+    },
+    "context": {
+      "ms": 111.210887,
+      "plain": "Claude wrote the Tauri prototype last week.",
+      "text": "Claude wrote the Tauri prototype last week."
+    },
+    "dual4": {
+      "ms": 204.70404,
+      "plain": "Claude wrote the Tauri prototype last week.",
+      "text": "Claude wrote the Tauri prototype last week."
+    },
+    "empty_context": {
+      "ms": 102.164165,
+      "plain": "Claude wrote the Tauri prototype last week.",
+      "text": "Claude wrote the Tauri prototype last week."
+    },
+    "raw": {
+      "ms": 103.245852,
+      "plain": null,
+      "text": "Claude wrote the Tauri prototype last week."
+    }
+  },
+  "p39-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 93.145784,
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "context": {
+      "ms": 100.26985099999999,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "dual4": {
+      "ms": 178.355314,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "empty_context": {
+      "ms": 92.199897,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "raw": {
+      "ms": 93.131314,
+      "plain": null,
+      "text": "Claude wrote the Towery prototype last week."
+    }
+  },
+  "p39-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 89.504015,
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "context": {
+      "ms": 98.178438,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "dual4": {
+      "ms": 177.274508,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "empty_context": {
+      "ms": 88.99999799999999,
+      "plain": "Claude wrote the Towery prototype last week.",
+      "text": "Claude wrote the Towery prototype last week."
+    },
+    "raw": {
+      "ms": 89.489255,
+      "plain": null,
+      "text": "Claude wrote the Towery prototype last week."
+    }
+  },
+  "p40-en-GB-RyanNeural": {
+    "cheap": {
+      "ms": 89.19002599999999,
+      "text": "Dieberg is spelled with a Y."
+    },
+    "context": {
+      "ms": 101.492058,
+      "plain": "Dieberg is spelled with a Y.",
+      "text": "Dyberg is spelled with a Y."
+    },
+    "dual4": {
+      "ms": 171.055227,
+      "plain": "Dieberg is spelled with a Y.",
+      "text": "Dyberg is spelled with a Y."
+    },
+    "empty_context": {
+      "ms": 88.614389,
+      "plain": "Dieberg is spelled with a Y.",
+      "text": "Dieberg is spelled with a Y."
+    },
+    "raw": {
+      "ms": 89.173746,
+      "plain": null,
+      "text": "Dieberg is spelled with a Y."
+    }
+  },
+  "p40-en-US-AndrewNeural": {
+    "cheap": {
+      "ms": 71.78644099999998,
+      "text": "Dyberg is spelled with AY."
+    },
+    "context": {
+      "ms": 73.706996,
+      "plain": "Dyberg is spelled with AY.",
+      "text": "Dyberg is spelled with AY."
+    },
+    "dual4": {
+      "ms": 127.21226599999999,
+      "plain": "Dyberg is spelled with AY.",
+      "text": "Dyberg is spelled with AY."
+    },
+    "empty_context": {
+      "ms": 68.027864,
+      "plain": "Dyberg is spelled with AY.",
+      "text": "Dyberg is spelled with AY."
+    },
+    "raw": {
+      "ms": 71.76985099999999,
+      "plain": null,
+      "text": "Dyberg is spelled with AY."
+    }
+  },
+  "p40-en-US-EmmaNeural": {
+    "cheap": {
+      "ms": 71.616843,
+      "text": "Diberg is spelled with a Y."
+    },
+    "context": {
+      "ms": 77.30222400000001,
+      "plain": "Diberg is spelled with a Y.",
+      "text": "Dyberg is spelled with a Y."
+    },
+    "dual4": {
+      "ms": 131.376463,
+      "plain": "Dyberg is spelled with a Y.",
+      "text": "Dyberg is spelled with a Y."
+    },
+    "empty_context": {
+      "ms": 70.889495,
+      "plain": "Diberg is spelled with a Y.",
+      "text": "Diberg is spelled with a Y."
+    },
+    "raw": {
+      "ms": 71.602823,
+      "plain": null,
+      "text": "Diberg is spelled with a Y."
+    }
+  }
+}
