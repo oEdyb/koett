@@ -59,8 +59,9 @@ in history”. No external service was contacted to validate any candidate key.
 
 Stop committing raw evidence folders by default. Keep small, reviewed textual
 receipts and purpose-built synthetic fixtures in Git. Store screenshots,
-recordings, core dumps and verbose logs as access-controlled CI artifacts with
-an explicit retention period; publish only deliberately reviewed examples.
+recordings, core dumps and verbose logs in private artifact storage or private CI
+with an explicit retention period. Public CI artifacts need the same sanitation
+as Git; publish only deliberately reviewed examples.
 
 This reduces accidental disclosure and permanent clone growth. It does not
 justify deleting existing evidence en masse or rewriting history without a
