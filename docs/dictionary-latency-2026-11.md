@@ -324,3 +324,25 @@ failure therefore does not prevent ordinary dictation.
 
 [Raw receipts and recomputation](../Benchmarks/Dictionary/2026-11/model-reuse/).
 Run `python3 Benchmarks/Dictionary/2026-11/model-reuse/check.py` from the repo root.
+
+### Live memory acceptance
+
+The installed-style private app built from `129c462` (SHA-256
+`a7466efe361186ba5b78b080c185e3da3e838f332d62cb4c63445453d5a77ec6`)
+completed six alternating empty/populated five-second live dictations with
+**1,393,148 KiB RSS before and after**. It logged model selection only once.
+This demonstrates stable vocabulary switching, not lower general idle memory
+than the first candidate, whose RSS was sampled after a longer session.
+
+The whole private compositor/app/target scope then passed a fresh live paste
+with a **2 GiB hard maximum, no swap and no artificial high watermark**, with
+no new OOM events. The earlier candidate had been OOM-killed under the 2 GiB
+maximum after vocabulary switches.
+
+A harsher, separate **768 MiB high watermark** throttled the approximately
+1.5 GiB working set enough that the fixture could not verify idle within 60 s;
+no new dictation started. No OOM occurred, and the app answered idle again after
+restoring the scope limits. That case fails responsiveness; it is not labeled
+a successful low-memory run. The raw failure and successful hard-limit case
+are both retained. These are artificial cgroup limits, not a claim about every
+low-memory host.
