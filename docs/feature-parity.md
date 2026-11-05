@@ -32,18 +32,18 @@ Evidence: `Sources/Koett/{DictationSession,DictationDelivery,RecordingOverlay,Es
 
 | Feature | Mac | Linux | Windows | Gap closure / default |
 |---|---|---|---|---|
-| Parakeet v2 | Yes | Yes | Engine | Keep choices/defaults; native picker + download status on Windows |
-| Parakeet v3 / Swedish in app | Yes, optional v3; accuracy acceptance recorded separately | Yes | Engine, no picker | Add optional Mac v3 using existing supported engine integration; Windows picker; no default switch |
-| Parakeet 110M primary ASR | Yes, optional native 110M TDT; synthetic phrase tested, human corpus pending | Yes, default | Engine | Optional Mac 110M primary path; validate accuracy, not just load success |
+| Parakeet v2 | Yes | Yes | Native picker; guest WAV pasted once, corrected assertion re-run pending | Keep choices/defaults; native picker + download status on Windows |
+| Parakeet v3 / Swedish in app | Yes, optional v3; accuracy acceptance recorded separately | Yes | Native picker; English guest CPU WAV passed, Swedish accuracy not measured | Add optional Mac v3 using existing supported engine integration; Windows picker; no default switch |
+| Parakeet 110M primary ASR | Yes, optional native 110M TDT; synthetic phrase tested, human corpus pending | Yes, default | Native picker; guest CPU WAV and switch-back passed | Optional Mac 110M primary path; validate accuracy, not just load success |
 | Nemotron streaming / Parakeet recovery | Yes, experimental | Yes | Shared engine; Windows unverified | Same experimental label, capture/finalization failure tests; no delivery-triggered retranscription |
 | Download verification / progress / offline reuse | Yes | Yes | Engine + tray progress | Native Windows progress/cancel/retry, checksums and atomic activation |
 | CPU / GPU / ARM64 | Apple Silicon local runtime | CPU path | CPU candidate, accelerators unverified | Native Windows x64/ARM64 CPU first; WinML/CUDA/QNN only after graph/device benchmarks |
-| Dictionary editor, import/export | Yes | Yes | Shared parsing/storage; no UI | Windows native Words page; same exchange format |
+| Dictionary editor, import/export | Yes | Yes | Native Words; guest CRUD/import/export/denied-write/rename checks passed | Windows native Words page; same exchange format |
 | Acoustic dictionary bias + adoption | Cheap spelling/forms by default; v2 CTC sidecar experimental and default-off; Nemotron spelling only | v2/v3 shared-encoder hotwords on verified builds (v2 measured; v3 performance unmeasured); 110M and Nemotron spelling only | Same engine limitation as Linux | Bounded CTC rescorer/optional transducer sidecar for 110M; investigate Nemotron bias; spelling-only must stay labeled |
 | Spelling around S1-mini | Before and after | Before and after, with raw recovery preserved | Shared Rust order | Align Rust pre/post passes to Mac using fixture/corpus checks |
-| Literal replacements | Yes | Yes | Engine; no UI | Expose Windows editor; replacements remain final stage |
-| Fix a word / accepted learning suggestions | Yes | Yes | Shared correction modules; no UI | Windows history action, explicit Add/Dismiss, everyday-word warning |
-| Optional S1-mini formatting controls | Yes, raw fallback | Yes, raw fallback | Engine, no full controls | Native Windows page; fail back to raw, measure Windows runtime dependencies |
+| Literal replacements | Yes | Yes | Native editor passed; missing final delivery stage found in guest, fix awaits rebuilt retest | Expose Windows editor; replacements remain final stage |
+| Fix a word / accepted learning suggestions | Yes | Yes | Native correction editor; strict UIA Save/Add/Dismiss/everyday/denied-write checks passed | Windows history action, explicit Add/Dismiss, everyday-word warning |
+| Optional S1-mini formatting controls | Yes, raw fallback | Yes, raw fallback | Native controls; guest formatting/raw fallback passed with private CPU runtime; runtime is not bundled | Native Windows page; fail back to raw, measure Windows runtime dependencies |
 
 Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swift`; `CrossPlatform/src/{model,formatting,runtime}.rs`, `transcription/{hotwords,nemotron,recovery}.rs`, `dictionary/`, `corrections/`; [dictionary details and benchmarks](dictionary.md). A model present in shared Rust is not proof its Windows artifact is complete.
 

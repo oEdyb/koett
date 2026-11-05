@@ -846,7 +846,18 @@ impl WindowsApp {
                     {
                         continue;
                     }
-                    self.deliver(&model, &transcript.text, transcript.raw.as_deref());
+                    match Settings::load() {
+                        Ok(saved) => self.settings.replacements = saved.replacements,
+                        Err(error) => eprintln!(
+                            "Koett: Settings unavailable; using last valid replacements: {error}"
+                        ),
+                    }
+                    let (text, raw) = completed_words(
+                        &transcript.text,
+                        transcript.raw.as_deref(),
+                        &self.settings.replacements,
+                    );
+                    self.deliver(&model, &text, raw.as_deref());
                 }
             }
         }
@@ -1690,6 +1701,17 @@ fn wide(value: &str) -> Vec<u16> {
     value.encode_utf16().chain([0]).collect()
 }
 
+// Runtime restores dictionary spelling around optional cleanup. Literal rules run last.
+fn completed_words(
+    text: &str,
+    raw: Option<&str>,
+    rules: &[crate::replacements::Replacement],
+) -> (String, Option<String>) {
+    let final_text = crate::replacements::apply(text, rules);
+    let raw = raw.or_else(|| (final_text != text).then_some(text));
+    (final_text, raw.map(str::to_owned))
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -1697,6 +1719,44 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::{MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT};
 
     use super::{Shortcut, tray_anchor, windows_shortcut};
+
+    #[test]
+    fn replacements_keep_original_asr_and_run_once_after_cleanup() {
+        use crate::replacements::Replacement;
+        let rules = [
+            Replacement {
+                phrase: "old portrait".into(),
+                replacement: "new portrait".into(),
+            },
+            Replacement {
+                phrase: "new portrait".into(),
+                replacement: "wrong cascade".into(),
+            },
+        ];
+        assert_eq!(
+            super::completed_words("old portrait", None, &rules),
+            ("new portrait".into(), Some("old portrait".into()))
+        );
+        assert_eq!(
+            super::completed_words("old portrait", Some("Original ASR"), &rules),
+            ("new portrait".into(), Some("Original ASR".into()))
+        );
+        assert_eq!(
+            super::completed_words("unchanged", None, &rules),
+            ("unchanged".into(), None)
+        );
+        assert_eq!(
+            super::completed_words(
+                "remove",
+                None,
+                &[Replacement {
+                    phrase: "remove".into(),
+                    replacement: String::new()
+                }]
+            ),
+            (String::new(), Some("remove".into()))
+        );
+    }
 
     #[test]
     fn every_window_in_this_process_is_ineligible_for_paste() {

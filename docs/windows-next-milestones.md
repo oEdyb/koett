@@ -106,3 +106,11 @@ denial rolled back, but cancellation left a stale Loading model status despite
 preserving settings; the Windows presentation now reports cancellation explicitly.
 Native UIA inspection found Style was associated with the Structure label;
 label/control creation order is corrected. Both fixes await linked re-run.
+
+The live CPU WAV word test caught a missing Windows delivery stage: dictionary
+spelling applied and raw history survived, but replacements were never applied.
+Windows now applies shared literal rules once, after cleanup/dictionary and
+before clipboard/paste/history. It keeps original ASR text and reuses the
+existing empty-result clipboard-preservation guard. A focused Windows test
+covers original/raw preservation, no cascading and empty output. Linux/Mac code
+is untouched by this fix; the linked WAV/empty-result re-run remains required.

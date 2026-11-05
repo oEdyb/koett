@@ -16,3 +16,13 @@ control creation order is corrected for native label association, pending re-run
 
 Not all M3 gates have passed. Settings were restored by each edit/failure script.
 Original history remains backed up while the controlled test history is in use.
+
+All three new windows also passed geometry/DPI checks at actual Windows display
+scales 100/150/200%, in light and dark modes (18 captured steps). Theme and 200%
+scale were restored. Formatter setup kept Notepad focus after the user resumed
+typing; native button invocation itself activates Settings as expected.
+
+The focused speech-rule check found a genuine failure: dictionary spelling
+changed Phoebe to M3Phoebe, and original ASR was retained/copied from History,
+but the literal replacement never ran. The Windows final-delivery-stage fix
+requires a rebuilt re-run; its failure receipt is intentionally retained.
