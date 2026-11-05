@@ -206,9 +206,11 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Test runtime self-test retry policy
+        run: python3 -m unittest discover -s scripts -p test_runtime_self_test.py
       - name: Runtime self-test
         id: asr_self_test
-        run: cargo run --release --locked --bin koett-engine -- --self-test
+        run: python3 scripts/run_runtime_self_test.py cargo run --release --locked --bin koett-engine -- --self-test
       - name: Capture native inference failure
         if: failure() && steps.asr_self_test.outcome == 'failure'
         run: |
