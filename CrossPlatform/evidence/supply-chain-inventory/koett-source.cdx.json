@@ -1154,45 +1154,6 @@
       "version": "1.0.4"
     },
     {
-      "bom-ref": "pkg:cargo/chacha20@0.10.2",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/RustCrypto/stream-ciphers"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "chacha20",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/chacha20@0.10.2",
-      "type": "library",
-      "version": "0.10.2"
-    },
-    {
       "bom-ref": "pkg:cargo/clipboard-win@5.4.2",
       "externalReferences": [
         {
@@ -1686,41 +1647,6 @@
       "purl": "pkg:cargo/dasp_sample@0.11.0",
       "type": "library",
       "version": "0.11.0"
-    },
-    {
-      "bom-ref": "pkg:cargo/data-encoding@2.11.1",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/ia0/data-encoding"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT"
-        }
-      ],
-      "name": "data-encoding",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/data-encoding@2.11.1",
-      "type": "library",
-      "version": "2.11.1"
     },
     {
       "bom-ref": "pkg:cargo/der@0.8.1",
@@ -2994,45 +2920,6 @@
         }
       ],
       "purl": "pkg:cargo/futures-macro@0.3.34",
-      "type": "library",
-      "version": "0.3.34"
-    },
-    {
-      "bom-ref": "pkg:cargo/futures-sink@0.3.34",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/rust-lang/futures-rs"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "futures-sink",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/futures-sink@0.3.34",
       "type": "library",
       "version": "0.3.34"
     },
@@ -7219,84 +7106,6 @@
       "version": "6.0.0"
     },
     {
-      "bom-ref": "pkg:cargo/rand@0.10.3",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/rust-random/rand"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "rand",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/rand@0.10.3",
-      "type": "library",
-      "version": "0.10.3"
-    },
-    {
-      "bom-ref": "pkg:cargo/rand_core@0.10.1",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/rust-random/rand_core"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "rand_core",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/rand_core@0.10.1",
-      "type": "library",
-      "version": "0.10.1"
-    },
-    {
       "bom-ref": "pkg:cargo/redox_syscall@0.5.18",
       "externalReferences": [
         {
@@ -8320,45 +8129,6 @@
       "purl": "pkg:cargo/serde_spanned@1.1.2",
       "type": "library",
       "version": "1.1.2"
-    },
-    {
-      "bom-ref": "pkg:cargo/sha1@0.11.0",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/RustCrypto/hashes"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "sha1",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/sha1@0.11.0",
-      "type": "library",
-      "version": "0.11.0"
     },
     {
       "bom-ref": "pkg:cargo/sha2@0.11.0",
@@ -9479,80 +9249,6 @@
       "version": "2.7.2"
     },
     {
-      "bom-ref": "pkg:cargo/tokio-rustls@0.26.6",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/rustls/tokio-rustls"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "tokio-rustls",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/tokio-rustls@0.26.6",
-      "type": "library",
-      "version": "0.26.6"
-    },
-    {
-      "bom-ref": "pkg:cargo/tokio-tungstenite@0.30.0",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/snapview/tokio-tungstenite"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "17a073bfed563fa236697a068031408a93cd9522e08abf9933ead3e73411bd71"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT"
-        }
-      ],
-      "name": "tokio-tungstenite",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/tokio-tungstenite@0.30.0",
-      "type": "library",
-      "version": "0.30.0"
-    },
-    {
       "bom-ref": "pkg:cargo/tokio@1.53.3",
       "externalReferences": [
         {
@@ -9886,45 +9582,6 @@
       "purl": "pkg:cargo/tracing@0.1.44",
       "type": "library",
       "version": "0.1.44"
-    },
-    {
-      "bom-ref": "pkg:cargo/tungstenite@0.30.0",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/snapview/tungstenite-rs"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "e48ac77174b19c110a50ab2128b24215ac9cb40e0e12e093fb602d175c569d22"
-        }
-      ],
-      "licenses": [
-        {
-          "acknowledgement": "declared",
-          "expression": "MIT OR Apache-2.0"
-        },
-        {
-          "acknowledgement": "concluded",
-          "expression": "MIT"
-        }
-      ],
-      "name": "tungstenite",
-      "properties": [
-        {
-          "name": "koett:group",
-          "value": "rust-package"
-        },
-        {
-          "name": "koett:notice-state",
-          "value": "bundled"
-        }
-      ],
-      "purl": "pkg:cargo/tungstenite@0.30.0",
-      "type": "library",
-      "version": "0.30.0"
     },
     {
       "bom-ref": "pkg:cargo/typenum@1.20.1",
@@ -13929,14 +13586,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/cfg-if@1.0.4",
-        "pkg:cargo/cpufeatures@0.3.0",
-        "pkg:cargo/rand_core@0.10.1"
-      ],
-      "ref": "pkg:cargo/chacha20@0.10.2"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/error-code@3.4.0"
       ],
       "ref": "pkg:cargo/clipboard-win@5.4.2"
@@ -14032,10 +13681,6 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/dasp_sample@0.11.0"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:cargo/data-encoding@2.11.1"
     },
     {
       "dependsOn": [
@@ -14237,17 +13882,12 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/futures-sink@0.3.34"
-    },
-    {
-      "dependsOn": [],
       "ref": "pkg:cargo/futures-task@0.3.34"
     },
     {
       "dependsOn": [
         "pkg:cargo/futures-core@0.3.34",
         "pkg:cargo/futures-macro@0.3.34",
-        "pkg:cargo/futures-sink@0.3.34",
         "pkg:cargo/futures-task@0.3.34",
         "pkg:cargo/pin-project-lite@0.2.17",
         "pkg:cargo/slab@0.4.12"
@@ -14336,8 +13976,7 @@
       "dependsOn": [
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/libc@0.2.189",
-        "pkg:cargo/r-efi@6.0.0",
-        "pkg:cargo/rand_core@0.10.1"
+        "pkg:cargo/r-efi@6.0.0"
       ],
       "ref": "pkg:cargo/getrandom@0.4.3"
     },
@@ -14721,7 +14360,6 @@
         "pkg:cargo/sherpa-onnx@1.13.5",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/time@0.3.55",
-        "pkg:cargo/tokio-tungstenite@0.30.0",
         "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/ureq@3.4.0",
         "pkg:cargo/url@2.5.8",
@@ -15165,18 +14803,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/chacha20@0.10.2",
-        "pkg:cargo/getrandom@0.4.3",
-        "pkg:cargo/rand_core@0.10.1"
-      ],
-      "ref": "pkg:cargo/rand@0.10.3"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:cargo/rand_core@0.10.1"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/bitflags@2.13.1"
       ],
       "ref": "pkg:cargo/redox_syscall@0.5.18"
@@ -15391,14 +15017,6 @@
         "pkg:cargo/cpufeatures@0.3.0",
         "pkg:cargo/digest@0.11.3"
       ],
-      "ref": "pkg:cargo/sha1@0.11.0"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/cfg-if@1.0.4",
-        "pkg:cargo/cpufeatures@0.3.0",
-        "pkg:cargo/digest@0.11.3"
-      ],
       "ref": "pkg:cargo/sha2@0.11.0"
     },
     {
@@ -15599,26 +15217,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/tokio@1.53.3"
-      ],
-      "ref": "pkg:cargo/tokio-rustls@0.26.6"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/futures-util@0.3.34",
-        "pkg:cargo/log@0.4.34",
-        "pkg:cargo/rustls-native-certs@0.8.4",
-        "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/tokio-rustls@0.26.6",
-        "pkg:cargo/tokio@1.53.3",
-        "pkg:cargo/tungstenite@0.30.0"
-      ],
-      "ref": "pkg:cargo/tokio-tungstenite@0.30.0"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/bytes@1.12.1",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/mio@1.2.2",
@@ -15689,21 +15287,6 @@
         "pkg:cargo/tracing-core@0.1.36"
       ],
       "ref": "pkg:cargo/tracing@0.1.44"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/bytes@1.12.1",
-        "pkg:cargo/data-encoding@2.11.1",
-        "pkg:cargo/http@1.5.0",
-        "pkg:cargo/httparse@1.10.1",
-        "pkg:cargo/log@0.4.34",
-        "pkg:cargo/rand@0.10.3",
-        "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/sha1@0.11.0",
-        "pkg:cargo/thiserror@2.0.20"
-      ],
-      "ref": "pkg:cargo/tungstenite@0.30.0"
     },
     {
       "dependsOn": [],
