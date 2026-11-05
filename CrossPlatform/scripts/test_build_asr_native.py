@@ -1,7 +1,9 @@
 import contextlib
+import hashlib
 import io
 import json
 import tempfile
+import tarfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -13,6 +15,7 @@ from build_asr_native import (
     SOURCE_COMMIT,
     configure_command,
     native_options,
+    prepare_context_header,
     remove_disabled_tts_stubs,
     stage_libraries,
     validate_onnx_cpp_abi,
@@ -20,6 +23,56 @@ from build_asr_native import (
 
 
 class AsrBuildTests(unittest.TestCase):
+    def test_known_context_patch_upgrades_without_overwriting_unknown_edits(self):
+        from shared_context_patch import PATCHED_SHA256
+        original = Path(__file__).with_name('fixtures').joinpath('offline-recognizer-transducer-nemo-impl.h').read_text().encode()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / 'source.tar.gz'
+            context = root / 'offline-recognizer-transducer-nemo-impl.h'
+            with tarfile.open(archive, 'w:gz') as package:
+                member = tarfile.TarInfo(f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/{context.name}')
+                member.size = len(original)
+                package.addfile(member, io.BytesIO(original))
+            prior = b'known prior context patch fixture'
+            context.write_bytes(prior)
+            with patch('build_asr_native.PREVIOUS_CONTEXT_SHA256', hashlib.sha256(prior).hexdigest()):
+                prepare_context_header(archive, context)
+            self.assertEqual(hashlib.sha256(context.read_bytes()).hexdigest(), PATCHED_SHA256)
+            modified = context.stat().st_mtime_ns
+            prepare_context_header(archive, context)
+            self.assertEqual(context.stat().st_mtime_ns, modified)
+            context.write_bytes(b'unknown local edit')
+            with self.assertRaisesRegex(ValueError, 'unrecognized NeMo source'):
+                prepare_context_header(archive, context)
+            self.assertEqual(context.read_bytes(), b'unknown local edit')
+
+    def test_context_capability_requires_matching_source_and_is_revoked_when_stale(self):
+        target = 'x86_64-pc-windows-msvc'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / 'build'
+            build.mkdir()
+            for name in LIBRARIES:
+                (build / f'{name}.lib').write_bytes(b'private archive fixture koett_context')
+            context = root / f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
+            context.parent.mkdir(parents=True)
+            context.write_bytes(b'patched native source fixture')
+            digest = hashlib.sha256(context.read_bytes()).hexdigest()
+            with patch('build_asr_native.PATCHED_SHA256', digest), contextlib.redirect_stdout(io.StringIO()):
+                stage_libraries(build, root, target)
+                marker = (root / 'lib/koett-context.txt').read_text()
+                self.assertIn(f'patch={digest}\n', marker)
+                self.assertIn(f'source={SOURCE_COMMIT}\n', marker)
+                self.assertIn(f'target={target}\n', marker)
+                self.assertIn('core=', marker)
+                self.assertIn('api=', marker)
+                self.assertEqual(json.loads((root / 'build-receipt.json').read_text())['shared_context_sha256'], digest)
+                context.write_bytes(b'changed native source')
+                stage_libraries(build, root, target)
+                self.assertFalse((root / 'lib/koett-context.txt').exists())
+                self.assertNotIn('shared_context_sha256', json.loads((root / 'build-receipt.json').read_text()))
+
     def test_onnx_string_abi_must_match_the_target_and_be_unambiguous(self):
         for target, expected in [('x86_64-unknown-linux-gnu', '0'),
                                  ('aarch64-unknown-linux-gnu', '1')]:

@@ -25,17 +25,83 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(2);
 const DROP_TIMEOUT: Duration = Duration::from_millis(250);
 const MAX_WRITERS: usize = 4;
 #[derive(Clone)]
-pub(super) struct Payload(pub Vec<(&'static str, Arc<[u8]>)>);
+pub(super) struct Payload(pub Vec<(&'static str, Arc<[u8]>)>, Option<ReadSignal>);
+#[derive(Clone)]
+struct ReadSignal {
+    armed: Arc<AtomicBool>,
+    started: Arc<AtomicBool>,
+    done: mpsc::SyncSender<()>,
+}
+impl ReadSignal {
+    fn begin(&self) -> Option<Self> {
+        self.armed.load(Ordering::Acquire).then(|| {
+            self.started.store(true, Ordering::Release);
+            self.clone()
+        })
+    }
+}
+pub(super) struct ImageRead {
+    signal: ReadSignal,
+    done: mpsc::Receiver<()>,
+}
+impl ImageRead {
+    pub fn arm(&self) {
+        self.signal.armed.store(true, Ordering::Release);
+    }
+    pub fn started(&self) -> bool {
+        self.signal.started.load(Ordering::Acquire)
+    }
+    /// A reader already in flight gets longer to finish than an unknown target.
+    /// Completion means the whole pipe was written and closed, not PNG decoding.
+    pub fn wait(&self, posted: Instant, fallback: Duration, transfer: Duration) -> bool {
+        loop {
+            let limit = if self.signal.started.load(Ordering::Acquire) {
+                transfer
+            } else {
+                fallback
+            };
+            let remaining = (posted + limit).saturating_duration_since(Instant::now());
+            match self
+                .done
+                .recv_timeout(remaining.min(Duration::from_millis(10)))
+            {
+                Ok(()) => return true,
+                Err(_) if remaining.is_zero() => return false,
+                Err(_) => {}
+            }
+        }
+    }
+}
 impl Payload {
     pub fn image(png: &[u8]) -> Self {
-        Self(vec![("image/png", Arc::from(png))])
+        Self(vec![("image/png", Arc::from(png))], None)
+    }
+    pub fn tracked_image(png: &[u8]) -> (Self, ImageRead) {
+        let (done, receiver) = mpsc::sync_channel(1);
+        let signal = ReadSignal {
+            armed: Arc::new(AtomicBool::new(false)),
+            started: Arc::new(AtomicBool::new(false)),
+            done,
+        };
+        let mut payload = Self::image(png);
+        payload.1 = Some(signal.clone());
+        (
+            payload,
+            ImageRead {
+                signal,
+                done: receiver,
+            },
+        )
     }
     pub fn text(text: &str) -> Self {
         let bytes = Arc::from(text.as_bytes());
-        Self(vec![
-            ("text/plain;charset=utf-8", Arc::clone(&bytes)),
-            ("text/plain", bytes),
-        ])
+        Self(
+            vec![
+                ("text/plain;charset=utf-8", Arc::clone(&bytes)),
+                ("text/plain", bytes),
+            ],
+            None,
+        )
     }
     pub fn bundle(png: &[u8], text: &str) -> Self {
         let mut data = Self::image(png).0;
@@ -44,7 +110,7 @@ impl Payload {
             Arc::from(super::feedback::sketch_html(text, png).into_bytes()),
         ));
         data.extend(Self::text(text).0);
-        Self(data)
+        Self(data, None)
     }
 }
 struct Request {
@@ -343,6 +409,7 @@ fn spawn_writer(
     file: File,
     data: Arc<[u8]>,
     pool: &Arc<WriterPool>,
+    completed: Option<ReadSignal>,
     spawn: impl FnOnce(WriterJob) -> io::Result<thread::JoinHandle<()>>,
 ) -> io::Result<thread::JoinHandle<()>> {
     let permit = pool.acquire().ok_or_else(|| {
@@ -350,8 +417,13 @@ fn spawn_writer(
     })?;
     spawn(Box::new(move || {
         let _permit = permit;
-        if let Err(error) = write_transfer(file, &data, Duration::from_secs(5)) {
-            eprintln!("clipboard_owner event=transfer_failed error={error}");
+        match write_transfer(file, &data, Duration::from_secs(5)) {
+            Ok(()) => {
+                if let Some(signal) = completed {
+                    let _ = signal.done.try_send(());
+                }
+            }
+            Err(error) => eprintln!("clipboard_owner event=transfer_failed error={error}"),
         }
     }))
 }
@@ -434,11 +506,20 @@ impl Dispatch<source::ZwlrDataControlSourceV1, Arc<SourceData>> for State {
                         bytes.len()
                     );
                     // Arc keeps this source's immutable data alive even after replacement.
-                    let result = spawn_writer(File::from(fd), Arc::clone(bytes), &WRITERS, |job| {
-                        thread::Builder::new()
-                            .name("koett-clip-write".into())
-                            .spawn(job)
-                    });
+                    // Ignore pre-paste clipboard-manager reads. This signal only advances
+                    // an already authorized delivery; reads never trigger keyboard input.
+                    let completed = data.payload.1.as_ref().and_then(ReadSignal::begin);
+                    let result = spawn_writer(
+                        File::from(fd),
+                        Arc::clone(bytes),
+                        &WRITERS,
+                        completed,
+                        |job| {
+                            thread::Builder::new()
+                                .name("koett-clip-write".into())
+                                .spawn(job)
+                        },
+                    );
                     if let Err(error) = result {
                         eprintln!("clipboard_owner event=writer_rejected error={error}");
                     }
@@ -625,6 +706,51 @@ mod tests {
     use std::process::{Command, Stdio};
     const TEXT: &str = "- #1 <literal> & “Unicode”\nsecond line";
     #[test]
+    fn image_completion_ignores_pre_paste_reads_and_other_offers() {
+        let (payload, read) = Payload::tracked_image(&[1, 2, 3]);
+        assert!(payload.1.as_ref().unwrap().begin().is_none());
+        read.arm();
+        let signal = payload.1.as_ref().unwrap().begin().unwrap();
+        let (_, other) = Payload::tracked_image(&[4]);
+        signal.done.try_send(()).unwrap();
+        assert!(read.wait(Instant::now(), Duration::ZERO, Duration::ZERO));
+        assert!(!other.wait(Instant::now(), Duration::ZERO, Duration::ZERO));
+    }
+    #[test]
+    fn image_completion_waits_for_the_whole_large_transfer_and_rejects_a_broken_pipe() {
+        use std::{io::Read, os::unix::net::UnixStream};
+        for broken in [false, true] {
+            let (payload, read) = Payload::tracked_image(&vec![42; 2 * 1024 * 1024]);
+            read.arm();
+            let signal = payload.1.as_ref().unwrap().begin();
+            let (writer, mut reader) = UnixStream::pair().unwrap();
+            let worker = spawn_writer(
+                File::from(std::os::fd::OwnedFd::from(writer)),
+                payload.0[0].1.clone(),
+                &Arc::new(WriterPool::default()),
+                signal,
+                |job| thread::Builder::new().spawn(job),
+            )
+            .unwrap();
+            assert!(!read.wait(
+                Instant::now(),
+                Duration::from_millis(1),
+                Duration::from_millis(20)
+            ));
+            if !broken {
+                let mut bytes = Vec::new();
+                reader.read_to_end(&mut bytes).unwrap();
+                assert_eq!(bytes.as_slice(), payload.0[0].1.as_ref());
+            }
+            drop(reader);
+            worker.join().unwrap();
+            assert_eq!(
+                read.wait(Instant::now(), Duration::ZERO, Duration::ZERO),
+                !broken
+            );
+        }
+    }
+    #[test]
     fn bundle_keeps_each_representation_and_escapes_only_html() {
         let payload = Payload::bundle(&[137, 80, 78, 71], TEXT);
         assert_eq!(payload.0.len(), 4);
@@ -684,6 +810,7 @@ mod tests {
                 File::from(std::os::fd::OwnedFd::from(writer)),
                 Arc::from(&b"x"[..]),
                 &pool,
+                None,
                 |_| panic!("spawn must not run at capacity")
             )
             .is_err()
@@ -696,6 +823,7 @@ mod tests {
                 File::from(std::os::fd::OwnedFd::from(writer)),
                 Arc::from(&b"x"[..]),
                 &pool,
+                None,
                 |_| Err(io::Error::other("injected spawn failure"))
             )
             .is_err()
@@ -715,6 +843,7 @@ mod tests {
             File::from(std::os::fd::OwnedFd::from(writer)),
             data.clone(),
             &pool,
+            None,
             |job| thread::Builder::new().spawn(job),
         )
         .unwrap();

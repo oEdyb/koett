@@ -11,6 +11,8 @@ from pathlib import Path, PureWindowsPath
 from unittest.mock import MagicMock, Mock
 
 from test_package_linux_archive import CANONICAL_NOTICES, verify_notices
+from build_asr_native import SOURCE_COMMIT
+from shared_context_patch import PATCHED_SHA256
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('installer', ROOT / 'packaging/linux/install.py')
@@ -54,7 +56,9 @@ class PackageTests(unittest.TestCase):
 
     def test_system_archive_has_complete_installer(self):
         with tempfile.TemporaryDirectory() as directory:
-            result = subprocess.run(['python3', str(ROOT / 'scripts/package_linux.py'), '--flavor', 'system-runtime', '--binary', '/bin/true', '--output', directory], check=True, capture_output=True, text=True)
+            receipt = Path(directory) / 'native.json'
+            receipt.write_text(json.dumps({'source_commit': SOURCE_COMMIT, 'shared_context_sha256': PATCHED_SHA256}))
+            result = subprocess.run(['python3', str(ROOT / 'scripts/package_linux.py'), '--flavor', 'system-runtime', '--binary', '/bin/true', '--native-build-receipt', str(receipt), '--output', directory], check=True, capture_output=True, text=True)
             import tarfile
             with tarfile.open(json.loads(result.stdout)['archive']) as archive:
                 members = list(archive)
@@ -66,6 +70,21 @@ class PackageTests(unittest.TestCase):
                         self.assertTrue(item.mode & 0o111, item.name)
             self.assertTrue({'install.py', 'install.sh', 'preflight.py', 'files.json', 'SYSTEM-RUNTIME.md', 'koett'}.issubset(names))
             self.assertFalse(any(name.endswith('.a') for name in names))
+
+    def test_missing_or_stale_native_receipts_fail_before_creating_a_package(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = root / 'native.json'
+            output = root / 'packages'
+            command = ['python3', str(ROOT / 'scripts/package_linux.py'), '--flavor', 'system-runtime', '--binary', '/bin/true', '--native-build-receipt', str(receipt), '--output', str(output)]
+            for value in [None, [], {'source_commit': SOURCE_COMMIT}, {'source_commit': SOURCE_COMMIT, 'shared_context_sha256': 'stale'}]:
+                with self.subTest(value=value):
+                    if value is not None:
+                        receipt.write_text(json.dumps(value))
+                    result = subprocess.run(command, capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('rerun scripts/build_asr_native.py', result.stderr)
+                    self.assertFalse(output.exists())
 
     def test_current_pc_still_requires_all_runtime_inputs(self):
         result = subprocess.run(['python3', str(ROOT / 'scripts/package_linux.py'), '--output', '/unused'], check=False, capture_output=True, text=True)

@@ -4,8 +4,8 @@
            GID: 1000 (olle)
         Signal: 11 (SEGV) si_code: SEGV_MAPERR
      Timestamp: Thu 2026-10-29 16:51:16 CET (10min ago)
-  Command Line: /home/olle/dev/koett/CrossPlatform/target/release/koett
-    Executable: /home/olle/dev/koett/CrossPlatform/target/release/koett
+  Command Line: <build-home>/dev/koett/CrossPlatform/target/release/koett
+    Executable: <build-home>/dev/koett/CrossPlatform/target/release/koett
  Control Group: /user.slice/user-1000.slice/user@1000.service/agents.slice/agents-lab.slice/agent-lab-koett-shortcuts-parent-client-156d4f75.scope
           Unit: user@1000.service
      User Unit: agent-lab-koett-shortcuts-parent-client-156d4f75.scope
@@ -30,6 +30,6 @@
                 #8  0x00007f44f2872068 n/a (libglib-2.0.so.0 + 0x70068)
                 #9  0x00007f44f28721c2 g_main_context_iteration (libglib-2.0.so.0 + 0x701c2)
                 #10 0x00007f44f2afaffe g_application_run (libgio-2.0.so.0 + 0xfaffe)
-                #11 0x0000561c159b0de8 _ZN5ashpd8registry33register_host_app_with_connection28_$u7b$$u7b$closure$u7d$$u7d$17h2cb78d1d72adc935E (/home/olle/dev/koett/CrossPlatform/target/release/koett (deleted) + 0xae4de8)
+                #11 0x0000561c159b0de8 _ZN5ashpd8registry33register_host_app_with_connection28_$u7b$$u7b$closure$u7d$$u7d$17h2cb78d1d72adc935E (<build-home>/dev/koett/CrossPlatform/target/release/koett (deleted) + 0xae4de8)
                 #12 0x00007fff979c3000 n/a (n/a + 0x0)
                 ELF object binary architecture: AMD x86-64

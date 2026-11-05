@@ -1098,6 +1098,25 @@ mod portal_binding_tests {
     }
 }
 
+// Registry is a newer optional host-identification interface. Older portal
+// frontends still authorize RemoteDesktop/Clipboard through their own prompts.
+async fn register_portal_host(connection: ashpd::zbus::Connection) -> Result<(), String> {
+    let app_id = APP_ID
+        .parse()
+        .map_err(|error| format!("invalid Koett application ID: {error}"))?;
+    match ashpd::register_host_app_with_connection(connection, app_id).await {
+        Ok(()) => Ok(()),
+        Err(ashpd::Error::PortalNotFound(interface))
+            if interface.as_str() == "org.freedesktop.host.portal.Registry" =>
+        {
+            Ok(())
+        }
+        Err(error) => Err(format!(
+            "could not register Koett with the desktop portal: {error}"
+        )),
+    }
+}
+
 async fn shortcut_events(
     settings: Settings,
     actions: Sender<TrayAction>,
@@ -1107,12 +1126,7 @@ async fn shortcut_events(
     let connection = ashpd::zbus::Connection::session()
         .await
         .map_err(|error| format!("could not connect to the desktop portal: {error}"))?;
-    let app_id = APP_ID
-        .parse()
-        .map_err(|error| format!("invalid Koett application ID: {error}"))?;
-    ashpd::register_host_app_with_connection(connection.clone(), app_id)
-        .await
-        .map_err(|error| format!("could not register Koett with the desktop portal: {error}"))?;
+    register_portal_host(connection.clone()).await?;
 
     let shortcuts = GlobalShortcuts::with_connection(connection.clone())
         .await
@@ -1403,14 +1417,20 @@ async fn run_wayland(
                             let before_text = output
                                 .as_ref()
                                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-                            let result = match &output {
-                                Some(output) => {
-                                    output.deliver(&text, now, settings.paste_shortcut).await
+                            let result = if let Err(error) = &image_delivery {
+                                Err(error.clone())
+                            } else {
+                                match &output {
+                                    Some(output) => {
+                                        output.deliver(&text, now, settings.paste_shortcut).await
+                                    }
+                                    None if png.is_some() => output::deliver_sketch_text(
+                                        &text,
+                                        now,
+                                        settings.paste_shortcut,
+                                    ),
+                                    None => output::deliver(&text, now, settings.paste_shortcut),
                                 }
-                                None if png.is_some() => {
-                                    output::deliver_sketch_text(&text, now, settings.paste_shortcut)
-                                }
-                                None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             let copied = if let Some(png) = &png {
                                 settle_sketch_text(output.as_ref(), before_text).await;
@@ -1543,12 +1563,16 @@ async fn run_wayland(
             let before_text = output
                 .as_ref()
                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-            let text_delivery = match &output {
-                Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
-                None if sheet.is_some() => {
-                    output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+            let text_delivery = if let Err(error) = &image_delivery {
+                Err(error.clone())
+            } else {
+                match &output {
+                    Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                    None if sheet.is_some() => {
+                        output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+                    }
+                    None => output::deliver(&text, target, settings.paste_shortcut),
                 }
-                None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let mut delivered = image_delivery.and(text_delivery);
             if let Some(png) = &sheet {
@@ -2519,12 +2543,7 @@ async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>)
 
 impl WaylandOutput {
     async fn new(connection: ashpd::zbus::Connection) -> Result<Self, String> {
-        let app_id = APP_ID
-            .parse()
-            .map_err(|error| format!("invalid Koett application ID: {error}"))?;
-        ashpd::register_host_app_with_connection(connection.clone(), app_id)
-            .await
-            .map_err(|error| format!("could not identify Koett to the paste portal: {error}"))?;
+        register_portal_host(connection.clone()).await?;
         let remote_desktop = RemoteDesktop::with_connection(connection.clone())
             .await
             .map_err(|error| format!("automatic paste is unavailable: {error}"))?;

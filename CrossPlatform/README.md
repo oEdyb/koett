@@ -57,9 +57,16 @@ available. Otherwise bind `koett toggle` in your compositor; hold mode uses
 a keyboard-access group or privileged keyboard daemon. Drawing has a separate
 opt-in setup below. On niri/wlroots, install
 `wl-clipboard` and `wtype`; KDE/GNOME use the portal path where supported.
-Automatic paste needs a focus check, which only niri and X11 offer here. Elsewhere
-Koett copies the text and shows Not pasted, with Paste to send it to the focused app. X11
-uses native global shortcuts and XTest.
+Automatic paste requires a supported focus check. GNOME Wayland needs the
+explicitly enabled [Koett Shell extension](integrations/gnome/README.md).
+The Linux archive includes its files; copy them as described there, log out/in,
+and enable the extension. GNOME 46 supplies focus checks; GNOME 51 also supplies
+the recording pill. Other Shell versions need verification. If GlobalShortcuts
+is unavailable, add a custom GNOME keyboard shortcut running `koett toggle`.
+Allow both **Remote Interaction** and **Clipboard Access** in the Remote Desktop
+prompt. Drawing remains unavailable on GNOME. Without the extension or portal
+permission, use History/Copy and paste manually. X11 uses native global shortcuts
+and XTest.
 
 Settings → Dictation → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 backends. Choose the chord your app accepts. Sending it cannot prove the app
@@ -140,7 +147,10 @@ python3 scripts/package_linux.py --flavor system-runtime --binary target/release
 ```
 
 The native builder verifies pinned sherpa-onnx source, disables TTS, and records
-its ASR-only link inputs. The Rust build rejects missing or mismatched receipts.
+its ASR-only link inputs. The Rust build rejects missing ASR-only receipts and
+mismatched capability markers. Without a capability marker, developer builds
+use spelling-only dictionary correction; packaging requires a receipt matching
+the reviewed contextual decoder. Rebuild old native caches before packaging.
 The pinned Linux archives use different C++ string ABIs on x86-64 and ARM64;
 the builder selects and verifies each one. Rebuild older ARM native caches with it.
 `packaging/linux/Dockerfile` defines the Ubuntu 22.04 build floor. A build from a

@@ -92,6 +92,15 @@ fn run() -> Result<(), String> {
 }
 
 fn run_self_test() -> Result<(), String> {
+    if env::var_os("KOETT_REQUIRE_SHARED_CONTEXT").is_some()
+        && !sherpa_onnx::SHARED_CONTEXT_AVAILABLE
+    {
+        return Err("release self-test requires verified shared-context native libraries".into());
+    }
+    eprintln!(
+        "shared_context_sha256={:?}",
+        sherpa_onnx::SHARED_CONTEXT_SHA256
+    );
     let (_, sample, mut transcriber) = load_self_test()?;
     eprintln!("self_test_stage=decode");
     let result = transcriber.transcribe(&sample)?;

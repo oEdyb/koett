@@ -332,6 +332,10 @@
 - Entries are a term plus optional sounds-like forms in `Settings.dictionary`;
   plain-text import/export is `Term = form, form`. See `docs/dictionary.md`.
 - An empty dictionary must leave decoding exactly as before (single greedy pass).
+- Verified transducer builds share one encoder output between a greedy base and
+  a biased decoder. Never encode identical audio twice in normal dictation.
+  CTC and native builds without that capability keep greedy decoding plus cheap
+  spelling. The old duplicate-encoder path is benchmark-only.
 - Biased decoding may only change words that become a dictionary term. Keep the
   plain stream as the base; never ship single-stream biasing.
 - The spelling pass ignores case, spaces and hyphens, never punctuation. It runs

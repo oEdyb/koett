@@ -1,0 +1,142 @@
+--- a/Sources/Koett/DictationSession.swift
++++ b/Sources/Koett/DictationSession.swift
+@@ -96,7 +96,7 @@
+ 
+         let newRecorder = try AVAudioRecorder(url: url, settings: settings)
+         newRecorder.isMeteringEnabled = true
+-        guard newRecorder.prepareToRecord(), newRecorder.record() else {
++        guard newRecorder.prepareToRecord(), auditInstallTap(newRecorder) == 0, newRecorder.record() else {
+             throw Self.failure("The microphone recorder could not start.")
+         }
+ 
+@@ -441,6 +441,7 @@
+             throw Self.failure("The transcript could not be copied to the clipboard.")
+         }
+ 
++        AuditPasteGeneration.generation = NSPasteboard.general.changeCount
+         guard pasteAtCursor() else {
+             throw Self.failure("The transcript is on the clipboard, but Command-V could not be sent.")
+         }
+@@ -476,6 +477,7 @@
+     }
+ 
+     private func pasteAtCursor() -> Bool {
++        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == AuditPasteGeneration.targetPID else { return false }
+         guard let source = CGEventSource(stateID: .hidSystemState),
+               let keyDown = CGEvent(
+                   keyboardEventSource: source,
+@@ -492,6 +494,7 @@
+ 
+         keyDown.flags = .maskCommand
+         keyUp.flags = .maskCommand
++        keyDown.setIntegerValueField(.eventSourceUserData, value: Int64(AuditPasteGeneration.generation))
+         keyDown.post(tap: .cghidEventTap)
+         keyUp.post(tap: .cghidEventTap)
+         return true
+@@ -549,3 +552,5 @@
+         }
+     }
+ }
++
++@MainActor enum AuditPasteGeneration { static var generation = 0; static var targetPID: Int32 = 0 }
+--- a/Sources/Koett/KoettApp.swift
++++ b/Sources/Koett/KoettApp.swift
+@@ -6,6 +6,14 @@
+ private struct Koett {
+     @MainActor
+     static func main() {
++        setbuf(stdout, nil)
++        let auditEnvironment = ProcessInfo.processInfo.environment
++        guard auditEnvironment["KOETT_AUDIT_HOST"] == "1",
++              let auditRoot = auditEnvironment["KOETT_AUDIT_ROOT"],
++              NSHomeDirectory() == auditRoot + "/home" else {
++            fputs("Private host audit: explicit opt-in and isolated home required\n", stderr)
++            return
++        }
+         let arguments = CommandLine.arguments.dropFirst()
+ 
+         if arguments.contains("--register-login") {
+@@ -84,8 +92,15 @@
+         }
+ 
+         do {
++            let auditDefaults = AuditDefaults()
++            auditDefaults.register(defaults: [
++                "dictationShortcut": Data([123, 34, 107, 101, 121, 67, 111, 100, 101, 115, 34, 58, 32, 91, 52, 48, 93, 44, 32, 34, 109, 111, 100, 105, 102, 105, 101, 114, 115, 82, 97, 119, 86, 97, 108, 117, 101, 34, 58, 32, 51, 57, 51, 50, 49, 54, 44, 32, 34, 107, 101, 121, 78, 97, 109, 101, 34, 58, 32, 34, 75, 34, 44, 32, 34, 109, 111, 100, 105, 102, 105, 101, 114, 79, 110, 108, 121, 34, 58, 32, 102, 97, 108, 115, 101, 125]),
++                "pauseMedia": false, "s1MiniEnabled": false, "dictionary": Data("[]".utf8),
++                "recordingMode": "toggle", "drawWhileDictating": false,
++                "pinSelectedText": false,
++            ])
+             let savedEngine = SpeechEngine(
+-                rawValue: UserDefaults.standard.string(forKey: "speechEngine") ?? ""
++                rawValue: auditDefaults.string(forKey: "speechEngine") ?? ""
+             ) ?? .parakeet
+             let speechEngine: SpeechEngine
+             if arguments.contains("--nemotron") {
+@@ -96,13 +111,14 @@
+                 speechEngine = savedEngine
+             }
+             let controller = try KoettController(
+-                defaults: .standard,
++                defaults: auditDefaults,
+                 speechEngine: speechEngine
+             )
+             let delegate = KoettDelegate(controller: controller)
+             let application = NSApplication.shared
+             application.setActivationPolicy(.accessory)
+             application.delegate = delegate
++            delegate.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
+             application.run()
+             withExtendedLifetime(delegate) {}
+         } catch {
+@@ -143,12 +159,50 @@
+ @MainActor
+ private final class KoettDelegate: NSObject, NSApplicationDelegate {
+     private let controller: KoettController
++    private var auditStarted = false
++    private var auditTimer: Timer?
+ 
+     init(controller: KoettController) {
+         self.controller = controller
+     }
+ 
+     func applicationDidFinishLaunching(_ notification: Notification) {
++        guard !auditStarted else { return }; auditStarted = true
++        let auditRoot = URL(fileURLWithPath: ProcessInfo.processInfo.environment["KOETT_AUDIT_ROOT"]!)
++        auditTimer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { [weak self] _ in
++            MainActor.assumeIsolated {
++                guard let self,
++                    let data = try? Data(contentsOf: auditRoot.appendingPathComponent("app-command.json")),
++                    let command = try? JSONSerialization.jsonObject(with: data) as? [String: String] else { return }
++                try? FileManager.default.removeItem(at: auditRoot.appendingPathComponent("app-command.json"))
++                AuditPasteGeneration.targetPID = Int32(command["targetPID"] ?? "0") ?? 0
++                let phase = String(describing: self.controller.state)
++                let name = command["command"] ?? ""
++                if ["start", "stop", "neutral"].contains(name),
++                    NSWorkspace.shared.frontmostApplication?.processIdentifier == AuditPasteGeneration.targetPID {
++                    let source = CGEventSource(stateID: .privateState)!
++                    let event = CGEvent(keyboardEventSource: source, virtualKey: 55, keyDown: false)!
++                    event.type = .flagsChanged; event.flags = []
++                    event.post(tap: .cghidEventTap)
++                    usleep(20_000)
++                }
++                let now = ProcessInfo.processInfo.systemUptime
++                var ok = name == "progress" || name == "neutral"
++                if name == "start", phase == "ready", let path = command["fixture"] {
++                    do { try AuditFixture.prepare(path); self.controller.toggleRecording(eventTimestamp: now); ok = true }
++                    catch { fputs("Audit fixture could not load\n", stderr) }
++                }
++                if name == "abort", phase == "recording" {
++                    self.controller.recorder?.stop(); self.controller.recorder = nil
++                    if let url = self.controller.recordingURL { self.controller.cleanup(url) }
++                    self.controller.recordingURL = nil; self.controller.state = .ready; ok = true
++                }
++                if name == "stop", phase == "recording" { self.controller.toggleRecording(eventTimestamp: now); ok = true }
++                let ack: [String: Any] = ["requestID": command["requestID"] ?? "", "uptime": now, "priorPhase": phase, "ok": ok,
++                    "fixtureFinished": auditFinished() != 0, "framesInjected": auditFrames(), "fixtureSHA256": AuditFixture.sha, "captureGeneration": AuditFixture.generation, "inputSampleRate": auditInputRate(), "appClipboardGeneration": AuditPasteGeneration.generation]
++                try! JSONSerialization.data(withJSONObject: ack).write(to: auditRoot.appendingPathComponent("app-ack.json"), options: .atomic)
++            }
++        }
+         controller.installMenu()
+         print("Checking microphone and Accessibility access...")
+         Task { @MainActor in

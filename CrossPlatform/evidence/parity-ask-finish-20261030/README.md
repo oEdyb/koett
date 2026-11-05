@@ -62,7 +62,7 @@ scripts (`ruff-final.log`). Those files were preserved for the parent floor pass
 Tested isolated invocation (after verifying/extracting the package):
 
 ```sh
-agent-lab run koett-ask-finish -- env LD_LIBRARY_PATH=/tmp/koett-native-host-abi0/lib python3 /home/olle/dev/koett/CrossPlatform/scripts/with_isolated_webkit.py /tmp/koett-ask-webkit -- env WEBKIT_DISABLE_DMABUF_RENDERER=1 python3 /home/olle/dev/koett/CrossPlatform/scripts/test_linux_ask_acceptance.py --lab koett-ask-finish --binary /home/olle/dev/koett/CrossPlatform/target/debug/koett --output /tmp/koett-ask-fresh-acceptance --theme dark --scaled
+agent-lab run koett-ask-finish -- env LD_LIBRARY_PATH=/tmp/koett-native-host-abi0/lib python3 <build-home>/dev/koett/CrossPlatform/scripts/with_isolated_webkit.py /tmp/koett-ask-webkit -- env WEBKIT_DISABLE_DMABUF_RENDERER=1 python3 <build-home>/dev/koett/CrossPlatform/scripts/test_linux_ask_acceptance.py --lab koett-ask-finish --binary <build-home>/dev/koett/CrossPlatform/target/debug/koett --output /tmp/koett-ask-fresh-acceptance --theme dark --scaled
 ```
 
 The helper requires `bwrap` and a complete signature-verified extracted package.

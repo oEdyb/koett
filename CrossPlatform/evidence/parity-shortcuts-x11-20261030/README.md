@@ -54,7 +54,7 @@ Reproduction (after providing xclip on the private PATH):
 
 ```sh
 agent-lab start koett-shortcuts-x11-owned
-agent-lab run koett-shortcuts-x11-owned -- env PATH=/tmp/koett-x11-tools/usr/bin:/usr/local/bin:/usr/bin:/bin /usr/bin/python3 /home/olle/dev/koett/CrossPlatform/scripts/test_linux_shortcuts_x11.py --binary /tmp/koett-x11-final-release --output /tmp/koett-x11-acceptance-final-2 --theme dark --renderer cairo
+agent-lab run koett-shortcuts-x11-owned -- env PATH=/tmp/koett-x11-tools/usr/bin:/usr/local/bin:/usr/bin:/bin /usr/bin/python3 <build-home>/dev/koett/CrossPlatform/scripts/test_linux_shortcuts_x11.py --binary /tmp/koett-x11-final-release --output /tmp/koett-x11-acceptance-final-2 --theme dark --renderer cairo
 agent-lab stop koett-shortcuts-x11-owned
 ```
 

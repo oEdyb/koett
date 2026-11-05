@@ -1,0 +1,44 @@
+{
+  "before_events": "low 0\nhigh 7796\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n",
+  "budget_bytes": 2147483648,
+  "high": "unlimited",
+  "swap_bytes": 0,
+  "result": {
+    "ok": true,
+    "value": {
+      "nonce": "AUDIT109956933684485",
+      "stop_kind": "manual_control",
+      "text_event_count": 1,
+      "feature": "off",
+      "seconds": 5,
+      "overlay_ready_ms": null,
+      "drawing_count": 0,
+      "captured_count": 0,
+      "recording_cpu_percent": 3.9081409051251694,
+      "recording_wall_s": 5.117522752,
+      "process_peak_rss_kib": 1392848,
+      "press_to_open_ms": 42.855786,
+      "stop_to_text_ms": 405.047934,
+      "start_ns": 109957064303557,
+      "capture_ready_ns": 109957107159343,
+      "stop_ns": 109962224682095,
+      "stop_realtime_ns": 1793855892258933223,
+      "receipt_ns": 109962629730029,
+      "image_to_text_ms": null,
+      "image_count": 0,
+      "text_bytes": 99,
+      "text_sha256": "853fa4a1bec234ff5ec375c83d8e5c82e2bc462553d9f2f2138666866ffc9469",
+      "rss_kib": 1362648,
+      "loadavg": [
+        4.53076171875,
+        4.0380859375,
+        3.20263671875
+      ]
+    }
+  },
+  "wall_s": 5.82172771099431,
+  "after_events": "low 0\nhigh 7796\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n",
+  "scope_current": 1627717632,
+  "app_survived": true,
+  "restored_max": "12884901888"
+}

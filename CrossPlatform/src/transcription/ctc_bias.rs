@@ -38,7 +38,7 @@ pub(super) struct Sidecar {
 
 pub fn status() -> &'static str {
     match WORKER.get() {
-        None => "inactive; requires dictionary terms and a downloaded Parakeet v2 model",
+        None => "off by default; spelling only (acoustic sidecar is benchmark-only)",
         Some(None) => "unavailable; raw CTC fallback",
         Some(Some(worker)) => match worker.state.load(Ordering::Acquire) {
             LOADING => "loading; raw CTC fallback",
@@ -135,7 +135,7 @@ impl Worker {
                     return;
                 }
                 let Ok(mut decoder) =
-                    ParakeetTranscriber::load_with_dictionary(&path, 4, &dictionary)
+                    ParakeetTranscriber::load_with_acoustic_dictionary(&path, 4, &dictionary)
                 else {
                     return;
                 };

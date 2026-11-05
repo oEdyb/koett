@@ -6,7 +6,7 @@ Research date: 2026-11-05. **Recommendation: shorten the image-to-text gap, not 
 
 - Koett: fetched `origin/main`, inspected `61e121e13044a7eb1df8d4ebf3fb8b1a889884d3`, including Mac Swift and Linux Rust. These are source capabilities, not a claim about the currently installed binaries.
 - Scrawl main: `b5fa070` (2026-11-01 UTC), latest stable [v0.3.14](https://github.com/kitlangton/scrawl/releases/tag/v0.3.14). Linux: separate draft branch `feat/linux`, `79b131599662ac872fe8ab07e98728a6d93d46a0`, shipped as [Linux preview 4](https://github.com/kitlangton/scrawl/releases/tag/linux-preview-4), based on 0.3.13. Do not infer Linux behavior from main's unsupported-platform stubs.
-- Cloned separately into `/home/olle/.cache/koett-research/scrawl-2026-11-05-1793838266`. Read README, release history, recent commits, all issue bodies returned by the paginated issues API (excluding PRs), selected issue comments, and relevant source. No Scrawl build, execution, installation or benchmark.
+- Cloned separately into `<build-home>/.cache/koett-research/scrawl-2026-11-05-1793838266`. Read README, release history, recent commits, all issue bodies returned by the paginated issues API (excluding PRs), selected issue comments, and relevant source. No Scrawl build, execution, installation or benchmark.
 - **Verified** below means source/API inspection. User reports are attributed. All real-app latency, accuracy, permission flow, hardware and compatibility outcomes are **unverified in this research**. Existing Koett receipts are historical evidence, not fresh tests.
 - Behavior and ideas only. No Scrawl implementation, assets, icons or branding are copied into Koett.
 
@@ -48,9 +48,9 @@ Effort is a planning estimate, not a measured delivery commitment: small = 1–2
 
 **Scrawl:** a short two-event handoff, about 180 ms explicit inter-event delay ([source](https://github.com/kitlangton/scrawl/blob/b5fa070/src/handoff.rs#L278-L301)). **Benefit:** directly addresses Olle's complaint. **Effort: medium**, including measurements and slow-reader regression checks on both platforms. Start with Koett's unconditional 700 ms fallback and missed-read cases; preserve reliable behavior for unknown consumers. **Koett already beats it:** guarded focus, newer clipboard preservation and combined repeat-copy formats. Keep those safeguards. Scrawl has no measured end-to-end advantage established here.
 
-### 2. Undo completed drawings on Mac
+### 2. Drawing undo is already available on Mac
 
-**Scrawl:** Cmd+Z removes the last stroke ([controls](https://github.com/kitlangton/scrawl/blob/b5fa070/README.md#capture-controls)); recording pill was simplified to Cancel/Finish in 0.3.12. **Benefit:** a mistaken mark should not force restarting a dictation. **Effort: medium** for a scoped native action, frame removal and late-capture rejection. **Koett already beats it on Linux:** Undo Last Drawing removes even captured drawings/pins, repeatedly, through menu/tray/CLI; [receipt and limits](../linux-drawing-undo-verification.md). Mac lacks drawing undo. Prefer explicit recording-scoped undo before considering a global Cmd+Z interceptor that could steal editor undo.
+**Scrawl:** Cmd+Z removes the last stroke ([controls](https://github.com/kitlangton/scrawl/blob/b5fa070/README.md#capture-controls)); recording pill was simplified to Cancel/Finish in 0.3.12. **Benefit:** a mistaken mark should not force restarting a dictation. **Koett status:** the scoped native action, frame removal and late-capture rejection already exist. **Koett already beats it on Linux:** Undo Last Drawing removes even captured drawings/pins, repeatedly, through menu/tray/CLI; [receipt and limits](../linux-drawing-undo-verification.md). Mac also provides Undo Last Drawing in the Draw on Screen menu and `koett --control undo`. Actual guest Shift-drag, Shift-click pin and repeated undo checks pass; see [Mac undo verification](../macos-drawing-undo-verification.md). Keep this recording-scoped action; a global Cmd+Z interceptor could steal editor undo.
 
 ### 3. Verify permission completion with an actual capability check
 
@@ -88,6 +88,6 @@ Effort is a planning estimate, not a measured delivery commitment: small = 1–2
 
 ## Decision and limits
 
-Prioritize the visible paste gap, then Mac undo, then permission capability recovery. Keep image-first delivery and Koett's stronger clipboard/focus safeguards. Do not import Scrawl code, continuous capture, agent routing, a LAN listener or a mandatory permission tour. No app code or defaults changed by this report.
+Prioritize the visible paste gap and permission capability recovery. Mac undo is implemented and now runtime-verified in the isolated guest. Keep image-first delivery and Koett's stronger clipboard/focus safeguards. Do not import Scrawl code, continuous capture, agent routing, a LAN listener or a mandatory permission tour. No app code or defaults changed by this report.
 
 Follow-up verification should establish actual attachment/text arrival times and failure rates before choosing shorter waits. This research deliberately did not build/run either app, grant permissions, interact with Olle's desktop, or claim a runtime comparison.

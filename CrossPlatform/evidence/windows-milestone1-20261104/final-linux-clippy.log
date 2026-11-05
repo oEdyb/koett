@@ -132,7 +132,7 @@ Running as unit: run-p1040091-i5235585.scope; invocation ID: c8c86b28c5614c738b0
     Checking thiserror v2.0.20
     Checking rustls-native-certs v0.8.4
    Compiling zbus_macros v5.19.0
-   Compiling sherpa-onnx-sys v1.13.5 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx-sys)
+   Compiling sherpa-onnx-sys v1.13.5 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx-sys)
     Checking async-broadcast v0.7.2
    Compiling wayland-scanner v0.31.11
     Checking crossbeam-utils v0.8.22
@@ -196,7 +196,7 @@ Running as unit: run-p1040091-i5235585.scope; invocation ID: c8c86b28c5614c738b0
     Checking xkeysym v0.2.1
     Checking deranged v0.5.8
     Checking powerfmt v0.2.0
-   Compiling koett-engine v0.2.0-linux.1 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+   Compiling koett-engine v0.2.0-linux.1 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
     Checking ksni v0.3.6
     Checking global-hotkey v0.8.0
     Checking gtk4 v0.11.5
@@ -208,7 +208,7 @@ Running as unit: run-p1040091-i5235585.scope; invocation ID: c8c86b28c5614c738b0
     Checking wayland-protocols-wlr v0.3.12
     Checking tokio-tungstenite v0.30.0
     Checking gdk4-wayland v0.11.5
-    Checking sherpa-onnx v1.13.5 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx)
+    Checking sherpa-onnx v1.13.5 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx)
     Checking arboard v3.6.1
     Checking ashpd v0.13.13
     Checking directories v6.0.0

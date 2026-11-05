@@ -15,14 +15,14 @@ rewrite the working Mac app or add a cross-platform shell.
 
 ## Takeover snapshot — 2026-09-14
 
-- Mac worktree: `/Users/olle/dev/local-voice-input`, branch `main`. Its latest
+- Mac worktree: `$HOME/dev/local-voice-input`, branch `main`. Its latest
   product commit is `fd83546` (agent transcription CLI, feature contracts split
   into `docs/`). Below it sit the unpushed local commits for recording-feedback
   accessibility (`b94bd4d`) and durable Copy/Paste Last Transcript recovery
   (`adf55db`). None of these are pushed or released.
 - Public state: `origin/main` is `5384daa`. The latest public release is
   notarized Apple-silicon `v0.1.1` from source commit `c72f834`.
-- Cross-platform worktree: `/Users/olle/dev/koett-cross-platform`, branch
+- Cross-platform worktree: `$HOME/dev/koett-cross-platform`, branch
   `feat/windows-linux-v0.1`, head `e85d0d0`. The branch matches its remote and
   backs draft PR #2. GitHub reports that the draft PR conflicts with `main`.
 - The cross-platform worktree also contains uncommitted KTT-002 work. It builds
@@ -248,11 +248,11 @@ Preserve failed-transcript recovery and keep storage off the audio callback.
 
 On Olle's Mac, read the canonical project card before substantial work:
 
-`/Users/olle/Documents/Notes/Agent/04 - Business/Project Cards/Local Voice Input.md`
+`$HOME/Documents/Notes/Agent/04 - Business/Project Cards/Local Voice Input.md`
 
 Record durable decisions and milestones in that card and in:
 
-`/Users/olle/Documents/Notes/Agent/Log.md`
+`$HOME/Documents/Notes/Agent/Log.md`
 
 Keep this as a current-state handoff, not a chronological session log. Replace
 stale status when the app changes instead of appending duplicate progress notes.

@@ -4,7 +4,7 @@
            GID: 1000 (olle)
         Signal: 11 (SEGV) si_code: SEGV_MAPERR
      Timestamp: Thu 2026-10-29 17:00:45 CET (13s ago)
-  Command Line: /usr/bin/python /home/olle/dev/koett/CrossPlatform/evidence/gtk-accessibility-crash-20261030/reproduce.py --child
+  Command Line: /usr/bin/python <build-home>/dev/koett/CrossPlatform/evidence/gtk-accessibility-crash-20261030/reproduce.py --child
     Executable: /usr/bin/python3.14
  Control Group: /user.slice/user-1000.slice/user@1000.service/agents.slice/agents-lab.slice/agent-lab-koett-gtk-a11y-diagnosis-client-1c62f2cc.scope
           Unit: user@1000.service

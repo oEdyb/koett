@@ -1,5 +1,5 @@
 {
-  "binary": "/home/olle/.cache/koett/private-tests/release-copy-bin/koett-final-selection",
+  "binary": "<build-home>/.cache/koett/private-tests/release-copy-bin/koett-final-selection",
   "binary_sha256": "b142eed9c4236344b2ddc60c421caa69d1a711d9aeca4a0f931013416085e0d6",
   "kind": "source-built local Linux preview candidate; uncommitted source",
   "source_files": {

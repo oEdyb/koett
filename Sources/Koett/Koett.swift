@@ -52,8 +52,9 @@ final class KoettController: NSObject {
     let assistantSpeech = CartesiaSpeechOutput()
     let manager = AsrManager(config: .default)
     let nemotronAdapter: NemotronStreamingAdapter?
-    let startSound: AVAudioPlayer
-    let stopSound: AVAudioPlayer
+    private(set) var startSound: AVAudioPlayer?
+    private(set) var stopSound: AVAudioPlayer?
+    var loginPreference = LoginPreference()
     var recordingMode: RecordingMode
     var dictationShortcut: ShortcutBinding
     var mediaShortcut: ShortcutBinding
@@ -186,8 +187,6 @@ final class KoettController: NSObject {
         drawWhileDictating = defaults.bool(forKey: DrawKey.enabledDefaultsKey)
         drawKey = defaults.string(forKey: DrawKey.defaultsKey).flatMap(DrawKey.init(rawValue:)) ?? .shift
         pinSelectedText = defaults.object(forKey: DrawKey.pinSelectedTextDefaultsKey) as? Bool ?? true
-        startSound = try Self.soundPlayer(named: "Tink")
-        stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
         transcriptPersistence.importHistoryInBackground()
         do {
@@ -225,6 +224,11 @@ final class KoettController: NSObject {
                 code: StartupErrorCode.accessibility.rawValue
             )
         }
+
+        // Prepare recording sounds after permission onboarding, rather than
+        // opening the playback device during controller construction.
+        startSound = try Self.soundPlayer(named: "Tink")
+        stopSound = try Self.soundPlayer(named: "Basso")
 
         let modelName = speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName
         setSetupStatus(.checkingModel(modelName))
