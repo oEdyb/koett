@@ -178,6 +178,16 @@ these earlier NOT TESTED rows for candidate `f2c3238d`:
   native Record interaction. Full GNOME paste/shortcut permission acceptance
   needs an interactive login/session; no product-failure claim from this probe.
 
+- **PASS — packaged ENOSPC fix retest:** #112 merged at
+  `8b78b51e30c50e165a066cc180e5ff9df86cc11f` after all six CI checks passed.
+  Downloaded its CI archive from run 41996617103, source
+  `e40ca27625c70a6449b56a6d6b708277b776c57b`, and verified the sidecar checksum.
+  Repeated the 8 MiB data-filesystem check using copied archive bytes, no network.
+  The visible error now reports No space left on device; Retry remains available,
+  app stays alive and no partial files remain. Cache aliases cover both model
+  names; capacity failure occurs before digest validation. This supersedes the
+  earlier ENOSPC diagnostic FAIL. Final-asset rerun remains separate.
+
 ## Remaining release gates
 
 1. Merge reviewed docs/privacy/version fixes; finish independent dictionary
