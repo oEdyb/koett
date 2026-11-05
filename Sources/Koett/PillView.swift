@@ -64,6 +64,11 @@ final class PillView: NSView {
     let historyButton = PillButton(title: "History")
     let statusElement = NSView()
     private var trackingArea: NSTrackingArea?
+    var onDrag: ((NSPoint) -> Void)?
+    var onDragEnd: (() -> Void)?
+    private var dragStart: NSPoint?
+    private var dragOrigin: NSPoint?
+    private var dragged = false
     private var buttons: [PillButton] { [cancelButton, pauseButton, historyButton, pasteButton, copyButton] }
 
     override init(frame: NSRect) {
@@ -130,9 +135,34 @@ final class PillView: NSView {
 
     override func mouseEntered(with event: NSEvent) { setHovered(true) }
     override func mouseExited(with event: NSEvent) { setHovered(false) }
-    override func mouseDown(with event: NSEvent) {}
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let hit = super.hitTest(point)
+        return hit === statusElement ? self : hit
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        dragStart = window?.convertPoint(toScreen: event.locationInWindow)
+        dragOrigin = window?.frame.origin
+        dragged = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let dragStart, let dragOrigin,
+              let point = window?.convertPoint(toScreen: event.locationInWindow) else { return }
+        let delta = NSPoint(x: point.x - dragStart.x, y: point.y - dragStart.y)
+        guard dragged || hypot(delta.x, delta.y) >= 4 else { return }
+        dragged = true
+        onDrag?(NSPoint(x: dragOrigin.x + delta.x, y: dragOrigin.y + delta.y))
+    }
 
     override func mouseUp(with event: NSEvent) {
+        dragStart = nil
+        dragOrigin = nil
+        if dragged {
+            dragged = false
+            onDragEnd?()
+            return
+        }
         switch content {
         case .done, .notPasted, .media, .error: onDismiss?()
         default: break
