@@ -355,6 +355,27 @@ fn modifier_mask(keys: &mut super::sketch::keys::Keyboards) -> Option<u8> {
     }
 }
 
+fn gnome_paste_sample(snapshot: Option<super::gnome_focus::Snapshot>, own_window: bool) -> Sample {
+    Sample {
+        focused: snapshot.as_ref().map(|value| value.0),
+        own_window,
+        // An old/unavailable extension cannot certify released modifiers.
+        modifiers: Some(snapshot.and_then(|value| value.2).unwrap_or(u8::MAX)),
+    }
+}
+
+fn paste_sample(keyboards: Option<&mut super::sketch::keys::Keyboards>) -> Sample {
+    let own_window = WINDOW_ACTIVE.load(Ordering::Acquire) || own_layer_active();
+    if super::gnome_focus::desktop() && std::env::var_os("NIRI_SOCKET").is_none() {
+        return gnome_paste_sample(super::gnome_focus::sample(), own_window);
+    }
+    Sample {
+        focused: focused_window(),
+        own_window,
+        modifiers: keyboards.and_then(modifier_mask),
+    }
+}
+
 /// Payload-free diagnostics: a post is logged once immediately before a paste key.
 pub(super) struct DeliveryStep {
     id: u64,
@@ -421,11 +442,7 @@ impl DeliveryStep {
         let mut keyboards = super::sketch::keys::Keyboards::open().ok();
         let started = std::time::Instant::now();
         loop {
-            let sample = Sample {
-                focused: focused_window(),
-                own_window: WINDOW_ACTIVE.load(Ordering::Acquire) || own_layer_active(),
-                modifiers: keyboards.as_mut().and_then(modifier_mask),
-            };
+            let sample = paste_sample(keyboards.as_mut());
             self.expected = gate.expected;
             self.observed = sample.focused;
             self.modifiers = sample.modifiers;
@@ -461,16 +478,10 @@ impl DeliveryStep {
         })
     }
     pub fn post(&mut self) -> Result<(), String> {
-        self.observed = focused_window();
-        self.modifiers = super::sketch::keys::Keyboards::open()
-            .ok()
-            .as_mut()
-            .and_then(modifier_mask);
-        let sample = Sample {
-            focused: self.observed,
-            own_window: WINDOW_ACTIVE.load(Ordering::Acquire) || own_layer_active(),
-            modifiers: self.modifiers,
-        };
+        let mut keyboards = super::sketch::keys::Keyboards::open().ok();
+        let sample = paste_sample(keyboards.as_mut());
+        self.observed = sample.focused;
+        self.modifiers = sample.modifiers;
         if let Some(reason) = post_refusal(self.expected, sample) {
             self.reason = reason;
             self.outcome = "refused";
@@ -597,6 +608,22 @@ mod target_tests {
             modifiers,
         }
     }
+    #[test]
+    fn gnome_requires_fresh_released_modifiers_before_posting() {
+        for modifiers in [None, Some(1)] {
+            let sample = gnome_paste_sample(Some((74, "editor".into(), modifiers)), false);
+            assert_eq!(
+                post_refusal(Some(74), sample),
+                Some("modifiers_held_before_post")
+            );
+        }
+        let released = gnome_paste_sample(Some((74, "editor".into(), Some(0))), false);
+        assert_eq!(post_refusal(Some(74), released), None);
+        let changed = gnome_paste_sample(Some((75, "editor".into(), Some(0))), false);
+        assert!(post_refusal(Some(74), changed).is_some());
+        assert!(post_refusal(Some(74), gnome_paste_sample(None, false)).is_some());
+    }
+
     #[test]
     fn stop_modifiers_release_after_the_old_timeout_then_paste_once() {
         for modifier in [1, 2, 4] {
