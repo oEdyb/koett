@@ -68,6 +68,12 @@
   microphone on any interface input is recorded and metered.
   Device choice does not change the macOS default. Both Nemotron capture and its
   recovery WAV use the same resolved device and fresh hardware format.
+- Recording Limit is one menu setting: 10, 30, 60 (default), or 120 minutes.
+  It counts captured audio, excluding paused time, and is fixed for each session.
+  About a minute before it ends, the existing pill says `1 min left` once for
+  five seconds and makes one accessibility announcement, keeping its size,
+  clock and hover actions. At the limit, normal Stop transcribes, pastes and
+  saves once. No extra permission is required.
 - Koett records a temporary 16 kHz mono Float32 WAV. Audio is deleted after
   transcription or recovery.
 - If local ASR fails, Koett moves the WAV to
@@ -101,6 +107,10 @@
   URL path are not trimmed.
 - Nemotron Streaming EN 0.6B at the 560 ms configuration is an experimental
   menu option. It processes microphone audio while the user speaks.
+- Nemotron live storage allocates five-second chunks on its consumer thread as
+  audio arrives, rather than preallocating the configured duration. The audio
+  callback only copies into prepared chunks. A one-second buffer margin lets
+  the capture poll Stop normally at the selected limit without overflowing.
 - Every Nemotron recording also keeps a complete temporary Parakeet recovery
   WAV. Use that recovery only after capture, streaming, or finalization fails.
 - Model changes restart Koett. Optional Parakeet v3 and 110M use the same pinned

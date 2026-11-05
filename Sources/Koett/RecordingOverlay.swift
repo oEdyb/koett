@@ -92,6 +92,7 @@ final class RecordingOverlayController: NSObject {
     private(set) var sketchSession: UInt64?
     private var timer: Timer?
     private var lastRedraw: TimeInterval = 0
+    private var recordingNoticeUntil: TimeInterval?
     private var dismissWorkItem: DispatchWorkItem?
     /// Set when a dismiss came due while hovered; the pill leaves once the pointer does.
     private var dismissOnExit = false
@@ -147,6 +148,8 @@ final class RecordingOverlayController: NSObject {
         self.sketchSession = sketchSession
         pauseChanged = controls?.pauseChanged
         startedAt = ProcessInfo.processInfo.systemUptime
+        pillView.recordingNotice = nil
+        recordingNoticeUntil = nil
         pillView.timeline.reset()
         pillView.elapsed = 0
         pillView.hasRecordingControls = controls != nil
@@ -155,6 +158,14 @@ final class RecordingOverlayController: NSObject {
         pillView.cancelButton.action = controls.map { controls in { controls.cancel() } }
         show(.recording(paused: false))
         startTimer()
+    }
+
+    func showRecordingNotice(_ text: String) {
+        guard case .recording = pillView.content else { return }
+        pillView.recordingNotice = text
+        recordingNoticeUntil = ProcessInfo.processInfo.systemUptime + 5
+        NSAccessibility.post(element: NSApplication.shared, notification: .announcementRequested,
+            userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
     }
 
     /// Hides the pill. The finished timeline stays for the transcribing and done states.
@@ -424,6 +435,10 @@ final class RecordingOverlayController: NSObject {
 
     @objc private func tick(_ timer: Timer) {
         let now = ProcessInfo.processInfo.systemUptime
+        if let until = recordingNoticeUntil, now >= until {
+            pillView.recordingNotice = nil
+            recordingNoticeUntil = nil
+        }
         switch pillView.content {
         case .recording:
             guard let recorder, recorder.isRecording, let startedAt else {

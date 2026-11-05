@@ -144,6 +144,7 @@ extension KoettController {
             item.isEnabled = state == .ready
             menu.addItem(item)
         }
+        menu.addItem(recordingLimitMenuItem())
         let resetShortcutsItem = menuItem(
             title: "Reset Shortcuts to Defaults",
             action: #selector(resetShortcuts),

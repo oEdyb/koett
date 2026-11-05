@@ -178,6 +178,24 @@ final class MicrophoneAvailabilityTests: XCTestCase {
         XCTAssertEqual(fixture.controller.recordingOverlay.latestOutcome, .failure("Microphone disconnected · Recording stopped"))
     }
 
+    func testLimitWarningUsesHealthyBackupWhenLiveInputStopsAdvancing() throws {
+        let fixture = try Fixture(uid: usb.uid, devices: { [self.usb] }, defaultID: { self.usb.id }, engine: .nemotron)
+        defer { fixture.cleanUp() }
+        let live = try NemotronLiveRecorder(adapter: TestAdapter(), input: TestInput(frames: 160))
+        let url = fixture.root.appendingPathComponent("recording.wav")
+        let backup = try MicrophoneRecorder(url: url, device: usb, input: TestInput(frames: 16_000, repetitions: 540))
+        try fixture.controller.startNemotronRecording(live: live) { (backup, url) }
+        defer { _ = try? live.stop() }
+        fixture.controller.recordingDeadline = RecordingDeadline(limit: .ten)
+        fixture.controller.state = .recording
+        fixture.controller.recordingOverlay.pillView.content = .recording(paused: false)
+        XCTAssertLessThan(live.currentTime, 1)
+        XCTAssertEqual(backup.currentTime, 540)
+        fixture.controller.checkActiveCapture()
+        XCTAssertEqual(fixture.controller.recordingOverlay.pillView.recordingNotice, "1 min left")
+        XCTAssertEqual(fixture.controller.state, .recording)
+    }
+
     private func assertNemotronDisconnect(frames: AVAudioFrameCount) async throws {
         let catalog = TestCatalog(devices: [usb, builtIn], defaultID: usb.id)
         let fixture = try Fixture(uid: usb.uid, devices: { catalog.devices }, defaultID: { catalog.defaultID }, engine: .nemotron)
@@ -267,14 +285,21 @@ private final class TestInput: MicrophoneCapturing {
     var error: Error?
     var stops = 0
     let frames: AVAudioFrameCount
+    let repetitions: Int
 
-    init(frames: AVAudioFrameCount = 8_000) { self.frames = frames }
+    init(frames: AVAudioFrameCount = 8_000, repetitions: Int = 1) {
+        self.frames = frames
+        self.repetitions = repetitions
+    }
 
     func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
         buffer.frameLength = frames
         buffer.floatChannelData![0].initialize(repeating: 0.25, count: Int(frames))
-        onAudio(buffer)
+        for _ in 0..<repetitions {
+            onAudio(buffer)
+            if repetitions > 1 { Thread.sleep(forTimeInterval: 0.002) }
+        }
     }
 
     func stop() { stops += 1 }

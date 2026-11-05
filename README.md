@@ -16,7 +16,7 @@ Choose your microphone, set your shortcut, and use hold or toggle recording. Dic
 2. Open it, allow Microphone and Accessibility, and let the model download.
 3. Press either Option key, speak, then press it again. Koett pastes and saves your text.
 
-Change your setup from the menu bar.
+Change your setup from the menu bar. On Mac, Recording Limit offers 10, 30, 60 (default), or 120 minutes of recorded audio. A one-minute warning appears before Koett stops, pastes and saves normally.
 
 For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in Settings. If the microphone will not start, set **Microphone** to **System default microphone**; in this version, a named device cannot be shared with apps such as Discord.
 
