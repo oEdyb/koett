@@ -263,3 +263,23 @@ Mac result is implied by these Linux checks.
 The end-to-end live paste, feature and memory results belong in the
 [workflow audit](https://github.com/oEdyb/koett/pull/102); ASR timings above must not be used
 as release-to-visible-text claims.
+
+## Vocabulary switches and memory
+
+The first shared-encoder candidate still recreated its recognizer when the
+dictionary became empty or populated. In the private live workflow, repeated
+switching raised process RSS from roughly 0.9 GiB to 2.1 GiB; reducing the whole
+compositor/app/target scope to 2 GiB then triggered an OOM kill. This is a real
+failed pressure test, not passing leak evidence.
+
+The follow-up keeps the same shared recognizer resident. Its explicit native
+mode uses the greedy decoder for a single stream without a context graph;
+per-recording hotwords select the shared greedy/biased path when populated.
+A real-model test points the transcriber's model path at a nonexistent directory
+after loading, then switches between empty and populated lists three times.
+Every transcription succeeds, empty output equals greedy, and the acoustic
+Phoebe recovery remains. This proves switches do not reopen model/token files.
+The final native header fingerprint is
+`1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3`.
+Earlier tables retain the previous header's measurements rather than relabeling
+them as this follow-up. Fresh latency and live pressure receipts follow.

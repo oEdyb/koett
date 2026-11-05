@@ -20,49 +20,70 @@ const ACTIVE_PATHS: i32 = 4;
 pub(super) struct Bias {
     hotwords: String,
     dictionary: Vec<DictionaryEntry>,
-    vocabulary: PathBuf,
 }
 
 impl Bias {
     /// `None` when nothing can be biased: no usable term, or a CTC model.
-    pub(super) fn new(
-        model_directory: &Path,
-        dictionary: &[DictionaryEntry],
-    ) -> Result<Option<Self>, String> {
+    pub(super) fn new(model_directory: &Path, dictionary: &[DictionaryEntry]) -> Option<Self> {
         let hotwords = hotwords(dictionary);
         if hotwords.is_empty() || model_directory.join("model.int8.onnx").is_file() {
-            return Ok(None);
+            return None;
         }
-        Ok(Some(Self {
+        Some(Self {
             hotwords,
             dictionary: dictionary.to_vec(),
-            vocabulary: write_vocabulary(model_directory)?,
-        }))
+        })
     }
 
-    pub(super) fn configure(&self, config: &mut OfflineRecognizerConfig) -> Result<(), String> {
-        config.model_config.bpe_vocab = Some(super::path_string(&self.vocabulary)?);
-        config.model_config.modeling_unit = Some("bpe".into());
-        config.decoding_method = Some("modified_beam_search".into());
-        config.max_active_paths = ACTIVE_PATHS;
-        config.hotwords_score = HOTWORD_SCORE;
-        Ok(())
+    pub(super) fn configure(
+        &self,
+        model_directory: &Path,
+        config: &mut OfflineRecognizerConfig,
+    ) -> Result<(), String> {
+        configure_decoder(
+            config,
+            &write_vocabulary(model_directory)?,
+            "modified_beam_search",
+        )
     }
 }
 
+fn configure_decoder(
+    config: &mut OfflineRecognizerConfig,
+    vocabulary: &Path,
+    method: &str,
+) -> Result<(), String> {
+    config.model_config.bpe_vocab = Some(super::path_string(vocabulary)?);
+    config.model_config.modeling_unit = Some("bpe".into());
+    config.decoding_method = Some(method.into());
+    config.max_active_paths = ACTIVE_PATHS;
+    config.hotwords_score = HOTWORD_SCORE;
+    Ok(())
+}
+
+pub(super) fn configure_shared(
+    vocabulary: &Path,
+    config: &mut OfflineRecognizerConfig,
+) -> Result<(), String> {
+    configure_decoder(config, vocabulary, "koett_context")
+}
+
 impl ParakeetTranscriber {
-    /// Swap the dictionary; reloads the decoder only when biasing turns on or off.
+    /// Swap hotwords while keeping the shared acoustic model resident.
     pub fn set_dictionary(&mut self, dictionary: &[DictionaryEntry]) -> Result<(), String> {
         if self.dictionary_mode == super::DictionaryMode::Spelling {
             return Ok(());
         }
-        let bias = Bias::new(&self.model_directory, dictionary)?;
-        if bias.is_some() != self.bias.is_some() {
+        let bias = Bias::new(&self.model_directory, dictionary);
+        if self.dictionary_mode != super::DictionaryMode::Shared
+            && bias.is_some() != self.bias.is_some()
+        {
             self.recognizer = Self::recognizer(
                 &self.model_directory,
                 self.threads,
                 bias.as_ref(),
                 self.dictionary_mode,
+                None,
             )?;
         }
         self.bias = bias;
@@ -137,7 +158,7 @@ pub(super) fn hotwords(dictionary: &[DictionaryEntry]) -> String {
 /// Parakeet ships no bpe.vocab. Equal scores over tokens.txt give the
 /// longest-match encoding the upstream example uses. It lives in Koett's cache,
 /// never in the verified model directory.
-fn write_vocabulary(model_directory: &Path) -> Result<PathBuf, String> {
+pub(super) fn write_vocabulary(model_directory: &Path) -> Result<PathBuf, String> {
     let tokens = fs::read_to_string(model_directory.join("tokens.txt"))
         .map_err(|error| format!("could not read the model tokens: {error}"))?;
     let vocabulary = vocabulary(&tokens);
@@ -151,10 +172,13 @@ fn write_vocabulary(model_directory: &Path) -> Result<PathBuf, String> {
     }
     let parent = path.parent().ok_or("hotword vocabulary has no folder")?;
     fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let partial = path.with_extension(format!("{}.part", std::process::id()));
-    fs::write(&partial, vocabulary)
-        .and_then(|()| fs::rename(&partial, &path))
-        .map_err(|error| format!("could not write the hotword vocabulary: {error}"))?;
+    static NEXT_PARTIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let serial = NEXT_PARTIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let partial = path.with_extension(format!("{}-{serial}.part", std::process::id()));
+    if let Err(error) = fs::write(&partial, vocabulary).and_then(|()| fs::rename(&partial, &path)) {
+        let _ = fs::remove_file(&partial);
+        return Err(format!("could not write the hotword vocabulary: {error}"));
+    }
     Ok(path)
 }
 
@@ -195,8 +219,8 @@ mod tests {
         fs::create_dir_all(&directory).unwrap();
         fs::write(directory.join("model.int8.onnx"), b"").unwrap();
         let dictionary = [DictionaryEntry::new("Koett", &[])];
-        assert!(Bias::new(&directory, &dictionary).unwrap().is_none());
-        assert!(Bias::new(&directory, &[]).unwrap().is_none());
+        assert!(Bias::new(&directory, &dictionary).is_none());
+        assert!(Bias::new(&directory, &[]).is_none());
         fs::remove_dir_all(directory).unwrap();
     }
 }
@@ -261,6 +285,43 @@ mod model_tests {
             corrected
         );
         assert!(corrected.contains("Phoebe"));
+    }
+
+    #[test]
+    #[ignore = "requires KOETT_MODEL_DIR and the shared-context native extension"]
+    fn shared_dictionary_switches_do_not_read_or_reload_model_files() {
+        if !sherpa_onnx::SHARED_CONTEXT_AVAILABLE {
+            return;
+        }
+        let directory = PathBuf::from(std::env::var("KOETT_MODEL_DIR").unwrap());
+        let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
+        let mut transcriber = ParakeetTranscriber::load(&directory, 2).unwrap();
+        let plain = transcriber.transcribe(&audio).unwrap().text;
+        assert!(!plain.contains("Phoebe"), "{plain}");
+        let unavailable = std::env::temp_dir().join(format!(
+            "koett-unavailable-model-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        assert!(!unavailable.exists());
+        transcriber.model_directory = unavailable;
+        for _ in 0..3 {
+            transcriber
+                .set_dictionary(&[DictionaryEntry::new("Phoebe", &[])])
+                .unwrap();
+            assert!(
+                transcriber
+                    .transcribe(&audio)
+                    .unwrap()
+                    .text
+                    .contains("Phoebe")
+            );
+            transcriber.set_dictionary(&[]).unwrap();
+            assert_eq!(transcriber.transcribe(&audio).unwrap().text, plain);
+        }
     }
 
     #[test]

@@ -58,7 +58,9 @@ and raw CTC fallback. This is acoustic sidecar decoding, not CTC hotwords.
 See [benchmark, setup and limits](ctc-dictionary-benchmark.md). Nemotron streaming
 still gets spelling only. The engine
 re-reads the saved dictionary once a second while idle and swaps hotwords
-without reloading; only turning biasing on or off reloads the decoder.
+without reloading the acoustic model, including when the list becomes empty
+or populated. If the vocabulary cache cannot be prepared at startup, raw
+dictation still loads and uses spelling only; the selected fallback is logged.
 
 Storage: `Settings.dictionary` in `settings.json`. Exchange format, one entry
 per line, `#` comments: `Term` or `Term = heard as, other form`. Settings has a

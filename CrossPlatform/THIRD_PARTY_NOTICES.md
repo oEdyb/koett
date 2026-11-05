@@ -32,7 +32,7 @@ control builds, not the inspected ASR-only binary.
 Koett also patches `offline-recognizer-transducer-nemo-impl.h` with the explicit
 `koett_context` decoding mode. One encoder output feeds a greedy base and a
 biased decoder; other upstream decoding modes are unchanged. Patched header
-SHA-256: `673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920`.
+SHA-256: `1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3`.
 The patch, portable patch helper and pinned native build recipe are distributed
 in `sources/`; `native-build-receipt.json` identifies linked library hashes.
 

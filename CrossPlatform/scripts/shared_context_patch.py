@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 ORIGINAL_SHA256 = '561b99f9ad872be403c0839ee05eee59d87808fd5623d2e0ef0e6e61e31d0109'
-PATCHED_SHA256 = '673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920'
+PATCHED_SHA256 = '1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3'
 
 
 def apply_shared_context(contents):

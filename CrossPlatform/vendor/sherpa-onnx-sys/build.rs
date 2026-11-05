@@ -91,7 +91,7 @@ fn try_main() -> Result<(), DynError> {
         println!("cargo:rerun-if-changed={}", core.display());
         println!("cargo:rerun-if-changed={}", api.display());
         let expected = format!(
-            "koett-context-v1\npatch=673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920\nsource=3dc7c569f31ca2cd4a20ed6f7db780327e6714c5\ntarget={target}\ncore={}\napi={}\n",
+            "koett-context-v1\npatch=1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3\nsource=3dc7c569f31ca2cd4a20ed6f7db780327e6714c5\ntarget={target}\ncore={}\napi={}\n",
             sha256(&core)?,
             sha256(&api)?
         );
