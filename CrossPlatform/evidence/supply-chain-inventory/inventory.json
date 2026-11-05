@@ -4842,10 +4842,10 @@
       "normalized_declared_license": "Apache-2.0",
       "notice_state": "project-license",
       "repository": null,
-      "sbom_ref": "pkg:cargo/koett-engine@0.2.0-linux.1",
+      "sbom_ref": "pkg:cargo/koett-engine@0.3.0",
       "selected_license": "Apache-2.0",
       "source": null,
-      "version": "0.2.0-linux.1"
+      "version": "0.3.0"
     },
     {
       "bundled_license_files": [
@@ -13323,7 +13323,7 @@
         "pkg:npm/katex@0.18.4",
         "pkg:npm/marked@18.0.10"
       ],
-      "ref": "pkg:cargo/koett-engine@0.2.0-linux.1"
+      "ref": "pkg:cargo/koett-engine@0.3.0"
     },
     {
       "dependsOn": [
@@ -14952,14 +14952,14 @@
   ],
   "inputs": [
     {
-      "bytes": 85831,
+      "bytes": 85823,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "fe6854de580b509a9c60eff8d2e869ba4462c29b7343fe0741ddaa1b26d5256f"
+      "sha256": "8ff4b16f03fb1e9ca6abfc10198dfdba9dbf39510f46d66b4e069735a04f4eb5"
     },
     {
-      "bytes": 3227,
+      "bytes": 3219,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "0d664b149be75bfae89ee2d7734e6f25e4c16ba816ef7205eef0c60fa64d1323"
+      "sha256": "3bffac1c39b44640e57e803387dbb5016f2a1ed576c2e1c38464daab078aa6cf"
     },
     {
       "bytes": 5621,

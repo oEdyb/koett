@@ -1273,7 +1273,7 @@ dependencies = [
 
 [[package]]
 name = "koett-engine"
-version = "0.2.0-linux.1"
+version = "0.3.0"
 dependencies = [
  "arboard",
  "ashpd",

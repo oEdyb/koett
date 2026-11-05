@@ -13730,7 +13730,7 @@
     {
       "aggregate": "incomplete",
       "assemblies": [
-        "pkg:cargo/koett-engine@0.2.0-linux.1"
+        "pkg:cargo/koett-engine@0.3.0"
       ]
     }
   ],
@@ -14751,7 +14751,7 @@
         "pkg:npm/katex@0.18.4",
         "pkg:npm/marked@18.0.10"
       ],
-      "ref": "pkg:cargo/koett-engine@0.2.0-linux.1"
+      "ref": "pkg:cargo/koett-engine@0.3.0"
     },
     {
       "dependsOn": [
@@ -16380,7 +16380,7 @@
   ],
   "metadata": {
     "component": {
-      "bom-ref": "pkg:cargo/koett-engine@0.2.0-linux.1",
+      "bom-ref": "pkg:cargo/koett-engine@0.3.0",
       "licenses": [
         {
           "acknowledgement": "declared",
@@ -16402,9 +16402,9 @@
           "value": "draft-source-inventory-not-release-compliance"
         }
       ],
-      "purl": "pkg:cargo/koett-engine@0.2.0-linux.1",
+      "purl": "pkg:cargo/koett-engine@0.3.0",
       "type": "application",
-      "version": "0.2.0-linux.1"
+      "version": "0.3.0"
     },
     "lifecycles": [
       {
