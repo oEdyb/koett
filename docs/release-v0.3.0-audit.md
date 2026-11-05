@@ -59,11 +59,11 @@ this is an explicit deviation from the stranger's current route.
 | Move into `/Applications` in a clean guest | **PASS** | Actual candidate ZIP extracted and moved into guest `/Applications/Koett.app`; normal first-open confirmation approved and process launched. Host installed app preserved. |
 | First GUI process launch from ZIP | **PASS** | Extracted executable remains alive; isolated `--control status` returns exit 0, `ok:true`, `model:parakeet`, `phase:loading`, `pasteAccessGranted:false`. Stops at missing access; not a ready/dictation pass. |
 | Permission onboarding layout/state | **PASS** | `PermissionsTests` pass; six offscreen light/dark first-launch, relaunch-needed and allowed renders inspected. These are fixtures, not system dialogs. |
-| Microphone allow, deny, later recovery | **NOT TESTED** | Real guest denial settles to Open Settings; granting through Settings produces Quit & Reopen and TCC changes to allowed. Actual capture after recovery is still pending. An unexpected early microphone prompt before onboarding with BlackHole selected remains under investigation. |
-| Accessibility allow, deny, later recovery | **NOT TESTED** | Guest Allow opens the actual Accessibility pane and denied/ungranted state settles to Open Settings. Natural grant plus event delivery is still pending. No new host grant was requested; a trusted flag alone does not prove delivery. |
+| Microphone allow, deny, later recovery | **NOT TESTED** | Real guest denial settles to Open Settings; granting through Settings produces Quit & Reopen and TCC changes to allowed. Actual capture after recovery is still pending. Early microphone prompt reproduced in the old build and removed by PR #107 in a same-guest comparison. Actual capture remains pending. |
+| Accessibility allow, deny, later recovery | **NOT TESTED** | Guest Allow opens the actual Accessibility pane and denied/ungranted state settles to Open Settings. Natural Settings grant and authentication now succeed; app status reports paste access. Actual event delivery after that grant is still pending. No new host grant was requested; a trusted flag alone does not prove delivery. |
 | Screen Recording allow, deny, relaunch | **NOT TESTED** | Row/relaunch tests pass. No host capture grant or monthly picker-bypass prompt was triggered for testing. |
 | Cold default model download and inference | **PASS** | Pinned FluidAudio through `parakeet-baseline`, fresh test home/model directory: download/load/warm-up succeeds; generated 3.32 s speech transcribes exactly. This bypasses the app's onboarding/UI. |
-| Failed network and Retry Setup UI | **NOT TESTED** | Dependency probe against refused localhost endpoint exits 1 with `Could not connect to the server`, preserving cache. Actual app error/retry UI still needs exercise. |
+| Failed network and Retry Setup UI | **NOT TESTED** | Dependency probe against refused localhost endpoint exits 1 with `Could not connect to the server`, preserving cache. A private source build in the clean guest received HTTP 503 from a guest-only registry fixture, then exposed Show Error and Retry Setup menu actions. Clicking Retry through successful download is still pending. |
 | Slow network progress, interruption/resume UI | **NOT TESTED** | Loader probe progressed through a throttled private proxy, retained a partial file after interruption, and subsequently loaded/transcribed successfully. Cached inference also passes with the registry unreachable. App UI is still untested; HTTP Range reuse was not independently observed. |
 | First Option-key microphone dictation and paste | **NOT TESTED** | Source capture/delivery tests pass; no generated audio has yet completed this full flow in the clean GUI. |
 | Draw & Pin option included | **PASS** | Exact label exists in extracted binary, production source and actual guest menu accessibility tree. Drawing while ready is still untested. |
@@ -143,6 +143,17 @@ normal measured consumers already hand off near 200 ms.
   release build and packaging checks pass. Merged as
   `a764b51ad20408d61c550efee8a88cab4391a501`. This fix is not in the candidate ZIP.
 
+- [PR #107](https://github.com/oEdyb/koett/pull/107): eager audio playback
+  initialization could show the microphone prompt before onboarding. Recording
+  sounds now prepare after required permissions; optional spoken replies create
+  their audio graph only when valid audio arrives. Three new regression tests;
+  433 tests (10 skips), release and static packaging gates pass. Merged as
+  `4e15ab806e40cd26ed683c5c8e0b85b54cae2011`. Same-guest reset-permission
+  comparison: original build prompts before local control exists; private source
+  `f140724db4d65a957810cd1a2ba84de5bd589530` shows onboarding with Allow Microphone
+  and local control first. The system prompt appears after explicit Allow.
+  This fix is not in the candidate ZIP; no new permission type was added.
+
 ## Guest evidence
 
 Local receipts are retained under
@@ -150,10 +161,15 @@ Local receipts are retained under
 `os-version.txt`, `codesign.txt`, `stapler.txt`, `gatekeeper-assessment.txt`,
 `first-open-dialog.png`, `microphone-denied-settled.png`,
 `permission-request-settled.png`, `ax-settings-after-mic-grant.png` (covered modal),
-and `window-order-fixed-relaunch-dialog.png` (fixed modal).
-The last screenshot uses private source `826c76c3791ca42bddbea000ee0dd64b9becd353`,
-not a rebuilt release ZIP. No full capture or model download has run in this
-natural-permission audit profile yet.
+`window-order-fixed-relaunch-dialog.png` (fixed modal),
+`eager-audio-ab-original.png`, `deferred-audio-first-open.png`,
+`deferred-audio-explicit-mic.png`, and `accessibility-auth-complete.png`.
+The failed-network AX tree is retained as `/tmp/koett-guest-failed-model-ui.json`;
+registry requests are in `registry-fixture-current.log`.
+The window-order screenshot uses private source `826c76c3791ca42bddbea000ee0dd64b9becd353`,
+not a rebuilt release ZIP. No full capture or successful model download has run in this
+natural-permission audit profile yet. The failed-network attempt reached the
+registry fixture and exposed Show Error and Retry Setup actions.
 
 No retained host `Diagnostics/Paste.jsonl` was present when checked. Historical
 missing automatic paste cannot be assigned a Mac cause from absent evidence.
