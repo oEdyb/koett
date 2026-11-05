@@ -3,6 +3,28 @@ import ServiceManagement
 import XCTest
 
 final class LoginPreferenceMenuTests: XCTestCase {
+    func testUnregisterDoesNotCallServiceWhenNoLoginItemExists() throws {
+        for status: SMAppService.Status in [.notRegistered, .notFound] {
+            var calls = 0
+            try LoginPreference.unregisterIfRegistered(status: status) {
+                calls += 1
+                throw NSError(domain: "SMAppServiceErrorDomain", code: 1)
+            }
+            XCTAssertEqual(calls, 0)
+        }
+    }
+
+    func testUnregisterCallsRegisteredServiceAndPreservesFailures() {
+        for status: SMAppService.Status in [.enabled, .requiresApproval] {
+            var calls = 0
+            XCTAssertThrowsError(try LoginPreference.unregisterIfRegistered(status: status) {
+                calls += 1
+                throw NSError(domain: "SMAppServiceErrorDomain", code: 1)
+            })
+            XCTAssertEqual(calls, 1)
+        }
+    }
+
     func testInitialMenuReadsStatusEvenDuringBusySetup() {
         var preference = LoginPreference()
         var reads = 0

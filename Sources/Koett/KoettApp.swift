@@ -171,7 +171,7 @@ private struct Koett {
 
     private static func unregisterLoginItem() throws {
         let service = SMAppService.mainApp
-        if service.status != .notRegistered {
+        try LoginPreference.unregisterIfRegistered(status: service.status) {
             try service.unregister()
         }
         print("Login Item disabled.")
