@@ -125,8 +125,15 @@ jobs:
         run: cargo build --release --locked --bin koett
       - name: Check clean-Windows DLL dependencies
         run: python scripts/check_windows_dependencies.py target/release/koett.exe
+      - name: Test Windows self-test retry policy
+        shell: pwsh
+        run: ./scripts/test_windows_self_test.ps1
       - name: Runtime self-test
-        run: cargo run --release --locked --bin koett-engine -- --self-test
+        shell: pwsh
+        run: |
+          cargo build --release --locked --bin koett-engine
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./scripts/run_windows_self_test.ps1
       - name: Runtime long-input probe
         timeout-minutes: 5
         run: cargo run --release --locked --bin koett-engine -- --long-self-test 420
