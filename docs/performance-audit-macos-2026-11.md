@@ -608,3 +608,25 @@ and provenance beneath `.build/performance/host/`. No private dictionary or Hist
 export was used. The exclusive native measurement slot
 was held through the native suite and final verification, then explicitly released. The source apps and
 receiver exited after verified clipboard restoration; the guest remains stopped.
+
+
+## Integration and local merge gate — 2026-11-05
+
+PR #105 merged as `c2eb0a6b1d96e2e7d89f6727d9e2d893faffcad3`.
+PR #110 was updated onto that main. The one conflict retained main's deferred,
+optional audio-player fields and the login-status cache. GitHub reports **no CI
+checks on either PR**; local Swift test results are the merge gate.
+
+Two initial full runs terminated with SIGPIPE during oversized local-control
+rejection; the four local-control tests passed in isolation. A new regression
+proved the client attempted connection before checking command size. Moving
+that existing size check before socket creation avoids the unnecessary empty
+connection; no test was skipped or global signal handler changed. The completed
+normal `swift test` run passed **442 tests, 13 optional skips, zero failures**
+(60.957 s). Exact tested source hashes are in `attribution/merge-gate.json`.
+The cache retains its earlier independent approval; this small socket-preflight
+reorder has the regression/full-suite evidence, not a new independent review.
+
+No additional performance cohort, host installation or app restart was performed
+for the merge. Earlier measured source/phase conditions and performance limits
+remain as documented; these test results do not establish a new latency claim.
