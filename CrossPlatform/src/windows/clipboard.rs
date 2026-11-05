@@ -233,6 +233,9 @@ fn publish(owner: HWND, formats: &[(u32, &[u8])], expected: Condition) -> Result
     for (id, data) in prepared {
         data.give(id)?;
     }
+    // Closing publishes the offer and lets Windows add synthesized formats.
+    // Its sequence inside the transaction is not the published sequence.
+    drop(_open);
     Ok(Offer {
         owner,
         sequence: unsafe { GetClipboardSequenceNumber() },
@@ -318,7 +321,15 @@ mod tests {
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
         {
             let _open = Open;
-            assert!(offer.current());
+            assert!(
+                offer.current(),
+                "published sequence={} current={} owner={:?} expected={:?} marker={}",
+                offer.sequence,
+                unsafe { GetClipboardSequenceNumber() },
+                unsafe { GetClipboardOwner() },
+                owner,
+                marker_matches(offer.marker)
+            );
             for format in [
                 image_formats().unwrap().0,
                 image_formats().unwrap().1,

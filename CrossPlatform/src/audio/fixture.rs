@@ -14,6 +14,9 @@ impl MicrophoneRecorder {
         }
         let priority = preview::RecordingPriority::acquire()?;
         let levels = AudioLevels::new();
+        levels
+            .sample_rate
+            .store(audio.sample_rate as u32, Ordering::Relaxed);
         let stop = Arc::new(AtomicBool::new(false));
         let (send, receive) = mpsc::channel();
         let worker_levels = levels.clone();
@@ -68,6 +71,24 @@ fn feed(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn finite_fixture_clock_stops_with_the_last_audio_frame() {
+        let levels = AudioLevels::new();
+        levels.sample_rate.store(16_000, Ordering::Relaxed);
+        let (send, receive) = mpsc::channel();
+        let recorded = feed(
+            AudioRecording::new(16_000, vec![0.0; 700]).unwrap(),
+            send,
+            Arc::new(AtomicBool::new(false)),
+            levels.clone(),
+            Duration::ZERO,
+        );
+        assert_eq!(recorded.len(), 700);
+        assert_eq!(receive.into_iter().flatten().count(), 700);
+        assert_eq!(levels.recorded_ms(), 43);
+        assert_eq!(levels.current(), (0.0, 0.0));
+    }
     #[test]
     fn fixture_streams_real_samples_once_in_order() {
         let samples: Vec<f32> = (0..700).map(|i| i as f32 / 1000.0).collect();

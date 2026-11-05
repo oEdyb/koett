@@ -125,14 +125,16 @@ struct WindowsApp {
     recording_started: Option<Instant>,
     draw_input: Option<draw_input::Monitor>,
     draw_pointer: POINT,
-    capture_lab: Option<(
-        Instant,
-        u32,
-        std::sync::mpsc::Receiver<Result<pixels::Pixels, String>>,
-    )>,
+    capture_lab: Option<PendingCapture>,
     capture_pending: bool,
     tray: NOTIFYICONDATAW,
     taskbar_created: u32,
+}
+
+struct PendingCapture {
+    started: Instant,
+    clipboard_sequence: u32,
+    result: std::sync::mpsc::Receiver<Result<pixels::Pixels, String>>,
 }
 
 pub fn run() -> Result<(), String> {
@@ -441,7 +443,11 @@ unsafe extern "system" fn window_proc(
                     }
                     .0 as usize;
                     let (tx, rx) = std::sync::mpsc::sync_channel(1);
-                    app.capture_lab = Some((Instant::now(), sequence, rx));
+                    app.capture_lab = Some(PendingCapture {
+                        started: Instant::now(),
+                        clipboard_sequence: sequence,
+                        result: rx,
+                    });
                     std::thread::spawn(move || {
                         let _ = tx.send(capture::monitor(monitor));
                     });
@@ -545,8 +551,10 @@ unsafe extern "system" fn window_proc(
                         let state = input.state(Instant::now());
                         if app.desktop_lab {
                             let label = wide(&format!(
-                                "Draw key: clicks={} ink={}",
-                                state.protect_clicks, state.ink
+                                "Draw key: clicks={} ink={} audio_ms={}",
+                                state.protect_clicks,
+                                state.ink,
+                                app.levels.as_ref().map_or(0, AudioLevels::recorded_ms)
                             ));
                             let _ = unsafe {
                                 windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
@@ -556,16 +564,16 @@ unsafe extern "system" fn window_proc(
                             };
                         }
                     }
-                    if let Some(result) = app.capture_lab.as_ref().and_then(|(started, _, rx)| {
-                        rx.try_recv().ok().or_else(|| {
-                            (started.elapsed() >= Duration::from_secs(3))
+                    if let Some(result) = app.capture_lab.as_ref().and_then(|pending| {
+                        pending.result.try_recv().ok().or_else(|| {
+                            (pending.started.elapsed() >= Duration::from_secs(3))
                                 .then(|| Err("Screen capture timed out".into()))
                         })
                     }) {
                         let sequence = app
                             .capture_lab
                             .as_ref()
-                            .map(|(_, sequence, _)| *sequence)
+                            .map(|pending| pending.clipboard_sequence)
                             .unwrap_or(0);
                         app.capture_lab = None;
                         let result = result

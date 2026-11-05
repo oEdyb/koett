@@ -53,7 +53,17 @@ New Windows native unit/guest checks still need the linked executable.
 
 The drawing canvas, contact-sheet/linking, staged reader-aware paste and UIA
 context matrix are still being implemented. No finished drawing UI is claimed.
-No Linux/Mac product code has changed; Cargo additions are Windows namespaces.
+Shared audio.rs and audio/fixture.rs now contain Windows-only sample counters
+for drawing timestamps. They count mono frames, skip pauses and stop with the
+last fixture frame. Linux/Mac callbacks and defaults are unchanged; Cargo
+additions are Windows namespaces.
+
+The first native Windows CI run reached 236 passing tests and caught an offer
+sequence captured before CloseClipboard. The follow-up records the published
+sequence after close, retaining owner/marker/sequence checks and the test that
+rejects a newer user copy. This correction still needs a native rerun; the
+guest has not run M4 yet. Windows metadata checking does not prove Win32 runtime
+behavior.
 
 Private `--desktop-lab` messages, to KoettOwnerWindow:
 

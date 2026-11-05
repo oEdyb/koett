@@ -1,4 +1,6 @@
 use std::path::Path;
+#[cfg(target_os = "windows")]
+use std::sync::atomic::AtomicU64;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -73,6 +75,10 @@ pub struct AudioLevels {
     rms: Arc<AtomicU32>,
     peak: Arc<AtomicU32>,
     paused: Arc<AtomicBool>,
+    #[cfg(target_os = "windows")]
+    captured_frames: Arc<AtomicU64>,
+    #[cfg(target_os = "windows")]
+    sample_rate: Arc<AtomicU32>,
 }
 
 impl AudioLevels {
@@ -81,7 +87,22 @@ impl AudioLevels {
             rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             paused: Arc::new(AtomicBool::new(false)),
+            #[cfg(target_os = "windows")]
+            captured_frames: Arc::new(AtomicU64::new(0)),
+            #[cfg(target_os = "windows")]
+            sample_rate: Arc::new(AtomicU32::new(0)),
         }
+    }
+
+    /// The accepted audio timeline, excluding pauses and time after a fixture ends.
+    #[cfg(target_os = "windows")]
+    pub fn recorded_ms(&self) -> u64 {
+        let rate = self.sample_rate.load(Ordering::Relaxed);
+        self.captured_frames
+            .load(Ordering::Relaxed)
+            .saturating_mul(1000)
+            .checked_div(u64::from(rate))
+            .unwrap_or(0)
     }
 
     /// While paused the capture callback discards input: nothing is recorded,
@@ -182,6 +203,10 @@ impl MicrophoneRecorder {
         let overflowed = Arc::new(AtomicBool::new(false));
         let stream_error = Arc::new(Mutex::new(None));
         let levels = AudioLevels::new();
+        #[cfg(target_os = "windows")]
+        levels
+            .sample_rate
+            .store(config.sample_rate, Ordering::Relaxed);
         let stop_collector = Arc::new(AtomicBool::new(false));
 
         eprintln!(
@@ -489,6 +514,10 @@ where
         consume(sample);
     }
     if frame_count > 0 {
+        #[cfg(target_os = "windows")]
+        levels
+            .captured_frames
+            .fetch_add(frame_count as u64, Ordering::Relaxed);
         levels.update((square_sum / frame_count as f32).sqrt(), peak);
     }
 }
@@ -566,6 +595,22 @@ mod tests {
     use ringbuf::traits::{Producer, Split};
 
     use super::{AudioRecording, collect_samples, is_recoverable_stream_error};
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn drawing_clock_counts_audio_frames_and_excludes_pause() {
+        let levels = super::AudioLevels::new();
+        assert_eq!(levels.recorded_ms(), 0);
+        levels.sample_rate.store(16_000, super::Ordering::Relaxed);
+        super::measure_input(&[0.0_f32; 320], 2, &levels, |_| {});
+        assert_eq!(levels.recorded_ms(), 10);
+        levels.set_paused(true);
+        super::measure_input(&[0.0_f32; 320], 2, &levels, |_| panic!("paused"));
+        assert_eq!(levels.recorded_ms(), 10);
+        levels.set_paused(false);
+        super::measure_input(&[0.0_f32; 80], 1, &levels, |_| {});
+        assert_eq!(levels.clone().recorded_ms(), 15);
+    }
 
     #[test]
     fn live_levels_convert_integer_stereo_and_reset_for_silence() {
