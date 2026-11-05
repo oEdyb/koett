@@ -89,3 +89,12 @@ compiler has only system imports and passed --version on Windows; no runtime
 installer/licence decision, host install or global PATH change was needed.
 See the runtime-static receipt; binaries/models remain outside git. This is
 not a bundled dependency or completed formatting end-to-end proof.
+
+The 6165f3f guest also passed Compact and v3 CPU WAV-to-Notepad delivery,
+S1-mini preparation/formatting and formatter-crash raw fallback (once, same
+foreground HWND/PID). V2 delivered once but a spelling-specific harness
+assertion needs a corrected re-run. Receipts are under ci-6165f3f. A remaining
+shared model/runtime platform guard prevented Windows Nemotron despite the
+shared CPU recognizer; it now admits Windows too, with Linux/Mac behavior
+unchanged. This additional shared-source change requires linked Windows
+execution before claiming Nemotron support. The default remains Compact.

@@ -110,8 +110,8 @@ pub fn ensure_model(
     cancelled: &AtomicBool,
     progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
-    if selection == LocalModel::Nemotron && !cfg!(target_os = "linux") {
-        return Err("Nemotron streaming is currently supported on Linux only".into());
+    if selection == LocalModel::Nemotron && !cfg!(any(target_os = "linux", target_os = "windows")) {
+        return Err("Nemotron streaming is currently supported on Linux and Windows only".into());
     }
     ensure_selected_model(selection, cancelled, progress)
 }

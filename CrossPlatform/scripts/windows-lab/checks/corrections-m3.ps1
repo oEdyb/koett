@@ -12,6 +12,9 @@ try{
  if($existed){Remove-Item $file}
  Send-DictationCommand 2;Start-Sleep -Milliseconds 700;$history=[LabDriver]::ByTitle('Koett History');Activate-LabEditor $history
  $root=[Windows.Automation.AutomationElement]::FromHandle($history)
+ $search=$root.FindFirst([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::AutomationIdProperty),'10'))
+ $search.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).SetValue('ask Grok about Superbase')
+ Start-Sleep -Milliseconds 700
  $list=$root.FindFirst([Windows.Automation.TreeScope]::Descendants,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::AutomationIdProperty),'11'))
  $row=$list.FindFirst([Windows.Automation.TreeScope]::Children,(New-Object Windows.Automation.PropertyCondition ([Windows.Automation.AutomationElement]::ControlTypeProperty),([Windows.Automation.ControlType]::ListItem)))
  $row.GetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern).Select();Start-Sleep -Milliseconds 300
