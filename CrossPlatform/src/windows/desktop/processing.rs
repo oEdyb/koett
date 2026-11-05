@@ -45,8 +45,15 @@ pub(in crate::windows) fn formatting_status(message: String) {
 pub(in crate::windows) fn formatting_busy(busy: bool) {
     change(|p| p.format_busy = busy);
 }
+fn finish_model(p: &mut Progress, cancelled: bool) {
+    if p.model_busy && cancelled {
+        p.model = "Model setup cancelled; previous model remains ready".into();
+    }
+    p.model_busy = false;
+}
 pub(in crate::windows) fn model_finished() {
-    change(|p| p.model_busy = false);
+    let cancelled = crate::model::SWITCH_CANCELLED.load(std::sync::atomic::Ordering::Acquire);
+    change(|p| finish_model(p, cancelled));
 }
 pub(in crate::windows) fn notice(message: &str) {
     if let Some(error) = message.strip_prefix("@model-notice:") {
@@ -184,18 +191,18 @@ impl Controls {
             0,
             [24, 184, 232, 24],
         )?;
+        let style = combo(
+            window,
+            STYLE,
+            &["Casual", "Semi-casual", "Semi-formal", "Formal"],
+            [24, 212, 232, 160],
+        )?;
         window.control(
             w!("STATIC"),
             "Structure",
             Default::default(),
             0,
             [280, 184, 232, 24],
-        )?;
-        let style = combo(
-            window,
-            STYLE,
-            &["Casual", "Semi-casual", "Semi-formal", "Formal"],
-            [24, 212, 232, 160],
         )?;
         let structure = combo(window, STRUCTURE, &["Prose", "Lists"], [280, 212, 232, 120])?;
         window.control(
@@ -327,6 +334,20 @@ impl Controls {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn model_cancel_finishes_progress_without_hiding_an_existing_error() {
+        let mut p = Progress {
+            model_busy: true,
+            model: "Loading model".into(),
+            ..Progress::default()
+        };
+        finish_model(&mut p, true);
+        assert!(!p.model_busy);
+        assert!(p.model.contains("cancelled"));
+        p.model = "Access denied".into();
+        finish_model(&mut p, true);
+        assert_eq!(p.model, "Access denied");
+    }
     #[test]
     fn formatting_commands_round_trip_all_options_and_reject_unknown_bits() {
         for bits in 0..32 {

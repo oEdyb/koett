@@ -98,3 +98,11 @@ shared model/runtime platform guard prevented Windows Nemotron despite the
 shared CPU recognizer; it now admits Windows too, with Linux/Mac behavior
 unchanged. This additional shared-source change requires linked Windows
 execution before claiming Nemotron support. The default remains Compact.
+
+On green b964d47, strict UIA correction selection/acceptance and Words
+category/selection/rename/collision/stale-edit all passed. A forced parent crash
+also reaped the Windows Job's formatter child within three seconds. Model write
+denial rolled back, but cancellation left a stale Loading model status despite
+preserving settings; the Windows presentation now reports cancellation explicitly.
+Native UIA inspection found Style was associated with the Structure label;
+label/control creation order is corrected. Both fixes await linked re-run.

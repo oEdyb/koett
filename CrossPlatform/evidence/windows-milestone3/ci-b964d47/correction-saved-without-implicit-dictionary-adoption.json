@@ -1,0 +1,14 @@
+{
+  "step": "correction-saved-without-implicit-dictionary-adoption",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 394052,
+    "process": "Koett",
+    "pid": 4784
+  }
+}

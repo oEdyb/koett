@@ -31,6 +31,7 @@ try{
  $everyday.GetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern).Select();Start-Sleep -Milliseconds 200
  $warning=(Correction-Control '84').Current.Name;$add=(Correction-Control '81').Current.Name
  $stillUnchanged=(Get-FileHash $config).Hash-eq$settingsHash
+ $steps+=Get-LabWindowStep 'everyday-warning-before-explicit-acceptance' $fix
  $null=Invoke-LabButton $fix 'Add anyway';Start-Sleep -Milliseconds 300
  $s=[IO.File]::ReadAllText($config)|ConvertFrom-Json
  $cases+=@{case='everyday-warning-and-explicit-add-anyway';passed=($warning-match'everyday'-and$add-ceq'Add anyway'-and$stillUnchanged-and@($s.dictionary|Where-Object {$_.term-ceq'Olle'-and'all'-in$_.sounds_like}).Count-eq1);warning=$warning}
