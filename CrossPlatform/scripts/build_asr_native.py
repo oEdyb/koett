@@ -16,6 +16,7 @@ from shared_context_patch import PATCHED_SHA256, apply_shared_context
 SOURCE_COMMIT = "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5"
 SOURCE_SHA256 = "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c"
 SOURCE_URL = f"https://codeload.github.com/k2-fsa/sherpa-onnx/tar.gz/{SOURCE_COMMIT}"
+PREVIOUS_CONTEXT_SHA256 = '673caa2c3c3053158cc5c2fec576b17607ea0a053d648f34422591e0c689d920'
 LIBRARIES = (
     "sherpa-onnx-c-api", "sherpa-onnx-core", "kaldi-decoder-core",
     "sherpa-onnx-kaldifst-core", "sherpa-onnx-fstfar", "sherpa-onnx-fst",
@@ -101,6 +102,22 @@ def remove_disabled_tts_stubs(contents):
     raise ValueError("pinned TTS guard is not balanced")
 
 
+def prepare_context_header(archive, context):
+    contents = context.read_text()
+    if hashlib.sha256(contents.encode()).hexdigest() == PREVIOUS_CONTEXT_SHA256:
+        # The archive has already passed SOURCE_SHA256 validation in prepare_source.
+        # Upgrade only this known prior patch; unknown local edits still fail closed.
+        member = f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/{context.name}'
+        with tarfile.open(archive) as package:
+            original = package.extractfile(member)
+            if original is None:
+                raise ValueError('pinned archive has no original NeMo header')
+            contents = original.read().decode()
+    patched = apply_shared_context(contents).encode()
+    if context.read_bytes() != patched:
+        context.write_bytes(patched)
+
+
 def prepare_source(root):
     archive = root / "source.tar.gz"
     if not archive.exists():
@@ -128,9 +145,7 @@ def prepare_source(root):
         shutil.copyfile(api, original)
     api.write_text(remove_disabled_tts_stubs(original.read_text()))
     context = source / 'sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
-    patched = apply_shared_context(context.read_text()).encode()
-    if context.read_bytes() != patched:
-        context.write_bytes(patched)
+    prepare_context_header(archive, context)
     return source
 
 

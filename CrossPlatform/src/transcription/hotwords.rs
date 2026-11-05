@@ -290,9 +290,10 @@ mod model_tests {
     #[test]
     #[ignore = "requires KOETT_MODEL_DIR and the shared-context native extension"]
     fn shared_dictionary_switches_do_not_read_or_reload_model_files() {
-        if !sherpa_onnx::SHARED_CONTEXT_AVAILABLE {
-            return;
-        }
+        assert!(
+            std::hint::black_box(sherpa_onnx::SHARED_CONTEXT_AVAILABLE),
+            "requires the reviewed shared-context native build"
+        );
         let directory = PathBuf::from(std::env::var("KOETT_MODEL_DIR").unwrap());
         let audio = AudioRecording::read_wav(&directory.join("test_wavs/0.wav")).unwrap();
         let mut transcriber = ParakeetTranscriber::load(&directory, 2).unwrap();

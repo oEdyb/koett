@@ -15,5 +15,7 @@
   "unit_result": "oom-kill",
   "history_rows_before": 18,
   "history_rows_after": 150,
-  "history_text_exported": false
+  "history_text_exported": false,
+  "memory_high_bytes": 805306368,
+  "memory_swap_max_bytes": 0
 }

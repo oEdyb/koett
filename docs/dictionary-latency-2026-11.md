@@ -336,13 +336,34 @@ than the first candidate, whose RSS was sampled after a longer session.
 
 The whole private compositor/app/target scope then passed a fresh live paste
 with a **2 GiB hard maximum, no swap and no artificial high watermark**, with
-no new OOM events. The earlier candidate had been OOM-killed under the 2 GiB
-maximum after vocabulary switches.
+no new OOM events. The earlier candidate had been OOM-killed with both the 2 GiB
+maximum and a 768 MiB high watermark after vocabulary switches.
 
 A harsher, separate **768 MiB high watermark** throttled the approximately
 1.5 GiB working set enough that the fixture could not verify idle within 60 s;
 no new dictation started. No OOM occurred, and the app answered idle again after
 restoring the scope limits. That case fails responsiveness; it is not labeled
-a successful low-memory run. The raw failure and successful hard-limit case
+a successful low-memory run. The final both-limits case survived but failed
+responsiveness; the separate hard-limit-only case passed. This is not an
+identical-condition before/after responsiveness comparison. The raw failure and successful hard-limit case
 are both retained. These are artificial cgroup limits, not a claim about every
 low-memory host.
+
+### Release packaging and platform limits
+
+Local Linux packaging now rejects a missing native receipt or a source/header
+fingerprint that does not match the reviewed shared decoder. This prevents a
+stale developer cache from silently packaging spelling-only recognition while
+claiming the acoustic benchmark's recall. The receipt must describe the native
+libraries linked into the supplied binary. A normal developer build may still
+fall back to spelling only; this remains logged.
+
+The native builder can upgrade the known first shared patch directly from its
+SHA-verified source archive. Unknown edited headers still fail closed. The
+model-reuse real-model test asserts the capability rather than returning early.
+
+These latency and recall receipts use v2 on Linux x86-64. They do not measure
+v3, Windows or ARM64 performance. The current CI self-test loads the compact CTC
+model and asserts that the native capability was compiled. It does not execute
+either NeMo contextual branch; successful compilation alone does not establish
+seeded transducer execution on those targets. Keep those platform runtime gates explicit.
