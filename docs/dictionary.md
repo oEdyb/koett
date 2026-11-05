@@ -9,7 +9,7 @@ like" forms (what Koett writes instead). Linux and the Mac both ship it with the
 **Release default:** verified native builds share one encoder result between a
 plain greedy decoder and a dictionary-biased beam decoder. The merge keeps plain
 words and adopts only supported dictionary terms. This avoids encoding the same
-audio twice. The four-length production benchmark measured 5.9–9.3% added median
+audio twice. The final four-length production repeat measured 7.5–10.4% added median
 ASR time, preserving 115/162 terms versus 115/162 for the old acoustic path.
 See the [latency and recall audit](dictionary-latency-2026-11.md) for conditions,
 tail latency and limits.

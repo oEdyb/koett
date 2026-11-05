@@ -282,4 +282,45 @@ Phoebe recovery remains. This proves switches do not reopen model/token files.
 The final native header fingerprint is
 `1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3`.
 Earlier tables retain the previous header's measurements rather than relabeling
-them as this follow-up. Fresh latency and live pressure receipts follow.
+them as this follow-up. Fresh latency receipts follow; live pressure evidence is added after completion.
+
+### Final model-reuse build repeat
+
+The final header above was rebuilt and retested at **absolute nice 10**, offline
+(loopback only), two CPU threads, copied models, one warm-up plus three rotating
+measured production pairs. The transcriber, conservative term adoption and final
+spelling pass are included. All three engines live in one process to alternate
+methods. The benchmark records its selected mode, native fingerprint, process
+priority and load at each measurement. An earlier follow-up run inherited a
+higher service priority despite `nice -n 10`; its timing was replaced, not used
+as final evidence.
+
+| Exact audio | Empty median / worst ms | Shared median / worst ms | Legacy acoustic median / worst ms | Shared added median |
+|---|---:|---:|---:|---:|
+| 5 s | 141.25 / 141.81 | 154.64 / 158.19 | 289.93 / 290.45 | 9.47% |
+| 30 s | 798.77 / 803.17 | 882.03 / 887.75 | 1,533.00 / 1,544.56 | 10.42% |
+| 2 min | 3,271.46 / 3,275.45 | 3,559.17 / 3,583.41 | 6,148.43 / 6,151.25 | 8.79% |
+| 10 min | 16,495.34 / 16,544.50 | 17,740.57 / 17,844.31 | 30,984.94 / 31,153.91 | 7.55% |
+
+This is near the requested **about 10%** target, with 30 seconds slightly above
+10%; it is not a strict all-run ceiling. The selected release policy retains
+shared encoding for verified transducer builds because it preserves the acoustic
+recall while removing most of the duplicate encoder work. Compact CTC and
+missing-capability builds keep spelling only.
+
+The same 210-clip final-build repeat again recovers **49 raw, 61 spelling,
+115 legacy acoustic, 115 shared** terms, with identical recovered occurrences
+for both acoustic methods. Both shared base paths match raw greedy on every
+clip. There are no additional false terms, damaged negatives or lost ordinary
+words against raw. Total times: spelling **19.8021 s**, legacy **37.7820 s**,
+shared **21.1520 s**: **6.82%** added time and **44.02% less than legacy**.
+Per-clip overhead p50/p90/p99/max is **7.24/9.68/13.83/17.78%**; added time
+median/max is **6.60/16.82 ms**. One inference per method per clip remains a
+limitation; the synthetic corpus was used during development.
+
+A regular file substituted for the vocabulary cache directory also produced
+successful dictation, exit 0, with `dictionary_mode=spelling_only`. Cache setup
+failure therefore does not prevent ordinary dictation.
+
+[Raw receipts and recomputation](../Benchmarks/Dictionary/2026-11/model-reuse/).
+Run `python3 Benchmarks/Dictionary/2026-11/model-reuse/check.py` from the repo root.
