@@ -43,6 +43,8 @@ const LIST: usize = 11;
 const COPY: usize = 12;
 const EXPORT: usize = 13;
 const NEXT_PAGE: usize = 14;
+const EXPORT_RESULTS: usize = 15;
+const EXPORT_STATUS: usize = 16;
 const SHORTCUT: usize = 20;
 const STARTUP: usize = 21;
 const SAVE: usize = 22;
@@ -50,10 +52,12 @@ const CHANGE_SHORTCUT: usize = 23;
 enum Query {
     Search(u64, String, Option<HistoryCursor>),
     Get(u64, String),
+    Export(String, std::path::PathBuf),
 }
 enum Reply {
     Rows(u64, Result<Page, String>),
     Text(u64, Result<String, String>),
+    Exported(Result<usize, String>),
 }
 struct Page {
     rows: Vec<HistorySummary>,
@@ -74,6 +78,42 @@ fn history_page(
         _ => None,
     };
     Ok(Page { rows, next })
+}
+// Read every matching page on the history worker, independent of the visible page.
+// Bound the in-memory export explicitly; exceeding it never creates a partial file.
+fn export_results(store: &HistoryStore, query: &str) -> Result<(String, usize), String> {
+    use std::fmt::Write as _;
+    let mut text = String::new();
+    let mut count = 0;
+    let mut cursor = None;
+    loop {
+        let page = history_page(store, query, cursor.as_ref())?;
+        for row in page.rows {
+            let record = store
+                .get(&row.id)?
+                .ok_or("Transcript changed during export; retry")?;
+            if text
+                .len()
+                .saturating_add(record.text.len())
+                .saturating_add(256)
+                > 8 * 1024 * 1024
+            {
+                return Err("Export exceeds 8 MiB; narrow the search and export again".into());
+            }
+            writeln!(
+                text,
+                "{}\n{}\n",
+                timestamp(record.created_at_ms),
+                record.text
+            )
+            .map_err(|e| e.to_string())?;
+            count += 1;
+        }
+        cursor = page.next;
+        if cursor.is_none() {
+            return Ok((text, count));
+        }
+    }
 }
 struct Window {
     theme: super::native_theme::Theme,
@@ -154,6 +194,13 @@ fn run(settings: bool, owner: usize) -> Result<(), String> {
         let store = HistoryStore::open_default();
         for query in receive {
             let result = match query {
+                Query::Export(text, path) => {
+                    Reply::Exported(store.as_ref().map_err(Clone::clone).and_then(|store| {
+                        let (text, count) = export_results(store, &text)?;
+                        write_export(&path, &text)?;
+                        Ok(count)
+                    }))
+                }
                 Query::Search(id, text, before) => Reply::Rows(
                     id,
                     store
@@ -503,6 +550,20 @@ impl Window {
                 NEXT_PAGE,
                 [24, 580, 120, 32],
             )?;
+            self.control(
+                w!("BUTTON"),
+                "Export results…",
+                WS_TABSTOP,
+                EXPORT_RESULTS,
+                [160, 580, 156, 32],
+            )?;
+            self.control(
+                w!("STATIC"),
+                "",
+                Default::default(),
+                EXPORT_STATUS,
+                [328, 580, 580, 40],
+            )?;
             self.search();
         }
         Ok(())
@@ -618,6 +679,21 @@ impl Window {
                         }
                     }
                 }
+                Reply::Exported(result) => unsafe {
+                    if let Ok(button) = GetDlgItem(Some(self.hwnd), EXPORT_RESULTS as i32) {
+                        let _ =
+                            windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(button, true);
+                    }
+                    if let Ok(status) = GetDlgItem(Some(self.hwnd), EXPORT_STATUS as i32) {
+                        set(
+                            status,
+                            &match result {
+                                Ok(count) => format!("Exported {count} transcripts"),
+                                Err(error) => error,
+                            },
+                        );
+                    }
+                },
                 Reply::Text(id, result) if id == self.generation => match result {
                     Ok(text) => {
                         set(
@@ -667,6 +743,28 @@ impl Window {
                     super::show_fatal_error(&e);
                 }
             }
+            EXPORT_RESULTS => match export_path(self.hwnd) {
+                Ok(Some(path)) => {
+                    if self
+                        .query
+                        .send(Query::Export(read(self.search), path))
+                        .is_ok()
+                    {
+                        unsafe {
+                            if let Ok(button) = GetDlgItem(Some(self.hwnd), EXPORT_RESULTS as i32) {
+                                let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
+                                    button, false,
+                                );
+                            }
+                            if let Ok(status) = GetDlgItem(Some(self.hwnd), EXPORT_STATUS as i32) {
+                                set(status, "Exporting…");
+                            }
+                        }
+                    }
+                }
+                Ok(None) => {}
+                Err(error) => super::show_fatal_error(&error),
+            },
             CHANGE_SHORTCUT => unsafe {
                 let _ = PostMessageW(
                     Some(HWND(self.owner as *mut _)),
@@ -743,6 +841,14 @@ impl Window {
                 let height = (r.bottom - 160).max(80);
                 for (id, x, y, w, h) in [
                     (NEXT_PAGE, 24, r.bottom - 56, 120, 32),
+                    (EXPORT_RESULTS, 160, r.bottom - 56, 156, 32),
+                    (
+                        EXPORT_STATUS,
+                        left + 24,
+                        r.bottom - 56,
+                        (r.right - left - 48).max(80),
+                        40,
+                    ),
                     (COPY, left + 24, 32, 100, 32),
                     (EXPORT, left + 136, 32, 100, 32),
                     (24, left + 24, 66, (r.right - left - 48).max(80), 20),
@@ -912,7 +1018,37 @@ fn set(hwnd: HWND, text: &str) {
         let _ = SetWindowTextW(hwnd, PCWSTR(text.as_ptr()));
     }
 }
+fn write_export(path: &std::path::Path, text: &str) -> Result<(), String> {
+    use std::io::Write as _;
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    let temporary =
+        path.with_file_name(format!(".koett-export-{}-{nonce}.part", std::process::id()));
+    let result = (|| {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .map_err(|e| e.to_string())?;
+        file.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())?;
+        drop(file);
+        std::fs::rename(&temporary, path).map_err(|e| e.to_string())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(temporary);
+    }
+    result
+}
 fn export(hwnd: HWND, text: &str) -> Result<(), String> {
+    if let Some(path) = export_path(hwnd)? {
+        write_export(&path, text)?;
+    }
+    Ok(())
+}
+fn export_path(hwnd: HWND) -> Result<Option<std::path::PathBuf>, String> {
     let mut file = [0u16; 32768];
     for (dest, src) in file.iter_mut().zip("Transcript.txt".encode_utf16()) {
         *dest = src;
@@ -936,9 +1072,15 @@ fn export(hwnd: HWND, text: &str) -> Result<(), String> {
     };
     if unsafe { GetSaveFileNameW(&mut dialog) }.as_bool() {
         let end = file.iter().position(|x| *x == 0).unwrap_or(file.len());
-        std::fs::write(String::from_utf16_lossy(&file[..end]), text).map_err(|e| e.to_string())?;
+        return Ok(Some(std::path::PathBuf::from(String::from_utf16_lossy(
+            &file[..end],
+        ))));
     }
-    Ok(())
+    let error = unsafe { CommDlgExtendedError() }.0;
+    if error != 0 {
+        return Err(format!("Could not choose export file: {error}"));
+    }
+    Ok(None)
 }
 
 fn timestamp(milliseconds: i64) -> String {
@@ -993,6 +1135,21 @@ mod tests {
         assert_eq!(
             ids.iter().collect::<std::collections::HashSet<_>>().len(),
             110
+        );
+        let (exported, count) = export_results(&store, "").unwrap();
+        assert_eq!(count, 110);
+        assert_eq!(exported.matches("entry ").count(), 110);
+        let output = path.with_extension("txt");
+        std::fs::write(&output, "previous export").unwrap();
+        write_export(&output, &exported).unwrap();
+        assert_eq!(std::fs::read_to_string(&output).unwrap(), exported);
+        std::fs::remove_file(output).unwrap();
+        let (filtered_export, count) = export_results(&store, "entry 003").unwrap();
+        assert_eq!(count, 1);
+        assert!(filtered_export.contains("entry 003"));
+        assert_eq!(
+            export_results(&store, "no-such-entry").unwrap(),
+            (String::new(), 0)
         );
         let filtered = history_page(&store, "entry 003", None).unwrap();
         assert_eq!(filtered.rows.len(), 1);

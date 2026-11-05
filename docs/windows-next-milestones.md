@@ -1,7 +1,7 @@
 # Windows milestones after reliable dictation
 
-M2 must finish its software gates and receive review before #78 is ready.
-Merge remains a separate explicit action. Start M3 on a new branch from main;
+M2 software gates now have real Windows receipts and #78 is ready for review.
+Merge remains a separate explicit action. M3 is stacked on #78 until it merges;
 keep Windows commits isolated from the v0.3.0 release and flag shared-file edits.
 M4 follows the words/records milestone. The windows-port-plan remains the gate
 list; this note carries the 2026-11-05 implementation constraints forward.
@@ -36,3 +36,22 @@ No default-model change or speculative dependency upgrade is authorized here.
 These are requirements carried from the reported Linux lessons, not Windows
 verification results. Physical device/display/sleep checks remain separate from
 QEMU or synthetic input evidence. Do not claim M3/M4 parity from compilation.
+
+## M3 first implementation checkpoint
+
+Native History now offers Export results, independent of the visible 50-row
+page. It captures the current search, reads successive cursor pages on the
+existing history worker, and reports the exported count in the window. A native
+Save dialog supplies the path; cancel leaves disk untouched. Export is bounded
+at 8 MiB with an explicit error asking for a narrower search. A same-directory
+part file is synced and renamed so a failed write preserves an existing export.
+
+Focused coverage extends the existing 110-row paging test to full, filtered and
+empty export and replacement of an existing output file. Windows metadata
+Clippy passes; linked tests and real guest export/cancel/failure/UIA/scaling
+checks still need the CI artifact. No guest runtime claim for M3 yet.
+
+This is a Windows-only first checkpoint, not M3 completion. Dictionary editing,
+Fix a word/acceptance, replacements, formatting/raw fallback and model switching
+remain open. Do not expose the current slow dictionary decoder path. Use small
+focused fixtures and timing checks; no big benchmarks.
