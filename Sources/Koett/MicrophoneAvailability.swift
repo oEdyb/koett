@@ -79,8 +79,11 @@ extension KoettController {
     func checkActiveCapture() {
         guard state == .recording || state == .assistantRecording, let recorder else { return }
         // A failed Nemotron backup file must not end a healthy live transcript.
-        guard recorder.captureHasFailed() || (nemotronRecorder == nil && recorder.fileHasFailed) else { return }
-        stopAfterCaptureFailure()
+        if recorder.captureHasFailed() || (nemotronRecorder == nil && recorder.fileHasFailed) {
+            stopAfterCaptureFailure()
+            return
+        }
+        checkRecordingLimit(elapsed: nemotronRecorder?.currentTime ?? recorder.currentTime)
     }
 
     private func stopAfterCaptureFailure() {

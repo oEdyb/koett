@@ -104,6 +104,7 @@ final class KoettController: NSObject {
     var lastDictationID: UInt64 = 0
     var dictationTask: Task<Void, Never>?
     var captureWatch: Timer?
+    var recordingDeadline: RecordingDeadline?
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
