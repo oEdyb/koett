@@ -86,6 +86,7 @@ const SHORTCUT_ID: &str = "toggle-recording";
 enum TrayAction {
     Menu(String, menu_preferences::Reply),
     Ask,
+    #[cfg_attr(not(feature = "ask"), allow(dead_code))]
     CancelAsk,
     AskStart,
     AskStop,
@@ -192,6 +193,7 @@ impl ksni::Tray for LinuxTray {
             .into()
         }
         let recording = menu::recording_action(&self.status);
+        #[cfg(feature = "ask")]
         let (ask_label, asking) = menu_preferences::ask_state();
         let last = history::recovery::last_available();
         let mut items = vec![
@@ -209,6 +211,7 @@ impl ksni::Tray for LinuxTray {
                         && QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)),
                 TrayAction::Toggle,
             ),
+            #[cfg(feature = "ask")]
             send(
                 if asking {
                     ask_label
@@ -219,6 +222,7 @@ impl ksni::Tray for LinuxTray {
                 TrayAction::Ask,
             ),
         ];
+        #[cfg(feature = "ask")]
         if asking {
             items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
         }
@@ -274,7 +278,9 @@ impl ksni::Tray for LinuxTray {
     }
 }
 
+#[cfg(feature = "ask")]
 mod ask_settings;
+#[cfg(feature = "ask")]
 mod ask_view;
 mod browser_media;
 mod clipboard_owner;
@@ -410,10 +416,12 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     }
     let mut command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
+    #[cfg(feature = "ask")]
     if command == "ask-status" {
         println!("{}", control::ask_status()?);
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-help" {
         println!(
             "{}",
@@ -421,6 +429,7 @@ pub fn run() -> Result<(), String> {
         );
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-speech-configure" {
         use std::io::Read;
         let mut input = String::new();
@@ -437,6 +446,7 @@ pub fn run() -> Result<(), String> {
         println!("{{\"ok\":true}}");
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-speech-status" {
         println!(
             "{}",
@@ -444,6 +454,7 @@ pub fn run() -> Result<(), String> {
         );
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-configure" {
         use std::io::Read;
         let mut input = String::new();
@@ -460,6 +471,7 @@ pub fn run() -> Result<(), String> {
         println!("{{\"ok\":true}}");
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-key" {
         use std::io::Read;
         let provider = std::env::args()
@@ -477,6 +489,10 @@ pub fn run() -> Result<(), String> {
         )?;
         println!("{{\"ok\":true}}");
         return Ok(());
+    }
+    #[cfg(not(feature = "ask"))]
+    if command == "ask" || command.starts_with("ask-") {
+        return Err("Ask is not available in this build".into());
     }
     if command == "media" {
         let source = std::env::args()
@@ -651,9 +667,13 @@ fn run_x11(
     let mut blocked_keys = std::collections::HashSet::new();
     let mut bindings = Vec::new();
     for value in [
-        &settings.shortcut,
-        &settings.ask_shortcut,
-        &settings.media_shortcut,
+        settings.shortcut.as_str(),
+        if cfg!(feature = "ask") {
+            settings.ask_shortcut.as_str()
+        } else {
+            ""
+        },
+        settings.media_shortcut.as_str(),
     ] {
         let key = if value.is_empty() {
             None
@@ -820,11 +840,17 @@ fn run_x11(
                     && let Some(capture) = capture.as_ref()
                 {
                     let chord = match index {
-                        0 => &settings.shortcut,
-                        1 => &settings.ask_shortcut,
-                        _ => &settings.media_shortcut,
+                        0 => settings.shortcut.as_str(),
+                        1 => {
+                            if cfg!(feature = "ask") {
+                                settings.ask_shortcut.as_str()
+                            } else {
+                                ""
+                            }
+                        }
+                        _ => settings.media_shortcut.as_str(),
                     };
-                    let _ = capture.try_send(chord.clone());
+                    let _ = capture.try_send(chord.to_string());
                 }
                 let intent =
                     x11_shortcut_intent(latch, settings.recording_mode, event.state, editing);
@@ -898,9 +924,13 @@ fn run_x11(
                 && updated.validate_shortcuts().is_ok()
             {
                 let next_values = [
-                    &updated.shortcut,
-                    &updated.ask_shortcut,
-                    &updated.media_shortcut,
+                    updated.shortcut.as_str(),
+                    if cfg!(feature = "ask") {
+                        updated.ask_shortcut.as_str()
+                    } else {
+                        ""
+                    },
+                    updated.media_shortcut.as_str(),
                 ];
                 let old_values = [
                     settings.shortcut.clone(),
@@ -910,7 +940,10 @@ fn run_x11(
                 if next_values
                     .iter()
                     .zip(&old_values)
-                    .any(|(next, old)| *next != old)
+                    .enumerate()
+                    .any(|(index, (next, old))| {
+                        (index != 1 || cfg!(feature = "ask")) && *next != old
+                    })
                 {
                     let desired: Vec<Option<HotKey>> = next_values
                         .iter()
@@ -1148,6 +1181,7 @@ async fn shortcut_events(
     let mut requested = Vec::new();
     for (id, label, value) in [
         (SHORTCUT_ID, "Dictation", &settings.shortcut),
+        #[cfg(feature = "ask")]
         ("ask", "Ask", &settings.ask_shortcut),
         ("media", "Transcribe media", &settings.media_shortcut),
     ] {
@@ -1178,6 +1212,7 @@ async fn shortcut_events(
     }
     let enabled: std::collections::HashSet<String> = [
         (SHORTCUT_ID, &settings.shortcut),
+        #[cfg(feature = "ask")]
         ("ask", &settings.ask_shortcut),
         ("media", &settings.media_shortcut),
     ]
@@ -2214,6 +2249,7 @@ impl LinuxEngine {
                         self.capture_pending = false;
                         QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
                     }
+                    #[cfg(feature = "ask")]
                     crate::assistant::update_status(&value);
                     status_changed(&format!("@ask:{}", value));
                 }
@@ -3112,9 +3148,15 @@ mod menu_tests {
         };
         tray.activate(0, 0);
         assert_eq!(receiver.recv().unwrap(), TrayAction::OpenTranscripts);
+        #[cfg(not(feature = "ask"))]
+        assert!(tray.menu().iter().all(|item| match item {
+            ksni::MenuItem::Standard(item) => !item.label.contains("Ask"),
+            _ => true,
+        }));
         for (label, expected) in [
             ("Record", TrayAction::Toggle),
             ("History", TrayAction::OpenTranscripts),
+            #[cfg(feature = "ask")]
             ("Ask About Screen", TrayAction::Ask),
             ("Settings…", TrayAction::OpenSettings),
             ("Quit Koett", TrayAction::Quit),

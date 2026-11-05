@@ -71,6 +71,7 @@ pub(super) fn show(
     let draw_page = section(&stack, "draw", "Draw on screen");
     let shortcuts_page = section(&stack, "shortcuts", "Shortcuts");
     let words = section(&stack, "words", "Words");
+    #[cfg(feature = "ask")]
     let ask = section(&stack, "ask", "Ask About Screen");
     let general = section(&stack, "general", "General");
     let microphone = group(&dictation, "Microphone");
@@ -112,6 +113,7 @@ pub(super) fn show(
         &settings.dictionary,
     );
     let replacements = group(&words, "Replacements");
+    #[cfg(feature = "ask")]
     super::ask_settings::build(&group(&ask, "Assistant"));
     stack.set_visible_child_name(page.unwrap_or("audio"));
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
@@ -182,11 +184,13 @@ pub(super) fn show(
     }));
     row(&recording, "Recording mode", &mode);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
+    #[cfg(feature = "ask")]
     let ask_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.ask_shortcut.clone()));
     let media_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.media_shortcut.clone()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     for (label, shortcut, default) in [
         ("Dictation", shortcut.clone(), "Ctrl+Shift+Space"),
+        #[cfg(feature = "ask")]
         ("Ask About Screen", ask_shortcut.clone(), "Ctrl+Alt+Space"),
         ("Transcribe media", media_shortcut.clone(), "Ctrl+Shift+T"),
     ] {
@@ -403,9 +407,6 @@ Toggle: koett toggle
 Hold press: koett start
 Hold release: koett stop
 Cancel: koett cancel
-Ask toggle: koett ask
-Ask press: koett ask-start
-Ask release: koett ask-stop
 Media: open Koett → Transcribe media
 
 Escape cancels while recording with keyboard access. Settings → Draw on screen has the setup. Otherwise use Cancel on the pill or bind koett cancel to a desktop shortcut.",
@@ -589,7 +590,10 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
         move |_| {
             let mut updated = settings.clone();
             updated.shortcut = shortcut.borrow().clone();
-            updated.ask_shortcut = ask_shortcut.borrow().clone();
+            #[cfg(feature = "ask")]
+            {
+                updated.ask_shortcut = ask_shortcut.borrow().clone();
+            }
             updated.media_shortcut = media_shortcut.borrow().clone();
             updated.start_at_login = login.is_active();
             updated.microphone = input

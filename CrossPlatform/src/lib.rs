@@ -25,4 +25,5 @@ pub mod windows;
 pub mod media_transcription;
 
 #[cfg(target_os = "linux")]
+#[cfg(feature = "ask")]
 pub mod assistant;

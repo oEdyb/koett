@@ -69,15 +69,20 @@ fn build_window(
     record.add_css_class("koett-record");
     record.set_sensitive(false);
     header.pack_start(&record);
+    #[cfg(feature = "ask")]
     let ask_button = gtk::Button::with_label("Ask");
+    #[cfg(feature = "ask")]
     let ask_actions = actions.clone();
+    #[cfg(feature = "ask")]
     ask_button.connect_clicked(move |_| {
         let _ = ask_actions.send(TrayAction::Ask);
     });
+    #[cfg(feature = "ask")]
     header.pack_start(&ask_button);
     let settings_button = gtk::Button::from_icon_name("preferences-system-symbolic");
     settings_button.set_tooltip_text(Some("Settings"));
     super::menu::set_accessible_label(settings_button.upcast_ref(), "Settings");
+    #[cfg(feature = "ask")]
     super::menu_preferences::attach(application);
     header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
@@ -239,8 +244,11 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    #[cfg(feature = "ask")]
     for (name, command) in [
+        #[cfg(feature = "ask")]
         ("ask", TrayAction::Ask),
+        #[cfg(feature = "ask")]
         ("cancel-ask", TrayAction::CancelAsk),
     ] {
         let action = gtk::gio::SimpleAction::new(name, None);
@@ -360,6 +368,7 @@ fn build_window(
     application.add_action(&quit);
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
+    #[cfg(feature = "ask")]
     let ask = super::ask_view::AskView::new(application, actions.clone());
     let overlay = super::recording_overlay::RecordingOverlay::new(
         application,
@@ -425,6 +434,7 @@ fn build_window(
                         media_result = false;
                         recovery_until = None;
                     }
+                    #[cfg(feature = "ask")]
                     if let Some(payload) = message.strip_prefix("@ask:") {
                         if let Ok(value) = serde_json::from_str(payload) {
                             ask.update(&value);
@@ -477,6 +487,7 @@ fn build_window(
                         asking_until = Some(Instant::now() + Duration::from_secs(20));
                         media_result = false;
                         recovery_until = None;
+                        #[cfg(feature = "ask")]
                         ask.hide();
                         gtk::glib::timeout_add_local_once(Duration::from_millis(100), move || {
                             let _ = ack.send(());
