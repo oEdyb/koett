@@ -7,6 +7,8 @@ part of this sequence.** Existing candidate receipts do not certify final assets
 
 Require merged source for:
 
+- #78 (M2): CI/native-build download retries.
+- #102: existing Linux performance/robustness audit and verdict.
 - #108: Linux dictionary encoder sharing and its existing measured verdict.
 - #109: keep the Linux model loaded across dictionary edits.
 - #105: Mac acoustic dictionary default/performance change.
@@ -14,6 +16,7 @@ Require merged source for:
 - #116: Mac explicit microphone, shortcut and screen capability checks.
 - #112: preserve model destination errors; packaged 8 MiB ENOSPC retest passes.
 - #117: GNOME 46 portal/focus compatibility and packaged extension.
+- #118: wait for GNOME stop modifiers to be released before paste.
 - Any additional required Mac fixes identified by the Mac release owner.
 
 Require review and green native jobs for changed code. The GNOME local-build
@@ -59,9 +62,13 @@ shortcut.
 ## 3. Freeze one source identity
 
 Fetch main after the last merge. Record its full 40-character SHA as `FINAL_SHA`.
-Require #108/#109/#105/#110/#116/#112/#117 merge commits to be ancestors. Record the
+Require #78/#102/#108/#109/#105/#110/#111/#114/#115/#116/#112/#117/#118 merge commits to be ancestors. Record the
 final three merge commits as well. Check out that commit in clean, isolated
 build checkouts on both machines; record clean-tree state.
+
+Exclude M3/#113 from this release. Before freezing, confirm its head/merge is
+not included. Announce the exact full `FINAL_SHA` immediately when the freeze
+happens, so subsequent work can proceed without changing these build inputs.
 
 Do not reuse a pre-merge PR merge ref, dirty local build, old Mac ZIP or old
 Linux artifact. A product or README change after the freeze requires a new SHA

@@ -240,6 +240,60 @@ this VM is not a new Shell 51 test. Permission denial/recovery was not separatel
 accepted here. No host desktop, installed app, physical keyboard/mic, tag or
 publication was changed. The Mac audit below is preserved from main.
 
+## Approved-package GNOME retest: new stop-key blocker
+
+**FAIL — standard held stop chord on the exact merged #117 package.**
+[Receipt](evidence/release-v0.3.0-audit/gnome-stop-modifiers.json).
+
+Consumed [CI run 42005375914](https://github.com/oEdyb/koett/actions/runs/42005375914),
+source `e3637778b9e65edacc02b7610a05618d74eac98e`. The archive SHA-256 is
+`a8379c3c3f7fd1f740caa81991a8dbfa710a1b083d73bc09f01234664b0f0898`;
+sidecar, all package hashes, clean candidate source stamp and installed binary
+hash match. Installed the extension from that same archive, relogged into real
+GNOME 46 Wayland, configured the desktop shortcut and approved the native portal.
+No local binary was substituted for this approved-package test.
+
+With QEMU's Ctrl+Shift+Space stop chord held for 80 ms, portal delivery reported
+success but the real GTK editor stayed blank. Manual Ctrl+V recovered the text.
+A targeted 10 ms release pasted automatically. The old guard had no modifier
+state in this ordinary user setup; it could post before shortcut release.
+A fast-release success does not close the normal stop-chord failure. This
+supersedes the earlier local-build GNOME PASS as release acceptance.
+
+[PR #118](https://github.com/oEdyb/koett/pull/118) returns the modifier mask in the
+existing authenticated extension focus reply. The bounded guard waits for release
+and checks fresh focus/modifiers together immediately before posting. It adds no
+fixed delay. An old extension without modifier state fails closed to recovery;
+the app and copied extension must be updated together.
+
+**PASS, local fix only:** the original 80 ms native stop chord now automatically
+pastes into GNOME Text Editor. Native Save wrote 119 transcript bytes plus the
+editor's normal final newline, matching History. The post trace reports the same
+focus token and zero held modifiers. Three identity/modifier tests and eleven
+paste-guard tests pass; one historical named-lab test is skipped. Invalid
+relogin/display, silence and own-window-focus attempts were discarded.
+
+This local frontend check used the cached pinned ASR library without the newer
+shared-context patch; no dictionary terms were used. Full patched-native CI and
+approved-package acceptance of #118 remain gates. The VM is stopped. No benchmark,
+new model download, host installed-app change, source freeze, tag or publication.
+
+## Remaining Mac checks by platform-owner handoff
+
+Hardware/live-profile acceptance requires a person to:
+
+- Start/stop with physical left and right Option, draw/pin with Shift, and verify
+  normal typing/chords remain intact.
+- Dictate through built-in and iPhone microphones, switch/disconnect a device,
+  and confirm visible recovery.
+- Check automatic drawing delivery and two repeated Cmd+V pastes in the actual
+  live T3 composer, retaining image and text each time. An isolated full-composer
+  check is still possible and is not replaced by this live-profile check.
+
+Final frozen-source ZIP build/notarization/launch, throttled network retry and
+v0.1.1 TCC/login-item upgrade remain software checks owned by the Mac build path;
+they do not require physical input and are not delegated to the user.
+
 ## Remaining release gates
 
 1. Merge reviewed docs/privacy/version fixes; finish independent dictionary
@@ -250,7 +304,7 @@ publication was changed. The Mac audit below is preserved from main.
    native CI, and repeat changed-path checks on those exact assets. Mac signing,
    notarization and screen permission acceptance require their own receipt.
 3. Complete final README from zero with physical login/keyboard permissions,
-   review/CI and approved-package acceptance of the GNOME compatibility fix.
+   review/CI and approved-package acceptance of the GNOME stop-modifier fix (#118).
    The packaged ENOSPC fix now passes; GNOME local-build acceptance is above.
    Targeted X11, populated upgrade, autostart/uninstall and short low-RAM inference
    now pass within the scopes above.
