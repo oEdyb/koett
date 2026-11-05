@@ -1,7 +1,7 @@
 use super::*;
 use crate::windows::formatting_job::Job;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::os::windows::process::CommandExt;
+use std::os::windows::{io::AsRawHandle, process::CommandExt};
 use std::process::{Child, ChildStdout, Command, Stdio};
 
 const OPEN_TIMEOUT: Duration = Duration::from_secs(5);
@@ -11,11 +11,60 @@ pub(crate) struct Process {
     child: Child,
     _job: Job,
 }
+impl Process {
+    fn stop(&mut self) {
+        let _ = self.child.kill();
+        if unsafe {
+            windows::Win32::System::Threading::WaitForSingleObject(
+                windows::Win32::Foundation::HANDLE(self.child.as_raw_handle()),
+                250,
+            )
+        } == windows::Win32::Foundation::WAIT_OBJECT_0
+        {
+            let _ = self.child.wait();
+        }
+    }
+}
 impl Drop for Process {
     fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.stop();
     }
+}
+static READERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+struct ReaderLease;
+impl ReaderLease {
+    fn take() -> Result<Self, String> {
+        READERS
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+                (n < 4).then_some(n + 1)
+            })
+            .map_err(|_| {
+                "Windows microphone workers are still closing. Retry after the device recovers."
+                    .to_string()
+            })?;
+        Ok(Self)
+    }
+}
+impl Drop for ReaderLease {
+    fn drop(&mut self) {
+        READERS.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+pub(super) fn join<T>(worker: thread::JoinHandle<T>) -> Result<T, String> {
+    let result = unsafe {
+        windows::Win32::System::Threading::WaitForSingleObject(
+            windows::Win32::Foundation::HANDLE(worker.as_raw_handle()),
+            250,
+        )
+    };
+    if result != windows::Win32::Foundation::WAIT_OBJECT_0 {
+        return Err(
+            "Microphone worker did not close in time; retry after the device recovers".into(),
+        );
+    }
+    worker
+        .join()
+        .map_err(|_| "The microphone worker stopped unexpectedly".into())
 }
 
 pub fn helper_requested() -> bool {
@@ -80,21 +129,22 @@ fn ready_with_timeout<T: serde::de::DeserializeOwned + Send + 'static>(
         .stdout
         .take()
         .ok_or("Missing microphone output pipe")?;
+    let lease = ReaderLease::take()?;
     let (tx, rx) = mpsc::sync_channel(1);
     let reader = thread::spawn(move || {
+        let _lease = lease;
         let mut reader = BufReader::new(output);
         let result = json_line::<Result<T, String>>(&mut reader).and_then(|v| v);
         let _ = tx.send(result.map(|value| (value, reader)));
     });
     match rx.recv_timeout(timeout) {
         Ok(result) => {
-            let _ = reader.join();
+            let _ = join(reader);
             result
         }
         Err(_) => {
-            let _ = process.child.kill();
-            let _ = process.child.wait();
-            let _ = reader.join();
+            process.stop();
+            let _ = join(reader);
             Err("Microphone opening timed out after 5 seconds. Choose an input and retry.".into())
         }
     }
@@ -125,7 +175,9 @@ pub(super) fn start(
     let worker_stop = stop.clone();
     let worker_error = stream_error.clone();
     let (send, receive) = mpsc::channel();
+    let lease = ReaderLease::take()?;
     let collector = thread::spawn(move || {
+        let _lease = lease;
         let mut samples = Vec::new();
         loop {
             let chunk = read_chunk(&mut output);
@@ -239,14 +291,12 @@ pub fn helper() -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     output.flush().map_err(|e| e.to_string())?;
     for chunk in std::iter::once(first).chain(receive) {
-        output
-            .write_all(&(chunk.len() as u32).to_le_bytes())
-            .map_err(|e| e.to_string())?;
+        let mut packet = Vec::with_capacity(4 + chunk.len() * 4);
+        packet.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
         for sample in chunk {
-            output
-                .write_all(&sample.to_le_bytes())
-                .map_err(|e| e.to_string())?;
+            packet.extend_from_slice(&sample.to_le_bytes());
         }
+        output.write_all(&packet).map_err(|e| e.to_string())?;
         output.flush().map_err(|e| e.to_string())?;
     }
     drop(recorder);
@@ -256,6 +306,20 @@ pub fn helper() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stalled_reader_cleanup_has_a_deadline() {
+        let (release, wait) = mpsc::channel();
+        let (finished, done) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let _ = wait.recv();
+            let _ = finished.send(());
+        });
+        let start = std::time::Instant::now();
+        assert!(join(worker).is_err());
+        assert!(start.elapsed() < Duration::from_secs(3));
+        release.send(()).unwrap();
+        done.recv_timeout(Duration::from_secs(1)).unwrap();
+    }
     #[test]
     fn hung_open_is_terminated_and_a_later_open_can_respond() {
         for script in ["Start-Sleep -Seconds 30", "Write-Output '{\"Ok\":16000}'"] {

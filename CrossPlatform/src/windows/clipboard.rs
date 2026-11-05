@@ -10,7 +10,7 @@ thread_local! { static DELAYED: RefCell<Option<Delayed>> = const { RefCell::new(
 struct Delayed {
     offer: Offer,
     formats: Vec<(u32, Vec<u8>)>,
-    reader: Option<(u32, Instant)>,
+    reader: Vec<(u32, Instant)>,
 }
 use windows::Win32::{
     Foundation::{GlobalFree, HANDLE, HGLOBAL, HWND},
@@ -72,7 +72,7 @@ impl Bundle {
                     (png_format, self.png.clone()),
                     (CF_DIBV5.0.into(), self.dib.clone()),
                 ],
-                reader: None,
+                reader: Vec::new(),
             })
         });
         Ok(offer)
@@ -143,24 +143,27 @@ pub(super) fn render(format: u32) {
             .is_ok()
         {
             state.offer.sequence = unsafe { GetClipboardSequenceNumber() };
-            if let Some(pid) = reader {
-                state.reader = Some((pid, Instant::now()));
+            let pid = reader.unwrap_or(0);
+            if state.reader.len() < 8 && !state.reader.iter().any(|(seen, _)| *seen == pid) {
+                state.reader.push((pid, Instant::now()));
             }
         }
     });
 }
-pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>) {
+pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>, bool) {
     DELAYED.with(|slot| {
         slot.borrow()
             .as_ref()
             .filter(|state| state.offer.marker == offer.marker)
-            .map_or((offer, None), |state| {
+            .map_or((offer, None, false), |state| {
                 (
                     state.offer,
                     state
                         .reader
-                        .filter(|(pid, _)| *pid == target_pid)
-                        .map(|(_, at)| at),
+                        .iter()
+                        .find(|(pid, _)| *pid == target_pid)
+                        .map(|(_, at)| *at),
+                    !state.reader.is_empty(),
                 )
             })
     })
@@ -181,6 +184,17 @@ pub(super) struct Offer {
 }
 
 impl Offer {
+    pub fn verify(self) -> Result<(), String> {
+        unsafe { OpenClipboard(Some(self.owner)) }.map_err(|e| e.to_string())?;
+        let open = Open;
+        let current = self.current();
+        drop(open);
+        if current && unsafe { GetClipboardSequenceNumber() } == self.sequence {
+            Ok(())
+        } else {
+            Err("Clipboard changed; the newer copy was preserved".into())
+        }
+    }
     pub fn replace_with_text(self, text: &str) -> Result<Offer, String> {
         publish(
             self.owner,
@@ -197,13 +211,34 @@ impl Offer {
     }
 }
 
+pub(super) fn render_all(owner: HWND) {
+    if unsafe { OpenClipboard(Some(owner)) }.is_err() {
+        return;
+    }
+    let open = Open;
+    if unsafe { GetClipboardOwner() }.ok() == Some(owner) {
+        let formats = DELAYED.with(|slot| {
+            slot.borrow()
+                .as_ref()
+                .map(|state| state.formats.iter().map(|(id, _)| *id).collect::<Vec<_>>())
+                .unwrap_or_default()
+        });
+        for format in formats {
+            render(format);
+        }
+    }
+    drop(open);
+}
+
 pub(super) fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
+    text_offer(owner, text).map(|_| ())
+}
+pub(super) fn text_offer(owner: HWND, text: &str) -> Result<Offer, String> {
     publish(
         owner,
         &[(CF_UNICODETEXT.0.into(), &utf16(text)?)],
         Condition::Any,
     )
-    .map(|_| ())
 }
 
 fn validate_text(text: &str) -> Result<(), String> {

@@ -15,6 +15,7 @@ struct Gate {
     spoiled: bool,
     since: Option<Instant>,
     activity: Option<Instant>,
+    idle: bool,
 }
 impl Gate {
     fn sample(&mut self, held: bool, others: bool, now: Instant) -> bool {
@@ -25,12 +26,11 @@ impl Gate {
             };
             return false;
         }
-        if others
-            || !self.seen_up
-            || self
-                .activity
-                .is_some_and(|at| now.saturating_duration_since(at) >= IDLE)
-        {
+        let idle = self
+            .activity
+            .is_some_and(|at| now.saturating_duration_since(at) >= IDLE);
+        self.idle |= idle;
+        if others || !self.seen_up || idle {
             self.spoiled = true;
         }
         if self.spoiled {
@@ -58,6 +58,7 @@ pub(super) struct State {
     pub protect_clicks: bool,
     pub ink: bool,
     pub discard: bool,
+    pub locked: bool,
 }
 
 impl Monitor {
@@ -133,19 +134,29 @@ impl Monitor {
 
     pub fn state(&mut self, now: Instant) -> State {
         if !self.known {
-            return State::default();
+            return State {
+                discard: true,
+                ..Default::default()
+            };
         }
         let held = self.held.iter().any(|v| *v);
         let active = self.gate.sample(held, others(self.key), now);
         State {
             protect_clicks: !self.gate.spoiled && self.gate.since.is_some(),
             ink: active,
-            discard: self.gate.spoiled,
+            discard: self.gate.idle,
+            locked: false,
         }
     }
 
     pub fn moved(&mut self, now: Instant) {
         self.gate.activity = Some(now);
+    }
+
+    pub fn suspend(&mut self) {
+        self.gate = Gate::default();
+        self.gate
+            .sample(self.held.iter().any(|held| *held), false, Instant::now());
     }
 
     pub fn device_changed(&mut self) {

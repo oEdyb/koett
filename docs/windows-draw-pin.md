@@ -92,7 +92,7 @@ paste, draw-lock/shortcut controls and timeline integration are still underway.
 
 Windows physical microphone lookup/opening now runs in a supervised child of
 the same executable, with a five-second ready deadline covering the first audio
-packet. Timeout kills and reaps that worker before returning an error. The app
+packet. Timeout requests termination and bounds process/reader cleanup before returning an error. The app
 rejects duplicate starts while opening, and a later toggle may retry. Audio IPC
 is memory-only with bounded packets, finite samples and a ten-minute capture
 limit. Pause discards packets before metering, timing or ASR. This replaces no
@@ -101,3 +101,47 @@ conditional; a small resolver extraction leaves the Linux algorithm intact.
 `--microphone-open-timeout-lab` injects a stalled child for the private guest
 journey; it is never active in normal launches. Windows tests cover process
 timeout/termination followed by a responsive worker and corrupt IPC rejection.
+
+## Local work after the last push
+
+No further push is permitted until M4 is ready for merge. The working changes
+add bounded native pin reading and visible missing-field status; no title-to-URL
+or seek-percentage-to-seconds inference is allowed. Private mode is never assumed
+false. Password selection is omitted. Capture results remain owned by their
+session; undo/cancel/display changes drop unfinished work. Multi-display holds
+use one bounded serial capture worker. The pill has a nonactivating Stop action,
+numbered timeline bands, repeat Paste and four-format Copy. Repeat delivery does
+not append history again. Each chord rechecks the clipboard offer after the
+modifier wait. Image chords use `image_paste_shortcuts["windows:<exe-name>"]`,
+then `windows:*`, then Ctrl+V; text uses the existing `paste_shortcut` preference.
+Native per-app shortcut editing still needs completion and a guest check.
+
+Drawing settings expose key choice, lock shortcut and selection opt-in. Lock
+waits for shortcut modifiers to be released; left drags draw, right-click/Ctrl+Z
+undo, Escape unlocks before it can cancel. Koett's pill remains a pointer target
+inside the shield. These integration paths are only compile-checked so far.
+The expanded Settings layout must be inspected at every required scale before
+calling it finished.
+
+Windows microphone timeout cleanup is bounded too: neither process termination
+nor reader cleanup can introduce a new unbounded join on the command thread.
+Stalled readers retain one of four permits until they exit, preventing runaway
+retries. The forwarding child does not retain a second full audio recording.
+The actual driver and hotkey journey still requires the rebuilt guest binary.
+
+Focused local checks passed: 15 existing Mac/Linux gesture fixtures; nine Windows
+meter/paste-timing/pin-policy tests made runnable in non-Windows test builds;
+seven shared pin-context fixtures; strict Windows library/test/desktop metadata
+Clippy. No full suite or release rebuild was repeated after the workflow change.
+The test-only lib.rs module has no effect on any production platform.
+
+Real guest foundation evidence is in
+`CrossPlatform/evidence/windows-milestone4/ci-03a7d0a/README.md`. The next boot was
+refused by the existing host-idle guard; the guest and transfer server are off.
+Neither host nor guest has the Microsoft link libraries. Local Windows linking
+therefore awaits the requested licence decision for xwin 0.10.0's Microsoft
+CRT/SDK download, entirely under `~/.cache/koett-windows/`. The exact prompt is
+[Microsoft's build-tools terms](https://visualstudio.microsoft.com/license-terms/mlt031519/).
+No licence has been accepted, no SDK installed and no money spent. The already-
+produced `3d7e604` artifact is cached; it does not contain the newer local fixes.
+M4 remains draft/incomplete. No release source or packaging has changed.

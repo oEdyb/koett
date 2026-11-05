@@ -31,6 +31,7 @@ enum Mouse {
     Move(usize, (f64, f64)),
     Down(usize, (f64, f64)),
     Up,
+    Undo,
 }
 struct Overlay {
     hwnd: HWND,
@@ -53,14 +54,32 @@ unsafe extern "system" fn procedure(hwnd: HWND, message: u32, wp: WPARAM, lp: LP
     }
     match message {
         WM_MOUSEACTIVATE => return LRESULT(MA_NOACTIVATE as isize),
+        WM_NCHITTEST => {
+            if let Ok(pill) = unsafe { FindWindowW(w!("KoettOverlayWindow"), None) } {
+                let mut point = POINT::default();
+                let _ = unsafe { GetCursorPos(&mut point) };
+                let mut rect = RECT::default();
+                if unsafe { IsWindowVisible(pill) }.as_bool()
+                    && unsafe { GetWindowRect(pill, &mut rect) }.is_ok()
+                    && point.x >= rect.left
+                    && point.x < rect.right
+                    && point.y >= rect.top
+                    && point.y < rect.bottom
+                {
+                    return LRESULT(HTTRANSPARENT as isize);
+                }
+            }
+        }
         WM_SETCURSOR => {
-            let cursor = unsafe { LoadCursorW(None, IDC_CROSS) }.unwrap_or_default();
-            unsafe {
-                SetCursor(Some(cursor));
+            if !unsafe { GetPropW(hwnd, w!("KoettInkArmed")) }.is_invalid() {
+                let cursor = unsafe { LoadCursorW(None, IDC_CROSS) }.unwrap_or_default();
+                unsafe {
+                    SetCursor(Some(cursor));
+                }
             }
             return LRESULT(1);
         }
-        WM_MOUSEMOVE | WM_LBUTTONDOWN | WM_LBUTTONUP => {
+        WM_MOUSEMOVE | WM_LBUTTONDOWN | WM_LBUTTONUP | WM_RBUTTONUP => {
             let ptr = unsafe { GetWindowLongPtrW(hwnd, GWLP_USERDATA) }
                 as *const RefCell<VecDeque<Mouse>>;
             if !ptr.is_null()
@@ -71,12 +90,14 @@ unsafe extern "system" fn procedure(hwnd: HWND, message: u32, wp: WPARAM, lp: LP
                 events.push_back(match message {
                     WM_MOUSEMOVE => Mouse::Move(hwnd.0 as usize, point),
                     WM_LBUTTONDOWN => Mouse::Down(hwnd.0 as usize, point),
+                    WM_RBUTTONUP => Mouse::Undo,
                     _ => Mouse::Up,
                 });
             }
             return LRESULT(0);
         }
         WM_NCDESTROY => unsafe {
+            let _ = RemovePropW(hwnd, w!("KoettInkArmed"));
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
         },
         _ => {}
@@ -187,11 +208,28 @@ pub(super) struct Frame {
     pub start_ms: u64,
     pub end_ms: u64,
     pub pin: bool,
+    pub context: Option<crate::pin_context::PinContext>,
+    pub context_status: String,
+    pub wall_start: u64,
+    pub wall_end: u64,
 }
 struct Pending {
     at: Instant,
-    request: Request,
-    result: std::sync::mpsc::Receiver<Result<Pixels, String>>,
+    remaining: usize,
+    started_count: usize,
+    cancelled: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    result: std::sync::mpsc::Receiver<(Request, Result<Captured, String>)>,
+}
+impl Drop for Pending {
+    fn drop(&mut self) {
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+}
+struct Captured {
+    image: Pixels,
+    context: Option<crate::pin_context::PinContext>,
+    status: String,
 }
 #[derive(Clone)]
 struct Request {
@@ -202,23 +240,30 @@ struct Request {
     index: usize,
     start_ms: u64,
     end_ms: u64,
+    context: Option<super::pin_reader::Snapshot>,
+    wall_start: u64,
+    wall_end: u64,
 }
 pub(super) struct Board {
     overlays: Vec<Overlay>,
     gesture: PinGesture,
     held: bool,
     armed: bool,
+    lock_mouse: bool,
     strokes: Vec<(usize, Stroke)>,
     started_ms: Option<u64>,
+    recording_start: Instant,
+    started_wall: Option<u64>,
     frames: Vec<Frame>,
     pending: Option<Pending>,
-    faded: Option<(Instant, Request)>,
+    faded: Vec<(Instant, Request)>,
     active: bool,
+    selected: bool,
     last_display_check: Instant,
     pub notice: Option<String>,
 }
 impl Board {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(selected: bool, recording_start: Instant) -> Result<Self, String> {
         let overlays = displays()?
             .into_iter()
             .map(Overlay::new)
@@ -228,27 +273,69 @@ impl Board {
             gesture: PinGesture::default(),
             held: false,
             armed: false,
+            lock_mouse: false,
             strokes: Vec::new(),
             started_ms: None,
+            recording_start,
+            started_wall: None,
             frames: Vec::new(),
             pending: None,
-            faded: None,
+            faded: Vec::new(),
             active: true,
+            selected,
             last_display_check: Instant::now(),
             notice: None,
         })
     }
+    pub fn events(&self) -> Vec<crate::sketch::SketchEvent> {
+        let mut events = self
+            .frames
+            .iter()
+            .enumerate()
+            .map(|(i, frame)| crate::sketch::SketchEvent {
+                index: i as u32 + 1,
+                start_ms: frame.wall_start,
+                end_ms: frame.wall_end,
+                live: false,
+            })
+            .collect::<Vec<_>>();
+        if self.held && !self.strokes.is_empty() {
+            events.push(crate::sketch::SketchEvent {
+                index: self.frames.len() as u32 + 1,
+                start_ms: self.started_wall.unwrap_or(0),
+                end_ms: self.recording_start.elapsed().as_millis() as u64,
+                live: true,
+            });
+        }
+        events
+    }
+    pub fn end_hold(&mut self, audio_ms: u64) {
+        self.release(Instant::now(), audio_ms, false);
+    }
+    pub fn undo_stroke(&mut self) {
+        self.gesture.lift();
+        self.lock_mouse = false;
+        if self.strokes.pop().is_none() {
+            self.undo();
+        }
+    }
     pub fn busy(&self) -> bool {
         self.pending.is_some()
+    }
+    pub fn can_undo(&self) -> bool {
+        self.pending.is_some() || !self.strokes.is_empty() || !self.frames.is_empty()
     }
     pub fn take_frames(&mut self) -> Vec<Frame> {
         std::mem::take(&mut self.frames)
     }
     pub fn undo(&mut self) {
-        self.pending = None;
+        if let Some(pending) = self.pending.take() {
+            self.frames.truncate(pending.started_count);
+        } else if self.strokes.is_empty() {
+            self.frames.pop();
+        }
         self.strokes.clear();
-        self.frames.pop();
-        self.faded = None;
+        self.faded.clear();
         self.gesture = PinGesture::default();
         self.held = false;
     }
@@ -272,7 +359,11 @@ impl Board {
             self.last_display_check = now;
             match displays() {
                 Ok(displays)
-                    if displays != self.overlays.iter().map(|o| o.display).collect::<Vec<_>>() =>
+                    if self.overlays.iter().any(|o| {
+                        (unsafe { GetDpiForWindow(o.hwnd) }.max(96) as f32 / 96.0 - o.scale).abs()
+                            > 0.01
+                    }) || displays
+                        != self.overlays.iter().map(|o| o.display).collect::<Vec<_>>() =>
                 {
                     self.release(now, audio_ms, true);
                     self.pending = None;
@@ -297,6 +388,13 @@ impl Board {
                 _ => {}
             }
         }
+        if state.locked
+            && self.lock_mouse
+            && unsafe { windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState(1) } >= 0
+        {
+            self.lock_mouse = false;
+            self.gesture.lift();
+        }
         let protect = self.active && state.protect_clicks;
         if protect && !self.held {
             self.held = true;
@@ -315,13 +413,29 @@ impl Board {
                 continue;
             }
             match event {
-                Mouse::Move(id, point) if self.armed => self.motion(id, point, now, audio_ms),
+                Mouse::Move(id, point) if self.armed && (!state.locked || self.lock_mouse) => {
+                    self.motion(id, point, now, audio_ms)
+                }
+                Mouse::Down(id, point) if state.locked => {
+                    self.lock_mouse = true;
+                    self.gesture.lift();
+                    self.motion(id, point, now, audio_ms);
+                }
+                Mouse::Up if state.locked => {
+                    self.lock_mouse = false;
+                    self.gesture.lift();
+                }
+                Mouse::Undo if state.locked => self.undo_stroke(),
                 Mouse::Down(id, point) => {
                     if let Some((surface, point)) = self.logical(id, point)
                         && self.gesture.button_down(surface, point, now) == Down::Press
                     {
                         self.strokes.clear();
                         self.started_ms = Some(audio_ms);
+                        self.started_wall = Some(
+                            now.saturating_duration_since(self.recording_start)
+                                .as_millis() as u64,
+                        );
                     }
                 }
                 Mouse::Up => {
@@ -332,36 +446,59 @@ impl Board {
                 _ => {}
             }
         }
-        if let Some(result) = self.pending.as_ref().and_then(|pending| {
-            pending.result.try_recv().ok().or_else(|| {
-                (now.saturating_duration_since(pending.at) > Duration::from_secs(3))
-                    .then(|| Err("Screen capture timed out".into()))
-            })
-        }) {
-            let pending = self.pending.take().expect("pending capture exists");
-            match result.and_then(|image| render_capture(&pending.request, image)) {
-                Ok(image)
+        loop {
+            let next = self.pending.as_mut().and_then(|pending| {
+                pending.result.try_recv().ok().inspect(|_| {
+                    pending.remaining = pending.remaining.saturating_sub(1);
+                })
+            });
+            let Some((mut request, result)) = next else {
+                break;
+            };
+            request.index = self.frames.len() + 1;
+            match result.and_then(|captured| {
+                render_capture(&request, captured.image)
+                    .map(|image| (image, captured.context, captured.status))
+            }) {
+                Ok((image, context, context_status))
                     if self
                         .frames
                         .iter()
-                        .map(|f| f.image.bytes().len())
+                        .map(|frame| frame.image.bytes().len())
                         .sum::<usize>()
                         + image.bytes().len()
                         <= MAX_FRAME_BYTES =>
                 {
                     self.frames.push(Frame {
                         image,
-                        start_ms: pending.request.start_ms,
-                        end_ms: pending.request.end_ms,
-                        pin: pending.request.pin.is_some(),
+                        start_ms: request.start_ms,
+                        end_ms: request.end_ms,
+                        pin: request.pin.is_some(),
+                        context,
+                        context_status,
+                        wall_start: request.wall_start,
+                        wall_end: request.wall_end,
                     })
                 }
                 Ok(_) => {
                     self.notice =
                         Some("Drawing memory limit reached; undo a frame to continue".into())
                 }
-                Err(e) => self.notice = Some(e),
+                Err(error) => self.notice = Some(error),
             }
+        }
+        if self
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.remaining == 0)
+        {
+            self.pending = None;
+        }
+        if self.pending.as_ref().is_some_and(|pending| {
+            now.saturating_duration_since(pending.at) > Duration::from_secs(3)
+        }) {
+            self.pending = None;
+            self.notice = Some("Screen capture timed out; unfinished frames discarded".into());
         }
         if let Err(e) = self.paint(protect, now) {
             self.notice = Some(e);
@@ -395,6 +532,10 @@ impl Board {
         };
         let motion = self.gesture.motion(surface, point, now);
         self.started_ms.get_or_insert(audio_ms);
+        self.started_wall.get_or_insert(
+            now.saturating_duration_since(self.recording_start)
+                .as_millis() as u64,
+        );
         if let Motion::Ink { from, to } = motion {
             if self.strokes.iter().map(|(_, p)| p.len()).sum::<usize>() >= MAX_POINTS {
                 self.release(now, audio_ms, true);
@@ -413,6 +554,7 @@ impl Board {
         self.request(mark.surface, Some(mark.point), audio_ms);
         self.strokes.clear();
         self.started_ms = None;
+        self.started_wall = None;
     }
     fn release(&mut self, now: Instant, audio_ms: u64, discard: bool) {
         if discard {
@@ -426,71 +568,143 @@ impl Board {
                 .iter()
                 .map(|(s, _)| *s)
                 .collect::<std::collections::BTreeSet<_>>();
-            for surface in surfaces {
-                self.request(surface, None, audio_ms);
-            }
+            let requests = surfaces
+                .into_iter()
+                .filter_map(|surface| self.make_request(surface, None, audio_ms))
+                .collect();
+            self.capture(requests);
         }
         self.strokes.clear();
         self.started_ms = None;
+        self.started_wall = None;
         self.held = false;
         self.armed = false;
+        self.lock_mouse = false;
     }
     fn request(&mut self, surface: usize, pin: Option<(f64, f64)>, audio_ms: u64) {
-        if self.pending.is_some() {
-            self.notice = Some("Screen capture busy; this mark was not captured".into());
-            return;
+        if let Some(request) = self.make_request(surface, pin, audio_ms) {
+            self.capture(vec![request]);
         }
-        if self.frames.len() >= MAX_FRAMES {
-            self.notice = Some("Drawing limit reached; undo a frame to continue".into());
-            return;
-        }
-        let Some(overlay) = self.overlays.get(surface) else {
-            return;
-        };
+    }
+    fn make_request(
+        &self,
+        surface: usize,
+        pin: Option<(f64, f64)>,
+        audio_ms: u64,
+    ) -> Option<Request> {
+        let overlay = self.overlays.get(surface)?;
         let strokes = self
             .strokes
             .iter()
             .filter(|(s, _)| *s == surface)
-            .map(|(_, p)| p.clone())
+            .map(|(_, points)| points.clone())
             .collect::<Vec<_>>();
         if pin.is_none()
             && strokes
                 .iter()
-                .flat_map(|p| p.windows(2))
-                .map(|p| (p[1].0 - p[0].0).hypot(p[1].1 - p[0].1))
+                .flat_map(|points| points.windows(2))
+                .map(|pair| (pair[1].0 - pair[0].0).hypot(pair[1].1 - pair[0].1))
                 .sum::<f64>()
                 < 12.0
         {
-            return;
+            return None;
         }
-        let request = Request {
+        Some(Request {
             display: overlay.display,
             scale: overlay.scale,
             strokes,
             pin,
-            index: self.frames.len() + 1,
+            index: 0,
             start_ms: self.started_ms.unwrap_or(audio_ms),
             end_ms: audio_ms,
-        };
-        if let Err(e) = capture::exclude_own_windows() {
-            self.notice = Some(e);
+            wall_start: self
+                .started_wall
+                .unwrap_or(self.recording_start.elapsed().as_millis() as u64),
+            wall_end: self.recording_start.elapsed().as_millis() as u64,
+            context: pin.and_then(|point| {
+                super::pin_reader::Snapshot::at(POINT {
+                    x: overlay.display.rect.left + (point.0 * f64::from(overlay.scale)) as i32,
+                    y: overlay.display.rect.top + (point.1 * f64::from(overlay.scale)) as i32,
+                })
+            }),
+        })
+    }
+    fn capture(&mut self, mut requests: Vec<Request>) {
+        if requests.is_empty() {
             return;
         }
-        let (send, result) = std::sync::mpsc::sync_channel(1);
-        let monitor = request.display.id;
-        std::thread::spawn(move || {
-            let _ = send.send(capture::monitor(monitor));
-        });
-        self.faded = Some((Instant::now(), request.clone()));
+        if self.pending.is_some() {
+            self.notice = Some("Screen capture busy; this mark was not captured".into());
+            return;
+        }
+        if requests.len() > 8 || self.frames.len() + requests.len() > MAX_FRAMES {
+            self.notice = Some("Drawing limit reached; undo a frame to continue".into());
+            return;
+        }
+        if let Err(error) = capture::exclude_own_windows() {
+            self.notice = Some(error);
+            return;
+        }
+        for (index, request) in requests.iter_mut().enumerate() {
+            request.index = self.frames.len() + index + 1;
+        }
+        self.faded = requests
+            .iter()
+            .cloned()
+            .map(|request| (Instant::now(), request))
+            .collect();
+        let (send, result) = std::sync::mpsc::sync_channel(8);
+        let cancelled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let worker_cancelled = cancelled.clone();
+        let selected = self.selected;
         self.pending = Some(Pending {
             at: Instant::now(),
-            request,
+            remaining: requests.len(),
+            started_count: self.frames.len(),
+            cancelled,
             result,
+        });
+        std::thread::spawn(move || {
+            for request in requests {
+                if worker_cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                    break;
+                }
+                let captured = capture::monitor(request.display.id).map(|image| {
+                    let read = if worker_cancelled.load(std::sync::atomic::Ordering::Acquire) {
+                        None
+                    } else {
+                        request
+                            .context
+                            .as_ref()
+                            .map(|snapshot| snapshot.read(selected))
+                    };
+                    Captured {
+                        image,
+                        context: read.as_ref().and_then(|read| read.context.clone()),
+                        status: read
+                            .map_or_else(|| "Context unavailable".into(), |read| read.status),
+                    }
+                });
+                if send.send((request, captured)).is_err() {
+                    break;
+                }
+            }
         });
     }
     fn paint(&self, protect: bool, now: Instant) -> Result<(), String> {
         for (index, overlay) in self.overlays.iter().enumerate() {
-            let faded = self.faded.as_ref().filter(|(at, r)| {
+            if self.armed {
+                let _ = unsafe {
+                    SetPropW(
+                        overlay.hwnd,
+                        w!("KoettInkArmed"),
+                        Some(HANDLE(overlay.hwnd.0)),
+                    )
+                };
+            } else {
+                let _ = unsafe { RemovePropW(overlay.hwnd, w!("KoettInkArmed")) };
+            }
+            let faded = self.faded.iter().find(|(at, r)| {
                 r.display == overlay.display
                     && now.saturating_duration_since(*at) < Duration::from_millis(1900)
             });

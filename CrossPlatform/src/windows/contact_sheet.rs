@@ -63,10 +63,14 @@ pub(super) fn compose(frames: &[Frame]) -> Result<Pixels, String> {
         surface.begin(false);
         for (index, (frame, rect)) in frames.iter().zip(rects).enumerate() {
             surface.background(&frame.image, rect)?;
-            surface.pin(
-                (f64::from(rect.left) + 12.0, f64::from(rect.top) + 40.0),
+            let scale = ((rect.right - rect.left) / 42.0)
+                .min((rect.bottom - rect.top) / 34.0)
+                .min(1.0);
+            surface.chip(
+                rect.left + 5.0 * scale,
+                rect.top + 5.0 * scale,
                 index + 1,
-                1.0,
+                scale,
                 1.0,
             )?;
         }

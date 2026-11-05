@@ -389,10 +389,14 @@ impl MicrophoneRecorder {
         self.stop_collector.store(true, Ordering::Release);
         #[cfg(target_os = "windows")]
         self.process.take();
-        let samples = self
+        let collector = self
             .collector
             .take()
-            .expect("a live recorder always has a collector")
+            .expect("a live recorder always has a collector");
+        #[cfg(target_os = "windows")]
+        let samples = windows_capture::join(collector)?;
+        #[cfg(not(target_os = "windows"))]
+        let samples = collector
             .join()
             .map_err(|_| "the microphone collector stopped unexpectedly".to_string())?;
 
@@ -425,6 +429,9 @@ impl Drop for MicrophoneRecorder {
         #[cfg(target_os = "windows")]
         self.process.take();
         if let Some(collector) = self.collector.take() {
+            #[cfg(target_os = "windows")]
+            let _ = windows_capture::join(collector);
+            #[cfg(not(target_os = "windows"))]
             let _ = collector.join();
         }
     }
@@ -445,9 +452,16 @@ fn collect_samples(
     mut audio_chunks: Option<Sender<Vec<f32>>>,
 ) -> Vec<f32> {
     let mut samples = Vec::new();
+    #[cfg(target_os = "windows")]
+    let forward_only = windows_capture::helper_requested();
     let mut chunk = [0.0_f32; 2_048];
     loop {
         let count = consumer.pop_slice(&mut chunk);
+        #[cfg(target_os = "windows")]
+        if !forward_only {
+            samples.extend_from_slice(&chunk[..count]);
+        }
+        #[cfg(not(target_os = "windows"))]
         samples.extend_from_slice(&chunk[..count]);
         if count > 0
             && let Some(sender) = &audio_chunks

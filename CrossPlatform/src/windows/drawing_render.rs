@@ -32,6 +32,7 @@ impl Drop for Dib {
 pub(super) struct Surface {
     target: ID2D1DCRenderTarget,
     text: IDWriteTextFormat,
+    write: IDWriteFactory,
     dib: Dib,
     width: u32,
     height: u32,
@@ -120,6 +121,7 @@ impl Surface {
             Ok(Self {
                 target,
                 text,
+                write: factory,
                 dib,
                 width,
                 height,
@@ -212,13 +214,33 @@ impl Surface {
                 3.0 * scale,
                 None,
             );
+            self.chip(
+                (center.X + 10.0 * scale).clamp(0.0, (self.width as f32 - 32.0 * scale).max(0.0)),
+                (center.Y - 32.0 * scale).clamp(0.0, (self.height as f32 - 24.0 * scale).max(0.0)),
+                index,
+                scale,
+                alpha,
+            )?;
+        }
+        Ok(())
+    }
+    pub fn chip(
+        &self,
+        x: f32,
+        y: f32,
+        index: usize,
+        scale: f32,
+        alpha: f32,
+    ) -> windows::core::Result<()> {
+        unsafe {
+            let brush = self.target.CreateSolidColorBrush(&color(alpha), None)?;
             self.target.FillRoundedRectangle(
                 &D2D1_ROUNDED_RECT {
                     rect: D2D_RECT_F {
-                        left: center.X + 10.0 * scale,
-                        top: center.Y - 32.0 * scale,
-                        right: center.X + 42.0 * scale,
-                        bottom: center.Y - 8.0 * scale,
+                        left: x,
+                        top: y,
+                        right: x + 32.0 * scale,
+                        bottom: y + 24.0 * scale,
                     },
                     radiusX: 5.0 * scale,
                     radiusY: 5.0 * scale,
@@ -235,18 +257,21 @@ impl Surface {
                 None,
             )?;
             let label = index.to_string().encode_utf16().collect::<Vec<_>>();
-            self.target.DrawText(
-                &label,
-                &self.text,
-                &D2D_RECT_F {
-                    left: center.X + 10.0 * scale,
-                    top: center.Y - 32.0 * scale,
-                    right: center.X + 42.0 * scale,
-                    bottom: center.Y - 8.0 * scale,
+            let layout =
+                self.write
+                    .CreateTextLayout(&label, &self.text, 32.0 * scale, 24.0 * scale)?;
+            layout.SetFontSize(
+                16.0 * scale,
+                DWRITE_TEXT_RANGE {
+                    startPosition: 0,
+                    length: label.len() as u32,
                 },
+            )?;
+            self.target.DrawTextLayout(
+                Vector2 { X: x, Y: y },
+                &layout,
                 &white,
                 D2D1_DRAW_TEXT_OPTIONS_NONE,
-                DWRITE_MEASURING_MODE_NATURAL,
             );
         }
         Ok(())
