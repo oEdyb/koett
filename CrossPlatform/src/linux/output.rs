@@ -8,8 +8,10 @@ pub static WINDOW_ACTIVE: AtomicBool = AtomicBool::new(false);
 pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(1500);
 /// Settle time after the image read, before the clipboard changes to text.
 pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
-/// wl-copy cannot report reads, so wait this long after an image paste.
-const WL_COPY_IMAGE_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
+/// Keep the previous bounded fallback when the target never requests PNG.
+const UNKNOWN_IMAGE_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
+/// Let the receiver handle its image before the guarded text chord follows.
+const FAST_IMAGE_SETTLE: std::time::Duration = std::time::Duration::from_millis(120);
 
 // Only Koett's own, active exclusive layers authorize an underlying-window capture.
 static KEYBOARD_LAYERS: std::sync::LazyLock<
@@ -161,11 +163,33 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
 /// text chord (terminal agents read the image themselves on Ctrl+V).
 pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
-    super::clipboard_owner::start(super::clipboard_owner::Payload::image(png))?;
+    let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
+    super::clipboard_owner::start(payload)?;
     trace.prepare_paste(target)?;
     let chord = trace.image_chord(target)?;
-    trace.send_fallback(chord)?;
-    std::thread::sleep(WL_COPY_IMAGE_WAIT);
+    let mut posted = None;
+    trace.send_fallback_tracked(chord, || {
+        read.arm();
+        posted = Some(std::time::Instant::now());
+    })?;
+    let posted = posted.ok_or("Image paste was not posted")?;
+    trace.log("image_wait_begin");
+    let complete = read.wait(posted, UNKNOWN_IMAGE_READ_WAIT, IMAGE_READ_TIMEOUT);
+    if !complete && read.started() {
+        trace.finish(false);
+        trace.reason = "image_transfer_timeout";
+        trace.log("image_wait_end");
+        return Err("Image transfer did not complete; use Paste or Copy".into());
+    }
+    if complete {
+        std::thread::sleep(FAST_IMAGE_SETTLE.saturating_sub(posted.elapsed()));
+    }
+    trace.reason = if complete {
+        "image_transfer_complete"
+    } else {
+        "image_read_fallback"
+    };
+    trace.log("image_wait_end");
     Ok(())
 }
 
@@ -457,12 +481,21 @@ impl DeliveryStep {
         Ok(())
     }
     fn send_fallback(&mut self, shortcut: PasteShortcut) -> Result<(), String> {
+        self.send_fallback_tracked(shortcut, || {})
+    }
+    fn send_fallback_tracked(
+        &mut self,
+        shortcut: PasteShortcut,
+        before_post: impl FnOnce(),
+    ) -> Result<(), String> {
         if std::env::var_os("NIRI_SOCKET").is_some() {
             self.reason = "native_keyboard_setup";
             let result = super::native_keyboard::paste(shortcut, |key, mask| {
                 self.native_key = Some(key);
                 self.native_mask = Some(mask);
-                self.post()
+                self.post()?;
+                before_post();
+                Ok(())
             });
             if self.outcome != "refused" {
                 self.finish(result.is_ok());
@@ -475,6 +508,7 @@ impl DeliveryStep {
             return result;
         }
         self.post()?;
+        before_post();
         match Command::new("wtype")
             .args(wtype_arguments(shortcut))
             .status()

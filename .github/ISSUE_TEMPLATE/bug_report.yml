@@ -1,0 +1,33 @@
+name: Bug report
+description: Report an installation, dictation, drawing or paste problem.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never attach API keys, personal transcripts, clipboard contents or unredacted screenshots.
+        For vulnerabilities, use Security → Report a vulnerability instead of a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: Koett version and download filename
+    validations:
+      required: true
+  - type: textarea
+    id: system
+    attributes:
+      label: Operating system and desktop
+      description: Include CPU architecture. On Linux, include distribution, desktop/compositor and Wayland or X11.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected result and actual result
+      description: For paste problems, name the target app and whether plain dictation or drawing was enabled. Use a made-up phrase.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Safe diagnostics (optional)
+      description: On Linux, paste the relevant missing-library names from --check-runtime. Remove personal paths and other private data first.
