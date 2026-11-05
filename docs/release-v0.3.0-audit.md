@@ -50,7 +50,7 @@ this is an explicit deviation from the stranger's current route.
 | Screen Recording allow, deny, relaunch | **NOT TESTED** | Row/relaunch tests pass. No host capture grant or monthly picker-bypass prompt was triggered for testing. |
 | Cold default model download and inference | **PASS** | Pinned FluidAudio through `parakeet-baseline`, fresh test home/model directory: download/load/warm-up succeeds; generated 3.32 s speech transcribes exactly. This bypasses the app's onboarding/UI. |
 | Failed network and Retry Setup UI | **NOT TESTED** | Dependency probe against refused localhost endpoint exits 1 with `Could not connect to the server`, preserving cache. Actual app error/retry UI still needs exercise. |
-| Slow network progress, interruption/resume | **NOT TESTED** | Throttled private proxy probe in progress; no app UI result yet. |
+| Slow network progress, interruption/resume UI | **NOT TESTED** | Loader probe progressed through a throttled private proxy, retained a partial file after interruption, and subsequently loaded/transcribed successfully. Cached inference also passes with the registry unreachable. App UI is still untested; HTTP Range reuse was not independently observed. |
 | First Option-key microphone dictation and paste | **NOT TESTED** | Source capture/delivery tests pass; no generated audio has yet completed this full flow in the clean GUI. |
 | Draw & Pin option included | **PASS** | Exact `Draw & Pin While Dictating` string in extracted binary and production menu source. Clicking it in the clean GUI is still untested. |
 | Drawing and pin capture/paste | **NOT TESTED** | Draw/pin/sheet tests pass and generated contact sheet inspected. Real ScreenCaptureKit and pointer path in the clean app remain untested. |
@@ -84,6 +84,29 @@ T3 needs a shared paste-event ID and metadata-only tracing at capture, Tiptap
 insertion/onChange and post-attachment draft commit. Record types, MIME/byte
 lengths, `keepText`, cancellation flags, editable/selection availability and draft
 identity; never record clipboard contents.
+
+## Paste timing baseline
+
+[Host probe receipt](evidence/release-v0.3.0-mac/host-probes.json).
+No timing policy has changed. Two generated fixtures used production staged
+delivery and the matching T3 editor/intake in hidden Electron 44.10.1:
+
+- Small image: image-to-text event-post gap **191.2 ms**; image paste intake to
+  text insertion **199.8 ms**.
+- 3.70 MB PNG: event-post gap **177.6 ms**; intake-to-insertion **177.4 ms**.
+- Both retain image/text through two repeats. These are two fixture observations,
+  not latency percentiles, CPU-load trials or visible screen presentation times.
+- A separate generated, named-pasteboard fixture measured the production image
+  wait with a read after posting: **161.5–167.4 ms** across three runs.
+- Reading the image before the post timestamp caches its bytes. A later consumer
+  read then produces no new provider callback, so the same code waits its full
+  timeout: **1,668.4–1,672.8 ms** across three runs. This reproduces a slow path,
+  not the original live T3 report. Clipboard-manager activity can create this
+  ambiguity; readiness waits are a separate possible contributor.
+
+Keep image-first order, focus checks and newer-copy ownership. Shortening an
+unobserved-read fallback needs slow-reader and target-consumption evidence;
+normal measured consumers already hand off near 200 ms.
 
 ## Fixes found during this audit
 
