@@ -59,24 +59,24 @@ this is an explicit deviation from the stranger's current route.
 | Move into `/Applications` in a clean guest | **PASS** | Actual candidate ZIP extracted and moved into guest `/Applications/Koett.app`; normal first-open confirmation approved and process launched. Host installed app preserved. |
 | First GUI process launch from ZIP | **PASS** | Extracted executable remains alive; isolated `--control status` returns exit 0, `ok:true`, `model:parakeet`, `phase:loading`, `pasteAccessGranted:false`. Stops at missing access; not a ready/dictation pass. |
 | Permission onboarding layout/state | **PASS** | `PermissionsTests` pass; six offscreen light/dark first-launch, relaunch-needed and allowed renders inspected. These are fixtures, not system dialogs. |
-| Microphone allow, deny, later recovery | **NOT TESTED** | Real guest denial settles to Open Settings; granting through Settings produces Quit & Reopen and TCC changes to allowed. Actual capture after recovery is still pending. Early microphone prompt reproduced in the old build and removed by PR #107 in a same-guest comparison. Actual capture remains pending. |
-| Accessibility allow, deny, later recovery | **NOT TESTED** | Guest Allow opens the actual Accessibility pane and denied/ungranted state settles to Open Settings. Natural Settings grant and authentication now succeed; app status reports paste access. Actual event delivery after that grant is still pending. No new host grant was requested; a trusted flag alone does not prove delivery. |
-| Screen Recording allow, deny, relaunch | **NOT TESTED** | Row/relaunch tests pass. No host capture grant or monthly picker-bypass prompt was triggered for testing. |
+| Microphone allow, deny, later recovery | **NOT TESTED** | Real guest denial settles to Open Settings; granting through Settings produces Quit & Reopen and TCC changes to allowed. Real BlackHole capture and native automatic paste now pass after natural grants. Early microphone prompt reproduced in the old build and removed by PR #107 in a same-guest comparison. Capture passed with generated BlackHole audio; physical microphone acquisition remains untested. |
+| Accessibility allow, deny, later recovery | **NOT TESTED** | Guest Allow opens the actual Accessibility pane and denied/ungranted state settles to Open Settings. Natural Settings grant and authentication now succeed; app status reports paste access. Actual native paste succeeds after that grant. No new host grant was requested; a trusted flag alone does not prove delivery. |
+| Screen Recording allow, deny, relaunch | **PASS (partial)** | Guest Settings grant, authentication, Quit & Reopen and actual capture-bypass Allow exercised. Real drawing/pin captures succeed. Revocation and bypass refusal recovery remain untested; no host grant requested. |
 | Cold default model download and inference | **PASS** | Pinned FluidAudio through `parakeet-baseline`, fresh test home/model directory: download/load/warm-up succeeds; generated 3.32 s speech transcribes exactly. This bypasses the app's onboarding/UI. |
-| Failed network and Retry Setup UI | **NOT TESTED** | Dependency probe against refused localhost endpoint exits 1 with `Could not connect to the server`, preserving cache. A private source build in the clean guest received HTTP 503 from a guest-only registry fixture, then exposed Show Error and Retry Setup menu actions. Clicking Retry through successful download is still pending. |
-| Slow network progress, interruption/resume UI | **NOT TESTED** | Loader probe progressed through a throttled private proxy, retained a partial file after interruption, and subsequently loaded/transcribed successfully. Cached inference also passes with the registry unreachable. App UI is still untested; HTTP Range reuse was not independently observed. |
+| Failed network and Retry Setup UI | **NOT TESTED** | Dependency probe against refused localhost endpoint exits 1 with `Could not connect to the server`, preserving cache. A private source build in the clean guest received HTTP 503 from a guest-only registry fixture, then exposed Show Error and Retry Setup menu actions. Retry restarts requests; a subsequent direct-registry launch downloads/loads successfully. End-to-end same-attempt retry completion remains untested. |
+| Slow network progress, interruption/resume UI | **NOT TESTED** | Loader probe progressed through a throttled private proxy, retained a partial file after interruption, and subsequently loaded/transcribed successfully. Cached inference also passes with the registry unreachable. Actual guest Checking/Loading UI observed, but a continuously throttled app download and HTTP Range reuse remain unverified. |
 | First Option-key microphone dictation and paste | **NOT TESTED** | Source capture/delivery tests pass; no generated audio has yet completed this full flow in the clean GUI. |
 | Draw & Pin option included | **PASS** | Exact label exists in extracted binary, production source and actual guest menu accessibility tree. Drawing while ready is still untested. |
-| Drawing and pin capture/paste | **NOT TESTED** | Draw/pin/sheet tests pass and generated contact sheet inspected. Real ScreenCaptureKit and pointer path in the clean app remain untested. |
+| Drawing and pin capture/paste | **PASS (partial)** | Actual Shift-drag ink, Shift-click pin, menu/CLI undo, ScreenCaptureKit capture and Chrome image/text delivery exercised. Initial text-stage failure fixed in #111; see guest receipt. Multi-display and physical gestures remain unverified. |
 | Repeat native paste, isolated T3 editor | **PASS** | Real macOS clipboard, hidden Electron 44.10.1 and matching T3 editor/intake: automatic image then text; two native `webContents.paste()` repeats each retain both. Details below. |
 | Reported image-only repeat in full T3 chat | **NOT TESTED** | Failure not reproduced; original failing clipboard was already replaced. Full ChatComposer state and desktop Cmd+V routing were outside the isolated editor test. |
-| Settings/menu interaction | **NOT TESTED** | Mac configuration is menu-based. Actual first-user selection, persistence and relaunch are pending. |
-| History UI and search | **NOT TESTED** | History model/search/retry tests pass; actual clean-user interaction remains pending. |
+| Settings/menu interaction | **PASS (partial)** | Actual Draw & Pin toggle, Undo Last Drawing and permission actions exercised; draw setting survives app replacement/relaunch. Full settings/input/model-switch matrix remains untested. |
+| History UI and search | **PASS (partial)** | Actual native History window loads three generated dictations, matching database count. Search/copy/export pointer flows remain untested. |
 | v0.1.1 history/preferences preservation | **PASS** | Actual old ZIP checksum matches public v0.1.1. Fixture generated by its exact `c72f834` TranscriptStore source; actual candidate imports it. Two launches yield one identical searchable archive row; original Markdown, last transcript and preferences are byte-identical. |
 | v0.1.1 permission/login-item upgrade | **NOT TESTED** | Old/new Developer ID designated requirements match; no real TCC/login-item migration was performed. |
 | Uninstall preserves data | **PASS** | Removing only the test app leaves its History database and original files intact. Real Finder Trash and Login Item cleanup remain untested. |
 | Intel Mac | **NOT TESTED** | Binary is arm64 only, consistent with README Apple silicon requirement. No Intel machine or actual rejection dialog was exercised. |
-| macOS 15 runtime | **PASS (partial)** | Actual ZIP launches on 15.7.7, shows onboarding and opens privacy Settings. Full dictation/drawing remains untested; exact macOS 15.0 was not exercised. |
+| macOS 15 runtime | **PASS (partial)** | Actual ZIP launches on 15.7.7, shows onboarding and opens privacy Settings. Generated audio capture, plain paste, drawing and Chrome repeats pass in the private source builds. Exact macOS 15.0 and final ZIP were not exercised. |
 | macOS 26 runtime | **PASS** | Isolated launch/status and native clipboard/editor probes above. Full clean-user dictation/drawing is still untested. |
 
 ## Repeat-paste finding
@@ -99,10 +99,36 @@ insertion/onChange and post-attachment draft commit. Record types, MIME/byte
 lengths, `keepText`, cancellation flags, editable/selection availability and draft
 identity; never record clipboard contents.
 
+## Actual guest paste failure and fix
+
+[Guest receipt](evidence/release-v0.3.0-mac/guest-paste.json).
+A private source build on macOS 15.7.7 reproduced a separate **automatic** sketch
+paste failure: image posted, then text waited 1,513 ms and refused with
+`modifiersHeld`. The existing persistent Not pasted/Paste/Copy recovery appeared.
+The native probe shows that posting V key-up with Command still set updates HID
+modifier state even from a private CGEvent source. Clearing key-up flags leaves
+Command released. [PR #111](https://github.com/oEdyb/koett/pull/111), merged as
+`d53be9c0bfa85412ed6f83a7dbfff34c0e4950a0`, ends the synthetic chord on key-up.
+The patched guest app posts both stages; text readiness waits zero milliseconds.
+Two native Chrome Cmd+V repeats each expose image + plain text + HTML and retain
+all three images plus prompt text. This does not establish the historical full
+T3 composer failure's cause.
+
+![Existing visible recovery after the old failure](evidence/release-v0.3.0-mac/chrome-not-pasted-held-command.png)
+![Two native Chrome repeats retain both formats](evidence/release-v0.3.0-mac/chrome-repeat-receipt-bottom.png)
+
+The guest has no newly added Input Monitoring grant. Synthetic Option events did
+not toggle dictation, so start/stop used the public local-control interface; this
+is actual recorder/ASR/paste evidence, not physical shortcut evidence. The Mac
+pill's specified hover row contains Cancel/Pause/History and has **no Stop
+button**. Clicking its recording dot does not stop; that requested path cannot be
+claimed tested or working without a product change. Pill rules remain intact.
+
 ## Paste timing baseline
 
 [Host probe receipt](evidence/release-v0.3.0-mac/host-probes.json).
-No timing policy has changed. Two generated fixtures used production staged
+No image-consumption timeout/settle policy has changed. PR #111 separately removes
+the self-generated Command state that could block text after image delivery. Two generated fixtures used production staged
 delivery and the matching T3 editor/intake in hidden Electron 44.10.1:
 
 - Small image: image-to-text event-post gap **191.2 ms**; image paste intake to
@@ -167,9 +193,10 @@ Local receipts are retained under
 The failed-network AX tree is retained as `/tmp/koett-guest-failed-model-ui.json`;
 registry requests are in `registry-fixture-current.log`.
 The window-order screenshot uses private source `826c76c3791ca42bddbea000ee0dd64b9becd353`,
-not a rebuilt release ZIP. No full capture or successful model download has run in this
-natural-permission audit profile yet. The failed-network attempt reached the
-registry fixture and exposed Show Error and Retry Setup actions.
+not a rebuilt release ZIP. The natural-permission profile subsequently downloaded/loaded v2, captured
+generated BlackHole audio and pasted into a native editor and Chrome. The
+failed-network attempt exposed Show Error and Retry Setup; Retry restarted
+requests. Full throttled-app retry/resume completion remains unverified.
 
 No retained host `Diagnostics/Paste.jsonl` was present when checked. Historical
 missing automatic paste cannot be assigned a Mac cause from absent evidence.
