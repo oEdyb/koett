@@ -6,6 +6,13 @@ A passing component test does not certify the corresponding first-install flow.
 
 ## Candidate and environment
 
+- Current audit candidate: `ece9c25b3eb19acf5c11145ca6358926ca81a86a`, including
+  the capture-failure warning. Version/build come directly from source: 0.3.0/3.
+  SHA-256: `b1f628201e87c22531aee59b567aa951f3fc68893bf9876d8ae14e55986a2e7f`.
+  Submission `a279c20d-ecec-46e2-aef5-bd8f3f723b65`: **Accepted**, stapled.
+  A separate quarantined extraction passes strict codesign, stapler and spctl
+  (`accepted`, `source=Notarized Developer ID`). Executable UUID:
+  `F5C7EEDC-DA37-3225-B230-B9054B35E6A8`. Guest GUI results are still pending.
 - Initial candidate: `eb6f2d6e896497d7e7e1c527aa8bba88ec23ee50`.
 - ZIP: `Koett-0.3.0-macOS-arm64.zip`, SHA-256
   `48d5e1c3711ffc8cc403da235638114e9f7b5d1f07e805ff506d45ba8c07e020`.
@@ -119,7 +126,8 @@ normal measured consumers already hand off near 200 ms.
   surviving images/text or overwriting Not pasted. Four regression tests pass;
   430 tests (10 skips), release build and packaging checks pass. Merged as
   `ece9c25b3eb19acf5c11145ca6358926ca81a86a`. Pill geometry and permission
-  requests are unchanged. The initial ZIP predates this fix and must be replaced.
+  requests are unchanged. The current audit candidate includes this fix;
+  the initial candidate is superseded.
 
 ## Release gate
 
