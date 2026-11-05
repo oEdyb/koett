@@ -44,6 +44,13 @@ final class LocalControlTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), data)
     }
 
+    func testOversizedCommandIsRejectedBeforeConnecting() {
+        let url = socketURL()
+        XCTAssertThrowsError(try LocalControlSocket.request([String(repeating: "x", count: 3_000)], at: url)) { error in
+            XCTAssertEqual(error.localizedDescription, "Control command exceeds the size limit.")
+        }
+    }
+
     func testOversizedCommandCannotReachTheHandler() async throws {
         let url = socketURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
