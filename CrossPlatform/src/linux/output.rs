@@ -281,7 +281,10 @@ struct Sample {
 fn post_refusal(expected: Option<u32>, sample: Sample) -> Option<&'static str> {
     if sample.own_window || expected.is_none() || sample.focused != expected {
         Some("focus_changed_before_post")
-    } else if sample.modifiers.is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0) {
+    } else if sample
+        .modifiers
+        .is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0)
+    {
         Some("modifiers_held_before_post")
     } else {
         None
@@ -328,7 +331,10 @@ impl PasteGate {
             self.stable = None;
             return Decision::Refuse("focus_changed");
         }
-        if sample.modifiers.is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0) {
+        if sample
+            .modifiers
+            .is_some_and(|mask| mask & !PASTE_CONTROL_MASK != 0)
+        {
             self.stable = None;
             return Decision::Wait("modifiers_held");
         }
