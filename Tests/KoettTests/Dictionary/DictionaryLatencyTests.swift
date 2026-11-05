@@ -35,18 +35,23 @@ final class DictionaryLatencyTests: XCTestCase {
         }
         let status = await booster.status
         XCTAssertEqual(status, .ready)
+        let defaultBooster = VocabularyBooster()
+        await defaultBooster.update(entries)
+        let requested = (env["KOETT_LATENCY_MODES"] ?? "off,spelling,ctc").split(separator: ",").map(String.init)
         let warm = URL(fileURLWithPath: folder).appendingPathComponent("5s.wav")
         _ = try await DictationTranscriber.transcribe(warm, using: manager, detector: detector, boost: booster.boost)
         var rows: [Row] = []
         for seconds in [5, 30, 120, 600] {
             let url = URL(fileURLWithPath: folder).appendingPathComponent("\(seconds)s.wav")
             for pair in 0..<3 {
-                let modes = pair % 2 == 0 ? ["off", "spelling", "ctc"] : ["ctc", "spelling", "off"]
+                let modes = pair % 2 == 0 ? requested : Array(requested.reversed())
                 for mode in modes {
                     let start = ContinuousClock.now
                     let result: ASRResult
                     if mode == "ctc" {
                         result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector, boost: booster.boost)
+                    } else if mode == "default" {
+                        result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector, boost: defaultBooster.boost)
                     } else {
                         result = try await DictationTranscriber.transcribe(url, using: manager, detector: detector)
                     }

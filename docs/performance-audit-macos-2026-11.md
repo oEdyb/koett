@@ -1,12 +1,12 @@
 # Mac performance audit — November 2026
 
-Status: native dictionary measurements complete; corpus recheck and actual-target
+Status: native dictionary and 210-clip corpus measurements complete; actual-target
 paste comparison in progress. No installed host app, preferences, history, clipboard
 or focus changed. All transcripts in the committed receipts are public synthetic fixtures.
 
 ## Scope and source
 
-M5 MacBook Air, macOS 26.6 (Darwin 25.6.0), native arm64 release tests. Source
+M5 MacBook Air, macOS 26.6.2 (Darwin 25.6.0), native arm64 release tests. Source
 `c0343ae` before the default-disable change. FluidAudio remains exactly 0.15.6,
 revision `4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b`. No dependency upgrade.
 
@@ -99,7 +99,49 @@ speed/recall fallback, not a claim that both original requirements were achieved
 
 ## Old/current actual-target paste
 
-Pending. The filmed August 18 source commit is unknown. The fallback baseline is
+In progress: eight v0.1.1 receipts are saved. Five-second repetitions were
+1429.140, 1438.257 and 1189.205 ms; 30-second repetitions were 1544.347,
+1821.604 and 1497.712 ms. First two 120-second repetitions were 5297.892 and
+5650.981 ms. These are actual inserted-text receipts, not app event-post times.
+No current-build comparison is claimed until its trials complete.
+
+The disposable Tart guest runs macOS 15.7.7, four virtual CPUs and 8 GiB on the
+same M5 host. BlackHole routes the exact synthetic WAV through the actual microphone
+capture code. The unchanged apps record, stop, transcribe, prepare and paste using
+Command-V into a private `NSTextView`. Its receipt is recorded after `super.paste`
+returns with inserted text. This is not a file-ASR substitute.
+
+The guest uses Control-Shift-K toggle (rather than physical Option), manually
+seeded test permissions, raw formatting, an empty dictionary and a copied model
+cache. Startup/model loading are outside the warm timer. The timer begins before
+posting stop-key-down and ends at completed text insertion, including real recorder
+stop and delivery. It does not measure compositor rendering, human microphone
+accuracy, onboarding, physical keys, T3/browser editors or rich-image paste.
+No app pipeline method is replaced. VM Core ML performance is not native M5
+performance, so these values cannot validate a native 118.5 ms historical claim.
+
+Current test source is `85dde51`; public v0.1.1 is identified by the released ZIP's
+SHA-256 and executable UUID in the provenance receipt. Current is a private ad hoc
+signed bundle; test grants have no code requirement and are not signature-upgrade
+or onboarding evidence. The apps use the same pinned FluidAudio version.
+The series pauses at a saved receipt boundary for the release auditor's gates;
+its guest is stopped before native timing or the auditor's work.
+
+Setup trials with missing permissions, stale shared-folder executables or a target
+without an Edit/Paste menu were discarded. Sources and the reproducible protocol
+are in `Benchmarks/Dictionary/PasteAudit/`. The target source adds a guest-account
+guard after the measured target-v2 build; insertion/receipt behavior is identical.
+
+ The filmed August 18 source commit is unknown. The fallback baseline is
 public v0.1.1, exact source `c72f83415b1d760c30316f07fc776f09b0ebdc0b`.
 The video's 118.5 ms Koett paste-post figure and 481 ms Wispr finished-state figure
 use different endpoints and cannot be treated as target-insertion measurements.
+
+## Verification
+
+- `swift test`: 432 tests, 11 optional tests skipped, zero failures (79.131 s).
+  Covers default-off behavior and the existing contracts; not a target paste receipt.
+- `swift build -c release`: passed (94.41 s); no host installation performed.
+- `git diff --check`, `zsh -n install-macos.sh`, both packaging plist lints: passed.
+- Independent provider review was not run: this task explicitly forbids more subagents.
+  The PR remains a draft while measurements finish.
