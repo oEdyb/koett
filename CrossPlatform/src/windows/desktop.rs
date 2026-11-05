@@ -146,6 +146,7 @@ struct Window {
     detail: HWND,
     startup: HWND,
     mode: HWND,
+    recording_limit: HWND,
     microphone: Option<microphone::Controls>,
     rows: Vec<HistorySummary>,
     selected_key: Option<String>,
@@ -360,6 +361,7 @@ fn run(
             detail: HWND::default(),
             startup: HWND::default(),
             mode: HWND::default(),
+            recording_limit: HWND::default(),
             microphone: None,
             rows: vec![],
             selected_key: None,
@@ -571,6 +573,43 @@ impl Window {
                     Some(WPARAM(usize::from(
                         settings.recording_mode == crate::settings::RecordingMode::Hold,
                     ))),
+                    None,
+                );
+            }
+            self.control(
+                w!("STATIC"),
+                "Recording limit",
+                Default::default(),
+                0,
+                [528, 224, 200, 24],
+            )?;
+            self.recording_limit = self.control(
+                w!("COMBOBOX"),
+                "",
+                WS_TABSTOP | WINDOW_STYLE(CBS_DROPDOWNLIST as u32),
+                35,
+                [528, 252, 212, 140],
+            )?;
+            for minutes in crate::settings::RECORDING_LIMIT_CHOICES {
+                let label = super::wide(&format!("{minutes} minutes"));
+                unsafe {
+                    SendMessageW(
+                        self.recording_limit,
+                        CB_ADDSTRING,
+                        None,
+                        Some(LPARAM(label.as_ptr() as isize)),
+                    );
+                }
+            }
+            let selected = crate::settings::RECORDING_LIMIT_CHOICES
+                .iter()
+                .position(|minutes| *minutes == settings.recording_limit_minutes)
+                .unwrap_or(2);
+            unsafe {
+                SendMessageW(
+                    self.recording_limit,
+                    CB_SETCURSEL,
+                    Some(WPARAM(selected)),
                     None,
                 );
             }
@@ -968,6 +1007,14 @@ impl Window {
                         1 => crate::settings::RecordingMode::Hold,
                         _ => return Err("Choose a recording mode".into()),
                     };
+                    let limit =
+                        unsafe { SendMessageW(self.recording_limit, CB_GETCURSEL, None, None) }.0;
+                    edit.settings.recording_limit_minutes = usize::try_from(limit)
+                        .ok()
+                        .and_then(|limit| {
+                            crate::settings::RECORDING_LIMIT_CHOICES.get(limit).copied()
+                        })
+                        .ok_or_else(|| "Choose a recording limit".to_string())?;
                     super::set_start_at_login(enabled)?;
                     if let Err(e) = edit.commit() {
                         let _ = super::set_start_at_login(old);

@@ -3,12 +3,14 @@ use super::*;
 #[cfg(target_os = "windows")]
 impl MicrophoneRecorder {
     pub(crate) fn start_wav_fixture(path: &Path) -> Result<(Self, Receiver<Vec<f32>>), String> {
-        if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > 20 * 1024 * 1024 {
-            return Err("WAV lab input exceeds the 20 MiB limit".into());
+        // 16-bit samples at 16 kHz for the longest recording, plus the header.
+        let largest = MAX_RECORDING_DURATION.as_secs() * 16_000 * 2 + 1024;
+        if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > largest {
+            return Err("WAV lab input is longer than two hours".into());
         }
         let audio = AudioRecording::read_wav(path)?;
         if audio.sample_rate != 16_000 || audio.duration() > MAX_RECORDING_DURATION {
-            return Err("WAV lab input must be 16 kHz mono PCM, at most ten minutes".into());
+            return Err("WAV lab input must be 16 kHz mono PCM, at most two hours".into());
         }
         let priority = preview::RecordingPriority::acquire()?;
         let levels = AudioLevels::new();

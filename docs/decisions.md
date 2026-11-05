@@ -243,3 +243,12 @@ move to the same card's source. A failure never changes the saved choice, so a m
 returns is used again. Exact digital zero counts as silent only if a stream has never
 produced a non-zero sample, because a noise gate also outputs zero during thinking pauses.
 A source found silent is tried last for 10 minutes, so recordings don't each lose 3 s.
+
+## 2026-11-05: recordings stop at a limit you choose, 60 minutes by default
+
+Olle asked why there was a 10-minute limit; there was no reason beyond bounding memory.
+Settings offers 10, 30, 60 and 120 minutes, and a value outside those in a settings file
+becomes 60. The pill says "1 minute left" once, and the stop still saves and pastes. The
+whole recording stays in memory in case decoding fails. An 11-minute lab run grew by 192 KB/s
+at 48 kHz, so that is about 690 MB at 60 minutes and 1.4 GB at 120, only while recording. Live decoding drops audio as it goes, so
+its memory doesn't grow with length.

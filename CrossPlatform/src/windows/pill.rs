@@ -243,7 +243,8 @@ impl Renderer {
                         &coral,
                     );
                 }
-                if (active && !state.hovered) || (!active && morph < 1.0) {
+                let notice = state.notice(now).filter(|_| active && !state.hovered);
+                if (active && !state.hovered && notice.is_none()) || (!active && morph < 1.0) {
                     let wave = target.CreateSolidColorBrush(
                         &if light {
                             color(0.11, 0.098, 0.09)
@@ -293,6 +294,8 @@ impl Renderer {
                             );
                         }
                         draw("History", 178.0, 235.0, false);
+                    } else if let Some(notice) = notice {
+                        draw(notice, 44.0, 235.0, false);
                     }
                     if !matches!(state.phase, Phase::Transcribing) {
                         draw(

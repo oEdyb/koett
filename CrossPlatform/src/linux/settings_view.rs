@@ -188,6 +188,12 @@ pub(super) fn show(
         "toggle"
     }));
     row(&recording, "Recording mode", &mode);
+    let recording_limit = gtk::ComboBoxText::new();
+    for minutes in crate::settings::RECORDING_LIMIT_CHOICES {
+        recording_limit.append(Some(&minutes.to_string()), &format!("{minutes} minutes"));
+    }
+    recording_limit.set_active_id(Some(&settings.recording_limit_minutes.to_string()));
+    row(&recording, "Recording limit", &recording_limit);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
     #[cfg(feature = "ask")]
     let ask_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.ask_shortcut.clone()));
@@ -610,6 +616,12 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
             } else {
                 RecordingMode::Toggle
             };
+            if let Some(minutes) = recording_limit
+                .active_id()
+                .and_then(|minutes| minutes.parse().ok())
+            {
+                updated.recording_limit_minutes = minutes;
+            }
             let mut rules = Vec::new();
             for (phrase, replacement, container) in entries.borrow().iter() {
                 if container.parent().is_none() {
