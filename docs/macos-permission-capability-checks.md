@@ -36,7 +36,18 @@ actual dictation/drawing still handles runtime errors and recovery.
 Unit tests inject grant/probe results to cover denied-access skipping, failure
 under an allowed flag, retry, and revocation during a probe. Fake capture tests
 require a real buffer callback and verify input cleanup after timeout/start
-failure. Clean-guest runtime validation is pending before merge.
+failure. The isolated-home full suite passes 449 tests (16 skipped), with zero failures;
+release build and static packaging gates pass. A private signed `fab92a6` build
+on macOS 15.7.7 reports Ready for all three checks through the actual APIs. After
+checking, actual BlackHole capture/Stop/native paste still succeeds: target
+receipt arrives after Stop and ends with the latest generated transcript. This
+also verifies that the microphone check releases its capture resources.
+
+![Actual guest capability results](evidence/release-v0.3.0-mac/capability-ready-window.png)
+
+Failure/retry and grant-revocation races are injected unit checks, not fresh OS
+refusal dialogs. No host permissions or installed app changed. These results do
+not certify a final release ZIP or physical shortcut dispatch.
 
 API references: [Apple screenshot API](https://developer.apple.com/documentation/ScreenCaptureKit/SCScreenshotManager/captureImage(contentFilter:configuration:completionHandler:)),
 [Apple event taps](https://developer.apple.com/documentation/coregraphics/cgevent/tapcreate(tap:place:options:eventsofinterest:callback:userinfo:)).
