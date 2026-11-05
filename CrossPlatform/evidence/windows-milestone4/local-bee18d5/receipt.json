@@ -1,0 +1,327 @@
+{
+  "scope": "Partial M4 local Windows test; forced opening stalls, no physical microphone. Edge only; Chrome not tested per instruction.",
+  "records": {
+    "m4-update-local": {
+      "ok": true,
+      "result": {
+        "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52",
+        "focus": {
+          "hwnd": 65734,
+          "process": "explorer",
+          "pid": 4860
+        },
+        "receipt": {
+          "built_at": "2026-11-05T17:17:26.235816+00:00",
+          "source_head": "8de823a2131d327d269ddeda879575cf25adf2b0",
+          "source_uncommitted_diff_sha256": "a92191ffebdfc05bc991ee5c94272951dc5dc06c6e13fb3be3be2920877f4571",
+          "rust_source_manifest_sha256": "5ca1602322eb83bda0092da38a6224ae1b40c2cea8d6fa845ba84717caf21533",
+          "compiler": "clang-cl 23.1.4; Rust x86_64-pc-windows-msvc; static CRT; dev profile without Rust debug info",
+          "files": {
+            "Koett.exe": "bee18d537abb6ffbc0beaff4ede328f02ab46093a51614118314747da299df52",
+            "Koett-M4-Tests.exe": "7755c682ccbdf30a19c9542faeef68a6413c30fcdb0413c4a2589bd22733a9cc"
+          },
+          "native_build": {
+            "schema_version": 1,
+            "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+            "source_sha256": "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c",
+            "target": "x86_64-pc-windows-msvc",
+            "cmake_options": {
+              "CMAKE_BUILD_TYPE": "Release",
+              "BUILD_SHARED_LIBS": "OFF",
+              "SHERPA_ONNX_ENABLE_TTS": "OFF",
+              "SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION": "OFF",
+              "SHERPA_ONNX_ENABLE_PORTAUDIO": "OFF",
+              "SHERPA_ONNX_ENABLE_WEBSOCKET": "OFF",
+              "SHERPA_ONNX_ENABLE_BINARY": "OFF",
+              "SHERPA_ONNX_BUILD_C_API_EXAMPLES": "OFF",
+              "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE": "OFF",
+              "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY": "OFF"
+            },
+            "libraries": {
+              "sherpa-onnx-c-api.lib": "595140c12d7f04ec47d117ab270801cd128ee655572323f6b6124edd2828ada9",
+              "sherpa-onnx-core.lib": "264d0275a762743a61b551dfad16d6606119c6a605dd7f6629a2304294068cb2",
+              "kaldi-decoder-core.lib": "4f6805e5c687cb8d6c97a11f1c2d14b61a4e75a6c88dce906110b793fa2977f9",
+              "sherpa-onnx-kaldifst-core.lib": "902f79421f5bece7122d2f6f5395a4b231a03d9c6be574f93cdf28406186a07d",
+              "sherpa-onnx-fstfar.lib": "063ffbae06cd43f464ee18c83043321ddb77243728d48ea9fc58b1e45eb24a72",
+              "sherpa-onnx-fst.lib": "69b24435ed840a4a3414882f90c1ac3d7d299ba36b049e36601997e983c4f056",
+              "kaldi-native-fbank-core.lib": "f8ef2f7a7ce641aa3031213ad1ce1150846363407e9f996b42cc100d56e2db92",
+              "kissfft-float.lib": "4a7fe028cfbf5e3dcc9423b7da19ccb6977aeca47a3d8d9804c5cb4f94b251f4",
+              "onnxruntime.lib": "fc1f5722dd17cbe8c2131cad2b9da6e004392d45bbe71560ff5e54c9dee26f24",
+              "ssentencepiece_core.lib": "b82cce8c77960764ea190531aa9c91ec07833b8513aa8441b08dffd78911d82d"
+            },
+            "shared_context_sha256": "1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3"
+          },
+          "scope": "Private local Windows runtime verification; not a signed or packaged release.",
+          "includes": "Windows hotkey retries after a recoverable microphone-opening error"
+        }
+      },
+      "id": "1793899076426159920"
+    },
+    "m4-mic-fixed-retry": {
+      "ok": true,
+      "result": {
+        "rounds": [
+          {
+            "passed": true,
+            "phase": "Koett. Microphone opening timed out after 5 seconds. Choose an input and retry.",
+            "elapsed_ms": 5153,
+            "focus": {
+              "hwnd": 65734,
+              "process": "explorer",
+              "pid": 4860
+            },
+            "remaining_worker_pids": [],
+            "observed_worker_pids": [
+              8876
+            ]
+          },
+          {
+            "passed": true,
+            "phase": "Koett. Microphone opening timed out after 5 seconds. Choose an input and retry.",
+            "elapsed_ms": 5132,
+            "focus": {
+              "hwnd": 65734,
+              "process": "explorer",
+              "pid": 4860
+            },
+            "remaining_worker_pids": [],
+            "observed_worker_pids": [
+              2288
+            ]
+          }
+        ],
+        "artifact": {
+          "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+          "pid": 800,
+          "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52"
+        }
+      },
+      "id": "1793899195990108360"
+    },
+    "m4-mic-named-retry": {
+      "ok": true,
+      "result": {
+        "rounds": [
+          {
+            "passed": true,
+            "phase": "Koett. Microphone opening timed out after 5 seconds. Choose an input and retry.",
+            "elapsed_ms": 5045,
+            "focus": {
+              "hwnd": 65734,
+              "process": "explorer",
+              "pid": 4860
+            },
+            "remaining_worker_pids": [],
+            "observed_worker_pids": [
+              4808
+            ]
+          },
+          {
+            "passed": true,
+            "phase": "Koett. Microphone opening timed out after 5 seconds. Choose an input and retry.",
+            "elapsed_ms": 5149,
+            "focus": {
+              "hwnd": 65734,
+              "process": "explorer",
+              "pid": 4860
+            },
+            "remaining_worker_pids": [],
+            "observed_worker_pids": [
+              2232
+            ]
+          }
+        ],
+        "artifact": {
+          "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+          "pid": 800,
+          "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52"
+        }
+      },
+      "id": "1793899300653272285"
+    },
+    "m4-browser-record": {
+      "ok": true,
+      "result": {
+        "editor_rect": [
+          106,
+          310,
+          1900,
+          528
+        ],
+        "after": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        },
+        "before": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        },
+        "phase": "Koett Recording",
+        "artifact": {
+          "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+          "pid": 7184,
+          "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52"
+        },
+        "controls": [
+          {
+            "rect": [
+              376,
+              116,
+              1246,
+              48
+            ],
+            "name": "Address and search bar",
+            "password": false,
+            "id": "view_1017"
+          },
+          {
+            "rect": [
+              106,
+              310,
+              1900,
+              528
+            ],
+            "name": "M4 drawing editor",
+            "password": false,
+            "id": "editor"
+          },
+          {
+            "rect": [
+              106,
+              940,
+              551,
+              62
+            ],
+            "name": "Password fixture",
+            "password": true,
+            "id": "secret"
+          },
+          {
+            "rect": [
+              106,
+              1104,
+              1912,
+              372
+            ],
+            "name": "Paste receipt",
+            "password": false,
+            "id": "receipt"
+          }
+        ]
+      },
+      "id": "1793899596594089844"
+    },
+    "m4-edge-password-focus": {
+      "ok": true,
+      "result": {
+        "phase": "Koett Recording",
+        "password": true,
+        "focus": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        }
+      },
+      "id": "1793899640079637069"
+    },
+    "m4-edge-before-stop": {
+      "ok": true,
+      "result": {
+        "phase": "Koett Recording",
+        "editor_text": "Selected public phrase",
+        "artifact": {
+          "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+          "pid": 7184,
+          "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52"
+        },
+        "focus": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        }
+      },
+      "id": "1793899674417151396"
+    },
+    "m4-edge-result": {
+      "ok": true,
+      "result": {
+        "artifact": {
+          "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+          "pid": 7184,
+          "sha256": "BEE18D537ABB6FFBC0BEAFF4EDE328F02AB46093A51614118314747DA299DF52"
+        },
+        "history_sha256": "1D5834497228A8834123A55F36E52F4970AFA836B6935CBA0483856C9C30E50D",
+        "clipboard_text": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\n  msedge \u00b7 \u201cKoett M4 Browser - Profile 1 - Microsoft\u200b Edge\u201d\n  selected: \u201cSelected public phrase\u201d\n  URL unavailable \u00b7 Private mode unknown\n- #2 (0:07) marked\n  msedge \u00b7 \u201cKoett M4 Browser - Profile 1 - Microsoft\u200b Edge\u201d\n  URL unavailable \u00b7 Private mode unknown \u00b7 Password text omitted",
+        "focus": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        },
+        "phase": "Koett Done. - #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning awa",
+        "events": {
+          "value": [
+            {
+              "at_ms": 201265,
+              "types": [
+                "Files"
+              ],
+              "images": 1,
+              "text": ""
+            },
+            {
+              "at_ms": 202792,
+              "types": [
+                "text/plain"
+              ],
+              "images": 0,
+              "text": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\n  msedge \u00b7 \u201cKoett M4 Browser - Profile 1 - Microsoft\u200b Edge\u201d\n  selected: \u201cSelected public phrase\u201d\n  URL unavailable \u00b7 Private mode unknown\n- #2 (0:07) marked\n  msedge \u00b7 \u201cKoett M4 Browser - Profile 1 - Microsoft\u200b Edge\u201d\n  URL unavailable \u00b7 Private mode unknown \u00b7 Password text omitted"
+            }
+          ],
+          "Count": 2
+        },
+        "passed": true,
+        "event_gap_ms": 1527
+      },
+      "id": "1793900024633776845"
+    },
+    "m4-edge-url-probe": {
+      "ok": true,
+      "result": {
+        "phase": "Koett Done. - #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning awa",
+        "focus": {
+          "hwnd": 458964,
+          "process": "msedge",
+          "pid": 6736
+        },
+        "results": [
+          {
+            "patterns": [
+              "ValuePatternIdentifiers.Pattern",
+              "ExpandCollapsePatternIdentifiers.Pattern",
+              "TextPatternIdentifiers.Pattern",
+              "ScrollItemPatternIdentifiers.Pattern"
+            ],
+            "name": "Address and search bar",
+            "id": "view_1017",
+            "value": "10.0.2.2:18767/draw-pin-m4.html"
+          },
+          {
+            "patterns": [
+              "ValuePatternIdentifiers.Pattern",
+              "ScrollPatternIdentifiers.Pattern",
+              "TextPatternIdentifiers.Pattern",
+              "ScrollItemPatternIdentifiers.Pattern"
+            ],
+            "name": "Koett M4 Browser",
+            "id": "RootWebArea",
+            "value": "http://10.0.2.2:18767/draw-pin-m4.html"
+          }
+        ]
+      },
+      "id": "1793899808979598991"
+    }
+  },
+  "image_sha256": "fc5e5c9ca0c15da05143a4aa1d7e6b23cb242d76edf5e6ba65ca825435f0971a"
+}

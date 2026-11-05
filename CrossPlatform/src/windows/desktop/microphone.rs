@@ -14,6 +14,7 @@ enum Command {
 #[derive(Clone, Default)]
 struct Status {
     active: bool,
+    pending: bool,
     message: String,
 }
 struct Monitor {
@@ -29,50 +30,68 @@ impl Monitor {
         let shared = status.clone();
         std::thread::spawn(move || {
             let mut capture: Option<preview::Capture> = None;
-            let publish = |active, message| {
+            let publish = |active, pending, message| {
                 if let Ok(mut state) = shared.lock() {
-                    *state = Status { active, message };
+                    *state = Status {
+                        active,
+                        pending,
+                        message,
+                    };
                 }
             };
             loop {
-                match receive.recv_timeout(Duration::from_millis(100)) {
-                    Ok(Command::Refresh) => {
+                let command = match receive.recv_timeout(Duration::from_millis(100)) {
+                    Ok(command) => Some(receive.try_iter().last().unwrap_or(command)),
+                    Err(mpsc::RecvTimeoutError::Timeout) => None,
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                };
+                match command {
+                    Some(Command::Refresh) => {
                         capture = None;
-                        publish(false, String::new());
-                        if send_devices.send(input_devices()).is_err() {
+                        publish(false, true, "Finding microphones…".into());
+                        let result = input_devices();
+                        publish(
+                            false,
+                            false,
+                            result.as_ref().err().cloned().unwrap_or_default(),
+                        );
+                        if send_devices.send(result).is_err() {
                             break;
                         }
                     }
-                    Ok(Command::Stop) => {
+                    Some(Command::Stop) => {
                         capture = None;
-                        publish(false, String::new());
+                        publish(false, false, String::new());
                     }
-                    Ok(Command::Preview(id)) => {
+                    Some(Command::Preview(id)) => {
+                        publish(false, true, "Opening microphone…".into());
                         capture = None;
                         match preview::Capture::start(id.as_deref(), || true) {
                             Ok(Some(started)) => {
                                 capture = Some(started);
                             }
-                            Ok(None) => publish(false, "Microphone is in use by dictation".into()),
-                            Err(error) => publish(false, error),
+                            Ok(None) => {
+                                publish(false, false, "Microphone is in use by dictation".into())
+                            }
+                            Err(error) => publish(false, false, error),
                         }
                     }
-                    Err(mpsc::RecvTimeoutError::Timeout) => {}
-                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                    None => {}
                 }
                 if preview::recording() && capture.is_some() {
                     capture = None;
-                    publish(false, "Microphone is in use by dictation".into());
+                    publish(false, false, "Microphone is in use by dictation".into());
                 }
                 if let Some(current) = &capture {
                     match current.levels() {
                         Ok((rms, _)) => publish(
                             true,
+                            false,
                             format!("Input level: {:.0}%", rms.clamp(0.0, 1.0) * 100.0),
                         ),
                         Err(error) => {
                             capture = None;
-                            publish(false, error);
+                            publish(false, false, error);
                         }
                     }
                 }
@@ -84,12 +103,32 @@ impl Monitor {
             status,
         }
     }
+    fn request(&self, command: Command) {
+        if let Ok(mut status) = self.status.lock() {
+            if status.pending && !matches!(command, Command::Stop) {
+                return;
+            }
+            status.pending = true;
+            status.message = match &command {
+                Command::Refresh => "Finding microphones…",
+                Command::Preview(_) => "Opening microphone…",
+                Command::Stop => "Stopping microphone…",
+            }
+            .into();
+            if self.commands.send(command).is_err() {
+                status.pending = false;
+                status.active = false;
+                status.message = "Microphone controls unavailable; reopen Settings".into();
+            }
+        }
+    }
     fn status(&self) -> Status {
         self.status
             .lock()
             .map(|s| s.clone())
             .unwrap_or_else(|_| Status {
                 active: false,
+                pending: false,
                 message: "Microphone preview unavailable".into(),
             })
     }
@@ -110,6 +149,7 @@ fn choices(devices: Vec<InputDevice>, selected: Option<&str>) -> Vec<(Option<Str
 pub(super) struct Controls {
     input: HWND,
     button: HWND,
+    refresh: HWND,
     meter: HWND,
     choices: Vec<(Option<String>, String)>,
     monitor: Monitor,
@@ -131,7 +171,7 @@ impl Controls {
             INPUT,
             [24, 124, 360, 220],
         )?;
-        window.control(
+        let refresh = window.control(
             w!("BUTTON"),
             "Refresh",
             WS_TABSTOP,
@@ -150,13 +190,14 @@ impl Controls {
         let mut controls = Self {
             input,
             button,
+            refresh,
             meter,
             choices: vec![],
             monitor,
             displayed: String::new(),
         };
         controls.populate(vec![], settings.microphone.as_deref());
-        let _ = controls.monitor.commands.send(Command::Refresh);
+        controls.monitor.request(Command::Refresh);
         Ok(controls)
     }
     fn populate(&mut self, devices: Vec<InputDevice>, selected: Option<&str>) {
@@ -195,10 +236,10 @@ impl Controls {
     pub fn command(&mut self, id: usize, notification: u16) -> bool {
         match id {
             REFRESH => {
-                let _ = self.monitor.commands.send(Command::Refresh);
+                self.monitor.request(Command::Refresh);
             }
             INPUT if notification == CBN_SELCHANGE as u16 => {
-                let _ = self.monitor.commands.send(Command::Stop);
+                self.monitor.request(Command::Stop);
             }
             PREVIEW => {
                 let command = if self.monitor.status().active {
@@ -212,7 +253,7 @@ impl Controls {
                         }
                     }
                 };
-                let _ = self.monitor.commands.send(command);
+                self.monitor.request(command);
             }
             _ => return false,
         }
@@ -237,6 +278,11 @@ impl Controls {
         if status.message != self.displayed {
             set(self.meter, &status.message);
             self.displayed = status.message;
+        }
+        for control in [self.input, self.button, self.refresh] {
+            let _ = unsafe {
+                windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(control, !status.pending)
+            };
         }
         let label = if status.active {
             "Stop preview"

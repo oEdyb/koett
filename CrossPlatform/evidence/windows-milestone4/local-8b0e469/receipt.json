@@ -1,0 +1,1314 @@
+{
+  "m4-update-8b0e469": {
+    "ok": true,
+    "result": {
+      "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550",
+      "focus": {
+        "hwnd": 131204,
+        "process": "explorer",
+        "pid": 1252
+      },
+      "receipt": {
+        "built_at": "2026-11-05T19:19:13.350529+00:00",
+        "source_head": "8de823a2131d327d269ddeda879575cf25adf2b0",
+        "source_uncommitted_diff_sha256": "d9ba35a2606149526c9f5df0b72dfe5790135dda6ddc9621853aecfdea78ee36",
+        "rust_source_manifest_sha256": "aec10ca09b89ad069bf05d2248c9db2d3de3c3a08f6276359a24a88cf523375e",
+        "compiler": "clang-cl 23.1.4; Rust x86_64-pc-windows-msvc; static CRT; dev profile without Rust debug info",
+        "files": {
+          "Koett.exe": "8b0e46921360a53def8b87f297f4a13d30ded4035d4956a7e8ffab736bf89550",
+          "Koett-M4-Tests.exe": "e400702de7cc2a65f6a999e8bd7e3ba4fba8ac54bdf8dd25f70c24758f393349"
+        },
+        "native_build": {
+          "schema_version": 1,
+          "source_commit": "3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
+          "source_sha256": "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c",
+          "target": "x86_64-pc-windows-msvc",
+          "cmake_options": {
+            "CMAKE_BUILD_TYPE": "Release",
+            "BUILD_SHARED_LIBS": "OFF",
+            "SHERPA_ONNX_ENABLE_TTS": "OFF",
+            "SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION": "OFF",
+            "SHERPA_ONNX_ENABLE_PORTAUDIO": "OFF",
+            "SHERPA_ONNX_ENABLE_WEBSOCKET": "OFF",
+            "SHERPA_ONNX_ENABLE_BINARY": "OFF",
+            "SHERPA_ONNX_BUILD_C_API_EXAMPLES": "OFF",
+            "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE": "OFF",
+            "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY": "OFF"
+          },
+          "libraries": {
+            "sherpa-onnx-c-api.lib": "595140c12d7f04ec47d117ab270801cd128ee655572323f6b6124edd2828ada9",
+            "sherpa-onnx-core.lib": "264d0275a762743a61b551dfad16d6606119c6a605dd7f6629a2304294068cb2",
+            "kaldi-decoder-core.lib": "4f6805e5c687cb8d6c97a11f1c2d14b61a4e75a6c88dce906110b793fa2977f9",
+            "sherpa-onnx-kaldifst-core.lib": "902f79421f5bece7122d2f6f5395a4b231a03d9c6be574f93cdf28406186a07d",
+            "sherpa-onnx-fstfar.lib": "063ffbae06cd43f464ee18c83043321ddb77243728d48ea9fc58b1e45eb24a72",
+            "sherpa-onnx-fst.lib": "69b24435ed840a4a3414882f90c1ac3d7d299ba36b049e36601997e983c4f056",
+            "kaldi-native-fbank-core.lib": "f8ef2f7a7ce641aa3031213ad1ce1150846363407e9f996b42cc100d56e2db92",
+            "kissfft-float.lib": "4a7fe028cfbf5e3dcc9423b7da19ccb6977aeca47a3d8d9804c5cb4f94b251f4",
+            "onnxruntime.lib": "fc1f5722dd17cbe8c2131cad2b9da6e004392d45bbe71560ff5e54c9dee26f24",
+            "ssentencepiece_core.lib": "b82cce8c77960764ea190531aa9c91ec07833b8513aa8441b08dffd78911d82d"
+          },
+          "shared_context_sha256": "1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3"
+        },
+        "scope": "Private local Windows runtime verification; not a signed or packaged release.",
+        "includes": "Tray foreground restoration without subsequent NIM_SETFOCUS; browser-chrome-only privacy; own Settings blocks pin context; read-based paste timing"
+      }
+    },
+    "id": "1793906406021949741"
+  },
+  "m4-tray-fix-launch": {
+    "ok": true,
+    "result": {
+      "editor_rect": [
+        81,
+        254,
+        1668,
+        461
+      ],
+      "target": {
+        "case": "reader",
+        "hwnd": 197208,
+        "pid": 732
+      },
+      "after": {
+        "hwnd": 197208,
+        "process": "msedge",
+        "pid": 732
+      },
+      "before": {
+        "hwnd": 197208,
+        "process": "msedge",
+        "pid": 732
+      },
+      "phase": "Koett Not pasted. Saved",
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 8924,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      }
+    },
+    "id": "1793906418243244701"
+  },
+  "m4-tray-fix-open": {
+    "ok": true,
+    "result": {
+      "phase": "Koett Not pasted. Saved",
+      "rect": [
+        0,
+        1516,
+        899,
+        1586,
+        969
+      ],
+      "before": {
+        "hwnd": 197208,
+        "process": "msedge",
+        "pid": 732
+      },
+      "after": {
+        "hwnd": 132004,
+        "process": "explorer",
+        "pid": 1252
+      }
+    },
+    "id": "1793906446078111574"
+  },
+  "m4-tray-fix-paste": {
+    "ok": true,
+    "result": {
+      "action": {
+        "control": "ControlType.MenuItem",
+        "invoke": true,
+        "name": "Paste last transcript"
+      },
+      "phase": "Koett",
+      "history_sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+      "after": {
+        "hwnd": 197208,
+        "process": "msedge",
+        "pid": 732
+      },
+      "before": {
+        "hwnd": 196628,
+        "process": "Koett",
+        "pid": 8924
+      },
+      "items": [
+        {
+          "name": "Status: Ready",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Shortcut:",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Change shortcut\u2026",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "separator",
+          "type": "ControlType.Separator",
+          "enabled": false
+        },
+        {
+          "name": "History",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Settings",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Draw while dictating",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Undo drawing",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Dictionary and replacements\u2026",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Record",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Copy last transcript",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Paste last transcript",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Pause",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Cancel",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Start at login",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "separator",
+          "type": "ControlType.Separator",
+          "enabled": false
+        },
+        {
+          "name": "Quit Koett",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        }
+      ],
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 8924,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      }
+    },
+    "id": "1793906460968333428"
+  },
+  "m4-tray-fix-result": {
+    "ok": true,
+    "result": {
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 8924,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      },
+      "history_sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+      "trace": "tray_focus hwnd=131204 current=131204 class=Shell_SecondaryTrayWnd tray=true previous=0\ntray_focus hwnd=197208 current=197208 class=Chrome_WidgetWin_1 tray=false previous=0\ntray_focus hwnd=132000 current=197208 class=Chrome_WidgetWin_1 tray=false previous=197208\ntray_focus hwnd=197208 current=197208 class=Chrome_WidgetWin_1 tray=false previous=132000\ntray_focus hwnd=131510 current=131510 class=Chrome_RenderWidgetHostHWND tray=false previous=197208\ntray_focus hwnd=197208 current=197208 class=Chrome_WidgetWin_1 tray=false previous=131510\ntray_focus hwnd=131228 current=131228 class=Shell_TrayWnd tray=true previous=197208\ntray_focus hwnd=132004 current=132004 class=TopLevelWindowForOverflowXamlIsland tray=true previous=197208\ntray_menu hwnd=132004 recent=197208\ntray_focus hwnd=196628 current=196628 class=KoettOwnerWindow tray=false previous=197208\ntray_focus hwnd=197208 current=197208 class=Chrome_WidgetWin_1 tray=false previous=0\n",
+      "focus": {
+        "hwnd": 197208,
+        "process": "msedge",
+        "pid": 732
+      },
+      "processes": [
+        {
+          "parent": 1252,
+          "pid": 8264
+        },
+        {
+          "parent": 8264,
+          "pid": 8296
+        },
+        {
+          "parent": 8264,
+          "pid": 8472
+        },
+        {
+          "parent": 8264,
+          "pid": 8484
+        },
+        {
+          "parent": 8264,
+          "pid": 8504
+        },
+        {
+          "parent": 4840,
+          "pid": 732
+        },
+        {
+          "parent": 732,
+          "pid": 1472
+        },
+        {
+          "parent": 732,
+          "pid": 9080
+        },
+        {
+          "parent": 732,
+          "pid": 4120
+        },
+        {
+          "parent": 732,
+          "pid": 9128
+        },
+        {
+          "parent": 732,
+          "pid": 6552
+        },
+        {
+          "parent": 732,
+          "pid": 7136
+        },
+        {
+          "parent": 732,
+          "pid": 2760
+        }
+      ],
+      "target": {
+        "case": "reader",
+        "hwnd": 197208,
+        "pid": 732
+      },
+      "phase": "Koett",
+      "events": [
+        {
+          "value": [
+            {
+              "at_ms": 40189,
+              "types": [
+                "text/plain"
+              ],
+              "images": 0,
+              "text": "Desktop lab recovery"
+            }
+          ],
+          "Count": 1
+        }
+      ]
+    },
+    "id": "1793906485297863244"
+  },
+  "m4-tray-switch-open": {
+    "ok": true,
+    "result": {
+      "phase": "Koett",
+      "rect": [
+        0,
+        1516,
+        896,
+        1586,
+        966
+      ],
+      "before": {
+        "hwnd": 197558,
+        "process": "powershell",
+        "pid": 9960
+      },
+      "after": {
+        "hwnd": 197558,
+        "process": "powershell",
+        "pid": 9960
+      }
+    },
+    "id": "1793906529118249299"
+  },
+  "m4-tray-switch-paste": {
+    "ok": true,
+    "result": {
+      "action": {
+        "control": "ControlType.MenuItem",
+        "invoke": true,
+        "name": "Paste last transcript"
+      },
+      "phase": "Koett Not pasted. Saved",
+      "history_sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+      "after": {
+        "hwnd": 196628,
+        "process": "Koett",
+        "pid": 8924
+      },
+      "before": {
+        "hwnd": 196628,
+        "process": "Koett",
+        "pid": 8924
+      },
+      "items": [
+        {
+          "name": "Status: Ready",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Shortcut:",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Change shortcut\u2026",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "separator",
+          "type": "ControlType.Separator",
+          "enabled": false
+        },
+        {
+          "name": "History",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Settings",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Draw while dictating",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Undo drawing",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Dictionary and replacements\u2026",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Record",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Copy last transcript",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Paste last transcript",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "Pause",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Cancel",
+          "type": "ControlType.MenuItem",
+          "enabled": false
+        },
+        {
+          "name": "Start at login",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        },
+        {
+          "name": "separator",
+          "type": "ControlType.Separator",
+          "enabled": false
+        },
+        {
+          "name": "Quit Koett",
+          "type": "ControlType.MenuItem",
+          "enabled": true
+        }
+      ],
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 8924,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      }
+    },
+    "id": "1793906558156350807"
+  },
+  "m4-runtime-8b0-launch": {
+    "ok": true,
+    "result": {
+      "editor_rect": [
+        98,
+        272,
+        1670,
+        461
+      ],
+      "target": {
+        "case": "m4-complete",
+        "hwnd": 327700,
+        "pid": 732
+      },
+      "after": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "before": {
+        "hwnd": 263062,
+        "process": "msedge",
+        "pid": 732
+      },
+      "phase": "Koett Recording",
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 5276,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      }
+    },
+    "id": "1793906607067442648"
+  },
+  "m4-pause-held-result": {
+    "ok": true,
+    "result": {
+      "canvas_armed": [],
+      "before": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "resumed": "Koett Recording",
+      "paused": "Koett Paused",
+      "after": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      }
+    },
+    "id": "1793906819932526962"
+  },
+  "m4-rotate-secondary-result": {
+    "ok": true,
+    "result": {
+      "phase": "Koett Recording",
+      "before": [
+        "\\\\.\\DISPLAY1 x=0 y=0 width=1920 height=1080 orientation=0",
+        "\\\\.\\DISPLAY2 x=1920 y=0 width=1280 height=1024 orientation=0"
+      ],
+      "focus": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "after": [
+        "\\\\.\\DISPLAY1 x=0 y=0 width=1920 height=1080 orientation=0",
+        "\\\\.\\DISPLAY2 x=-1024 y=0 width=1024 height=1280 orientation=1"
+      ]
+    },
+    "id": "1793906991901145891"
+  },
+  "m4-second-display-ink-result2": {
+    "ok": true,
+    "result": {
+      "phase": "Koett Recording",
+      "canvases": [
+        {
+          "dpi": 96,
+          "rect": [
+            -1024,
+            0,
+            0,
+            1280
+          ],
+          "hwnd": 197582
+        },
+        {
+          "dpi": 168,
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "hwnd": 197580
+        }
+      ],
+      "displays": [
+        "\\\\.\\DISPLAY1 x=0 y=0 width=1920 height=1080 orientation=0",
+        "\\\\.\\DISPLAY2 x=-1024 y=0 width=1024 height=1280 orientation=1"
+      ],
+      "focus": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      }
+    },
+    "id": "1793907133859288804"
+  },
+  "m4-runtime-auto-result": {
+    "ok": true,
+    "result": {
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 5276,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      },
+      "history_sha256": "94E37859F26A89C5AF1ADD1E390F60E6F4061C69B7C28D30C0806245537C06A2",
+      "trace": "dictionary_mode=spelling_only\ntray_focus hwnd=197558 current=197558 class=WindowsForms10.Window.8.app.0.23313b8_r8_ad1 tray=false previous=0\ntray_focus hwnd=327700 current=197558 class=Chrome_WidgetWin_1 tray=false previous=197558\ntray_focus hwnd=196706 current=196706 class=Chrome_WidgetWin_1 tray=false previous=327700\ntray_focus hwnd=327700 current=327700 class=Chrome_WidgetWin_1 tray=false previous=196706\ntray_focus hwnd=263062 current=263062 class=Chrome_RenderWidgetHostHWND tray=false previous=327700\ntray_focus hwnd=327700 current=327700 class=Chrome_WidgetWin_1 tray=false previous=263062\nmicrophone_rms=0.072659 microphone_peak=0.781830\nKoett: Stopped at the 10-minute limit\ndrawing_clipboard_read format=49380 pid=0\n",
+      "focus": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "processes": [
+        {
+          "parent": 1252,
+          "pid": 8264
+        },
+        {
+          "parent": 8264,
+          "pid": 8296
+        },
+        {
+          "parent": 8264,
+          "pid": 8472
+        },
+        {
+          "parent": 8264,
+          "pid": 8484
+        },
+        {
+          "parent": 8264,
+          "pid": 8504
+        },
+        {
+          "parent": 4840,
+          "pid": 732
+        },
+        {
+          "parent": 732,
+          "pid": 1472
+        },
+        {
+          "parent": 732,
+          "pid": 9080
+        },
+        {
+          "parent": 732,
+          "pid": 4120
+        },
+        {
+          "parent": 732,
+          "pid": 9128
+        },
+        {
+          "parent": 732,
+          "pid": 6552
+        },
+        {
+          "parent": 732,
+          "pid": 7136
+        },
+        {
+          "parent": 732,
+          "pid": 2760
+        },
+        {
+          "parent": 732,
+          "pid": 6732
+        }
+      ],
+      "target": {
+        "case": "m4-complete",
+        "hwnd": 327700,
+        "pid": 732
+      },
+      "phase": "Koett",
+      "events": [
+        {
+          "value": [
+            {
+              "at_ms": 607605,
+              "types": [
+                "Files"
+              ],
+              "images": 1,
+              "html_bytes": 0,
+              "text": ""
+            },
+            {
+              "at_ms": 607853,
+              "types": [
+                "text/plain"
+              ],
+              "images": 0,
+              "html_bytes": 0,
+              "text": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\n  msedge \u00b7 \u201cKoett M4 Browser m4-complete - Profile 1 - Microsoft\u200b Edge\u201d\n  URL unavailable \u00b7 Private mode unknown \u00b7 Selection unavailable\n- #2 (0:07) marked\n- #3 (0:07) marked"
+            }
+          ],
+          "Count": 2
+        }
+      ]
+    },
+    "id": "1793907373005711180"
+  },
+  "m4-copy-race-result": {
+    "ok": true,
+    "result": {
+      "race": {
+        "found": true,
+        "started": "2026-11-05T18:36:38.4620762Z",
+        "seen_ms": 150,
+        "write_ms": 190
+      },
+      "history": "94E37859F26A89C5AF1ADD1E390F60E6F4061C69B7C28D30C0806245537C06A2",
+      "after": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "before": {
+        "hwnd": 327700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "phase": "Koett Not pasted. Saved",
+      "clipboard": "M4 newer copy wins"
+    },
+    "id": "1793907396115321925"
+  },
+  "m4-history-raw-result": {
+    "ok": true,
+    "result": {
+      "raw": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+      "window": 263192,
+      "final": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\n  msedge \u00b7 \u201cKoett M4 Browser m4-complete - Profile 1 - Microsoft\u200b Edge\u201d\n  URL unavailable \u00b7 Private mode unknown \u00b7 Selection unavailable\n- #2 (0:07) marked\n- #3 (0:07) marked",
+      "focus": {
+        "hwnd": 263192,
+        "process": "Koett",
+        "pid": 5276
+      },
+      "passed": true
+    },
+    "id": "1793907434905969200"
+  },
+  "m4-copy-native-result": {
+    "ok": true,
+    "result": {
+      "receipt": "[{\"at_ms\":2545,\"types\":[\"text/plain\",\"text/html\",\"Files\"],\"images\":1,\"html_bytes\":2481791,\"text\":\"- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\\n  msedge \u00b7 \u201cKoett M4 Browser m4-complete - Profile 1 - Microsoft\u200b Edge\u201d\\n  URL unavailable \u00b7 Private mode unknown \u00b7 Selection unavailable\\n- #2 (0:07) marked\\n- #3 (0:07) marked\",\"native_images\":1,\"native_text\":\"- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d\\n  msedge \u00b7 \u201cKoett M4 Browser m4-complete - Profile 1 - Microsoft\u200b Edge\u201d\\n  URL unavailable \u00b7 Private mode unknown \u00b7 Selection unavailable\\n- #2 (0:07) marked\\n- #3 (0:07) marked\"}]",
+      "after": {
+        "hwnd": 197700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "before": {
+        "hwnd": 197700,
+        "process": "msedge",
+        "pid": 732
+      },
+      "window": 197700,
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 5276,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      },
+      "formats": [
+        "PNG",
+        "Format17",
+        "HTML Format",
+        "UnicodeText",
+        "Koett.DrawingOffer",
+        "Locale",
+        "Text",
+        "OEMText",
+        "Bitmap",
+        "DeviceIndependentBitmap"
+      ]
+    },
+    "id": "1793907477971493725"
+  },
+  "m4-silent-stop-result": {
+    "ok": true,
+    "result": {
+      "after": {
+        "focus": {
+          "hwnd": 590406,
+          "process": "msedge",
+          "pid": 732
+        },
+        "history": "94E37859F26A89C5AF1ADD1E390F60E6F4061C69B7C28D30C0806245537C06A2",
+        "clipboard": "M4 silent clipboard marker",
+        "last": "519918E66A134FFC79431D01FB9F908E852AB74529AA2C4414CCD171D0C7C2B1"
+      },
+      "before": {
+        "focus": {
+          "hwnd": 590406,
+          "process": "msedge",
+          "pid": 732
+        },
+        "history": "94E37859F26A89C5AF1ADD1E390F60E6F4061C69B7C28D30C0806245537C06A2",
+        "clipboard": "M4 silent clipboard marker",
+        "last": "519918E66A134FFC79431D01FB9F908E852AB74529AA2C4414CCD171D0C7C2B1"
+      },
+      "phase": "Koett",
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 9564,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      },
+      "passed": true
+    },
+    "id": "1793907573477350086"
+  },
+  "m4-silent-image-result": {
+    "ok": true,
+    "result": {
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 9564,
+        "sha256": "8B0E46921360A53DEF8B87F297F4A13D30DED4035D4956A7E8FFAB736BF89550"
+      },
+      "history_sha256": "28869C4A9925E030D2AA01DB9024F95B5B353F8023C078775E69C3D7441D69CA",
+      "trace": "dictionary_mode=spelling_only\ntray_focus hwnd=197700 current=197700 class=Chrome_WidgetWin_1 tray=false previous=0\ntray_focus hwnd=590406 current=590406 class=Chrome_WidgetWin_1 tray=false previous=197700\ntray_focus hwnd=393234 current=393234 class=Chrome_RenderWidgetHostHWND tray=false previous=590406\ntray_focus hwnd=590406 current=590406 class=Chrome_WidgetWin_1 tray=false previous=393234\nmicrophone_rms=0.000000 microphone_peak=0.000000\nmicrophone_rms=0.000000 microphone_peak=0.000000\ndrawing_clipboard_read format=49380 pid=0\n",
+      "focus": {
+        "hwnd": 590406,
+        "process": "msedge",
+        "pid": 732
+      },
+      "processes": [
+        {
+          "parent": 1252,
+          "pid": 8264
+        },
+        {
+          "parent": 8264,
+          "pid": 8296
+        },
+        {
+          "parent": 8264,
+          "pid": 8472
+        },
+        {
+          "parent": 8264,
+          "pid": 8484
+        },
+        {
+          "parent": 8264,
+          "pid": 8504
+        },
+        {
+          "parent": 4840,
+          "pid": 732
+        },
+        {
+          "parent": 732,
+          "pid": 1472
+        },
+        {
+          "parent": 732,
+          "pid": 9080
+        },
+        {
+          "parent": 732,
+          "pid": 4120
+        },
+        {
+          "parent": 732,
+          "pid": 9128
+        },
+        {
+          "parent": 732,
+          "pid": 6552
+        },
+        {
+          "parent": 732,
+          "pid": 7136
+        },
+        {
+          "parent": 732,
+          "pid": 2760
+        },
+        {
+          "parent": 732,
+          "pid": 6732
+        },
+        {
+          "parent": 732,
+          "pid": 1940
+        },
+        {
+          "parent": 732,
+          "pid": 3784
+        }
+      ],
+      "target": {
+        "case": "silence",
+        "hwnd": 590406,
+        "pid": 732
+      },
+      "phase": "Koett",
+      "events": [
+        {
+          "value": [
+            {
+              "at_ms": 89595,
+              "types": [
+                "Files"
+              ],
+              "images": 1,
+              "html_bytes": 0,
+              "text": ""
+            },
+            {
+              "at_ms": 89827,
+              "types": [
+                "text/plain"
+              ],
+              "images": 0,
+              "html_bytes": 0,
+              "text": "- #1 (0:02) marked"
+            }
+          ],
+          "Count": 2
+        }
+      ]
+    },
+    "id": "1793907673972298835"
+  },
+  "m4-other-key-spoils-held": {
+    "ok": true,
+    "result": {
+      "phase": "Koett Recording",
+      "others": 0,
+      "shift": true,
+      "focus": {
+        "hwnd": 590406,
+        "process": "msedge",
+        "pid": 732
+      },
+      "windows": [
+        {
+          "hwnd": 263116,
+          "name": "Koett Recording",
+          "armed": 0,
+          "class": "KoettOverlayWindow"
+        }
+      ]
+    },
+    "id": "1793907762654548993"
+  },
+  "m4-cancel-result": {
+    "ok": true,
+    "result": {
+      "after": {
+        "clipboard": "M4 cancel clipboard marker",
+        "history": "28869C4A9925E030D2AA01DB9024F95B5B353F8023C078775E69C3D7441D69CA",
+        "focus": {
+          "hwnd": 590406,
+          "process": "msedge",
+          "pid": 732
+        },
+        "last": "81D6816801512B1CFB97210BB28265F0A364307A7797EA3FCB3C9E536F918013"
+      },
+      "before": {
+        "history": "28869C4A9925E030D2AA01DB9024F95B5B353F8023C078775E69C3D7441D69CA",
+        "focus": {
+          "hwnd": 590406,
+          "process": "msedge",
+          "pid": 732
+        },
+        "last": "81D6816801512B1CFB97210BB28265F0A364307A7797EA3FCB3C9E536F918013"
+      },
+      "phase_before": "Koett Recording",
+      "phase_after": "Koett",
+      "passed": true
+    },
+    "id": "1793907765214945227"
+  },
+  "m4-settings-current": {
+    "ok": true,
+    "result": {
+      "dpi": 168,
+      "controls": [
+        {
+          "name": "Shortcut",
+          "id": "",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Ctrl+Shift+Space",
+          "id": "20",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Change shortcut\u2026",
+          "id": "23",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Microphone",
+          "id": "",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Microphone",
+          "id": "30",
+          "type": "ControlType.ComboBox",
+          "offscreen": false
+        },
+        {
+          "name": "Microphone",
+          "id": "ListBox",
+          "type": "ControlType.List",
+          "offscreen": true
+        },
+        {
+          "name": "System default",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Line In (High Definition Audio Device) via Built-in",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Drop Down Button",
+          "id": "DropDown",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Refresh",
+          "id": "31",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Preview",
+          "id": "32",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Recording mode",
+          "id": "",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Recording mode",
+          "id": "33",
+          "type": "ControlType.ComboBox",
+          "offscreen": false
+        },
+        {
+          "name": "Recording mode",
+          "id": "ListBox",
+          "type": "ControlType.List",
+          "offscreen": true
+        },
+        {
+          "name": "Toggle",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Hold",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Drop Down Button",
+          "id": "DropDown",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Start at login",
+          "id": "21",
+          "type": "ControlType.CheckBox",
+          "offscreen": false
+        },
+        {
+          "name": "Draw while dictating",
+          "id": "40",
+          "type": "ControlType.CheckBox",
+          "offscreen": false
+        },
+        {
+          "name": "Draw key",
+          "id": "",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Draw key",
+          "id": "41",
+          "type": "ControlType.ComboBox",
+          "offscreen": false
+        },
+        {
+          "name": "Draw key",
+          "id": "ListBox",
+          "type": "ControlType.List",
+          "offscreen": true
+        },
+        {
+          "name": "Shift",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Control",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Alt",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "offscreen": true
+        },
+        {
+          "name": "Drop Down Button",
+          "id": "DropDown",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Draw lock shortcut",
+          "id": "",
+          "type": "ControlType.Text",
+          "offscreen": false
+        },
+        {
+          "name": "Draw lock shortcut",
+          "id": "42",
+          "type": "ControlType.Edit",
+          "offscreen": false
+        },
+        {
+          "name": "Read selected text at pins",
+          "id": "43",
+          "type": "ControlType.CheckBox",
+          "offscreen": false
+        },
+        {
+          "name": "Paste shortcuts\u2026",
+          "id": "44",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Model and formatting\u2026",
+          "id": "34",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Save",
+          "id": "22",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Koett Settings",
+          "id": "TitleBar",
+          "type": "ControlType.TitleBar",
+          "offscreen": false
+        },
+        {
+          "name": "System Menu Bar",
+          "id": "SystemMenuBar",
+          "type": "ControlType.MenuBar",
+          "offscreen": false
+        },
+        {
+          "name": "System",
+          "id": "Item 1",
+          "type": "ControlType.MenuItem",
+          "offscreen": false
+        },
+        {
+          "name": "Minimize",
+          "id": "Minimize",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Maximize",
+          "id": "Maximize",
+          "type": "ControlType.Button",
+          "offscreen": false
+        },
+        {
+          "name": "Close",
+          "id": "Close",
+          "type": "ControlType.Button",
+          "offscreen": false
+        }
+      ],
+      "focus": {
+        "hwnd": 328760,
+        "process": "Koett",
+        "pid": 9564
+      },
+      "window": 328760
+    },
+    "id": "1793907810141903254"
+  },
+  "m4-menu-names-result2": {
+    "ok": true,
+    "result": {
+      "focus": {
+        "hwnd": 328760,
+        "process": "Koett",
+        "pid": 9564
+      },
+      "menus": [
+        {
+          "items": [
+            {
+              "name": "Text",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 default",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 default",
+              "type": "ControlType.Menu"
+            },
+            {
+              "name": "",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 applicationframehost",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 explorer",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 msedge",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 openconsole",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 powershell",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 systemsettings",
+              "type": "ControlType.MenuItem"
+            },
+            {
+              "name": "Images \u2014 windowsterminal",
+              "type": "ControlType.MenuItem"
+            }
+          ],
+          "hwnd": 132212
+        }
+      ]
+    },
+    "id": "1793908084918021706"
+  },
+  "m4-restore-before-preview": {
+    "ok": true,
+    "result": {
+      "focus": {
+        "hwnd": 590406,
+        "process": "msedge",
+        "pid": 732
+      },
+      "koett_processes": 0,
+      "restored": [
+        {
+          "sha256": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json"
+        },
+        {
+          "sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3"
+        },
+        {
+          "sha256": "41F9E18F92AD8DFA94861D37CCB1262F07A1660C7B42F50BF51252CF5B5D0383",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt"
+        }
+      ]
+    },
+    "id": "1793908264901831991"
+  },
+  "m4-display-restore": {
+    "ok": true,
+    "result": {
+      "focus": {
+        "hwnd": 590406,
+        "process": "msedge",
+        "pid": 732
+      },
+      "displays": [
+        "\\\\.\\DISPLAY1 x=0 y=0 width=1920 height=1080 orientation=0",
+        "\\\\.\\DISPLAY2 x=1920 y=0 width=1280 height=1024 orientation=0"
+      ]
+    },
+    "id": "1793908297925597103"
+  },
+  "m4-shutdown-before-preview": {
+    "ok": true,
+    "result": {
+      "shutdown_requested": true,
+      "focus": {
+        "hwnd": 590406,
+        "process": "msedge",
+        "pid": 732
+      }
+    },
+    "id": "1793908299561065227"
+  }
+}

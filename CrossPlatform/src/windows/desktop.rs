@@ -1,5 +1,6 @@
 mod correction;
 mod microphone;
+mod paste_shortcuts;
 pub(super) mod processing;
 #[path = "words.rs"]
 mod words;
@@ -330,7 +331,7 @@ fn run(
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             if settings { 560 } else { 960 },
-            if settings { 440 } else { 680 },
+            if settings { 600 } else { 680 },
             if correction_view && owner != 0 {
                 Some(HWND(owner as *mut _))
             } else {
@@ -581,14 +582,14 @@ impl Window {
                 "Recording limit",
                 Default::default(),
                 0,
-                [528, 224, 200, 24],
+                [24, 268, 200, 24],
             )?;
             self.recording_limit = self.control(
                 w!("COMBOBOX"),
                 "",
                 WS_TABSTOP | WINDOW_STYLE(CBS_DROPDOWNLIST as u32),
                 35,
-                [528, 252, 212, 140],
+                [24, 300, 212, 140],
             )?;
             for minutes in crate::settings::RECORDING_LIMIT_CHOICES {
                 let label = super::wide(&format!("{minutes} minutes"));
@@ -618,9 +619,25 @@ impl Window {
                 "Start at login",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 STARTUP,
-                [24, 252, 240, 32],
+                [24, 224, 240, 32],
             )?;
             self.theme.apply_checkbox(self.startup);
+            let draw = self.control(
+                w!("BUTTON"),
+                "Draw while dictating",
+                WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
+                40,
+                [300, 300, 212, 32],
+            )?;
+            self.theme.apply_checkbox(draw);
+            unsafe {
+                SendMessageW(
+                    draw,
+                    BM_SETCHECK,
+                    Some(WPARAM(usize::from(settings.draw_while_dictating))),
+                    None,
+                );
+            }
             unsafe {
                 SendMessageW(
                     self.startup,
@@ -630,21 +647,91 @@ impl Window {
                 );
             }
             self.control(
+                w!("STATIC"),
+                "Draw key",
+                Default::default(),
+                0,
+                [24, 344, 148, 20],
+            )?;
+            let key = self.control(
+                w!("COMBOBOX"),
+                "Draw key",
+                WS_TABSTOP | WINDOW_STYLE(CBS_DROPDOWNLIST as u32 | WS_VSCROLL.0),
+                41,
+                [24, 368, 148, 140],
+            )?;
+            for label in ["Shift", "Control", "Alt"] {
+                let label = label.encode_utf16().chain([0]).collect::<Vec<_>>();
+                unsafe {
+                    SendMessageW(
+                        key,
+                        CB_ADDSTRING,
+                        None,
+                        Some(LPARAM(label.as_ptr() as isize)),
+                    );
+                }
+            }
+            let index = match settings.draw_key {
+                crate::settings::DrawKey::Shift => 0,
+                crate::settings::DrawKey::Control => 1,
+                crate::settings::DrawKey::Alt => 2,
+            };
+            unsafe {
+                SendMessageW(key, CB_SETCURSEL, Some(WPARAM(index)), None);
+            }
+            self.control(
+                w!("STATIC"),
+                "Draw lock shortcut",
+                Default::default(),
+                0,
+                [192, 344, 320, 20],
+            )?;
+            self.control(
+                w!("EDIT"),
+                &settings.draw_lock_shortcut,
+                WS_TABSTOP | WS_BORDER | WINDOW_STYLE(ES_AUTOHSCROLL as u32),
+                42,
+                [192, 368, 320, 30],
+            )?;
+            let selected = self.control(
+                w!("BUTTON"),
+                "Read selected text at pins",
+                WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
+                43,
+                [24, 412, 264, 32],
+            )?;
+            self.theme.apply_checkbox(selected);
+            self.control(
+                w!("BUTTON"),
+                "Paste shortcuts…",
+                WS_TABSTOP,
+                44,
+                [300, 412, 212, 32],
+            )?;
+            unsafe {
+                SendMessageW(
+                    selected,
+                    BM_SETCHECK,
+                    Some(WPARAM(usize::from(settings.pin_selected_text))),
+                    None,
+                );
+            }
+            self.control(
                 w!("BUTTON"),
                 "Model and formatting…",
                 WS_TABSTOP,
                 34,
-                [300, 300, 212, 32],
+                [300, 460, 212, 32],
             )?;
             self.control(
                 w!("BUTTON"),
                 "Save",
                 WS_TABSTOP | WINDOW_STYLE(BS_DEFPUSHBUTTON as u32),
                 SAVE,
-                [24, 300, 100, 32],
+                [24, 460, 100, 32],
             )?;
             self.detail =
-                self.control(w!("STATIC"), "", Default::default(), 0, [24, 344, 488, 48])?;
+                self.control(w!("STATIC"), "", Default::default(), 0, [24, 504, 488, 48])?;
         } else {
             self.control(
                 w!("STATIC"),
@@ -983,6 +1070,18 @@ impl Window {
                 Err(error) => super::show_fatal_error(&error),
             },
             34 => open_kind(true, false, true, HWND(self.owner as *mut _), None),
+            44 => {
+                let result = unsafe { GetDlgItem(Some(self.hwnd), 44) }
+                    .map_err(|e| e.to_string())
+                    .and_then(|anchor| paste_shortcuts::show(self.hwnd, anchor));
+                set(
+                    self.detail,
+                    match &result {
+                        Ok(()) => "",
+                        Err(error) => error,
+                    },
+                );
+            }
             CHANGE_SHORTCUT => unsafe {
                 let _ = PostMessageW(
                     Some(HWND(self.owner as *mut _)),
@@ -996,6 +1095,40 @@ impl Window {
                 let result = (|| {
                     let microphone = self.microphone.as_ref().map(|m| m.selected()).transpose()?;
                     let mut edit = Settings::edit()?;
+                    let draw =
+                        unsafe { GetDlgItem(Some(self.hwnd), 40) }.map_err(|e| e.to_string())?;
+                    edit.settings.draw_while_dictating =
+                        unsafe { SendMessageW(draw, BM_GETCHECK, None, None) }.0 != 0;
+                    let key =
+                        unsafe { GetDlgItem(Some(self.hwnd), 41) }.map_err(|e| e.to_string())?;
+                    edit.settings.draw_key =
+                        match unsafe { SendMessageW(key, CB_GETCURSEL, None, None) }.0 {
+                            0 => crate::settings::DrawKey::Shift,
+                            1 => crate::settings::DrawKey::Control,
+                            2 => crate::settings::DrawKey::Alt,
+                            _ => return Err("Choose a draw key".into()),
+                        };
+                    let shortcut = read(
+                        unsafe { GetDlgItem(Some(self.hwnd), 42) }.map_err(|e| e.to_string())?,
+                    );
+                    let shortcut = shortcut.trim();
+                    if !shortcut.is_empty() {
+                        let draw = shortcut.parse::<crate::shortcut::Shortcut>()?;
+                        if edit
+                            .settings
+                            .shortcut
+                            .parse::<crate::shortcut::Shortcut>()
+                            .ok()
+                            == Some(draw)
+                        {
+                            return Err("Draw lock and dictation need different shortcuts".into());
+                        }
+                    }
+                    edit.settings.draw_lock_shortcut = shortcut.to_owned();
+                    let selected =
+                        unsafe { GetDlgItem(Some(self.hwnd), 43) }.map_err(|e| e.to_string())?;
+                    edit.settings.pin_selected_text =
+                        unsafe { SendMessageW(selected, BM_GETCHECK, None, None) }.0 != 0;
                     if let Some(microphone) = microphone {
                         edit.settings.microphone = microphone;
                     }
@@ -1148,7 +1281,7 @@ fn fit_window(hwnd: HWND, suggested: Option<&RECT>, settings: bool, processing: 
             .map(|r| r.bottom - r.top)
             .unwrap_or(
                 if settings {
-                    if processing { 480 } else { 440 }
+                    if processing { 480 } else { 600 }
                 } else {
                     680
                 } * dpi
@@ -1243,7 +1376,11 @@ unsafe extern "system" fn proc(
                             processing.theme(&window.theme);
                         }
                         if window.settings && !window.processing_view {
-                            window.theme.apply_checkbox(window.startup);
+                            for id in [STARTUP, 40, 43] {
+                                if let Ok(checkbox) = unsafe { GetDlgItem(Some(hwnd), id as i32) } {
+                                    window.theme.apply_checkbox(checkbox);
+                                }
+                            }
                         } else if let Ok(raw) = unsafe { GetDlgItem(Some(hwnd), SHOW_RAW as i32) } {
                             window.theme.apply_checkbox(raw);
                         }

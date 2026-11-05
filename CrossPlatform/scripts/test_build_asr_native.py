@@ -22,6 +22,7 @@ from build_asr_native import (
     native_options,
     prepare_context_header,
     remove_disabled_tts_stubs,
+    shared_context_compiled,
     stage_libraries,
     validate_onnx_cpp_abi,
 )
@@ -168,6 +169,24 @@ class AsrBuildTests(unittest.TestCase):
         windows = configure_command('source', 'build', 'x86_64-pc-windows-msvc')
         self.assertEqual(windows[5:7], ['-A', 'x64'])
         self.assertNotIn('-G', windows)
+
+    def test_explicit_cross_toolchain_uses_ninja_without_visual_studio_platform(self):
+        command = configure_command('source', 'build', 'x86_64-pc-windows-msvc',
+                                    toolchain=Path('private-toolchain.cmake'))
+        self.assertEqual(command[5:7], ['-G', 'Ninja'])
+        self.assertNotIn('-A', command)
+        self.assertIn(f'-DCMAKE_TOOLCHAIN_FILE={Path("private-toolchain.cmake").resolve()}', command)
+        self.assertIn('-DSHERPA_ONNX_ENABLE_TTS=OFF', command)
+
+    def test_context_proof_accepts_exact_clang_x64_constants_not_partial_markers(self):
+        target = 'x86_64-pc-windows-msvc'
+        folded = b'\x48\xb9koett_co\x48\x33\x08\x48\xba_context\x48\x33\x50\x05'
+        self.assertTrue(shared_context_compiled(folded, target))
+        self.assertTrue(shared_context_compiled(b'koett_context', target))
+        for data in [b'koett_co', b'_context', folded.replace(b'_context', b'_contest'),
+                     b'\x48\xb9koett_co' + b'\0' * 100 + b'\x48\xba_context']:
+            self.assertFalse(shared_context_compiled(data, target))
+        self.assertFalse(shared_context_compiled(folded, 'x86_64-unknown-linux-gnu'))
 
     def test_removes_only_disabled_tts_implementation_with_nested_guards(self):
         original = ("before\n#if SHERPA_ONNX_ENABLE_TTS == 1\n"

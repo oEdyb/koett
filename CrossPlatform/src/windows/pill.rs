@@ -10,6 +10,10 @@ use windows::core::Interface;
 use windows::core::w;
 use windows_numerics::Matrix3x2;
 
+pub(super) struct TimelinePaint<'a> {
+    pub bars: &'a [(f32, f32)],
+    pub bands: &'a [(u32, f32, f32)],
+}
 pub(super) struct Renderer {
     device: IDCompositionDesktopDevice,
     _target: IDCompositionTarget,
@@ -97,7 +101,7 @@ impl Renderer {
         &mut self,
         hwnd: HWND,
         bounds: RECT,
-        bars: &[(f32, f32)],
+        timeline: TimelinePaint<'_>,
         elapsed: u64,
         state: &super::pill_state::State,
         now: u64,
@@ -210,6 +214,15 @@ impl Renderer {
                             &coral,
                         );
                     }
+                } else if matches!(state.phase, Phase::Recording) && state.hovered {
+                    target.FillRoundedRectangle(
+                        &D2D1_ROUNDED_RECT {
+                            rect: rect(18.0, 18.0, 30.0, 30.0),
+                            radiusX: 3.0,
+                            radiusY: 3.0,
+                        },
+                        &coral,
+                    );
                 } else if state.paused {
                     draw("Ⅱ", 18.0, 32.0, false);
                 } else if state.drawing {
@@ -253,7 +266,31 @@ impl Renderer {
                         },
                         None,
                     )?;
-                    for (position, level) in bars {
+                    for (index, left, right) in timeline.bands {
+                        coral.SetOpacity(0.14);
+                        let x = 44.0 + left * 3.0;
+                        let end = 44.0 + right * 3.0;
+                        target.FillRoundedRectangle(
+                            &D2D1_ROUNDED_RECT {
+                                rect: rect(x, 9.0, end.max(x + 3.0), 39.0),
+                                radiusX: 3.0,
+                                radiusY: 3.0,
+                            },
+                            &coral,
+                        );
+                        coral.SetOpacity(0.9);
+                        let label = index.to_string().encode_utf16().collect::<Vec<_>>();
+                        target.DrawText(
+                            &label,
+                            &self.body,
+                            &rect(x + 1.0, 30.0, (x + 24.0).min(236.0), 44.0),
+                            &coral,
+                            D2D1_DRAW_TEXT_OPTIONS_CLIP,
+                            DWRITE_MEASURING_MODE_NATURAL,
+                        );
+                    }
+                    coral.SetOpacity(1.0);
+                    for (position, level) in timeline.bars {
                         let silent = *level < 0.08;
                         let dim = silent || matches!(state.phase, Phase::Transcribing);
                         let alpha = if light {
@@ -313,9 +350,12 @@ impl Renderer {
                             draw(
                                 &preview.replace(['\n', '\r'], " "),
                                 44.0 + shift,
-                                234.0,
+                                if state.media_result { 182.0 } else { 234.0 },
                                 false,
                             );
+                            if state.media_result {
+                                draw("Paste", 192.0, 237.0, false);
+                            }
                             draw(
                                 if state.copied { "Copied" } else { "Copy" },
                                 246.0,

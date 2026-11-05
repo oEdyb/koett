@@ -1,4 +1,6 @@
 use std::path::Path;
+#[cfg(target_os = "windows")]
+use std::sync::atomic::AtomicU64;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -16,6 +18,8 @@ pub(crate) mod preview;
 
 #[cfg(any(target_os = "windows", test))]
 mod fixture;
+#[cfg(target_os = "windows")]
+pub mod windows_capture;
 
 /// The longest choice in Settings. Each recording's own limit comes from there.
 pub(crate) const MAX_RECORDING_DURATION: Duration = Duration::from_secs(120 * 60);
@@ -73,6 +77,10 @@ pub struct AudioLevels {
     rms: Arc<AtomicU32>,
     peak: Arc<AtomicU32>,
     paused: Arc<AtomicBool>,
+    #[cfg(target_os = "windows")]
+    captured_frames: Arc<AtomicU64>,
+    #[cfg(target_os = "windows")]
+    sample_rate: Arc<AtomicU32>,
 }
 
 impl AudioLevels {
@@ -81,7 +89,22 @@ impl AudioLevels {
             rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             paused: Arc::new(AtomicBool::new(false)),
+            #[cfg(target_os = "windows")]
+            captured_frames: Arc::new(AtomicU64::new(0)),
+            #[cfg(target_os = "windows")]
+            sample_rate: Arc::new(AtomicU32::new(0)),
         }
+    }
+
+    /// The accepted audio timeline, excluding pauses and time after a fixture ends.
+    #[cfg(target_os = "windows")]
+    pub fn recorded_ms(&self) -> u64 {
+        let rate = self.sample_rate.load(Ordering::Relaxed);
+        self.captured_frames
+            .load(Ordering::Relaxed)
+            .saturating_mul(1000)
+            .checked_div(u64::from(rate))
+            .unwrap_or(0)
     }
 
     /// While paused the capture callback discards input: nothing is recorded,
@@ -111,6 +134,8 @@ impl AudioLevels {
 }
 
 pub struct MicrophoneRecorder {
+    #[cfg(target_os = "windows")]
+    process: Option<windows_capture::Process>,
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     _capture_priority: preview::RecordingPriority,
     stream: Option<cpal::Stream>,
@@ -138,9 +163,14 @@ impl MicrophoneRecorder {
     pub fn start_streaming_with_device(
         microphone: Option<&str>,
     ) -> Result<(Self, Receiver<Vec<f32>>), String> {
-        let (sender, receiver) = mpsc::channel();
-        let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
-        Ok((recorder, receiver))
+        #[cfg(target_os = "windows")]
+        return windows_capture::start(microphone);
+        #[cfg(not(target_os = "windows"))]
+        {
+            let (sender, receiver) = mpsc::channel();
+            let recorder = Self::start_inner(MAX_RECORDING_DURATION, Some(sender), microphone)?;
+            Ok((recorder, receiver))
+        }
     }
 
     fn start_inner(
@@ -182,6 +212,10 @@ impl MicrophoneRecorder {
         let overflowed = Arc::new(AtomicBool::new(false));
         let stream_error = Arc::new(Mutex::new(None));
         let levels = AudioLevels::new();
+        #[cfg(target_os = "windows")]
+        levels
+            .sample_rate
+            .store(config.sample_rate, Ordering::Relaxed);
         let stop_collector = Arc::new(AtomicBool::new(false));
 
         eprintln!(
@@ -320,6 +354,8 @@ impl MicrophoneRecorder {
         }
 
         Ok(Self {
+            #[cfg(target_os = "windows")]
+            process: None,
             #[cfg(any(target_os = "linux", target_os = "windows"))]
             _capture_priority: capture_priority,
             stream: Some(stream),
@@ -351,10 +387,16 @@ impl MicrophoneRecorder {
     pub fn finish_with_warning(mut self) -> Result<(AudioRecording, Option<String>), String> {
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
-        let samples = self
+        #[cfg(target_os = "windows")]
+        self.process.take();
+        let collector = self
             .collector
             .take()
-            .expect("a live recorder always has a collector")
+            .expect("a live recorder always has a collector");
+        #[cfg(target_os = "windows")]
+        let samples = windows_capture::join(collector)?;
+        #[cfg(not(target_os = "windows"))]
+        let samples = collector
             .join()
             .map_err(|_| "the microphone collector stopped unexpectedly".to_string())?;
 
@@ -384,7 +426,12 @@ impl Drop for MicrophoneRecorder {
     fn drop(&mut self) {
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
+        #[cfg(target_os = "windows")]
+        self.process.take();
         if let Some(collector) = self.collector.take() {
+            #[cfg(target_os = "windows")]
+            let _ = windows_capture::join(collector);
+            #[cfg(not(target_os = "windows"))]
             let _ = collector.join();
         }
     }
@@ -405,9 +452,16 @@ fn collect_samples(
     mut audio_chunks: Option<Sender<Vec<f32>>>,
 ) -> Vec<f32> {
     let mut samples = Vec::new();
+    #[cfg(target_os = "windows")]
+    let forward_only = windows_capture::helper_requested();
     let mut chunk = [0.0_f32; 2_048];
     loop {
         let count = consumer.pop_slice(&mut chunk);
+        #[cfg(target_os = "windows")]
+        if !forward_only {
+            samples.extend_from_slice(&chunk[..count]);
+        }
+        #[cfg(not(target_os = "windows"))]
         samples.extend_from_slice(&chunk[..count]);
         if count > 0
             && let Some(sender) = &audio_chunks
@@ -489,6 +543,10 @@ where
         consume(sample);
     }
     if frame_count > 0 {
+        #[cfg(target_os = "windows")]
+        levels
+            .captured_frames
+            .fetch_add(frame_count as u64, Ordering::Relaxed);
         levels.update((square_sum / frame_count as f32).sqrt(), peak);
     }
 }
@@ -523,6 +581,13 @@ fn replacement_input<'a>(devices: &'a [InputDevice], default: Option<&str>) -> O
 }
 
 pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>, String> {
+    #[cfg(target_os = "windows")]
+    return windows_capture::resolve(selected);
+    #[cfg(not(target_os = "windows"))]
+    resolve_recording_input_native(selected)
+}
+
+fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<String>, String> {
     let Some(selected) = selected else {
         return Ok(None);
     };
@@ -530,7 +595,7 @@ pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>,
     let id = selected
         .parse::<cpal::DeviceId>()
         .map_err(|e| format!("Invalid microphone ID: {e}"))?;
-    let devices = input_devices()?;
+    let devices = input_devices_native()?;
     if devices.iter().any(|device| device.id == id.to_string()) {
         return Ok(Some(selected.into()));
     }
@@ -544,6 +609,13 @@ pub fn resolve_recording_input(selected: Option<&str>) -> Result<Option<String>,
 }
 
 pub fn input_devices() -> Result<Vec<InputDevice>, String> {
+    #[cfg(target_os = "windows")]
+    return windows_capture::devices();
+    #[cfg(not(target_os = "windows"))]
+    input_devices_native()
+}
+
+fn input_devices_native() -> Result<Vec<InputDevice>, String> {
     cpal::default_host()
         .input_devices()
         .map_err(|e| e.to_string())?
@@ -566,6 +638,22 @@ mod tests {
     use ringbuf::traits::{Producer, Split};
 
     use super::{AudioRecording, collect_samples, is_recoverable_stream_error};
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn drawing_clock_counts_audio_frames_and_excludes_pause() {
+        let levels = super::AudioLevels::new();
+        assert_eq!(levels.recorded_ms(), 0);
+        levels.sample_rate.store(16_000, super::Ordering::Relaxed);
+        super::measure_input(&[0.0_f32; 320], 2, &levels, |_| {});
+        assert_eq!(levels.recorded_ms(), 10);
+        levels.set_paused(true);
+        super::measure_input(&[0.0_f32; 320], 2, &levels, |_| panic!("paused"));
+        assert_eq!(levels.recorded_ms(), 10);
+        levels.set_paused(false);
+        super::measure_input(&[0.0_f32; 80], 1, &levels, |_| {});
+        assert_eq!(levels.clone().recorded_ms(), 15);
+    }
 
     #[test]
     fn live_levels_convert_integer_stereo_and_reset_for_silence() {

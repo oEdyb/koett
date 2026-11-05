@@ -1,0 +1,435 @@
+{
+  "m4-native-1249196": {
+    "ok": true,
+    "result": {
+      "results": [
+        {
+          "passed": true,
+          "filter": "windows::draw_input::tests",
+          "error": "",
+          "output": "\nrunning 2 tests\ntest windows::draw_input::tests::raw_key_sides_and_idle_release_do_not_read_characters ... ok\ntest windows::draw_input::tests::startup_hold_and_chord_cannot_become_ink_without_release ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 275 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 2
+        },
+        {
+          "passed": true,
+          "filter": "windows::clipboard::tests",
+          "error": "",
+          "output": "\nrunning 4 tests\ntest windows::clipboard::tests::clipboard_text_is_exact_utf16_and_invalid_text_is_not_truncated ... ok\ntest windows::clipboard::tests::html_offsets_are_utf8_bytes_and_text_is_not_markup ... ok\ntest windows::clipboard::tests::native_bundle_round_trip_and_newer_copy_preservation ... ok\ntest windows::clipboard::tests::rendered_receipts_ignore_known_observers_and_accept_anonymous_reads ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 273 filtered out; finished in 0.04s\n\n",
+          "exit": 0,
+          "expected": 4
+        },
+        {
+          "passed": true,
+          "filter": "windows::contact_sheet::tests",
+          "error": "",
+          "output": "\nrunning 1 test\ntest windows::contact_sheet::tests::mixed_aspect_layout_preserves_order_aspect_and_pixel_cap ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "windows::paste_timing::tests",
+          "error": "",
+          "output": "\nrunning 1 test\ntest windows::paste_timing::tests::target_read_keeps_the_processing_gap_and_unknown_reader_keeps_its_bound ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "windows::pin_policy::tests",
+          "error": "",
+          "output": "\nrunning 1 test\ntest windows::pin_policy::tests::urls_are_explicit_web_values_and_video_times_cannot_be_guessed ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "windows::pixels::tests",
+          "error": "",
+          "output": "\nrunning 1 test\ntest windows::pixels::tests::dib_keeps_bgra_top_down_and_rejects_invalid_allocations ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "audio::windows_capture::tests",
+          "error": "",
+          "output": "\nrunning 4 tests\ntest audio::windows_capture::tests::hung_open_is_terminated_and_a_later_open_can_respond ... ok\ntest audio::windows_capture::tests::microphone_protocol_rejects_corrupt_and_unbounded_packets ... ok\ntest audio::windows_capture::tests::stalled_reader_cleanup_has_a_deadline ... ok\ntest audio::windows_capture::tests::stalled_readers_keep_the_spawn_budget_until_they_exit ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 273 filtered out; finished in 0.79s\n\n",
+          "exit": 0,
+          "expected": 4
+        },
+        {
+          "passed": true,
+          "filter": "audio::windows_capture::preview_proxy::tests",
+          "error": "",
+          "output": "\nrunning 1 test\ntest audio::windows_capture::preview_proxy::tests::preview_protocol_accepts_levels_and_propagates_failure_without_audio ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "audio::tests::drawing_clock",
+          "error": "",
+          "output": "\nrunning 1 test\ntest audio::tests::drawing_clock_counts_audio_frames_and_excludes_pause ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        },
+        {
+          "passed": true,
+          "filter": "audio::fixture::tests::finite_fixture",
+          "error": "",
+          "output": "\nrunning 1 test\ntest audio::fixture::tests::finite_fixture_clock_stops_with_the_last_audio_frame ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 276 filtered out; finished in 0.00s\n\n",
+          "exit": 0,
+          "expected": 1
+        }
+      ],
+      "tests_sha256": "4C805B54F606142895DF24DC2E35963C986ADFBFCE6FA8DF3A7375F3CCFFEDA0",
+      "app_sha256": "124919625D4ACCE1B0FC8F818011984B9C46680CB3B2D90A1FDEA38A6D14E874",
+      "focus": {
+        "hwnd": 131218,
+        "process": "explorer",
+        "pid": 4164
+      },
+      "passed": true
+    },
+    "id": "1793912050811935830"
+  },
+  "m4-preview-positive-result": {
+    "ok": true,
+    "result": {
+      "passed": true,
+      "scope": "Virtual HDA device, not a physical microphone.",
+      "focus": {
+        "hwnd": 66484,
+        "process": "Koett",
+        "pid": 3776
+      },
+      "active": {
+        "workers": [
+          6148
+        ],
+        "focus": {
+          "hwnd": 66502,
+          "process": "Koett",
+          "pid": 3776
+        },
+        "text": [
+          "Shortcut",
+          "Ctrl+Shift+Space",
+          "Microphone",
+          "Input level: 0%",
+          "Recording mode",
+          "Draw key",
+          "Draw lock shortcut",
+          ""
+        ],
+        "button": "Stop preview"
+      },
+      "before": {
+        "hwnd": 66484,
+        "process": "Koett",
+        "pid": 3776
+      },
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 3776,
+        "sha256": "124919625D4ACCE1B0FC8F818011984B9C46680CB3B2D90A1FDEA38A6D14E874"
+      },
+      "remaining": []
+    },
+    "id": "1793912640345690325"
+  },
+  "m4-preview-timeout-current": {
+    "ok": true,
+    "result": {
+      "scope": "Forced worker stalls; no physical microphone.",
+      "preview": [
+        {
+          "pending_visible": true,
+          "round": 1,
+          "worker_pids": [
+            6004
+          ],
+          "focus": {
+            "hwnd": 132068,
+            "process": "Koett",
+            "pid": 5932
+          },
+          "passed": true,
+          "pending_disabled": true,
+          "text": [
+            "Shortcut",
+            "Ctrl+Shift+Space",
+            "Microphone",
+            "Microphone timed out. Try again.",
+            "Recording mode",
+            "Draw key",
+            "Draw lock shortcut",
+            ""
+          ],
+          "remaining_workers": [],
+          "elapsed_ms": 5566
+        },
+        {
+          "pending_visible": true,
+          "round": 2,
+          "worker_pids": [
+            8124
+          ],
+          "focus": {
+            "hwnd": 132068,
+            "process": "Koett",
+            "pid": 5932
+          },
+          "passed": true,
+          "pending_disabled": true,
+          "text": [
+            "Shortcut",
+            "Ctrl+Shift+Space",
+            "Microphone",
+            "Microphone timed out. Try again.",
+            "Recording mode",
+            "Draw key",
+            "Draw lock shortcut",
+            ""
+          ],
+          "remaining_workers": [],
+          "elapsed_ms": 5444
+        }
+      ],
+      "enumeration": {
+        "workers": [],
+        "focus": {
+          "hwnd": 132068,
+          "process": "Koett",
+          "pid": 5932
+        },
+        "text": [
+          "Shortcut",
+          "Ctrl+Shift+Space",
+          "Microphone",
+          "Microphone timed out. Try again.",
+          "Recording mode",
+          "Draw key",
+          "Draw lock shortcut",
+          ""
+        ],
+        "elapsed_ms": 4824
+      },
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 5932,
+        "sha256": "124919625D4ACCE1B0FC8F818011984B9C46680CB3B2D90A1FDEA38A6D14E874"
+      },
+      "passed": true
+    },
+    "id": "1793912969620278904"
+  },
+  "m4-open-timeout-current": {
+    "ok": true,
+    "result": {
+      "scope": "Start Koett with --microphone-open-timeout-lab and Ctrl+Shift+Space toggle settings first. Injected child stalls, no physical microphone.",
+      "artifact": {
+        "path": "C:\\Users\\KoettLab\\KoettM4Local\\Koett.exe",
+        "pid": 5932,
+        "sha256": "124919625D4ACCE1B0FC8F818011984B9C46680CB3B2D90A1FDEA38A6D14E874"
+      },
+      "rounds": [
+        {
+          "input": "default",
+          "round": 1,
+          "remaining_worker_pids": [],
+          "focus": {
+            "hwnd": 196788,
+            "process": "msedge",
+            "pid": 6876
+          },
+          "passed": true,
+          "observed_worker_pids": [
+            1696
+          ],
+          "phase": "Koett. Microphone timed out. Try again.",
+          "visible": true,
+          "elapsed_ms": 5152
+        },
+        {
+          "input": "default",
+          "round": 2,
+          "remaining_worker_pids": [],
+          "focus": {
+            "hwnd": 196788,
+            "process": "msedge",
+            "pid": 6876
+          },
+          "passed": true,
+          "observed_worker_pids": [
+            1180
+          ],
+          "phase": "Koett. Microphone timed out. Try again.",
+          "visible": true,
+          "elapsed_ms": 5051
+        },
+        {
+          "input": "named",
+          "round": 1,
+          "remaining_worker_pids": [],
+          "focus": {
+            "hwnd": 196788,
+            "process": "msedge",
+            "pid": 6876
+          },
+          "passed": true,
+          "observed_worker_pids": [
+            1948
+          ],
+          "phase": "Koett. Microphone timed out. Try again.",
+          "visible": true,
+          "elapsed_ms": 5092
+        },
+        {
+          "input": "named",
+          "round": 2,
+          "remaining_worker_pids": [],
+          "focus": {
+            "hwnd": 196788,
+            "process": "msedge",
+            "pid": 6876
+          },
+          "passed": true,
+          "observed_worker_pids": [
+            7536
+          ],
+          "phase": "Koett. Microphone timed out. Try again.",
+          "visible": true,
+          "elapsed_ms": 5127
+        }
+      ],
+      "passed": true
+    },
+    "id": "1793912992371022226"
+  },
+  "m4-menu-tabs-probe": {
+    "ok": true,
+    "result": {
+      "focus": {
+        "hwnd": 66484,
+        "process": "Koett",
+        "pid": 3776
+      },
+      "rows": [
+        {
+          "input": [
+            "Ctrl+V\t",
+            "Ctrl+Shift+V\t"
+          ],
+          "items": [
+            {
+              "name": "Text",
+              "accelerator": ""
+            },
+            {
+              "name": "separator",
+              "accelerator": ""
+            },
+            {
+              "name": "Ctrl+V",
+              "accelerator": ""
+            },
+            {
+              "name": "Ctrl+Shift+V",
+              "accelerator": ""
+            }
+          ]
+        },
+        {
+          "input": [
+            "Standard paste\tCtrl+V",
+            "Alternative paste\tCtrl+Shift+V"
+          ],
+          "items": [
+            {
+              "name": "Text",
+              "accelerator": ""
+            },
+            {
+              "name": "separator",
+              "accelerator": ""
+            },
+            {
+              "name": "Standard paste",
+              "accelerator": "Ctrl+V"
+            },
+            {
+              "name": "Alternative paste",
+              "accelerator": "Ctrl+Shift+V"
+            }
+          ]
+        },
+        {
+          "input": [
+            "Standard (Ctrl+V)",
+            "Alternative (Ctrl+Shift+V)"
+          ],
+          "items": [
+            {
+              "name": "Text",
+              "accelerator": ""
+            },
+            {
+              "name": "separator",
+              "accelerator": ""
+            },
+            {
+              "name": "Standard (",
+              "accelerator": "Ctrl + V)"
+            },
+            {
+              "name": "Alternative (",
+              "accelerator": "Ctrl + Shift+V)"
+            }
+          ]
+        }
+      ]
+    },
+    "id": "1793912712548945101"
+  },
+  "m4-restore-1249196": {
+    "ok": true,
+    "result": {
+      "focus": {
+        "hwnd": 196788,
+        "process": "msedge",
+        "pid": 6876
+      },
+      "koett_processes": 0,
+      "restored": [
+        {
+          "sha256": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json"
+        },
+        {
+          "sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3"
+        },
+        {
+          "sha256": "41F9E18F92AD8DFA94861D37CCB1262F07A1660C7B42F50BF51252CF5B5D0383",
+          "path": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt"
+        }
+      ]
+    },
+    "id": "1793913020736304843"
+  },
+  "m4-shutdown-1249196": {
+    "ok": true,
+    "result": {
+      "shutdown_requested": true,
+      "focus": {
+        "hwnd": 196788,
+        "process": "msedge",
+        "pid": 6876
+      }
+    },
+    "id": "1793913028376664793"
+  }
+}
