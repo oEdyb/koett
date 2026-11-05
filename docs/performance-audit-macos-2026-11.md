@@ -62,7 +62,9 @@ repetitions per length, same warm model/VAD and exact fixtures:
 | 120 s | 555.509 ms | 563.526 ms | +1.44% |
 | 600 s | 2464.218 ms | 2365.109 ms | −4.02% |
 
-All lengths remain below the 10% budget. Negative differences are run variation,
+All length medians remain below the 10% budget. One individual 120 s pair was
++24.80%; the other two were −6.62% and +1.44%. This does not establish a
+per-recording 10% ceiling. Negative differences are run variation,
 not evidence that spelling speeds up ASR. All 12 default transcripts exactly
 matched the first sweep's spelling-only transcripts. Raw repeats and equality
 checks are in `default-latency.json` and `default-summary.json`.
@@ -123,11 +125,14 @@ tradeoff. Both original requirements were not achieved.
 
 ## Old/current actual-target paste
 
-In progress: eight v0.1.1 receipts are saved. Five-second repetitions were
-1429.140, 1438.257 and 1189.205 ms; 30-second repetitions were 1544.347,
-1821.604 and 1497.712 ms. First two 120-second repetitions were 5297.892 and
-5650.981 ms. These are actual inserted-text receipts, not app event-post times.
-No current-build comparison is claimed until its trials complete.
+In progress: 19 actual inserted-text receipts are saved. All v0.1.1 trials are
+complete. Its 5/30/120/600 s medians are 1429.140, 1544.347, 5650.981 and
+26519.603 ms. The 600 s repetitions are 29292.883, 26519.603 and 25363.956 ms.
+
+Current 5 s repetitions are 1193.840, 1252.939 and 1221.464 ms; 30 s repetitions
+are 2043.145, 1699.995 and 1617.347 ms. Its first 120 s trial is 5108.346 ms.
+Current long trials remain in progress; no complete comparison is claimed yet.
+These are target text-insertion receipts, not app event-post times.
 
 The disposable Tart guest runs macOS 15.7.7, four virtual CPUs and 8 GiB on the
 same M5 host. BlackHole routes the exact synthetic WAV through the actual microphone
@@ -148,7 +153,9 @@ Current test source is `85dde51`; public v0.1.1 is identified by the released ZI
 SHA-256 and executable UUID in the provenance receipt. Current is a private ad hoc
 signed bundle; test grants have no code requirement and are not signature-upgrade
 or onboarding evidence. The apps use the same pinned FluidAudio version.
-The series pauses at a saved receipt boundary for the release auditor's gates;
+The builds run in blocks, old first and current second, without randomization.
+Playback WAV bytes match; capture timing and resampling can vary. The series
+pauses at a saved receipt boundary for the release auditor's gates;
 its guest is stopped before native timing or the auditor's work.
 
 Setup trials with missing permissions, stale shared-folder executables or a target

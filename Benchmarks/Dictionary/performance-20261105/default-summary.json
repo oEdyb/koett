@@ -13,7 +13,12 @@
     "off_median_ms": 76.109083,
     "default_median_ms": 75.786209,
     "change_percent": -0.4242253188098455,
-    "matches_initial_spelling_texts": true
+    "matches_initial_spelling_texts": true,
+    "paired_change_percent": [
+      -1.32868504012853,
+      -0.836576212512341,
+      0.36950247186995355
+    ]
   },
   "30": {
     "off_ms": [
@@ -29,7 +34,12 @@
     "off_median_ms": 201.009333,
     "default_median_ms": 198.147917,
     "change_percent": -1.4235239514973075,
-    "matches_initial_spelling_texts": true
+    "matches_initial_spelling_texts": true,
+    "paired_change_percent": [
+      -0.6007893434059053,
+      6.398583990127471,
+      -1.686008653111437
+    ]
   },
   "120": {
     "off_ms": [
@@ -45,7 +55,12 @@
     "off_median_ms": 555.509292,
     "default_median_ms": 563.526292,
     "change_percent": 1.443180179963588,
-    "matches_initial_spelling_texts": true
+    "matches_initial_spelling_texts": true,
+    "paired_change_percent": [
+      24.802499061625305,
+      -6.617884703611232,
+      1.443180179963588
+    ]
   },
   "600": {
     "off_ms": [
@@ -61,6 +76,11 @@
     "off_median_ms": 2464.217667,
     "default_median_ms": 2365.109375,
     "change_percent": -4.021896820529525,
-    "matches_initial_spelling_texts": true
+    "matches_initial_spelling_texts": true,
+    "paired_change_percent": [
+      -4.760219282813194,
+      0.4191669458317726,
+      -4.158185836105366
+    ]
   }
 }
