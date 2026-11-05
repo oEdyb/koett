@@ -10,6 +10,9 @@ fn main() {
             manifest.display()
         );
     }
+    if std::env::var_os("CARGO_FEATURE_ASK").is_none() {
+        return;
+    }
     let source = Path::new("../Sources/Koett/Resources/AssistantRenderer");
     println!("cargo:rerun-if-changed={}", source.display());
     let mut html = fs::read_to_string(source.join("index.html"))

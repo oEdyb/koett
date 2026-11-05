@@ -5,6 +5,10 @@ edition = "2024"
 rust-version = "1.92"
 license = "Apache-2.0"
 
+[features]
+default = []
+ask = ["dep:tokio-tungstenite"]
+
 [dependencies]
 url = "=2.5.8"
 cpal = "=0.18.2"
@@ -60,7 +64,7 @@ ureq = { version = "=3.4.0", default-features = false, features = ["native-tls",
 cpal = { version = "=0.18.2", features = ["pulseaudio"] }
 log = { version = "=0.4.34", features = ["max_level_warn", "release_max_level_warn"] }
 uuid = { version = "=1.29.0", features = ["v4"] }
-tokio-tungstenite = { version = "=0.30.0", features = ["rustls-tls-native-roots"] }
+tokio-tungstenite = { optional = true, version = "=0.30.0", features = ["rustls-tls-native-roots"] }
 libc = "=0.2.189"
 wayland-client = "=0.31.15"
 wayland-protocols-misc = { version = "=0.3.12", features = ["client"] }
@@ -84,3 +88,11 @@ ureq = { version = "=3.4.0", default-features = false, features = ["platform-ver
 [patch.crates-io]
 sherpa-onnx = { path = "vendor/sherpa-onnx" }
 sherpa-onnx-sys = { path = "vendor/sherpa-onnx-sys" }
+
+[[example]]
+name = "ask_panel_probe"
+required-features = ["ask"]
+
+[[example]]
+name = "ask_probe"
+required-features = ["ask"]

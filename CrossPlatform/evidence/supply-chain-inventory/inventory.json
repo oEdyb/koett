@@ -1521,43 +1521,6 @@
       "version": "1.0.4"
     },
     {
-      "bundled_license_files": [
-        {
-          "bytes": 10849,
-          "path": "CrossPlatform/packaging/notices/rust/chacha20-0.10.2/LICENSE-APACHE",
-          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
-        },
-        {
-          "bytes": 1082,
-          "path": "CrossPlatform/packaging/notices/rust/chacha20-0.10.2/LICENSE-MIT",
-          "sha256": "b8c6939380a400f53e11923d50fcc4dd2fa1ba8339fd9d04cda38a0251b6c9b0"
-        }
-      ],
-      "cargo_checksum_sha256": "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 10849,
-          "path": "LICENSE-APACHE",
-          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
-        },
-        {
-          "bytes": 1082,
-          "path": "LICENSE-MIT",
-          "sha256": "b8c6939380a400f53e11923d50fcc4dd2fa1ba8339fd9d04cda38a0251b6c9b0"
-        }
-      ],
-      "name": "chacha20",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/RustCrypto/stream-ciphers",
-      "sbom_ref": "pkg:cargo/chacha20@0.10.2",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.10.2"
-    },
-    {
       "bundled_license_files": [],
       "cargo_checksum_sha256": "39ed3668f121a65e4ce95efeba22ad1f8ad6c6628397a5dd773118514a5e1804",
       "declared_license": "BSL-1.0",
@@ -1989,33 +1952,6 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.11.0"
-    },
-    {
-      "bundled_license_files": [
-        {
-          "bytes": 1121,
-          "path": "CrossPlatform/packaging/notices/rust/data-encoding-2.11.1/LICENSE",
-          "sha256": "b68ad1a3367b825447089e1f8d6829b97f47a89eb78d2f4ebaef4672f5606186"
-        }
-      ],
-      "cargo_checksum_sha256": "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06",
-      "declared_license": "MIT",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 1121,
-          "path": "LICENSE",
-          "sha256": "b68ad1a3367b825447089e1f8d6829b97f47a89eb78d2f4ebaef4672f5606186"
-        }
-      ],
-      "name": "data-encoding",
-      "normalized_declared_license": "MIT",
-      "notice_state": "bundled",
-      "repository": "https://github.com/ia0/data-encoding",
-      "sbom_ref": "pkg:cargo/data-encoding@2.11.1",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "2.11.1"
     },
     {
       "bundled_license_files": [
@@ -6884,100 +6820,6 @@
     {
       "bundled_license_files": [
         {
-          "bytes": 569,
-          "path": "CrossPlatform/packaging/notices/rust/rand-0.10.3/COPYRIGHT",
-          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
-        },
-        {
-          "bytes": 9724,
-          "path": "CrossPlatform/packaging/notices/rust/rand-0.10.3/LICENSE-APACHE",
-          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
-        },
-        {
-          "bytes": 1117,
-          "path": "CrossPlatform/packaging/notices/rust/rand-0.10.3/LICENSE-MIT",
-          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
-        }
-      ],
-      "cargo_checksum_sha256": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 569,
-          "path": "COPYRIGHT",
-          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
-        },
-        {
-          "bytes": 9724,
-          "path": "LICENSE-APACHE",
-          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
-        },
-        {
-          "bytes": 1117,
-          "path": "LICENSE-MIT",
-          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
-        }
-      ],
-      "name": "rand",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/rust-random/rand",
-      "sbom_ref": "pkg:cargo/rand@0.10.3",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.10.3"
-    },
-    {
-      "bundled_license_files": [
-        {
-          "bytes": 478,
-          "path": "CrossPlatform/packaging/notices/rust/rand_core-0.10.1/COPYRIGHT",
-          "sha256": "92b81db30f7ab6d693e0af5661a40d273ca1947e891123ed823924192c10cbc7"
-        },
-        {
-          "bytes": 10282,
-          "path": "CrossPlatform/packaging/notices/rust/rand_core-0.10.1/LICENSE-APACHE",
-          "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
-        },
-        {
-          "bytes": 1076,
-          "path": "CrossPlatform/packaging/notices/rust/rand_core-0.10.1/LICENSE-MIT",
-          "sha256": "8b6e9feec03e7c9a5facb26855cecd31662bf989b636bcfe79521bdf8ac863f0"
-        }
-      ],
-      "cargo_checksum_sha256": "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 478,
-          "path": "COPYRIGHT",
-          "sha256": "92b81db30f7ab6d693e0af5661a40d273ca1947e891123ed823924192c10cbc7"
-        },
-        {
-          "bytes": 10282,
-          "path": "LICENSE-APACHE",
-          "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
-        },
-        {
-          "bytes": 1076,
-          "path": "LICENSE-MIT",
-          "sha256": "8b6e9feec03e7c9a5facb26855cecd31662bf989b636bcfe79521bdf8ac863f0"
-        }
-      ],
-      "name": "rand_core",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/rust-random/rand_core",
-      "sbom_ref": "pkg:cargo/rand_core@0.10.1",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.10.1"
-    },
-    {
-      "bundled_license_files": [
-        {
           "bytes": 1076,
           "path": "CrossPlatform/packaging/notices/rust/redox_syscall-0.5.18/LICENSE",
           "sha256": "efcfee7981ff72431fffb06925cad00a23dce079ed4354f61030ad5abdb78829"
@@ -7949,43 +7791,6 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "1.1.2"
-    },
-    {
-      "bundled_license_files": [
-        {
-          "bytes": 10849,
-          "path": "CrossPlatform/packaging/notices/rust/sha1-0.11.0/LICENSE-APACHE",
-          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
-        },
-        {
-          "bytes": 1196,
-          "path": "CrossPlatform/packaging/notices/rust/sha1-0.11.0/LICENSE-MIT",
-          "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25"
-        }
-      ],
-      "cargo_checksum_sha256": "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 10849,
-          "path": "LICENSE-APACHE",
-          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
-        },
-        {
-          "bytes": 1196,
-          "path": "LICENSE-MIT",
-          "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25"
-        }
-      ],
-      "name": "sha1",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/RustCrypto/hashes",
-      "sbom_ref": "pkg:cargo/sha1@0.11.0",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.11.0"
     },
     {
       "bundled_license_files": [
@@ -9027,70 +8832,6 @@
     {
       "bundled_license_files": [
         {
-          "bytes": 10832,
-          "path": "CrossPlatform/packaging/notices/rust/tokio-rustls-0.26.6/LICENSE-APACHE",
-          "sha256": "cc117d90b498b32b11a886f279b359da16a73c3b01efbb2f5cc004b20262334e"
-        },
-        {
-          "bytes": 1056,
-          "path": "CrossPlatform/packaging/notices/rust/tokio-rustls-0.26.6/LICENSE-MIT",
-          "sha256": "e20fa2b8e0a2565f24a792b94b4bf4b6c2b9d36f781d8a9516e218a036e6677a"
-        }
-      ],
-      "cargo_checksum_sha256": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 10832,
-          "path": "LICENSE-APACHE",
-          "sha256": "cc117d90b498b32b11a886f279b359da16a73c3b01efbb2f5cc004b20262334e"
-        },
-        {
-          "bytes": 1056,
-          "path": "LICENSE-MIT",
-          "sha256": "e20fa2b8e0a2565f24a792b94b4bf4b6c2b9d36f781d8a9516e218a036e6677a"
-        }
-      ],
-      "name": "tokio-rustls",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/rustls/tokio-rustls",
-      "sbom_ref": "pkg:cargo/tokio-rustls@0.26.6",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.26.6"
-    },
-    {
-      "bundled_license_files": [
-        {
-          "bytes": 1093,
-          "path": "CrossPlatform/packaging/notices/rust/tokio-tungstenite-0.30.0/LICENSE",
-          "sha256": "fdd55e2b2da854b0fbdc1e607df7c2ba1e1ebf91ecb77c515511ebeef972bc8f"
-        }
-      ],
-      "cargo_checksum_sha256": "17a073bfed563fa236697a068031408a93cd9522e08abf9933ead3e73411bd71",
-      "declared_license": "MIT",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 1093,
-          "path": "LICENSE",
-          "sha256": "fdd55e2b2da854b0fbdc1e607df7c2ba1e1ebf91ecb77c515511ebeef972bc8f"
-        }
-      ],
-      "name": "tokio-tungstenite",
-      "normalized_declared_license": "MIT",
-      "notice_state": "bundled",
-      "repository": "https://github.com/snapview/tokio-tungstenite",
-      "sbom_ref": "pkg:cargo/tokio-tungstenite@0.30.0",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.30.0"
-    },
-    {
-      "bundled_license_files": [
-        {
           "bytes": 11349,
           "path": "CrossPlatform/packaging/notices/rust/toml-1.1.8+spec-1.1.0/LICENSE-APACHE",
           "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
@@ -9353,43 +9094,6 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.1.36"
-    },
-    {
-      "bundled_license_files": [
-        {
-          "bytes": 10847,
-          "path": "CrossPlatform/packaging/notices/rust/tungstenite-0.30.0/LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "bytes": 1092,
-          "path": "CrossPlatform/packaging/notices/rust/tungstenite-0.30.0/LICENSE-MIT",
-          "sha256": "7fea0ee51a4ca5d5cea7464135fd55e8b09caf3a61da3d451ac8a22af95c033f"
-        }
-      ],
-      "cargo_checksum_sha256": "e48ac77174b19c110a50ab2128b24215ac9cb40e0e12e093fb602d175c569d22",
-      "declared_license": "MIT OR Apache-2.0",
-      "group": "rust-package",
-      "license_files": [
-        {
-          "bytes": 10847,
-          "path": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "bytes": 1092,
-          "path": "LICENSE-MIT",
-          "sha256": "7fea0ee51a4ca5d5cea7464135fd55e8b09caf3a61da3d451ac8a22af95c033f"
-        }
-      ],
-      "name": "tungstenite",
-      "normalized_declared_license": "MIT OR Apache-2.0",
-      "notice_state": "bundled",
-      "repository": "https://github.com/snapview/tungstenite-rs",
-      "sbom_ref": "pkg:cargo/tungstenite@0.30.0",
-      "selected_license": "MIT",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "version": "0.30.0"
     },
     {
       "bundled_license_files": [
@@ -12604,14 +12308,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/cfg-if@1.0.4",
-        "pkg:cargo/cpufeatures@0.3.0",
-        "pkg:cargo/rand_core@0.10.1"
-      ],
-      "ref": "pkg:cargo/chacha20@0.10.2"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/error-code@3.4.0"
       ],
       "ref": "pkg:cargo/clipboard-win@5.4.2"
@@ -12710,10 +12406,6 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/dasp_sample@0.11.0"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:cargo/data-encoding@2.11.1"
     },
     {
       "dependsOn": [
@@ -13038,8 +12730,7 @@
       "dependsOn": [
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/libc@0.2.189",
-        "pkg:cargo/r-efi@6.0.0",
-        "pkg:cargo/rand_core@0.10.1"
+        "pkg:cargo/r-efi@6.0.0"
       ],
       "ref": "pkg:cargo/getrandom@0.4.3"
     },
@@ -13423,7 +13114,6 @@
         "pkg:cargo/sherpa-onnx@1.13.5",
         "pkg:cargo/tar@0.4.46",
         "pkg:cargo/time@0.3.55",
-        "pkg:cargo/tokio-tungstenite@0.30.0",
         "pkg:cargo/tokio@1.53.3",
         "pkg:cargo/ureq@3.4.0",
         "pkg:cargo/url@2.5.8",
@@ -13881,18 +13571,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/chacha20@0.10.2",
-        "pkg:cargo/getrandom@0.4.3",
-        "pkg:cargo/rand_core@0.10.1"
-      ],
-      "ref": "pkg:cargo/rand@0.10.3"
-    },
-    {
-      "dependsOn": [],
-      "ref": "pkg:cargo/rand_core@0.10.1"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/bitflags@2.13.1"
       ],
       "ref": "pkg:cargo/redox_syscall@0.5.18"
@@ -14107,14 +13785,6 @@
         "pkg:cargo/cpufeatures@0.3.0",
         "pkg:cargo/digest@0.11.3"
       ],
-      "ref": "pkg:cargo/sha1@0.11.0"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/cfg-if@1.0.4",
-        "pkg:cargo/cpufeatures@0.3.0",
-        "pkg:cargo/digest@0.11.3"
-      ],
       "ref": "pkg:cargo/sha2@0.11.0"
     },
     {
@@ -14315,26 +13985,6 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/tokio@1.53.3"
-      ],
-      "ref": "pkg:cargo/tokio-rustls@0.26.6"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/futures-util@0.3.34",
-        "pkg:cargo/log@0.4.34",
-        "pkg:cargo/rustls-native-certs@0.8.4",
-        "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/tokio-rustls@0.26.6",
-        "pkg:cargo/tokio@1.53.3",
-        "pkg:cargo/tungstenite@0.30.0"
-      ],
-      "ref": "pkg:cargo/tokio-tungstenite@0.30.0"
-    },
-    {
-      "dependsOn": [
         "pkg:cargo/bytes@1.12.1",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/mio@1.2.2",
@@ -14405,21 +14055,6 @@
         "pkg:cargo/tracing-core@0.1.36"
       ],
       "ref": "pkg:cargo/tracing@0.1.44"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/bytes@1.12.1",
-        "pkg:cargo/data-encoding@2.11.1",
-        "pkg:cargo/http@1.5.0",
-        "pkg:cargo/httparse@1.10.1",
-        "pkg:cargo/log@0.4.34",
-        "pkg:cargo/rand@0.10.3",
-        "pkg:cargo/rustls-pki-types@1.15.1",
-        "pkg:cargo/rustls@0.23.46",
-        "pkg:cargo/sha1@0.11.0",
-        "pkg:cargo/thiserror@2.0.20"
-      ],
-      "ref": "pkg:cargo/tungstenite@0.30.0"
     },
     {
       "dependsOn": [],
@@ -15102,9 +14737,9 @@
       "sha256": "520dd22d27b385a71f5d85b54867c3d183bc95ae83a2bb7f2ab3be7e8f96dfec"
     },
     {
-      "bytes": 3398,
+      "bytes": 3598,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "ccb1afd6358831347a71240f891dce13cc43e1ec6104dba78a9c08217abe4f9a"
+      "sha256": "3b4148fab34c64ce87fef0930ea4e868c206623266f3b880494cb9ec7cd9fbea"
     },
     {
       "bytes": 6089,
@@ -15284,12 +14919,6 @@
     },
     {
       "component": "pkg:cargo/cfg-if@1.0.4",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
-      "component": "pkg:cargo/chacha20@0.10.2",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -15949,18 +15578,6 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/rand@0.10.3",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
-      "component": "pkg:cargo/rand_core@0.10.1",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
       "component": "pkg:cargo/ringbuf@0.5.2",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
@@ -16076,12 +15693,6 @@
     },
     {
       "component": "pkg:cargo/serde_spanned@1.1.2",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
-      "component": "pkg:cargo/sha1@0.11.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -16207,12 +15818,6 @@
       "selected": "MIT"
     },
     {
-      "component": "pkg:cargo/tokio-rustls@0.26.6",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
       "component": "pkg:cargo/toml@1.1.8+spec-1.1.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
@@ -16238,12 +15843,6 @@
     },
     {
       "component": "pkg:cargo/toml_writer@1.1.3+spec-1.1.0",
-      "declared": "MIT OR Apache-2.0",
-      "normalized_declared": "MIT OR Apache-2.0",
-      "selected": "MIT"
-    },
-    {
-      "component": "pkg:cargo/tungstenite@0.30.0",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -16602,11 +16201,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 372,
+    "components": 364,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 36,
-    "rust_packages": 350,
+    "rust_packages": 342,
     "swift_packages": 1
   }
 }

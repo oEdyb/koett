@@ -71,7 +71,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 
 Evidence: `Sources/Koett/Sketch*.swift`, `DrawKey.swift`, `PinContext*.swift`; `CrossPlatform/src/{annotation,sketch,pin_context}.rs`, `linux/sketch/`, `linux/{feedback,output,clipboard_owner}.rs`; [drawing](draw-while-dictating.md), [pin rules](screen-context-proposal.md). Clipboard helper existence does not prove every app consumes all formats. Preserve this gap until tested in browser agent editor, native rich text, plain editor and terminal.
 
-## History, media, Ask and automation
+## History, media and automation
 
 | Feature | Mac | Linux | Windows | Gap closure / default |
 |---|---|---|---|---|
@@ -85,9 +85,6 @@ Evidence: `Sources/Koett/Sketch*.swift`, `DrawKey.swift`, `PinContext*.swift`; `
 | Vimeo anonymous fetch | Known 401 | Not reverified | No workflow | Track upstream extractor/auth restriction; user-supplied local file is alternative, never quietly import browser cookies |
 | `koett-transcribe` URL/file CLI | Yes | Yes, source installer; v2/v3 URL/file, JSON/text/cache | No equivalent product CLI | Linux uses existing wrapper + small Rust adapter; [fresh evidence](linux-cli-verification.md). Windows installer/entry remains open |
 | Control CLI / agent JSON | Local user-only socket + JSON status/capture/recovery/media commands | Yes | Engine harness, no equivalent app control | Add Mac/Windows local command endpoint + documented status/errors; avoid network listener |
-| Ask text + one screenshot, providers/models/keys | Yes | Yes | No; assistant module Linux-gated | Share HTTP/SSE/session logic; Windows WGC + native panel/settings + Credential Manager |
-| Ask spoken replies / interrupt | Yes, Cartesia | Yes | No | Windows audio output adapter, stop on interruption, keys optional |
-| Ask Markdown/math/local renderer | Yes, installed-panel live check outstanding | Yes, not newly verified | No | Optional lazy WebView2 renderer on Windows; no browser process in dictation |
 | Dark/light, high contrast, scaling, reduced motion | Native surfaces; not all combinations rechecked | Native evidence; live theme changes partly unverified | Basic surfaces only | Narrator/keyboard/theme/contrast + narrow/long-text gates per platform |
 | Signed install / updates / architectures | Public notarized Apple Silicon release; later source differs | Native scripts/artifacts; clean-install coverage incomplete | Compile/CI archive only, no real install proof | Windows signed x64+ARM64 installer, clean user/update tests; Linux package gates; Mac release remains separately authorized |
 

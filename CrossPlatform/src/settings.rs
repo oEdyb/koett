@@ -84,7 +84,11 @@ impl Default for Settings {
         Self {
             formatting: crate::formatting::Formatting::default(),
             shortcut: "Ctrl+Shift+Space".to_string(),
-            ask_shortcut: "Ctrl+Alt+Space".to_string(),
+            ask_shortcut: if cfg!(feature = "ask") {
+                "Ctrl+Alt+Space".into()
+            } else {
+                String::new()
+            },
             media_shortcut: "Ctrl+Shift+T".to_string(),
             start_at_login: true,
             microphone: None,
@@ -140,6 +144,9 @@ impl Settings {
                     if value.get(action).is_some() {
                         continue;
                     }
+                    if action == "ask_shortcut" && !cfg!(feature = "ask") {
+                        continue;
+                    }
                     let candidate = if action == "ask_shortcut" {
                         &settings.ask_shortcut
                     } else {
@@ -148,11 +155,13 @@ impl Settings {
                     let parsed = candidate.parse::<crate::shortcut::Shortcut>().ok();
                     let other = if action == "ask_shortcut" {
                         &settings.media_shortcut
-                    } else {
+                    } else if cfg!(feature = "ask") {
                         &settings.ask_shortcut
+                    } else {
+                        ""
                     };
                     if parsed.is_some()
-                        && [&settings.shortcut, other].iter().any(|binding| {
+                        && [settings.shortcut.as_str(), other].iter().any(|binding| {
                             binding.parse::<crate::shortcut::Shortcut>().ok() == parsed
                         })
                     {
@@ -188,12 +197,13 @@ impl Settings {
             .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
         let mut normalized = self.clone();
         for value in [
-            &mut normalized.shortcut,
-            &mut normalized.ask_shortcut,
-            &mut normalized.media_shortcut,
+            Some(&mut normalized.shortcut),
+            cfg!(feature = "ask").then_some(&mut normalized.ask_shortcut),
+            Some(&mut normalized.media_shortcut),
         ]
         .into_iter()
         .take(ACTIVE_SHORTCUT_COUNT)
+        .flatten()
         {
             if !value.is_empty() {
                 *value = value.parse::<crate::shortcut::Shortcut>()?.to_string();
@@ -294,18 +304,33 @@ impl Settings {
             .draw_lock_shortcut
             .parse::<crate::shortcut::Shortcut>()
             .ok()?;
-        [&self.shortcut, &self.ask_shortcut, &self.media_shortcut]
-            .into_iter()
-            .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
-            .then_some(self.draw_lock_shortcut.as_str())
+        [
+            self.shortcut.as_str(),
+            if cfg!(feature = "ask") {
+                self.ask_shortcut.as_str()
+            } else {
+                ""
+            },
+            self.media_shortcut.as_str(),
+        ]
+        .into_iter()
+        .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
+        .then_some(self.draw_lock_shortcut.as_str())
     }
 
     pub fn validate_shortcuts(&self) -> Result<(), String> {
         let mut seen = Vec::new();
         for (name, value) in [
-            ("Dictation", &self.shortcut),
-            ("Ask", &self.ask_shortcut),
-            ("Media", &self.media_shortcut),
+            ("Dictation", self.shortcut.as_str()),
+            (
+                "Ask",
+                if cfg!(feature = "ask") {
+                    self.ask_shortcut.as_str()
+                } else {
+                    ""
+                },
+            ),
+            ("Media", self.media_shortcut.as_str()),
         ]
         .into_iter()
         .take(ACTIVE_SHORTCUT_COUNT)
@@ -362,8 +387,12 @@ mod tests {
         settings.ask_shortcut = "Alt+Ctrl+D".into();
         assert_eq!(
             settings.effective_draw_lock(),
-            None,
-            "same chord, any order"
+            if cfg!(feature = "ask") {
+                None
+            } else {
+                Some("Ctrl+Alt+D")
+            },
+            "only active shortcuts reserve chords"
         );
         assert!(settings.validate_shortcuts().is_ok(), "saving still works");
         settings.ask_shortcut = String::new();
@@ -427,6 +456,21 @@ mod tests {
         fs::remove_file(path).unwrap();
     }
 
+    #[cfg(not(feature = "ask"))]
+    #[test]
+    fn shelved_ask_settings_load_and_save_without_reserving_shortcuts() {
+        let path = temporary_file("shelved-ask");
+        fs::write(&path, r#"{"shortcut":"Ctrl+Alt+Space","ask_shortcut":"obsolete shortcut","ask":{"enabled":true}}"#).unwrap();
+        let settings = Settings::load_from(&path).unwrap();
+        settings.validate_shortcuts().unwrap();
+        settings.save_to(&path).unwrap();
+        assert_eq!(
+            Settings::load_from(&path).unwrap().ask_shortcut,
+            "obsolete shortcut"
+        );
+        fs::remove_file(path).unwrap();
+    }
+
     #[test]
     fn missing_file_uses_small_public_defaults() {
         let path = temporary_file("missing-settings");
@@ -470,7 +514,7 @@ mod tests {
                 .unwrap()
                 .validate_shortcuts()
                 .is_err(),
-            cfg!(target_os = "linux")
+            cfg!(all(target_os = "linux", feature = "ask"))
         );
         fs::remove_file(path).unwrap();
     }
@@ -614,12 +658,19 @@ mod tests {
     fn shortcuts_migrate_validate_and_merge_independently() {
         let opened: Settings =
             serde_json::from_str(r#"{"shortcut":"Alt+K","pause_media":true}"#).unwrap();
-        assert_eq!(opened.ask_shortcut, "Ctrl+Alt+Space");
+        assert_eq!(
+            opened.ask_shortcut,
+            if cfg!(feature = "ask") {
+                "Ctrl+Alt+Space"
+            } else {
+                ""
+            }
+        );
         assert_eq!(opened.media_shortcut, "Ctrl+Shift+T");
         assert!(opened.validate_shortcuts().is_ok());
         let mut edited = opened.clone();
         edited.ask_shortcut = "control+shift+t".into();
-        if cfg!(target_os = "linux") {
+        if cfg!(all(target_os = "linux", feature = "ask")) {
             assert!(
                 edited
                     .validate_shortcuts()

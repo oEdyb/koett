@@ -68,6 +68,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-groq-key-if-missing") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 if try AssistantAPIKeyStore.load(for: .groq) != nil {
                     print("Groq API key is already in Keychain.")
@@ -94,6 +98,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-cartesia-key") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 guard let key = ProcessInfo.processInfo.environment[
                     "CARTESIA_API_KEY"

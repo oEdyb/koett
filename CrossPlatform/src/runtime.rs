@@ -215,7 +215,7 @@ fn run(
     sessions: Arc<DictationSessions>,
     source: CaptureSource,
 ) {
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(all(target_os = "linux", feature = "ask")))]
     let _ = ask_cancelled;
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
@@ -284,16 +284,16 @@ fn run(
     let mut background: Option<BackgroundSession> = None;
     #[cfg(target_os = "linux")]
     let mut media_operation: Option<MediaOperation> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut ask_image: Option<Vec<u8>> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut answer: Option<crate::assistant::Answer> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut screen_capture: Option<crate::assistant::screen::Capture> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut speech: Option<crate::assistant::speech::Speech> = None;
     loop {
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if (ask_image.is_some() || answer.is_some())
             && let Some(active) = &speech
         {
@@ -303,11 +303,11 @@ fn run(
                 ));
             }
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if ask_cancelled.load(Ordering::Acquire) {
             speech = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if let Some(active) = &answer {
             for event in active.updates.try_iter() {
                 let value = match event {
@@ -433,11 +433,11 @@ fn run(
             let _ = updates.send(EngineUpdate::FormattingBusy(false));
             send_status(&updates, &status);
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let screen_result = screen_capture
             .as_ref()
             .and_then(|capture| capture.result.try_recv().ok());
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let capture_start = if let Some(result) = screen_result {
             screen_capture = None;
             match result {
@@ -459,7 +459,7 @@ fn run(
         } else {
             false
         };
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(all(target_os = "linux", feature = "ask")))]
         let capture_start = false;
         let command = if capture_start {
             EngineCommand::Start
@@ -485,16 +485,16 @@ fn run(
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let stopping_question = matches!(command, EngineCommand::AskStop | EngineCommand::Stop)
             || matches!(command, EngineCommand::Ask | EngineCommand::Toggle)
                 && ask_image.is_some()
                 && status == AppStatus::Recording;
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if !(capture_start || stopping_question) {
             speech = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = match command {
             EngineCommand::AskStart if status == AppStatus::Ready => EngineCommand::Ask,
             EngineCommand::AskStop if status == AppStatus::Recording && ask_image.is_some() => {
@@ -503,7 +503,7 @@ fn run(
             EngineCommand::AskStart | EngineCommand::AskStop => continue,
             other => other,
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = if ask_image.is_some()
             && status == AppStatus::Recording
             && matches!(
@@ -529,7 +529,7 @@ fn run(
         } else {
             command
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = match command {
             EngineCommand::Ask if status == AppStatus::Recording && ask_image.is_some() => {
                 EngineCommand::Stop
@@ -599,7 +599,7 @@ fn run(
             }
             other => other,
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if !matches!(
             command,
             EngineCommand::Start
@@ -610,7 +610,7 @@ fn run(
         ) {
             screen_capture = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if matches!(command, EngineCommand::Start | EngineCommand::Toggle)
             && !capture_start
             && ask_image.is_none()
@@ -627,10 +627,13 @@ fn run(
             EngineCommand::Ask
             | EngineCommand::CancelAsk
             | EngineCommand::AskStart
-            | EngineCommand::AskStop => unreachable!(),
+            | EngineCommand::AskStop => continue,
             #[cfg(target_os = "linux")]
             EngineCommand::Media(source) => {
-                answer = None;
+                #[cfg(feature = "ask")]
+                {
+                    answer = None;
+                }
                 if status != AppStatus::Ready || preparation.is_some() {
                     continue;
                 }
@@ -844,9 +847,9 @@ fn run(
                         }
                     })
                     .and_then(|(started, audio_chunks)| {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         let offline = ask_image.is_some();
-                        #[cfg(not(target_os = "linux"))]
+                        #[cfg(not(all(target_os = "linux", feature = "ask")))]
                         let offline = false;
                         let session = if offline {
                             transcription.record_offline(started.sample_rate(), audio_chunks)?
@@ -868,7 +871,7 @@ fn run(
                         let _ = updates.send(EngineUpdate::RecordingStarted(levels));
                     }
                     Err(error) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         {
                             if ask_image.take().is_some() {
                                 speech = None;
@@ -893,7 +896,7 @@ fn run(
                     .expect("recording can always stop");
                 send_status(&updates, &status);
 
-                #[cfg(target_os = "linux")]
+                #[cfg(all(target_os = "linux", feature = "ask"))]
                 if ask_image.is_some() {
                     let _ = updates.send(EngineUpdate::Ask(
                         serde_json::json!({"phase": "Transcribing locally…"}),
@@ -929,7 +932,7 @@ fn run(
                 })();
                 match result {
                     Ok(mut transcript) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         if let Some(image) = ask_image.take() {
                             let storage =
                                 crate::history::append_question_resilient(&model, &transcript.text);
@@ -1012,7 +1015,7 @@ fn run(
                         send_status(&updates, &status);
                     }
                     Err(error) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         {
                             if ask_image.take().is_some() {
                                 speech = None;
@@ -1029,7 +1032,7 @@ fn run(
                 drop(recorder.take());
                 drop(background.take());
                 capture_started = None;
-                #[cfg(target_os = "linux")]
+                #[cfg(all(target_os = "linux", feature = "ask"))]
                 if ask_image.take().is_some() {
                     speech = None;
                     let _ = updates.send(EngineUpdate::Ask(

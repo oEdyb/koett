@@ -21,7 +21,7 @@ enum PermissionKind: String, CaseIterable, Sendable {
         switch self {
         case .microphone: "To hear you"
         case .accessibility: "For shortcuts and pasting"
-        case .screenRecording: "For drawing and Ask"
+        case .screenRecording: "For drawing and pins"
         }
     }
 

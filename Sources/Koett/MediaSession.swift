@@ -5,7 +5,7 @@ import Foundation
 extension KoettController {
     func startMediaTranscription() {
         guard canStartSession else { return }
-        assistantSpeech.stop()
+        if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         guard let application = NSWorkspace.shared.frontmostApplication,
               let target = BrowserTabTarget.target(
                   bundleIdentifier: application.bundleIdentifier,
@@ -26,7 +26,7 @@ extension KoettController {
 
     func beginMediaTranscription(load: @escaping @MainActor @Sendable () async throws -> DownloadedMediaAudio) {
         guard canStartSession else { return }
-        assistantSpeech.stop()
+        if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         state = .media
         recordingOverlay.showStatus("Fetching audio…")
         Task { @MainActor [weak self] in await self?.transcribeMedia(load: load) }
