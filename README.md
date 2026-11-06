@@ -6,7 +6,7 @@ Voice-to-text runs locally. Drawing is optional and off by default; normal dicta
 
 Choose your microphone, set your shortcut, and use hold or toggle recording. Dictation stays local. No account or telemetry.
 
-**Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models; drawing requires a supported Wayland desktop. **Windows:** native preview; installer signing is not yet configured.
+**Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models; drawing requires a supported desktop and its capture setup. **Windows:** native preview; installer signing is not yet configured.
 
 **Download status:** v0.3.0 includes drawing in Mac ZIP and Linux archive downloads. Native installers below are built by manual CI until a release publishes them.
 

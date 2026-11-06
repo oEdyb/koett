@@ -125,9 +125,11 @@ sources are outside the supported scope. A separate result has preview and Copy.
 
 ## Drawing setup
 
-Requires a Wayland desktop with layer-shell: KDE Plasma 6, niri, Sway or
-Hyprland. KDE Plasma 6 has end-to-end drawing verification; the other desktops
-have less verification. GNOME Wayland needs the Koett extension, and X11 needs a compositor.
+On KDE Plasma 6, niri, Sway or Hyprland, drawing requires GTK4 layer-shell.
+KDE Plasma 6, niri and GNOME Shell 51 have private-lab drawing verification;
+Sway and Hyprland have less verification. GNOME Shell 51 needs the Koett
+extension; GNOME 46 supports guarded text paste only. X11 drawing needs a
+compositor and has private-lab verification.
 Use `grim` for capture on niri/wlroots, or a working Screenshot portal on KDE;
 allow screenshot access when asked. Multi-monitor drawing is not hardware-verified.
 
