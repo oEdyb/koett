@@ -1,97 +1,27 @@
 name: Windows and Linux
 
+# Manual only, on Olle's call. No run starts by itself. See "Required checks" in AGENTS.md:
+# gh workflow run cross-platform.yml --ref BRANCH
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
-    paths:
-      - "CrossPlatform/**"
-      - "!CrossPlatform/BENCHMARK.md"
-      - "!CrossPlatform/evidence/**"
-      - "CrossPlatform/evidence/supply-chain-inventory/**"
-      - "CrossPlatform/evidence/blocked-604ed15/**"
-      - "CrossPlatform/evidence/gnome-capture-20261104/capture.png"
-      - "Sources/Koett/Resources/History/**"
-      - "Sources/Koett/Resources/AssistantRenderer/**"
-      - "Packaging/Notices/**"
-      - "LICENSE"
-      - "Package.swift"
-      - "Package.resolved"
-      - ".gitattributes"
-      - ".github/workflows/cross-platform.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "CrossPlatform/**"
-      - "!CrossPlatform/BENCHMARK.md"
-      - "!CrossPlatform/evidence/**"
-      - "CrossPlatform/evidence/supply-chain-inventory/**"
-      - "CrossPlatform/evidence/blocked-604ed15/**"
-      - "CrossPlatform/evidence/gnome-capture-20261104/capture.png"
-      - "Sources/Koett/Resources/History/**"
-      - "Sources/Koett/Resources/AssistantRenderer/**"
-      - "Packaging/Notices/**"
-      - "LICENSE"
-      - "Package.swift"
-      - "Package.resolved"
-      - ".gitattributes"
-      - ".github/workflows/cross-platform.yml"
+    inputs:
+      clean:
+        description: Release build, using and saving no caches
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  # A draft's event must not cancel a real run that started just before it.
-  group: cross-platform-${{ github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'real' }}
+  group: cross-platform-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # A merge whose exact tree already passed on its pull request doesn't need a second run.
-  # Only ever runs on main, and anything short of proof leaves skip empty, which runs CI.
-  decide:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: read
-    outputs:
-      skip: ${{ steps.gate.outputs.skip }}
-      keys: ${{ steps.gate.outputs.keys }}
-    defaults:
-      run:
-        working-directory: CrossPlatform
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Check whether the pull request already tested this
-        id: gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-          # Every cache main must have saved. Keep in step with the jobs below.
-          CACHE_KEYS: |
-            cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
-            cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
-            cargo-v2-linux-x86_64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
-            cargo-v2-linux-arm64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
-            native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
-            native-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
-            native-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
-            model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
-            model-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
-            model-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
-        run: |
-          month=$(date -u +%Y%m)
-          export CACHE_KEYS="$CACHE_KEYS"$'\n'"apt-v1-x86_64-$month"$'\n'"apt-v1-arm64-$month"
-          python3 scripts/ci_main_gate.py decide
-
   # Replaced caches would otherwise sit there for a week, counting against the 10 GB limit.
   cache-trim:
-    needs: [decide, msrv, windows, linux]
-    if: ${{ !cancelled() && github.event_name == 'push' && needs.decide.outputs.skip != 'true' && needs.decide.outputs.keys != '' }}
+    needs: [msrv, windows, linux]
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     permissions:
@@ -107,22 +37,37 @@ jobs:
       - name: Delete replaced caches
         env:
           GH_TOKEN: ${{ github.token }}
-          KEYS: ${{ needs.decide.outputs.keys }}
-        run: python3 scripts/ci_main_gate.py trim
+          # Every cache a main run saves. Keep in step with the jobs below.
+          CACHE_KEYS: |
+            cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-linux-x86_64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-linux-arm64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            native-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            native-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+            model-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+            model-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+        run: |
+          month=$(date -u +%Y%m)
+          export CACHE_KEYS="$CACHE_KEYS"$'\n'"apt-v1-x86_64-$month"$'\n'"apt-v1-arm64-$month"
+          python3 scripts/ci_trim_caches.py
 
   dependency-review:
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    # Compares the branch with main, so there's nothing to compare on main itself.
+    if: ${{ github.ref != 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
+          base-ref: main
+          head-ref: ${{ github.sha }}
           retry-on-snapshot-warnings: true
           retry-on-snapshot-warnings-timeout: 120
 
   supply-chain:
-    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
-    needs: decide
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     defaults:
@@ -138,8 +83,8 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
-      - name: Test the main-run gate
-        run: python3 scripts/test_ci_main_gate.py
+      - name: Test cache trimming
+        run: python3 scripts/test_ci_trim_caches.py
       - name: Test Windows dependency gate
         run: python3 scripts/test_windows_dependencies.py
       - name: Test native build configuration
@@ -162,22 +107,8 @@ jobs:
         run: cargo install cargo-audit --version 0.22.2 --locked
       - name: Audit locked dependencies
         run: cargo audit
-      # What the main-run gate compares a merge against. Last, so it means this job passed.
-      - name: Record the tree this run tested
-        if: github.event_name == 'pull_request'
-        run: git rev-parse "HEAD^{tree}" > tested-tree.txt
-      - name: Upload the record
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: tested-tree
-          path: CrossPlatform/tested-tree.txt
-          retention-days: 14
-          if-no-files-found: error
 
   msrv:
-    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
-    needs: decide
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
@@ -196,7 +127,7 @@ jobs:
         run: echo "month=$(date -u +%Y%m)" >> "$GITHUB_OUTPUT"
       - name: Restore system packages
         id: apt_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs/*.deb
@@ -212,7 +143,7 @@ jobs:
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
       - name: Save system packages
-        if: github.event_name == 'push' && steps.apt_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.apt_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs/*.deb
@@ -221,7 +152,7 @@ jobs:
         run: rustup toolchain install 1.92.0 --profile minimal
       - name: Restore Cargo cache
         id: cargo_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -234,11 +165,11 @@ jobs:
       - name: Check minimum Rust
         run: DOCS_RS=1 cargo +1.92.0 check --locked --all-targets
       - name: Drop Koett's own build output from the cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         shell: bash
         run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
       - name: Save Cargo cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -249,8 +180,6 @@ jobs:
           key: cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   windows:
-    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
-    needs: decide
     runs-on: windows-2025
     timeout-minutes: 60
     env:
@@ -275,7 +204,7 @@ jobs:
         run: ./scripts/check_powershell.ps1
       - name: Restore native libraries
         id: native_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -286,7 +215,7 @@ jobs:
         if: steps.native_cache.outputs.cache-hit != 'true'
         run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
       - name: Save native libraries
-        if: github.event_name == 'push' && steps.native_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.native_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -295,7 +224,7 @@ jobs:
           key: native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
       - name: Restore Cargo cache
         id: cargo_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -307,7 +236,7 @@ jobs:
           restore-keys: cargo-v2-windows-2025-
       - name: Restore speech model
         id: model_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/DybergCo/Koett/data/models
@@ -341,7 +270,7 @@ jobs:
         timeout-minutes: 5
         run: cargo run --release --locked --bin koett-engine -- --long-self-test 420
       - name: Save speech model
-        if: github.event_name == 'push' && steps.model_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.model_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/DybergCo/Koett/data/models
@@ -374,11 +303,11 @@ jobs:
             CrossPlatform/dist/Koett-Windows-x86_64.zip.build-receipt.json
           if-no-files-found: error
       - name: Drop Koett's own build output from the cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         shell: bash
         run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
       - name: Save Cargo cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -389,8 +318,6 @@ jobs:
           key: cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   linux:
-    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
-    needs: decide
     strategy:
       fail-fast: false
       matrix:
@@ -422,7 +349,7 @@ jobs:
         run: echo "month=$(date -u +%Y%m)" >> "$GITHUB_OUTPUT"
       - name: Restore system packages
         id: apt_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs/*.deb
@@ -438,7 +365,7 @@ jobs:
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
       - name: Save system packages
-        if: github.event_name == 'push' && steps.apt_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.apt_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs/*.deb
@@ -449,7 +376,7 @@ jobs:
           rustup default 1.98.0
       - name: Restore native libraries
         id: native_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -460,7 +387,7 @@ jobs:
         if: steps.native_cache.outputs.cache-hit != 'true'
         run: python3 scripts/build_asr_native.py --jobs 2
       - name: Save native libraries
-        if: github.event_name == 'push' && steps.native_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.native_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -469,7 +396,7 @@ jobs:
           key: native-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
       - name: Restore Cargo cache
         id: cargo_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -482,7 +409,7 @@ jobs:
           restore-keys: cargo-v2-linux-${{ matrix.architecture }}-
       - name: Restore speech model
         id: model_cache
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ !inputs.clean }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.local/share/koett/models
@@ -499,7 +426,7 @@ jobs:
         id: asr_self_test
         run: python3 scripts/run_runtime_self_test.py cargo run --release --locked --bin koett-engine -- --self-test
       - name: Save speech model
-        if: github.event_name == 'push' && steps.model_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.model_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.local/share/koett/models
@@ -546,11 +473,11 @@ jobs:
             CrossPlatform/dist/Koett-Linux-*.tar.gz.build-receipt.json
           if-no-files-found: error
       - name: Drop Koett's own build output from the cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         shell: bash
         run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
       - name: Save Cargo cache
-        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |

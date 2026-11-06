@@ -78,14 +78,15 @@ change the commit intended for the assets.
 
 ## 4. Build Linux from the frozen commit
 
-The workflow is `.github/workflows/cross-platform.yml`. It supports manual
-dispatch, does not run on tag creation and does not publish a GitHub release.
+The workflow is `.github/workflows/cross-platform.yml`. It only runs when dispatched,
+and does not publish a GitHub release. Release builds pass `-f clean=true`, which uses
+no caches.
 
 Dispatch against main only while main equals `FINAL_SHA`, or use an approved
 branch pinned to it:
 
 ```sh
-gh workflow run cross-platform.yml --repo oEdyb/koett --ref main
+gh workflow run cross-platform.yml --repo oEdyb/koett --ref main -f clean=true
 gh run list --repo oEdyb/koett --workflow cross-platform.yml
 gh run view RUN_ID --repo oEdyb/koett --json headSha,status,conclusion,url,jobs
 ```

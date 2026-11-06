@@ -15,7 +15,7 @@ Benchmarks/Performance/2026-11/**/*.json linguist-generated=true
 Benchmarks/Performance/2026-11/**/*.jsonl linguist-generated=true
 
 # Cache keys hash these, and Windows checkouts would otherwise hash CRLF versions of them.
-# With one line ending the main-run gate can name Windows' keys from Linux.
+# With one line ending, cache trimming can name Windows' keys from Linux.
 CrossPlatform/Cargo.lock text eol=lf
 CrossPlatform/Cargo.toml text eol=lf
 CrossPlatform/rust-toolchain.toml text eol=lf
