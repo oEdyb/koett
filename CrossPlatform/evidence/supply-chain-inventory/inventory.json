@@ -11971,6 +11971,26 @@
       "source_url": "https://github.com/FluidInference/FluidAudio/tree/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
       "type": "library",
       "version": "0.15.6"
+    },
+    {
+      "assets": [],
+      "group": "swift-package",
+      "license": {
+        "expression": "MIT AND BSD-2-Clause AND Zlib"
+      },
+      "license_files": [
+        {
+          "bytes": 6154,
+          "path": "Packaging/Notices/Sparkle-LICENSE.txt",
+          "sha256": "389a4e4e9a32f059775b13a06e25a591445ba229d2838d26dd3e7c0c45127cfe"
+        }
+      ],
+      "name": "Sparkle",
+      "notice_state": "bundled",
+      "sbom_ref": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
+      "source_url": "https://github.com/sparkle-project/Sparkle/tree/ab7d71291238df6e0492143b120c9b696a35f603",
+      "type": "library",
+      "version": "2.10.1"
     }
   ],
   "dependency_edges": [
@@ -12963,6 +12983,7 @@
         "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
         "pkg:github/microsoft/onnxruntime@v1.27.1",
         "pkg:github/pkufool/simple-sentencepiece@v0.7",
+        "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
         "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
         "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
         "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
@@ -14517,6 +14538,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838"
     },
     {
@@ -14556,9 +14581,9 @@
       "sha256": "60dc63abba2278394841ac1d3072eb52cab3f36a76dc6d886a800ec78a441e8b"
     },
     {
-      "bytes": 6089,
+      "bytes": 6849,
       "path": "CrossPlatform/THIRD_PARTY_NOTICES.md",
-      "sha256": "3932d8c8d204b3bc90f5ff67a2018760e8e034b1320ed2093da975aa86776903"
+      "sha256": "32faef1dbd575fc077012f9db3b46555aa59e342aa0aeb70775ee8185a145740"
     },
     {
       "bytes": 9465,
@@ -14581,9 +14606,9 @@
       "sha256": "c654032d61ae8b3370914ac8f3c4434961306823b9da808dc6a28bd658fd0fe3"
     },
     {
-      "bytes": 18747,
+      "bytes": 19273,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
-      "sha256": "e159a1391739db8719271c105c9fb4ed81b9c3d9015d694f25f46f98601bfc71"
+      "sha256": "2ee394b72b416a69c06f0496ae9aee2709211f39b4430a03fdea5d9de82d8b7b"
     },
     {
       "bytes": 2501,
@@ -15997,11 +16022,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 359,
+    "components": 360,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 32,
     "rust_packages": 337,
-    "swift_packages": 1
+    "swift_packages": 2
   }
 }

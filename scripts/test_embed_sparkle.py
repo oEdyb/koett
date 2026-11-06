@@ -19,6 +19,8 @@ class SparkleEmbeddingTests(unittest.TestCase):
                 framework = artifact / 'Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework'
                 framework.mkdir(parents=True)
                 (artifact / 'LICENSE').write_text('Complete upstream license fixture')
+                (root / 'Packaging/Notices').mkdir(parents=True)
+                (root / 'Packaging/Notices/Sparkle-LICENSE.txt').write_bytes((artifact / 'LICENSE').read_bytes())
                 fake = root / 'bin'
                 fake.mkdir()
                 (fake / 'ditto').write_text('#!/usr/bin/env python3\nimport shutil,sys\nshutil.copytree(sys.argv[1],sys.argv[2])\n')
@@ -43,6 +45,12 @@ class SparkleEmbeddingTests(unittest.TestCase):
                 self.assertIn('--verify', calls[-1])
                 self.assertEqual((app / 'Contents/Resources/Sparkle-LICENSE.txt').read_bytes(),
                                  (artifact / 'LICENSE').read_bytes())
+                (artifact / 'LICENSE').write_text('Changed upstream license')
+                result = subprocess.run(['zsh', str(script), str(app), identity],
+                                        env=dict(os.environ, PATH=str(fake) + os.pathsep + os.environ['PATH'], SIGN_LOG=str(log)),
+                                        capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('refresh Packaging/Notices', result.stderr)
 
 
 if __name__ == '__main__':
