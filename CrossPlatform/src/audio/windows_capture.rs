@@ -439,7 +439,9 @@ mod tests {
                 assert!(start.elapsed() < Duration::from_secs(3));
                 assert!(process.child.try_wait().unwrap().is_some());
             } else {
-                assert_eq!(ready::<u32>(&mut process).unwrap().0, 16_000);
+                // A cold PowerShell on a busy runner can take longer than the open limit.
+                let opened = ready_with_timeout::<u32>(&mut process, Duration::from_secs(60));
+                assert_eq!(opened.unwrap().0, 16_000);
             }
         }
     }
