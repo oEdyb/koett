@@ -371,3 +371,9 @@
   before accepting a hold. Other modifiers or ordinary keys end and spoil that
   hold until the draw key is released. Dropping Control from Control-Shift must
   never start drawing. Key events use codes and flags only, not typed characters.
+- Draw lock is recording-scoped. Its shortcut/menu starts one sketch per display
+  across left-button strokes; unpressed pointer movement leaves no ink. Toggling
+  off or the first Esc captures and unlocks; a second distinct Esc cancels the
+  dictation. Esc repeats never turn an unlock into a cancellation. Right-click
+  undoes a stroke without reaching the app; observed keyboard undo also reaches
+  the focused app. Stop captures open lock ink; Cancel discards it.

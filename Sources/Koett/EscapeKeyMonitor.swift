@@ -5,6 +5,9 @@ import AppKit
 @MainActor
 final class EscapeKeyMonitor {
     static let escapeKeyCode: UInt16 = 53
+    static func requestsEscape(_ event: NSEvent) -> Bool {
+        event.type == .keyDown && event.keyCode == escapeKeyCode && !event.isARepeat
+    }
     private let onEscape: () -> Void
     private var monitors: [Any] = []
 
@@ -20,13 +23,13 @@ final class EscapeKeyMonitor {
     private func install() {
         guard monitors.isEmpty else { return }
         if let global = NSEvent.addGlobalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
-            guard event.keyCode == Self.escapeKeyCode else { return }
+            guard Self.requestsEscape(event) else { return }
             DispatchQueue.main.async { self?.onEscape() }
         }) {
             monitors.append(global)
         }
         if let local = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
-            if event.keyCode == Self.escapeKeyCode {
+            if Self.requestsEscape(event) {
                 DispatchQueue.main.async { self?.onEscape() }
             }
             return event
