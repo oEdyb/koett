@@ -115,7 +115,7 @@ Section
  StrCmp $0 "0" install_ok
  StrCmp $1 "" 0 +2
  StrCpy $1 "Close Koett and run setup again."
- MessageBox MB_OK|MB_ICONSTOP "$1$\r$\nDetails: $SetupLog" /SD IDOK
+ MessageBox MB_OK|MB_ICONSTOP "Details: $SetupLog$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
  install_ok:
@@ -158,7 +158,7 @@ Section Uninstall
  StrCmp $0 "0" uninstall_ok
  StrCmp $1 "" 0 +2
  StrCpy $1 "Close Koett and retry uninstall."
- MessageBox MB_OK|MB_ICONSTOP "$1$\r$\nDetails: $SetupLog" /SD IDOK
+ MessageBox MB_OK|MB_ICONSTOP "Details: $SetupLog$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
  uninstall_ok:

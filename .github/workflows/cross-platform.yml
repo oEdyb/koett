@@ -303,8 +303,12 @@ jobs:
       - name: Install pinned NSIS compiler
         shell: pwsh
         run: |
-          choco upgrade nsis.install --version=3.12.0 --allow-downgrade --yes --no-progress
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($attempt in 1..3) {
+            choco upgrade nsis.install --version=3.12.0 --allow-downgrade --yes --no-progress
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($attempt -eq 3) { exit $LASTEXITCODE }
+            Start-Sleep -Seconds (5 * $attempt)
+          }
           & 'C:\Program Files (x86)\NSIS\makensis.exe' /VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Test Windows installer packaging

@@ -749,8 +749,17 @@ fn run(
                             dictionary.current(),
                             &model::SWITCH_CANCELLED,
                             &updates,
-                        )?;
-                        Ok((directory, worker))
+                        );
+                        #[cfg(target_os = "windows")]
+                        let worker = worker.map_err(|error| {
+                            model::report_model_result(
+                                selection,
+                                Err(error),
+                                &model::SWITCH_CANCELLED,
+                            )
+                            .unwrap_err()
+                        });
+                        Ok((directory, worker?))
                     });
                 match candidate {
                     Ok((directory, worker)) if !model::SWITCH_CANCELLED.load(Ordering::Acquire) => {

@@ -487,11 +487,11 @@ fn diagnose_model_result(
     cancelled: &AtomicBool,
 ) -> Result<PathBuf, String> {
     result.map_err(|error| {
-        if cancelled.load(Ordering::Acquire) {
+        if cancelled.load(Ordering::Acquire) || error.contains("\nModel log: ") || error.contains("\nModel log unavailable: ") {
             return error;
         }
         let details = format!("Model: {model}\n{error}\nRetry this command, choose the model again, or reopen Koett.\n");
-        let write = log.parent().map_or(Ok(()), fs::create_dir_all).and_then(|()| fs::write(log, details));
+        let write = log.parent().map_or(Ok(()), fs::create_dir_all).and_then(|()| fs::OpenOptions::new().create(true).append(true).open(log).and_then(|mut file| file.write_all(details.as_bytes())));
         match write {
             Ok(()) => format!("{error}\nRetry this command, choose the model again, or reopen Koett.\nModel log: {}\n", log.display()),
             Err(log_error) => format!("{error}\nRetry this command, choose the model again, or reopen Koett; \nModel log unavailable: {}: {log_error}", log.display()),

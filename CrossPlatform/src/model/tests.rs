@@ -920,3 +920,23 @@ fn model_log_write_failure_keeps_the_original_error_readable() {
     assert!(error.contains("\nModel log unavailable: "));
     fs::remove_dir_all(parent).unwrap();
 }
+
+#[test]
+fn fallback_diagnostics_append_without_wrapping_the_same_failure_twice() {
+    let parent = temporary_directory("fallback-log");
+    let log = parent.join("Model Install.log");
+    let active = AtomicBool::new(false);
+    let first =
+        super::diagnose_model_result(Err("first OS32".into()), "v2", &log, &active).unwrap_err();
+    let before = fs::read(&log).unwrap();
+    assert_eq!(
+        super::diagnose_model_result(Err(first.clone()), "v2", &log, &active).unwrap_err(),
+        first
+    );
+    assert_eq!(fs::read(&log).unwrap(), before);
+    super::diagnose_model_result(Err("fallback OS112".into()), "compact", &log, &active)
+        .unwrap_err();
+    let text = fs::read_to_string(&log).unwrap();
+    assert!(text.contains("first OS32") && text.contains("fallback OS112"));
+    fs::remove_dir_all(parent).unwrap();
+}
