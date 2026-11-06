@@ -53,7 +53,10 @@ extension KoettController {
         }
     }
 
-    private func startRecording() throws {
+    func startRecording() throws {
+        defer {
+            if state == .ready { microphonePreview?.refresh() }
+        }
         automaticPasteTarget = PasteTarget.capture()
         switch speechEngine {
         case .parakeet, .parakeetV3, .parakeet110m:
