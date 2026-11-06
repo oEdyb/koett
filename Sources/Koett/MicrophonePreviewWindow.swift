@@ -2,7 +2,14 @@ import AppKit
 import AVFoundation
 
 @MainActor
-final class MicrophonePreviewWindow: NSWindowController, NSWindowDelegate {
+protocol MicrophonePreviewing: AnyObject {
+    func open()
+    func refresh()
+    func suspend()
+}
+
+@MainActor
+final class MicrophonePreviewWindow: NSWindowController, NSWindowDelegate, MicrophonePreviewing {
     private weak var controller: KoettController?
     private let preview = InputLevelPreview()
     private let picker = NSPopUpButton()
