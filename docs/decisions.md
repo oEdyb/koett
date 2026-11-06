@@ -288,12 +288,17 @@ Koett at another feed, and a build missing any setting is inert. Ed25519 comes f
 in the tree through rustls, so only the direct dependency is new. The idle check takes a lock
 that starting work also takes, because checking then starting is a race an install could slip into.
 
-## 2026-11-06: main runs only when a pull request didn't already test the same tree
+## 2026-11-06: CI is manual only
 
-Olle: "And fix ci", after 76 runs overnight for 35 PRs. Each PR paid for itself and again on
-main. The gate compares git trees, using a record the PR's run writes of what it checked out.
-Timing can't prove this: #146's merge ref sat on an old main for hours through repeated runs.
-It fails open, and also runs when a cache main owes is missing. Cache keys no longer contain
-the commit, which is what took them to 14 GB: every main run saved another 5.5 GB. Key inputs
-are LF on every platform so Linux can name Windows' keys. Slow apt steps were a crawling Azure
-mirror, not dpkg: usually 18 to 45 s, sometimes 7 minutes. So the .deb files are cached.
+Olle, asked after 76 overnight runs for 35 PRs, chose: "No automatic runs on PRs or main. Workers
+fire one run themselves right before merging a batch, and before a release." That replaced a
+gate merged hours earlier that skipped main runs a PR had already covered, which never got to prove itself.
+The cost is that nothing enforces testing: GitHub shows no check on a PR and won't block a merge,
+so main can go red if the procedure in AGENTS.md is skipped. A run also tests the branch, not the
+merge, which is why the branch goes onto current main first.
+
+Kept from that work: cache keys without the commit, which had taken caches to 14 GB because each
+main run saved another 5.5 GB; restore prefixes by architecture, because `ubuntu-22.04-` also
+matched arm's caches; and cached .deb files, because slow apt steps were a crawling Azure mirror,
+not dpkg: usually 18 to 45 s, sometimes 7 minutes. Dependency review compares a branch with main
+by ref, as it no longer has a PR event.
