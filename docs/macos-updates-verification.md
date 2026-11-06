@@ -83,3 +83,25 @@ The frozen v0.3.0 ZIP remains
 No tag, release, draft asset or public feed was created or changed.
 
 Activation and Keychain ownership are documented in [Mac updates](macos-updates.md).
+
+## Distribution-signing correction — 2026-11-06
+
+The original runtime fixtures above were only locally signed. Strict validation
+accepted their ad-hoc nested helpers; it did **not** establish Developer ID or
+notarization readiness. Their signatures must not be reused for distribution.
+
+A real private notary comparison reproduced the release blocker: the old
+outer-framework-only signing layout was **Invalid**, submission
+`4377dbe5-d409-497d-bbf6-1648230bc98e`, with 16 errors across both architectures
+(missing Developer ID certificates and secure timestamps). Signing all four
+nested components before the framework, preserving only Downloader entitlements,
+produced **Accepted**, submission `e31cced6-4067-4f1a-b457-4818c8b0ab08`.
+The fixed test app also passed stapling, stapler validation and Gatekeeper
+`source=Notarized Developer ID`. All four helpers report team LF8KF3G42Q.
+
+This is a private 0.3.1/5101 test app from runtime source `7ef8756`, not a released
+ZIP or a final 0.3.1 freeze. The installer packaging helper is corrected; no feed
+was enabled. The build/sign/submit driver and original Apple logs are in
+[evidence](evidence/macos-sparkle-signing-20261106/fixed-notary-log.json).
+A shell regression test covers nested signing order, Downloader entitlements,
+timestamps and the ad-hoc development fallback. No Swift code changed in this fix.

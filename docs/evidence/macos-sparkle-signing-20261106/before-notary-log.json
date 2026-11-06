@@ -1,0 +1,141 @@
+{
+  "logFormatVersion": 1,
+  "jobId": "4377dbe5-d409-497d-bbf6-1648230bc98e",
+  "status": "Invalid",
+  "statusSummary": "Archive contains critical validation errors",
+  "statusCode": 4000,
+  "archiveFilename": "before.zip",
+  "uploadDate": "2026-11-06T03:12:47.345Z",
+  "sha256": "d6f13b1fcd1979019099036bccccae940731f7739087dc606ee4895cd1a92cf6",
+  "ticketContents": null,
+  "issues": [
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "x86_64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer",
+      "message": "The binary is not signed with a valid Developer ID certificate.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087721",
+      "architecture": "arm64"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "path": "before.zip/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer",
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733",
+      "architecture": "arm64"
+    }
+  ]
+}

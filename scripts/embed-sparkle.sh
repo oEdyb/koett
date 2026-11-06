@@ -8,6 +8,12 @@ framework="$project_dir/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/mac
 mkdir -p "$app_path/Contents/Frameworks" "$app_path/Contents/Resources"
 ditto "$framework" "$app_path/Contents/Frameworks/Sparkle.framework"
 cp "$project_dir/.build/artifacts/sparkle/Sparkle/LICENSE" "$app_path/Contents/Resources/Sparkle-LICENSE.txt"
-codesign --force --options runtime --preserve-metadata=identifier,entitlements \
-    --sign "$identity" "$app_path/Contents/Frameworks/Sparkle.framework"
-codesign --verify --deep --strict "$app_path/Contents/Frameworks/Sparkle.framework"
+embedded="$app_path/Contents/Frameworks/Sparkle.framework"
+sign_options=(--force --options runtime --sign "$identity")
+[[ "$identity" == - ]] || sign_options+=(--timestamp)
+codesign "${sign_options[@]}" "$embedded/Versions/B/XPCServices/Installer.xpc"
+codesign "${sign_options[@]}" --preserve-metadata=entitlements "$embedded/Versions/B/XPCServices/Downloader.xpc"
+codesign "${sign_options[@]}" "$embedded/Versions/B/Autoupdate"
+codesign "${sign_options[@]}" "$embedded/Versions/B/Updater.app"
+codesign "${sign_options[@]}" "$embedded"
+codesign --verify --deep --strict "$embedded"

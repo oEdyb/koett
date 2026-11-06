@@ -1,0 +1,112 @@
+Executable=/Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate
+Identifier=Autoupdate
+Format=Mach-O universal (x86_64 arm64)
+CodeDirectory v=20500 size=822 flags=0x10000(runtime) hashes=20+2 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1705216
+Hash type=sha256 size=32
+CandidateCDHash sha256=b3d95d65330ba43360855c9344e25be5aa9c9b0c
+CandidateCDHashFull sha256=b3d95d65330ba43360855c9344e25be5aa9c9b0c245134c1cbf2d2b5320f2cce
+Hash choices=sha256
+CMSDigest=b3d95d65330ba43360855c9344e25be5aa9c9b0c245134c1cbf2d2b5320f2cce
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=229376
+Executable Segment flags=0x1
+Page size=16384
+CDHash=b3d95d65330ba43360855c9344e25be5aa9c9b0c
+Signature size=9049
+Authority=Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=6 Nov 2026 at 04:12:48
+Info.plist=not bound
+TeamIdentifier=LF8KF3G42Q
+Runtime Version=26.5.0
+Sealed Resources=none
+Internal requirements count=1 size=172
+Executable=/Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app/Contents/MacOS/Updater
+Identifier=org.sparkle-project.Sparkle.Updater
+Format=app bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20500 size=527 flags=0x10000(runtime) hashes=9+3 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1705216
+Hash type=sha256 size=32
+CandidateCDHash sha256=491c82e156914157c2596e74d2687a9554b79462
+CandidateCDHashFull sha256=491c82e156914157c2596e74d2687a9554b79462ee326b3ab1b44a92c5dcba92
+Hash choices=sha256
+CMSDigest=491c82e156914157c2596e74d2687a9554b79462ee326b3ab1b44a92c5dcba92
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=81920
+Executable Segment flags=0x1
+Page size=16384
+CDHash=491c82e156914157c2596e74d2687a9554b79462
+Signature size=9048
+Authority=Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=6 Nov 2026 at 04:12:48
+Info.plist entries=24
+TeamIdentifier=LF8KF3G42Q
+Runtime Version=26.5.0
+Sealed Resources version=2 rules=13 files=0
+Internal requirements count=1 size=196
+Executable=/Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer
+Identifier=org.sparkle-project.InstallerLauncher
+Format=bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20500 size=433 flags=0x10000(runtime) hashes=6+3 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1705216
+Hash type=sha256 size=32
+CandidateCDHash sha256=3194af05886e61715dafd005fc96be9d87939f81
+CandidateCDHashFull sha256=3194af05886e61715dafd005fc96be9d87939f81091c5e616734ebc6c5c1b006
+Hash choices=sha256
+CMSDigest=3194af05886e61715dafd005fc96be9d87939f81091c5e616734ebc6c5c1b006
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=49152
+Executable Segment flags=0x1
+Page size=16384
+CDHash=3194af05886e61715dafd005fc96be9d87939f81
+Signature size=9049
+Authority=Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=6 Nov 2026 at 04:12:47
+Info.plist entries=22
+TeamIdentifier=LF8KF3G42Q
+Runtime Version=26.5.0
+Sealed Resources version=2 rules=13 files=0
+Internal requirements count=1 size=200
+Executable=/Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader
+Identifier=org.sparkle-project.DownloaderService
+Format=bundle with Mach-O universal (x86_64 arm64)
+CodeDirectory v=20500 size=529 flags=0x10000(runtime) hashes=5+7 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1705216
+Hash type=sha256 size=32
+CandidateCDHash sha256=e1a62d5488e5a68de26f30feb5e1b7f581190088
+CandidateCDHashFull sha256=e1a62d5488e5a68de26f30feb5e1b7f5811900884fa139a2d6bffd5a124da6c3
+Hash choices=sha256
+CMSDigest=e1a62d5488e5a68de26f30feb5e1b7f5811900884fa139a2d6bffd5a124da6c3
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=32768
+Executable Segment flags=0x1
+Page size=16384
+CDHash=e1a62d5488e5a68de26f30feb5e1b7f581190088
+Signature size=9049
+Authority=Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+Timestamp=6 Nov 2026 at 04:12:48
+Info.plist entries=23
+TeamIdentifier=LF8KF3G42Q
+Runtime Version=26.5.0
+Sealed Resources version=2 rules=13 files=0
+Internal requirements count=1 size=200
