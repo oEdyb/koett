@@ -81,7 +81,8 @@ extension KoettController {
         }
 
         let device = try selectedMicrophone()
-        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device)
+        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device,
+            maximumDuration: RecordingLimit.load(from: microphoneDefaults).seconds + 1)
         try startNemotronRecording(live: nemotronRecorder) { try startFileRecording(device: device) }
     }
 
@@ -131,6 +132,7 @@ extension KoettController {
 
     @discardableResult
     func beginDictationSession() -> UInt64 {
+        recordingDeadline = RecordingDeadline(limit: RecordingLimit.load(from: microphoneDefaults))
         lastDictationID &+= 1
         activeDictationID = lastDictationID
         return lastDictationID

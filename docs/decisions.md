@@ -222,10 +222,16 @@ a browser pin. Details: docs/screen-context-proposal.md.
 
 ## 2026-11-05: the pill's drag moves a copy, not the pill
 
-The real pill stays in place, invisible at 1/255 opacity, and keeps the pointer grab
+On Linux, the real pill stays in place, invisible at 1/255 opacity, and keeps the pointer grab
 while an input-free live copy follows the pointer onto any monitor. On release the real
 pill moves there. This gives one code path for every compositor and exact pointer offsets.
 The cost is a second window for the length of a drag.
+
+On Mac, AppKit tracks the drag while the nonactivating panel moves directly.
+Dragging its background keeps the existing appearance and button hit targets.
+Position is saved relative to the display's visible frame, keyed by display ID;
+rearranging or resizing a display keeps the pill on it. A disconnected display
+falls back to the first available screen without erasing the saved position.
 
 ## 2026-11-05: Esc ends draw lock instead of cancelling
 
@@ -243,6 +249,15 @@ move to the same card's source. A failure never changes the saved choice, so a m
 returns is used again. Exact digital zero counts as silent only if a stream has never
 produced a non-zero sample, because a noise gate also outputs zero during thinking pauses.
 A source found silent is tried last for 10 minutes, so recordings don't each lose 3 s.
+
+## 2026-11-05: Linux cues are synthesized and can be turned off
+
+Linux plays a high tick when capture starts and a low tone when it stops, at the same
+moments as the Mac, and stays silent on cancel. The Mac uses macOS system sounds, which
+Koett can not ship, so the Linux cues are generated in code with no audio files. Unlike
+the Mac there is a Settings switch, on by default, because Olle films with Koett and a
+sound in a take should be his choice. In a lab where the microphone hears the speaker
+directly, the transcript was identical with the cues on and off.
 
 ## 2026-11-05: recordings stop at a limit you choose, 60 minutes by default
 

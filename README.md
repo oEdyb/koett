@@ -16,7 +16,9 @@ Choose your microphone, set your shortcut, and use hold or toggle recording. Dic
 2. Open it, allow Microphone and Accessibility, and let the model download.
 3. Press either Option key, speak, then press it again. Koett pastes and saves your text.
 
-Change your setup from the menu bar.
+Change your setup from the menu bar. On Mac, Recording Limit offers 10, 30, 60 (default), or 120 minutes of recorded audio. A one-minute warning appears before Koett stops, pastes and saves normally.
+
+On Mac, drag the pill's background to move it to any display. Its position is remembered across recordings and restarts. Buttons still click normally; if the display is disconnected, the pill returns on-screen.
 
 For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in Settings. If the microphone will not start, set **Microphone** to **System default microphone**; in this version, a named device cannot be shared with apps such as Discord.
 
@@ -28,8 +30,11 @@ For Linux, follow the [preview install instructions](CrossPlatform/README.md#ins
 - **Linux:** Settings → Draw on screen → **Draw & Pin While Dictating**. Complete the [keyboard-access setup](CrossPlatform/README.md#drawing-setup) before recording.
 - Start dictation, release any shortcut keys, then **hold Shift and move** to draw. Release Shift to finish a sketch. **Shift+click** drops a pin. Each new hold starts a separate sketch. The Draw Key setting can change Shift.
 - **Linux draw lock:** press **Ctrl+Alt+D** while recording, then drag with the left button to draw multiple strokes in one sketch. Press the shortcut again to finish.
+- **Mac draw lock:** press **Ctrl+Option+D** while recording, then drag with the left button to join multiple strokes into one sketch per display. Press again or press **Esc** to capture and leave draw lock; another Esc cancels dictation. Right-click undoes the last stroke. With VoiceOver on, use **Ctrl+Shift+D**; the Draw on Screen menu shows the active shortcut, including any binding conflicts.
 
 Drawing pastes a numbered image sheet followed by speech-linked text. The target must accept image paste. Images stay in memory, so copy or paste them before quitting or completing another dictation. Captured screen content is included in the image you paste.
+
+On Mac, Chrome's English Incognito window marker suppresses page details in pins. For other private windows or languages, turn off **Include Page Details in Pins**. The screenshot still includes the content you capture.
 
 Linux drawing has private-lab verification on KDE Plasma 6 Wayland and niri. Sway and Hyprland use supported capture paths but have less verification; GNOME Wayland and X11 have no drawing overlay. Multi-monitor drawing is not hardware-verified. Dictation remains available without drawing. See [Linux requirements and limits](CrossPlatform/README.md#drawing-setup).
 

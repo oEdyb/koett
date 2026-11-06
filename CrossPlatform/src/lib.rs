@@ -4,6 +4,7 @@ pub mod corrections;
 pub mod dictionary;
 pub mod formatting;
 pub mod history;
+pub mod media_source;
 pub mod model;
 pub mod paths;
 pub mod pin_context;
@@ -14,6 +15,8 @@ pub mod shortcut;
 pub mod sketch;
 pub mod state;
 pub mod transcription;
+#[cfg(all(test, not(target_os = "windows")))]
+mod windows_logic_tests;
 
 #[cfg(target_os = "linux")]
 pub mod linux;

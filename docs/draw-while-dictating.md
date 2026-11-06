@@ -141,6 +141,19 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 
 ## Mac (built 2026-11-02, live check pending)
 
+Mac draw lock is recording-scoped: Ctrl+Option+D toggles left-button drawing,
+with one sketch per display across pointer lifts. Hover movement adds no ink.
+The Draw on Screen menu also toggles it and shows a non-conflicting alternative
+shortcut when needed. With VoiceOver running, Control-Option-D remains its
+Dock command and draw lock starts with Control-Shift-D. The first Esc captures and unlocks; the second distinct
+Esc cancels dictation, while held-key repeats are ignored. Right-click undoes
+one stroke without reaching the focused app; Command-Z or Control-Z also undo
+one stroke, but those observed keys still reach the focused app. Stop captures
+open ink; Cancel discards it. The existing pill stays unchanged in size/style,
+briefly names the mode, and its buttons remain above the drawing surfaces.
+The local `draw-lock` command and `drawLocked` status expose the same state.
+
+
 Same output as Linux: one numbered contact sheet, then the same
 `- #N (M:SS) “words”` bullets. Files: `SketchLinking.swift` (port of
 `annotation.rs`), `SketchBoard.swift` (holds, numbering, capture phases),

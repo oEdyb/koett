@@ -310,6 +310,7 @@ mod recording_overlay;
 mod recovery;
 mod settings_view;
 mod sketch;
+mod sounds;
 mod theme;
 mod window;
 
@@ -342,14 +343,31 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "draw-lock"
+            "permissions"
+                | "permissions-status"
+                | "drawing-status"
+                | "undo-drawing"
+                | "draw-lock"
+                | "status"
+                | "pause"
+                | "resume"
         )
     }) {
-        let response = control::request(&command)?;
+        let response = match control::request(&command) {
+            Ok(response) => response,
+            Err(_) if matches!(command.as_str(), "status" | "pause" | "resume") => {
+                println!(
+                    "{}",
+                    serde_json::json!({"ok":false,"error":{"code":"not_running","message":"Start Koett and retry"}})
+                );
+                std::process::exit(1);
+            }
+            Err(error) => return Err(error),
+        };
         println!("{response}");
         if matches!(
             command.as_str(),
-            "drawing-status" | "undo-drawing" | "draw-lock"
+            "drawing-status" | "undo-drawing" | "draw-lock" | "status" | "pause" | "resume"
         ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
             == false
         {
@@ -381,7 +399,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("media-help") {
         println!(
             "{}",
-            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
+            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","transcribe-url HTTP(S)_URL","transcribe-file ABSOLUTE_PATH","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
         );
         return Ok(());
     }
@@ -502,6 +520,27 @@ pub fn run() -> Result<(), String> {
             return Err("Usage: koett media HTTP(S)_URL".into());
         }
         crate::media_transcription::validate_url(&source)?;
+        command = format!("media {source}");
+    }
+    // The Mac control names, for scripts that work on both.
+    if command == "transcribe-url" || command == "transcribe-file" {
+        let usage = format!(
+            "Usage: koett {command} {}",
+            if command == "transcribe-url" {
+                "HTTP(S)_URL"
+            } else {
+                "ABSOLUTE_PATH"
+            }
+        );
+        let source = std::env::args().nth(2).ok_or(usage.clone())?;
+        if std::env::args().count() != 3 {
+            return Err(usage);
+        }
+        if command == "transcribe-url" {
+            crate::media_transcription::validate_url(&source)?;
+        } else {
+            crate::media_transcription::validate_file(&source)?;
+        }
         command = format!("media {source}");
     }
     if matches!(command.as_str(), "show" | "--background")
@@ -2267,6 +2306,10 @@ impl LinuxEngine {
                 EngineUpdate::Status(status) => {
                     self.configuration_pending = false;
                     self.stop_sent = false;
+                    recording_cue(&self.status, &status);
+                    if let Ok(mut phase) = menu_preferences::PHASE.write() {
+                        *phase = menu_preferences::phase_name(&status);
+                    }
                     self.status = status;
                     self.capture_pending = false;
                     QUIT_BUSY.store(
@@ -2328,6 +2371,17 @@ impl LinuxEngine {
         if let Some(error) = interaction_error {
             status_changed(&format!("@error:{error}. Use Copy last transcript"));
         }
+    }
+}
+
+/// Plays the cue for a status change unless the user turned sounds off.
+fn recording_cue(old: &AppStatus, new: &AppStatus) {
+    // Tests drive these status changes and must stay silent.
+    if !cfg!(test)
+        && let Some(cue) = sounds::for_change(old, new)
+        && Settings::load().map_or(true, |settings| settings.recording_sounds)
+    {
+        sounds::play(cue);
     }
 }
 

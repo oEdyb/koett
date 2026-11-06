@@ -52,7 +52,7 @@ struct Action {
     x: i32,
     width: i32,
 }
-const ACTIONS: [Action; 5] = [
+const ACTIONS: [Action; 6] = [
     Action {
         id: 101,
         label: "Cancel",
@@ -83,6 +83,12 @@ const ACTIONS: [Action; 5] = [
         x: 244,
         width: 51,
     },
+    Action {
+        id: 106,
+        label: "Stop",
+        x: 0,
+        width: 40,
+    },
 ];
 #[derive(Clone, Default, PartialEq)]
 struct Snapshot {
@@ -99,8 +105,12 @@ impl Snapshot {
             let show = match action.id {
                 101 | 103 => active,
                 102 => active && matches!(state.phase, Phase::Recording),
+                106 => matches!(state.phase, Phase::Recording),
                 104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted { .. }),
-                105 => matches!(state.phase, Phase::NotPasted { .. }),
+                105 => {
+                    matches!(state.phase, Phase::NotPasted { .. })
+                        || state.media_result && matches!(state.phase, Phase::Done(_))
+                }
                 _ => false,
             };
             if show {
@@ -255,11 +265,11 @@ mod tests {
         assert_eq!(Snapshot::new(&state).mask, 0);
         state.set(Phase::Recording, 0);
         assert!(!state.hovered);
-        assert_eq!(Snapshot::new(&state).mask, 0b00111);
+        assert_eq!(Snapshot::new(&state).mask, 0b100111);
         state.hover(true, 1);
-        assert_eq!(Snapshot::new(&state).mask, 0b00111);
+        assert_eq!(Snapshot::new(&state).mask, 0b100111);
         state.hover(false, 2);
-        assert_eq!(Snapshot::new(&state).mask, 0b00111);
+        assert_eq!(Snapshot::new(&state).mask, 0b100111);
         state.paused = true;
         assert_eq!(Snapshot::new(&state).label(1), "Resume");
         state.set(Phase::Transcribing, 2);

@@ -6,6 +6,13 @@ pub struct Meter {
     smoothed: f32,
 }
 impl Meter {
+    pub fn band(&self, start_ms: u64, end_ms: u64) -> Option<(f32, f32)> {
+        let unit = |at: u64| (at as f64 - self.latest_ms as f64) / 150.0 + 63.0;
+        let start = unit(start_ms).max(0.0);
+        let end = (unit(end_ms) + 1.0).min(64.0);
+        (end_ms >= start_ms && end > 0.0 && start < 64.0 && end >= start)
+            .then_some((start as f32, end as f32))
+    }
     pub fn sample(&mut self, milliseconds: u64, rms: f32) {
         let level = if rms.is_finite() && rms > 0.0 {
             ((20.0 * rms.log10()).clamp(-50.0, 0.0) / 50.0 + 1.0).powf(0.75)
@@ -53,6 +60,15 @@ impl Meter {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn sketch_bands_share_the_wave_clock_and_expire_off_the_left_edge() {
+        let mut meter = super::Meter::default();
+        meter.sample(1_000, 0.0);
+        assert_eq!(meter.band(1_000, 1_000), Some((63.0, 64.0)));
+        meter.sample(10_600, 0.0);
+        assert_eq!(meter.band(1_000, 1_000), None);
+        assert!(meter.band(2_000, 1_000).is_none());
+    }
     use super::Meter;
     #[test]
     fn silence_stays_flat() {

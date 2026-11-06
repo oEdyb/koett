@@ -47,7 +47,12 @@ pub(crate) fn recording() -> bool {
 
 pub(crate) struct Capture {
     // Drop the stream before releasing ownership to a waiting recorder.
+    #[cfg(not(target_os = "windows"))]
     _stream: cpal::Stream,
+    #[cfg(target_os = "windows")]
+    _stream: Option<cpal::Stream>,
+    #[cfg(target_os = "windows")]
+    proxy: Option<super::windows_capture::Preview>,
     _ownership: MutexGuard<'static, ()>,
     levels: AudioLevels,
     error: Arc<Mutex<Option<String>>>,
@@ -66,6 +71,18 @@ impl Capture {
         };
         if recording() || !current() {
             return Ok(None);
+        }
+        #[cfg(target_os = "windows")]
+        if !super::windows_capture::helper_requested() {
+            let proxy = super::windows_capture::Preview::start(microphone)?;
+            return Ok(Some(Self {
+                _stream: None,
+                proxy: Some(proxy),
+                _ownership: ownership,
+                levels: AudioLevels::new(),
+                error: Arc::new(Mutex::new(None)),
+                last_callback: Arc::new(Mutex::new(Instant::now())),
+            }));
         }
         let host = super::audio_host();
         let device = match microphone {
@@ -120,7 +137,12 @@ impl Capture {
             .play()
             .map_err(|error| format!("Cannot start microphone: {error}"))?;
         Ok(Some(Self {
+            #[cfg(not(target_os = "windows"))]
             _stream: stream,
+            #[cfg(target_os = "windows")]
+            _stream: Some(stream),
+            #[cfg(target_os = "windows")]
+            proxy: None,
             _ownership: ownership,
             levels,
             error,
@@ -129,6 +151,10 @@ impl Capture {
     }
 
     pub(crate) fn levels(&self) -> Result<(f32, f32), String> {
+        #[cfg(target_os = "windows")]
+        if let Some(proxy) = &self.proxy {
+            return proxy.levels();
+        }
         if let Some(error) = self
             .error
             .lock()
