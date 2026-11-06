@@ -7,3 +7,5 @@
 [2026-11-03 21:43] I checked the cleanup agent's filler finding against the local history. Parakeet v2 writes "um/uh" at 2.46% of words and 110M at 0.60%, though those ran on different days. I'm still waiting on the oth
 [2026-11-03 21:44] One to go, the model comparison. Vocabulary is back: non-word forms are safe, but a blanket `scroll → Scrawl` would be wrong in 8 of the 14 "scroll" hits. 
 [2026-11-06 04:00] | PR | What it adds | Merge SHA | |---|---|---| | #77 | GNOME drawing background capture | `240121a574f64461e6f769a9f3383eaae8c88b73` | 
+[2026-11-06 04:57] PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
+[2026-11-06 04:59] The real CI run on #155 is in progress, and it merges when green. PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
