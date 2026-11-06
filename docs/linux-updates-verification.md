@@ -50,3 +50,36 @@ The extension now asks the running app each time the menu opens.
 - arm64, X11, and a window left open across an update's restart.
 - Pruning beyond two versions, a hung install step, unwritable installs and removing the old
   version's paths on restart (bundled installs only) have unit tests only.
+
+## Recovery, added after an independent review of #155
+
+Lab only, on 2026-11-06. Nested niri, a local feed, signed lab builds and real speech. The faulty
+builds come from a compile-time lab switch that needs the loopback switch too, so a release can't
+carry one. It fires once the app has its socket, before any window. 62 checks, all pass.
+
+- **Signed release that crashes at startup:** it passed the build probe, installed, restarted and
+  died. About 6 s after the check, the old version was running with the launcher back and one
+  process. The build was marked skipped and not fetched again, the reason was shown once, and
+  dictation worked.
+- **Signed release that hangs at startup:** its socket answered but it reported not started.
+  After 175.7 s it was stopped and the old version was running.
+- **Installer fails after moving the launcher:** the failure was reported, the launcher went back,
+  the same process kept running, no rollback to itself was offered, the archive was removed, and
+  dictation worked.
+- **No app at all:** a crashing build on the launcher, with no watcher. `update-status` and
+  `rollback-update` both worked, and the old version was running 0.7 s later. A second rollback
+  had nothing to do.
+- **Quit refused during a rollback:** new work was refused while reserved, then released after 30 s
+  with the watcher stopped. Dictation worked, a check didn't land an update on the rollback, and
+  the next start finished going back.
+- **Quit refused during an install:** reported, launcher back on the running version, dictation
+  worked.
+- **Expired feed:** refused before the archive was fetched. A pushed-out expiry failed the signature.
+
+A first run of this lab found one more bug: `koett rollback-update` with no app ran the rollback
+and then ran it again to build its answer, so it did the work but reported failure.
+
+`install.py`'s fsync order and its writing desktop files before the launcher move have unit tests.
+They can't be proven by pulling power here, so whether a real power loss leaves good files is
+untested. The normal path above was rerun on this source and passed: 67 checks in niri and the
+KWin pill case. GNOME wasn't rerun, because the extension didn't change.

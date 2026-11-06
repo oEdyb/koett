@@ -330,6 +330,9 @@ pub fn run() -> Result<(), String> {
         updates::print_build();
         return Ok(());
     }
+    if std::env::args().nth(1).as_deref() == Some("update-watch") {
+        return updates::watch(&std::env::args().skip(2).collect::<Vec<_>>());
+    }
     if let Some(command) = std::env::args().nth(1).filter(|c| c.starts_with("menu-")) {
         if command == "menu-help" {
             println!(
@@ -376,6 +379,12 @@ pub fn run() -> Result<(), String> {
     }) {
         let response = match control::request(&command) {
             Ok(response) => response,
+            // Rollback acts, so this must only run once: not in a guard and again here.
+            Err(_) if matches!(command.as_str(), "update-status" | "rollback-update") => {
+                let answer = updates::offline(&command).unwrap_or_default();
+                println!("{answer}");
+                std::process::exit(if answer["ok"] == true { 0 } else { 1 });
+            }
             Err(_)
                 if matches!(
                     command.as_str(),
@@ -607,6 +616,7 @@ pub fn run() -> Result<(), String> {
     let (ui, updates) = mpsc::channel();
     control::listen(actions.clone(), ui.clone())?;
     updates::start(actions.clone(), ui.clone());
+    updates::lab_fault_at_startup();
     menu_preferences::start_inputs();
     let startup_ui = ui.clone();
     std::thread::spawn(move || match history::recovery::initialize_last() {
@@ -2368,6 +2378,9 @@ impl LinuxEngine {
                     }
                     self.status = status;
                     self.capture_pending = false;
+                    if self.status == AppStatus::Ready {
+                        updates::engine_ready();
+                    }
                     QUIT_BUSY.store(
                         matches!(
                             self.status,

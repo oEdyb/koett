@@ -11,16 +11,24 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, MutexGuard, OnceLock, mpsc};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+mod watch;
+
+pub use watch::run as watch;
+
 const FEED: Option<&str> = option_env!("KOETT_UPDATE_FEED");
 const PUBLIC_KEY: Option<&str> = option_env!("KOETT_UPDATE_PUBLIC_KEY");
 const BUILD: Option<&str> = option_env!("KOETT_UPDATE_BUILD");
 /// Lab builds only: allows plain HTTP to this machine.
 const LOOPBACK: bool = option_env!("KOETT_UPDATE_LOOPBACK_TESTING").is_some();
+/// Lab builds only: a release that misbehaves, to prove recovery. Needs the loopback switch.
+const LAB_FAULT: Option<&str> = option_env!("KOETT_UPDATE_LAB_FAULT");
 const CHECK_EVERY: Duration = Duration::from_secs(24 * 60 * 60);
 const FIRST_CHECK_AFTER: Duration = Duration::from_secs(60);
 /// A laptop that started offline shouldn't wait a day to try again.
 const RETRY_AFTER: Duration = Duration::from_secs(60 * 60);
 const TICK: Duration = Duration::from_secs(1);
+/// A quit that hasn't happened by now was refused.
+const QUIT_WAIT: Duration = Duration::from_secs(30);
 const FEED_LIMIT: Duration = Duration::from_secs(30);
 const DOWNLOAD_LIMIT: Duration = Duration::from_secs(60 * 60);
 const UNPACK_LIMIT: Duration = Duration::from_secs(120);
@@ -72,8 +80,22 @@ fn install_location(executable: &Path) -> Option<(PathBuf, String)> {
 
 fn location() -> Option<(PathBuf, String)> {
     install_location(&std::env::current_exe().ok()?.canonicalize().ok()?).filter(|(prefix, _)| {
-        writable(&prefix.join("bin")) && writable(&prefix.join("lib/koett/versions"))
+        [
+            "bin",
+            "lib/koett/versions",
+            "share/applications",
+            "share/icons/hicolor/scalable/apps",
+        ]
+        .iter()
+        .all(|folder| creatable(&prefix.join(folder)))
     })
+}
+
+/// `~/.local/share` may not exist yet, so the nearest folder that does has to be writable.
+fn creatable(path: &Path) -> bool {
+    path.ancestors()
+        .find(|folder| folder.exists())
+        .is_some_and(writable)
 }
 
 /// A system-wide install isn't this user's to replace, and shouldn't download daily to find out.
@@ -84,7 +106,7 @@ fn writable(path: &Path) -> bool {
         .is_ok_and(|path| unsafe { libc::access(path.as_ptr(), libc::W_OK) } == 0)
 }
 
-#[derive(Default, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Default, serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 struct State {
     last_check: u64,
@@ -93,6 +115,8 @@ struct State {
     previous: Option<String>,
     /// Versions the updater installed, oldest first. Only these are ever removed.
     managed: Vec<String>,
+    /// Why an update was undone, to say once on the next start.
+    failed: Option<String>,
 }
 
 fn state_file() -> Result<PathBuf, String> {
@@ -111,12 +135,19 @@ fn save_state(state: &State) -> Result<(), String> {
     let path = state_file()?;
     private_directory(path.parent().ok_or("no updates folder")?)?;
     let temporary = path.with_extension("json.new");
-    std::fs::write(
-        &temporary,
-        serde_json::to_vec(state).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
-    std::fs::rename(temporary, path).map_err(|error| error.to_string())
+    let mut file = std::fs::File::create(&temporary).map_err(|error| error.to_string())?;
+    file.write_all(&serde_json::to_vec(state).map_err(|error| error.to_string())?)
+        .and_then(|()| file.sync_all())
+        .map_err(|error| error.to_string())?;
+    std::fs::rename(&temporary, &path).map_err(|error| error.to_string())?;
+    sync_folder(path.parent().ok_or("no updates folder")?)
+}
+
+/// A rename isn't durable until the folder holding it is flushed.
+fn sync_folder(path: &Path) -> Result<(), String> {
+    std::fs::File::open(path)
+        .and_then(|folder| folder.sync_all())
+        .map_err(|error| error.to_string())
 }
 
 fn private_directory(path: &Path) -> Result<(), String> {
@@ -147,6 +178,9 @@ static STATUS: Mutex<Option<Status>> = Mutex::new(None);
 static RESERVED: AtomicBool = AtomicBool::new(false);
 static UI_BUSY: AtomicBool = AtomicBool::new(false);
 static WINDOW_SHOWN: AtomicBool = AtomicBool::new(false);
+static ENGINE_READY: AtomicBool = AtomicBool::new(false);
+/// The window is ticking and the engine has been ready. Stays set. What the restart waits for.
+static STARTED: AtomicBool = AtomicBool::new(false);
 static COMMANDS: OnceLock<Mutex<mpsc::Sender<Command>>> = OnceLock::new();
 static GATE: Mutex<()> = Mutex::new(());
 static UI: OnceLock<mpsc::Sender<super::window::Update>> = OnceLock::new();
@@ -179,6 +213,29 @@ pub fn admit() -> Option<MutexGuard<'static, ()>> {
 pub fn set_ui_state(busy: bool, window_shown: bool) {
     UI_BUSY.store(busy, Ordering::Relaxed);
     WINDOW_SHOWN.store(window_shown, Ordering::Relaxed);
+    if ENGINE_READY.load(Ordering::Relaxed) {
+        STARTED.store(true, Ordering::Relaxed);
+    }
+}
+
+/// The model is loaded and dictation would work.
+pub fn engine_ready() {
+    ENGINE_READY.store(true, Ordering::Relaxed);
+}
+
+/// Stands in for a release that dies or hangs once it has its socket, before any window.
+pub fn lab_fault_at_startup() {
+    match LAB_FAULT.filter(|_| LOOPBACK) {
+        Some("crash") => std::process::abort(),
+        Some("hang") => loop {
+            std::thread::sleep(Duration::from_secs(60));
+        },
+        _ => {}
+    }
+}
+
+fn current_build() -> u64 {
+    BUILD.and_then(|build| build.parse().ok()).unwrap_or(0)
 }
 
 fn idle() -> bool {
@@ -231,7 +288,7 @@ fn fetch_feed(config: &Config) -> Result<Feed, String> {
     if raw.len() as u64 > update_feed::MAX_FEED_BYTES {
         return Err("The update feed is too large".into());
     }
-    Feed::verified(&raw, &config.public_key, LOOPBACK)
+    Feed::verified(&raw, &config.public_key, LOOPBACK, now())
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -431,41 +488,73 @@ fn prune(prefix: &Path, state: &mut State, keep: &[&str]) {
     }
 }
 
-/// Starts the new version once this process has gone, then quits this one.
-fn relaunch(prefix: &Path, actions: &mpsc::Sender<super::TrayAction>) -> Result<(), String> {
-    use std::os::unix::process::CommandExt;
-    let mode = if WINDOW_SHOWN.load(Ordering::Relaxed) {
-        "show"
-    } else {
-        "--background"
-    };
-    let mut waiter = clean_command("sh");
-    waiter
-        .args([
-            "-c",
-            // A parent that doesn't reap leaves a zombie, which `kill -0` calls alive.
-            "i=0; while [ -r \"/proc/$1/status\" ] && ! grep -q '^State:[[:space:]]*Z' \"/proc/$1/status\" && [ \"$i\" -lt 150 ]; do sleep 0.2; i=$((i+1)); done; exec \"$2\" \"$3\"",
-            "koett-update",
-        ])
-        .arg(std::process::id().to_string())
-        .arg(prefix.join("bin/koett"))
+/// Starts this install's launcher, detached from whoever asked.
+fn launch(prefix: &Path, mode: &str) -> Result<std::process::Child, String> {
+    detached(prefix.join("bin/koett"))
         .arg(mode)
+        .spawn()
+        .map_err(|error| format!("Could not restart Koett: {error}"))
+}
+
+fn detached(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    use std::os::unix::process::CommandExt;
+    let mut command = clean_command(program);
+    command
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
     // SAFETY: setsid is async-signal-safe and touches no parent state.
     unsafe {
-        waiter.pre_exec(|| {
+        command.pre_exec(|| {
             libc::setsid();
             Ok(())
         });
     }
-    waiter
+    command
+}
+
+/// Hands over to a watcher from this version, then quits. Build 0 restarts without
+/// checking the result. If the quit never comes, the caller stops the watcher.
+fn relaunch(
+    prefix: &Path,
+    current: &str,
+    build: u64,
+    actions: &mpsc::Sender<super::TrayAction>,
+) -> Result<std::process::Child, String> {
+    let mode = if WINDOW_SHOWN.load(Ordering::Relaxed) {
+        "show"
+    } else {
+        "--background"
+    };
+    let launcher = prefix
+        .join("lib/koett/versions")
+        .join(current)
+        .join("koett");
+    let mut watcher = detached(launcher)
+        .arg("update-watch")
+        .arg(std::process::id().to_string())
+        .arg(prefix)
+        .arg(build.to_string())
+        .arg(current)
+        .arg(mode)
         .spawn()
         .map_err(|error| format!("Could not restart Koett: {error}"))?;
-    actions
-        .send(super::TrayAction::Quit)
-        .map_err(|_| "Could not restart Koett".to_string())
+    if LAB_FAULT.filter(|_| LOOPBACK) != Some("refuse-quit")
+        && actions.send(super::TrayAction::Quit).is_err()
+    {
+        let _ = watcher.kill();
+        let _ = watcher.wait();
+        return Err("Could not restart Koett".to_string());
+    }
+    Ok(watcher)
+}
+
+/// Returns only if the quit was refused, with the watcher stopped so it can't restart
+/// anything later and with the app free to work again once the caller has cleaned up.
+fn quit_was_refused(mut watcher: std::process::Child, wait: Duration) {
+    std::thread::sleep(wait);
+    let _ = watcher.kill();
+    let _ = watcher.wait();
 }
 
 /// Takes the idle app, so nothing new can start while it's replaced.
@@ -491,37 +580,108 @@ fn point_launcher(prefix: &Path, version: &str) -> Result<(), String> {
     let link = bin.join(format!(".koett-rollback-{}", std::process::id()));
     let _ = std::fs::remove_file(&link);
     std::os::unix::fs::symlink(&target, &link).map_err(|error| error.to_string())?;
-    std::fs::rename(&link, bin.join("koett")).map_err(|error| error.to_string())
+    std::fs::rename(&link, bin.join("koett")).map_err(|error| error.to_string())?;
+    sync_folder(&bin)
 }
 
+/// The version the launcher points at, whatever this process is running.
+fn launcher_version(prefix: &Path) -> Option<String> {
+    let target = std::fs::read_link(prefix.join("bin/koett")).ok()?;
+    Some(target.parent()?.file_name()?.to_str()?.to_owned())
+}
+
+/// Moves the launcher back and stops offering `build`. The state goes first: a crash in
+/// between leaves the bad build refused, never offered again as if nothing happened.
+fn go_back(prefix: &Path, version: &str, build: u64) -> Result<(), String> {
+    let before = load_state();
+    let mut state = before.clone();
+    state.skip_build = build;
+    state.previous = None;
+    save_state(&state)?;
+    point_launcher(prefix, version).inspect_err(|_| {
+        let _ = save_state(&before);
+    })
+}
+
+/// A version to go back to. The state is written before an install starts, so after a
+/// failed one it can name the version that's running.
+fn rollback_target(state: &State, running: &str) -> Option<String> {
+    state
+        .previous
+        .clone()
+        .filter(|previous| previous != running)
+}
+
+fn failure(code: &str, message: impl Into<String>) -> serde_json::Value {
+    serde_json::json!({"ok":false,"error":{"code":code,"message":message.into()}})
+}
+
+/// The app's answer and, if it's now quitting, the watcher restarting it.
 fn rollback(
     prefix: &Path,
+    current: &str,
     config: &Config,
     actions: &mpsc::Sender<super::TrayAction>,
-) -> serde_json::Value {
-    let failure = |code: &str, message: String| serde_json::json!({"ok":false,"error":{"code":code,"message":message}});
-    let mut state = load_state();
-    let Some(previous) = state.previous.clone() else {
-        return failure(
-            "no_previous_version",
-            "There is no earlier version to go back to".into(),
-        );
+) -> (serde_json::Value, Option<std::process::Child>) {
+    let Some(previous) = rollback_target(&load_state(), current) else {
+        let message = "There is no earlier version to go back to";
+        return (failure("no_previous_version", message), None);
     };
     if !reserve() {
-        return failure("busy", "Finish recording or processing first".into());
+        let message = "Finish recording or processing first";
+        return (failure("busy", message), None);
     }
-    let result = point_launcher(prefix, &previous).and_then(|()| {
-        state.skip_build = config.build;
-        state.previous = None;
-        save_state(&state)?;
-        relaunch(prefix, actions)
-    });
+    let result = go_back(prefix, &previous, config.build)
+        .and_then(|()| relaunch(prefix, current, 0, actions));
     match result {
-        Ok(()) => serde_json::json!({"ok":true,"status":"rolling_back","version":previous}),
+        Ok(watcher) => (
+            serde_json::json!({"ok":true,"status":"rolling_back","version":previous}),
+            Some(watcher),
+        ),
         Err(error) => {
             RESERVED.store(false, Ordering::SeqCst);
-            failure("rollback_failed", error)
+            (failure("rollback_failed", error), None)
         }
+    }
+}
+
+/// `update-status` and `rollback-update` with no app to ask, which is exactly when a bad
+/// release needs them. Works from the state file and the launcher.
+pub fn offline(command: &str) -> Option<serde_json::Value> {
+    let found = config().zip(location());
+    let target = found
+        .as_ref()
+        .and_then(|(_, (_, running))| rollback_target(&load_state(), running));
+    match command {
+        "update-status" => Some(serde_json::json!({
+            "ok": true,
+            "running": false,
+            "enabled": found.is_some(),
+            "state": "not_running",
+            "build": current_build(),
+            "version": env!("CARGO_PKG_VERSION"),
+            "rollback": target,
+        })),
+        "rollback-update" => {
+            let Some((config, (prefix, _))) = found else {
+                return Some(failure("updates_disabled", "This build has no update feed"));
+            };
+            let Some(previous) = target else {
+                let message = "There is no earlier version to go back to";
+                return Some(failure("no_previous_version", message));
+            };
+            Some(
+                match go_back(&prefix, &previous, config.build)
+                    .and_then(|()| launch(&prefix, "--background").map(drop))
+                {
+                    Ok(()) => {
+                        serde_json::json!({"ok":true,"status":"rolled_back","version":previous})
+                    }
+                    Err(error) => failure("rollback_failed", error),
+                },
+            )
+        }
+        _ => None,
     }
 }
 
@@ -539,6 +699,12 @@ pub fn start(actions: mpsc::Sender<super::TrayAction>, ui: mpsc::Sender<super::w
         status.enabled = true;
         status.state = "idle";
     });
+    let mut state = load_state();
+    if let Some(failed) = state.failed.take() {
+        let _ = save_state(&state);
+        let _ = ui.send(super::window::Update::Status(format!("@notice:{failed}")));
+        change(|status| status.error = Some(failed));
+    }
     let spawned = std::thread::Builder::new()
         .name("koett-updates".into())
         .spawn(move || run(config, &prefix, &current, &actions, &ui, &commands));
@@ -566,16 +732,44 @@ fn run(
                 .saturating_sub(now().saturating_sub(load_state().last_check)),
         );
     let mut ready = None::<(Feed, PathBuf)>;
+    // A rollback whose quit was refused: the launcher is set, and only a restart finishes
+    // it. Updating now would move the launcher again and undo what was asked for.
+    let mut going_back = false;
     loop {
         let mut manual = false;
         match commands.recv_timeout(TICK) {
             Ok(Command::Check) => manual = true,
             Ok(Command::Rollback(reply)) => {
-                let _ = reply.send(rollback(prefix, config, actions));
+                let (answer, watcher) = rollback(prefix, current, config, actions);
+                let _ = reply.send(answer);
+                if let Some(watcher) = watcher {
+                    quit_was_refused(watcher, QUIT_WAIT);
+                    // The launcher already points back. A pending update must not land
+                    // on top of that, and dictation has to work until the next start.
+                    if let Some((_, archive)) = ready.take() {
+                        let _ = std::fs::remove_file(archive);
+                    }
+                    change(|status| {
+                        status.state = "idle";
+                        status.available_version = None;
+                        status.available_build = None;
+                        status.error = Some(
+                            "Koett goes back to the earlier version when it next starts".into(),
+                        );
+                    });
+                    going_back = true;
+                    RESERVED.store(false, Ordering::SeqCst);
+                }
                 continue;
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => return,
+        }
+        if going_back {
+            if manual {
+                say("Restart Koett to finish going back");
+            }
+            continue;
         }
         if (manual || now() >= next_check) && ready.is_none() {
             change(|status| {
@@ -645,34 +839,49 @@ fn run(
             continue;
         }
         change(|status| status.state = "installing");
-        let outcome = install(archive, feed, prefix).and_then(|new| {
-            let mut state = load_state();
-            state.previous = Some(current.to_owned());
-            for id in [current, new.as_str()] {
-                if !state.managed.iter().any(|known| known == id) {
-                    state.managed.push(id.to_owned());
+        // Written first: whatever happens to this process after the launcher moves, the
+        // way back is on disk. An install that fails before moving it changes nothing.
+        let before = load_state();
+        let mut state = before.clone();
+        state.previous = Some(current.to_owned());
+        let outcome = save_state(&state)
+            .and_then(|()| install(archive, feed, prefix))
+            .and_then(|new| {
+                for id in [current, new.as_str()] {
+                    if !state.managed.iter().any(|known| known == id) {
+                        state.managed.push(id.to_owned());
+                    }
                 }
-            }
-            prune(prefix, &mut state, &[current, new.as_str()]);
-            save_state(&state)?;
-            relaunch(prefix, actions)
-        });
-        let _ = std::fs::remove_file(archive);
-        if let Err(error) = outcome {
-            eprintln!("Update failed: {error}");
-            say(&error);
-            change(|status| {
-                status.state = "idle";
-                status.error = Some(error);
+                prune(prefix, &mut state, &[current, new.as_str()]);
+                save_state(&state)?;
+                relaunch(prefix, current, feed.build, actions)
             });
-            ready = None;
-            RESERVED.store(false, Ordering::SeqCst);
-            continue;
+        let _ = std::fs::remove_file(archive);
+        let error = match outcome {
+            Ok(watcher) => {
+                quit_was_refused(watcher, QUIT_WAIT);
+                "Koett could not restart for the update and will try again later".to_string()
+            }
+            Err(error) => error,
+        };
+        // Still here, so this version stays: the launcher can't be left on an unproven one.
+        let mut error = error;
+        if launcher_version(prefix).is_some_and(|version| version != current)
+            && let Err(undo) = point_launcher(prefix, current)
+        {
+            error = format!("{error}; {undo}");
         }
-        // Quitting takes it from here. If that is refused, don't stay blocked.
-        std::thread::sleep(Duration::from_secs(30));
-        RESERVED.store(false, Ordering::SeqCst);
+        let mut restored = before;
+        restored.managed = state.managed;
+        let _ = save_state(&restored);
+        eprintln!("Update failed: {error}");
+        say(&error);
+        change(|status| {
+            status.state = "idle";
+            status.error = Some(error);
+        });
         ready = None;
+        RESERVED.store(false, Ordering::SeqCst);
     }
 }
 
@@ -697,14 +906,16 @@ pub fn control(command: &str) -> Option<serde_json::Value> {
             let status = status.clone().unwrap_or_default();
             Some(serde_json::json!({
                 "ok": true,
+                "running": true,
+                "started": STARTED.load(Ordering::Relaxed),
                 "enabled": status.enabled,
                 "state": if status.state.is_empty() { "disabled" } else { status.state },
-                "build": config().map(|config| config.build),
+                "build": current_build(),
                 "version": env!("CARGO_PKG_VERSION"),
                 "available_version": status.available_version,
                 "available_build": status.available_build,
                 "error": status.error,
-                "rollback": load_state().previous,
+                "rollback": location().and_then(|(_, running)| rollback_target(&load_state(), &running)),
             }))
         }
         "check-updates" => Some(if check_now() {
@@ -790,6 +1001,7 @@ mod tests {
             schema: 1,
             version: "1".into(),
             build,
+            expires: 0,
             arch: "x".into(),
             url: "u".into(),
             length: 1,
@@ -838,6 +1050,33 @@ mod tests {
     fn a_folder_this_user_cannot_write_is_not_replaceable() {
         assert!(writable(&std::env::temp_dir()));
         assert!(!writable(Path::new("/no/such/folder")));
+    }
+
+    #[test]
+    fn a_failed_install_never_offers_a_rollback_to_itself() {
+        let state = State {
+            previous: Some("running".into()),
+            ..State::default()
+        };
+        assert_eq!(rollback_target(&state, "running"), None);
+        assert_eq!(rollback_target(&state, "newer").as_deref(), Some("running"));
+        assert_eq!(rollback_target(&State::default(), "running"), None);
+    }
+
+    #[test]
+    fn a_missing_folder_counts_if_a_parent_can_hold_it() {
+        let folder = std::env::temp_dir().join("koett-no-such/share/applications");
+        assert!(creatable(&folder));
+        assert!(!creatable(Path::new("/proc/koett-no-such/share")));
+    }
+
+    #[test]
+    fn a_refused_quit_stops_the_watcher() {
+        let mut sleeper = std::process::Command::new("sleep");
+        let watcher = sleeper.arg("30").spawn().unwrap();
+        let pid = watcher.id();
+        quit_was_refused(watcher, Duration::from_millis(1));
+        assert!(!Path::new(&format!("/proc/{pid}")).exists());
     }
 
     #[test]

@@ -14,6 +14,8 @@ pub struct Feed {
     pub schema: u32,
     pub version: String,
     pub build: u64,
+    /// Unix time after which this feed is refused. Bounds how long an old one can be replayed.
+    pub expires: u64,
     pub arch: String,
     pub url: String,
     pub length: u64,
@@ -25,8 +27,8 @@ impl Feed {
     /// The exact bytes the Ed25519 signature covers.
     pub fn signed_message(&self) -> String {
         format!(
-            "{DOMAIN}\n{}\n{}\n{}\n{}\n{}\n",
-            self.version, self.build, self.arch, self.length, self.sha256
+            "{DOMAIN}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+            self.version, self.build, self.expires, self.arch, self.length, self.sha256
         )
     }
 
@@ -35,6 +37,7 @@ impl Feed {
         raw: &[u8],
         public_key: &[u8; 32],
         allow_loopback: bool,
+        now: u64,
     ) -> Result<Self, String> {
         let feed: Self =
             serde_json::from_slice(raw).map_err(|_| "The update feed is not valid".to_string())?;
@@ -46,6 +49,9 @@ impl Feed {
             .map_err(|_| "The update signature is not valid".to_string())?;
         if feed.schema != SCHEMA {
             return Err("The update feed has an unknown format".into());
+        }
+        if feed.expires <= now {
+            return Err("The update feed has expired".into());
         }
         if feed.arch != std::env::consts::ARCH {
             return Err("The update is for another architecture".into());
@@ -89,6 +95,8 @@ mod tests {
     use super::*;
     use ring::signature::{Ed25519KeyPair, KeyPair};
 
+    const NOW: u64 = 1_800_000_000;
+
     fn key() -> (Ed25519KeyPair, [u8; 32]) {
         let pkcs8 = Ed25519KeyPair::generate_pkcs8(&ring::rand::SystemRandom::new()).unwrap();
         let pair = Ed25519KeyPair::from_pkcs8(pkcs8.as_ref()).unwrap();
@@ -101,6 +109,7 @@ mod tests {
             schema: SCHEMA,
             version: "0.3.2".into(),
             build: 7,
+            expires: NOW + 1,
             arch: std::env::consts::ARCH.into(),
             url: "https://github.com/oEdyb/koett/releases/download/v0.3.2/koett.tar.gz".into(),
             length: 10,
@@ -120,7 +129,7 @@ mod tests {
         let (pair, public) = key();
         let signed = feed(&pair);
         assert_eq!(
-            Feed::verified(&raw(&signed), &public, false).unwrap(),
+            Feed::verified(&raw(&signed), &public, false, NOW).unwrap(),
             signed
         );
     }
@@ -131,7 +140,7 @@ mod tests {
         let (other, _) = key();
         let error = "The update signature is not valid";
         assert_eq!(
-            Feed::verified(&raw(&feed(&other)), &public, false).unwrap_err(),
+            Feed::verified(&raw(&feed(&other)), &public, false, NOW).unwrap_err(),
             error
         );
         for change in [
@@ -145,7 +154,7 @@ mod tests {
             let mut changed = feed(&pair);
             change(&mut changed);
             assert_eq!(
-                Feed::verified(&raw(&changed), &public, false).unwrap_err(),
+                Feed::verified(&raw(&changed), &public, false, NOW).unwrap_err(),
                 error
             );
         }
@@ -160,12 +169,29 @@ mod tests {
         };
         let mut other = feed(&pair);
         other.arch = "other".into();
-        assert!(Feed::verified(&raw(&sign(other)), &public, false).is_err());
+        assert!(Feed::verified(&raw(&sign(other)), &public, false, NOW).is_err());
         let mut http = feed(&pair);
         http.url = "http://127.0.0.1:1/koett.tar.gz".into();
         let http = sign(http);
-        assert!(Feed::verified(&raw(&http), &public, false).is_err());
-        assert!(Feed::verified(&raw(&http), &public, true).is_ok());
+        assert!(Feed::verified(&raw(&http), &public, false, NOW).is_err());
+        assert!(Feed::verified(&raw(&http), &public, true, NOW).is_ok());
+    }
+
+    #[test]
+    fn an_old_feed_stops_working_when_it_expires() {
+        let (pair, public) = key();
+        let good = feed(&pair);
+        let raw = serde_json::to_vec(&good).unwrap();
+        assert!(Feed::verified(&raw, &public, false, NOW).is_ok());
+        assert_eq!(
+            Feed::verified(&raw, &public, false, NOW + 1).unwrap_err(),
+            "The update feed has expired"
+        );
+        // The expiry is signed, so it can't be pushed out.
+        let mut later = good;
+        later.expires += 1_000_000;
+        let raw = serde_json::to_vec(&later).unwrap();
+        assert!(Feed::verified(&raw, &public, false, NOW + 1).is_err());
     }
 
     #[test]
