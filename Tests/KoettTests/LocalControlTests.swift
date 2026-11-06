@@ -106,6 +106,7 @@ final class LocalControlTests: XCTestCase {
         for phase in [KoettController.State.recording, .transcribing, .media, .assistantRecording, .assistantWorking] {
             controller.state = phase
             XCTAssertFalse(controller.isIdleForUpdates)
+            XCTAssertNil(controller.drawingEventTap, "Controllers without installed hotkeys must not create global input hooks")
         }
     }
 }

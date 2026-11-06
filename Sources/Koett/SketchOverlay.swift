@@ -38,6 +38,7 @@ final class SketchOverlay {
     private(set) var failedCaptures = 0
 
     var isActive: Bool { session != nil }
+    var acceptsInput: Bool { board.map { !$0.finishing } ?? false }
     var canUndo: Bool { board.map { !$0.finishing && !$0.groups.isEmpty } ?? false }
     var strokeCount: Int { board?.groups.reduce(0) { $0 + $1.strokes.count } ?? 0 }
 

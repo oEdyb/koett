@@ -194,6 +194,7 @@ extension KoettController {
         sketchFrames.begin(session)
         guard drawWhileDictating, let startedAt = recordingOverlay.recordingStartedAt else {
             sketchOverlay.discard()
+            refreshDrawingKeyTap()
             return
         }
         let overlay = recordingOverlay
@@ -210,10 +211,15 @@ extension KoettController {
                 overlay.raiseAboveDrawing()
             }
         ), startedAt: startedAt)
+        if !refreshDrawingKeyTap() {
+            sketchOverlay.finish()
+            recordingOverlay.recordFailure("Drawing shortcuts unavailable · Dictation continues")
+        }
     }
 
     func discardSketches(_ session: UInt64) {
         sketchOverlay.discard()
+        refreshDrawingKeyTap()
         sketchFrames.discard(session)
     }
 
