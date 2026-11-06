@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "result": {
+    "root_absent": true,
+    "exit": 1,
+    "focus": {
+      "hwnd": 262170,
+      "process": "Notepad",
+      "pid": 1980
+    },
+    "passed": true
+  },
+  "id": "1793964956278339292"
+}

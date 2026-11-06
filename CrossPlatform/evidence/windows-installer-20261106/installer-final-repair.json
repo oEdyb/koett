@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "result": {
+    "data_after": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "E171B6D0CA017333BA14A127B88CAD6115B30EAF905AAC8054BA6614C6D1E5E4",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "registration": {
+      "DisplayName": "Koett",
+      "DisplayVersion": "0.3.0"
+    },
+    "executable": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\26b7991301ebce1d\\Koett.exe",
+    "complete": {
+      "step": "native-upgrade-complete",
+      "rect": [
+        543,
+        156,
+        1377,
+        840
+      ],
+      "screenshot_file": "installer-final-repair-result-complete.png",
+      "focus": {
+        "hwnd": 262310,
+        "process": "Koett-Setup",
+        "pid": 1280
+      }
+    },
+    "passed": true,
+    "data_before": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "E171B6D0CA017333BA14A127B88CAD6115B30EAF905AAC8054BA6614C6D1E5E4",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "focus": {
+      "hwnd": 0,
+      "process": "Idle",
+      "pid": 0
+    },
+    "before": {
+      "step": "native-upgrade-install",
+      "rect": [
+        543,
+        156,
+        1377,
+        840
+      ],
+      "screenshot_file": "installer-final-repair-result-before.png",
+      "focus": {
+        "hwnd": 262310,
+        "process": "Koett-Setup",
+        "pid": 1280
+      }
+    },
+    "startup": "\"C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\26b7991301ebce1d\\Koett.exe\"",
+    "hash": "E2A22B96A42ADA15F94C88178E166F6DADFD9A8F10435439EF2C1F7C899D3E4A"
+  },
+  "id": "1793967112759792857"
+}
