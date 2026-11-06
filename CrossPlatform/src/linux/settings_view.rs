@@ -442,6 +442,41 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     let recording_sounds = gtk::CheckButton::with_label("Play start and stop sounds");
     recording_sounds.set_active(settings.recording_sounds);
     recording.append(&recording_sounds);
+    let sounds_volume_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    sounds_volume_row.append(&gtk::Label::new(Some("Sound volume")));
+    let sounds_volume = gtk::Scale::with_range(gtk::Orientation::Horizontal, 5.0, 100.0, 5.0);
+    sounds_volume.set_digits(0);
+    sounds_volume.set_draw_value(true);
+    sounds_volume.set_hexpand(true);
+    sounds_volume.set_value(f64::from(settings.recording_sounds_volume));
+    super::menu::set_accessible_label(sounds_volume.upcast_ref(), "Sound volume, in percent");
+    sounds_volume_row.append(&sounds_volume);
+    recording.append(&sounds_volume_row);
+    let sync_sounds = {
+        let recording_sounds = recording_sounds.clone();
+        let sounds_volume_row = sounds_volume_row.clone();
+        move || sounds_volume_row.set_sensitive(recording_sounds.is_active())
+    };
+    sync_sounds();
+    recording_sounds.connect_toggled(move |_| sync_sounds());
+    // Plays once the slider settles, so dragging doesn't stack up a burst of tones.
+    let sample_timer = std::rc::Rc::new(std::cell::RefCell::new(None::<gtk::glib::SourceId>));
+    sounds_volume.connect_value_changed(move |scale| {
+        if let Some(previous) = sample_timer.borrow_mut().take() {
+            previous.remove();
+        }
+        let volume = scale.value().round() as u32;
+        let timer = sample_timer.clone();
+        let source =
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || {
+                timer.borrow_mut().take();
+                // A sample mustn't end up in a recording.
+                if !super::QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire) {
+                    super::sounds::play(super::sounds::Cue::Start, volume);
+                }
+            });
+        sample_timer.borrow_mut().replace(source);
+    });
     let drawing = group(&draw_page, "Drawing");
     let image_rules = gtk::TextView::new();
     image_rules.set_monospace(true);
@@ -674,6 +709,7 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
             };
             updated.pause_media = pause_media.is_active();
             updated.recording_sounds = recording_sounds.is_active();
+            updated.recording_sounds_volume = sounds_volume.value().round() as u32;
             updated.draw_while_dictating = draw.is_active();
             updated.draw_may_take_keyboard = may_take.is_active();
             updated.pin_selected_text = pin_selection.is_active();

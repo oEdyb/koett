@@ -1335,9 +1335,10 @@ impl WindowsApp {
                 EngineUpdate::Status(status) => {
                     let media_outcome = media_view::finish(&status);
                     if let Some(cue) = sounds::for_change(&self.status, &status)
-                        && Settings::load().is_ok_and(|settings| settings.recording_sounds)
+                        && let Ok(settings) = Settings::load()
+                        && settings.recording_sounds
                     {
-                        sounds::play(cue);
+                        sounds::play(cue, settings.recording_sounds_volume);
                     }
 
                     let status = if status == AppStatus::Ready
