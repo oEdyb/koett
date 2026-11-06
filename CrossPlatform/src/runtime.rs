@@ -1237,7 +1237,6 @@ impl DictionarySync {
     }
 }
 
-#[cfg(target_os = "linux")]
 /// A failed media job says so on the pill. Cancelling it was the user's own doing.
 #[cfg(target_os = "linux")]
 fn media_failed(updates: &Sender<EngineUpdate>, error: String, cancelled: &AtomicBool) {
