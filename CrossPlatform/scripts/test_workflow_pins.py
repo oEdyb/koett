@@ -57,10 +57,14 @@ class WorkflowPinTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not pinned"):
             external_action_pins(workflow)
 
-    def test_pull_requests_run_ci_only_when_marked_ready(self) -> None:
+    def test_every_non_draft_pull_request_runs_and_drafts_do_not(self) -> None:
         pull_request = self.workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0]
-        self.assertIn("types: [ready_for_review]", pull_request)
+        self.assertIn("types: [opened, reopened, synchronize, ready_for_review]", pull_request)
         self.assertIn("  push:\n    branches:\n      - main\n", self.workflow)
+        jobs = self.workflow.split("jobs:\n", 1)[1]
+        for job in ("dependency-review", "supply-chain", "msrv", "windows", "linux"):
+            header = jobs.split(f"  {job}:\n", 1)[1].split("\n", 1)[0]
+            self.assertIn("!github.event.pull_request.draft", header, job)
 
     def test_releases_use_no_cache_and_only_main_saves_one(self) -> None:
         restores = self.workflow.count("uses: actions/cache/restore@")
