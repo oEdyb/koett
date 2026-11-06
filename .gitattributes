@@ -13,3 +13,15 @@ Benchmarks/Dictionary/2026-11/*.json linguist-generated=true
 Benchmarks/Dictionary/2026-11/**/*.json linguist-generated=true
 Benchmarks/Performance/2026-11/**/*.json linguist-generated=true
 Benchmarks/Performance/2026-11/**/*.jsonl linguist-generated=true
+
+# Cache keys hash these, and Windows checkouts would otherwise hash CRLF versions of them.
+# With one line ending the main-run gate can name Windows' keys from Linux.
+CrossPlatform/Cargo.lock text eol=lf
+CrossPlatform/Cargo.toml text eol=lf
+CrossPlatform/rust-toolchain.toml text eol=lf
+CrossPlatform/.cargo/config.toml text eol=lf
+CrossPlatform/scripts/build_asr_native.py text eol=lf
+CrossPlatform/scripts/shared_context_patch.py text eol=lf
+CrossPlatform/scripts/shared_context.patch text eol=lf
+CrossPlatform/src/model.rs text eol=lf
+CrossPlatform/src/paths.rs text eol=lf

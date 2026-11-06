@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -69,8 +70,8 @@ class WorkflowPinTests(unittest.TestCase):
     def test_releases_use_no_cache_and_only_main_saves_one(self) -> None:
         restores = self.workflow.count("uses: actions/cache/restore@")
         saves = self.workflow.count("uses: actions/cache/save@")
-        self.assertEqual(restores, 7)
-        self.assertEqual(saves, 7)
+        self.assertEqual(restores, 9)
+        self.assertEqual(saves, 9)
         self.assertEqual(
             self.workflow.count("if: github.event_name != 'workflow_dispatch'\n"
                                 "        uses: actions/cache/restore@"),
@@ -81,6 +82,81 @@ class WorkflowPinTests(unittest.TestCase):
                            r"        uses: actions/cache/save@", self.workflow)),
             saves,
         )
+
+    def test_cache_keys_stay_stable_between_commits(self) -> None:
+        keys = re.findall(r"(?m)^\s+key: (\S+.*)$", self.workflow)
+        self.assertTrue(keys)
+        for key in keys:
+            self.assertNotIn("github.sha", key)
+
+    def test_the_gate_names_every_cache_main_saves(self) -> None:
+        gate = self.workflow.split("          CACHE_KEYS: |\n", 1)[1].split("        run: |", 1)[0]
+        listed = {line.strip() for line in gate.splitlines()}
+        expansions = [
+            {"${{ matrix.runner }}": "ubuntu-22.04", "${{ matrix.architecture }}": "x86_64"},
+            {"${{ matrix.runner }}": "ubuntu-22.04-arm", "${{ matrix.architecture }}": "arm64"},
+        ]
+        saved = re.findall(r"uses: actions/cache/save@[^\n]*\n\s+with:\n\s+path:(?:[^\n]*\n(?:\s{12}[^\n]*\n)*)\s+key: ([^\n]+)", self.workflow)
+        self.assertEqual(len(saved), 9)
+        for key in saved:
+            if key.startswith("apt-v1-"):
+                self.assertIn("steps.apt_month.outputs.month", key)
+                continue
+            for expansion in expansions:
+                expanded = key
+                for name, value in expansion.items():
+                    expanded = expanded.replace(name, value)
+                self.assertIn(expanded, listed)
+
+    def test_a_skipped_or_failed_gate_never_blocks_ci(self) -> None:
+        jobs = self.workflow.split("jobs:\n", 1)[1]
+        for job in ("supply-chain", "msrv", "windows", "linux"):
+            header = jobs.split(f"  {job}:\n", 1)[1].split("\n", 2)
+            self.assertIn("!cancelled()", header[0], job)
+            self.assertIn("needs.decide.outputs.skip != 'true'", header[0], job)
+            self.assertEqual(header[1].strip(), "needs: decide", job)
+        self.assertNotIn("skip == ", self.workflow)
+
+    def test_only_the_trim_job_can_write_to_actions(self) -> None:
+        self.assertEqual(self.workflow.count("actions: write"), 1)
+        trim = self.workflow.split("  cache-trim:\n", 1)[1].split("\n  supply-chain:", 1)[0]
+        self.assertIn("actions: write", trim.split("  dependency-review:", 1)[0])
+        self.assertNotIn("cargo", trim.split("  dependency-review:", 1)[0])
+
+    def test_paths_skip_only_what_cannot_affect_the_build(self) -> None:
+        patterns = self.workflow.split("  push:\n", 1)[1].split("paths:\n", 1)[1].split("\npermissions", 1)[0]
+        patterns = re.findall(r'- "([^"]+)"', patterns)
+        pull_request = re.findall(r'- "([^"]+)"', self.workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0])
+        self.assertEqual(patterns, pull_request)
+
+        def matched(pattern: str, path: str) -> bool:
+            regex = re.escape(pattern).replace(r"\*\*", ".*")
+            return re.fullmatch(regex, path) is not None
+
+        def triggers(path: str) -> bool:
+            result = False
+            for pattern in patterns:  # The last pattern to match wins.
+                if pattern.startswith("!"):
+                    result = False if matched(pattern[1:], path) else result
+                elif matched(pattern, path):
+                    result = True
+            return result
+
+        for path in ("docs/linux-updates.md", "README.md", "AGENTS.md", "Sources/Koett/Koett.swift",
+                     "CrossPlatform/BENCHMARK.md", "CrossPlatform/evidence/menus-20261028/a.png",
+                     "CrossPlatform/evidence/gnome-capture-20261104/other.json"):
+            self.assertFalse(triggers(path), path)
+        for path in ("CrossPlatform/src/lib.rs", "CrossPlatform/README.md", "CrossPlatform/scripts/x.py",
+                     "CrossPlatform/evidence/supply-chain-inventory/inventory.json",
+                     "CrossPlatform/evidence/blocked-604ed15/control.json",
+                     "CrossPlatform/evidence/gnome-capture-20261104/capture.png",
+                     "Package.swift", "Package.resolved", "LICENSE", "Packaging/Notices/Sparkle-LICENSE.txt",
+                     ".gitattributes", ".github/workflows/cross-platform.yml"):
+            self.assertTrue(triggers(path), path)
+        # Every file the inventory hashes must run the check that catches it going stale.
+        inventory = json.loads((ROOT / "CrossPlatform/evidence/supply-chain-inventory/inventory.json").read_text(encoding="utf-8"))
+        for record in inventory["inputs"]:
+            self.assertTrue(triggers(record["path"]), record["path"])
 
     def test_checkout_never_persists_credentials(self) -> None:
         checkout_steps = re.findall(
