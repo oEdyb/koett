@@ -59,10 +59,12 @@ publication, default-model switch or cross-platform rewrite is included.
   hidden controls, other languages and non-YouTube browser media are no-ops;
   resume manually. [API evidence and chosen limits](media-pause.md) explain why
   MediaRemote's read restriction does not prove every pause approach impossible.
-- **Automatic private-window detection:** no authoritative private-mode signal is
-  wired into the AX reader. Use image-only pins; this omits URL, title, selection
-  and pointer context but does not remove the deliberately captured screenshot.
-  A browser bridge remains a separate integration, not an inferred privacy flag.
+- **Private-window detection:** the English Chrome/Chromium accessible-window
+  formatter's Incognito marker suppresses URL, title, selection, link/image and
+  video metadata. A missing Chrome window identity also omits these fields.
+  Other browsers and localized markers remain unverified; use image-only pins.
+  This does not remove content from the deliberately captured screenshot.
+  A broader browser bridge remains a separate integration.
 - **Nemotron silence trim:** audio has already reached the live model before final
   ASR. Trimming the backup afterward cannot retroactively trim the stream. Empty
   results remain quiet; a validated streaming VAD/segmentation path is still needed.

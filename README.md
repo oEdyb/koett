@@ -34,6 +34,8 @@ For Linux, follow the [preview install instructions](CrossPlatform/README.md#ins
 
 Drawing pastes a numbered image sheet followed by speech-linked text. The target must accept image paste. Images stay in memory, so copy or paste them before quitting or completing another dictation. Captured screen content is included in the image you paste.
 
+On Mac, Chrome's English Incognito window marker suppresses page details in pins. For other private windows or languages, turn off **Include Page Details in Pins**. The screenshot still includes the content you capture.
+
 Linux drawing has private-lab verification on KDE Plasma 6 Wayland and niri. Sway and Hyprland use supported capture paths but have less verification; GNOME Wayland and X11 have no drawing overlay. Multi-monitor drawing is not hardware-verified. Dictation remains available without drawing. See [Linux requirements and limits](CrossPlatform/README.md#drawing-setup).
 
 Linux ARM64 archives pass native CI; ARM64 desktop use is untested. GNOME Wayland automatic paste needs the explicitly enabled [GNOME integration](CrossPlatform/integrations/gnome/README.md), a desktop shortcut and portal permission.
