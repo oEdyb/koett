@@ -8,25 +8,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-pub fn validate_url(value: &str) -> Result<(), String> {
-    let url = url::Url::parse(value).map_err(|_| "Enter an HTTP(S) URL".to_string())?;
-    if !matches!(url.scheme(), "http" | "https")
-        || url.host_str().is_none()
-        || !url.username().is_empty()
-        || url.password().is_some()
-        || value.chars().any(char::is_control)
-        || value.len() > 7000
-        || !value.contains("://")
-        || value.split_once("://").is_some_and(|(_, rest)| {
-            rest.split(['/', '?', '#'])
-                .next()
-                .is_some_and(|authority| authority.contains('@'))
-        })
-    {
-        return Err("Enter an HTTP(S) URL without credentials".into());
-    }
-    Ok(())
-}
+pub use crate::media_source::validate_url;
 
 pub struct Download {
     directory: PathBuf,

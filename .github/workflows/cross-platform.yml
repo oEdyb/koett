@@ -201,8 +201,12 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Build native transcription CLI
+        run: cargo build --release --locked --bin koett-transcribe-engine
       - name: Check clean-Windows DLL dependencies
         run: python scripts/check_windows_dependencies.py target/release/koett.exe
+      - name: Check transcription CLI DLL dependencies
+        run: python scripts/check_windows_dependencies.py target/release/koett-transcribe-engine.exe
       - name: Test Windows self-test retry policy
         shell: pwsh
         run: ./scripts/test_windows_self_test.ps1
@@ -227,6 +231,7 @@ jobs:
           New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
           Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
           Copy-Item target/release/koett-engine.exe dist/Koett-Windows-x86_64/koett-engine.exe
+          Copy-Item target/release/koett-transcribe-engine.exe dist/Koett-Windows-x86_64/koett-transcribe-engine.exe
           Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
           Copy-Item -Recurse packaging/notices dist/Koett-Windows-x86_64/notices
           Copy-Item native-build/build-receipt.json dist/Koett-Windows-x86_64/native-build-receipt.json
