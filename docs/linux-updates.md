@@ -66,7 +66,10 @@ For each release:
 4. Publish each archive and its `appcast-linux-ARCH.json` as assets of the release. Clients read
    `https://github.com/oEdyb/koett/releases/latest/download/appcast-linux-ARCH.json`, which follows
    GitHub's latest non-draft, non-prerelease release, so a feed answers 404 until then.
-5. Sign the feed again before it expires, with no new build needed, and replace the asset. Use 90
+5. Every Latest release has to carry all the feeds and the assets they name: both Linux ones and the
+   Mac's `appcast.xml` and ZIP, even for a release that only changes one platform. Otherwise
+   `latest/download` answers 404 and that platform stops updating.
+6. Sign the feed again before it expires, with no new build needed, and replace the asset. Use 90
    days. An expired feed stops updates, with the reason in `update-status`; installed apps keep
    working. Publishing a new release also renews it.
 
