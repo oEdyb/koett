@@ -14,9 +14,9 @@ manage updates to that app. Remove the app to uninstall; personal data remains.
 
 Choose the package matching the distribution and CPU:
 
-- Ubuntu/Debian: open the `.deb` with the software installer, or run
+- Ubuntu/Debian: run
   `sudo apt install ./koett-VERSION-REVISION-amd64.deb` (`arm64` on ARM).
-- Fedora: open the `.rpm` with Software, or run `sudo dnf install ./koett-VERSION-REVISION-x86_64.rpm`.
+- Fedora: run `sudo dnf install ./koett-VERSION-REVISION-x86_64.rpm`.
 - Arch: run `sudo pacman -U ./koett-VERSION-REVISION-x86_64.pkg.tar.zst`.
 
 Launch **Koett** from the applications menu. The package manager installs the
@@ -37,15 +37,16 @@ so it does not by itself arrange automatic package-manager updates.
 The archive installer remains available for private installations; its signed
 updater continues to own only that installation's version tree. To switch from a
 private archive installation, quit Koett, turn off its Start at login entry and
-remove the old application files using the archive uninstall instructions before
+remove the old application files using the [archive uninstall instructions](../CrossPlatform/README.md#update-or-uninstall) before
 installing the native package. Keep your settings/models/History. A private
 launcher in `~/.local/bin` can otherwise shadow the system CLI, and a private
 applications entry can shadow the new menu entry.
 
 Packages do not change keyboard groups, udev rules, microphone selection or
 compositor shortcuts. Existing keyboard-access setup remains separate. New users
-still explicitly opt into drawing and grant its permissions. GNOME extension and
-portal setup remains as described in the Linux README.
+still explicitly opt into drawing and grant its permissions. For GNOME, copy `/usr/lib/koett/integrations/gnome/koett@olledyberg.com/`
+to `~/.local/share/gnome-shell/extensions/koett@olledyberg.com/`, then follow the
+[GNOME login and permission setup](../CrossPlatform/integrations/gnome/README.md#explicit-setup).
 
 If a named microphone cannot start while another app uses it, choose **System
 default microphone**. Native ARM64 desktop use remains untested until there is
@@ -75,3 +76,35 @@ No external repositories are submitted automatically.
   the same features without weakening the sandbox.
 
 No account registration, purchase or submission is part of building installers.
+
+## Build and release handoff
+
+Update onto main before changing shared workflows. The workflow is manual only.
+For an installer-only batch, run the build and packaging checks without repeating
+unchanged Rust suites or inference probes:
+
+```sh
+gh workflow run cross-platform.yml --ref BRANCH -f packaging_only=true
+```
+
+Confirm the run's full SHA and each required job actually ran and passed before
+merging. A mergeable PR is not proof of tests. Each native Linux package gets its
+own SHA-256 and unsigned source/build receipt beside the archive payload.
+The package version comes from `CrossPlatform/Cargo.toml` at the built commit;
+the native wrapper requires the input archive hash and clean source revision.
+
+The Mac release step runs on the packaging Mac after the existing procedure has
+produced a source-stamped, Developer-ID-signed, notarized and stapled app:
+
+```sh
+python3 scripts/package-macos-dmg.py --app /absolute/staging/Koett.app \
+  --output /absolute/artifacts/Koett-VERSION-macOS-arm64.dmg \
+  --identity 'Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)' \
+  --notary-profile koett-notary
+```
+
+This uses the packaging Mac's existing signing/notarization credentials. They are
+not copied into GitHub Actions. The DMG is the initial/manual install surface;
+Sparkle still uses its separately signed update archive. See
+[Mac packaging and acceptance](macos-dmg-installer.md). Building and notarizing
+installers does not authorize creating or publishing a release.

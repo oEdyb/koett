@@ -12,6 +12,14 @@ The drawing controls below are available in the current source build.
 
 ## Install
 
+Use the [native package instructions](../docs/native-installers.md#linux) for
+`.deb`, `.rpm` and Arch packages produced by the manual installer workflow.
+They install Koett in the applications menu and keep system updates with the
+package manager. Until those assets are published, v0.3.0 downloads use the
+archive instructions below.
+
+## Archive install
+
 Choose the matching **Linux system-runtime** archive from
 [Releases](https://github.com/oEdyb/koett/releases). Extract it, then run these
 commands from the extracted folder. Install Python 3.10+ first; the launcher and

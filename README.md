@@ -13,10 +13,10 @@ Choose your microphone, set your shortcut, and use hold or toggle recording. Dic
 ## Get started
 
 - **Mac:** download the signed, notarized **DMG**, open it and drag Koett to Applications. Open Koett and allow Microphone and Accessibility.
-- **Linux:** download your distribution's **.deb**, **.rpm** or **Arch package**, install it with the software installer/package manager, then open Koett from Applications. See [native install and upgrade](docs/native-installers.md#linux).
+- **Linux:** download your distribution's **.deb**, **.rpm** or **Arch package**, install it with the package manager, then open Koett from Applications. See [native install and upgrade](docs/native-installers.md#linux).
 - **Windows:** run **Koett-Windows-x86_64-Setup.exe**, then open Koett from Start. The installer is currently unsigned; [SmartScreen and uninstall details](docs/native-installers.md#windows).
 
-[Downloads](https://github.com/oEdyb/koett/releases)
+[Downloads](https://github.com/oEdyb/koett/releases) · For the currently published v0.3.0, unzip the Mac ZIP and drag Koett to Applications; Linux archive users follow the [archive install steps](CrossPlatform/README.md#archive-install).
 
 Press the dictation shortcut, speak, then press it again. Mac uses either Option key; Linux and Windows use Ctrl+Shift+Space. Koett pastes and saves your text. Models, microphones and shortcuts are in Settings (menu bar on Mac).
 

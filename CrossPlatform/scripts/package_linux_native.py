@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -23,7 +24,9 @@ def digest(path):
         return value.hexdigest()
 
 
-def unpack(archive, destination):
+def unpack(archive, destination, expected_sha256, source_revision):
+    if digest(archive) != expected_sha256:
+        raise ValueError('Archive checksum mismatch')
     with tarfile.open(archive) as source:
         source.extractall(destination, filter='data')
     roots = list(destination.iterdir())
@@ -31,6 +34,8 @@ def unpack(archive, destination):
         raise ValueError('Expected one release payload directory')
     root = roots[0]
     candidate = json.loads((root / 'candidate.json').read_text())
+    if candidate.get('source_dirty') is not False or candidate.get('source_revision') != source_revision:
+        raise ValueError('Release source identity mismatch or dirty source')
     if candidate['flavor'] != 'system-runtime':
         raise ValueError('Native packages require the portable system runtime')
     manifest = json.loads((root / 'files.json').read_text())
@@ -56,6 +61,9 @@ def stage(payload, root):
     icon = root / 'usr/share/icons/hicolor/scalable/apps/com.olledyberg.Koett.svg'
     icon.parent.mkdir(parents=True)
     shutil.copy2(payload / icon.name, icon)
+    for path in [root, *root.rglob('*')]:
+        if not path.is_symlink():
+            path.chmod(0o755 if path.is_dir() or path.stat().st_mode & 0o111 else 0o644)
 
 
 def build_deb(root, output, version, revision, arch):
@@ -68,7 +76,7 @@ Maintainer: Koett maintainers
 Section: sound
 Priority: optional
 Depends: python3 (>= 3.10), libgtk-4-1 (>= 4.6), libasound2, libudev1, libxkbcommon0, libwayland-client0, libx11-6, libxcb-shape0, libxcb-xfixes0, libstdc++6, zlib1g
-Recommends: wl-clipboard, wtype, grim
+Recommends: wl-clipboard, wtype, grim, xclip, libgtk4-layer-shell0
 Homepage: https://github.com/oEdyb/koett
 Description: Local dictation with screen drawing and pins
  Native voice-to-text application. Models are downloaded on first use.
@@ -89,6 +97,7 @@ License: Apache-2.0 AND LicenseRef-Koett-Third-Party
 URL: https://github.com/oEdyb/koett
 BuildArch: {arch}
 Requires: python3 >= 3.10, gtk4 >= 4.6, libasound.so.2()(64bit), libudev.so.1()(64bit), libxkbcommon.so.0()(64bit), libwayland-client.so.0()(64bit), libX11.so.6()(64bit), libxcb.so.1()(64bit), libstdc++.so.6()(64bit), libz.so.1()(64bit)
+Recommends: wl-clipboard, wtype, grim, xclip, gtk4-layer-shell
 AutoReqProv: no
 %description
 Native local voice-to-text application with screen drawing and pins.
@@ -96,6 +105,7 @@ Native local voice-to-text application with screen drawing and pins.
 mkdir -p %{{buildroot}}
 cp -a {shlex.quote(str(root / "usr"))} %{{buildroot}}/
 %files
+%defattr(-,root,root,-)
 /usr/bin/koett
 /usr/lib/koett
 /usr/share/applications/com.olledyberg.Koett.desktop
@@ -110,7 +120,7 @@ cp -a {shlex.quote(str(root / "usr"))} %{{buildroot}}/
 
 def build_arch(root, output, version, revision, arch):
     size = sum(p.stat().st_size for p in root.rglob('*') if p.is_file())
-    dependencies = ['python>=3.10', 'gtk4>=4.6', 'alsa-lib', 'systemd-libs', 'libxkbcommon', 'wayland', 'libx11', 'libxcb', 'gcc-libs', 'zlib']
+    dependencies = ['python>=3.10', 'gtk4>=4.6', 'alsa-lib', 'systemd-libs', 'libxkbcommon', 'wayland', 'libx11', 'libxcb', 'gcc-libs', 'zlib', 'gtk4-layer-shell', 'grim', 'wl-clipboard', 'wtype', 'xclip']
     info = f'''pkgname = koett
 pkgbase = koett
 pkgver = {version}-{revision}
@@ -123,14 +133,16 @@ arch = {arch}
 license = Apache-2.0
 '''
     info += ''.join(f'depend = {dep}\n' for dep in dependencies)
-    info += 'optdepend = gtk4-layer-shell: drawing overlay\noptdepend = grim: drawing capture on wlroots\noptdepend = wl-clipboard: Wayland clipboard\noptdepend = wtype: Wayland paste\n'
     (root / '.PKGINFO').write_text(info)
     subprocess.run(['bsdtar', '--zstd', '--uid', '0', '--gid', '0', '-cf', str(output), '-C', str(root), '.PKGINFO', 'usr'], check=True)
 
 
 def main():
+    os.umask(0o022)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
+    parser.add_argument('--archive-sha256', required=True)
+    parser.add_argument('--source-revision', required=True)
     parser.add_argument('--format', choices=['deb', 'rpm', 'arch'], required=True)
     parser.add_argument('--architecture', choices=ARCHES, required=True)
     parser.add_argument('--version', required=True)
@@ -145,7 +157,7 @@ def main():
         work = Path(directory)
         extracted = work / 'payload'
         extracted.mkdir()
-        payload, candidate = unpack(args.archive, extracted)
+        payload, candidate = unpack(args.archive, extracted, args.archive_sha256, args.source_revision)
         elf = (payload / 'libexec/koett').read_bytes()[:20]
         machine = struct.unpack_from('<H', elf, 18)[0] if elf[:5] == b'\x7fELF\x02' else 0
         if {62: 'x86_64', 183: 'aarch64'}.get(machine) != args.architecture:
