@@ -2448,9 +2448,10 @@ fn recording_cue(old: &AppStatus, new: &AppStatus) {
     // Tests drive these status changes and must stay silent.
     if !cfg!(test)
         && let Some(cue) = sounds::for_change(old, new)
-        && Settings::load().map_or(true, |settings| settings.recording_sounds)
+        && let Ok(settings) = Settings::load()
+        && settings.recording_sounds
     {
-        sounds::play(cue);
+        sounds::play(cue, settings.recording_sounds_volume);
     }
 }
 
