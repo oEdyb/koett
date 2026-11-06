@@ -3,6 +3,7 @@ import Foundation
 
 extension KoettController {
     func rebuildMenu() {
+        appUpdater?.stateDidChange()
         let menu = NSMenu()
         menu.delegate = self
         let historyItem = menuItem(title: "History…", action: #selector(openTranscripts), selected: false)
@@ -224,6 +225,10 @@ extension KoettController {
         menu.addItem(.separator())
         menu.addItem(loginMenuItem())
         menu.addItem(menuItem(title: "Permissions…", action: #selector(showPermissions), selected: false))
+        let updates = menuItem(title: "Check for Updates…", action: #selector(checkForUpdates), selected: false)
+        updates.isEnabled = appUpdater?.canCheck == true
+        updates.toolTip = appUpdater?.lastError ?? (appUpdater?.configuration == nil ? "Updates are not enabled in this build." : nil)
+        menu.addItem(updates)
         let versionItem = NSMenuItem(
             title: "Koett \(Self.versionLabel)",
             action: nil,
