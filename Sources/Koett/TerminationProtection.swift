@@ -4,6 +4,10 @@ extension KoettController {
     func prepareTermination() -> NSApplication.TerminateReply {
         switch state {
         case .ready, .loading:
+            guard appUpdater?.prepareForTermination() != false else {
+                recordingOverlay.showError("Update paused · Could not save rollback state", keepUntilClicked: true)
+                return .terminateCancel
+            }
             if transcriptPersistence.hasVolatileTranscripts {
                 recoverTranscripts()
                 guard !transcriptPersistence.hasVolatileTranscripts else {

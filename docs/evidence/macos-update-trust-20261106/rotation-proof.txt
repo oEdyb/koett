@@ -1,0 +1,1 @@
+Three distinct public keys; historical v1 signature verifies under retired key and fails under new production key.

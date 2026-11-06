@@ -1,0 +1,1 @@
+Production signing refuses lab/test builds, insecure feeds or a mismatched public key.

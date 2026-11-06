@@ -33,6 +33,10 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Koett reads the current browser tab URL only when you start media transcription.</string>
 	<key>SUPublicEDKey</key>
-	<string>FYJa1mXv6UJgVIWclOoAWO/78u2d8Wlfncx/q36v1Pw=</string>
+	<string>/SY2ckG+UXlqU0Y0Upiv2p8NuQGIBd8GZlNY2Seu/QE=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUSignedFeedFailureExpirationInterval</key>
+	<integer>0</integer>
 </dict>
 </plist>

@@ -5,6 +5,9 @@ struct UpdateConfiguration {
     let permitsLoopback: Bool
 
     init?(info: [String: Any]) {
+        guard info["SURequireSignedFeed"] as? Bool == true,
+              info["SUVerifyUpdateBeforeExtraction"] as? Bool == true,
+              (info["SUSignedFeedFailureExpirationInterval"] as? NSNumber)?.doubleValue == 0 else { return nil }
         guard let raw = info["SUFeedURL"] as? String, let feed = URL(string: raw),
               let key = info["SUPublicEDKey"] as? String, Data(base64Encoded: key)?.count == 32 else { return nil }
         let local = info["KoettLocalUpdateTesting"] as? Bool == true
@@ -27,6 +30,13 @@ final class UpdateInstallGate {
     private(set) var isInstalling = false
     private var pending: (() -> Void)?
     private var generation: UInt64 = 0
+    private var noticeShown = false
+    func takeReservationNotice() -> Bool {
+        guard isInstalling, !noticeShown else { return false }
+        noticeShown = true
+        return true
+    }
+    var hasReservationNotice: Bool { noticeShown && isInstalling }
     var isPending: Bool { pending != nil }
 
     init(isIdle: @escaping () -> Bool) { self.isIdle = isIdle }
@@ -58,5 +68,5 @@ final class UpdateInstallGate {
         }
     }
 
-    func reset() { generation &+= 1; pending = nil; isInstalling = false }
+    func reset() { generation &+= 1; pending = nil; isInstalling = false; noticeShown = false }
 }
