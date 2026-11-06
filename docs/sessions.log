@@ -6,10 +6,3 @@
 [2026-11-03 21:40] Noted: it's 21:40 local, 20 minutes before the cutoff. I'm waiting for the three agents already running and won't start new ones, before or after 22:00. 
 [2026-11-03 21:43] I checked the cleanup agent's filler finding against the local history. Parakeet v2 writes "um/uh" at 2.46% of words and 110M at 0.60%, though those ran on different days. I'm still waiting on the oth
 [2026-11-03 21:44] One to go, the model comparison. Vocabulary is back: non-word forms are safe, but a blanket `scroll → Scrawl` would be wrong in 8 of the 14 "scroll" hits. 
-[2026-11-06 04:00] | PR | What it adds | Merge SHA | |---|---|---| | #77 | GNOME drawing background capture | `240121a574f64461e6f769a9f3383eaae8c88b73` | 
-[2026-11-06 04:57] PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
-[2026-11-06 04:59] The real CI run on #155 is in progress, and it merges when green. PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
-[2026-11-06 05:22] Still waiting on that main run for `6c2e78e`. PR https://github.com/oEdyb/koett/pull/155, head `dc069a66b82864ca6f64334ec8446a5685a7afc3`, merged, checks passed on the PR, no reviews. 
-[2026-11-06 05:32] All the review fixes and Linux auto-update are merged, and main is green at `6c2e78e`. Auto-update stays switched off until a build carries a feed. There were 68 CI runs since midnight, and I'm openin
-[2026-11-06 06:13] PR https://github.com/oEdyb/koett/pull/158, head `71d68a82b16ae77a9911617c791b4a5a6c8db1ce`, merged, checks passed on the PR, no reviews. 
-[2026-11-06 06:18] All five findings were real and are fixed in one PR, [#158](https://github.com/oEdyb/koett/pull/158), merged at `3993a5c52576c7b0fe58cacf77ae45da37f73088`. A signed release that crashes at startup now
