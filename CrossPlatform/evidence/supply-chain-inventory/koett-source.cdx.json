@@ -815,6 +815,45 @@
       "version": "3.20.3"
     },
     {
+      "bom-ref": "pkg:cargo/byteorder@1.5.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/BurntSushi/byteorder"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Unlicense OR MIT"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "byteorder",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/byteorder@1.5.0",
+      "type": "library",
+      "version": "1.5.0"
+    },
+    {
       "bom-ref": "pkg:cargo/bytes@1.12.1",
       "externalReferences": [
         {
@@ -1996,6 +2035,41 @@
       "version": "1.1.1"
     },
     {
+      "bom-ref": "pkg:cargo/enum-primitive-derive@0.3.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://gitlab.com/cardoe/enum-primitive-derive.git"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ba7795da175654fe16979af73f81f26a8ea27638d8d9823d317016888a63dc4c"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "enum-primitive-derive",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/enum-primitive-derive@0.3.0",
+      "type": "library",
+      "version": "0.3.0"
+    },
+    {
       "bom-ref": "pkg:cargo/enumflags2@0.7.12",
       "externalReferences": [
         {
@@ -2924,6 +2998,45 @@
       "version": "0.3.34"
     },
     {
+      "bom-ref": "pkg:cargo/futures-sink@0.3.34",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/futures-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "futures-sink",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:cargo/futures-sink@0.3.34",
+      "type": "library",
+      "version": "0.3.34"
+    },
+    {
       "bom-ref": "pkg:cargo/futures-task@0.3.34",
       "externalReferences": [
         {
@@ -3000,6 +3113,45 @@
       "purl": "pkg:cargo/futures-util@0.3.34",
       "type": "library",
       "version": "0.3.34"
+    },
+    {
+      "bom-ref": "pkg:cargo/futures@0.3.32",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/futures-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT OR Apache-2.0"
+        },
+        {
+          "acknowledgement": "concluded",
+          "expression": "MIT"
+        }
+      ],
+      "name": "futures",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/futures@0.3.32",
+      "type": "library",
+      "version": "0.3.32"
     },
     {
       "bom-ref": "pkg:cargo/gdk-pixbuf-sys@0.22.9",
@@ -6991,6 +7143,41 @@
       "purl": "pkg:cargo/proc-macro2@1.0.107",
       "type": "library",
       "version": "1.0.107"
+    },
+    {
+      "bom-ref": "pkg:cargo/pulseaudio@0.3.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/colinmarc/pulseaudio-rs"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9ba79a4c6904c987cc31fa50e9b750539404511c2dbd9ce95e5e58444177a21e"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "pulseaudio",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "rust-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "missing"
+        }
+      ],
+      "purl": "pkg:cargo/pulseaudio@0.3.2",
+      "type": "library",
+      "version": "0.3.2"
     },
     {
       "bom-ref": "pkg:cargo/quick-xml@0.41.0",
@@ -13556,6 +13743,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/byteorder@1.5.0"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/bytes@1.12.1"
     },
     {
@@ -13658,6 +13849,7 @@
         "pkg:cargo/block2@0.6.2",
         "pkg:cargo/coreaudio-rs@0.14.2",
         "pkg:cargo/dasp_sample@0.11.0",
+        "pkg:cargo/futures@0.3.32",
         "pkg:cargo/jni@0.22.4",
         "pkg:cargo/js-sys@0.3.104",
         "pkg:cargo/libc@0.2.189",
@@ -13673,6 +13865,8 @@
         "pkg:cargo/objc2-core-foundation@0.3.2",
         "pkg:cargo/objc2-foundation@0.3.2",
         "pkg:cargo/objc2@0.6.4",
+        "pkg:cargo/portable-atomic@1.15.0",
+        "pkg:cargo/pulseaudio@0.3.2",
         "pkg:cargo/web-sys@0.3.104",
         "pkg:cargo/windows-core@0.62.2",
         "pkg:cargo/windows@0.62.2"
@@ -13767,6 +13961,14 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/endi@1.1.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ],
+      "ref": "pkg:cargo/enum-primitive-derive@0.3.0"
     },
     {
       "dependsOn": [
@@ -13871,7 +14073,8 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/futures-core@0.3.34"
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34"
       ],
       "ref": "pkg:cargo/futures-channel@0.3.34"
     },
@@ -13911,17 +14114,37 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/futures-sink@0.3.34"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/futures-task@0.3.34"
     },
     {
       "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
         "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
         "pkg:cargo/futures-macro@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34",
         "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/memchr@2.8.3",
         "pkg:cargo/pin-project-lite@0.2.17",
         "pkg:cargo/slab@0.4.12"
       ],
       "ref": "pkg:cargo/futures-util@0.3.34"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-executor@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures@0.3.32"
     },
     {
       "dependsOn": [
@@ -14503,6 +14726,7 @@
     {
       "dependsOn": [
         "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/log@0.4.34",
         "pkg:cargo/wasi@0.11.1+wasi-snapshot-preview1",
         "pkg:cargo/windows-sys@0.61.2"
       ],
@@ -14815,6 +15039,19 @@
         "pkg:cargo/unicode-ident@1.0.24"
       ],
       "ref": "pkg:cargo/proc-macro2@1.0.107"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/byteorder@1.5.0",
+        "pkg:cargo/enum-primitive-derive@0.3.0",
+        "pkg:cargo/futures@0.3.32",
+        "pkg:cargo/log@0.4.34",
+        "pkg:cargo/mio@1.2.2",
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/thiserror@1.0.69"
+      ],
+      "ref": "pkg:cargo/pulseaudio@0.3.2"
     },
     {
       "dependsOn": [

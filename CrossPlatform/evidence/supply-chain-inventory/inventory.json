@@ -1177,6 +1177,37 @@
       "version": "3.20.3"
     },
     {
+      "bundled_license_files": [],
+      "cargo_checksum_sha256": "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b",
+      "declared_license": "Unlicense OR MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 126,
+          "path": "COPYING",
+          "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f"
+        },
+        {
+          "bytes": 1081,
+          "path": "LICENSE-MIT",
+          "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
+        },
+        {
+          "bytes": 1211,
+          "path": "UNLICENSE",
+          "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
+        }
+      ],
+      "name": "byteorder",
+      "normalized_declared_license": "Unlicense OR MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/BurntSushi/byteorder",
+      "sbom_ref": "pkg:cargo/byteorder@1.5.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "1.5.0"
+    },
+    {
       "bundled_license_files": [
         {
           "bytes": 1055,
@@ -2224,6 +2255,27 @@
       "version": "1.1.1"
     },
     {
+      "bundled_license_files": [],
+      "cargo_checksum_sha256": "ba7795da175654fe16979af73f81f26a8ea27638d8d9823d317016888a63dc4c",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1086,
+          "path": "LICENSE",
+          "sha256": "819e0555b295079201b0670bb3302855303bdbbcc739f3819b13e1b3d2ec03bb"
+        }
+      ],
+      "name": "enum-primitive-derive",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://gitlab.com/cardoe/enum-primitive-derive.git",
+      "sbom_ref": "pkg:cargo/enum-primitive-derive@0.3.0",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.0"
+    },
+    {
       "bundled_license_files": [
         {
           "bytes": 9715,
@@ -2870,6 +2922,32 @@
       "version": "1.2.2"
     },
     {
+      "bundled_license_files": [],
+      "cargo_checksum_sha256": "8b147ee9d1f6d097cef9ce628cd2ee62288d963e16fb287bd9286455b241382d",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10874,
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "bytes": 1094,
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "name": "futures",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "missing",
+      "repository": "https://github.com/rust-lang/futures-rs",
+      "sbom_ref": "pkg:cargo/futures@0.3.32",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.32"
+    },
+    {
       "bundled_license_files": [
         {
           "bytes": 10874,
@@ -3097,6 +3175,43 @@
       "notice_state": "bundled",
       "repository": "https://github.com/rust-lang/futures-rs",
       "sbom_ref": "pkg:cargo/futures-macro@0.3.34",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.34"
+    },
+    {
+      "bundled_license_files": [
+        {
+          "bytes": 10874,
+          "path": "CrossPlatform/packaging/notices/rust/futures-sink-0.3.34/LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "bytes": 1094,
+          "path": "CrossPlatform/packaging/notices/rust/futures-sink-0.3.34/LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "cargo_checksum_sha256": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d",
+      "declared_license": "MIT OR Apache-2.0",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 10874,
+          "path": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "bytes": 1094,
+          "path": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "name": "futures-sink",
+      "normalized_declared_license": "MIT OR Apache-2.0",
+      "notice_state": "bundled",
+      "repository": "https://github.com/rust-lang/futures-rs",
+      "sbom_ref": "pkg:cargo/futures-sink@0.3.34",
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "0.3.34"
@@ -6601,6 +6716,27 @@
       "selected_license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "version": "1.0.107"
+    },
+    {
+      "bundled_license_files": [],
+      "cargo_checksum_sha256": "9ba79a4c6904c987cc31fa50e9b750539404511c2dbd9ce95e5e58444177a21e",
+      "declared_license": "MIT",
+      "group": "rust-package",
+      "license_files": [
+        {
+          "bytes": 1077,
+          "path": "LICENSE.md",
+          "sha256": "fb9e808c9dd52f9d00f1168713933087b8fed4b7ecbbc694fc4b1d08c0c82352"
+        }
+      ],
+      "name": "pulseaudio",
+      "normalized_declared_license": "MIT",
+      "notice_state": "missing",
+      "repository": "https://github.com/colinmarc/pulseaudio-rs",
+      "sbom_ref": "pkg:cargo/pulseaudio@0.3.2",
+      "selected_license": "MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "version": "0.3.2"
     },
     {
       "bundled_license_files": [
@@ -12129,6 +12265,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/byteorder@1.5.0"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/bytes@1.12.1"
     },
     {
@@ -12231,6 +12371,7 @@
         "pkg:cargo/block2@0.6.2",
         "pkg:cargo/coreaudio-rs@0.14.2",
         "pkg:cargo/dasp_sample@0.11.0",
+        "pkg:cargo/futures@0.3.32",
         "pkg:cargo/jni@0.22.4",
         "pkg:cargo/js-sys@0.3.104",
         "pkg:cargo/libc@0.2.189",
@@ -12246,6 +12387,8 @@
         "pkg:cargo/objc2-core-foundation@0.3.2",
         "pkg:cargo/objc2-foundation@0.3.2",
         "pkg:cargo/objc2@0.6.4",
+        "pkg:cargo/portable-atomic@1.15.0",
+        "pkg:cargo/pulseaudio@0.3.2",
         "pkg:cargo/web-sys@0.3.104",
         "pkg:cargo/windows-core@0.62.2",
         "pkg:cargo/windows@0.62.2"
@@ -12340,6 +12483,14 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/endi@1.1.1"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ],
+      "ref": "pkg:cargo/enum-primitive-derive@0.3.0"
     },
     {
       "dependsOn": [
@@ -12444,7 +12595,8 @@
     },
     {
       "dependsOn": [
-        "pkg:cargo/futures-core@0.3.34"
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34"
       ],
       "ref": "pkg:cargo/futures-channel@0.3.34"
     },
@@ -12484,17 +12636,37 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:cargo/futures-sink@0.3.34"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:cargo/futures-task@0.3.34"
     },
     {
       "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
         "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
         "pkg:cargo/futures-macro@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34",
         "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/memchr@2.8.3",
         "pkg:cargo/pin-project-lite@0.2.17",
         "pkg:cargo/slab@0.4.12"
       ],
       "ref": "pkg:cargo/futures-util@0.3.34"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/futures-channel@0.3.34",
+        "pkg:cargo/futures-core@0.3.34",
+        "pkg:cargo/futures-executor@0.3.34",
+        "pkg:cargo/futures-io@0.3.34",
+        "pkg:cargo/futures-sink@0.3.34",
+        "pkg:cargo/futures-task@0.3.34",
+        "pkg:cargo/futures-util@0.3.34"
+      ],
+      "ref": "pkg:cargo/futures@0.3.32"
     },
     {
       "dependsOn": [
@@ -13076,6 +13248,7 @@
     {
       "dependsOn": [
         "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/log@0.4.34",
         "pkg:cargo/wasi@0.11.1+wasi-snapshot-preview1",
         "pkg:cargo/windows-sys@0.61.2"
       ],
@@ -13388,6 +13561,19 @@
         "pkg:cargo/unicode-ident@1.0.24"
       ],
       "ref": "pkg:cargo/proc-macro2@1.0.107"
+    },
+    {
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.1",
+        "pkg:cargo/byteorder@1.5.0",
+        "pkg:cargo/enum-primitive-derive@0.3.0",
+        "pkg:cargo/futures@0.3.32",
+        "pkg:cargo/log@0.4.34",
+        "pkg:cargo/mio@1.2.2",
+        "pkg:cargo/num-traits@0.2.19",
+        "pkg:cargo/thiserror@1.0.69"
+      ],
+      "ref": "pkg:cargo/pulseaudio@0.3.2"
     },
     {
       "dependsOn": [
@@ -14572,14 +14758,14 @@
   ],
   "inputs": [
     {
-      "bytes": 85841,
+      "bytes": 87082,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "119b4d872557387441c05886ce13ce9c69eaf8f88d79c363557f27c668734511"
+      "sha256": "aadcfb8f83f803691fb163b3ddd453b4e57769195973566e528ded2185a7cfe2"
     },
     {
-      "bytes": 3744,
+      "bytes": 3892,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "07d968531e4631de77ce88870f7075627fc8dc457a92ddcb775c7fa0d8c26970"
+      "sha256": "4921540464975afe0eeb7d2a62fde8e709f27a5c4d97866bec78e4300de308e3"
     },
     {
       "bytes": 6849,
@@ -14719,6 +14905,12 @@
       "component": "pkg:cargo/bumpalo@3.20.3",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/byteorder@1.5.0",
+      "declared": "Unlicense OR MIT",
+      "normalized_declared": "Unlicense OR MIT",
       "selected": "MIT"
     },
     {
@@ -14998,6 +15190,12 @@
       "selected": "MIT"
     },
     {
+      "component": "pkg:cargo/futures-sink@0.3.34",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
       "component": "pkg:cargo/futures-task@0.3.34",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
@@ -15005,6 +15203,12 @@
     },
     {
       "component": "pkg:cargo/futures-util@0.3.34",
+      "declared": "MIT OR Apache-2.0",
+      "normalized_declared": "MIT OR Apache-2.0",
+      "selected": "MIT"
+    },
+    {
+      "component": "pkg:cargo/futures@0.3.32",
       "declared": "MIT OR Apache-2.0",
       "normalized_declared": "MIT OR Apache-2.0",
       "selected": "MIT"
@@ -16023,11 +16227,11 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 360,
+    "components": 365,
     "models": 8,
     "native_libraries": 9,
-    "notice_gaps": 32,
-    "rust_packages": 337,
+    "notice_gaps": 36,
+    "rust_packages": 342,
     "swift_packages": 2
   }
 }

@@ -801,7 +801,28 @@ fn run(
                         settings.clone()
                     }
                 };
+                // A mic saved as a raw ALSA id moves to the same mic's sound server source.
+                #[cfg(target_os = "linux")]
+                if let Some(migrated) =
+                    crate::audio::inputs::migrated_input(current.microphone.as_deref())
+                {
+                    let previous = current.microphone.clone();
+                    current.microphone = migrated;
+                    let saved = Settings::update(|latest| {
+                        if latest.microphone == previous {
+                            latest.microphone = current.microphone.clone();
+                        }
+                    });
+                    if let Err(error) = saved {
+                        eprintln!("Could not save the migrated microphone: {error}");
+                    }
+                    settings.microphone = current.microphone.clone();
+                }
                 let input_resolution = match &source {
+                    // Linux picks a working mic while starting and never changes the choice.
+                    #[cfg(target_os = "linux")]
+                    CaptureSource::Microphone => Ok(current.microphone.clone()),
+                    #[cfg(not(target_os = "linux"))]
                     CaptureSource::Microphone => {
                         crate::audio::resolve_recording_input(current.microphone.as_deref())
                     }
@@ -841,6 +862,23 @@ fn run(
                 }
                 match input_resolution
                     .and_then(|_| match &source {
+                        #[cfg(target_os = "linux")]
+                        CaptureSource::Microphone => {
+                            let switches = updates.clone();
+                            MicrophoneRecorder::start_resilient(
+                                current.microphone.as_deref(),
+                                move |notice| {
+                                    let _ = switches.send(EngineUpdate::Notice(notice));
+                                },
+                            )
+                            .map(|(started, audio_chunks, notice)| {
+                                if notice.is_some() {
+                                    input_notice = notice;
+                                }
+                                (started, audio_chunks)
+                            })
+                        }
+                        #[cfg(not(target_os = "linux"))]
                         CaptureSource::Microphone => {
                             MicrophoneRecorder::start_streaming_with_device(
                                 current.microphone.as_deref(),

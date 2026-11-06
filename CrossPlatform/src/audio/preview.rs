@@ -86,7 +86,7 @@ impl Capture {
                 last_callback: Arc::new(Mutex::new(Instant::now())),
             }));
         }
-        let host = cpal::default_host();
+        let host = super::audio_host();
         let device = match microphone {
             None => host
                 .default_input_device()

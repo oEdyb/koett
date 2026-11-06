@@ -92,6 +92,9 @@ fn control_reply(
 pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
     let result = (|| {
         if command == "menu-status" {
+            // A stuck server answers from the last list instead of holding this up.
+            let _ =
+                crate::audio::inputs::bounded(std::time::Duration::from_secs(1), refresh_inputs);
             let settings = Settings::load()?;
             return Ok(
                 serde_json::json!({"ok":true,"busy":busy,"desired_model":settings.selected_model,"active_engine":ACTIVE.read().map_err(|e| e.to_string())?.clone(),"microphone":settings.microphone,"microphones":input_status(),"recording_mode":settings.recording_mode,"start_at_login":settings.start_at_login,"login_registered":login_registered(),"formatting":settings.formatting,"paste_shortcut":settings.paste_shortcut,"image_paste_shortcuts":settings.image_paste_shortcuts,"ctc_dictionary_bias":crate::transcription::ctc_dictionary_bias_status(),"version":env!("CARGO_PKG_VERSION")}),
@@ -257,16 +260,17 @@ pub(super) static INPUTS: std::sync::LazyLock<
     std::sync::RwLock<Result<Vec<crate::audio::InputDevice>, String>>,
 > = std::sync::LazyLock::new(|| std::sync::RwLock::new(Err("Loading microphones…".into())));
 
+/// Lists microphones once at startup. After that only when someone asks: each listing
+/// is a round trip to the sound server, and nothing needs it between requests.
 pub(super) fn start_inputs() {
-    std::thread::spawn(|| {
-        loop {
-            let devices = crate::audio::input_devices();
-            if let Ok(mut inputs) = INPUTS.write() {
-                *inputs = devices;
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        }
-    });
+    std::thread::spawn(refresh_inputs);
+}
+
+fn refresh_inputs() {
+    let devices = crate::audio::input_devices();
+    if let Ok(mut inputs) = INPUTS.write() {
+        *inputs = devices;
+    }
 }
 
 #[cfg(test)]

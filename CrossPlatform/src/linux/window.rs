@@ -13,6 +13,17 @@ pub enum DrawingRequest {
     ToggleLock,
 }
 
+/// Notices about which microphone is in use, which the pill shows while recording.
+fn is_microphone_notice(notice: &str) -> bool {
+    [
+        "This mic is silent",
+        "Microphone lost",
+        "Microphone unavailable",
+    ]
+    .iter()
+    .any(|start| notice.starts_with(start))
+}
+
 pub enum Update {
     DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
     RecordingControl(
@@ -773,6 +784,11 @@ fn build_window(
                             notice = Some(phase.to_string());
                         }
                         notice_until = Some(Instant::now() + Duration::from_secs(8));
+                        // The window is usually closed, so the pill has to say this.
+                        if is_microphone_notice(phase) {
+                            pill_message =
+                                Some((phase.to_string(), Instant::now() + Duration::from_secs(6)));
+                        }
                     }
                     Update::Status(message) => {
                         if message.starts_with("Error: ") && message != state {
@@ -1037,4 +1053,26 @@ pub(super) fn present(window: &gtk::Window, token: Option<&str>) {
         }
     }
     window.present();
+}
+
+#[cfg(test)]
+mod microphone_notice_tests {
+    #[test]
+    fn only_microphone_notices_reach_the_pill() {
+        for notice in [
+            "This mic is silent",
+            "This mic is silent · using RØDE PodMic USB Mono",
+            "Microphone lost · using system default",
+            "Microphone unavailable · using system default",
+        ] {
+            assert!(super::is_microphone_notice(notice), "{notice}");
+        }
+        for notice in [
+            "Fetching audio…",
+            "Dictation cancelled",
+            "Saved recovery: x",
+        ] {
+            assert!(!super::is_microphone_notice(notice), "{notice}");
+        }
+    }
 }

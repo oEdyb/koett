@@ -1,7 +1,5 @@
 use std::path::Path;
-#[cfg(target_os = "windows")]
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -13,6 +11,8 @@ use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use ringbuf::{HeapProd, HeapRb};
 use sherpa_onnx::Wave;
 
+#[cfg(target_os = "linux")]
+pub(crate) mod inputs;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) mod preview;
 
@@ -187,6 +187,46 @@ pub struct MicrophoneRecorder {
     overflowed: Arc<AtomicBool>,
     stream_error: Arc<Mutex<Option<String>>>,
     levels: AudioLevels,
+    #[cfg(target_os = "linux")]
+    live: Option<LiveInput>,
+    #[cfg(target_os = "linux")]
+    watcher: Option<(Arc<AtomicBool>, thread::JoinHandle<()>)>,
+}
+
+/// What a capture stream writes into. A replacement stream during a recording
+/// writes to the same place, and only the active generation's samples count.
+#[derive(Clone)]
+struct InputSink {
+    producer: Arc<Mutex<HeapProd<f32>>>,
+    overflowed: Arc<AtomicBool>,
+    stream_error: Arc<Mutex<Option<String>>>,
+    levels: AudioLevels,
+    generation: Arc<AtomicU32>,
+    /// Milliseconds since `origin` of the last audio callback from the active stream.
+    last_audio: Arc<AtomicU64>,
+    origin: std::time::Instant,
+}
+
+impl InputSink {
+    fn elapsed_ms(&self) -> u64 {
+        self.origin.elapsed().as_millis() as u64
+    }
+}
+
+/// What one stream has shown so far.
+#[derive(Clone, Default)]
+struct StreamProbe {
+    alive: Arc<AtomicBool>,
+    /// Any sample that isn't exact digital zero, ever, on this stream.
+    signal: Arc<AtomicBool>,
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Clone)]
+struct LiveInput {
+    sink: InputSink,
+    probe: StreamProbe,
+    sample_rate: u32,
 }
 
 impl MicrophoneRecorder {
@@ -228,7 +268,7 @@ impl MicrophoneRecorder {
 
         #[cfg(any(target_os = "linux", target_os = "windows"))]
         let capture_priority = preview::RecordingPriority::acquire()?;
-        let host = cpal::default_host();
+        let host = audio_host();
         let device = match microphone {
             None => host
                 .default_input_device()
@@ -246,7 +286,8 @@ impl MicrophoneRecorder {
         let supported = device
             .default_input_config()
             .map_err(|error| format!("could not read the microphone format: {error}"))?;
-        let config = supported.config();
+        let mut config = supported.config();
+        request_short_buffer(&device, &mut config);
         let channels = config.channels as usize;
         let sample_rate = config.sample_rate as usize;
         let capacity = sample_rate * 2;
@@ -254,6 +295,15 @@ impl MicrophoneRecorder {
         let overflowed = Arc::new(AtomicBool::new(false));
         let stream_error = Arc::new(Mutex::new(None));
         let levels = AudioLevels::new();
+        let sink = InputSink {
+            producer: Arc::new(Mutex::new(producer)),
+            overflowed: overflowed.clone(),
+            stream_error: stream_error.clone(),
+            levels: levels.clone(),
+            generation: Arc::new(AtomicU32::new(0)),
+            last_audio: Arc::new(AtomicU64::new(0)),
+            origin: std::time::Instant::now(),
+        };
         #[cfg(target_os = "windows")]
         levels
             .sample_rate
@@ -271,117 +321,15 @@ impl MicrophoneRecorder {
             supported.sample_format()
         );
 
-        let stream = match supported.sample_format() {
-            SampleFormat::I8 => build_stream::<i8>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::I16 => build_stream::<i16>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::I24 => build_stream::<I24>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::I32 => build_stream::<i32>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::I64 => build_stream::<i64>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::U8 => build_stream::<u8>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::U16 => build_stream::<u16>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::U24 => build_stream::<U24>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::U32 => build_stream::<u32>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::U64 => build_stream::<u64>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::F32 => build_stream::<f32>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            SampleFormat::F64 => build_stream::<f64>(
-                &device,
-                &config,
-                channels,
-                producer,
-                overflowed.clone(),
-                stream_error.clone(),
-                levels.clone(),
-            ),
-            format => return Err(format!("unsupported microphone sample format: {format}")),
-        }?;
+        let probe = StreamProbe::default();
+        let stream = open_stream(
+            &device,
+            &config,
+            supported.sample_format(),
+            sink.clone(),
+            0,
+            probe.clone(),
+        )?;
 
         stream
             .play()
@@ -409,6 +357,14 @@ impl MicrophoneRecorder {
             overflowed,
             stream_error,
             levels,
+            #[cfg(target_os = "linux")]
+            live: Some(LiveInput {
+                sink,
+                probe,
+                sample_rate: sample_rate as u32,
+            }),
+            #[cfg(target_os = "linux")]
+            watcher: None,
         })
     }
 
@@ -437,6 +393,11 @@ impl MicrophoneRecorder {
     }
 
     pub fn finish_with_warning(mut self) -> Result<(AudioRecording, Option<String>), String> {
+        #[cfg(target_os = "linux")]
+        {
+            self.stop_watcher();
+            self.close_stream();
+        }
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
         #[cfg(target_os = "windows")]
@@ -477,8 +438,302 @@ impl MicrophoneRecorder {
     }
 }
 
+/// A dropped Pulse client leaves its connection open: the library's reactor sleeps with
+/// no timeout and nothing wakes it, so each host costs one socket and one thread until
+/// the server hits its client limit and refuses every app on the desktop. So the process
+/// keeps one host. It is replaced only when the server has dropped it, which also ends
+/// the old reactor.
+#[cfg(target_os = "linux")]
+static SHARED_HOST: Mutex<Option<Arc<cpal::Host>>> = Mutex::new(None);
+/// When connecting last failed. A stuck server would otherwise cost a socket per try.
+#[cfg(target_os = "linux")]
+static HOST_FAILED: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+#[cfg(target_os = "linux")]
+const HOST_RETRY: Duration = Duration::from_secs(5);
+
+/// The audio host: the shared sound server connection when there is one, else ALSA.
+#[cfg(target_os = "linux")]
+pub(crate) fn audio_host() -> Arc<cpal::Host> {
+    let mut shared = SHARED_HOST.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(host) = shared.as_ref() {
+        return host.clone();
+    }
+    let mut failed = HOST_FAILED.lock().unwrap_or_else(|e| e.into_inner());
+    if failed.is_some_and(|at| at.elapsed() < HOST_RETRY)
+        && let Ok(host) = cpal::host_from_id(cpal::HostId::Alsa)
+    {
+        return Arc::new(host);
+    }
+    let host = Arc::new(cpal::default_host());
+    if host.id() == cpal::HostId::PulseAudio {
+        *shared = Some(host.clone());
+        *failed = None;
+    } else {
+        *failed = Some(std::time::Instant::now());
+    }
+    host
+}
+
+#[cfg(not(target_os = "linux"))]
+pub(crate) fn audio_host() -> Arc<cpal::Host> {
+    Arc::new(cpal::default_host())
+}
+
+/// The server dropped the connection, so the next use makes a new one.
+#[cfg(target_os = "linux")]
+fn forget_audio_host() {
+    *SHARED_HOST.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
+/// A running recorder, its audio, and a notice if it is not on the chosen mic.
+#[cfg(target_os = "linux")]
+pub type StartedInput = (MicrophoneRecorder, Receiver<Vec<f32>>, Option<String>);
+
+/// With no audio callback for this long the stream has died. Silence still calls
+/// back with quiet samples, so a thinking pause can never trigger this.
+#[cfg(target_os = "linux")]
+const STREAM_STALL: u64 = 2500;
+#[cfg(target_os = "linux")]
+const PROBE_WAIT: Duration = Duration::from_millis(1500);
+/// A stream that has never produced one non-zero sample for this long has no real
+/// input behind it. Only "never": a noise gate outputs exact zero during a thinking
+/// pause, so a stream that has shown signal once is never called silent.
+#[cfg(target_os = "linux")]
+const SILENT_AFTER: u64 = 3000;
+
+#[cfg(target_os = "linux")]
+impl MicrophoneRecorder {
+    /// Starts on the chosen mic, or the first that works, and keeps a working mic for
+    /// the whole recording. `notify` tells the user about a switch during it. Returns
+    /// a notice if capture did not start on the chosen mic. The saved choice is left
+    /// alone, so that mic is used again as soon as it works.
+    pub fn start_resilient(
+        selected: Option<&str>,
+        notify: impl Fn(String) + Send + 'static,
+    ) -> Result<StartedInput, String> {
+        let chosen = inputs::effective_choice(selected);
+        let ((mut recorder, receiver), current, notice) =
+            inputs::start_first_working(selected, |candidate: Option<String>| {
+                let (sender, receiver) = mpsc::channel();
+                Self::start_inner(MAX_RECORDING_DURATION, Some(sender), candidate.as_deref())
+                    .map(|recorder| (recorder, receiver))
+            })?;
+        if let Some(live) = recorder.live.clone() {
+            let stop = Arc::new(AtomicBool::new(false));
+            let flag = stop.clone();
+            let handle = thread::Builder::new()
+                .name("koett-mic-watch".into())
+                .spawn(move || watch_input(live, chosen, current, flag, notify))
+                .map_err(|error| format!("could not watch the microphone: {error}"))?;
+            recorder.watcher = Some((stop, handle));
+        }
+        Ok((recorder, receiver, notice))
+    }
+
+    /// Stops the watcher without waiting: it may be probing a stuck server, and
+    /// stopping a recording must never wait on that. No stream writes after this.
+    fn stop_watcher(&mut self) {
+        if let Some((stop, _)) = self.watcher.take() {
+            stop.store(true, Ordering::Release);
+        }
+        if let Some(live) = &self.live {
+            live.sink.generation.store(u32::MAX, Ordering::Release);
+        }
+    }
+
+    /// Closes the stream, without letting a stuck server hold up the engine.
+    fn close_stream(&mut self) {
+        if let Some(stream) = self.stream.take() {
+            let _ = inputs::bounded(Duration::from_secs(1), move || drop(stream));
+        }
+    }
+}
+
+/// Opens a stream on `id` at the recording's sample rate, for a mid-recording switch.
+#[cfg(target_os = "linux")]
+fn open_replacement(
+    id: Option<&str>,
+    live: &LiveInput,
+    generation: u32,
+    probe: StreamProbe,
+) -> Result<cpal::Stream, String> {
+    let host = audio_host();
+    let device = match id {
+        None => host.default_input_device(),
+        Some(id) => host.device_by_id(&id.parse::<cpal::DeviceId>().map_err(|e| e.to_string())?),
+    }
+    .ok_or("Microphone unavailable")?;
+    let supported = device.default_input_config().map_err(|e| e.to_string())?;
+    let mut config = supported.config();
+    config.sample_rate = live.sample_rate;
+    request_short_buffer(&device, &mut config);
+    let stream = open_stream(
+        &device,
+        &config,
+        supported.sample_format(),
+        live.sink.clone(),
+        generation,
+        probe,
+    )?;
+    stream.play().map_err(|e| e.to_string())?;
+    Ok(stream)
+}
+
+/// Replaces the stream if it errors, goes quiet at the callback level, or its source
+/// disappears. Runs on its own thread, so the engine never waits on any of this.
+#[cfg(target_os = "linux")]
+fn watch_input(
+    live: LiveInput,
+    chosen: Option<String>,
+    mut current: Option<String>,
+    stop: Arc<AtomicBool>,
+    notify: impl Fn(String),
+) {
+    // Keep the replacement alive here. The original stays with the recorder.
+    let mut replacement: Option<cpal::Stream> = None;
+    let mut generation = 0;
+    let mut ticks = 0_u32;
+    let sink = &live.sink;
+    let mut active = live.probe.clone();
+    let mut listening_since = sink.elapsed_ms();
+    let mut gave_up = false;
+    let mut silence_reported = false;
+    let checking = Arc::new(AtomicBool::new(false));
+    while !stop.load(Ordering::Acquire) {
+        thread::sleep(Duration::from_millis(200));
+        ticks = ticks.wrapping_add(1);
+        let now = sink.elapsed_ms();
+        if sink.levels.paused() {
+            // Paused audio is discarded, so it says nothing about the mic.
+            listening_since = now;
+        }
+        let errored = sink.stream_error.lock().is_ok_and(|error| error.is_some());
+        let stalled = now.saturating_sub(sink.last_audio.load(Ordering::Acquire)) > STREAM_STALL;
+        // Listing goes over the server's socket, so check for a gone source only now and then.
+        // A check stuck on a frozen server is left alone rather than joined by another.
+        let gone = ticks.is_multiple_of(5)
+            && current.as_deref().is_some_and(|id| {
+                if checking.swap(true, Ordering::AcqRel) {
+                    return false;
+                }
+                let (id, checking) = (id.to_string(), checking.clone());
+                inputs::bounded(Duration::from_secs(1), move || {
+                    let listed =
+                        input_devices().map(|list| list.iter().any(|device| device.id == id));
+                    checking.store(false, Ordering::Release);
+                    listed
+                })
+                .is_some_and(|listed| listed.is_ok_and(|listed| !listed))
+            });
+        // Working on the chosen mic again: the next problem is a new one worth saying.
+        if current == chosen && active.signal.load(Ordering::Acquire) {
+            inputs::settle_situation();
+        }
+        let failed = errored || stalled || gone;
+        let silent = !failed
+            && !silence_reported
+            && !active.signal.load(Ordering::Acquire)
+            && now.saturating_sub(listening_since) > SILENT_AFTER;
+        if !(failed || silent) {
+            continue;
+        }
+        let (order, devices) = inputs::replacements(current.as_deref());
+        let mut switched = false;
+        for candidate in order {
+            if stop.load(Ordering::Acquire) {
+                return;
+            }
+            let next = generation + 1;
+            let probe = StreamProbe::default();
+            let opened = {
+                let (live, probe, id) = (live.clone(), probe.clone(), candidate.clone());
+                inputs::bounded(Duration::from_millis(2500), move || {
+                    open_replacement(id.as_deref(), &live, next, probe)
+                })
+            };
+            let Some(Ok(stream)) = opened else { continue };
+            // Replacing a silent mic needs proof of signal, or it could pick another
+            // silent one. Replacing a lost mic only needs audio to flow.
+            let proven = |probe: &StreamProbe| {
+                if silent {
+                    probe.signal.load(Ordering::Acquire)
+                } else {
+                    probe.alive.load(Ordering::Acquire)
+                }
+            };
+            let started = std::time::Instant::now();
+            while !proven(&probe) && started.elapsed() < PROBE_WAIT {
+                thread::sleep(Duration::from_millis(20));
+            }
+            if !proven(&probe) {
+                eprintln!(
+                    "microphone_candidate_rejected id={candidate:?} at_ms={}",
+                    sink.elapsed_ms()
+                );
+                continue;
+            }
+            generation = next;
+            sink.generation.store(next, Ordering::Release);
+            sink.last_audio.store(sink.elapsed_ms(), Ordering::Release);
+            listening_since = sink.elapsed_ms();
+            if let Ok(mut error) = sink.stream_error.lock() {
+                *error = None;
+            }
+            replacement = Some(stream);
+            active = probe;
+            eprintln!(
+                "microphone_switched generation={next} silent={silent} id={candidate:?} at_ms={}",
+                sink.elapsed_ms()
+            );
+            if silent {
+                inputs::remember_silent(current.as_deref());
+            }
+            if inputs::announce(chosen.as_deref(), candidate.as_deref()) {
+                notify(if silent {
+                    inputs::silent_notice(candidate.as_deref(), &devices)
+                } else {
+                    inputs::lost_notice(candidate.as_deref(), &devices)
+                });
+            }
+            current = candidate;
+            gave_up = false;
+            silence_reported = false;
+            switched = true;
+            break;
+        }
+        if switched {
+            continue;
+        }
+        if silent {
+            // Nothing better: keep recording and say so once.
+            silence_reported = true;
+            eprintln!("microphone_silent no replacement");
+            if inputs::announce(chosen.as_deref(), Some(inputs::NOTHING_BETTER)) {
+                notify("This mic is silent".into());
+            }
+        } else {
+            // Nothing works: the recording keeps what it has and says so at the end.
+            if !gave_up {
+                gave_up = true;
+                if let Ok(mut error) = sink.stream_error.lock()
+                    && error.is_none()
+                {
+                    *error = Some("no audio from the microphone".into());
+                }
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+    drop(replacement);
+}
+
 impl Drop for MicrophoneRecorder {
     fn drop(&mut self) {
+        #[cfg(target_os = "linux")]
+        {
+            self.stop_watcher();
+            self.close_stream();
+        }
         self.stream.take();
         self.stop_collector.store(true, Ordering::Release);
         #[cfg(target_os = "windows")]
@@ -533,30 +788,90 @@ fn collect_samples(
     }
 }
 
-fn build_stream<T>(
+/// A sound server otherwise delivers capture in chunks of up to about 2 s, and
+/// stopping would lose the last chunk: the end of what was said.
+fn request_short_buffer(device: &cpal::Device, config: &mut cpal::StreamConfig) {
+    #[cfg(target_os = "linux")]
+    if device
+        .id()
+        .is_ok_and(|id| id.to_string().starts_with("pulseaudio:"))
+    {
+        config.buffer_size = cpal::BufferSize::Fixed(config.sample_rate / 25);
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = (device, config);
+}
+
+fn open_stream(
     device: &cpal::Device,
     config: &cpal::StreamConfig,
-    channels: usize,
-    mut producer: HeapProd<f32>,
-    overflowed: Arc<AtomicBool>,
-    stream_error: Arc<Mutex<Option<String>>>,
-    levels: AudioLevels,
+    format: SampleFormat,
+    sink: InputSink,
+    generation: u32,
+    probe: StreamProbe,
+) -> Result<cpal::Stream, String> {
+    let go = (device, config, sink, generation, probe);
+    match format {
+        SampleFormat::I8 => build_stream::<i8>(go),
+        SampleFormat::I16 => build_stream::<i16>(go),
+        SampleFormat::I24 => build_stream::<I24>(go),
+        SampleFormat::I32 => build_stream::<i32>(go),
+        SampleFormat::I64 => build_stream::<i64>(go),
+        SampleFormat::U8 => build_stream::<u8>(go),
+        SampleFormat::U16 => build_stream::<u16>(go),
+        SampleFormat::U24 => build_stream::<U24>(go),
+        SampleFormat::U32 => build_stream::<u32>(go),
+        SampleFormat::U64 => build_stream::<u64>(go),
+        SampleFormat::F32 => build_stream::<f32>(go),
+        SampleFormat::F64 => build_stream::<f64>(go),
+        format => Err(format!("unsupported microphone sample format: {format}")),
+    }
+}
+
+fn build_stream<T>(
+    (device, config, sink, generation, probe): (
+        &cpal::Device,
+        &cpal::StreamConfig,
+        InputSink,
+        u32,
+        StreamProbe,
+    ),
 ) -> Result<cpal::Stream, String>
 where
     T: Sample + SizedSample,
     f32: FromSample<T>,
 {
+    let channels = usize::from(config.channels).max(1);
+    let errors = sink.clone();
     device
         .build_input_stream(
             *config,
             move |data: &[T], _| {
-                measure_input(data, channels, &levels, |sample| {
+                probe.alive.store(true, Ordering::Release);
+                if !sink.levels.paused()
+                    && !probe.signal.load(Ordering::Relaxed)
+                    && has_signal(data)
+                {
+                    probe.signal.store(true, Ordering::Release);
+                }
+                if sink.generation.load(Ordering::Acquire) != generation {
+                    return;
+                }
+                sink.last_audio.store(sink.elapsed_ms(), Ordering::Release);
+                // Only a stream switch could hold this lock, and that happens off this path.
+                let Ok(mut producer) = sink.producer.try_lock() else {
+                    return;
+                };
+                measure_input(data, channels, &sink.levels, |sample| {
                     if producer.try_push(sample).is_err() {
-                        overflowed.store(true, Ordering::Relaxed);
+                        sink.overflowed.store(true, Ordering::Relaxed);
                     }
                 });
             },
             move |error| {
+                if errors.generation.load(Ordering::Acquire) != generation {
+                    return;
+                }
                 if is_recoverable_stream_error(error.kind()) {
                     eprintln!(
                         "microphone_stream_notice kind={:?} error={error}",
@@ -567,7 +882,7 @@ where
                         "microphone_stream_error kind={:?} error={error}",
                         error.kind()
                     );
-                    if let Ok(mut stored) = stream_error.lock()
+                    if let Ok(mut stored) = errors.stream_error.lock()
                         && stored.is_none()
                     {
                         *stored = Some(error.to_string());
@@ -577,6 +892,16 @@ where
             None,
         )
         .map_err(|error| format!("could not create the microphone stream: {error}"))
+}
+
+/// Whether any sample differs from exact digital zero. Even a quiet room's noise
+/// floor passes this; only a source with nothing behind it does not.
+fn has_signal<T>(data: &[T]) -> bool
+where
+    T: Sample + SizedSample,
+    f32: FromSample<T>,
+{
+    data.iter().any(|sample| f32::from_sample(*sample) != 0.0)
 }
 
 fn measure_input<T>(data: &[T], channels: usize, levels: &AudioLevels, mut consume: impl FnMut(f32))
@@ -646,7 +971,7 @@ fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<Strin
     let Some(selected) = selected else {
         return Ok(None);
     };
-    let host = cpal::default_host();
+    let host = audio_host();
     let id = selected
         .parse::<cpal::DeviceId>()
         .map_err(|e| format!("Invalid microphone ID: {e}"))?;
@@ -663,16 +988,8 @@ fn resolve_recording_input_native(selected: Option<&str>) -> Result<Option<Strin
         .ok_or_else(|| "No microphone is available. Connect an input and retry".into())
 }
 
-pub fn input_devices() -> Result<Vec<InputDevice>, String> {
-    #[cfg(target_os = "windows")]
-    return windows_capture::devices();
-    #[cfg(not(target_os = "windows"))]
-    input_devices_native()
-}
-
-fn input_devices_native() -> Result<Vec<InputDevice>, String> {
-    cpal::default_host()
-        .input_devices()
+fn list_devices(host: &cpal::Host) -> Result<Vec<InputDevice>, String> {
+    host.input_devices()
         .map_err(|e| e.to_string())?
         .map(|device| {
             Ok(InputDevice {
@@ -681,6 +998,31 @@ fn input_devices_native() -> Result<Vec<InputDevice>, String> {
             })
         })
         .collect()
+}
+
+pub fn input_devices() -> Result<Vec<InputDevice>, String> {
+    #[cfg(target_os = "windows")]
+    return windows_capture::devices();
+    #[cfg(not(target_os = "windows"))]
+    input_devices_native()
+}
+
+fn input_devices_native() -> Result<Vec<InputDevice>, String> {
+    let host = audio_host();
+    let listed = list_devices(&host);
+    #[cfg(target_os = "linux")]
+    let listed = match listed {
+        Err(_) if host.id() == cpal::HostId::PulseAudio => {
+            forget_audio_host();
+            list_devices(&audio_host())
+        }
+        listed => listed,
+    };
+    let all = listed?;
+    #[cfg(target_os = "linux")]
+    return Ok(inputs::microphones(all));
+    #[cfg(not(target_os = "linux"))]
+    Ok(all)
 }
 
 #[cfg(test)]
@@ -723,6 +1065,19 @@ mod tests {
         levels.set_paused(false);
         super::measure_input(&[0.0_f32; 80], 1, &levels, |_| {});
         assert_eq!(levels.clone().recorded_ms(), 15);
+    }
+
+    #[test]
+    fn only_exact_zero_counts_as_no_signal() {
+        assert!(!super::has_signal(&[0.0_f32; 8]));
+        assert!(!super::has_signal(&[0_i16; 8]));
+        assert!(!super::has_signal(&[128_u8; 8]), "unsigned zero");
+        assert!(
+            super::has_signal(&[0.0_f32, 0.000_001, 0.0]),
+            "a noise floor"
+        );
+        assert!(super::has_signal(&[0_i16, 1, 0]), "one quantization step");
+        assert!(super::has_signal(&[129_u8]));
     }
 
     #[test]
