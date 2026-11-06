@@ -36,3 +36,20 @@ and other target editors are untested for this change. The guest used a silent
 BlackHole input and synthetic CGEvents. Real right-click/keyboard undo has
 unit/model coverage, not a separate guest pointer/key receipt. No host input,
 installed-app replacement, or frozen v0.3.0 ZIP change was performed.
+
+## VoiceOver follow-up
+
+PR #133 preserves [VoiceOver's Dock command](https://support.apple.com/guide/voiceover/vo2695/mac)
+by using [NSWorkspace.isVoiceOverEnabled](https://developer.apple.com/documentation/appkit/nsworkspace/isvoiceoverenabled).
+When VoiceOver is running, the default draw-lock chord becomes Control-Shift-D;
+Control-Option-D is never chosen, even if other bindings occupy the alternatives.
+Menu/CLI remain available when no chord is free.
+
+31 impacted Swift tests passed, zero failures; release product build passed in
+47.67 seconds. A signed build from `e135197c2646ded671d7deec9c57be3e848e4378`
+passed actual macOS 15.7.7 guest VoiceOver on/off checks: while on, Control-Option-D
+did not toggle draw lock and Control-Shift-D toggled on/off; after restoring
+VoiceOver off through Settings, Control-Option-D toggled on/off again.
+Executable SHA256: `25758354852488336c53c167f128599844ebb8ab754e4085962cd08e7af8e354`.
+These were synthetic CGEvents, not physical-key or assistive-user navigation
+acceptance. Guest audio sharing was disabled. VoiceOver was restored off.

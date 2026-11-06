@@ -30,7 +30,7 @@ For Linux, follow the [preview install instructions](CrossPlatform/README.md#ins
 - **Linux:** Settings → Draw on screen → **Draw & Pin While Dictating**. Complete the [keyboard-access setup](CrossPlatform/README.md#drawing-setup) before recording.
 - Start dictation, release any shortcut keys, then **hold Shift and move** to draw. Release Shift to finish a sketch. **Shift+click** drops a pin. Each new hold starts a separate sketch. The Draw Key setting can change Shift.
 - **Linux draw lock:** press **Ctrl+Alt+D** while recording, then drag with the left button to draw multiple strokes in one sketch. Press the shortcut again to finish.
-- **Mac draw lock:** press **Ctrl+Option+D** while recording, then drag with the left button to join multiple strokes into one sketch per display. Press again or press **Esc** to capture and leave draw lock; another Esc cancels dictation. Right-click undoes the last stroke. The Draw on Screen menu shows the shortcut if another binding requires a different one.
+- **Mac draw lock:** press **Ctrl+Option+D** while recording, then drag with the left button to join multiple strokes into one sketch per display. Press again or press **Esc** to capture and leave draw lock; another Esc cancels dictation. Right-click undoes the last stroke. With VoiceOver on, use **Ctrl+Shift+D**; the Draw on Screen menu shows the active shortcut, including any binding conflicts.
 
 Drawing pastes a numbered image sheet followed by speech-linked text. The target must accept image paste. Images stay in memory, so copy or paste them before quitting or completing another dictation. Captured screen content is included in the image you paste.
 

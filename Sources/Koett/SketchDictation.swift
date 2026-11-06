@@ -15,7 +15,8 @@ extension KoettController {
 
     var effectiveDrawKey: DrawKey { DrawKey.effective(drawKey, dictation: dictationShortcut) }
     var drawLockShortcut: ShortcutBinding? {
-        DrawLock.shortcut(dictation: dictationShortcut, media: mediaShortcut, mode: recordingMode)
+        DrawLock.shortcut(dictation: dictationShortcut, media: mediaShortcut, mode: recordingMode,
+                          voiceOverEnabled: NSWorkspace.shared.isVoiceOverEnabled)
     }
 
     func drawMenuItem() -> NSMenuItem {
