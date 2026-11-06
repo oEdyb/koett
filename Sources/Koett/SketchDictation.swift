@@ -83,6 +83,23 @@ extension KoettController {
         sketchOverlay.toggleLock()
     }
 
+    func consumeDrawLockKey(type: NSEvent.EventType, keyCode: UInt16, modifierFlags: UInt, isRepeat: Bool) -> Bool {
+        guard keyCode == 2 else { return false }
+        if type == .keyUp, drawLockKeyDown {
+            drawLockKeyDown = false
+            return true
+        }
+        guard type == .keyDown else { return false }
+        if drawLockKeyDown { return true }
+        guard state == .recording, sketchOverlay.isActive,
+              drawLockShortcut?.matchesDown(type: type, keyCode: keyCode,
+                                           modifierFlags: modifierFlags, isRepeat: false) == true else { return false }
+        drawLockKeyDown = true
+        noteModifierInterruption()
+        if !isRepeat { toggleDrawLock() }
+        return true
+    }
+
     func handleDictationEscape() {
         if state == .recording, sketchOverlay.isLocked {
             sketchOverlay.toggleLock()
@@ -181,7 +198,6 @@ extension KoettController {
             includeSelection: pinSelectedText,
             onUpdate: { update in overlay.applySketch(update, session: session) },
             includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true,
-            lockShortcut: drawLockShortcut,
             onLockChange: { locked in
                 overlay.showRecordingNotice(locked ? "Draw lock" : "Draw lock off")
                 overlay.raiseAboveDrawing()

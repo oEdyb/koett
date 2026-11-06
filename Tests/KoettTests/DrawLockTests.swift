@@ -111,7 +111,7 @@ final class DrawLockTests: XCTestCase {
         XCTAssertFalse(EscapeKeyMonitor.requestsEscape(try event(repeating: false, keyCode: 2)))
     }
 
-    func testOverlayShortcutIgnoresRepeatAndModifierReleaseDoesNotEndLock() throws {
+    func testModifierReleaseDoesNotEndLock() throws {
         let frames = SketchFrames()
         frames.begin(1)
         let overlay = SketchOverlay(screens: { [] })
@@ -119,16 +119,11 @@ final class DrawLockTests: XCTestCase {
         overlay.start(.init(id: 1, key: .shift, frames: frames, audioClock: { 0 }, includeSelection: false,
             onUpdate: { _ in }, onLockChange: { changes.append($0) }), startedAt: 0)
         defer { overlay.discard() }
-        func key(_ repeatKey: Bool) throws -> NSEvent {
-            try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.control, .option],
-                timestamp: 0, windowNumber: 0, context: nil, characters: "d", charactersIgnoringModifiers: "d", isARepeat: repeatKey, keyCode: 2))
-        }
-        overlay.handleKeyEvent(try key(false))
+        overlay.toggleLock()
         XCTAssertTrue(overlay.isLocked)
         overlay.followKey(flags: [])
-        overlay.handleKeyEvent(try key(true))
         XCTAssertTrue(overlay.isLocked)
-        overlay.handleKeyEvent(try key(false))
+        overlay.toggleLock()
         XCTAssertFalse(overlay.isLocked)
         XCTAssertEqual(changes, [true, false])
         overlay.finish()
@@ -151,8 +146,14 @@ final class DrawLockTests: XCTestCase {
         controller.sketchOverlay.start(.init(id: id, key: .shift, frames: controller.sketchFrames,
             audioClock: { 0 }, includeSelection: false, onUpdate: { _ in }), startedAt: 0)
         controller.state = .recording
-        controller.toggleDrawLock()
+        let flags = NSEvent.ModifierFlags([.control, .option]).rawValue
+        XCTAssertFalse(controller.consumeDrawLockKey(type: .keyDown, keyCode: 0, modifierFlags: flags, isRepeat: false))
+        XCTAssertTrue(controller.consumeDrawLockKey(type: .keyDown, keyCode: 2, modifierFlags: flags, isRepeat: false))
         XCTAssertTrue(controller.sketchOverlay.isLocked)
+        XCTAssertTrue(controller.consumeDrawLockKey(type: .keyDown, keyCode: 2, modifierFlags: flags, isRepeat: true))
+        XCTAssertTrue(controller.sketchOverlay.isLocked, "Repeats must be consumed without toggling")
+        XCTAssertTrue(controller.consumeDrawLockKey(type: .keyUp, keyCode: 2, modifierFlags: 0, isRepeat: false))
+        XCTAssertFalse(controller.consumeDrawLockKey(type: .keyDown, keyCode: 2, modifierFlags: 0, isRepeat: false), "Ordinary typing must pass through")
         controller.handleDictationEscape()
         XCTAssertFalse(controller.sketchOverlay.isLocked)
         XCTAssertEqual(controller.state, .recording)
@@ -161,6 +162,7 @@ final class DrawLockTests: XCTestCase {
         XCTAssertEqual(controller.state, .ready)
         XCTAssertNil(controller.activeDictationID)
         XCTAssertFalse(controller.sketchOverlay.isActive)
+        XCTAssertFalse(controller.consumeDrawLockKey(type: .keyDown, keyCode: 2, modifierFlags: flags, isRepeat: false), "Idle shortcuts must pass through")
         XCTAssertEqual(controller.handleControl(["draw-lock"]).error?.code, "not_recording")
     }
 }

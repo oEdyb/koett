@@ -17,7 +17,6 @@ final class SketchOverlay {
         let includeSelection: Bool
         let onUpdate: (SketchUpdate) -> Void
         var includeContext = true
-        var lockShortcut: ShortcutBinding? = DrawLock.shortcuts.first
         var onLockChange: (Bool) -> Void = { _ in }
     }
 
@@ -138,11 +137,6 @@ final class SketchOverlay {
     // MARK: Input
 
     func handleKeyEvent(_ event: NSEvent) {
-        if event.type == .keyDown, let shortcut = session?.lockShortcut,
-           shortcut.matchesDown(type: event.type, keyCode: event.keyCode,
-                                modifierFlags: event.modifierFlags.rawValue, isRepeat: event.isARepeat) {
-            toggleLock()
-        }
         if isLocked, event.type == .keyDown, !event.isARepeat, event.keyCode == 6,
            [NSEvent.ModifierFlags.control, .command].contains(event.modifierFlags.intersection(ShortcutBinding.relevantModifiers)) {
             undoStroke()
