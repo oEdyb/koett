@@ -1128,7 +1128,12 @@ fn prepare_engine(
         &settings.dictionary,
         cancelled,
         updates,
-    )?;
+    );
+    #[cfg(target_os = "windows")]
+    let worker = worker.map_err(|error| {
+        model::report_model_result(settings.selected_model, Err(error), cancelled).unwrap_err()
+    });
+    let worker = worker?;
     Ok((directory, worker))
 }
 

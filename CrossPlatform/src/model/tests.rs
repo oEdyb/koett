@@ -710,9 +710,14 @@ fn unpack_diagnostics_include_path_nested_os_error_and_persistent_log() {
     let path = parent.join("model.onnx");
     let message = super::unpack_failure(&path, &error);
     assert!(message.contains(&path.display().to_string()));
-    assert!(message.contains("archive entry failed"));
     assert!(message.contains("os error 5"));
-    let reported = super::installation_failure(&parent.join("model"), &message);
+    let reported = super::diagnose_model_result(
+        Err(message),
+        "compact",
+        &parent.join("Model Install.log"),
+        &AtomicBool::new(false),
+    )
+    .unwrap_err();
     assert!(reported.contains("reopen Koett"));
     assert!(reported.contains("Model Install.log"));
     assert!(
@@ -870,5 +875,48 @@ fn windows_invalid_archive_filename_reports_entry_and_os_error() {
     assert!(error.contains("bad?.onnx"), "{error}");
     assert!(error.contains("os error 123"), "{error}");
     assert!(!destination.exists());
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn cancel_and_quit_preserve_previous_model_failure_log() {
+    let parent = temporary_directory("cancelled-diagnostics");
+    fs::create_dir_all(&parent).unwrap();
+    let log = parent.join("Model Install.log");
+    fs::write(&log, "original OS32 diagnostic").unwrap();
+    for reason in ["model setup cancelled", "quit during model setup"] {
+        let error = super::diagnose_model_result(
+            Err(reason.into()),
+            "compact",
+            &log,
+            &AtomicBool::new(true),
+        )
+        .unwrap_err();
+        assert_eq!(error, reason);
+        assert_eq!(
+            fs::read_to_string(&log).unwrap(),
+            "original OS32 diagnostic"
+        );
+        assert!(super::failure_log(&error).is_none());
+    }
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[test]
+fn model_log_write_failure_keeps_the_original_error_readable() {
+    let parent = temporary_directory("log-unavailable");
+    fs::create_dir_all(&parent).unwrap();
+    let blocked = parent.join("blocked");
+    fs::write(&blocked, b"not a directory").unwrap();
+    let error = super::diagnose_model_result(
+        Err("original OS5 failure".into()),
+        "compact",
+        &blocked.join("log"),
+        &AtomicBool::new(false),
+    )
+    .unwrap_err();
+    assert!(error.contains("original OS5 failure"));
+    assert!(error.contains("\nModel log unavailable: "));
     fs::remove_dir_all(parent).unwrap();
 }

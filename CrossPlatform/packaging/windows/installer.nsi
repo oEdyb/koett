@@ -49,7 +49,17 @@ ManifestDPIAware true
  ${PREFIX}_message_done:
 !macroend
 Var SetupLog
+Var SetupLogName
+Var SetupLogBase
+!macro PrepareLog
+ ClearErrors
+ CreateDirectory "$SetupLogBase"
+ IfErrors 0 +3
+ StrCpy $SetupLogBase "$TEMP"
+ StrCpy $SetupLog "$SetupLogBase\$SetupLogName"
+!macroend
 !macro LogOutput
+ !insertmacro PrepareLog
  ClearErrors
  FileOpen $2 "$SetupLog" a
  IfErrors +4
@@ -59,8 +69,11 @@ Var SetupLog
 !macroend
 Var SetupMutex
 !macro SetupGuard
- CreateDirectory "$LOCALAPPDATA\Koett\Setup Logs"
- GetTempFileName $SetupLog "$LOCALAPPDATA\Koett\Setup Logs"
+ System::Call 'kernel32::GetCurrentProcessId() i .r8'
+ System::Call 'kernel32::GetTickCount() i .r9'
+ StrCpy $SetupLogName "Koett-setup-$8-$9.log"
+ StrCpy $SetupLogBase "$LOCALAPPDATA\Koett\Setup Logs"
+ StrCpy $SetupLog "$SetupLogBase\$SetupLogName"
  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\KoettSetup") p .r0 ?e'
  Pop $1
  StrCpy $SetupMutex $0
@@ -93,13 +106,16 @@ Section
  InitPluginsDir
  SetOutPath "$PLUGINSDIR\payload"
  File /r "${PAYLOAD}\*"
+ !insertmacro PrepareLog
  nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\payload\manage-preview.ps1" -Action Install -Root "$INSTDIR" -Payload "$PLUGINSDIR\payload" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt" -LogPath "$SetupLog"'
  Pop $0
  Pop $1
  !insertmacro LogOutput
  !insertmacro ReadMessage install
  StrCmp $0 "0" install_ok
- MessageBox MB_OK|MB_ICONSTOP "Close Koett and run setup again; details are in $SetupLog." /SD IDOK
+ StrCmp $1 "" 0 +2
+ StrCpy $1 "Close Koett and run setup again."
+ MessageBox MB_OK|MB_ICONSTOP "$1$\r$\nDetails: $SetupLog" /SD IDOK
  SetErrorLevel 1
  Abort
  install_ok:
@@ -133,13 +149,16 @@ FunctionEnd
 Section Uninstall
  InitPluginsDir
  SetOutPath "$TEMP"
+ !insertmacro PrepareLog
  nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\manage-install.ps1" -Action Uninstall -Root "$INSTDIR" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt" -LogPath "$SetupLog"'
  Pop $0
  Pop $1
  !insertmacro LogOutput
  !insertmacro ReadMessage uninstall
  StrCmp $0 "0" uninstall_ok
- MessageBox MB_OK|MB_ICONSTOP "Close Koett and retry uninstall; details are in $SetupLog." /SD IDOK
+ StrCmp $1 "" 0 +2
+ StrCpy $1 "Close Koett and retry uninstall."
+ MessageBox MB_OK|MB_ICONSTOP "$1$\r$\nDetails: $SetupLog" /SD IDOK
  SetErrorLevel 1
  Abort
  uninstall_ok:

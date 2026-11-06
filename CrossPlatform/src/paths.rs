@@ -81,6 +81,14 @@ pub fn failed_recordings_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Failed Recordings"))
 }
 
+#[cfg(target_os = "windows")]
+pub fn model_install_log() -> Result<PathBuf, String> {
+    Ok(project_directories()?
+        .data_local_dir()
+        .join("models")
+        .join("Model Install.log"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{history_file, settings_file};

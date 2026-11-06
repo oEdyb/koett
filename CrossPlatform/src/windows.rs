@@ -13,6 +13,7 @@ pub mod media_cli;
 pub(crate) mod media_control;
 mod media_view;
 mod meter;
+mod model_failure;
 mod native_theme;
 mod paste_chord;
 mod paste_guard;
@@ -1320,6 +1321,7 @@ impl WindowsApp {
                     }
                 }
                 EngineUpdate::Notice(message) => {
+                    model_failure::present(self.hwnd, &message);
                     media_view::notice(&message);
                     desktop::processing::notice(&message);
                     if message == crate::runtime::LIMIT_WARNING {
@@ -1389,13 +1391,16 @@ impl WindowsApp {
                             self.pill_state.set(pill_state::Phase::Transcribing, now);
                             self.pill_state.media_result = self.pill_media;
                         }
-                        AppStatus::Error(message) => self.pill_state.set(
-                            pill_state::Phase::Error {
-                                message: message.clone(),
-                                rescue: true,
-                            },
-                            now,
-                        ),
+                        AppStatus::Error(message) => {
+                            model_failure::present(self.hwnd, message);
+                            self.pill_state.set(
+                                pill_state::Phase::Error {
+                                    message: message.clone(),
+                                    rescue: true,
+                                },
+                                now,
+                            );
+                        }
                         _ => {}
                     }
                     if let Some(outcome) = media_outcome {

@@ -11,7 +11,7 @@ $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 function Result($Value){
  $json=$Value|ConvertTo-Json -Depth 8 -Compress
- if($LogPath){[IO.File]::WriteAllText($LogPath,$json,[Text.Encoding]::Unicode)}else{$json}
+ if($LogPath){try{[IO.File]::WriteAllText($LogPath,$json,[Text.Encoding]::Unicode)}catch{$json}}else{$json}
 }
 function Read-Json([string]$Path){Get-Content -LiteralPath $Path -Raw -Encoding UTF8|ConvertFrom-Json}
 function Hash([string]$Path){(Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()}
@@ -222,5 +222,5 @@ try {
  Result @{ok=$true;action=$Action.ToLowerInvariant();root=$Root;data_preserved=$true;signature='unsigned-preview';outputs=@();warnings=(@('Unsigned preview; media tools and optional formatter are not bundled')+$cleanupWarnings);preserved_files=$preserved}
 }catch{
  Message ($_.Exception.Message+([Environment]::NewLine)+'Your application data is kept. '+($preserved-join[Environment]::NewLine))
- Result @{ok=$false;code='preview_management_failed';error=$_.Exception.Message;fix='Follow the path-specific error above and retry; application data is preserved';outputs=@();warnings=@()};exit 1
+ Result @{ok=$false;preserved_files=$preserved;code='preview_management_failed';error=$_.Exception.Message;fix='Follow the path-specific error above and retry; application data is preserved';outputs=@();warnings=@()};exit 1
 }
