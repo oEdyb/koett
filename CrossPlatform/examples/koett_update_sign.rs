@@ -2,7 +2,7 @@
 //! never leaves its file: it must be mode 600 and stay out of the repository.
 //!   koett_update_sign keygen KEY_FILE
 //!   koett_update_sign public KEY_FILE
-//!   koett_update_sign sign KEY_FILE ARCHIVE VERSION BUILD URL [ARCH] > appcast-linux-ARCH.json
+//!   koett_update_sign sign KEY_FILE ARCHIVE VERSION BUILD URL VALID_DAYS [ARCH] > appcast-linux-ARCH.json
 #[cfg(target_os = "linux")]
 fn main() -> Result<(), String> {
     use base64::{Engine, engine::general_purpose::STANDARD};
@@ -12,6 +12,18 @@ fn main() -> Result<(), String> {
     use std::io::Write;
     use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt};
     use std::path::Path;
+
+    let expires = |days: &str| -> Result<u64, String> {
+        let days: u64 = days
+            .parse()
+            .ok()
+            .filter(|days| (1..=366).contains(days))
+            .ok_or("VALID_DAYS must be 1 to 366")?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| error.to_string())?;
+        Ok(now.as_secs() + days * 24 * 60 * 60)
+    };
 
     fn pair(path: &Path) -> Result<Ed25519KeyPair, String> {
         let metadata = std::fs::metadata(path).map_err(|error| error.to_string())?;
@@ -47,13 +59,14 @@ fn main() -> Result<(), String> {
             println!("{}", STANDARD.encode(pair(path)?.public_key().as_ref()));
         }
         ["public", path] => println!("{}", STANDARD.encode(pair(Path::new(path))?.public_key().as_ref())),
-        ["sign", key, archive, version, build, url, rest @ ..] if rest.len() <= 1 => {
+        ["sign", key, archive, version, build, url, days, rest @ ..] if rest.len() <= 1 => {
             let pair = pair(Path::new(key))?;
             let bytes = std::fs::read(archive).map_err(|error| error.to_string())?;
             let mut feed = Feed {
                 schema: 1,
                 version: (*version).to_string(),
                 build: build.parse().map_err(|_| "BUILD must be a number".to_string())?,
+                expires: expires(days)?,
                 // A release signed on another machine names the package's architecture.
                 arch: rest.first().copied().unwrap_or(std::env::consts::ARCH).to_string(),
                 url: (*url).to_string(),
@@ -67,7 +80,7 @@ fn main() -> Result<(), String> {
             feed.signature = STANDARD.encode(pair.sign(feed.signed_message().as_bytes()));
             println!("{}", serde_json::to_string_pretty(&feed).map_err(|error| error.to_string())?);
         }
-        _ => return Err("usage: koett_update_sign keygen|public KEY_FILE, or sign KEY_FILE ARCHIVE VERSION BUILD URL [ARCH]".into()),
+        _ => return Err("usage: koett_update_sign keygen|public KEY_FILE, or sign KEY_FILE ARCHIVE VERSION BUILD URL VALID_DAYS [ARCH]".into()),
     }
     Ok(())
 }
