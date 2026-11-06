@@ -29,12 +29,13 @@ activate it; a missing or invalid model leaves CTC working. `menu-status` report
 `ctc_dictionary_bias`. Advanced local runs can point `KOETT_CTC_BIAS_MODEL` at a
 copied v2 folder; its files must still match the pinned v2 manifest.
 
-The sidecar has a **250 ms budget per decode unit**, including dictionary update,
+The sidecar has a **budget per decode unit of 250 ms plus 40 ms per second of audio,
+capped at 1 s**, including dictionary update,
 decoding and adoption. Loading, busy, failed, oversized, disconnected, expired or
 late results retain the exact primary CTC text at the ASR boundary. That raw text
 still receives the independent user spelling/formatting/replacement policy.
 This is not a 250 ms limit on the primary ASR or on a whole multi-segment file.
-Long chunks can exceed the budget and deliberately fall back.
+A unit that misses its budget deliberately falls back.
 
 Native ONNX decoding cannot be interrupted safely through this API. There is
 one cached worker per process, at most one active request and a bounded channel;
@@ -139,3 +140,39 @@ After rebasing on main with #61 and #64: cargo fmt --check, cargo test --locked
 as errors, release build and git diff --check passed. The Windows MSVC cross-check
 was attempted but blocked by missing lib.exe/native build tools on Linux.
 Independent review and real microphone/long-session acceptance remain pending.
+
+## Scaling the budget with audio length
+
+Measured 2026-11-05 with `ctc_dictionary_budget_bench`, Ryzen 5 9600X, two-thread primary
+and four-thread sidecar. Each length is 12 dictations built from corpus clips, one voice
+each, with spelling applied, and the sidecar idle before each call. Raw is the same audio
+with no dictionary. Added wait compares each dictation with its own raw decode.
+
+| Length | Raw recall | Fixed 250 ms | Scaled | Scaled added wait, median (worst) | % of length |
+|---|---:|---:|---:|---:|---:|
+| 4 s | 4 / 24 | 12 | 16 | 238 ms (276) | 6.0 |
+| 6 s | 6 / 30 | 8 | 19 | 279 ms (321) | 4.6 |
+| 8 s | 11 / 43 | 11 | 26 | 370 ms (431) | 4.6 |
+| 10 s | 12 / 49 | 12 | 29 | 443 ms (515) | 4.4 |
+| 15 s | 21 / 75 | 21 | 46 | 646 ms (705) | 4.3 |
+| 20 s | 30 / 95 | 60 | 60 | 723 ms (840) | 3.6 |
+| 40 s | 57 / 188 | 123 | 123 | 1495 ms (1578) | 3.7 |
+| 60 s | 89 / 284 | 184 | 184 | 2234 ms (2343) | 3.7 |
+
+From about 6 s to 15 s the fixed budget paid its whole wait and gained nothing. Dictations
+of 20 s and over are split at pauses, so they were already covered and did not change. Dictionary
+terms in negative speech stayed at 0, apart from one at 60 s under both budgets.
+
+The bar was set before measuring: added wait at most 5% of the length and at most 1 s per
+decode unit. It holds from 6 s up. At 4 s it is 6.0%, against 5.9% with the fixed budget, so
+this change did not cause it. Across a 60 s dictation the units add up to about 2.2 s.
+
+On one CPU core the sidecar misses every budget up to at least 8 s: recall equals raw, as a
+fallback should, and the wait is 462 to 629 ms median, 674 ms worst, for no gain. The old
+budget would have cost those machines about 250 ms. That run was stopped after 8 s by its
+time limit. This is a real cost on very slow machines, and only for users with 110M, a
+dictionary and v2 downloaded.
+
+All of this uses synthetic TTS voices, not microphone speech. Raw data is in
+[fixed](../Benchmarks/Dictionary/ctc-budget-20261105/fixed.json) and
+[scaled](../Benchmarks/Dictionary/ctc-budget-20261105/scaled.json).

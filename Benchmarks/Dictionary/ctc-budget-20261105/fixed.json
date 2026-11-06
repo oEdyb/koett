@@ -1,0 +1,98 @@
+[
+  {
+    "added_ms_median": 234.0,
+    "added_ms_worst": 250.0,
+    "added_pct_of_length_median": 5.9,
+    "dictations": 12,
+    "recall_biased": 12,
+    "recall_raw": 4,
+    "seconds": 4,
+    "terms": 24,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 289.0
+  },
+  {
+    "added_ms_median": 247.0,
+    "added_ms_worst": 255.0,
+    "added_pct_of_length_median": 4.1,
+    "dictations": 12,
+    "recall_biased": 8,
+    "recall_raw": 6,
+    "seconds": 6,
+    "terms": 30,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 311.0
+  },
+  {
+    "added_ms_median": 248.0,
+    "added_ms_worst": 249.0,
+    "added_pct_of_length_median": 3.1,
+    "dictations": 12,
+    "recall_biased": 11,
+    "recall_raw": 11,
+    "seconds": 8,
+    "terms": 43,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 334.0
+  },
+  {
+    "added_ms_median": 247.0,
+    "added_ms_worst": 258.0,
+    "added_pct_of_length_median": 2.5,
+    "dictations": 12,
+    "recall_biased": 12,
+    "recall_raw": 12,
+    "seconds": 10,
+    "terms": 49,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 348.0
+  },
+  {
+    "added_ms_median": 247.0,
+    "added_ms_worst": 269.0,
+    "added_pct_of_length_median": 1.6,
+    "dictations": 12,
+    "recall_biased": 21,
+    "recall_raw": 21,
+    "seconds": 15,
+    "terms": 75,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 390.0
+  },
+  {
+    "added_ms_median": 754.0,
+    "added_ms_worst": 961.0,
+    "added_pct_of_length_median": 3.8,
+    "dictations": 12,
+    "recall_biased": 60,
+    "recall_raw": 30,
+    "seconds": 20,
+    "terms": 95,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 941.0
+  },
+  {
+    "added_ms_median": 1442.0,
+    "added_ms_worst": 1532.0,
+    "added_pct_of_length_median": 3.6,
+    "dictations": 12,
+    "recall_biased": 123,
+    "recall_raw": 57,
+    "seconds": 40,
+    "terms": 188,
+    "terms_in_negative_speech": 0,
+    "total_ms_median": 1801.0
+  },
+  {
+    "added_ms_median": 2198.0,
+    "added_ms_worst": 2280.0,
+    "added_pct_of_length_median": 3.7,
+    "dictations": 12,
+    "recall_biased": 184,
+    "recall_raw": 89,
+    "seconds": 60,
+    "terms": 284,
+    "terms_in_negative_speech": 1,
+    "total_ms_median": 2733.0
+  }
+]
