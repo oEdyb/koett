@@ -165,7 +165,7 @@ fn ensure_selected_model(
     let archive = transaction.join("model.tar.bz2.part");
     let vad_download = transaction.join("silero_vad.onnx.part");
     let download_total = asr.bytes + vad.bytes;
-    let result = (|| {
+    let result: Result<PathBuf, String> = (|| {
         download_file(
             "speech model",
             &asr.source_url,
@@ -203,6 +203,8 @@ fn ensure_selected_model(
         Ok(destination.clone())
     })();
     let _ = fs::remove_dir_all(&transaction);
+    #[cfg(target_os = "windows")]
+    let result = result.map_err(|error| installation_failure(&destination, &error));
     result
 }
 
@@ -449,6 +451,38 @@ fn tls_provider() -> TlsProvider {
     }
 }
 
+fn unpack_failure(path: &Path, error: &std::io::Error) -> String {
+    let mut detail = format!("could not unpack model file {}: {error}", path.display());
+    let mut source = std::error::Error::source(error);
+    while let Some(error) = source {
+        detail.push_str(&format!(": {error}"));
+        source = error.source();
+    }
+    detail
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn installation_failure(destination: &Path, error: &str) -> String {
+    let log = destination
+        .parent()
+        .unwrap_or(destination)
+        .join("Model Install.log");
+    let details = format!(
+        "Model: {}\n{error}\nClose Koett, check free disk space and file permissions, then reopen Koett to retry.\n",
+        destination.display()
+    );
+    match fs::write(&log, &details) {
+        Ok(()) => format!(
+            "{error}. Close and reopen Koett to retry; details: {}",
+            log.display()
+        ),
+        Err(log_error) => format!(
+            "{error}. Close and reopen Koett to retry; could not write log {}: {log_error}",
+            log.display()
+        ),
+    }
+}
+
 fn install_archive(
     archive: &Path,
     vad_download: &Path,
@@ -476,9 +510,13 @@ fn install_archive(
         if !kind.is_file() && !kind.is_dir() {
             return Err("the model archive contains an unsupported entry type".to_string());
         }
+        let path = entry
+            .path()
+            .map_err(|error| format!("could not read model entry path: {error}"))?
+            .into_owned();
         if !entry
             .unpack_in(transaction)
-            .map_err(|error| format!("could not unpack the model archive: {error}"))?
+            .map_err(|error| unpack_failure(&transaction.join(&path), &error))?
         {
             return Err("the model archive contains an unsafe path".to_string());
         }

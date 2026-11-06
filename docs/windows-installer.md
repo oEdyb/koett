@@ -68,3 +68,10 @@ A deliberately failing signer was tested against the actual setup script.
 Organization policy that blocks PowerShell or constrains its language may prevent
 setup. The visible error should be provided to the administrator; no protection
 needs to be disabled for the supported install path.
+
+Setup keeps machine-readable results in `%LOCALAPPDATA%\Koett\Setup Logs`.
+Failures show a retry instruction and the log path; successful setup ends with
+Launch Koett. Added or modified files still get a plain preservation notice.
+Model installation failures name the archive entry and underlying Windows error;
+`Model Install.log` is beside the model directories. Close and reopen Koett to
+retry after addressing disk space, permissions or another program locking files.
