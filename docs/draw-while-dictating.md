@@ -121,7 +121,7 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 | KDE Plasma 6 (Wayland) | layer-shell | Screenshot portal (one-time "Allow apps to take screenshots") | Verified end to end in private KWin 6.8.1 lab |
 | niri | layer-shell | `grim -o OUTPUT` (wlr-screencopy) | Same code paths; not run on Olle's visible desktop (needs authorization) |
 | Sway, Hyprland, other wlroots | layer-shell | grim, else portal | Unverified |
-| GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected |
+| GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected. The extension can take the background image, but there is no drawing surface yet |
 | X11 | no layer-shell | — | Unavailable; dictation unaffected |
 
 - The ink (and the recording pill when the ink is near it) is part of the

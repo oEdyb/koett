@@ -2,6 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import {Pills} from './pills.js';
+import {Captures} from './capture.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -10,6 +11,7 @@ const PATH = '/org/gnome/Shell/Extensions/Koett';
 const XML = `<node><interface name="com.olledyberg.Koett.Gnome1">
 <method name="PillStatus"><arg type="s" direction="out"/></method>
 <method name="Pill"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
+<method name="Capture"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Focus"><arg type="s" direction="out"/></method>
 </interface></node>`;
 
@@ -31,12 +33,15 @@ export default class Koett extends Extension {
         this._pills = typeof Meta.Window.prototype.inhibit_mapped === 'function' &&
             typeof Meta.Window.prototype.hide_from_window_list === 'function'
             ? new Pills() : null;
+        this._captures = new Captures();
         this._object = Gio.DBusExportedObject.wrapJSObject(XML, this);
         this._object.export(Gio.DBus.session, PATH);
     }
 
     disable() {
         this._enabled = false;
+        this._captures?.destroy();
+        this._captures = null;
         this._pills?.destroy();
         this._pills = null;
         this._object?.unexport();
@@ -56,6 +61,25 @@ export default class Koett extends Extension {
                 ok = this._pills?.register(JSON.parse(raw), app, owner) ?? false;
         } catch { }
         invocation.return_value(new GLib.Variant('(s)', [JSON.stringify({ok})]));
+    }
+
+    async CaptureAsync([raw], invocation) {
+        let result = {protocol: 1, ok: false, error: 'GNOME capture unavailable'};
+        try {
+            const owner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const pid = name => busCall('GetConnectionUnixProcessID', new GLib.Variant('(s)', [name]), '(u)');
+            const [caller, app] = await Promise.all([pid(invocation.get_sender()), pid(owner)]);
+            const valid = async () => this._enabled &&
+                owner === await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)') &&
+                app === await pid(invocation.get_sender());
+            if (caller === app && await valid()) {
+                const png = await this._captures.run(JSON.parse(raw), app, valid);
+                result = {protocol: 1, ok: true, png};
+            }
+        } catch (error) {
+            result.error = String(error.message).slice(0, 160);
+        }
+        invocation.return_value(new GLib.Variant('(s)', [JSON.stringify(result)]));
     }
 
     async FocusAsync(_parameters, invocation) {

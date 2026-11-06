@@ -62,6 +62,16 @@ The lab also has no StatusNotifierWatcher without an indicator extension; GNOME
 tray/menu integration or explicit provider setup remains open. Native app windows
 and the local CLI remain available. No host install was done for this PR.
 
+## Drawing background capture
+
+The extension's `Capture` call returns one monitor as a PNG, held only in memory. It answers
+only the process that owns Koett's GTK application name, refuses during the overview, a modal
+dialog, a lock or a monitor change, and hides only Koett's own pill while it captures. A failure
+keeps the dictation. On 2026-11-06 `capture-check.py` passed on Shell 51.1 with main merged:
+real pixels, an invalid monitor, the overview, a stalled Shell that timed out at 5 s, and the
+extension turned off and on. Nothing calls it on GNOME until a drawing surface exists.
+Evidence: `CrossPlatform/evidence/gnome-capture-20261104/`.
+
 ## Reproduce
 
 Use the staged runtime/package-hash procedure in `linux-gnome-focus-verification.md`.

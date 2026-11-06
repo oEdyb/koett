@@ -1,0 +1,14 @@
+
+(process:1642657): Gdk-WARNING **: 22:51:04.423: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Portal operation not allowed: Unable to open /proc/1642657/root
+
+(python3:1642657): Gtk-WARNING **: 22:51:04.608: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Portal operation not allowed: Unable to open /proc/1642657/root
+
+running 1 test
+
+(process:1642926): Gdk-WARNING **: 22:51:04.629: Failed to read portal settings: GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Portal operation not allowed: Unable to open /proc/1642926/root
+
+(process:1642926): Gtk-WARNING **: 22:51:04.805: Creating a portal monitor failed: GDBus.Error:org.freedesktop.DBus.Error.AccessDenied: Portal operation not allowed: Unable to open /proc/1642926/root
+test linux::sketch::gnome_capture::tests::native_gnome_capture ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 419 filtered out; finished in 7.61s
+
