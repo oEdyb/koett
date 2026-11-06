@@ -347,15 +347,23 @@ pub fn run() -> Result<(), String> {
                 | "permissions-status"
                 | "drawing-status"
                 | "undo-drawing"
+                | "undo"
                 | "draw-lock"
                 | "status"
                 | "pause"
                 | "resume"
+                | "history"
+                | "dictionary"
         )
     }) {
         let response = match control::request(&command) {
             Ok(response) => response,
-            Err(_) if matches!(command.as_str(), "status" | "pause" | "resume") => {
+            Err(_)
+                if matches!(
+                    command.as_str(),
+                    "status" | "pause" | "resume" | "undo" | "history" | "dictionary"
+                ) =>
+            {
                 println!(
                     "{}",
                     serde_json::json!({"ok":false,"error":{"code":"not_running","message":"Start Koett and retry"}})
@@ -367,7 +375,13 @@ pub fn run() -> Result<(), String> {
         println!("{response}");
         if matches!(
             command.as_str(),
-            "drawing-status" | "undo-drawing" | "draw-lock" | "status" | "pause" | "resume"
+            "drawing-status"
+                | "undo-drawing"
+                | "undo"
+                | "draw-lock"
+                | "status"
+                | "pause"
+                | "resume"
         ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
             == false
         {

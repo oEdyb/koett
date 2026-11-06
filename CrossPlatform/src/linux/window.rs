@@ -672,6 +672,16 @@ fn build_window(
                             super::settings_view::show(&parent, &panels, saved, None, None);
                         });
                     }
+                    Update::Status(message) if message == "@words" => {
+                        window.present();
+                        super::settings_view::show(
+                            &window,
+                            &panels,
+                            settings_saved.clone(),
+                            None,
+                            Some("words"),
+                        );
+                    }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message == "@silence" => {
                         // No delivery outcome will arrive for an empty result.
