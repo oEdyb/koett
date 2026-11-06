@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import {Pills} from './pills.js';
 import {Captures} from './capture.js';
+import {Indicator} from './indicator.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -36,12 +37,16 @@ export default class Koett extends Extension {
             typeof Meta.Window.prototype.hide_from_window_list === 'function'
             ? new Pills() : null;
         this._captures = new Captures();
+        this._indicator = new Indicator();
+        Main.panel.addToStatusArea('koett', this._indicator);
         this._object = Gio.DBusExportedObject.wrapJSObject(XML, this);
         this._object.export(Gio.DBus.session, PATH);
     }
 
     disable() {
         this._enabled = false;
+        this._indicator?.destroy();
+        this._indicator = null;
         this._captures?.destroy();
         this._captures = null;
         this._pills?.destroy();
