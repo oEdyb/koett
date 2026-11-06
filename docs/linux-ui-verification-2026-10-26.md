@@ -275,7 +275,7 @@ Parent also reran reduced-motion capture in the reused private session successfu
 `/tmp/koett-waveform-floor-reduced-reuse/results.json`. This does not establish
 the cause of the earlier failure. All owned labs are stopped.
 Installed executable SHA-256: `9457c230e71ca63b7f36443d5c841859ba7cc49ac1bd7c38d6b06c48400800eb` (48867720 bytes).
-Backup and receipt: `/home/olle/.local/state/koett/install-backups/20261027T113436Z`.
+Backup and receipt: `<build-home>/.local/state/koett/install-backups/20261027T113436Z`.
 The idle app was reloaded in the background and its running hash verified.
 No preferences, model choice, microphone or Pause shortcut were changed.
 Changes remain local and uncommitted.
@@ -313,7 +313,7 @@ are stopped after verification. The installed baseline executable is 48881928
 bytes, SHA-256 `3491b63438b502e17a69a018cde687aa3276f1d026d56c62572a39af11cead95`,
 maximum GLIBC2.34. Its idle process was reloaded in the background; settings were
 hash-verified unchanged. Backup:
-`/home/olle/.local/state/koett/install-backups/20261027T121836Z/koett`.
+`<build-home>/.local/state/koett/install-backups/20261027T121836Z/koett`.
 No model, Pause binding, transcript processing, public release or commit changed.
 
 ## Thinking pauses are normal — 2026-10-27

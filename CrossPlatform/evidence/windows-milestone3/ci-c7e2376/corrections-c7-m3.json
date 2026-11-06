@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "correction-save-does-not-change-history-or-dictionary",
+      "passed": true
+    },
+    {
+      "case": "everyday-warning-and-explicit-add-anyway",
+      "warning": "\u201call\u201d is an everyday word. Adding it changes every occurrence you dictate.",
+      "passed": true
+    },
+    {
+      "case": "dismiss-suggestion-does-not-write-dictionary",
+      "passed": true
+    },
+    {
+      "case": "correction-write-failure-preserves-all-stores",
+      "notice": "could not save corrections: Access is denied. (os error 5)",
+      "passed": true
+    }
+  ],
+  "settings_restored": true,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3-c7\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 5932,
+    "sha256": "DDF86B8DEB4CEBF253F6EB6DE4D3ACCB855ABD2C1240246A0574B22F51E1E382"
+  },
+  "history_unchanged": true
+}

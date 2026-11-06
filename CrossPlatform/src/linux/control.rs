@@ -135,6 +135,19 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
+            let recording_control = match bytes.as_slice() {
+                b"status" => Some(super::menu_preferences::RecordingControl::Status),
+                b"pause" => Some(super::menu_preferences::RecordingControl::Pause),
+                b"resume" => Some(super::menu_preferences::RecordingControl::Resume),
+                _ => None,
+            };
+            if let Some(command) = recording_control {
+                let (tx, rx) = std::sync::mpsc::channel();
+                let _ = ui.send(super::window::Update::RecordingControl(command, tx));
+                let value = rx.recv_timeout(std::time::Duration::from_secs(2)).unwrap_or_else(|_| serde_json::json!({"ok":false,"error":{"code":"ui_unavailable","message":"No response from Koett; retry"}}));
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if bytes == b"drawing-status" || bytes == b"undo-drawing" || bytes == b"draw-lock" {
                 let (tx, rx) = std::sync::mpsc::channel();
                 let expires = std::time::Instant::now() + std::time::Duration::from_secs(2);
@@ -259,6 +272,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
+            #[cfg(feature = "ask")]
             if bytes == b"ask-status" {
                 let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
                 continue;
@@ -277,14 +291,18 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
             let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
                 value if value.starts_with("media ") => {
                     let source = &value[6..];
-                    if crate::media_transcription::validate_url(source).is_err() {
+                    if crate::media_transcription::validate_source(source).is_err() {
                         continue;
                     }
                     TrayAction::Media(source.into())
                 }
+                #[cfg(feature = "ask")]
                 "ask" => TrayAction::Ask,
+                #[cfg(feature = "ask")]
                 "ask-start" => TrayAction::AskStart,
+                #[cfg(feature = "ask")]
                 "ask-stop" => TrayAction::AskStop,
+                #[cfg(feature = "ask")]
                 "ask-cancel" => TrayAction::CancelAsk,
                 "cancel-media" => TrayAction::CancelMedia,
                 "media-current" => TrayAction::OpenMedia,
@@ -329,6 +347,7 @@ fn debug_sketch(value: &str) -> Option<crate::sketch::SketchEvent> {
     })
 }
 
+#[cfg(feature = "ask")]
 pub fn ask_status() -> Result<String, String> {
     let mut stream = UnixStream::connect(path()?).map_err(|_| "Koett is not running")?;
     stream

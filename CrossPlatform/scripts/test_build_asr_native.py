@@ -1,7 +1,12 @@
 import contextlib
+import hashlib
 import io
 import json
 import tempfile
+import subprocess
+import urllib.error
+
+import tarfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -12,14 +17,94 @@ from build_asr_native import (
     OPTIONS,
     SOURCE_COMMIT,
     configure_command,
+    configure_with_download_retries,
+    download_archive,
     native_options,
+    prepare_context_header,
     remove_disabled_tts_stubs,
+    shared_context_compiled,
     stage_libraries,
     validate_onnx_cpp_abi,
 )
 
 
 class AsrBuildTests(unittest.TestCase):
+    def test_native_configure_retries_only_temporary_download_failures(self):
+        for failure, count in [
+            ('download onnxruntime: HTTP/2 504', 3),
+            ('download: The requested URL returned error: 503', 3),
+            ('download onnxruntime: HTTP/2 404', 1),
+            ('CMake compiler error', 1),
+            ('download HTTP/2 504; SHA256 hash mismatch', 1),
+        ]:
+            with self.subTest(failure=failure), patch('build_asr_native.subprocess.run', return_value=subprocess.CompletedProcess(['cmake'], 1, failure)) as execute, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    configure_with_download_retries(['cmake'])
+                self.assertEqual(execute.call_count, count)
+
+    def test_native_configure_recovers_after_gateway_failure(self):
+        results = [subprocess.CompletedProcess(['cmake'], 1, 'download onnxruntime HTTP/2 504'), subprocess.CompletedProcess(['cmake'], 0, 'configured')]
+        with patch('build_asr_native.subprocess.run', side_effect=results) as execute, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+            configure_with_download_retries(['cmake'])
+            self.assertEqual(execute.call_count, 2)
+
+    def test_source_http_retries_are_bounded_and_permanent_errors_are_fatal(self):
+        for status, count in [(504, 3), (404, 1)]:
+            with patch('build_asr_native.urllib.request.urlopen', side_effect=urllib.error.HTTPError('url', status, 'failure', {}, None)) as request, patch('build_asr_native.time.sleep'), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(urllib.error.HTTPError):
+                    download_archive('url', Path('never-created'))
+                self.assertEqual(request.call_count, count)
+
+    def test_known_context_patch_upgrades_without_overwriting_unknown_edits(self):
+        from shared_context_patch import PATCHED_SHA256
+        original = Path(__file__).with_name('fixtures').joinpath('offline-recognizer-transducer-nemo-impl.h').read_text().encode()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / 'source.tar.gz'
+            context = root / 'offline-recognizer-transducer-nemo-impl.h'
+            with tarfile.open(archive, 'w:gz') as package:
+                member = tarfile.TarInfo(f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/{context.name}')
+                member.size = len(original)
+                package.addfile(member, io.BytesIO(original))
+            prior = b'known prior context patch fixture'
+            context.write_bytes(prior)
+            with patch('build_asr_native.PREVIOUS_CONTEXT_SHA256', hashlib.sha256(prior).hexdigest()):
+                prepare_context_header(archive, context)
+            self.assertEqual(hashlib.sha256(context.read_bytes()).hexdigest(), PATCHED_SHA256)
+            modified = context.stat().st_mtime_ns
+            prepare_context_header(archive, context)
+            self.assertEqual(context.stat().st_mtime_ns, modified)
+            context.write_bytes(b'unknown local edit')
+            with self.assertRaisesRegex(ValueError, 'unrecognized NeMo source'):
+                prepare_context_header(archive, context)
+            self.assertEqual(context.read_bytes(), b'unknown local edit')
+
+    def test_context_capability_requires_matching_source_and_is_revoked_when_stale(self):
+        target = 'x86_64-pc-windows-msvc'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / 'build'
+            build.mkdir()
+            for name in LIBRARIES:
+                (build / f'{name}.lib').write_bytes(b'private archive fixture koett_context')
+            context = root / f'sherpa-onnx-{SOURCE_COMMIT}/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h'
+            context.parent.mkdir(parents=True)
+            context.write_bytes(b'patched native source fixture')
+            digest = hashlib.sha256(context.read_bytes()).hexdigest()
+            with patch('build_asr_native.PATCHED_SHA256', digest), contextlib.redirect_stdout(io.StringIO()):
+                stage_libraries(build, root, target)
+                marker = (root / 'lib/koett-context.txt').read_text()
+                self.assertIn(f'patch={digest}\n', marker)
+                self.assertIn(f'source={SOURCE_COMMIT}\n', marker)
+                self.assertIn(f'target={target}\n', marker)
+                self.assertIn('core=', marker)
+                self.assertIn('api=', marker)
+                self.assertEqual(json.loads((root / 'build-receipt.json').read_text())['shared_context_sha256'], digest)
+                context.write_bytes(b'changed native source')
+                stage_libraries(build, root, target)
+                self.assertFalse((root / 'lib/koett-context.txt').exists())
+                self.assertNotIn('shared_context_sha256', json.loads((root / 'build-receipt.json').read_text()))
+
     def test_onnx_string_abi_must_match_the_target_and_be_unambiguous(self):
         for target, expected in [('x86_64-unknown-linux-gnu', '0'),
                                  ('aarch64-unknown-linux-gnu', '1')]:
@@ -84,6 +169,24 @@ class AsrBuildTests(unittest.TestCase):
         windows = configure_command('source', 'build', 'x86_64-pc-windows-msvc')
         self.assertEqual(windows[5:7], ['-A', 'x64'])
         self.assertNotIn('-G', windows)
+
+    def test_explicit_cross_toolchain_uses_ninja_without_visual_studio_platform(self):
+        command = configure_command('source', 'build', 'x86_64-pc-windows-msvc',
+                                    toolchain=Path('private-toolchain.cmake'))
+        self.assertEqual(command[5:7], ['-G', 'Ninja'])
+        self.assertNotIn('-A', command)
+        self.assertIn(f'-DCMAKE_TOOLCHAIN_FILE={Path("private-toolchain.cmake").resolve()}', command)
+        self.assertIn('-DSHERPA_ONNX_ENABLE_TTS=OFF', command)
+
+    def test_context_proof_accepts_exact_clang_x64_constants_not_partial_markers(self):
+        target = 'x86_64-pc-windows-msvc'
+        folded = b'\x48\xb9koett_co\x48\x33\x08\x48\xba_context\x48\x33\x50\x05'
+        self.assertTrue(shared_context_compiled(folded, target))
+        self.assertTrue(shared_context_compiled(b'koett_context', target))
+        for data in [b'koett_co', b'_context', folded.replace(b'_context', b'_contest'),
+                     b'\x48\xb9koett_co' + b'\0' * 100 + b'\x48\xba_context']:
+            self.assertFalse(shared_context_compiled(data, target))
+        self.assertFalse(shared_context_compiled(folded, 'x86_64-unknown-linux-gnu'))
 
     def test_removes_only_disabled_tts_implementation_with_nested_guards(self):
         original = ("before\n#if SHERPA_ONNX_ENABLE_TTS == 1\n"

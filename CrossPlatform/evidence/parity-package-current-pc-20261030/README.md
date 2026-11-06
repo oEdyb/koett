@@ -5,11 +5,11 @@ No commits, pushes, host installation, installed-app restart, system GTK change,
 cloud request, physical audio or user settings/history/key reads were performed.
 
 Package:
-`/home/olle/.cache/koett/private-tests/koett-package-currentpc/final/Koett-Linux-x86_64-37705a44.tar.gz`
+`<build-home>/.cache/koett/private-tests/koett-package-currentpc/final/Koett-Linux-x86_64-37705a44.tar.gz`
 
 SHA-256: `405e8f19bf8b68f81afae003b9fde221d153822a0f312fdd4b5560f1f3119bdf`.
 Installed launcher:
-`/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/bin/koett`.
+`<build-home>/.cache/koett/private-tests/koett-package-currentpc/clean install/bin/koett`.
 Exact binary/runtime/source hashes and version tree are in receipt.json.
 
 ## Changes

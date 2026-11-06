@@ -23,6 +23,30 @@ final class VocabularyBoosterTests: XCTestCase {
         XCTFail("status never became \(expected)")
     }
 
+    func testAcousticBoostingIsDisabledByDefault() async {
+        let booster = VocabularyBooster()
+        await booster.update(supabase)
+        let status = await booster.status
+        XCTAssertEqual(status, .off)
+        let text = await booster.boost(text: "Superbase", timings: timing, samples: [0])
+        XCTAssertNil(text)
+        XCTAssertEqual(DictionarySpelling.apply("super base", entries: [DictionaryEntry("Supabase", soundsLike: ["super base"])]), "Supabase")
+    }
+
+    func testDisabledBoosterNeverCallsLoaderForPopulatedDictionary() async {
+        let booster = VocabularyBooster(enabled: false) { _ in
+            XCTFail("disabled booster loaded the acoustic model")
+            return Fixed(text: "Supabase")
+        }
+        await booster.update(supabase)
+        await booster.update([])
+        await booster.update(supabase)
+        let status = await booster.status
+        XCTAssertEqual(status, .off)
+        let result = await booster.boost(text: "Superbase", timings: timing, samples: [0])
+        XCTAssertNil(result)
+    }
+
     func testEmptyDictionaryNeverLoadsTheModel() async {
         let booster = VocabularyBooster { _ in
             XCTFail("loaded")

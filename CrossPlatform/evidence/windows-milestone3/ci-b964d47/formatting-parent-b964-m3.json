@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "parent_pid": 4784,
+  "child_alive_after_three_seconds": false,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Latest\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 4784,
+    "sha256": "B70ECF4FE49D2E955B97A8EE49C592703E7275B7DAA982AD3C7ED49E7A7C4089"
+  },
+  "child_pid": 8412
+}

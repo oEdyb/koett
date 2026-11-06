@@ -1,0 +1,14 @@
+{
+  "step": "model-parakeet_v3-wav-paste",
+  "rect": [
+    344,
+    344,
+    2264,
+    1436
+  ],
+  "focus": {
+    "hwnd": 327716,
+    "process": "Notepad",
+    "pid": 8296
+  }
+}

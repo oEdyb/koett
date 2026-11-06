@@ -26,7 +26,7 @@ extension KoettController {
 
     func startRecordingIfReady() {
         guard canStartSession else { return }
-        assistantSpeech.stop()
+        if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         do {
             try startRecording()
         } catch {
@@ -81,7 +81,8 @@ extension KoettController {
         }
 
         let device = try selectedMicrophone()
-        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device)
+        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device,
+            maximumDuration: RecordingLimit.load(from: microphoneDefaults).seconds + 1)
         try startNemotronRecording(live: nemotronRecorder) { try startFileRecording(device: device) }
     }
 
@@ -131,6 +132,7 @@ extension KoettController {
 
     @discardableResult
     func beginDictationSession() -> UInt64 {
+        recordingDeadline = RecordingDeadline(limit: RecordingLimit.load(from: microphoneDefaults))
         lastDictationID &+= 1
         activeDictationID = lastDictationID
         return lastDictationID
@@ -531,11 +533,17 @@ extension KoettController {
         let textReadyAt = ProcessInfo.processInfo.systemUptime
         guard !sketched.text.isEmpty else {
             guard !rawText.isEmpty else {
+                if sketched.drawingFailed, claimDelivery(session) {
+                    recordingOverlay.showError("Drawing failed · No speech", keepUntilClicked: true)
+                }
                 print("No speech detected. Clipboard unchanged.")
                 return .finished
             }
             guard claimDelivery(session) else { return .finished }
             try saveTranscript(prepared)
+            if sketched.drawingFailed {
+                recordingOverlay.showError("Text saved · Drawing failed", keepUntilClicked: true)
+            }
             print("S1-mini removed filler-only text. Clipboard unchanged.")
             return .finished
         }
@@ -551,7 +559,7 @@ extension KoettController {
         } else {
             pastePostedAt = try deliver(final, readyToPaste: readyToPaste)
         }
-        recordingOverlay.showDone(text: final.text, png: sketched.sheet)
+        recordingOverlay.showDone(text: final.text, png: sketched.sheet, drawingFailed: sketched.drawingFailed)
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
@@ -641,7 +649,8 @@ extension KoettController {
         }
     }
 
-    func play(_ player: AVAudioPlayer) {
+    func play(_ player: AVAudioPlayer?) {
+        guard let player else { return }
         player.stop()
         player.currentTime = 0
         _ = player.play()

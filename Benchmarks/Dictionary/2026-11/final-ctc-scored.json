@@ -1,0 +1,2159 @@
+{
+  "raw": {
+    "term_recall": 0.1667,
+    "term_hits": 27,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1824,
+    "wer_negative": 0.0198,
+    "missing": [
+      [
+        "p01-en-US-AndrewNeural",
+        "Koett",
+        "Cat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-AndrewNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p03-en-US-AndrewNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "We compiled shirp belalongs from the pin source tag."
+      ],
+      [
+        "p05-en-US-AndrewNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-US-AndrewNeural",
+        "FluidAudio",
+        "On the Mac, we use flluid audio for speech recognition."
+      ],
+      [
+        "p07-en-US-AndrewNeural",
+        "Nordicrank",
+        "Send the Backlink report to Nordickrank by Friday"
+      ],
+      [
+        "p09-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow."
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Olle",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Dyberg",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p12-en-US-AndrewNeural",
+        "Olle",
+        "All will review the poll request tonight."
+      ],
+      [
+        "p14-en-US-AndrewNeural",
+        "PostgreSQL",
+        "Store the bookings in post RcQL instead of a flat file"
+      ],
+      [
+        "p15-en-US-AndrewNeural",
+        "Tauri",
+        "Towerry bundles the web view into a small desktop app"
+      ],
+      [
+        "p16-en-US-AndrewNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-US-AndrewNeural",
+        "Supabase",
+        "Suabase handles the login and the database"
+      ],
+      [
+        "p18-en-US-AndrewNeural",
+        "SvelteKit",
+        "The landing page is built with Sveltekit"
+      ],
+      [
+        "p19-en-US-AndrewNeural",
+        "Fortnox",
+        "Export the receipts to F Knox before the end of the month"
+      ],
+      [
+        "p20-en-US-AndrewNeural",
+        "Skatteverket",
+        "Scatterket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gataborg on Monday"
+      ],
+      [
+        "p22-en-US-AndrewNeural",
+        "fika",
+        "Let's grab a FICA after the call"
+      ],
+      [
+        "p23-en-US-AndrewNeural",
+        "Hetzner",
+        "The server is a small Hetzer machine in Helsinki"
+      ],
+      [
+        "p25-en-US-AndrewNeural",
+        "Groq",
+        "Ask Ues Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-AndrewNeural",
+        "Qwen",
+        "The default model is uin with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-US-AndrewNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weyland"
+      ],
+      [
+        "p29-en-US-AndrewNeural",
+        "Hyprland",
+        "My desktop is Hyperlland with a single monitor."
+      ],
+      [
+        "p30-en-US-AndrewNeural",
+        "Codex",
+        "askk Claude to write the tests and codex to review them"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "Parakeet",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Olle",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "fika",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p33-en-US-AndrewNeural",
+        "Supabase",
+        "Move the database from Superabase to a Hetzner server"
+      ],
+      [
+        "p34-en-US-AndrewNeural",
+        "Fortnox",
+        "Nordicrank pays through four knocks"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Matyas",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Koett",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Wayland",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-AndrewNeural",
+        "Skatteverket",
+        "Hogia and Scatterairkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Claude",
+        "Claud wrote the Towerry prototype last week"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Tauri",
+        "Claud wrote the Towerry prototype last week"
+      ],
+      [
+        "p40-en-US-AndrewNeural",
+        "Dyberg",
+        "Diberg is spelled with A Y"
+      ],
+      [
+        "p01-en-US-EmmaNeural",
+        "Koett",
+        "Coat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-EmmaNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p03-en-US-EmmaNeural",
+        "Parakeet",
+        "The parakeute model runs locally on the laptop"
+      ],
+      [
+        "p04-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "We compiled shpbonks from the pin source tag"
+      ],
+      [
+        "p05-en-US-EmmaNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-US-EmmaNeural",
+        "FluidAudio",
+        "On the Mac, we use flluid audio for speech recognition"
+      ],
+      [
+        "p07-en-US-EmmaNeural",
+        "Nordicrank",
+        "Send the backlink report to Nordic Rank by Friday"
+      ],
+      [
+        "p09-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Olle",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Dyberg",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p12-en-US-EmmaNeural",
+        "Olle",
+        "All will review the poull request tonight"
+      ],
+      [
+        "p14-en-US-EmmaNeural",
+        "PostgreSQL",
+        "Store the bookings in Postgres QL instead of a flat file"
+      ],
+      [
+        "p15-en-US-EmmaNeural",
+        "Tauri",
+        "Towerry bundles the webView into a small desktop app"
+      ],
+      [
+        "p16-en-US-EmmaNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-US-EmmaNeural",
+        "Supabase",
+        "Superabase handles the login and the database"
+      ],
+      [
+        "p18-en-US-EmmaNeural",
+        "SvelteKit",
+        "The landing page is built with Svelte Kit"
+      ],
+      [
+        "p20-en-US-EmmaNeural",
+        "Skatteverket",
+        "Scatterwket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Geburg on Monday."
+      ],
+      [
+        "p25-en-US-EmmaNeural",
+        "Groq",
+        "Ask usees Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-EmmaNeural",
+        "Qwen",
+        "The default model is Qin with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-US-EmmaNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weayland"
+      ],
+      [
+        "p29-en-US-EmmaNeural",
+        "Hyprland",
+        "My desktop is Hyperlan with a single monitor."
+      ],
+      [
+        "p30-en-US-EmmaNeural",
+        "Codex",
+        "Ask Claude to write the tests in codex to review them"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "Parakeet",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Olle",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "fika",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p34-en-US-EmmaNeural",
+        "Nordicrank",
+        "Nordic Rank pays through Fort Knox"
+      ],
+      [
+        "p34-en-US-EmmaNeural",
+        "Fortnox",
+        "Nordic Rank pays through Fort Knox"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Matyas",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Koett",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Wayland",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Hogia",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Skatteverket",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-EmmaNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p40-en-US-EmmaNeural",
+        "Dyberg",
+        "Diberg is spelled with a Y"
+      ],
+      [
+        "p01-en-GB-RyanNeural",
+        "Koett",
+        "Coet turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-GB-RyanNeural",
+        "Koett",
+        "Open Co it and press the option key to start dictating"
+      ],
+      [
+        "p03-en-GB-RyanNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "We compiled Spperons from the pinsource tag"
+      ],
+      [
+        "p05-en-GB-RyanNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-GB-RyanNeural",
+        "FluidAudio",
+        "On the Mac we use Fuid audio for speech recognition"
+      ],
+      [
+        "p07-en-GB-RyanNeural",
+        "Nordicrank",
+        "Send a backlink report to Nordic Rank by Friday"
+      ],
+      [
+        "p08-en-GB-RyanNeural",
+        "Hogia",
+        "I logged into Hoger to check the invoices"
+      ],
+      [
+        "p09-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p10-en-GB-RyanNeural",
+        "Matyas",
+        "Machios paid the last three invoices"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Olle",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Dyberg",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p12-en-GB-RyanNeural",
+        "Olle",
+        "O will review the pool request tonight"
+      ],
+      [
+        "p14-en-GB-RyanNeural",
+        "PostgreSQL",
+        "Store the bookings in Poster SQL instead of a flat file"
+      ],
+      [
+        "p15-en-GB-RyanNeural",
+        "Tauri",
+        "Tori bundles the webView into a small desktop app."
+      ],
+      [
+        "p16-en-GB-RyanNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-GB-RyanNeural",
+        "Supabase",
+        "Superbase handles the login and the database"
+      ],
+      [
+        "p18-en-GB-RyanNeural",
+        "SvelteKit",
+        "The landing page is built with Svelte kit."
+      ],
+      [
+        "p20-en-GB-RyanNeural",
+        "Skatteverket",
+        "Scatterirkit sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gotborg on Monday"
+      ],
+      [
+        "p22-en-GB-RyanNeural",
+        "fika",
+        "Let's grab a feka after the call"
+      ],
+      [
+        "p23-en-GB-RyanNeural",
+        "Hetzner",
+        "The server is a small Hetzna machine in Helsinki"
+      ],
+      [
+        "p24-en-GB-RyanNeural",
+        "Cartesia",
+        "Cartiza reads the first sentence of the answer out loud"
+      ],
+      [
+        "p25-en-GB-RyanNeural",
+        "Groq",
+        "Ask uses Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-GB-RyanNeural",
+        "Qwen",
+        "The default model is Quen with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-GB-RyanNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weyland"
+      ],
+      [
+        "p29-en-GB-RyanNeural",
+        "Hyprland",
+        "My desktop is Hyperand with a single monitor"
+      ],
+      [
+        "p30-en-GB-RyanNeural",
+        "Codex",
+        "Ask Claude to write the tests and codecs to review them."
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "Parakeet",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Olle",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "fika",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Supabase",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Hetzner",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p34-en-GB-RyanNeural",
+        "Nordicrank",
+        "Nordic rank pays through Fort Knox"
+      ],
+      [
+        "p34-en-GB-RyanNeural",
+        "Fortnox",
+        "Nordic rank pays through Fort Knox"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Matyas",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Koett",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Wayland",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Hogia",
+        "Hoggier and Scatterwkit both need the same numbers"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Skatteverket",
+        "Hoggier and Scatterwkit both need the same numbers"
+      ],
+      [
+        "p39-en-GB-RyanNeural",
+        "Tauri",
+        "Claude wrote the Tori prototype last week"
+      ]
+    ],
+    "false": [],
+    "broken_negatives": 0,
+    "collateral_words": 0
+  },
+  "spelling": {
+    "term_recall": 0.2778,
+    "term_hits": 45,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1635,
+    "wer_negative": 0.0198,
+    "missing": [
+      [
+        "p01-en-US-AndrewNeural",
+        "Koett",
+        "Cat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-AndrewNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p04-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "We compiled shirp belalongs from the pin source tag."
+      ],
+      [
+        "p05-en-US-AndrewNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-US-AndrewNeural",
+        "FluidAudio",
+        "On the Mac, we use flluid audio for speech recognition."
+      ],
+      [
+        "p07-en-US-AndrewNeural",
+        "Nordicrank",
+        "Send the Backlink report to Nordickrank by Friday"
+      ],
+      [
+        "p09-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow."
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Olle",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Dyberg",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p12-en-US-AndrewNeural",
+        "Olle",
+        "All will review the poll request tonight."
+      ],
+      [
+        "p14-en-US-AndrewNeural",
+        "PostgreSQL",
+        "Store the bookings in post RcQL instead of a flat file"
+      ],
+      [
+        "p15-en-US-AndrewNeural",
+        "Tauri",
+        "Towerry bundles the web view into a small desktop app"
+      ],
+      [
+        "p16-en-US-AndrewNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-US-AndrewNeural",
+        "Supabase",
+        "Suabase handles the login and the database"
+      ],
+      [
+        "p19-en-US-AndrewNeural",
+        "Fortnox",
+        "Export the receipts to F Knox before the end of the month"
+      ],
+      [
+        "p20-en-US-AndrewNeural",
+        "Skatteverket",
+        "Scatterket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gataborg on Monday"
+      ],
+      [
+        "p22-en-US-AndrewNeural",
+        "fika",
+        "Let's grab a FICA after the call"
+      ],
+      [
+        "p23-en-US-AndrewNeural",
+        "Hetzner",
+        "The server is a small Hetzer machine in Helsinki"
+      ],
+      [
+        "p25-en-US-AndrewNeural",
+        "Groq",
+        "Ask Ues Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-AndrewNeural",
+        "Qwen",
+        "The default model is uin with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-US-AndrewNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weyland"
+      ],
+      [
+        "p29-en-US-AndrewNeural",
+        "Hyprland",
+        "My desktop is Hyperlland with a single monitor."
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "run Parakeet through shir blonks on Linux"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Olle",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "fika",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p33-en-US-AndrewNeural",
+        "Supabase",
+        "Move the database from Superabase to a Hetzner server"
+      ],
+      [
+        "p34-en-US-AndrewNeural",
+        "Fortnox",
+        "Nordicrank pays through four knocks"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Matyas",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Koett",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Wayland",
+        "Matias asked whether Coat works on Wyland"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Nemotron",
+        "Compare Nematron with Parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-AndrewNeural",
+        "Skatteverket",
+        "Hogia and Scatterairkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Claude",
+        "Claud wrote the Towerry prototype last week"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Tauri",
+        "Claud wrote the Towerry prototype last week"
+      ],
+      [
+        "p40-en-US-AndrewNeural",
+        "Dyberg",
+        "Diberg is spelled with A Y"
+      ],
+      [
+        "p01-en-US-EmmaNeural",
+        "Koett",
+        "Coat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-EmmaNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p03-en-US-EmmaNeural",
+        "Parakeet",
+        "The parakeute model runs locally on the laptop"
+      ],
+      [
+        "p04-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "We compiled shpbonks from the pin source tag"
+      ],
+      [
+        "p05-en-US-EmmaNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-US-EmmaNeural",
+        "FluidAudio",
+        "On the Mac, we use flluid audio for speech recognition"
+      ],
+      [
+        "p09-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Olle",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Dyberg",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p12-en-US-EmmaNeural",
+        "Olle",
+        "All will review the poull request tonight"
+      ],
+      [
+        "p15-en-US-EmmaNeural",
+        "Tauri",
+        "Towerry bundles the webView into a small desktop app"
+      ],
+      [
+        "p16-en-US-EmmaNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-US-EmmaNeural",
+        "Supabase",
+        "Superabase handles the login and the database"
+      ],
+      [
+        "p20-en-US-EmmaNeural",
+        "Skatteverket",
+        "Scatterwket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Geburg on Monday."
+      ],
+      [
+        "p25-en-US-EmmaNeural",
+        "Groq",
+        "Ask usees Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-EmmaNeural",
+        "Qwen",
+        "The default model is Qin with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-US-EmmaNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weayland"
+      ],
+      [
+        "p29-en-US-EmmaNeural",
+        "Hyprland",
+        "My desktop is Hyperlan with a single monitor."
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "Run Parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Olle",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "fika",
+        "Jacob and all met in Gotabburg for a Fica"
+      ],
+      [
+        "p34-en-US-EmmaNeural",
+        "Fortnox",
+        "Nordicrank pays through Fort Knox"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Matyas",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Koett",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Wayland",
+        "Madias asks whether Cat works on Weyland"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Nemotron",
+        "Compare Nematron with Parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Hogia",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Skatteverket",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-EmmaNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p40-en-US-EmmaNeural",
+        "Dyberg",
+        "Diberg is spelled with a Y"
+      ],
+      [
+        "p01-en-GB-RyanNeural",
+        "Koett",
+        "Coet turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-GB-RyanNeural",
+        "Koett",
+        "Open Co it and press the option key to start dictating"
+      ],
+      [
+        "p04-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "We compiled Spperons from the pinsource tag"
+      ],
+      [
+        "p05-en-GB-RyanNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p06-en-GB-RyanNeural",
+        "FluidAudio",
+        "On the Mac we use Fuid audio for speech recognition"
+      ],
+      [
+        "p08-en-GB-RyanNeural",
+        "Hogia",
+        "I logged into Hoger to check the invoices"
+      ],
+      [
+        "p09-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p10-en-GB-RyanNeural",
+        "Matyas",
+        "Machios paid the last three invoices"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Olle",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Dyberg",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p12-en-GB-RyanNeural",
+        "Olle",
+        "O will review the pool request tonight"
+      ],
+      [
+        "p14-en-GB-RyanNeural",
+        "PostgreSQL",
+        "Store the bookings in Poster SQL instead of a flat file"
+      ],
+      [
+        "p15-en-GB-RyanNeural",
+        "Tauri",
+        "Tori bundles the webView into a small desktop app."
+      ],
+      [
+        "p16-en-GB-RyanNeural",
+        "GTK4",
+        "The settings window is written in GTK four"
+      ],
+      [
+        "p17-en-GB-RyanNeural",
+        "Supabase",
+        "Superbase handles the login and the database"
+      ],
+      [
+        "p20-en-GB-RyanNeural",
+        "Skatteverket",
+        "Scatterirkit sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gotborg on Monday"
+      ],
+      [
+        "p22-en-GB-RyanNeural",
+        "fika",
+        "Let's grab a feka after the call"
+      ],
+      [
+        "p23-en-GB-RyanNeural",
+        "Hetzner",
+        "The server is a small Hetzna machine in Helsinki"
+      ],
+      [
+        "p24-en-GB-RyanNeural",
+        "Cartesia",
+        "Cartiza reads the first sentence of the answer out loud"
+      ],
+      [
+        "p25-en-GB-RyanNeural",
+        "Groq",
+        "Ask uses Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-GB-RyanNeural",
+        "Qwen",
+        "The default model is Quen with twenty seven billion parameters"
+      ],
+      [
+        "p28-en-GB-RyanNeural",
+        "Wayland",
+        "Global shortcuts work differently on Weyland"
+      ],
+      [
+        "p29-en-GB-RyanNeural",
+        "Hyprland",
+        "My desktop is Hyperand with a single monitor"
+      ],
+      [
+        "p30-en-GB-RyanNeural",
+        "Codex",
+        "Ask Claude to write the tests and codecs to review them."
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "Run Parakeet through Sprons on Linux"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Olle",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "fika",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Supabase",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Hetzner",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p34-en-GB-RyanNeural",
+        "Fortnox",
+        "Nordicrank pays through Fort Knox"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Matyas",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Koett",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Wayland",
+        "Motios asked Whether Coet works on Weyland"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Nemotron",
+        "Compare Nematron with Parakeet on the same clips"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Hogia",
+        "Hoggier and Scatterwkit both need the same numbers"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Skatteverket",
+        "Hoggier and Scatterwkit both need the same numbers"
+      ],
+      [
+        "p39-en-GB-RyanNeural",
+        "Tauri",
+        "Claude wrote the Tori prototype last week"
+      ]
+    ],
+    "false": [],
+    "broken_negatives": 0,
+    "collateral_words": 0
+  },
+  "sidecar_plain": {
+    "term_recall": 0.3395,
+    "term_hits": 55,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1349,
+    "wer_negative": 0.0198,
+    "missing": [
+      [
+        "p01-en-US-AndrewNeural",
+        "Koett",
+        "Cat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-AndrewNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p03-en-US-AndrewNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "We compiled shirp belalongs from the pin source tag."
+      ],
+      [
+        "p05-en-US-AndrewNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p07-en-US-AndrewNeural",
+        "Nordicrank",
+        "Send the Backlink report to Nordickrank by Friday"
+      ],
+      [
+        "p09-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow."
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Olle",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Dyberg",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p12-en-US-AndrewNeural",
+        "Olle",
+        "All will review the poll request tonight."
+      ],
+      [
+        "p15-en-US-AndrewNeural",
+        "Tauri",
+        "Towerry bundles the web view into a small desktop app"
+      ],
+      [
+        "p17-en-US-AndrewNeural",
+        "Supabase",
+        "Suabase handles the login and the database"
+      ],
+      [
+        "p18-en-US-AndrewNeural",
+        "SvelteKit",
+        "The landing page is built with Sveltekit"
+      ],
+      [
+        "p19-en-US-AndrewNeural",
+        "Fortnox",
+        "Export the receipts to F Knox before the end of the month"
+      ],
+      [
+        "p20-en-US-AndrewNeural",
+        "Skatteverket",
+        "Scatterket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gataborg on Monday"
+      ],
+      [
+        "p22-en-US-AndrewNeural",
+        "fika",
+        "Let's grab a FICA after the call"
+      ],
+      [
+        "p25-en-US-AndrewNeural",
+        "Groq",
+        "Ask Ues Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-AndrewNeural",
+        "Qwen",
+        "The default model is uin with twenty seven billion parameters"
+      ],
+      [
+        "p29-en-US-AndrewNeural",
+        "Hyprland",
+        "My desktop is Hyperlland with a single monitor."
+      ],
+      [
+        "p30-en-US-AndrewNeural",
+        "Codex",
+        "askk Claude to write the tests and codex to review them"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "Parakeet",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Yakob",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Olle",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "fika",
+        "Jacob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p33-en-US-AndrewNeural",
+        "Supabase",
+        "Move the database from Superabase to a Hetzner server"
+      ],
+      [
+        "p34-en-US-AndrewNeural",
+        "Fortnox",
+        "Nordicrank pays through four knocks"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Matyas",
+        "Matias asked whether Coat works on Wayland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Koett",
+        "Matias asked whether Coat works on Wayland"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-AndrewNeural",
+        "Skatteverket",
+        "Hogia and Scatterairkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p01-en-US-EmmaNeural",
+        "Koett",
+        "Coat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-EmmaNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p04-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "We compiled shpbonks from the pin source tag"
+      ],
+      [
+        "p05-en-US-EmmaNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p07-en-US-EmmaNeural",
+        "Nordicrank",
+        "Send the backlink report to Nordic Rank by Friday"
+      ],
+      [
+        "p09-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Olle",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Dyberg",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p12-en-US-EmmaNeural",
+        "Olle",
+        "All will review the poull request tonight"
+      ],
+      [
+        "p15-en-US-EmmaNeural",
+        "Tauri",
+        "Towerry bundles the webView into a small desktop app"
+      ],
+      [
+        "p17-en-US-EmmaNeural",
+        "Supabase",
+        "Superabase handles the login and the database"
+      ],
+      [
+        "p20-en-US-EmmaNeural",
+        "Skatteverket",
+        "Scatterwket sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Geburg on Monday."
+      ],
+      [
+        "p25-en-US-EmmaNeural",
+        "Groq",
+        "Ask usees Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-EmmaNeural",
+        "Qwen",
+        "The default model is Qin with twenty seven billion parameters"
+      ],
+      [
+        "p29-en-US-EmmaNeural",
+        "Hyprland",
+        "My desktop is Hyperlan with a single monitor."
+      ],
+      [
+        "p30-en-US-EmmaNeural",
+        "Codex",
+        "Ask Claude to write the tests in codex to review them"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "Parakeet",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Yakob",
+        "Jacob and all met in Gotabburg for a fika"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Olle",
+        "Jacob and all met in Gotabburg for a fika"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gotabburg for a fika"
+      ],
+      [
+        "p34-en-US-EmmaNeural",
+        "Fortnox",
+        "Nordicrank pays through Fort Knox"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Matyas",
+        "Madias asks whether Cat works on Wayland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Koett",
+        "Madias asks whether Cat works on Wayland"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Hogia",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Skatteverket",
+        "Hogy and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-EmmaNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p40-en-US-EmmaNeural",
+        "Dyberg",
+        "Diberg is spelled with a Y"
+      ],
+      [
+        "p01-en-GB-RyanNeural",
+        "Koett",
+        "Coet turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-GB-RyanNeural",
+        "Koett",
+        "Open Co it and press the option key to start dictating"
+      ],
+      [
+        "p03-en-GB-RyanNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "We compiled Spperons from the pinsource tag"
+      ],
+      [
+        "p05-en-GB-RyanNeural",
+        "Nemotron",
+        "Nematron streams partial results every half second"
+      ],
+      [
+        "p08-en-GB-RyanNeural",
+        "Hogia",
+        "I logged into Hoger to check the invoices"
+      ],
+      [
+        "p09-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob wants a demo of the booking app tomorrow"
+      ],
+      [
+        "p10-en-GB-RyanNeural",
+        "Matyas",
+        "Machios paid the last three invoices"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Olle",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Dyberg",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p12-en-GB-RyanNeural",
+        "Olle",
+        "O will review the pool request tonight"
+      ],
+      [
+        "p15-en-GB-RyanNeural",
+        "Tauri",
+        "Tori bundles the webView into a small desktop app."
+      ],
+      [
+        "p17-en-GB-RyanNeural",
+        "Supabase",
+        "Superbase handles the login and the database"
+      ],
+      [
+        "p18-en-GB-RyanNeural",
+        "SvelteKit",
+        "The landing page is built with Svelte kit."
+      ],
+      [
+        "p20-en-GB-RyanNeural",
+        "Skatteverket",
+        "Scatterirkit sent a letter about the VAT return"
+      ],
+      [
+        "p21-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "I am taking the train to Gotborg on Monday"
+      ],
+      [
+        "p22-en-GB-RyanNeural",
+        "fika",
+        "Let's grab a feka after the call"
+      ],
+      [
+        "p24-en-GB-RyanNeural",
+        "Cartesia",
+        "Cartiza reads the first sentence of the answer out loud"
+      ],
+      [
+        "p25-en-GB-RyanNeural",
+        "Groq",
+        "Ask uses Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-GB-RyanNeural",
+        "Qwen",
+        "The default model is Quen with twenty seven billion parameters"
+      ],
+      [
+        "p29-en-GB-RyanNeural",
+        "Hyprland",
+        "My desktop is Hyperand with a single monitor"
+      ],
+      [
+        "p30-en-GB-RyanNeural",
+        "Codex",
+        "Ask Claude to write the tests and codecs to review them."
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "Parakeet",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Yakob",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Olle",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "G\u00f6teborg",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "fika",
+        "Jacob and all met in Gatborg for a Fica"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Supabase",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p33-en-GB-RyanNeural",
+        "Hetzner",
+        "Move the database from Superbase to a Hetna server"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Matyas",
+        "Motios asked Whether Coet works on Wayland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Koett",
+        "Motios asked Whether Coet works on Wayland"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Nemotron",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Parakeet",
+        "Compare Nematron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-GB-RyanNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Skatteverket",
+        "Hogia and Scatterwkit both need the same numbers"
+      ]
+    ],
+    "false": [],
+    "broken_negatives": 0,
+    "collateral_words": 0
+  },
+  "sidecar_biased": {
+    "term_recall": 0.6173,
+    "term_hits": 100,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.083,
+    "wer_negative": 0.0198,
+    "missing": [
+      [
+        "p01-en-US-AndrewNeural",
+        "Koett",
+        "Cat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-AndrewNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p03-en-US-AndrewNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "We compiled shirp belalongs from the pin source tag."
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Olle",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p11-en-US-AndrewNeural",
+        "Dyberg",
+        "Hi, this is all Diber callalling about the meeting"
+      ],
+      [
+        "p12-en-US-AndrewNeural",
+        "Olle",
+        "All will review the poll request tonight."
+      ],
+      [
+        "p15-en-US-AndrewNeural",
+        "Tauri",
+        "Towerry bundles the web view into a small desktop app"
+      ],
+      [
+        "p18-en-US-AndrewNeural",
+        "SvelteKit",
+        "The landing page is built with Sveltekit"
+      ],
+      [
+        "p20-en-US-AndrewNeural",
+        "Skatteverket",
+        "Scatterket sent a letter about the VAT return"
+      ],
+      [
+        "p25-en-US-AndrewNeural",
+        "Groq",
+        "Ask Ues Grock because it answers very quickly"
+      ],
+      [
+        "p26-en-US-AndrewNeural",
+        "Qwen",
+        "The default model is uin with twenty seven billion parameters"
+      ],
+      [
+        "p29-en-US-AndrewNeural",
+        "Hyprland",
+        "My desktop is Hyperlland with a single monitor."
+      ],
+      [
+        "p30-en-US-AndrewNeural",
+        "Codex",
+        "askk Claude to write the tests and codex to review them"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "Parakeet",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p31-en-US-AndrewNeural",
+        "sherpa-onnx",
+        "run parakeet through shir blonks on Linux"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "Olle",
+        "Yakob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "G\u00f6teborg",
+        "Yakob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p32-en-US-AndrewNeural",
+        "fika",
+        "Yakob and all metet in Gataborg for a Fica"
+      ],
+      [
+        "p34-en-US-AndrewNeural",
+        "Fortnox",
+        "Nordicrank pays through four knocks"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Matyas",
+        "Matias asked whether Coat works on Wayland"
+      ],
+      [
+        "p35-en-US-AndrewNeural",
+        "Koett",
+        "Matias asked whether Coat works on Wayland"
+      ],
+      [
+        "p36-en-US-AndrewNeural",
+        "Parakeet",
+        "Compare Nemotron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Groq",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p37-en-US-AndrewNeural",
+        "Qwen",
+        "Grock serves Quinn faster than the other providers"
+      ],
+      [
+        "p39-en-US-AndrewNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p01-en-US-EmmaNeural",
+        "Koett",
+        "Coat turns my voice into text without the cloud"
+      ],
+      [
+        "p02-en-US-EmmaNeural",
+        "Koett",
+        "Open code and press the option key to start dictating"
+      ],
+      [
+        "p04-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "We compiled shpbonks from the pin source tag"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Olle",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p11-en-US-EmmaNeural",
+        "Dyberg",
+        "Hi, this is All Diberg calling about the meeting"
+      ],
+      [
+        "p12-en-US-EmmaNeural",
+        "Olle",
+        "All will review the poull request tonight"
+      ],
+      [
+        "p15-en-US-EmmaNeural",
+        "Tauri",
+        "Towerry bundles the webView into a small desktop app"
+      ],
+      [
+        "p20-en-US-EmmaNeural",
+        "Skatteverket",
+        "Scatterwket sent a letter about the VAT return"
+      ],
+      [
+        "p25-en-US-EmmaNeural",
+        "Groq",
+        "Ask usees Grock because it answers very quickly"
+      ],
+      [
+        "p30-en-US-EmmaNeural",
+        "Codex",
+        "Ask Claude to write the tests in codex to review them"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "Parakeet",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p31-en-US-EmmaNeural",
+        "sherpa-onnx",
+        "Run parakeet through shirp bonks on Linux"
+      ],
+      [
+        "p32-en-US-EmmaNeural",
+        "Olle",
+        "Yakob and all met in G\u00f6teborg for a fika"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Matyas",
+        "Madias asks whether Cat works on Wayland"
+      ],
+      [
+        "p35-en-US-EmmaNeural",
+        "Koett",
+        "Madias asks whether Cat works on Wayland"
+      ],
+      [
+        "p36-en-US-EmmaNeural",
+        "Parakeet",
+        "Compare Nemotron with parakeet on the same clips"
+      ],
+      [
+        "p37-en-US-EmmaNeural",
+        "Qwen",
+        "Groq serves Quinn faster than the other providers"
+      ],
+      [
+        "p38-en-US-EmmaNeural",
+        "Skatteverket",
+        "Hogia and Scatterfirkit both need the same numbers"
+      ],
+      [
+        "p39-en-US-EmmaNeural",
+        "Tauri",
+        "Claude wrote the Towerry prototype last week"
+      ],
+      [
+        "p03-en-GB-RyanNeural",
+        "Parakeet",
+        "The parakeet model runs locally on the laptop"
+      ],
+      [
+        "p04-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "We compiled Spperons from the pinsource tag"
+      ],
+      [
+        "p10-en-GB-RyanNeural",
+        "Matyas",
+        "Machios paid the last three invoices"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Olle",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p11-en-GB-RyanNeural",
+        "Dyberg",
+        "Hi, this is O Diberurg calling about the meeting"
+      ],
+      [
+        "p12-en-GB-RyanNeural",
+        "Olle",
+        "O will review the pool request tonight"
+      ],
+      [
+        "p15-en-GB-RyanNeural",
+        "Tauri",
+        "Tori bundles the webView into a small desktop app."
+      ],
+      [
+        "p17-en-GB-RyanNeural",
+        "Supabase",
+        "Superbase handles the login and the database"
+      ],
+      [
+        "p22-en-GB-RyanNeural",
+        "fika",
+        "Let's grab a feka after the call"
+      ],
+      [
+        "p29-en-GB-RyanNeural",
+        "Hyprland",
+        "My desktop is Hyperand with a single monitor"
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "Parakeet",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p31-en-GB-RyanNeural",
+        "sherpa-onnx",
+        "Run parakeet through Sprons on Linux"
+      ],
+      [
+        "p32-en-GB-RyanNeural",
+        "Olle",
+        "Yakob and all met in G\u00f6teborg for a fika"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Matyas",
+        "Motios asked Whether Coet works on Wayland"
+      ],
+      [
+        "p35-en-GB-RyanNeural",
+        "Koett",
+        "Motios asked Whether Coet works on Wayland"
+      ],
+      [
+        "p36-en-GB-RyanNeural",
+        "Parakeet",
+        "Compare Nemotron with parakeet on the same clips"
+      ],
+      [
+        "p38-en-GB-RyanNeural",
+        "Skatteverket",
+        "Hogia and Scatterwkit both need the same numbers"
+      ]
+    ],
+    "false": [],
+    "broken_negatives": 0,
+    "collateral_words": 0
+  }
+}

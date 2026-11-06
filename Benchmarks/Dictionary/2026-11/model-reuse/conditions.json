@@ -1,0 +1,17 @@
+{
+  "nice": 10,
+  "threads": 2,
+  "network_interfaces": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n",
+  "build_jobs": 4,
+  "memory_max_bytes": 12884901888,
+  "warmup_pairs": 1,
+  "measured_pairs": 3,
+  "order": "rotating",
+  "standalone": "no concurrent owned ASR or live app",
+  "source_commit": "129c462af81d75a75935dbb2c7d10103de48d1a9",
+  "examples": {
+    "dictionary_default_bench": "949a216727aca8cacd850459888d88870f947cca4a6170a85ae26ceacf18535d",
+    "dictionary_latency_bench": "78e1d6c96f1a11a4a2c209801dfe74ff19171e3806f2e9d2e8ec1e780056f18b"
+  },
+  "shared_context_sha256": "1200f3e6b686eb3a47cc5982c906ba0b0f0b7f9b0e3e69d987556c85c00137f3"
+}

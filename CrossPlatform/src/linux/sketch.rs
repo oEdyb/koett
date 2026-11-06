@@ -173,6 +173,12 @@ impl Phase {
     fn busy(self) -> bool {
         matches!(self, Self::Queued(_) | Self::Capturing)
     }
+
+    /// The image is taken, so a display change can no longer spoil it. A pin still
+    /// reading its context is finished by `finish_frames` without its surface.
+    fn has_image(self) -> bool {
+        matches!(self, Self::Reading(_) | Self::Captured)
+    }
 }
 
 struct Group {
@@ -794,7 +800,7 @@ impl Session {
         self.gate = keys::DrawGate::default();
         let mut removed = false;
         for index in (0..self.groups.len()).rev() {
-            if self.groups[index].phase != Phase::Captured {
+            if !self.groups[index].phase.has_image() {
                 self.drop_group(index);
                 removed = true;
             }
@@ -1550,6 +1556,16 @@ impl SketchOverlay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_display_change_keeps_every_image_already_taken() {
+        let now = Instant::now();
+        assert!(Phase::Captured.has_image());
+        assert!(Phase::Reading(now).has_image());
+        assert!(!Phase::Drawing.has_image());
+        assert!(!Phase::Queued(now).has_image());
+        assert!(!Phase::Capturing.has_image());
+    }
 
     #[test]
     fn draw_key_ignores_chords_with_other_modifiers() {

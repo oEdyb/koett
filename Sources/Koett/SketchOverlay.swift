@@ -17,6 +17,7 @@ final class SketchOverlay {
         let includeSelection: Bool
         let onUpdate: (SketchUpdate) -> Void
         var includeContext = true
+        var onLockChange: (Bool) -> Void = { _ in }
     }
 
     private struct Surface {
@@ -47,6 +48,28 @@ final class SketchOverlay {
         redraw()
     }
     var isDrawing: Bool { board?.held == true }
+    var isLocked: Bool { board?.locked == true }
+
+    func undoStroke() {
+        guard var board else { return }
+        let updates = board.undoStroke(now: Self.now)
+        self.board = board
+        publish(updates)
+        redraw()
+    }
+
+    func toggleLock() {
+        guard var board, let session, !board.finishing else { return }
+        let updates = board.toggleLock(now: Self.now)
+        self.board = board
+        drawGate = DrawHoldGate()
+        setAcceptsPointer(board.held)
+        publish(updates)
+        redraw()
+        startCaptures()
+        startTicker()
+        session.onLockChange(board.locked)
+    }
 
     init(screens: @escaping () -> [NSScreen] = { NSScreen.screens }) {
         self.screens = screens
@@ -114,12 +137,17 @@ final class SketchOverlay {
     // MARK: Input
 
     func handleKeyEvent(_ event: NSEvent) {
+        if isLocked, event.type == .keyDown, !event.isARepeat, event.keyCode == 6,
+           [NSEvent.ModifierFlags.control, .command].contains(event.modifierFlags.intersection(ShortcutBinding.relevantModifiers)) {
+            undoStroke()
+        }
         drawGate.noteKey(type: event.type, keyCode: event.keyCode)
         followKey(flags: event.modifierFlags)
     }
 
     func followKey(flags: NSEvent.ModifierFlags = NSEvent.modifierFlags) {
         guard var board, let session, !board.finishing else { return }
+        guard !board.locked else { return }
         let draws = drawGate.draws(key: session.key, flags: flags)
         if draws && !board.held {
             board.press()
@@ -228,6 +256,7 @@ final class SketchOverlay {
             }
         case .failure(let error):
             failedCaptures += 1
+            session.frames.markCaptureFailed(session.id)
             fputs("Sketch capture failed: \(error.localizedDescription)\n", stderr)
             publish(board.failed(id))
         }
@@ -305,6 +334,9 @@ final class SketchOverlay {
         view.onMouse = { [weak self] down, point, clickCount in
             self?.mouse(down: down, screen: index, at: point, clickCount: clickCount)
         }
+        view.onUndo = { [weak self] in
+            if self?.isLocked == true { self?.undoStroke() }
+        }
         panel.contentView = view
         panel.setFrame(screen.frame, display: false)
         panel.orderFrontRegardless()
@@ -319,6 +351,7 @@ final class SketchOverlay {
 final class SketchInkView: NSView {
     var groups: () -> [SketchBoard.Group] = { [] }
     var onMouse: (_ down: Bool, _ point: CGPoint, _ clickCount: Int) -> Void = { _, _, _ in }
+    var onUndo: () -> Void = {}
 
     override var isFlipped: Bool { true }
 
@@ -332,8 +365,12 @@ final class SketchInkView: NSView {
         onMouse(false, convert(event.locationInWindow, from: nil), event.clickCount)
     }
 
-    override func rightMouseDown(with event: NSEvent) {}
+    override func rightMouseDown(with event: NSEvent) { onUndo() }
     override func otherMouseDown(with event: NSEvent) {}
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .crosshair)
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }

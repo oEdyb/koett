@@ -1,6 +1,6 @@
 # GNOME integration
 
-This optional GNOME Shell 51 extension supplies a fresh focused-window identity
+This optional GNOME Shell 46/51 extension supplies a fresh focused-window identity
 to Koett's existing guarded paste path and per-app image chord selection.
 The identity query never activates another window, changes focus or reads
 the clipboard. The recording pill is described below; drawing/input surfaces,
@@ -17,7 +17,8 @@ owner and mapped to tokens that are never recycled during the app process.
 
 ## Explicit setup
 
-Copy `koett@olledyberg.com/` to
+From the extracted Linux package, copy
+`integrations/gnome/koett@olledyberg.com/` to
 `~/.local/share/gnome-shell/extensions/koett@olledyberg.com/`, then log out and in
 on GNOME Wayland and enable **Koett** in Extensions, or run:
 
@@ -25,7 +26,9 @@ on GNOME Wayland and enable **Koett** in Extensions, or run:
 gnome-extensions enable koett@olledyberg.com
 ```
 
-Only Shell 51 is declared compatible. Other versions need their own verification.
+Shell 46 supplies focus identity; the pill requires newer Mutter window APIs and
+is disabled when those APIs are missing. Shell 51 supplies both. Other Shell
+versions need their own verification.
 No installer enables the extension automatically. Without it, Koett retains
 Copy/History/manual paste and does not guess the original target. Disabling the
 extension removes the bus object immediately; the next focus check fails closed.
@@ -34,6 +37,13 @@ extension removes the bus object immediately; the next focus check fails closed.
 Sources: [GNOME extension lifecycle](https://gjs.guide/extensions/overview/anatomy.html),
 [Shell 51.1 session/modal state](https://github.com/GNOME/gnome-shell/blob/51.1/js/ui/main.js),
 [Mutter stable window sequence](https://mutter.gnome.org/meta/method.Window.get_stable_sequence.html).
+
+The focus reply also supplies the current modifier mask. Koett waits for the
+recording shortcut's Shift/Control/Alt/Super keys to be released before pasting,
+and checks again immediately before posting. Lock keys do not block paste.
+Update the app and copied extension together, then log out/in. An older
+extension without modifier state keeps automatic paste unavailable; Copy/History
+remain usable.
 
 ## Recording pill
 

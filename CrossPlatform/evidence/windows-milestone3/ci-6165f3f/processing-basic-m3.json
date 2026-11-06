@@ -1,0 +1,29 @@
+{
+  "settings_restored": true,
+  "cases": [
+    {
+      "formatting": {
+        "enabled": false,
+        "style": "formal",
+        "structure": "lists",
+        "context": "email"
+      },
+      "case": "raw-mode-can-save-all-formatting-options-without-preparation",
+      "passed": true
+    },
+    {
+      "passed": true,
+      "model_before": "compact",
+      "case": "model-change-during-recording-refused-with-visible-status",
+      "model_after": "compact",
+      "phase": "Koett Recording",
+      "status": "Stop recording or finish setup before changing models"
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Full\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 7152,
+    "sha256": "38D40B1E35C733D638C0EBF2D5347262B0D4BE2E87A8E624170648FDC2D14F1F"
+  },
+  "passed": true
+}

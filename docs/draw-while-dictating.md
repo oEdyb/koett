@@ -97,17 +97,13 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   the text is pasted with the configured chord as
   `- #N (M:SS) “words”` bullets (`- #N (M:SS) marked` when nothing was said).
   Without sketches dictation is unchanged.
-- After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
-  700 ms), the clipboard offers the same sheet as `image/png` and bullets as
-  `text/plain` / `text/plain;charset=utf-8` on the portal path. Without the
-  clipboard portal, `wl-copy` leaves `image/png` selected instead: GTK cannot
-  reliably claim the clipboard automatically without a fresh focused input
-  event. Ctrl+V can reuse the sketch;
-  plain-text targets can read the bullets from the combined offer. Done and
-  Not pasted **Copy** offer both PNG and text using the button's input event;
-  Not pasted **Paste** replays image then text. The most
-  recent sketch is retained in memory until another dictation completes.
-  A failed image delivery keeps the result in Not pasted even if text succeeds.
+- After text delivery settles (portal: read, up to 1.5 s plus 160 ms;
+  fallback: 700 ms), both paths retain PNG, HTML containing the image and text,
+  and plain text. The fallback uses an in-process data-control owner. Targets
+  choose which formats to read. Done and Not pasted **Copy** offer the same
+  bundle; Not pasted **Paste** delivers image then text. The most recent sketch
+  remains in memory until another dictation completes. An image-delivery failure
+  keeps Not pasted and suppresses the following text key.
 - History stores the bullet text, with the plain transcript as raw text. Images
   stay in memory only, like Ask's screen image; nothing is written to disk
   except the portal's own screenshot file, which Koett deletes immediately.
@@ -135,13 +131,27 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   virtual output, so multi-monitor drawing is not yet verified on hardware.
 - On Linux, click keyframes and spoken cue keyframes are not implemented. Pins are:
   rules, context and limits are in `screen-context-proposal.md`.
-- `wl-copy` cannot report when the target read the image, so the wlroots path
-  waits a fixed 700 ms before switching the clipboard to text. The portal path
-  waits for the actual read (max 1.5 s) plus 160 ms.
+- The fallback observes full image-transfer completion and a 120 ms minimum
+  image-processing interval before the guarded text step. Started transfers get
+  up to 1.5 s; targets with no observed PNG read retain the 700 ms fallback.
+  The portal still waits for a read (max 1.5 s) plus 160 ms. Measurements and
+  limits: `CrossPlatform/evidence/sketch-paste-gap/`.
 - Nemotron streaming and merged long chunks fall back to evenly estimated word
   times, so linking there is approximate.
 
 ## Mac (built 2026-11-02, live check pending)
+
+Mac draw lock is recording-scoped: Ctrl+Option+D toggles left-button drawing,
+with one sketch per display across pointer lifts. Hover movement adds no ink.
+The Draw on Screen menu also toggles it and shows a non-conflicting alternative
+shortcut when needed. The first Esc captures and unlocks; the second distinct
+Esc cancels dictation, while held-key repeats are ignored. Right-click undoes
+one stroke without reaching the focused app; Command-Z or Control-Z also undo
+one stroke, but those observed keys still reach the focused app. Stop captures
+open ink; Cancel discards it. The existing pill stays unchanged in size/style,
+briefly names the mode, and its buttons remain above the drawing surfaces.
+The local `draw-lock` command and `drawLocked` status expose the same state.
+
 
 Same output as Linux: one numbered contact sheet, then the same
 `- #N (M:SS) “words”` bullets. Files: `SketchLinking.swift` (port of

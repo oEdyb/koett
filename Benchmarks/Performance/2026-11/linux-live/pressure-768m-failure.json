@@ -1,0 +1,20 @@
+{
+  "case": {
+    "command": {
+      "name": "take",
+      "seconds": 5,
+      "feature": "off",
+      "load_condition": "whole private compositor/app/receiver scope: high768MiB/max2GiB/no swap"
+    },
+    "result": {
+      "ok": false,
+      "error": "idle"
+    }
+  },
+  "events": "low 0\nhigh 7796\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n",
+  "restored_high": "max",
+  "restored_max": "12884901888",
+  "recovered_busy": false,
+  "app_survived": true,
+  "failure": "failed idle check within60s under artificial high watermark; no dictation started"
+}

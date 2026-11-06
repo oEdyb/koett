@@ -1,0 +1,14 @@
+{
+  "step": "hold-mode-saved",
+  "rect": [
+    720,
+    312,
+    1840,
+    1192
+  ],
+  "focus": {
+    "hwnd": 131840,
+    "process": "Koett",
+    "pid": 8684
+  }
+}

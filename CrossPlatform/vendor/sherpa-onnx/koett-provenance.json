@@ -32,6 +32,6 @@
     "Cargo.lock": "3f12b804133d766a6ef22844f83a6c26813d7fe0233523fb8ac6e396c84969a5"
   },
   "patched_files": {
-    "src/lib.rs": "0132e5b4918fc4f18b755b26dadab17cceb7302b8eda466b1d84b8d77097ae5c"
+    "src/lib.rs": "19cd52765c9a47f7d6ed17fd4392505a5d4d74d12480caf45c8d558ceb4bcf72"
   }
 }

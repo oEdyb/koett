@@ -1,0 +1,106 @@
+--- a/Sources/Koett/DictationSession.swift
++++ b/Sources/Koett/DictationSession.swift
+@@ -207,0 +208 @@
++        let begin = ProcessInfo.processInfo.systemUptime
+@@ -208,0 +210 @@
++        let media = ProcessInfo.processInfo.systemUptime
+@@ -209,0 +212 @@
++        let overlay = ProcessInfo.processInfo.systemUptime
+@@ -210,0 +214 @@
++        let sketch = ProcessInfo.processInfo.systemUptime
+@@ -211,0 +216 @@
++        print("STOP_ENTRY mediaMS=\((media-begin)*1000) overlayMS=\((overlay-media)*1000) sketchMS=\((sketch-overlay)*1000) sessionMS=\((ProcessInfo.processInfo.systemUptime-sketch)*1000)")
+@@ -222,0 +228 @@
++        let stopBegan = ProcessInfo.processInfo.systemUptime
+@@ -223,0 +230 @@
++        print("RECORDER_STOP_TOTAL_MS \((ProcessInfo.processInfo.systemUptime-stopBegan)*1000)")
+@@ -226 +233,4 @@
+-        guard !handleMicrophoneFailure(recorder, url: url) else { return }
++        let checked = ProcessInfo.processInfo.systemUptime
++        let microphoneFailed = handleMicrophoneFailure(recorder, url: url)
++        let beforeState = ProcessInfo.processInfo.systemUptime
++        guard !microphoneFailed else { return }
+@@ -227,0 +238 @@
++        let afterState = ProcessInfo.processInfo.systemUptime
+@@ -228,0 +240 @@
++        print("STOP_STATE failureCheckMS=\((beforeState-checked)*1000) stateMS=\((afterState-beforeState)*1000) playMS=\((ProcessInfo.processInfo.systemUptime-afterState)*1000)")
+@@ -239,0 +252 @@
++        let overlayStart = ProcessInfo.processInfo.systemUptime
+@@ -241 +254,4 @@
+-        dictationTask = Task { @MainActor [weak self] in
++        print("STOP_SHOW_TRANSCRIBING_MS \((ProcessInfo.processInfo.systemUptime-overlayStart)*1000)")
++        let retained = ProcessInfo.processInfo.environment["KOETT_PROFILE_RETAIN_RECORDER"] == "1" ? recorder : nil
++        dictationTask = Task { @MainActor [weak self, retained] in
++            defer { withExtendedLifetime(retained) {} }
+@@ -318 +334 @@
+-                detector: speechDetector,
++                detector: ProcessInfo.processInfo.environment["KOETT_PROFILE_NO_VAD"] == "1" ? nil : speechDetector,
+@@ -466 +482 @@
+-                detector: speechDetector,
++                detector: ProcessInfo.processInfo.environment["KOETT_PROFILE_NO_VAD"] == "1" ? nil : speechDetector,
+@@ -686,0 +703,5 @@
++        if let root = ProcessInfo.processInfo.environment["KOETT_AUDIT_ROOT"] {
++            let folder = URL(fileURLWithPath: root).appendingPathComponent("captured-wavs")
++            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
++            try? FileManager.default.copyItem(at: url, to: folder.appendingPathComponent(url.lastPathComponent))
++        }
+--- a/Sources/Koett/Koett.swift
++++ b/Sources/Koett/Koett.swift
+@@ -84,0 +85 @@
++                let menuStart = ProcessInfo.processInfo.systemUptime
+@@ -85,0 +87 @@
++                let menuEnd = ProcessInfo.processInfo.systemUptime
+@@ -86,0 +89 @@
++                if state == .transcribing { print("STATE_OBSERVER menuMS=\((menuEnd-menuStart)*1000) microphoneRefreshMS=\((ProcessInfo.processInfo.systemUptime-menuEnd)*1000)") }
+@@ -231,0 +235 @@
++        let modelLoadBegan = ProcessInfo.processInfo.systemUptime
+@@ -237,0 +242,2 @@
++        print("STARTUP_MODEL_LOAD_MS \((ProcessInfo.processInfo.systemUptime-modelLoadBegan)*1000)")
++        let modelWarmBegan = ProcessInfo.processInfo.systemUptime
+@@ -243,0 +250 @@
++        print("STARTUP_ASR_WARM_MS \((ProcessInfo.processInfo.systemUptime-modelWarmBegan)*1000)")
+--- a/Sources/Koett/KoettMenu.swift
++++ b/Sources/Koett/KoettMenu.swift
+@@ -94,0 +95 @@
++        let micBegan = ProcessInfo.processInfo.systemUptime
+@@ -95,0 +97 @@
++        print("MIC_MENU_MS \((ProcessInfo.processInfo.systemUptime-micBegan)*1000)")
+--- a/Sources/Koett/LoginPreference.swift
++++ b/Sources/Koett/LoginPreference.swift
+@@ -11,0 +12,4 @@
++@MainActor private enum AuditLoginStatus {
++    static var cached: SMAppService.Status?
++}
++
+@@ -14 +18,10 @@
+-        let status = SMAppService.mainApp.status
++        let began = ProcessInfo.processInfo.systemUptime
++        let status: SMAppService.Status
++        if ProcessInfo.processInfo.environment["KOETT_PROFILE_CACHE_LOGIN"] == "1",
++           state != .ready, let cached = AuditLoginStatus.cached {
++            status = cached
++        } else {
++            status = SMAppService.mainApp.status
++            AuditLoginStatus.cached = status
++        }
++        print("LOGIN_STATUS_MS \((ProcessInfo.processInfo.systemUptime-began)*1000)")
+--- a/Sources/Koett/MicrophoneInput.swift
++++ b/Sources/Koett/MicrophoneInput.swift
+@@ -136,0 +137 @@
++        let began = ProcessInfo.processInfo.systemUptime
+@@ -137,0 +139 @@
++        let stopped = ProcessInfo.processInfo.systemUptime
+@@ -138,0 +141 @@
++        let uninitialized = ProcessInfo.processInfo.systemUptime
+@@ -139,0 +143 @@
++        print("INPUT_DEINIT stopMS=\((stopped-began)*1000) uninitializeMS=\((uninitialized-stopped)*1000) disposeMS=\((ProcessInfo.processInfo.systemUptime-uninitialized)*1000)")
+--- a/Sources/Koett/MicrophoneRecorder.swift
++++ b/Sources/Koett/MicrophoneRecorder.swift
+@@ -66,0 +67 @@
++        let began = ProcessInfo.processInfo.systemUptime
+@@ -67,0 +69 @@
++        let stopped = ProcessInfo.processInfo.systemUptime
+@@ -68,0 +71 @@
++        let closed = ProcessInfo.processInfo.systemUptime
+@@ -69,0 +73 @@
++        print("RECORDER_PARTS inputStopMS=\((stopped-began)*1000) fileCloseMS=\((closed-stopped)*1000)")

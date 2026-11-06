@@ -29,9 +29,9 @@
     "libssentencepiece_core.a": "1e282efb1cd7a9570743676bd14cca5a252abbf4dee9fc09d831d9315dc8bc69"
   },
   "restored_at_utc": "2026-10-29T16:22:09.394534+00:00",
-  "library_directory": "/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib",
+  "library_directory": "<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib",
   "historical_symlink": "/tmp/koett-native-host-abi0",
-  "recovery_source": "/home/olle/dev/koett/CrossPlatform/native-build/lib",
+  "recovery_source": "<build-home>/dev/koett/CrossPlatform/native-build/lib",
   "independent_cache": "Docker volume koett-linux-native-floor (read-only using koett-linux-floor:20261026)",
   "cache_comparison": "All 10 available current-PC repository archives and marker are byte-identical by SHA256 to the Docker floor cache and restored disk cache. Deleted /tmp host cache had no surviving hash receipt; exact identity to that lost build cannot be established.",
   "source_archive_verified_sha256": "33723a7195bc3d3ecf127dac2675293e578a12fdb1d3de891ff17628c118b66c",
@@ -47,14 +47,14 @@
     "embedded_sha_note": "Hardcoded in version.cc inside the verified pinned upstream source archive; not the source provenance identifier."
   },
   "focused_linked_library_test": {
-    "command": "SHERPA_ONNX_LIB_DIR=/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib CARGO_BUILD_JOBS=2 cargo test --locked --lib transcription::tests::realtime_factor_uses_transcription_over_audio -- --exact",
+    "command": "SHERPA_ONNX_LIB_DIR=<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib CARGO_BUILD_JOBS=2 cargo test --locked --lib transcription::tests::realtime_factor_uses_transcription_over_audio -- --exact",
     "result": "1 passed; 0 failed; 149 filtered out",
     "binary": "target/debug/deps/koett_engine-1aedc86df496a484",
     "log": "focused-linked-test.log"
   },
   "native_runtime_probe": {
-    "artifact": "/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/native-version-smoke",
-    "command_receipt": "/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/native-version-smoke-command.json",
+    "artifact": "<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/native-version-smoke",
+    "command_receipt": "<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/native-version-smoke-command.json",
     "result": "exit 0; version=1.13.5; embedded_git_sha1=17ab05b7"
   },
   "scope": "Native cache artifacts, historical /tmp symlink, and this evidence only. No source/dependency/settings/transcript/GUI/audio changes, no rebuild/download/host install.",

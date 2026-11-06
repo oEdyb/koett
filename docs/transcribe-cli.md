@@ -44,6 +44,27 @@ not in `/tmp`. Cache keys include engine identity. Models are shared with the ap
 transcript caching, `--text`, `--refresh`, `--no-cache`, limits and exit codes
 follow the same contract as Mac. Windows CLI installation remains open.
 
+## Windows native engine groundwork
+
+The native Rust engine links on Windows using the approved local SDK/CRT or
+Windows build tools. It accepts mono 16 kHz WAV directly:
+
+```powershell
+.\koett-transcribe-engine.exe --offline --model-version compact --results-json result.json speech.wav
+```
+
+`--offline` validates the selected cached model and fails without downloading or
+repairing it. Omit it to retain the existing download/verification behavior.
+`compact`, `v2` and `v3` are supported; this does not change the app or Python
+wrapper defaults. Output is the existing one-element engine JSON array. Errors
+go to stderr with a nonzero exit; the input path cannot be the output path.
+The engine does not load app settings or write dictation History.
+
+[Real Windows offline proof](../CrossPlatform/evidence/windows-milestone5/local-c2a8b99/README.md)
+uses a disconnected virtual NIC and checks app-data hashes and foreground identity.
+The URL/general-media wrapper, Windows installation and native media UI remain
+M5 work; this command alone is not the complete Windows media feature.
+
 ## Cache and limits
 
 Results are cached under `~/Library/Caches/Koett/CLI Transcripts/`. An exact repeat skips download and inference. Model choices have separate cache entries. Local files also include size and modification time in their cache key. URL content can change: use `--refresh` to replace its cached result. `--no-cache` bypasses cache reads and writes. Only transcript JSON persists; temporary downloaded media and WAVs are deleted after success or failure. Ctrl-C cancels the child process group and cleans temporary files.

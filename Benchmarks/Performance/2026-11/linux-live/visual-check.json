@@ -1,0 +1,116 @@
+{
+  "images": [
+    {
+      "feature": "drawing",
+      "result": {
+        "nonce": "AUDIT109564229186603",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "drawing",
+        "seconds": 5,
+        "overlay_ready_ms": 234.726623,
+        "drawing_count": 1,
+        "captured_count": 1,
+        "recording_cpu_percent": 7.615666746174765,
+        "recording_wall_s": 6.828029867,
+        "process_peak_rss_kib": 1360176,
+        "press_to_open_ms": 51.794257,
+        "stop_to_text_ms": 777.780708,
+        "start_ns": 109564369736522,
+        "capture_ready_ns": 109564421530779,
+        "stop_ns": 109571249560646,
+        "stop_realtime_ns": 1793855501283812554,
+        "receipt_ns": 109572027341354,
+        "image_to_text_ms": 271.444128,
+        "image_count": 1,
+        "text_bytes": 116,
+        "text_sha256": "bf9b9742e61c5a4069456e02e47a484f5904e9496062c691fec120e520911545",
+        "rss_kib": 1346876,
+        "loadavg": [
+          2.07470703125,
+          3.12890625,
+          2.79638671875
+        ]
+      },
+      "png_width": 1576,
+      "png_height": 990,
+      "png_sha256": "4a5d25262b314ba77fed1439dc83486b0c67465448a149c236e9a912f135ed6f",
+      "unique_colors": 832
+    },
+    {
+      "feature": "pins",
+      "result": {
+        "nonce": "AUDIT109572917398689",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "pins",
+        "seconds": 5,
+        "overlay_ready_ms": 182.904066,
+        "drawing_count": 1,
+        "captured_count": 1,
+        "recording_cpu_percent": 5.563299460885209,
+        "recording_wall_s": 6.291230635,
+        "process_peak_rss_kib": 1372712,
+        "press_to_open_ms": 60.177262,
+        "stop_to_text_ms": 770.187542,
+        "start_ns": 109573070301648,
+        "capture_ready_ns": 109573130478910,
+        "stop_ns": 109579421709545,
+        "stop_realtime_ns": 1793855509455960803,
+        "receipt_ns": 109580191897087,
+        "image_to_text_ms": 263.870712,
+        "image_count": 1,
+        "text_bytes": 163,
+        "text_sha256": "8a74f5c3ac90385b2fc53f9c9a265dbe3f429fd397dd73f53a27b9db2f6cc9f6",
+        "rss_kib": 1353244,
+        "loadavg": [
+          1.908203125,
+          3.07666015625,
+          2.78125
+        ]
+      },
+      "png_width": 1576,
+      "png_height": 990,
+      "png_sha256": "6afd31884936ab0f110abaac9e0655db46486cacc30dd1b015d3a672c5cf698c",
+      "unique_colors": 951
+    }
+  ],
+  "plain_next": {
+    "nonce": "AUDIT109581061453007",
+    "stop_kind": "manual_control",
+    "text_event_count": 1,
+    "feature": "off",
+    "seconds": 5,
+    "overlay_ready_ms": null,
+    "drawing_count": 0,
+    "captured_count": 0,
+    "recording_cpu_percent": 3.913255778767179,
+    "recording_wall_s": 5.110833825,
+    "process_peak_rss_kib": 1372712,
+    "press_to_open_ms": 52.316625,
+    "stop_to_text_ms": 359.93955,
+    "start_ns": 109581219357161,
+    "capture_ready_ns": 109581271673786,
+    "stop_ns": 109586382507611,
+    "stop_realtime_ns": 1793855516416758789,
+    "receipt_ns": 109586742447161,
+    "image_to_text_ms": null,
+    "image_count": 0,
+    "text_bytes": 98,
+    "text_sha256": "d6eccfa54ba4aa1301b2740a9f06784199690a1d8228af505da04f5a66acf5d9",
+    "rss_kib": 1354228,
+    "loadavg": [
+      1.83544921875,
+      3.0419921875,
+      2.771484375
+    ]
+  },
+  "plain_mime_types": [
+    "text/plain;charset=utf-8",
+    "text/plain",
+    "text/plain;charset=utf-8",
+    "TEXT",
+    "STRING",
+    "UTF8_STRING"
+  ]
+}
