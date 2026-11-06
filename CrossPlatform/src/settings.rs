@@ -95,6 +95,9 @@ pub struct Settings {
     pub draw_may_take_keyboard: bool,
     /// On by default: a pin also reads the selected text, capped at 500 characters.
     pub pin_selected_text: bool,
+    /// On by default: a pin also reads the app, window, page and selection. Off
+    /// gives pins with the image only.
+    pub pin_page_details: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
 }
@@ -125,6 +128,7 @@ impl Default for Settings {
             draw_lock_shortcut: DEFAULT_DRAW_LOCK.to_string(),
             draw_may_take_keyboard: false,
             pin_selected_text: true,
+            pin_page_details: true,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
         }
@@ -321,6 +325,9 @@ impl Settings {
         if self.pin_selected_text != opened.pin_selected_text {
             merged.pin_selected_text = self.pin_selected_text;
         }
+        if self.pin_page_details != opened.pin_page_details {
+            merged.pin_page_details = self.pin_page_details;
+        }
         merged
     }
 
@@ -399,6 +406,19 @@ mod tests {
             .unwrap()
             .as_nanos();
         std::env::temp_dir().join(format!("koett-{name}-{nonce}.json"))
+    }
+
+    #[test]
+    fn pins_read_page_details_unless_turned_off() {
+        let old: super::Settings = serde_json::from_str("{}").unwrap();
+        assert!(
+            old.pin_page_details,
+            "a settings file from before the switch"
+        );
+        let off: super::Settings = serde_json::from_str(r#"{"pin_page_details":false}"#).unwrap();
+        assert!(!off.pin_page_details);
+        let merged = off.clone().merge_editor(&old, old.clone());
+        assert!(!merged.pin_page_details);
     }
 
     #[test]
