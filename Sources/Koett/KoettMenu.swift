@@ -94,6 +94,9 @@ extension KoettController {
         menu.addItem(nemotronItem)
 
         menu.addItem(microphoneMenuItem())
+        let sounds = menuItem(title: "Sound Settings…", action: #selector(showSoundSettings), selected: false)
+        sounds.isEnabled = canStartSession
+        menu.addItem(sounds)
         let pauseMedia = menuItem(title: "Pause Supported Media While Recording", action: #selector(togglePauseMedia),
                                   selected: microphoneDefaults.bool(forKey: "pauseMedia"))
         pauseMedia.isEnabled = state == .ready

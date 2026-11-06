@@ -663,7 +663,9 @@ extension KoettController {
     }
 
     func play(_ player: AVAudioPlayer?) {
-        guard let player else { return }
+        guard let volume = RecordingSoundPreferences(defaults: microphoneDefaults).playbackVolume,
+              let player else { return }
+        player.volume = volume
         player.stop()
         player.currentTime = 0
         _ = player.play()
