@@ -28,8 +28,9 @@ instead of Sparkle.
   pending version, last error and the version to roll back to.
 - It keeps the running version and the one before, and removes older ones it has run or
   installed. Versions from before its first update stay.
-- Only an install under `prefix/lib/koett/versions/<id>` updates. A development build or a
-  distribution package is left alone, with the menu item disabled.
+- Only an install under `prefix/lib/koett/versions/<id>` that this user can write updates. A
+  development build, a system-wide install or a distribution package is left alone, with
+  the menu item disabled.
 - Manual checks say the result once. Automatic ones are silent; `update-status` has any error.
 
 ## What switches it on
@@ -62,3 +63,8 @@ network attacker only as far as an older build the client already refuses, or he
 keep clients on the current one; HTTPS and the 24-hour check don't prove freshness.
 `install.py` runs from the signed archive with your user's rights, so the signing key is the
 whole trust boundary. There's no delta download: each update is the full archive.
+
+Koett is gone for the seconds a restart and model load take, so a shortcut pressed in that
+gap starts nothing. Each install step has a time limit, so a hung installer can't leave
+dictation blocked. A manual check blocks nothing, but a rollback asked for during a download
+answers `busy`.

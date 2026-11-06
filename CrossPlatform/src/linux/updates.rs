@@ -21,6 +21,11 @@ const FIRST_CHECK_AFTER: Duration = Duration::from_secs(60);
 /// A laptop that started offline shouldn't wait a day to try again.
 const RETRY_AFTER: Duration = Duration::from_secs(60 * 60);
 const TICK: Duration = Duration::from_secs(1);
+const FEED_LIMIT: Duration = Duration::from_secs(30);
+const DOWNLOAD_LIMIT: Duration = Duration::from_secs(60 * 60);
+const UNPACK_LIMIT: Duration = Duration::from_secs(120);
+const PROBE_LIMIT: Duration = Duration::from_secs(30);
+const INSTALL_LIMIT: Duration = Duration::from_secs(300);
 /// Versions the updater keeps once it has installed some: the running one and one before.
 const KEEP_VERSIONS: usize = 2;
 
@@ -66,7 +71,17 @@ fn install_location(executable: &Path) -> Option<(PathBuf, String)> {
 }
 
 fn location() -> Option<(PathBuf, String)> {
-    install_location(&std::env::current_exe().ok()?.canonicalize().ok()?)
+    install_location(&std::env::current_exe().ok()?.canonicalize().ok()?).filter(|(prefix, _)| {
+        writable(&prefix.join("bin")) && writable(&prefix.join("lib/koett/versions"))
+    })
+}
+
+/// A system-wide install isn't this user's to replace, and shouldn't download daily to find out.
+fn writable(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    std::ffi::CString::new(path.as_os_str().as_bytes())
+        // SAFETY: the pointer is a valid C string for the length of the call.
+        .is_ok_and(|path| unsafe { libc::access(path.as_ptr(), libc::W_OK) } == 0)
 }
 
 #[derive(Default, serde::Deserialize, serde::Serialize)]
@@ -177,15 +192,15 @@ enum Command {
     Rollback(mpsc::Sender<serde_json::Value>),
 }
 
-fn agent() -> ureq::Agent {
+fn agent(limit: Duration) -> ureq::Agent {
     use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
     ureq::Agent::config_builder()
         .https_only(!LOOPBACK)
         .max_redirects(5)
-        .timeout_global(Some(Duration::from_secs(30 * 60)))
+        // The whole body counts toward ureq's body limit, so only the global one applies.
+        .timeout_global(Some(limit))
         .timeout_connect(Some(Duration::from_secs(15)))
         .timeout_recv_response(Some(Duration::from_secs(30)))
-        .timeout_recv_body(Some(Duration::from_secs(30)))
         .tls_config(
             TlsConfig::builder()
                 .provider(TlsProvider::Rustls)
@@ -202,7 +217,7 @@ fn offered(feed: &Feed, current: u64, skip: u64) -> bool {
 }
 
 fn fetch_feed(config: &Config) -> Result<Feed, String> {
-    let mut response = agent()
+    let mut response = agent(FEED_LIMIT)
         .get(config.feed)
         .call()
         .map_err(|error| format!("Could not check for updates: {error}"))?;
@@ -251,9 +266,17 @@ fn download(feed: &Feed) -> Result<PathBuf, String> {
     if file_matches(&path, feed) {
         return Ok(path);
     }
+    // An offer can move on while one waits for an idle moment.
+    if let Ok(entries) = std::fs::read_dir(&folder) {
+        for stale in entries.filter_map(Result::ok).map(|entry| entry.path()) {
+            if stale.extension().is_some_and(|extension| extension == "gz") {
+                let _ = std::fs::remove_file(stale);
+            }
+        }
+    }
     let partial = path.with_extension("part");
     let result = (|| {
-        let mut response = agent()
+        let mut response = agent(DOWNLOAD_LIMIT)
             .get(&feed.url)
             .call()
             .map_err(|error| format!("Could not download the update: {error}"))?;
@@ -275,12 +298,47 @@ fn download(feed: &Feed) -> Result<PathBuf, String> {
     result.map(|()| path)
 }
 
+/// A path list without the folders under `root`, or None if nothing is left.
+fn without_root(list: &std::ffi::OsStr, root: &Path) -> Option<std::ffi::OsString> {
+    let kept: Vec<_> = std::env::split_paths(list)
+        .filter(|path| !path.starts_with(root))
+        .collect();
+    if kept.is_empty() {
+        return None;
+    }
+    std::env::join_paths(kept).ok()
+}
+
 fn clean_command(program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
     let mut command = std::process::Command::new(program);
-    // Set by the launcher for this process and its runtime, not for what comes next.
+    // Set by the launcher for this version's runtime. The next version sets its own,
+    // and this version's folders may be gone by the time that one's children look.
     for name in ["LD_LIBRARY_PATH", "GTK_DATA_PREFIX"] {
         command.env_remove(name);
     }
+    let root = std::env::current_exe()
+        .ok()
+        .and_then(|executable| executable.canonicalize().ok())
+        .and_then(|executable| executable.parent()?.parent().map(Path::to_path_buf));
+    if let Some(root) = root {
+        for name in ["PATH", "XDG_DATA_DIRS"] {
+            if let Some(value) = std::env::var_os(name) {
+                match without_root(&value, &root) {
+                    Some(kept) => command.env(name, kept),
+                    None => command.env_remove(name),
+                };
+            }
+        }
+    }
+    command
+}
+
+/// A step that hangs must not hold the reservation, or dictation stays blocked.
+fn bounded(limit: Duration, program: impl AsRef<std::ffi::OsStr>) -> std::process::Command {
+    let mut command = clean_command("timeout");
+    command
+        .args(["-k", "5", &limit.as_secs().to_string()])
+        .arg(program);
     command
 }
 
@@ -291,7 +349,7 @@ fn install(archive: &Path, feed: &Feed, prefix: &Path) -> Result<String, String>
     let _ = std::fs::remove_dir_all(&work);
     private_directory(&work)?;
     let result = (|| {
-        let unpacked = clean_command("tar")
+        let unpacked = bounded(UNPACK_LIMIT, "tar")
             .arg("-xzf")
             .arg(archive)
             .arg("--no-same-owner")
@@ -308,7 +366,7 @@ fn install(archive: &Path, feed: &Feed, prefix: &Path) -> Result<String, String>
             .map(|entry| entry.path())
             .find(|path| path.join("install.py").is_file())
             .ok_or("The update has no installer")?;
-        let reported = clean_command(package.join("koett"))
+        let reported = bounded(PROBE_LIMIT, package.join("koett"))
             .arg("update-build")
             .output()
             .map_err(|error| format!("The update would not start: {error}"))?;
@@ -320,7 +378,7 @@ fn install(archive: &Path, feed: &Feed, prefix: &Path) -> Result<String, String>
                 feed.build
             ));
         }
-        let installed = clean_command("python3")
+        let installed = bounded(INSTALL_LIMIT, "python3")
             .arg(package.join("install.py"))
             .arg("--prefix")
             .arg(prefix)
@@ -751,6 +809,35 @@ mod tests {
         assert!(removable(&ids(&["a", "b"]), &[]).is_empty());
         assert_eq!(removable(&ids(&["a", "b", "c"]), &[]), ["a"]);
         assert!(removable(&ids(&["a", "b", "c"]), &["a"]).is_empty());
+    }
+
+    #[test]
+    fn the_replaced_version_leaves_the_next_ones_paths() {
+        let root = Path::new("/p/lib/koett/versions/old");
+        let list = std::ffi::OsStr::new("/p/lib/koett/versions/old/runtime/bin:/usr/bin:/bin");
+        assert_eq!(without_root(list, root).unwrap(), "/usr/bin:/bin");
+        let only = std::ffi::OsStr::new("/p/lib/koett/versions/old/runtime/gtk/share");
+        assert_eq!(without_root(only, root), None);
+        // A sibling whose name merely starts the same stays.
+        let sibling = std::ffi::OsStr::new("/p/lib/koett/versions/older/bin");
+        assert_eq!(without_root(sibling, root).unwrap(), sibling);
+    }
+
+    #[test]
+    fn a_hung_step_is_stopped() {
+        let started = std::time::Instant::now();
+        let status = bounded(Duration::from_secs(1), "sleep")
+            .arg("30")
+            .status()
+            .unwrap();
+        assert!(!status.success());
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn a_folder_this_user_cannot_write_is_not_replaceable() {
+        assert!(writable(&std::env::temp_dir()));
+        assert!(!writable(Path::new("/no/such/folder")));
     }
 
     #[test]
