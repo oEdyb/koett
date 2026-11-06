@@ -8,15 +8,17 @@ Choose your microphone, set your shortcut, and use hold or toggle recording. Dic
 
 **Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models; drawing requires a supported desktop and its capture setup. **Windows:** native preview; installer signing is not yet configured.
 
-**Download status:** v0.3.0 includes drawing in Mac ZIP and Linux archive downloads. Native installers below are built by manual CI until a release publishes them.
+**Koett 0.3.1 is available for Mac, Linux and Windows.**
 
 ## Get started
 
-- **Mac:** download the signed, notarized **DMG**, open it and drag Koett to Applications. Open Koett and allow Microphone and Accessibility.
-- **Linux:** download your distribution's **.deb**, **.rpm** or **Arch package**, install it with the package manager, then open Koett from Applications. See [native install and upgrade](docs/native-installers.md#linux).
-- **Windows:** run **Koett-Windows-x86_64-Setup.exe**, then open Koett from Start. The installer is currently unsigned; [SmartScreen and uninstall details](docs/native-installers.md#windows).
+- **Mac:** [Download DMG](https://github.com/oEdyb/koett/releases/download/v0.3.1/Koett-0.3.1-macOS-arm64.dmg). Open it and drag Koett to Applications; allow Microphone and Accessibility.
+- **Windows:** [Download Setup.exe](https://github.com/oEdyb/koett/releases/latest/download/Koett-Windows-x86_64-Setup.exe). Run Setup, then open Koett from Start. The installer is unsigned.
+- **Ubuntu / Debian:** [Download .deb](https://github.com/oEdyb/koett/releases/download/v0.3.1/koett-0.3.1-1-amd64.deb). Install it with your package manager.
+- **Fedora:** [Download .rpm](https://github.com/oEdyb/koett/releases/download/v0.3.1/koett-0.3.1-1-x86_64.rpm). Install it with your package manager.
+- **Arch:** [Download Arch package](https://github.com/oEdyb/koett/releases/download/v0.3.1/koett-0.3.1-1-x86_64.pkg.tar.zst). Install it with pacman.
 
-[Downloads](https://github.com/oEdyb/koett/releases) · For the currently published v0.3.0, unzip the Mac ZIP and drag Koett to Applications; Linux archive users follow the [archive install steps](CrossPlatform/README.md#archive-install).
+Mac requires Apple silicon and macOS 15+. Linux links above are x86_64. [ARM64, archive installs, upgrade and uninstall](docs/native-installers.md) · [All downloads and SHA256SUMS](https://github.com/oEdyb/koett/releases/latest).
 
 Press the dictation shortcut, speak, then press it again. Mac uses either Option key; Linux and Windows use Ctrl+Shift+Space. Koett pastes and saves your text. Models, microphones and shortcuts are in Settings (menu bar on Mac).
 
