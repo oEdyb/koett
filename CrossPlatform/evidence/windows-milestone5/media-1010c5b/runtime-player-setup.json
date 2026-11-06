@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "step": {
+      "step": "pause-media-checkbox",
+      "rect": [
+        790,
+        233,
+        1770,
+        1283
+      ],
+      "screenshot_file": "runtime-player-setup-result-step.png",
+      "focus": {
+        "hwnd": 328614,
+        "process": "Koett",
+        "pid": 2588
+      }
+    },
+    "checkbox": {
+      "state": "On",
+      "name": "Pause media while dictating"
+    },
+    "focus": {
+      "hwnd": 589968,
+      "process": "msedge",
+      "pid": 8348
+    },
+    "settings": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"settings\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "settings",
+      "exit": 0
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 2588,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    }
+  },
+  "id": "1793934477690296389"
+}

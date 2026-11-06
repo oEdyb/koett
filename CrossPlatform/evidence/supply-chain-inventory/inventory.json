@@ -13126,6 +13126,7 @@
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/libloading@0.9.0",
         "pkg:cargo/log@0.4.34",
+        "pkg:cargo/ring@0.17.14",
         "pkg:cargo/ringbuf@0.5.2",
         "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
@@ -14757,14 +14758,14 @@
   ],
   "inputs": [
     {
-      "bytes": 87073,
+      "bytes": 87082,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "520dd22d27b385a71f5d85b54867c3d183bc95ae83a2bb7f2ab3be7e8f96dfec"
+      "sha256": "aadcfb8f83f803691fb163b3ddd453b4e57769195973566e528ded2185a7cfe2"
     },
     {
-      "bytes": 3853,
+      "bytes": 3892,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "b922f47249166c4662ecd25545c870ceb6f2beb996cb738516de1ae4c4058f38"
+      "sha256": "4921540464975afe0eeb7d2a62fde8e709f27a5c4d97866bec78e4300de308e3"
     },
     {
       "bytes": 6849,

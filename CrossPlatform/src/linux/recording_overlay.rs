@@ -1044,6 +1044,11 @@ impl RecordingOverlay {
         }
     }
 
+    /// Up on screen, including a result still waiting to be read.
+    pub fn is_shown(&self) -> bool {
+        self.window.is_visible()
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn update(
         &self,

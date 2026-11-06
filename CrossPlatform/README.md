@@ -4,7 +4,8 @@ Dictate while drawing on your screen: hold Shift and move to sketch, or
 Shift+click to pin. Koett pastes a numbered image sheet followed by your words.
 Drawing is optional and off by default. Local voice-to-text also has configurable
 shortcuts, models and microphones, with native GTK controls.
-Windows remains a source-build preview. [Mac download](https://github.com/oEdyb/koett/releases/latest).
+Windows remains a source-build preview. Native media and console commands are
+documented in [Windows media](../docs/windows-media.md). [Mac download](https://github.com/oEdyb/koett/releases/latest).
 
 The published Linux v0.2.0-linux.1 and Mac v0.1.1 downloads do not include drawing.
 The drawing controls below are available in the current source build.
@@ -55,6 +56,7 @@ Python 3.10+ is required. Verify the archive against its published SHA-256 file.
 To update, verify and extract the new archive, run its runtime check and installer
 with the same prefix, then quit and reopen Koett. Installing does not stop the
 old process. Previous application versions and your data are retained.
+Builds that carry an update feed do this themselves; see [Linux updates](../docs/linux-updates.md).
 
 To uninstall the default installation, turn off **Start at login** in Settings,
 quit Koett and remove these application files:

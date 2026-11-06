@@ -1,0 +1,1 @@
+$r=Run-MediaCli 'media';$w=Wait-MediaWindow;Media-Source 'cancel must preserve this';$h=[IntPtr]$w.Current.NativeWindowHandle;$null=[LabDriver]::PostMessage($h,0x111,[IntPtr]109,[IntPtr]::Zero);Start-Sleep -Milliseconds 300;@{started=$r;focus=Get-LabFocus}

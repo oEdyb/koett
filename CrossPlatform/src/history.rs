@@ -92,14 +92,26 @@ pub fn append_question_resilient(model: &str, text: &str) -> Result<Option<PathB
     )
 }
 
-pub fn save_media_recovery(model: &str, text: &str) -> Result<PathBuf, String> {
+pub enum MediaRecovery {
+    File(PathBuf),
+    History,
+}
+pub fn save_media_recovery_status(model: &str, text: &str) -> Result<MediaRecovery, String> {
     let record = new_record(OffsetDateTime::now_utc(), model, text, None)?;
     match paths::failed_transcripts_directory()
         .and_then(|path| save_failed_transcript_to(&path, &record))
     {
-        Ok(path) => Ok(path),
+        Ok(path) => Ok(MediaRecovery::File(path)),
         Err(_) => {
             recovery::persist(record, false)?;
+            Ok(MediaRecovery::History)
+        }
+    }
+}
+pub fn save_media_recovery(model: &str, text: &str) -> Result<PathBuf, String> {
+    match save_media_recovery_status(model, text)? {
+        MediaRecovery::File(path) => Ok(path),
+        MediaRecovery::History => {
             Err("Media transcript saved to History · Media file unavailable".into())
         }
     }

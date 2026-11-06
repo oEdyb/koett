@@ -627,7 +627,7 @@ impl Window {
                 "Draw while dictating",
                 WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
                 40,
-                [300, 300, 212, 32],
+                [300, 284, 212, 24],
             )?;
             self.theme.apply_checkbox(draw);
             unsafe {
@@ -635,6 +635,22 @@ impl Window {
                     draw,
                     BM_SETCHECK,
                     Some(WPARAM(usize::from(settings.draw_while_dictating))),
+                    None,
+                );
+            }
+            let pause = self.control(
+                w!("BUTTON"),
+                "Pause media while dictating",
+                WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
+                45,
+                [300, 312, 212, 24],
+            )?;
+            self.theme.apply_checkbox(pause);
+            unsafe {
+                SendMessageW(
+                    pause,
+                    BM_SETCHECK,
+                    Some(WPARAM(usize::from(settings.pause_media))),
                     None,
                 );
             }
@@ -1095,6 +1111,10 @@ impl Window {
                 let result = (|| {
                     let microphone = self.microphone.as_ref().map(|m| m.selected()).transpose()?;
                     let mut edit = Settings::edit()?;
+                    let pause =
+                        unsafe { GetDlgItem(Some(self.hwnd), 45) }.map_err(|e| e.to_string())?;
+                    edit.settings.pause_media =
+                        unsafe { SendMessageW(pause, BM_GETCHECK, None, None) }.0 != 0;
                     let draw =
                         unsafe { GetDlgItem(Some(self.hwnd), 40) }.map_err(|e| e.to_string())?;
                     edit.settings.draw_while_dictating =

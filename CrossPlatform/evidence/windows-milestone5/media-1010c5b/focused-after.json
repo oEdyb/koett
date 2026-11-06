@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "result": {
+    "record": "{\"model\":\"sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8\",\"source\":\"http://10.0.2.2:18767/m5-media-page.html\",\"title\":\"Koett controlled media check (1)\"}\n\nWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "media_window_visible": false,
+    "step": {
+      "step": "focused-browser-media-done",
+      "rect": {
+        "left": 1017,
+        "bottom": 1488,
+        "top": 1404,
+        "right": 1542,
+        "dpi": 168,
+        "hwnd": 327852
+      },
+      "screenshot_file": "focused-after-result-step.png",
+      "focus": {
+        "hwnd": 589968,
+        "process": "msedge",
+        "pid": 8348
+      },
+      "visible": true
+    },
+    "passed": true,
+    "new_records": 1,
+    "after": {
+      "hwnd": 589968,
+      "process": "msedge",
+      "pid": 8348
+    },
+    "before": {
+      "last": "41F9E18F92AD8DFA94861D37CCB1262F07A1660C7B42F50BF51252CF5B5D0383",
+      "history": "3CD4B088EB51D73F243150409C395D2A0449EB24357CD2BFECEC4EB9F4BF3A24",
+      "focus": {
+        "hwnd": 589968,
+        "process": "msedge",
+        "pid": 8348
+      },
+      "names": [
+        "Media-1793919382407876700-2580.md",
+        "Media-1793919386707432900-2580.md",
+        "Media-1793920496313074400-5384.md",
+        "Media-1793920554360796500-5384.md",
+        "Media-1793922951152690400-2180.md",
+        "Media-1793923026434109700-2180.md",
+        "Media-1793923145817921300-2180.md",
+        "Media-1793925738421009000-4468.md"
+      ]
+    },
+    "status": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "warnings": []
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 5408,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    }
+  },
+  "id": "1793934037991864765"
+}

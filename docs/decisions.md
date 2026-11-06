@@ -285,3 +285,14 @@ focus. Override-redirect windows are never focused or decorated. The cost is tha
 can raise something above them, so the overlay raises itself at each draw key press. They're shown
 without `present()`, which asks for focus.
 
+
+## 2026-11-06: Linux updates replace the launcher, not the files
+
+Linux installs are already versioned, so an update unpacks the signed archive and runs the same
+`install.py` a person runs, which swaps `bin/koett` atomically. That left no new installer to
+trust and gives rollback for free: the old version stays on disk and only the link moves. The feed
+is a small signed JSON file rather than an appcast because nothing on Linux would parse the XML.
+Settings are compiled in, with no environment or file override, so a user's environment can't point
+Koett at another feed, and a build missing any setting is inert. Ed25519 comes from `ring`, already
+in the tree through rustls, so only the direct dependency is new. The idle check takes a lock
+that starting work also takes, because checking then starting is a race an install could slip into.

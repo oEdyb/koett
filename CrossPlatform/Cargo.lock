@@ -1329,6 +1329,7 @@ dependencies = [
  "libc",
  "libloading",
  "log",
+ "ring",
  "ringbuf",
  "rusqlite",
  "serde",
