@@ -313,3 +313,11 @@ gain so the slider feels even; 100 is the old cue level at most. A saved `record
 with no volume beside it counts as off, because it predates this choice and no release shipped it.
 Windows shares the settings and tones but its popup menu can't hold a slider, so it offers 25, 50,
 75 and 100.
+
+## 2026-11-06: auto-update is on for Linux archive installs
+
+Olle, asked whether to turn it on for 0.3.1: "Yeah, do it." CI builds now carry the feed and the
+public key. Native packages share that binary, and their layout keeps the updater off, rather than a
+second build with its own flag, so what's tested is what ships. The build number is a plain rising
+integer in the workflow, 4 for 0.3.1, matching the Mac. The signing key stays on the machine that
+signs and never reaches CI, so a stolen CI token can't sign an update.
