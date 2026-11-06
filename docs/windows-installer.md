@@ -29,7 +29,8 @@ current pointer. It refuses applications running in the current Windows session.
 version folders into a removal stage before deleting verified app files. Changed,
 missing or added files and interrupted removal residue are kept outside the
 installation in `%LOCALAPPDATA%\Koett Preserved Files`, with the location shown.
-A retry can complete after a partial deletion. Same-version repair also keeps
+A retry can complete after a partial deletion. User-provided `tools/` files carry
+forward on upgrade and setup rerun, so media tools stay available. Same-version repair also keeps
 changed files before replacing the app. Reparse points are never followed during
 payload validation. Refusals name the path and the next step.
 
@@ -49,9 +50,10 @@ reputation. Checksums provide integrity, not publisher identity.
 
 A future signing pipeline must sign application executables before the payload
 manifest is generated, pass `--uninstaller-sign-command` to sign the embedded
-uninstaller, the hook also signs the embedded stable launcher. Then sign the final setup before checksums and receipts are made.
+uninstaller and stable launcher. Then sign the final setup before checksums and
+receipts are made.
 The signing hook accepts a trusted command prefix and appends the generated
-uninstaller path. No certificate, timestamp service or signing account has been
+executable path. No certificate, timestamp service or signing account has been
 provisioned or tested.
 
 Release publication, acquiring a signing certificate, winget submission and

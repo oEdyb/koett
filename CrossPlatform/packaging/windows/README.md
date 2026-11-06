@@ -70,7 +70,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\manage-preview.ps1 -Action
 
 Uninstall removes verified preview files and its own shortcut/startup entry.
 It preserves settings, models, history, dictionary and recovery data. Unexpected
-files or modified payloads cause a refusal; they are not silently deleted.
+files and modified payloads are kept in `Koett Preserved Files`; their location
+is shown. User-provided `tools/` files carry forward on upgrade and setup rerun.
 This script is preview management, not an MSI/MSIX installer or automatic updater.
 Checksums detect corruption; they do not replace Authenticode signing or establish
 SmartScreen reputation.

@@ -52,6 +52,6 @@ if __name__ == '__main__':
     parser.add_argument('--payload', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--compiler', default='makensis')
-    parser.add_argument('--uninstaller-sign-command', help='Trusted NSIS signing command prefix; receives the uninstaller path')
+    parser.add_argument('--uninstaller-sign-command', help='Trusted NSIS signing prefix for the launcher and uninstaller; receives each executable path')
     args = parser.parse_args()
     print(json.dumps(build(args.payload, args.output, args.compiler, args.uninstaller_sign_command), indent=2))

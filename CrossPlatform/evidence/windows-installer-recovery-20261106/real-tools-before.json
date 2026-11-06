@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "result": {
+    "tools": {
+      "ffprobe.exe": "244C6842C1517211C43EDBCA716767517520EBB51687101AC8EBFD117F438444",
+      "ffmpeg.exe": "CC68AA459348B23AC5BA554534CEDC8D83E2B60B87505A31291101F220A840A1",
+      "yt-dlp.exe": "66674953FE251B89F4D08C5F0E35E0728679BD67AB3D7D05C0562AF101DD3E7A"
+    },
+    "target": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\ba1bdcdf07bed353\\tools",
+    "focus": {
+      "hwnd": 65744,
+      "process": "explorer",
+      "pid": 5008
+    },
+    "passed": true
+  },
+  "id": "1793971159943794394"
+}

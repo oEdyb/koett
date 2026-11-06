@@ -1,0 +1,104 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "browser_processes": [
+      {
+        "Id": 524,
+        "ProcessName": "msedge"
+      },
+      {
+        "Id": 4116,
+        "ProcessName": "msedge"
+      },
+      {
+        "Id": 4996,
+        "ProcessName": "msedge"
+      },
+      {
+        "Id": 6968,
+        "ProcessName": "msedge"
+      },
+      {
+        "Id": 7408,
+        "ProcessName": "msedge"
+      },
+      {
+        "Id": 1768,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 1920,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 4296,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 4728,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 6048,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 6260,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 6812,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 6820,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 6960,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 7016,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 7860,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 8172,
+        "ProcessName": "msedgewebview2"
+      }
+    ],
+    "focus": {
+      "hwnd": 65744,
+      "process": "explorer",
+      "pid": 5008
+    },
+    "cleared_keys": [
+      "GROQ_API_KEY",
+      "OPENAI_API_KEY",
+      "CARTESIA_API_KEY"
+    ],
+    "config_hash": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+    "ready": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\b78ff6e5b8a1a201\\Koett.exe",
+      "pid": 5036,
+      "sha256": "FEFA4BAD39BDB42ECED6DDA8CE96ADC96CC32C5D907D2F5765504FDB7819DDF1"
+    }
+  },
+  "id": "1793972950784679351"
+}

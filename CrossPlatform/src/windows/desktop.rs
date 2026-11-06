@@ -1355,6 +1355,9 @@ unsafe extern "system" fn proc(
         return LRESULT(0);
     }
     if message == WM_DESTROY {
+        if let Err(error) = super::install_identity::clear(hwnd) {
+            eprintln!("Could not clear Windows taskbar properties: {error}");
+        }
         unsafe {
             PostQuitMessage(0);
         }

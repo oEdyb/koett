@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "step": {
+      "step": "root-launcher-held-hotkey",
+      "rect": {
+        "left": 697,
+        "bottom": 968,
+        "top": 884,
+        "right": 1222,
+        "dpi": 168,
+        "hwnd": 394134
+      },
+      "screenshot_file": "held-hotkey-1.png",
+      "focus": {
+        "hwnd": 65744,
+        "process": "explorer",
+        "pid": 5008
+      },
+      "visible": true
+    },
+    "focus": {
+      "hwnd": 65744,
+      "process": "explorer",
+      "pid": 5008
+    },
+    "recording": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "recording",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "after": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\b78ff6e5b8a1a201\\Koett.exe",
+      "pid": 5036,
+      "sha256": "FEFA4BAD39BDB42ECED6DDA8CE96ADC96CC32C5D907D2F5765504FDB7819DDF1"
+    }
+  },
+  "id": "1793973040293224465"
+}

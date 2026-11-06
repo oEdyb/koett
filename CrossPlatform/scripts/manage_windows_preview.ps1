@@ -19,7 +19,7 @@ function Payload-Items([string]$Directory){
   if($item.PSIsContainer){$queue.Enqueue($item.FullName)}
  }}
 }
-function Verify-Payload([string]$Directory){
+function Verify-Payload([string]$Directory,[switch]$Installed){
  if((Get-Item -LiteralPath $Directory -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'Payload root is a reparse point'}
  $all=@(Payload-Items $Directory)
  $release=Read-Json (Join-Path $Directory 'preview-release.json')
@@ -36,6 +36,7 @@ function Verify-Payload([string]$Directory){
   $expected+=$name
  }
  $actual=@($all|Where-Object {-not$_.PSIsContainer}|ForEach-Object {$_.FullName.Substring($Directory.Length+1).Replace('\','/')})
+ if($Installed){$actual=@($actual|Where-Object {$_-notlike'tools/*'-or$_-in$expected})}
  if(Compare-Object $expected $actual){throw 'Payload contains missing or unlisted files'}
  foreach($name in @('Koett.exe','koett-engine.exe','koett-transcribe-engine.exe','manage-preview.ps1','LICENSE','THIRD_PARTY_NOTICES.md')){if(-not(Test-Path -LiteralPath (Join-Path $Directory $name) -PathType Leaf)){throw ('Missing payload file: '+$name)}}
  $release
@@ -52,6 +53,24 @@ function Read-State {
  $state
 }
 function Own-Startup([string]$Value){$Value-eq('"'+$Root+'\Koett.exe"')-or($Value-and$Value.StartsWith('"'+$Root+'\versions\',[StringComparison]::OrdinalIgnoreCase)-and$Value.EndsWith('\Koett.exe"',[StringComparison]::OrdinalIgnoreCase))}
+function Set-ShortcutIdentity([string]$Path){
+ if(-not('KoettShortcutIdentity' -as [type])){Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+[StructLayout(LayoutKind.Sequential)]public struct KoettPropertyKey {public Guid format;public uint id;}
+[StructLayout(LayoutKind.Sequential)]public struct KoettPropertyValue {public ushort type,r1,r2,r3;public IntPtr value,tail;}
+[ComImport,Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]public interface KoettPropertyStore {
+ [PreserveSig]int GetCount(out uint count);[PreserveSig]int GetAt(uint index,out KoettPropertyKey key);[PreserveSig]int GetValue(ref KoettPropertyKey key,out KoettPropertyValue value);[PreserveSig]int SetValue(ref KoettPropertyKey key,ref KoettPropertyValue value);[PreserveSig]int Commit();
+}
+public static class KoettShortcutIdentity {
+ public static void Set(string path){object link=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("00021401-0000-0000-c000-000000000046")));IntPtr text=IntPtr.Zero;
+ try{((IPersistFile)link).Load(path,2);var store=(KoettPropertyStore)link;var key=new KoettPropertyKey{format=new Guid("9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3"),id=5};text=Marshal.StringToCoTaskMemUni("DybergCo.Koett");var value=new KoettPropertyValue{type=31,value=text};Marshal.ThrowExceptionForHR(store.SetValue(ref key,ref value));Marshal.ThrowExceptionForHR(store.Commit());((IPersistFile)link).Save(path,true);}
+ finally{if(text!=IntPtr.Zero)Marshal.FreeCoTaskMem(text);Marshal.ReleaseComObject(link);}}
+}
+'@}
+ [KoettShortcutIdentity]::Set($Path)
+}
 function Activate([string]$Current,[string]$Previous){
  $statePath=Join-Path $Root 'current.json';$oldState=if(Test-Path $statePath){[IO.File]::ReadAllBytes($statePath)}else{$null}
  $run='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run';$oldRun=(Get-ItemProperty -LiteralPath $run -Name Koett -ErrorAction SilentlyContinue).Koett
@@ -63,7 +82,8 @@ function Activate([string]$Current,[string]$Previous){
  $temp=$statePath+'.'+[Guid]::NewGuid().ToString('N');$launchTemp=$temp+'.launch'
  try {
   if($ShortcutName-eq'Koett'){[IO.File]::WriteAllText($launchTemp,('[Koett]'+[Environment]::NewLine+'Current='+$Current.Replace('/','\')+[Environment]::NewLine));if(Test-Path $launch){[IO.File]::Replace($launchTemp,$launch,[System.Management.Automation.Language.NullString]::Value)}else{[IO.File]::Move($launchTemp,$launch)}}
-  $link=$shell.CreateShortcut($shortcut);$link.TargetPath=$target;$link.WorkingDirectory=[IO.Path]::GetDirectoryName($target);$link.Save()
+  $link=$shell.CreateShortcut($shortcut);$link.TargetPath=$target;$link.WorkingDirectory=[IO.Path]::GetDirectoryName($target);if($ShortcutName-eq'Koett'){$link.IconLocation=(Join-Path $Root 'Koett.ico')+',0'};$link.Save()
+  if($ShortcutName-eq'Koett'){Set-ShortcutIdentity $shortcut}
   if(Own-Startup $oldRun){Set-ItemProperty -LiteralPath $run -Name Koett -Value ('"'+$target+'"')}
   $state=@{format=1;current=$Current;previous=$Previous};[IO.File]::WriteAllText($temp,($state|ConvertTo-Json -Compress))
   if(Test-Path $statePath){[IO.File]::Replace($temp,$statePath,[System.Management.Automation.Language.NullString]::Value)}else{[IO.File]::Move($temp,$statePath)}
@@ -89,8 +109,21 @@ function Preserve([string]$Path){
  $destination=Join-Path (Join-Path $env:LOCALAPPDATA 'Koett Preserved Files') ([Guid]::NewGuid().ToString('N'))
  try{New-Item -ItemType Directory -Path $destination -Force|Out-Null;$target=Join-Path $destination ([IO.Path]::GetFileName($Path));if([IO.Directory]::Exists($Path)){[IO.Directory]::Move($Path,$target)}else{[IO.File]::Move($Path,$target)}}catch{throw ('Could not keep '+$Path+'. Close programs using that path, then retry uninstall. '+$_.Exception.Message)}
  $script:preserved+=Join-Path $destination ([IO.Path]::GetFileName($Path))
- [IO.File]::WriteAllText((Join-Path $destination 'preserved-from.txt'),$Path)
+ [IO.File]::WriteAllText(($destination+'.txt'),$Path)
  Message ('Added or changed app files were kept in:'+([Environment]::NewLine)+(Join-Path $env:LOCALAPPDATA 'Koett Preserved Files'))
+}
+function Carry-Tools([string]$Source,[string]$Destination){
+ if([String]::Equals($Source,$Destination,[StringComparison]::OrdinalIgnoreCase)){return}
+ $tools=Join-Path $Source 'tools';if(-not(Test-Path $tools)){return}
+ $item=Get-Item -LiteralPath $tools -Force
+ if(-not$item.PSIsContainer-or($item.Attributes-band[IO.FileAttributes]::ReparsePoint)){throw ('Unsupported tools path: '+$tools+'. Move this path outside the installation, then retry.')}
+ $items=@(Payload-Items $tools);$target=Join-Path $Destination 'tools';New-Item -ItemType Directory -Path $target -Force|Out-Null
+ foreach($entry in $items){
+  $path=Join-Path $target $entry.FullName.Substring($tools.Length+1)
+  if($entry.PSIsContainer){New-Item -ItemType Directory -Path $path -Force|Out-Null;continue}
+  if(Test-Path $path){if((Hash $path)-eq(Hash $entry.FullName)){continue};Preserve $path}
+  Copy-Item -LiteralPath $entry.FullName -Destination $path
+ }
 }
 function Residue-State {
  if(Test-Path (Join-Path $Root 'current.json')){throw ('Installation metadata is incomplete at '+$Root+'. Move this installation folder to a safe location, then run setup again; application data is stored separately.')}
@@ -131,7 +164,7 @@ try {
  $ancestor=$Root;while($ancestor){if((Test-Path -LiteralPath $ancestor)-and((Get-Item -LiteralPath $ancestor -Force).Attributes-band[IO.FileAttributes]::ReparsePoint)){throw 'Preview install path contains a reparse point'};$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
  if(-not$Root.StartsWith([IO.Path]::GetFullPath($env:LOCALAPPDATA)+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Preview root must be below LocalAppData'}
  if($Root-eq[IO.Path]::GetFullPath($env:LOCALAPPDATA)){throw 'Unsafe preview root'}
- if(Test-Path $Root){if((Get-Item -LiteralPath $Root -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'Preview root is a reparse point'};if((Test-Path (Join-Path $Root 'current.json'))-and(Test-Path (Join-Path $Root 'preview-owner.json'))){$state=Read-State}else{$state=Residue-State}}else{$state=$null}
+ if(Test-Path $Root){if((Get-Item -LiteralPath $Root -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'Preview root is a reparse point'};if((Test-Path (Join-Path $Root 'current.json'))-and(Test-Path (Join-Path $Root 'preview-owner.json'))){try{$state=Read-State}catch{throw ('Could not read installation metadata at '+$Root+'. Move this folder to a safe location, then run setup again; application data is stored separately. '+$_.Exception.Message)}}else{$state=Residue-State}}else{$state=$null}
  if($Action-eq'Status'){@{ok=$true;installed=[bool]($state-and$state.current);root=$Root;state=$state;signature='unsigned-preview';outputs=@();warnings=@()}|ConvertTo-Json -Depth 6 -Compress;exit 0}
  if(@(Get-Process Koett,koett-engine,koett-transcribe-engine -ErrorAction SilentlyContinue|Where-Object {$_.SessionId-eq[Diagnostics.Process]::GetCurrentProcess().SessionId}).Count){throw ('Close Koett and its transcription commands in this Windows session, then retry '+$Root)}
  if(-not$PSCmdlet.ShouldProcess($Root,$Action)){@{ok=$true;changed=$false;outputs=@();warnings=@()}|ConvertTo-Json -Compress;exit 0}
@@ -141,23 +174,26 @@ try {
    if(-not$Payload){throw 'Install requires -Payload pointing at the extracted archive folder'}
    $Payload=[IO.Path]::GetFullPath($Payload).TrimEnd('\');$release=Verify-Payload $Payload
    $key=(Hash (Join-Path $Payload 'preview-release.json')).Substring(0,16);$relative='versions/'+$key;$version=Join-Path $Root $relative.Replace('/','\')
+   New-Item -ItemType Directory -Path (Join-Path $Root 'versions') -Force|Out-Null
    if(-not$state){
-    New-Item -ItemType Directory -Path (Join-Path $Root 'versions') -Force|Out-Null
     [IO.File]::WriteAllText((Join-Path $Root 'preview-owner.json'),(@{format=1;root=$Root}|ConvertTo-Json -Compress))
     [IO.File]::WriteAllText((Join-Path $Root 'current.json'),'{"format":1,"current":null,"previous":null}')
    }
    $repair=$false
-   if(Test-Path $version){try{$null=Verify-Payload $version;if((Hash (Join-Path $version 'preview-release.json'))-cne(Hash (Join-Path $Payload 'preview-release.json'))){throw 'Installed version identifier collision'}}catch{$repair=$true}}
+   if(Test-Path $version){try{$null=Verify-Payload $version -Installed;if((Hash (Join-Path $version 'preview-release.json'))-cne(Hash (Join-Path $Payload 'preview-release.json'))){throw 'Installed version identifier collision'}}catch{$repair=$true}}
    if(-not(Test-Path $version)-or$repair){
     $stage=Join-Path $Root ('stage-'+[Guid]::NewGuid().ToString('N'))
     try{
      New-Item -ItemType Directory -Path $stage|Out-Null
      Get-ChildItem -LiteralPath $Payload -Force|ForEach-Object {Copy-Item -LiteralPath $_.FullName -Destination $stage -Recurse -Force}
      $null=Verify-Payload $stage
+     if($state-and$state.current){Carry-Tools (Join-Path $Root $state.current.Replace('/','\')) $stage}
+     $null=Verify-Payload $stage -Installed
      if($repair){Preserve $version}
      [IO.Directory]::Move($stage,$version)
     }finally{if(Test-Path $stage){Remove-Item -LiteralPath $stage -Recurse -Force}}
    }
+   if($state-and$state.current){Carry-Tools (Join-Path $Root $state.current.Replace('/','\')) $version}
    $previous=if($state-and$state.current-ne$relative){$state.current}elseif($state){$state.previous}else{$null}
    Activate $relative $previous
    $cleanupWarnings=@(Prune-Versions $relative $previous)

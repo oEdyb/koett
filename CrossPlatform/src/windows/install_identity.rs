@@ -53,6 +53,21 @@ pub(super) fn configure(window: HWND) -> windows::core::Result<()> {
     Ok(())
 }
 
+pub(super) fn clear(window: HWND) -> windows::core::Result<()> {
+    unsafe {
+        let store: IPropertyStore = SHGetPropertyStoreForWindow(window)?;
+        for key in [
+            PKEY_AppUserModel_RelaunchCommand,
+            PKEY_AppUserModel_RelaunchDisplayNameResource,
+            PKEY_AppUserModel_RelaunchIconResource,
+            PKEY_AppUserModel_ID,
+        ] {
+            store.SetValue(&key, &PROPVARIANT::default())?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

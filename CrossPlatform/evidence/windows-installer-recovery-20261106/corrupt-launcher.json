@@ -1,0 +1,71 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "focus": {
+      "hwnd": 721874,
+      "process": "Koett-Setup",
+      "pid": 8348
+    },
+    "restored_ini_sha256": "1252815CE79984168A98A6C277C12D583A7C117060EADB5D6169F941BA2DAF5A",
+    "steps": [
+      {
+        "pointer": "corrupted",
+        "step": {
+          "step": "visible-corrupt-launcher-error",
+          "rect": [
+            628,
+            413,
+            1304,
+            674
+          ],
+          "screenshot_file": "corrupt-launcher-1.png",
+          "focus": {
+            "hwnd": 459744,
+            "process": "Koett",
+            "pid": 5388
+          }
+        },
+        "text": "OK  Koett could not start. Run the setup again to repair the installation; your data is kept. Koett Setup System Menu Bar System Close",
+        "exit": 1
+      },
+      {
+        "pointer": "versions\\0000000000000000",
+        "step": {
+          "step": "visible-corrupt-launcher-error",
+          "rect": [
+            628,
+            413,
+            1304,
+            674
+          ],
+          "screenshot_file": "corrupt-launcher-2.png",
+          "focus": {
+            "hwnd": 787406,
+            "process": "Koett",
+            "pid": 2392
+          }
+        },
+        "text": "OK  Koett could not start. Run the setup again to repair the installation; your data is kept. Koett Setup System Menu Bar System Close",
+        "exit": 1
+      }
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\1240be8152ad9743\\Koett.exe",
+      "pid": 1432,
+      "sha256": "FEFA4BAD39BDB42ECED6DDA8CE96ADC96CC32C5D907D2F5765504FDB7819DDF1"
+    },
+    "status": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    }
+  },
+  "id": "1793971920228578416"
+}

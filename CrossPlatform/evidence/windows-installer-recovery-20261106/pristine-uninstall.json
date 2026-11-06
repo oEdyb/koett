@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "no_extra_dialog": true,
+    "focus": {
+      "hwnd": 393384,
+      "process": "ApplicationFrameHost",
+      "pid": 7736
+    },
+    "data_after": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "E9CCE8B286A99539B53F2F227A083184EFB1617626B60779786C03E159BE568C",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "fresh_startup_off": true,
+    "step": {
+      "step": "pristine-uninstall-no-blank-dialog",
+      "rect": [
+        543,
+        156,
+        1377,
+        840
+      ],
+      "screenshot_file": "pristine-uninstall-1.png",
+      "focus": {
+        "hwnd": 263190,
+        "process": "Un",
+        "pid": 2728
+      }
+    }
+  },
+  "id": "1793973738848010849"
+}

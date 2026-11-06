@@ -33,6 +33,6 @@ Section
  IfErrors invalid
  Quit
  invalid:
- MessageBox MB_OK|MB_ICONSTOP "Koett could not start. Run the setup again to repair the installation; your data is kept." /SD IDOK
+ MessageBox MB_OK|MB_ICONSTOP "Koett could not start. Run the setup again to repair the installation; your data is kept."
  SetErrorLevel 1
 SectionEnd

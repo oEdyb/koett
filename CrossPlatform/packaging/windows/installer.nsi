@@ -79,6 +79,8 @@ Section
  Pop $1
  !insertmacro ReadMessage install
  StrCmp $0 "0" install_ok
+ StrCmp $1 "" 0 +2
+ StrCpy $1 "Setup timed out or stopped before reporting a reason at $INSTDIR. Run it again; your data is kept."
  MessageBox MB_OK|MB_ICONSTOP "Installation could not finish.$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
@@ -88,7 +90,6 @@ Section
  File /oname=Koett.exe "${LAUNCHER}"
  File /oname=Koett.ico "${__FILEDIR__}\Koett.ico"
  WriteUninstaller "$INSTDIR\Uninstall.exe"
- CreateShortcut "$SMPROGRAMS\Koett.lnk" "$INSTDIR\Koett.exe" "" "$INSTDIR\Koett.ico"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayName" "Koett"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayVersion" "${VERSION}"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "Publisher" "Dyberg & Co AB"
@@ -98,6 +99,8 @@ Section
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "QuietUninstallString" '$\"$INSTDIR\Uninstall.exe$\" /S'
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "NoModify" 1
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "NoRepair" 1
+ StrCmp $1 "" +2
+ MessageBox MB_OK|MB_ICONINFORMATION "$1" /SD IDOK
 SectionEnd
 Function un.onInit
  !insertmacro SetupGuard
@@ -115,6 +118,8 @@ Section Uninstall
  Pop $1
  !insertmacro ReadMessage uninstall
  StrCmp $0 "0" uninstall_ok
+ StrCmp $1 "" 0 +2
+ StrCpy $1 "Setup timed out or stopped before reporting a reason at $INSTDIR. Run it again; your data is kept."
  MessageBox MB_OK|MB_ICONSTOP "Uninstall could not finish.$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
