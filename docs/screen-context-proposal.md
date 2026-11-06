@@ -1,5 +1,7 @@
 # Screen context pins
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Status: approach A chosen on 2026-11-02. Mac is built (`PinContext.swift`,
 `PinContextReader.swift`, `SketchBoard` pins, tests in `SketchPinTests.swift`);
 live check pending. Linux is built (`pin_context.rs`, `linux/sketch/gesture.rs`,

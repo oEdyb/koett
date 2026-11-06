@@ -1,5 +1,7 @@
 # Mac microphone hardening evidence
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The microphone branch is based on main after PR #36. Baseline for timing is the
 previously installed source, `ee6f87b`. All probes use disposable files and
 preferences, without microphone capture or new permission requests. Model caches
@@ -51,7 +53,7 @@ Scrawl has no `scroll` form. The app was restarted afterward.
 Three cached-model process runs per revision, alternating order, on the same Mac
 and identical synthetic fixtures. These are medians, not a claim of speedup;
 background machine load was not controlled. Raw runs and fixture hashes are in
-[`docs/evidence/mac-mic-readiness`](evidence/mac-mic-readiness).
+[`docs/evidence/mac-mic-readiness`](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/mac-mic-readiness).
 
 - Before (ee6f87b): model load + prewarm 265.8 ms; 10.459 s clip ASR 106.9 ms; 10 min ASR 2.741 s; 30 min ASR 6.708 s.
 - After (9830dfa): model load + prewarm 269.6 ms; 10.459 s clip ASR 120.3 ms; 10 min ASR 2.631 s; 30 min ASR 6.788 s.

@@ -1,5 +1,7 @@
 # Mac permission capability checks
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The Permissions window's explicit **Check Permissions** action verifies granted
 access through the actual APIs. Normal startup and dictation do not require this
 extra step. No new permission type is requested.
@@ -43,7 +45,7 @@ checking, actual BlackHole capture/Stop/native paste still succeeds: target
 receipt arrives after Stop and ends with the latest generated transcript. This
 also verifies that the microphone check releases its capture resources.
 
-![Actual guest capability results](evidence/release-v0.3.0-mac/capability-ready-window.png)
+![Actual guest capability results](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/capability-ready-window.png)
 
 Failure/retry and grant-revocation races are injected unit checks, not fresh OS
 refusal dialogs. No host permissions or installed app changed. These results do

@@ -1,5 +1,7 @@
 # Release privacy audit
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](../evidence-archive.md) for private reproduction.
+
 Current-tree cleanup removes build-local home prefixes from 126 text files
 (the initial audit counted 125; a later source document added another). Historic
 log and receipt paths use `<build-home>`; their original binary/source digests

@@ -1,5 +1,7 @@
 # Controlled Linux model comparison, 2026-10-27
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The cached Parakeet 600M v2 candidate made fewer word errors than Koett's
 110M baseline on this bounded public corpus. A separate installed Whisper CPU
 variant tied v2 on the 13 clips it completed within the wall budget. Whisper
@@ -111,7 +113,7 @@ end-to-end time. Do not compare that internal timer to Koett as equal work.
 Whisper ended 5/13 outputs with sentence punctuation; normalized references
 still provide no punctuation accuracy ground truth.
 
-Separate [CPU evidence](../CrossPlatform/evidence/model-comparison-20261027/whisper-cpu.json)
+Separate [CPU evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/model-comparison-20261027/whisper-cpu.json)
 records the exact variant, version/help, outputs, scores, failed final process,
 timings, log hashes, matching sample hashes and private settings. Validation
 recomputed scores/counts, checked CPU-only logs, and verified the original
@@ -172,7 +174,7 @@ No daemon, socket, clipboard or user-output path was invoked. All owned service
 processes exited; no lab desktop was started. No product/settings/default changes
 or commits were made by this research task.
 
-Durable [machine-readable evidence](../CrossPlatform/evidence/model-comparison-20261027/comparison.json)
+Durable [machine-readable evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/model-comparison-20261027/comparison.json)
 contains references, sample/model/binary hashes, exact alignments, all 38 successful
 CPU outputs/timings, two Whisper failures and raw-log hashes. Ignored
 `.tmp/model-comparison-20261027/` retains WAV/FLAC files, row metadata, raw logs,

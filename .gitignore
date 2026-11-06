@@ -15,3 +15,7 @@ Benchmarks/__pycache__/
 *.pyc
 .tmp/
 /target/
+
+# Historical lab output stays in git history; new receipts stay local.
+/CrossPlatform/evidence/
+/docs/evidence/

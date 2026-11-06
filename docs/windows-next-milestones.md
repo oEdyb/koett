@@ -1,12 +1,14 @@
 # Windows milestones after reliable dictation
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 M2 (#78) merged as dca0252e8fc8a3cc232e24b94315eb89384fc22f. M3 #113 merged as 8344c545503ddf76f54a62023993f74a1f8020d3 after six green
 checks on 5bdc961 and real Windows software acceptance. Main's v0.3.0 source freeze remains 41fca8e;
 this branch has not changed the frozen release or installed host apps.
 
 ## M3 — words and records
 
-The [final c7e2376 receipt](../CrossPlatform/evidence/windows-milestone3/ci-c7e2376/README.md)
+The [final c7e2376 receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone3/ci-c7e2376/README.md)
 links the per-artifact evidence, including historical failures and their rechecks.
 Screenshots include foreground HWND/PID and executable hashes. The guest is
 bounded to 4 vCPU / 8 GiB, nice 19, and shut down outside active testing.
@@ -75,7 +77,7 @@ checks passed on `47990ce`. It provides the offline Windows WAV adapter.
 Native media #153 merged as `8a93b7739ad2efbed7690bd01650c51dc7395204`
 after all six checks passed on `94a50ea`. It adds the native media window, bounded URL/file conversion,
 focused public Edge source selection, opt-in GSMTC pause/resume and app commands.
-See [the Windows contract](windows-media.md) and [M5 acceptance](../CrossPlatform/evidence/windows-milestone5/media-1010c5b/README.md).
+See [the Windows contract](windows-media.md) and [M5 acceptance](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone5/media-1010c5b/README.md).
 Ask was shelved by main; this milestone does not restore it.
 
 ## M6 — distribution and remaining parity
@@ -92,6 +94,6 @@ software gaps must remain explicit rather than be relabeled hardware limits.
 M6 preview hardening now has real x64 guest checks for recovery, recording cues,
 image-only pins, Unicode per-user install/upgrade/rollback/uninstall, startup and
 offline fresh app data. See [distribution gates](windows-release-gates.md) and
-[the acceptance receipt](../CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md).
+[the acceptance receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md).
 The signed release gate remains closed; open software, dependency and hardware
 work is listed explicitly there. No three-platform release is claimed.

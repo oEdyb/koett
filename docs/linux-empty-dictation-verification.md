@@ -1,5 +1,7 @@
 # Quiet Linux empty dictation
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 An empty or whitespace-only ASR result no longer overwrites the clipboard or
 posts a paste, creates a blank history entry, changes Last Transcript, or shows
 Not pasted. The pill returns to idle without waiting for a delivery outcome that

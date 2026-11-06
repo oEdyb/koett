@@ -227,7 +227,7 @@ mod tests {
     fn complete_png_is_decoded_but_truncated_and_oversized_headers_fail() {
         let png = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/evidence/gnome-capture-20261104/capture.png"
+            "/tests/fixtures/capture.png"
         ));
         let reply = |png: &[u8]| {
             serde_json::json!({"protocol":1,"ok":true,"png":STANDARD.encode(png)}).to_string()

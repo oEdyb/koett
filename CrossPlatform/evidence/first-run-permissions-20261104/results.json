@@ -1,5 +1,0 @@
-{
-  "visible": "shown once, persisted across restart, manually reopenable",
-  "background": "quiet until explicit show",
-  "readonly": "save failure visible; repaired directory permits retry"
-}

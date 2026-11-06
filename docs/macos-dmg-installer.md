@@ -1,5 +1,7 @@
 # Native Mac installer
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Koett's native direct-download installer is a signed, notarized, read-only DMG.
 Opening it presents Koett and an Applications shortcut in Finder. Drag Koett onto
 Applications, eject the disk, then open Koett from Applications. There is no shell
@@ -134,4 +136,4 @@ source before making its public DMG. First-launch permission denials, a pristine
 install and a live Sparkle upgrade were not retested by this packaging change.
 
 Exact driver, receipts, hashes and inspected Finder screenshot:
-[evidence](evidence/macos-dmg-installer-20261106/).
+[evidence](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-dmg-installer-20261106).

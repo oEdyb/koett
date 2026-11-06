@@ -1,5 +1,7 @@
 # Windows distribution gates
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 M5 merged in #153 as `8a93b7739ad2efbed7690bd01650c51dc7395204`
 after all six checks passed on `94a50ea`. M6 remains a release gate, not a
 three-platform release claim. The current work hardens the unsigned x64 preview.
@@ -82,10 +84,10 @@ benchmark cohort, account purchase or public release is part of this work.
 [MessageBox ownership/default buttons](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-messageboxw),
 [virtualized UIA items](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-workingwithvirtualizeditems).
 
-[The acceptance receipt](../CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md)
+[The acceptance receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md)
 distinguishes exact executables, unchanged-component rechecks, guest execution,
 host compile checks and all open gates. A draft PR is not a completed M6 release gate.
 
-[Review acceptance](../CrossPlatform/evidence/windows-milestone6/review-935e21f/README.md)
+[Review acceptance](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone6/review-935e21f/README.md)
 records the subsequent dictation, capture-retention, private-browser and clipboard
 corrections, exact executables and targeted guest checks.

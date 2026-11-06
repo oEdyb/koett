@@ -1,8 +1,0 @@
-{
-  "available_memory": "MemAvailable:   30031872 kB",
-  "guest_nice": 19,
-  "guest_vcpu": 4,
-  "guest_memory_gib": 8,
-  "hardware_virtualization": "/dev/kvm accessible",
-  "deadline_guard_alive": true
-}

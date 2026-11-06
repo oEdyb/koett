@@ -1,5 +1,7 @@
 # Recording-scoped drawing key tap
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The always-on consuming modifier/mouse tap previously included keyDown and keyUp.
 Its callback ran on the main run loop, making ordinary typing wait when that
 thread stalled. The main tap now contains only modifier and mouse events.
@@ -14,7 +16,7 @@ hotkeys never create global event taps. No full suite or benchmark cohort ran.
 
 Guest runtime source `09bfbe2e8fec940e35ed54239532c7271fc641c5`, macOS 15 disposable
 profile. Exact source/hash bindings, guest driver and CGGetEventTapList collector:
-[evidence](evidence/macos-recording-key-tap-20261106/tap-receipt.json).
+[evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-recording-key-tap-20261106/tap-receipt.json).
 
 - Before fix, the idle process owned an enabled consuming tap whose mask included keys.
 - After fix, idle has no consuming key tap. A synthetic A reaches an owned native
@@ -28,4 +30,4 @@ profile. Exact source/hash bindings, guest driver and CGGetEventTapList collecto
 These are functional routing checks, not throughput measurements. No hardware
 microphone, physical keys, real-host input, installed app or frozen ZIP was used
 or changed. The guest native recipient source is retained with the preceding
-[drawing undo evidence](evidence/macos-draw-undo-consumption-20261106/KeyReceiver.swift).
+[drawing undo evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-draw-undo-consumption-20261106/KeyReceiver.swift).

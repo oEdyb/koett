@@ -1,5 +1,0 @@
-{
-  "ok": false,
-  "error": "{\"error\":\"Exception calling \\\"Replace\\\" with \\\"3\\\" argument(s): \\\"The path is not of a legal form.\\\"\",\"code\":\"preview_management_failed\",\"fix\":\"Close Koett, verify the extracted payload, and retry; application data is preserved\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\r\n",
-  "id": "1793941076664676943"
-}

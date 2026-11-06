@@ -1,5 +1,7 @@
 # Mac update trust and rollback verification — 2026-11-06
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 All UI, recording and installation checks ran inside the disposable macOS guest.
 Nothing was published. Production has no feed URL. The installed host v0.3.0 app
 and frozen ZIP were not replaced. Fixtures use a distinct lab key, never the new
@@ -63,7 +65,7 @@ brief visual appearance during an actual install handoff was not captured.
 Manual restore must happen after the installer finishes, as documented.
 
 The exact guest drivers, source/binary bindings, requests, key proof and cleanup
-manifests are in [the evidence directory](evidence/macos-update-trust-20261106/).
+manifests are in [the evidence directory](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-update-trust-20261106).
 Sparkle's [current settings documentation](https://sparkle-project.org/documentation/customization/)
 specifies signed-feed support since 2.9 and zero as the value that disables
 signature-failure expiration. Both flags are enforced before enabling Koett's updater.

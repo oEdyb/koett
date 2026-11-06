@@ -1,5 +1,7 @@
 # Linux v0.3.0 first-install audit
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 **Decision: NO-GO. No tag or release was created.**
 
 Audit date: 2026-11-05 UTC. The functional results below are candidate evidence,
@@ -48,9 +50,9 @@ candidate explicitly. Initial installer/adverse-condition checks used
 [run 41936332855](https://github.com/oEdyb/koett/actions/runs/41936332855).
 The upgrade input was the actual published v0.2.0-linux.1 x86-64 archive.
 
-[Initial receipts](evidence/release-v0.3.0-audit/receipts.json),
-[initial privacy scan](evidence/release-v0.3.0-audit/privacy-scan.json) and
-[follow-up receipts](evidence/release-v0.3.0-audit/followup.json) distinguish these
+[Initial receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/receipts.json),
+[initial privacy scan](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/privacy-scan.json) and
+[follow-up receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/followup.json) distinguish these
 sources. Public receipts contain hashes and observations, not raw screenshots,
 OCR output, local home paths or History text.
 
@@ -157,7 +159,7 @@ rewriting remains a separate owner decision.
 
 ## Targeted resumed checks
 
-[Resumed receipts](evidence/release-v0.3.0-audit/resumed-gates.json) supersede
+[Resumed receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/resumed-gates.json) supersede
 these earlier NOT TESTED rows for candidate `f2c3238d`:
 
 - **PASS — populated upgrade/History:** installed actual v0.2.0-linux.1,
@@ -209,7 +211,7 @@ these earlier NOT TESTED rows for candidate `f2c3238d`:
 ## Interactive GNOME VM follow-up
 
 **PASS, local compatibility build — GNOME 46 Wayland dictation and native paste.**
-[Receipt](evidence/release-v0.3.0-audit/gnome46-compatibility.json).
+[Receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/gnome46-compatibility.json).
 
 The bounded follow-up used QEMU/KVM, four virtual CPUs, 7,680 MiB guest RAM,
 a real virtual keyboard/tablet and a fresh generic Ubuntu 24.04.4 live user.
@@ -261,7 +263,7 @@ publication was changed. The Mac audit below is preserved from main.
 ## Approved-package GNOME retest: new stop-key blocker
 
 **FAIL — standard held stop chord on the exact merged #117 package.**
-[Receipt](evidence/release-v0.3.0-audit/gnome-stop-modifiers.json).
+[Receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-audit/gnome-stop-modifiers.json).
 
 Consumed [CI run 42005375914](https://github.com/oEdyb/koett/actions/runs/42005375914),
 source `e3637778b9e65edacc02b7610a05618d74eac98e`. The archive SHA-256 is
@@ -442,7 +444,7 @@ identity; never record clipboard contents.
 
 ## Actual guest paste failure and fix
 
-[Guest receipt](evidence/release-v0.3.0-mac/guest-paste.json).
+[Guest receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/guest-paste.json).
 A private source build on macOS 15.7.7 reproduced a separate **automatic** sketch
 paste failure: image posted, then text waited 1,513 ms and refused with
 `modifiersHeld`. The existing persistent Not pasted/Paste/Copy recovery appeared.
@@ -455,8 +457,8 @@ Two native Chrome Cmd+V repeats each expose image + plain text + HTML and retain
 all three images plus prompt text. This does not establish the historical full
 T3 composer failure's cause.
 
-![Existing visible recovery after the old failure](evidence/release-v0.3.0-mac/chrome-not-pasted-held-command.png)
-![Two native Chrome repeats retain both formats](evidence/release-v0.3.0-mac/chrome-repeat-receipt-bottom.png)
+![Existing visible recovery after the old failure](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/chrome-not-pasted-held-command.png)
+![Two native Chrome repeats retain both formats](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/chrome-repeat-receipt-bottom.png)
 
 The guest has no newly added Input Monitoring grant. Synthetic Option events did
 not toggle dictation, so start/stop used the public local-control interface; this
@@ -467,7 +469,7 @@ claimed tested or working without a product change. Pill rules remain intact.
 
 ## Paste timing baseline
 
-[Host probe receipt](evidence/release-v0.3.0-mac/host-probes.json).
+[Host probe receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/host-probes.json).
 No image-consumption timeout/settle policy has changed. PR #111 separately removes
 the self-generated Command state that could block text after image delivery. Two generated fixtures used production staged
 delivery and the matching T3 editor/intake in hidden Electron 44.10.1:

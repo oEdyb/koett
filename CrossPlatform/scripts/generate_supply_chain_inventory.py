@@ -18,7 +18,7 @@ Bundle = namedtuple("Bundle", ["inventory", "sbom", "gaps"])
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 CROSS_PLATFORM = REPOSITORY_ROOT / "CrossPlatform"
 POLICY_PATH = CROSS_PLATFORM / "supply-chain" / "inventory-policy.json"
-OUTPUT_DIRECTORY = CROSS_PLATFORM / "evidence" / "supply-chain-inventory"
+OUTPUT_DIRECTORY = CROSS_PLATFORM / "supply-chain" / "generated"
 OUTPUTS = {
     "inventory": OUTPUT_DIRECTORY / "inventory.json",
     "sbom": OUTPUT_DIRECTORY / "koett-source.cdx.json",
@@ -248,7 +248,6 @@ def _input_records(repo_root: Path, policy_path: Path) -> list[dict[str, Any]]:
         "Package.swift",
         "LICENSE",
         "CrossPlatform/THIRD_PARTY_NOTICES.md",
-        "CrossPlatform/evidence/blocked-604ed15/control.json",
         "Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md",
     ]
     records = [file_record(policy_path, str(policy_path.relative_to(repo_root)))]

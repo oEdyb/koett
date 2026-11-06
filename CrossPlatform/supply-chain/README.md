@@ -14,6 +14,8 @@ python3 scripts/test_supply_chain_inventory.py
 python3 scripts/generate_supply_chain_inventory.py --check
 ```
 
+Generated inventory, SBOM and notice-gap files live in `generated/`.
+
 Run the generator without `--check` after an intentional dependency, model,
 native input, bundled asset, or license-policy change. Review every generated
 change before committing it.

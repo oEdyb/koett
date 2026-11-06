@@ -1,1 +1,0 @@
-{"recognized_rows": 5, "expected": 5, "targets": ["Notepad", "Edge", "Windows Terminal"], "additional_sessions": ["hold", "pause/resume"], "cancel_added_row": false}

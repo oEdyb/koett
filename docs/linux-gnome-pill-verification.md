@@ -1,5 +1,7 @@
 # GNOME recording pill
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 ## Result
 
 The explicitly enabled Shell 51 integration adds Koett's existing native GTK pill
