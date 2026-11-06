@@ -1,0 +1,9 @@
+{
+  "app_pid": 230942,
+  "setup_launch_ready_ms": 985.228794,
+  "binary_sha256": "a7466efe361186ba5b78b080c185e3da3e838f332d62cb4c63445453d5a77ec6",
+  "dictionary": "shared 20-term seed",
+  "idle_cpu_percent": 0.4998936666171901,
+  "idle_rss_kib": 1104752,
+  "network_interfaces": "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n"
+}

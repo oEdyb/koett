@@ -1,0 +1,14 @@
+{
+  "step": "model-compact-ready",
+  "rect": [
+    720,
+    272,
+    1840,
+    1232
+  ],
+  "focus": {
+    "hwnd": 394108,
+    "process": "Koett",
+    "pid": 5832
+  }
+}

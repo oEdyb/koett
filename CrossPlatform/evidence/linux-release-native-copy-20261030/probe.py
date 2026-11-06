@@ -129,7 +129,7 @@ try:
         (output / 'v3-transcript.json').write_text(json.dumps({'model': row[0], 'text': row[1], 'native_copy_exact': True}))
     maps = Path(f'/proc/{process.pid}/maps').read_text()
     (output / 'loaded-maps.txt').write_text(maps)
-    gtk = Path('/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1')
+    gtk = Path(str(Path.home() / '.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1'))
     assert str(gtk.resolve()) in maps
     assert hashlib.sha256(gtk.read_bytes()).hexdigest() == 'a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a'
     ns['capture']('native-copy')

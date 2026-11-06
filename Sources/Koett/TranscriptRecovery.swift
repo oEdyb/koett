@@ -16,7 +16,7 @@ extension KoettController {
         }
         let outcome = transcriptPersistence.enqueue(record, keepAsLast: keepAsLast) { [weak self] outcome in
             self?.presentTranscriptSaveOutcome(outcome)
-            self?.assistantPanel.showStorageWarning(outcome.warning)
+            if AssistantAvailability.isEnabled { self?.assistantPanel.showStorageWarning(outcome.warning) }
         }
         presentTranscriptRecovery(record, outcome: outcome, image: image)
         return outcome

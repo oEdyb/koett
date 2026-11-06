@@ -1,0 +1,34 @@
+{
+  "settings_restored": true,
+  "cases": [
+    {
+      "case": "import-cancel-no-write",
+      "passed": true
+    },
+    {
+      "case": "import-explicit-accept",
+      "passed": true
+    },
+    {
+      "status": "Line 1 has no term before \"=\".",
+      "case": "invalid-import-no-write",
+      "passed": true
+    },
+    {
+      "case": "canonical-dictionary-export",
+      "text": "# Koett dictionary: Term = sounds like, other form\nKoettCase = coat case\n\u00c5Term = err term\n",
+      "passed": true
+    },
+    {
+      "status": "could not save C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json: Access is denied. (os error 5)",
+      "case": "settings-write-failure-preserves-file",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Words\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 472,
+    "sha256": "5CC22ED0F269A2D40A8CCC69F9471BE92F2008BD0143350A6A2262823DE01A88"
+  },
+  "passed": true
+}

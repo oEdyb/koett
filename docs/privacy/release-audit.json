@@ -1,0 +1,30 @@
+{
+  "tool": "Gitleaks 8.30.1",
+  "source": "https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1",
+  "upstream_archive_checksum_verified": true,
+  "public_commits_scanned": 367,
+  "bytes_scanned": 31095714,
+  "raw_findings": 5,
+  "triage": {
+    "credential_values_confirmed": 0,
+    "sha256_digest_false_positives": 5
+  },
+  "unique_historical_image_blobs_ocr_scanned": 656,
+  "historical_images_flagged": 3,
+  "additional_image_flags": 0,
+  "image_patterns": [
+    "home path",
+    "email",
+    "author name",
+    "OpenAI/Groq-shaped key"
+  ],
+  "current_text_files_sanitized": 126,
+  "current_text_files_with_original_home_prefix_remaining": 0,
+  "screenshots_removed_from_current_tree": 3,
+  "history_rewritten": false,
+  "limits": [
+    "Pattern scanning cannot certify all private prose or image content.",
+    "Public fetched refs at scan time; deleted/unreachable objects and private remote refs are outside scope.",
+    "No external credential validation was attempted."
+  ]
+}

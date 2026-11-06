@@ -1,0 +1,33 @@
+{
+  "fixture": "same official Compact 0.wav; text spelling/near-miss rule, not CTC acoustic gap closure",
+  "cases": [
+    {
+      "passed": true,
+      "focus_before": {
+        "hwnd": 327716,
+        "process": "Notepad",
+        "pid": 8296
+      },
+      "text": "Well, I don't wish to see it any more, observed M3Phoebe, turning away her eyes. It is certainly very like the M3 replacement.",
+      "case": "dictionary-and-replacement-apply-to-one-live-cpu-wav-result",
+      "stop_to_text_ms": 248.424,
+      "focus_after": {
+        "hwnd": 327716,
+        "process": "Notepad",
+        "pid": 8296
+      }
+    },
+    {
+      "raw": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+      "case": "history-retains-original-asr-before-dictionary-and-replacement",
+      "final": "Well, I don't wish to see it any more, observed M3Phoebe, turning away her eyes. It is certainly very like the M3 replacement.",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3-fd\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 6208,
+    "sha256": "86D83E56FEA70F800B1A9B314C61319B59C8700A91B05D6F712733B3ECA70FD0"
+  },
+  "passed": true
+}

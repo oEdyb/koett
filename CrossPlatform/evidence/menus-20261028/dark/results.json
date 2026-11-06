@@ -76,7 +76,7 @@
   ],
   "renderer": "cairo",
   "app_cpu_affinity": "one inherited allowed CPU to expose real ASR busy state",
-  "binary": "/home/olle/dev/koett/CrossPlatform/target/release/koett",
+  "binary": "<build-home>/dev/koett/CrossPlatform/target/release/koett",
   "theme": "dark",
   "tray": "disposable private watcher and actual dbusmenu dispatch; no rendered tray host"
 }

@@ -1,0 +1,33 @@
+{
+  "settings_restored": true,
+  "cases": [
+    {
+      "case": "uia-list-selection-refreshes-editor",
+      "passed": true
+    },
+    {
+      "case": "rename-removes-only-original-key",
+      "passed": true
+    },
+    {
+      "status": "An entry already uses that term or phrase",
+      "case": "rename-collision-visible-no-write",
+      "passed": true
+    },
+    {
+      "status": "This entry changed elsewhere. Reopen Words to review it.",
+      "case": "stale-editor-does-not-overwrite-external-change",
+      "passed": true
+    },
+    {
+      "case": "new-entry-clears-prior-selection",
+      "passed": true
+    }
+  ],
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Latest\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 4784,
+    "sha256": "B70ECF4FE49D2E955B97A8EE49C592703E7275B7DAA982AD3C7ED49E7A7C4089"
+  },
+  "passed": true
+}

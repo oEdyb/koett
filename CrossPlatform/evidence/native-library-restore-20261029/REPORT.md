@@ -1,6 +1,6 @@
 # Native library recovery
 
-Restored the pinned sherpa-onnx 1.13.5 ASR-only static artifacts to `/home/olle/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib`; `/tmp/koett-native-host-abi0` is a symlink to that disk-backed root.
+Restored the pinned sherpa-onnx 1.13.5 ASR-only static artifacts to `<build-home>/.cache/koett/native/sherpa-onnx-1.13.5-linux-abi0-floor/lib`; `/tmp/koett-native-host-abi0` is a symlink to that disk-backed root.
 
 All 10 archives and the ASR marker match the current-PC repository cache and independent Docker floor volume byte-for-byte by SHA256. `receipt.json` lists exact hashes, source commit/archive identity and ABI0/TTS-disabled options. The deleted host cache has no surviving hash receipt, so this is compatible verified-cache recovery, not a claimed exact restoration of that lost host build.
 

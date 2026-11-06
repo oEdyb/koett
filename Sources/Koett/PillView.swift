@@ -29,6 +29,9 @@ final class PillView: NSView {
         }
     }
     var timeline = PillTimeline()
+    var recordingNotice: String? {
+        didSet { refreshAccessibility(); needsDisplay = true }
+    }
     var elapsed: TimeInterval = 0
     var spin: CGFloat = 0
     var modelName = ""
@@ -61,6 +64,11 @@ final class PillView: NSView {
     let historyButton = PillButton(title: "History")
     let statusElement = NSView()
     private var trackingArea: NSTrackingArea?
+    var onDrag: ((NSPoint) -> Void)?
+    var onDragEnd: (() -> Void)?
+    private var dragStart: NSPoint?
+    private var dragOrigin: NSPoint?
+    private var dragged = false
     private var buttons: [PillButton] { [cancelButton, pauseButton, historyButton, pasteButton, copyButton] }
 
     override init(frame: NSRect) {
@@ -127,9 +135,34 @@ final class PillView: NSView {
 
     override func mouseEntered(with event: NSEvent) { setHovered(true) }
     override func mouseExited(with event: NSEvent) { setHovered(false) }
-    override func mouseDown(with event: NSEvent) {}
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let hit = super.hitTest(point)
+        return hit === statusElement ? self : hit
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        dragStart = window?.convertPoint(toScreen: event.locationInWindow)
+        dragOrigin = window?.frame.origin
+        dragged = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let dragStart, let dragOrigin,
+              let point = window?.convertPoint(toScreen: event.locationInWindow) else { return }
+        let delta = NSPoint(x: point.x - dragStart.x, y: point.y - dragStart.y)
+        guard dragged || hypot(delta.x, delta.y) >= 4 else { return }
+        dragged = true
+        onDrag?(NSPoint(x: dragOrigin.x + delta.x, y: dragOrigin.y + delta.y))
+    }
 
     override func mouseUp(with event: NSEvent) {
+        dragStart = nil
+        dragOrigin = nil
+        if dragged {
+            dragged = false
+            onDragEnd?()
+            return
+        }
         switch content {
         case .done, .notPasted, .media, .error: onDismiss?()
         default: break
@@ -215,7 +248,7 @@ final class PillView: NSView {
             element.setAccessibilityValueDescription("\(Int((clamped * 100).rounded())) percent")
         }
         switch content {
-        case .recording(let paused): staticText(paused ? "Paused" : "Recording")
+        case .recording(let paused): staticText(recordingNotice ?? (paused ? "Paused" : "Recording"))
         case .transcribing(let fraction?): progress("Transcribing", fraction)
         case .transcribing(nil): staticText("Transcribing…")
         case .done(let preview), .media(let preview): staticText(preview)
@@ -259,7 +292,8 @@ final class PillView: NSView {
         drawGlyph(content, cy: cy, palette: palette, drawing: drawing)
         context.translateBy(x: shift, y: 0)
         let stripContent = switch content {
-        case .recording, .transcribing: !timeline.isEmpty
+        case .recording: !timeline.isEmpty && recordingNotice == nil
+        case .transcribing: !timeline.isEmpty
         default: false
         }
         if stripContent && !(showsActions && content == self.content) {
@@ -382,6 +416,9 @@ final class PillView: NSView {
         let resultRect = NSRect(x: 44, y: 0, width: max(0, textRight - 44), height: height)
         switch content {
         case .recording:
+            if let recordingNotice, !showsActions {
+                drawText(recordingNotice, in: NSRect(x: 44, y: 0, width: 180, height: height), alignment: .left, color: palette.text)
+            }
             drawText(RecordingOverlayFormat.elapsedTime(elapsed), in: clockRect, alignment: .right, monospaced: true, color: palette.text)
         case .transcribing(let fraction?) where hasStrip:
             drawText("\(Int((fraction * 100).rounded()))%", in: clockRect, alignment: .right, monospaced: true, color: palette.text.withAlphaComponent(0.62))

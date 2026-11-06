@@ -1,9 +1,13 @@
 [package]
 name = "koett-engine"
-version = "0.2.0-linux.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.92"
 license = "Apache-2.0"
+
+[features]
+default = []
+ask = ["dep:tokio-tungstenite"]
 
 [dependencies]
 url = "=2.5.8"
@@ -25,8 +29,15 @@ time = { version = "=0.3.55", features = ["formatting", "local-offset", "macros"
 windows-numerics = "=0.3.1"
 windows-core = "=0.62.2"
 windows = { version = "=0.62.2", features = [
+    "Foundation",
+    "Graphics_Capture",
+    "Graphics_DirectX_Direct3D11",
+    "Win32_System_WinRT",
+    "Win32_System_WinRT_Graphics_Capture",
+    "Win32_System_WinRT_Direct3D11",
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
+    "Win32_Graphics_Imaging",
     "Win32_Graphics_Dwm",
     "Win32_Graphics_Direct2D",
     "Win32_Graphics_Direct3D",
@@ -39,12 +50,14 @@ windows = { version = "=0.62.2", features = [
     "Win32_Security",
     "Win32_System_DataExchange",
     "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
     "Win32_System_Variant",
     "Win32_System_LibraryLoader",
     "Win32_System_Memory",
     "Win32_System_Ole",
     "Win32_System_Registry",
     "Win32_System_Threading",
+    "Win32_System_JobObjects",
     "Win32_UI_HiDpi",
     "Win32_UI_Accessibility",
     "Win32_UI_Controls_Dialogs",
@@ -57,9 +70,10 @@ ureq = { version = "=3.4.0", default-features = false, features = ["native-tls",
 [target.'cfg(target_os = "linux")'.dependencies]
 log = { version = "=0.4.34", features = ["max_level_warn", "release_max_level_warn"] }
 uuid = { version = "=1.29.0", features = ["v4"] }
-tokio-tungstenite = { version = "=0.30.0", features = ["rustls-tls-native-roots"] }
+tokio-tungstenite = { optional = true, version = "=0.30.0", features = ["rustls-tls-native-roots"] }
 libc = "=0.2.189"
 wayland-client = "=0.31.15"
+wayland-protocols-misc = { version = "=0.3.12", features = ["client"] }
 wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
 gtk4 = { version = "=0.11.5", features = ["v4_6"] }
 gdk4-wayland = "=0.11.5"
@@ -80,3 +94,11 @@ ureq = { version = "=3.4.0", default-features = false, features = ["platform-ver
 [patch.crates-io]
 sherpa-onnx = { path = "vendor/sherpa-onnx" }
 sherpa-onnx-sys = { path = "vendor/sherpa-onnx-sys" }
+
+[[example]]
+name = "ask_panel_probe"
+required-features = ["ask"]
+
+[[example]]
+name = "ask_probe"
+required-features = ["ask"]

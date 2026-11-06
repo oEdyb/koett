@@ -1,4 +1,5 @@
 use super::{Settings, TrayAction};
+#[cfg(feature = "ask")]
 use gtk4::{self as gtk, prelude::*};
 use std::sync::{Arc, mpsc};
 
@@ -205,6 +206,7 @@ pub(super) fn formatting_patch(
     serde_json::from_value(json).map_err(|e| format!("Invalid formatting choice: {e}"))
 }
 
+#[cfg(feature = "ask")]
 pub(super) fn ask_state() -> (&'static str, bool) {
     let status = crate::assistant::status();
     match status["phase"].as_str().unwrap_or("") {
@@ -228,6 +230,7 @@ fn input_status() -> serde_json::Value {
 
 pub(super) static ACTIVE: std::sync::RwLock<String> = std::sync::RwLock::new(String::new());
 
+#[cfg(feature = "ask")]
 pub(super) fn attach(application: &gtk::Application) {
     let application = application.clone();
     gtk::glib::timeout_add_local(std::time::Duration::from_millis(250), move || {

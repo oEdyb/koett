@@ -272,6 +272,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
+            #[cfg(feature = "ask")]
             if bytes == b"ask-status" {
                 let _ = stream.write_all(crate::assistant::status().to_string().as_bytes());
                 continue;
@@ -290,14 +291,18 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
             let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
                 value if value.starts_with("media ") => {
                     let source = &value[6..];
-                    if crate::media_transcription::validate_url(source).is_err() {
+                    if crate::media_transcription::validate_source(source).is_err() {
                         continue;
                     }
                     TrayAction::Media(source.into())
                 }
+                #[cfg(feature = "ask")]
                 "ask" => TrayAction::Ask,
+                #[cfg(feature = "ask")]
                 "ask-start" => TrayAction::AskStart,
+                #[cfg(feature = "ask")]
                 "ask-stop" => TrayAction::AskStop,
+                #[cfg(feature = "ask")]
                 "ask-cancel" => TrayAction::CancelAsk,
                 "cancel-media" => TrayAction::CancelMedia,
                 "media-current" => TrayAction::OpenMedia,
@@ -342,6 +347,7 @@ fn debug_sketch(value: &str) -> Option<crate::sketch::SketchEvent> {
     })
 }
 
+#[cfg(feature = "ask")]
 pub fn ask_status() -> Result<String, String> {
     let mut stream = UnixStream::connect(path()?).map_err(|_| "Koett is not running")?;
     stream
