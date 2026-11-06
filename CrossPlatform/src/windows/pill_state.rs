@@ -16,6 +16,8 @@ pub struct PaintKey {
     copied: bool,
     drawing: bool,
     media_result: bool,
+    repeat_paste: bool,
+    sticky_result: bool,
 }
 
 pub struct State {
@@ -25,6 +27,8 @@ pub struct State {
     pub copied: bool,
     pub drawing: bool,
     pub media_result: bool,
+    pub repeat_paste: bool,
+    pub sticky_result: bool,
     notice: Option<(String, u64)>,
     changed: u64,
     revision: u64,
@@ -39,6 +43,8 @@ impl Default for State {
             copied: false,
             drawing: false,
             media_result: false,
+            repeat_paste: false,
+            sticky_result: false,
             notice: None,
             changed: 0,
             revision: 0,
@@ -54,6 +60,8 @@ impl State {
         self.copied = false;
         self.drawing = false;
         self.media_result = false;
+        self.repeat_paste = false;
+        self.sticky_result = false;
         self.notice = None;
         self.left_hover = None;
         if self.phase == Phase::Recording {
@@ -86,12 +94,15 @@ impl State {
         let timeout = match self.phase {
             Phase::Hidden => return 0.0,
             Phase::Done(_) if self.copied => Some(self.changed + 1000),
-            Phase::Done(_) if self.hovered => None,
-            Phase::Done(_) => Some(
-                self.left_hover
-                    .map(|t| t + 800)
-                    .unwrap_or(self.changed + if self.media_result { 10000 } else { 1750 }),
-            ),
+            Phase::Done(_) if self.hovered || self.sticky_result => None,
+            Phase::Done(_) => Some(self.left_hover.map(|t| t + 800).unwrap_or(
+                self.changed
+                    + if self.media_result || self.repeat_paste {
+                        10000
+                    } else {
+                        1750
+                    },
+            )),
             Phase::Error { rescue: false, .. } => Some(self.changed + 5000),
             _ => None,
         };
@@ -117,6 +128,8 @@ impl State {
             copied: self.copied,
             drawing: self.drawing,
             media_result: self.media_result,
+            repeat_paste: self.repeat_paste,
+            sticky_result: self.sticky_result,
         }
     }
     pub fn interactive(&self) -> bool {
@@ -203,6 +216,16 @@ mod tests {
             0,
         );
         assert_eq!(s.opacity(90000, false), 1.0);
+    }
+    #[test]
+    fn unsaved_media_remains_visible_until_copied() {
+        let mut s = State::default();
+        s.set(Phase::Done("Not saved".into()), 0);
+        s.media_result = true;
+        s.sticky_result = true;
+        assert_eq!(s.opacity(3600000, true), 1.0);
+        s.copy(3600000);
+        assert_eq!(s.opacity(3601000, true), 0.0);
     }
     #[test]
     fn copy_leaves_after_one_second_with_reduced_motion() {

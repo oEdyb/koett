@@ -103,13 +103,14 @@ impl Snapshot {
         let mut mask = 0;
         for (index, action) in ACTIONS.iter().enumerate() {
             let show = match action.id {
-                101 | 103 => active,
+                101 => active,
+                103 => active && !state.media_result,
                 102 => active && matches!(state.phase, Phase::Recording),
                 106 => matches!(state.phase, Phase::Recording),
                 104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted { .. }),
                 105 => {
                     matches!(state.phase, Phase::NotPasted { .. })
-                        || state.media_result && matches!(state.phase, Phase::Done(_))
+                        || state.repeat_paste && matches!(state.phase, Phase::Done(_))
                 }
                 _ => false,
             };
@@ -259,6 +260,19 @@ impl Drop for Buttons {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn media_copy_does_not_offer_a_previous_dictation_paste() {
+        let mut state = State::default();
+        state.set(Phase::Done("Media words".into()), 0);
+        state.media_result = true;
+        assert_eq!(Snapshot::new(&state).mask, 0b10000);
+        state.set(Phase::Transcribing, 1);
+        state.media_result = true;
+        assert_eq!(Snapshot::new(&state).mask, 0b00001);
+        state.set(Phase::Done("Drawing words".into()), 2);
+        state.repeat_paste = true;
+        assert_eq!(Snapshot::new(&state).mask, 0b11000);
+    }
     #[test]
     fn actions_follow_visible_pill_states_and_labels() {
         let mut state = State::default();

@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "result": {
+    "title": "Koett controlled media check - [InPrivate] - Microsoft\u200b Edge",
+    "files": [
+      "Media-1793919382407876700-2580.md",
+      "Media-1793919386707432900-2580.md",
+      "Media-1793920496313074400-5384.md",
+      "Media-1793920554360796500-5384.md",
+      "Media-1793922951152690400-2180.md",
+      "Media-1793923026434109700-2180.md",
+      "Media-1793923145817921300-2180.md",
+      "Media-1793925738421009000-4468.md",
+      "Media-1793930441206552300-5408.md"
+    ],
+    "focus": {
+      "hwnd": 524352,
+      "process": "msedge",
+      "pid": 8348
+    },
+    "markers": [
+      "InPrivate browsing"
+    ]
+  },
+  "id": "1793934152350734085"
+}

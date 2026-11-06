@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "result": {
+    "focus": {
+      "hwnd": 458920,
+      "process": "Koett",
+      "pid": 5584
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 5584,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    },
+    "binding": "Ctrl+Shift+Y",
+    "passed": true
+  },
+  "id": "1793933843918775943"
+}

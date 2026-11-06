@@ -34,6 +34,14 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    if env::args().nth(1).as_deref() == Some("app") {
+        return koett_engine::windows::automation::run(&env::args().skip(2).collect::<Vec<_>>());
+    }
+    #[cfg(target_os = "windows")]
+    if env::args().nth(1).as_deref() == Some("media") {
+        return koett_engine::windows::media_cli::run(&env::args().skip(2).collect::<Vec<_>>());
+    }
     if env::args().nth(1).as_deref() == Some("--self-test") {
         if env::args().count() != 2 {
             return Err("--self-test does not take arguments".to_string());

@@ -1,0 +1,29 @@
+   Compiling koett-engine v0.3.0 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.44s
+     Running unittests src/lib.rs (CrossPlatform/target/debug/deps/koett_engine-2b4a6b9b7b29e1f9)
+
+running 4 tests
+test runtime::tests::model_name_uses_the_model_folder ... ok
+test runtime::tests::recording_limit_stops_the_recording_and_says_why ... ok
+test runtime::tests::shutdown_cannot_be_reset_by_queued_model_setup ... ok
+test runtime::tests::the_warning_comes_a_minute_before_the_stop ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 464 filtered out; finished in 0.00s
+
+     Running unittests src/bin/koett.rs (CrossPlatform/target/debug/deps/koett-532ca6988e494f03)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (CrossPlatform/target/debug/deps/koett_engine-5d877a39997c16a8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/koett-transcribe-engine.rs (CrossPlatform/target/debug/deps/koett_transcribe_engine-fee16096ebc291bf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s

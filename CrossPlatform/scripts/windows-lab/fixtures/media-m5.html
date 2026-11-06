@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Koett controlled media check</title>
+<style>body{font:20px system-ui;margin:40px}audio,textarea{display:block;margin:24px 0;width:70%}textarea{height:180px}</style>
+<h1>Controlled media fixture</h1>
+<audio id="player" controls loop src="m5-fixture.wav"></audio>
+<p id="state" role="status">Paused</p>
+<textarea aria-label="Media focus editor">Guest media test</textarea>
+<script>
+const player=document.querySelector('audio');
+if('mediaSession' in navigator){
+ navigator.mediaSession.metadata=new MediaMetadata({title:'Koett controlled WAV',artist:'Guest fixture'});
+ navigator.mediaSession.setActionHandler('play',()=>player.play());
+ navigator.mediaSession.setActionHandler('pause',()=>player.pause());
+ navigator.mediaSession.setActionHandler('seekto',e=>{player.currentTime=e.seekTime;});
+}
+function refresh(){
+ document.querySelector('#state').textContent=(player.paused?'Paused':'Playing')+' '+player.currentTime.toFixed(2);
+ if('mediaSession' in navigator){
+  navigator.mediaSession.playbackState=player.paused?'paused':'playing';
+  if(Number.isFinite(player.duration)) navigator.mediaSession.setPositionState({duration:player.duration,position:player.currentTime,playbackRate:player.playbackRate});
+ }
+}
+for(const event of ['play','pause','seeked','loadedmetadata'])player.addEventListener(event,refresh);
+setInterval(()=>document.querySelector('#state').textContent=(player.paused?'Paused':'Playing')+' '+player.currentTime.toFixed(2),200);
+</script>
