@@ -35,7 +35,7 @@ impl Job {
         if let Err(error) = self.attach(&child) {
             let _ = child.kill();
             let _ = child.wait();
-            return Err(format!("Could not supervise S1-mini: {error}"));
+            return Err(format!("Could not supervise child process: {error}"));
         }
         Ok((child, self))
     }

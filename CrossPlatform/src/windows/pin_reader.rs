@@ -38,6 +38,19 @@ fn title(hwnd: HWND) -> String {
     String::from_utf16_lossy(&text[..len.max(0) as usize])
 }
 impl Snapshot {
+    pub fn foreground() -> Option<Self> {
+        let hwnd = unsafe { GetForegroundWindow() };
+        let mut rect = RECT::default();
+        if unsafe { GetWindowRect(hwnd, &mut rect) }.is_err() {
+            return None;
+        }
+        Self::at(POINT {
+            x: rect.left + (rect.right - rect.left) / 2,
+            y: rect.top + (rect.bottom - rect.top) / 2,
+        })
+        .filter(|snapshot| snapshot.hwnd == hwnd.0 as usize)
+    }
+
     pub fn at(point: POINT) -> Option<Self> {
         let mut window = unsafe { GetTopWindow(None) }.ok()?;
         for _ in 0..256 {
@@ -104,6 +117,12 @@ impl Snapshot {
             && title(hwnd) == self.title
     }
     pub fn read(&self, selected: bool) -> Read {
+        self.read_options(selected, true)
+    }
+    pub fn read_source(&self) -> Read {
+        self.read_options(false, false)
+    }
+    fn read_options(&self, selected: bool, video_position: bool) -> Read {
         let missing = |message: &str| Read {
             context: None,
             status: message.into(),
@@ -127,13 +146,13 @@ impl Snapshot {
             }
         }
         let _apartment = Apartment;
-        let result = self.accessible(selected);
+        let result = self.accessible(selected, video_position);
         if !self.current() {
             return missing("Context unavailable: window changed");
         }
         result.unwrap_or_else(|_| missing("Context unavailable: app does not expose accessibility"))
     }
-    fn accessible(&self, selected: bool) -> windows::core::Result<Read> {
+    fn accessible(&self, selected: bool, video_position: bool) -> windows::core::Result<Read> {
         unsafe {
             let automation: IUIAutomation2 =
                 CoCreateInstance(&CUIAutomation8, None, CLSCTX_INPROC_SERVER)?;
@@ -283,6 +302,7 @@ impl Snapshot {
                 });
             }
             if let Some(url) = context.url.as_deref()
+                && video_position
                 && youtube_time(url, 0.0).is_some()
             {
                 if let Some(time) = video_time.and_then(|time| youtube_time(url, time)) {

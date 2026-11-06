@@ -1,0 +1,49 @@
+   Compiling koett-engine v0.3.0 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.69s
+     Running unittests src/lib.rs (CrossPlatform/target/debug/deps/koett_engine-2b4a6b9b7b29e1f9)
+
+running 24 tests
+test history::recovery::tests::failed_media_and_blank_dictation_preserve_last ... ok
+test history::recovery::tests::last_is_exact_private_atomic_and_failure_preserves_old ... ok
+test history::recovery::tests::two_failed_records_retry_exactly_once_with_raw_and_collision ... ok
+test history::tests::appended_ambiguous_tail_reconciles_only_changed_chunk_and_retries ... ok
+test history::tests::benchmark_100k ... ignored, explicit 100k-entry performance measurement
+test history::tests::changed_unmarked_source_replaces_searchable_version_and_preserves_bytes ... ok
+test history::tests::default_open_does_not_read_legacy_archive ... ok
+test history::tests::fallback_and_private_files ... ok
+test history::tests::archive_chunks_complete_unicode_scalars_and_reconstruct_exact_text ... ok
+test history::tests::huge_unmarked_archive_is_searchable_with_unknown_original_metadata ... ok
+test history::tests::identical_archive_chunks_at_different_offsets_remain_distinct ... ok
+test history::tests::interrupted_archive_chunk_import_retries_without_duplicates ... ok
+test history::tests::interrupted_import_retries_without_duplicate_records ... ok
+test history::tests::interrupted_transaction_and_empty_save ... ok
+test history::tests::legacy_unicode_markers_raw_cleaned_retry_and_original_bytes ... ok
+test history::tests::interrupted_new_version_keeps_previous_search_and_ownership ... ok
+test history::tests::marked_dictation_preserves_timestamp_headings_and_previews_are_bounded ... ok
+test history::tests::malformed_huge_and_ambiguous_are_lossless ... ok
+test history::tests::previously_preserved_only_archives_are_indexed_on_explicit_retry ... ok
+test history::tests::raw_fallback_can_be_reimported_with_exact_identity ... ok
+test history::tests::reconciliation_protects_native_saves_other_sources_and_repeated_dictations ... ok
+test history::tests::schema_one_upgrade_is_sqlite_only_and_explicit_import_versions_completion ... ok
+test history::tests::schema_upgrade_protects_preexisting_native_id_referenced_by_import ... ok
+test history::tests::paging_search_retries_restart_and_conflicts ... ok
+
+test result: ok. 23 passed; 0 failed; 1 ignored; 0 measured; 429 filtered out; finished in 5.36s
+
+     Running unittests src/bin/koett.rs (CrossPlatform/target/debug/deps/koett-532ca6988e494f03)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (CrossPlatform/target/debug/deps/koett_engine-5d877a39997c16a8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/koett-transcribe-engine.rs (CrossPlatform/target/debug/deps/koett_transcribe_engine-fee16096ebc291bf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s

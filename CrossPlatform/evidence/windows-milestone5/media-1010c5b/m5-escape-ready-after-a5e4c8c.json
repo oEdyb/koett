@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "message": "Media cancelled, timed out, or exceeded size limit",
+    "focus": {
+      "hwnd": 197304,
+      "process": "Koett",
+      "pid": 816
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 816,
+      "sha256": "A5E4C8CBBC1942E5B64BD5DCD6969B2A4395F14AFEEC7CB0115E00ADD14BF55E"
+    },
+    "orphan_tools": [],
+    "status": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "warnings": []
+    }
+  },
+  "id": "1793930053432078603"
+}

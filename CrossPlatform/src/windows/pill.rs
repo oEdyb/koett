@@ -330,7 +330,9 @@ impl Renderer {
                                 false,
                             );
                         }
-                        draw("History", 178.0, 235.0, false);
+                        if !state.media_result {
+                            draw("History", 178.0, 235.0, false);
+                        }
                     } else if let Some(notice) = notice {
                         draw(notice, 44.0, 235.0, false);
                     }
@@ -350,10 +352,10 @@ impl Renderer {
                             draw(
                                 &preview.replace(['\n', '\r'], " "),
                                 44.0 + shift,
-                                if state.media_result { 182.0 } else { 234.0 },
+                                if state.repeat_paste { 182.0 } else { 234.0 },
                                 false,
                             );
-                            if state.media_result {
+                            if state.repeat_paste {
                                 draw("Paste", 192.0, 237.0, false);
                             }
                             draw(

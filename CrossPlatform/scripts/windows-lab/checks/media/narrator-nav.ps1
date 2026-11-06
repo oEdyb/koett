@@ -1,0 +1,4 @@
+$ErrorActionPreference='Stop';$window=Wait-MediaWindow;Activate-LabEditor ([IntPtr]$window.Current.NativeWindowHandle);(Media-Item '101').SetFocus();Start-Sleep -Milliseconds 2200
+$items=@();for($index=0;$index-lt4;$index++){$element=[Windows.Automation.AutomationElement]::FocusedElement;$items+=@{name=$element.Current.Name;control=$element.Current.ControlType.ProgrammaticName;focus=Get-LabFocus};if($index-lt3){[Windows.Forms.SendKeys]::SendWait('{TAB}');Start-Sleep -Milliseconds 1000}}
+$narrator=@(Get-Process Narrator -ErrorAction SilentlyContinue|Select-Object Id,ProcessName)
+@{passed=($narrator.Count-gt0-and$items[0].name-eq'URL or local media file'-and$items[1].name-match'Browse'-and$items[2].name-eq'Transcribe'-and$items[3].name-eq'Close');narrator=$narrator;keyboard=$items;step=Media-Step 'narrator-native-media';artifact=Get-LabArtifact}
