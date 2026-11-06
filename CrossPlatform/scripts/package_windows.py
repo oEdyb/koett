@@ -85,6 +85,7 @@ def package(binaries, native_receipt, output):
     shutil.copy2(CROSS/'THIRD_PARTY_NOTICES.md', root/'THIRD_PARTY_NOTICES.md')
     shutil.copy2(CROSS.parent/'LICENSE', root/'LICENSE')
     shutil.copytree(CROSS/'packaging/notices', root/'notices')
+    shutil.copy2(CROSS/'packaging/windows/NSIS-COPYING.txt', root/'NSIS-COPYING.txt')
     shutil.copy2(native_receipt, root/'native-build-receipt.json')
     shutil.copy2(CROSS/'scripts/manage_windows_preview.ps1', root/'manage-preview.ps1')
     (root/'sources').mkdir()

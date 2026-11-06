@@ -222,6 +222,27 @@
     },
     {
       "assets": [],
+      "group": "installer-runtime",
+      "license": {
+        "expression": "Zlib"
+      },
+      "license_files": [
+        {
+          "bytes": 15488,
+          "path": "CrossPlatform/packaging/windows/NSIS-COPYING.txt",
+          "sha256": "6cc665347be5c84b76bf0fd6f85fbb0c33261e89b3408aa3e3e55dbe95e12d89"
+        }
+      ],
+      "name": "NSIS installer runtime",
+      "notice_state": "bundled",
+      "sbom_ref": "pkg:github/NSIS-Dev/nsis@v312",
+      "source_url": "https://github.com/NSIS-Dev/nsis/tree/v312",
+      "status": "windows-zlib-installer-stub-and-plugins",
+      "type": "application",
+      "version": "3.12"
+    },
+    {
+      "assets": [],
       "group": "model",
       "license": {
         "name": "NVIDIA Open Model License",
@@ -12977,6 +12998,7 @@
         "pkg:cargo/xkeysym@0.2.1",
         "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
+        "pkg:github/NSIS-Dev/nsis@v312",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
@@ -14511,6 +14533,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:github/NSIS-Dev/nsis@v312"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3"
     },
     {
@@ -14607,9 +14633,9 @@
       "sha256": "c654032d61ae8b3370914ac8f3c4434961306823b9da808dc6a28bd658fd0fe3"
     },
     {
-      "bytes": 19273,
+      "bytes": 19773,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
-      "sha256": "2ee394b72b416a69c06f0496ae9aee2709211f39b4430a03fdea5d9de82d8b7b"
+      "sha256": "18f7af403075a1903578e458caf7ab024d88f42c8f42483f2e7ee6ae3fb623f4"
     },
     {
       "bytes": 2501,
@@ -16023,7 +16049,7 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 360,
+    "components": 361,
     "models": 8,
     "native_libraries": 9,
     "notice_gaps": 32,

@@ -2,6 +2,7 @@
 param(
  [ValidateSet('Install','Rollback','Uninstall','Status')][string]$Action='Status',
  [string]$Payload,
+ [ValidateSet('Koett Preview','Koett')][string]$ShortcutName='Koett Preview',
  [string]$Root=(Join-Path $env:LOCALAPPDATA 'Programs\Koett-Preview')
 )
 $ErrorActionPreference='Stop'
@@ -46,7 +47,7 @@ function Own-Startup([string]$Value){$Value-and$Value.StartsWith('"'+$Root+'\ver
 function Activate([string]$Current,[string]$Previous){
  $statePath=Join-Path $Root 'current.json';$oldState=if(Test-Path $statePath){[IO.File]::ReadAllBytes($statePath)}else{$null}
  $run='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run';$oldRun=(Get-ItemProperty -LiteralPath $run -Name Koett -ErrorAction SilentlyContinue).Koett
- $shortcut=Join-Path ([Environment]::GetFolderPath('Programs')) 'Koett Preview.lnk';$shell=New-Object -ComObject WScript.Shell
+ $shortcut=Join-Path ([Environment]::GetFolderPath('Programs')) ($ShortcutName+'.lnk');$shell=New-Object -ComObject WScript.Shell
  if(Test-Path $shortcut){$target=$shell.CreateShortcut($shortcut).TargetPath;if(-not(Under-Root $target)){throw 'The Koett Preview shortcut belongs to another installation'}}
  $oldLink=if(Test-Path $shortcut){[IO.File]::ReadAllBytes($shortcut)}else{$null}
  $target=Join-Path (Join-Path $Root $Current.Replace('/','\')) 'Koett.exe'
@@ -106,7 +107,7 @@ try {
    if(-not$state){throw 'No preview installation'}
    $versions=@(Get-ChildItem -LiteralPath (Join-Path $Root 'versions') -Directory)
    foreach($version in $versions){if($version.Name-notmatch'^[a-f0-9]{16}$'){throw 'Unrecognized version directory'};$null=Verify-Payload $version.FullName}
-   $shortcut=Join-Path ([Environment]::GetFolderPath('Programs')) 'Koett Preview.lnk';$shell=New-Object -ComObject WScript.Shell
+   $shortcut=Join-Path ([Environment]::GetFolderPath('Programs')) ($ShortcutName+'.lnk');$shell=New-Object -ComObject WScript.Shell
    if(Test-Path $shortcut){if(Under-Root ($shell.CreateShortcut($shortcut).TargetPath)){Remove-Item -LiteralPath $shortcut}}
    $run='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run';$value=(Get-ItemProperty -LiteralPath $run -Name Koett -ErrorAction SilentlyContinue).Koett
    if(Own-Startup $value){Remove-ItemProperty -LiteralPath $run -Name Koett}

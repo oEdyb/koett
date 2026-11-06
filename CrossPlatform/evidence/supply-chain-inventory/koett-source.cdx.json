@@ -12921,6 +12921,39 @@
       "version": "0.3.0"
     },
     {
+      "bom-ref": "pkg:github/NSIS-Dev/nsis@v312",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/NSIS-Dev/nsis/tree/v312"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Zlib"
+        }
+      ],
+      "name": "NSIS installer runtime",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "installer-runtime"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        },
+        {
+          "name": "koett:status",
+          "value": "windows-zlib-installer-stub-and-plugins"
+        }
+      ],
+      "purl": "pkg:github/NSIS-Dev/nsis@v312",
+      "type": "application",
+      "version": "3.12"
+    },
+    {
       "bom-ref": "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
       "externalReferences": [
         {
@@ -14404,6 +14437,7 @@
         "pkg:cargo/xkeysym@0.2.1",
         "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
+        "pkg:github/NSIS-Dev/nsis@v312",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
@@ -15935,6 +15969,10 @@
     {
       "dependsOn": [],
       "ref": "pkg:github/FluidInference/text-processing-rs@v0.3.0"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:github/NSIS-Dev/nsis@v312"
     },
     {
       "dependsOn": [],
