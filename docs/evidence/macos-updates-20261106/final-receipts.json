@@ -1,0 +1,219 @@
+[
+  {
+    "check": "bad",
+    "time": 1793933308.63996,
+    "status": {
+      "phase": "ready",
+      "model": "parakeet",
+      "ok": true,
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "updates": {
+        "build": "4010",
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "enabled": true,
+        "pending": false,
+        "installing": false,
+        "error": "The update is improperly signed and could not be validated. Please try again later or contact the app developer.",
+        "preparing": false
+      }
+    },
+    "binarySHA256": "b71c6fb376ffbc658e116a8dbfa196e81144b6ec3b98853362c9252864115727"
+  },
+  {
+    "check": "bad-app",
+    "time": 1793933313.1087208,
+    "status": {
+      "ok": true,
+      "phase": "ready",
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "model": "parakeet",
+      "updates": {
+        "preparing": false,
+        "build": "4010",
+        "pending": false,
+        "error": "The update is improperly signed and could not be validated. Please try again later or contact the app developer.",
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "installing": false,
+        "enabled": true
+      }
+    },
+    "binarySHA256": "b71c6fb376ffbc658e116a8dbfa196e81144b6ec3b98853362c9252864115727"
+  },
+  {
+    "check": "deferred-while-recording",
+    "time": 1793933317.8932009,
+    "status": {
+      "ok": true,
+      "drawLocked": false,
+      "pasteAccessGranted": true,
+      "phase": "recording",
+      "updates": {
+        "installing": false,
+        "enabled": true,
+        "preparing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "build": "4010",
+        "pending": true
+      },
+      "paused": false,
+      "model": "parakeet"
+    },
+    "binarySHA256": "b71c6fb376ffbc658e116a8dbfa196e81144b6ec3b98853362c9252864115727"
+  },
+  {
+    "check": "manual-check-busy",
+    "time": 1793933317.9039192,
+    "status": {
+      "model": "parakeet",
+      "drawLocked": false,
+      "updates": {
+        "installing": false,
+        "enabled": true,
+        "pending": true,
+        "preparing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "build": "4010"
+      },
+      "pasteAccessGranted": true,
+      "phase": "recording",
+      "error": {
+        "message": "Wait until Koett and its updater are idle, then retry.",
+        "code": "busy"
+      },
+      "ok": false,
+      "paused": false
+    }
+  },
+  {
+    "check": "still-recording-after-delay",
+    "time": 1793933320.9430258,
+    "status": {
+      "ok": true,
+      "phase": "recording",
+      "pasteAccessGranted": true,
+      "updates": {
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "build": "4010",
+        "preparing": false,
+        "enabled": true,
+        "pending": true,
+        "installing": false
+      },
+      "drawLocked": false,
+      "model": "parakeet",
+      "paused": false
+    }
+  },
+  {
+    "check": "deferred-while-transcribing",
+    "time": 1793933323.8799171,
+    "status": {
+      "model": "parakeet",
+      "phase": "transcribing",
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "updates": {
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "build": "4010",
+        "enabled": true,
+        "installing": false,
+        "pending": true,
+        "preparing": false
+      },
+      "ok": true
+    }
+  },
+  {
+    "check": "updated-after-idle",
+    "time": 1793933330.849195,
+    "status": {
+      "drawLocked": false,
+      "ok": true,
+      "pasteAccessGranted": true,
+      "phase": "ready",
+      "model": "parakeet",
+      "updates": {
+        "build": "4011",
+        "enabled": true,
+        "installing": false,
+        "pending": false,
+        "preparing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-8573f308ad7e4f67d6a9af8818dfaf0427383aff.app"
+      }
+    },
+    "binarySHA256": "9dffd869ab78af15c1c82fc4efed296f699acafc0ac1696d65c2420c0e7762df",
+    "oldBackup": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+    "oldBackupSHA256": "b71c6fb376ffbc658e116a8dbfa196e81144b6ec3b98853362c9252864115727"
+  },
+  {
+    "check": "manual-check-accepted",
+    "time": 1793933331.873278,
+    "status": {
+      "ok": true,
+      "phase": "ready",
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "updates": {
+        "pending": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-8573f308ad7e4f67d6a9af8818dfaf0427383aff.app",
+        "enabled": true,
+        "preparing": false,
+        "build": "4011",
+        "installing": false
+      },
+      "model": "parakeet"
+    }
+  },
+  {
+    "check": "manual-check-requested-feed",
+    "time": 1793933334.061524,
+    "requestsBefore": 25,
+    "requestsAfter": 26
+  },
+  {
+    "check": "rollback-launch",
+    "time": 1793933338.2121038,
+    "status": {
+      "model": "parakeet",
+      "pasteAccessGranted": true,
+      "updates": {
+        "enabled": true,
+        "installing": false,
+        "preparing": false,
+        "pending": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-42320de3832af4b698dd757f605922283e28e738.app",
+        "build": "4010"
+      },
+      "drawLocked": false,
+      "ok": true,
+      "phase": "ready"
+    },
+    "binarySHA256": "b71c6fb376ffbc658e116a8dbfa196e81144b6ec3b98853362c9252864115727"
+  },
+  {
+    "check": "no-feed-inert",
+    "time": 1793933342.19329,
+    "status": {
+      "drawLocked": false,
+      "updates": {
+        "installing": false,
+        "build": "4013",
+        "enabled": false,
+        "pending": false,
+        "preparing": false
+      },
+      "phase": "ready",
+      "pasteAccessGranted": true,
+      "model": "parakeet",
+      "ok": true
+    },
+    "requestsBefore": 27,
+    "requestsAfter": 27,
+    "backupNames": [
+      "Koett-42320de3832af4b698dd757f605922283e28e738.app",
+      "Koett-8573f308ad7e4f67d6a9af8818dfaf0427383aff.app"
+    ]
+  }
+]

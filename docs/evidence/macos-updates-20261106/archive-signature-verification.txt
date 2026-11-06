@@ -1,0 +1,2 @@
+B: Ed25519 valid=true, bytes=11064605
+damaged: Ed25519 valid=true, bytes=11064606

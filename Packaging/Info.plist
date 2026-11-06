@@ -2,29 +2,37 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDisplayName</key>
-    <string>Koett</string>
-    <key>CFBundleExecutable</key>
-    <string>koett</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.olledyberg.Koett</string>
-    <key>CFBundleName</key>
-    <string>Koett</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.3.0</string>
-    <key>CFBundleVersion</key>
-    <string>3</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Koett uses the microphone for dictation, input level previews, and permission checks.</string>
-    <key>NSScreenCaptureUsageDescription</key>
-    <string>Koett captures the screen when you draw or pin.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Koett reads the current browser tab URL only when you start media transcription.</string>
+	<key>CFBundleDisplayName</key>
+	<string>Koett</string>
+	<key>CFBundleExecutable</key>
+	<string>koett</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.olledyberg.Koett</string>
+	<key>CFBundleName</key>
+	<string>Koett</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.3.0</string>
+	<key>CFBundleVersion</key>
+	<string>3</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>15.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Koett uses the microphone for dictation, input level previews, and permission checks.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Koett captures the screen when you draw or pin.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Koett reads the current browser tab URL only when you start media transcription.</string>
+	<key>SUPublicEDKey</key>
+	<string>FYJa1mXv6UJgVIWclOoAWO/78u2d8Wlfncx/q36v1Pw=</string>
 </dict>
 </plist>

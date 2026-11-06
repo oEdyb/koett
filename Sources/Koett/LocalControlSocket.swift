@@ -12,6 +12,7 @@ struct ControlReply: Codable, Sendable {
     var pasteLogError: String? = nil
     var pasteAccessGranted: Bool? = nil
     var drawLocked: Bool? = nil
+    var updates: UpdateStatus? = nil
 
     static func failure(_ code: String, _ message: String) -> Self {
         .init(ok: false, phase: "unavailable", model: nil, error: .init(code: code, message: message))
