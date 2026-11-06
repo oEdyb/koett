@@ -131,6 +131,13 @@ If the YouTube time cannot be read, the link is the plain video URL.
 
 ## Linux
 
+Private windows keep only the app name. Firefox says so in its window title, in English.
+Chrome and Chromium don't: their compositor title is the same in Incognito, and only the
+accessible frame's name ends in ` (Incognito)`. So for those two, the page title and details
+appear only when an accessible frame has exactly the window's title, which also means a
+Chrome with accessibility off shows just its app name. Other browsers and languages are not
+detected; turn off Include Page Details in Pins for image-only pins.
+
 Same gesture table and paste format as the Mac; `gesture.rs` ports the Mac's
 rules and their tests. Differences, all measured on niri 26.04:
 

@@ -59,6 +59,10 @@ pub fn read(
         return None;
     }
     let app = app_name(&window.app_id);
+    let chromium = is_chromium(&window.app_id);
+    if private_title(&window.app_id, &window.title) || (chromium && !window.title_unique) {
+        return Some(app_only(app));
+    }
     let mut context = PinContext {
         title: Some(page_title(&window.title, &app)),
         app: Some(app),
@@ -74,6 +78,9 @@ pub fn read(
         screen_point,
         deadline,
     );
+    if chromium && !found.frame_confirmed {
+        return context.app.map(app_only);
+    }
     context.url = found.url;
     context.link = found.link;
     context.image = found.image;
@@ -82,6 +89,44 @@ pub fn read(
     }
     context.selection = found.selection;
     Some(context)
+}
+
+fn app_only(app: String) -> PinContext {
+    PinContext {
+        app: Some(app),
+        ..PinContext::default()
+    }
+}
+
+/// Google Chrome and Chromium. Their compositor title is the same in Incognito;
+/// only the accessible frame's name carries the marker.
+fn is_chromium(app: &str) -> bool {
+    matches!(
+        app.to_ascii_lowercase().replace(' ', "-").as_str(),
+        "google-chrome"
+            | "google-chrome-stable"
+            | "google-chrome-beta"
+            | "google-chrome-unstable"
+            | "chromium"
+            | "chromium-browser"
+            | "org.chromium.chromium"
+            | "com.google.chrome"
+    )
+}
+
+fn is_firefox(app: &str) -> bool {
+    let app = app.to_ascii_lowercase();
+    matches!(
+        app.as_str(),
+        "firefox" | "firefox-esr" | "org.mozilla.firefox" | "mozilla-firefox" | "mozilla firefox"
+    )
+}
+
+/// English window titles that say a window is private. Absence proves nothing:
+/// other browsers and languages rely on the Include Page Details switch.
+fn private_title(app: &str, title: &str) -> bool {
+    (is_chromium(app) && title.ends_with(" (Incognito)"))
+        || (is_firefox(app) && title.ends_with("Private Browsing"))
 }
 
 fn point_in_window(
@@ -135,6 +180,7 @@ fn read_screen(
         .ok()?;
     let mut context = None;
     let mut found = Found::default();
+    let mut chromium = false;
     runtime.block_on(async {
         let geometry = super::kwin_context::at_point(point).await;
         let read = async {
@@ -151,6 +197,12 @@ fn read_screen(
                 {
                     return None;
                 }
+                chromium = is_chromium(&window.app);
+                if private_title(&window.app, &window.title) {
+                    context = Some(app_only(app_name(&window.app)));
+                    chromium = false;
+                    return None;
+                }
                 context = Some(PinContext {
                     app: Some(app_name(&window.app)),
                     title: Some(window.title.clone()),
@@ -158,6 +210,7 @@ fn read_screen(
                 });
                 let frame = frame_titled(&bus, &window.title).await.ok()??;
                 fill_frame(&bus, &frame, include_selection, Some(local), &mut found).await;
+                found.frame_confirmed = true;
                 return Some(());
             }
             let root = (
@@ -195,6 +248,11 @@ fn read_screen(
                 }
             }
             let (app, title, frame, local) = only(candidates)?;
+            if private_title(&app, &title) {
+                context = Some(app_only(app));
+                return None;
+            }
+            chromium = is_chromium(&app);
             context = Some(PinContext {
                 app: Some(app),
                 title: Some(title.clone()),
@@ -203,12 +261,17 @@ fn read_screen(
             fill_frame(&bus, &frame, include_selection, Some(local), &mut found).await;
             if name(&bus, &frame).await.as_deref() != Some(&title) {
                 found = Found::default();
+            } else {
+                found.frame_confirmed = true;
             }
             Some(())
         };
         let _ = tokio::time::timeout(remaining(deadline).min(ACCESSIBILITY), read).await;
     });
     let mut context = context?;
+    if chromium && !found.frame_confirmed {
+        return context.app.map(app_only);
+    }
     context.url = found.url;
     context.link = found.link;
     context.image = found.image;
@@ -293,6 +356,8 @@ struct Found {
     selection: Option<String>,
     /// A password field is focused or has a selection: read no selection at all.
     password: bool,
+    /// The accessible frame's name is exactly the window title.
+    frame_confirmed: bool,
 }
 
 fn accessible(
@@ -354,6 +419,8 @@ async fn fill(
     fill_frame(&bus, &frame, include_selection, point, found).await;
     if name(&bus, &frame).await.as_deref() != Some(title) {
         *found = Found::default();
+    } else {
+        found.frame_confirmed = true;
     }
     Ok(())
 }
@@ -711,6 +778,32 @@ async fn read_selection(bus: &Connection, scan: &Scan) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_the_marker_on_the_right_browser_means_private() {
+        for (app, title) in [
+            ("google-chrome", "Bank - Google Chrome (Incognito)"),
+            ("Google Chrome", "Bank - Google Chrome (Incognito)"),
+            ("chromium", "Bank - Chromium (Incognito)"),
+            ("firefox", "Bank — Mozilla Firefox Private Browsing"),
+            (
+                "org.mozilla.firefox",
+                "Bank — Mozilla Firefox Private Browsing",
+            ),
+        ] {
+            assert!(super::private_title(app, title), "{app} {title}");
+        }
+        for (app, title) in [
+            ("google-chrome", "Bank - Google Chrome"),
+            ("firefox", "Bank — Mozilla Firefox"),
+            ("firefox", "Bank (Incognito) — Mozilla Firefox"),
+            ("kitty", "notes (Incognito)"),
+            ("kitty", "Private Browsing"),
+            ("google-chrome", "Private Browsing"),
+        ] {
+            assert!(!super::private_title(app, title), "{app} {title}");
+        }
+    }
 
     #[test]
     #[ignore = "requires the named private niri geometry lab and real AT-SPI fixture"]
