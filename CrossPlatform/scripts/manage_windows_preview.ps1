@@ -3,11 +3,16 @@ param(
  [ValidateSet('Install','Rollback','Uninstall','Status')][string]$Action='Status',
  [string]$Payload,
  [string]$MessagePath,
+ [string]$LogPath,
  [ValidateSet('Koett Preview','Koett')][string]$ShortcutName='Koett Preview',
  [string]$Root=(Join-Path $env:LOCALAPPDATA 'Programs\Koett-Preview')
 )
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
+function Result($Value){
+ $json=$Value|ConvertTo-Json -Depth 8 -Compress
+ if($LogPath){try{[IO.File]::WriteAllText($LogPath,$json,[Text.Encoding]::Unicode)}catch{$json}}else{$json}
+}
 function Read-Json([string]$Path){Get-Content -LiteralPath $Path -Raw -Encoding UTF8|ConvertFrom-Json}
 function Hash([string]$Path){(Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()}
 function Under-Root([string]$Path){[IO.Path]::GetFullPath($Path).StartsWith($Root+'\',[StringComparison]::OrdinalIgnoreCase)}
@@ -165,9 +170,9 @@ try {
  if(-not$Root.StartsWith([IO.Path]::GetFullPath($env:LOCALAPPDATA)+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Preview root must be below LocalAppData'}
  if($Root-eq[IO.Path]::GetFullPath($env:LOCALAPPDATA)){throw 'Unsafe preview root'}
  if(Test-Path $Root){if((Get-Item -LiteralPath $Root -Force).Attributes-band[IO.FileAttributes]::ReparsePoint){throw 'Preview root is a reparse point'};if((Test-Path (Join-Path $Root 'current.json'))-and(Test-Path (Join-Path $Root 'preview-owner.json'))){try{$state=Read-State}catch{throw ('Could not read installation metadata at '+$Root+'. Move this folder to a safe location, then run setup again; application data is stored separately. '+$_.Exception.Message)}}else{$state=Residue-State}}else{$state=$null}
- if($Action-eq'Status'){@{ok=$true;installed=[bool]($state-and$state.current);root=$Root;state=$state;signature='unsigned-preview';outputs=@();warnings=@()}|ConvertTo-Json -Depth 6 -Compress;exit 0}
+ if($Action-eq'Status'){Result @{ok=$true;installed=[bool]($state-and$state.current);root=$Root;state=$state;signature='unsigned-preview';outputs=@();warnings=@()};exit 0}
  if(@(Get-Process Koett,koett-engine,koett-transcribe-engine -ErrorAction SilentlyContinue|Where-Object {$_.SessionId-eq[Diagnostics.Process]::GetCurrentProcess().SessionId}).Count){throw ('Close Koett and its transcription commands in this Windows session, then retry '+$Root)}
- if(-not$PSCmdlet.ShouldProcess($Root,$Action)){@{ok=$true;changed=$false;outputs=@();warnings=@()}|ConvertTo-Json -Compress;exit 0}
+ if(-not$PSCmdlet.ShouldProcess($Root,$Action)){Result @{ok=$true;changed=$false;outputs=@();warnings=@()};exit 0}
  if(Test-Path $Root){Sweep-Residue}
  switch($Action){
   Install {
@@ -214,8 +219,8 @@ try {
    foreach($path in @((Join-Path $Root 'versions'),$Root)){if((Test-Path $path)-and@(Get-ChildItem -LiteralPath $path -Force).Count-eq0){Remove-Item -LiteralPath $path}}
   }
  }
- @{ok=$true;action=$Action.ToLowerInvariant();root=$Root;data_preserved=$true;signature='unsigned-preview';outputs=@();warnings=(@('Unsigned preview; media tools and optional formatter are not bundled')+$cleanupWarnings);preserved_files=$preserved}|ConvertTo-Json -Depth 6 -Compress
+ Result @{ok=$true;action=$Action.ToLowerInvariant();root=$Root;data_preserved=$true;signature='unsigned-preview';outputs=@();warnings=(@('Unsigned preview; media tools and optional formatter are not bundled')+$cleanupWarnings);preserved_files=$preserved}
 }catch{
  Message ($_.Exception.Message+([Environment]::NewLine)+'Your application data is kept. '+($preserved-join[Environment]::NewLine))
- @{ok=$false;code='preview_management_failed';error=$_.Exception.Message;fix='Follow the path-specific error above and retry; application data is preserved';outputs=@();warnings=@()}|ConvertTo-Json -Compress;exit 1
+ Result @{ok=$false;preserved_files=$preserved;code='preview_management_failed';error=$_.Exception.Message;fix='Follow the path-specific error above and retry; application data is preserved';outputs=@();warnings=@()};exit 1
 }

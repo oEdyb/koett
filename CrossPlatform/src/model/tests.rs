@@ -688,3 +688,255 @@ fn cache_destination_failure_preserves_error_without_trying_another_source() {
     }
     fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn unpack_diagnostics_include_path_nested_os_error_and_persistent_log() {
+    use std::fmt;
+    #[derive(Debug)]
+    struct Context(std::io::Error);
+    impl fmt::Display for Context {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("archive entry failed")
+        }
+    }
+    impl std::error::Error for Context {
+        fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+            Some(&self.0)
+        }
+    }
+    let error = std::io::Error::other(Context(std::io::Error::from_raw_os_error(5)));
+    let parent = temporary_directory("model-diagnostics");
+    fs::create_dir_all(&parent).unwrap();
+    let path = parent.join("model.onnx");
+    let message = super::unpack_failure(&path, &error);
+    assert!(message.contains(&path.display().to_string()));
+    assert!(message.contains("os error 5"));
+    let reported = super::diagnose_model_result(
+        Err(message),
+        "compact",
+        &parent.join("Model Install.log"),
+        &AtomicBool::new(false),
+    )
+    .unwrap_err();
+    assert!(reported.contains("reopen Koett"));
+    assert!(reported.contains("Model Install.log"));
+    assert!(
+        fs::read_to_string(parent.join("Model Install.log"))
+            .unwrap()
+            .contains("os error 5")
+    );
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn archive_install_supports_a_long_windows_profile_path() {
+    let parent = temporary_directory("long-profile")
+        .join("a".repeat(80))
+        .join("b".repeat(80));
+    fs::create_dir_all(&parent).unwrap();
+    let destination = parent.join(DEFAULT_MODEL_ID);
+    let transaction = create_install_transaction(&parent).unwrap();
+    let archive = write_test_archive(&transaction, &[("model.int8.onnx", b"model")]);
+    let vad = transaction.join("vad.part");
+    fs::write(&vad, b"vad").unwrap();
+    let manifest = test_manifest(vec![
+        artifact_file(ASR_ARTIFACT, "model.int8.onnx", b"model"),
+        artifact_file(VAD_ARTIFACT, VAD_FILE, b"vad"),
+    ]);
+    install_archive(
+        &archive,
+        &vad,
+        &destination,
+        &manifest,
+        &"a".repeat(64),
+        &AtomicBool::new(false),
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(destination.join("model.int8.onnx").is_file());
+    fs::remove_dir_all(parent.parent().unwrap().parent().unwrap()).unwrap();
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn locked_model_file_reports_os_error_and_retry_succeeds() {
+    use std::os::windows::fs::OpenOptionsExt;
+    let parent = temporary_directory("locked-model");
+    fs::create_dir_all(&parent).unwrap();
+    let destination = parent.join(DEFAULT_MODEL_ID);
+    let transaction = create_install_transaction(&parent).unwrap();
+    let archive = write_test_archive(&transaction, &[("model.int8.onnx", b"model")]);
+    let vad = transaction.join("vad.part");
+    fs::write(&vad, b"vad").unwrap();
+    let folder = transaction.join(DEFAULT_MODEL_ID);
+    fs::create_dir_all(&folder).unwrap();
+    let locked = folder.join("model.int8.onnx");
+    fs::write(&locked, b"partial").unwrap();
+    let guard = fs::OpenOptions::new()
+        .read(true)
+        .share_mode(0)
+        .open(&locked)
+        .unwrap();
+    let manifest = test_manifest(vec![
+        artifact_file(ASR_ARTIFACT, "model.int8.onnx", b"model"),
+        artifact_file(VAD_ARTIFACT, VAD_FILE, b"vad"),
+    ]);
+    let attempt = || {
+        install_archive(
+            &archive,
+            &vad,
+            &destination,
+            &manifest,
+            &"a".repeat(64),
+            &AtomicBool::new(false),
+            &mut |_| {},
+        )
+    };
+    let error = attempt().unwrap_err();
+    assert!(error.contains("model.int8.onnx"), "{error}");
+    assert!(error.contains("os error 32"), "{error}");
+    assert!(!destination.exists());
+    drop(guard);
+    attempt().unwrap();
+    assert_eq!(
+        fs::read(destination.join("model.int8.onnx")).unwrap(),
+        b"model"
+    );
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[test]
+fn archive_symlinks_are_rejected_without_promotion() {
+    let parent = temporary_directory("archive-link");
+    fs::create_dir_all(&parent).unwrap();
+    let archive = parent.join("model.tar.bz2");
+    let mut builder = tar::Builder::new(BzEncoder::new(
+        File::create(&archive).unwrap(),
+        Compression::fast(),
+    ));
+    let mut header = tar::Header::new_gnu();
+    header.set_entry_type(tar::EntryType::Symlink);
+    header.set_size(0);
+    header.set_mode(0o777);
+    builder
+        .append_link(&mut header, "model/link", "../../outside")
+        .unwrap();
+    builder.into_inner().unwrap().finish().unwrap();
+    let destination = parent.join(DEFAULT_MODEL_ID);
+    let error = install_archive(
+        &archive,
+        &parent.join("vad"),
+        &destination,
+        &test_manifest(vec![]),
+        &"a".repeat(64),
+        &AtomicBool::new(false),
+        &mut |_| {},
+    )
+    .unwrap_err();
+    assert!(error.contains("unsupported entry type"));
+    assert!(!destination.exists());
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn windows_invalid_archive_filename_reports_entry_and_os_error() {
+    let parent = temporary_directory("invalid-windows-name");
+    fs::create_dir_all(&parent).unwrap();
+    let transaction = create_install_transaction(&parent).unwrap();
+    let archive = transaction.join("model.tar.bz2");
+    let mut builder = tar::Builder::new(BzEncoder::new(
+        File::create(&archive).unwrap(),
+        Compression::fast(),
+    ));
+    let mut header = tar::Header::new_gnu();
+    header.set_size(1);
+    header.set_mode(0o644);
+    builder
+        .append_data(
+            &mut header,
+            format!("{DEFAULT_MODEL_ID}/bad?.onnx"),
+            b"x".as_slice(),
+        )
+        .unwrap();
+    builder.into_inner().unwrap().finish().unwrap();
+    let destination = parent.join(DEFAULT_MODEL_ID);
+    let error = install_archive(
+        &archive,
+        &parent.join("vad"),
+        &destination,
+        &test_manifest(vec![]),
+        &"a".repeat(64),
+        &AtomicBool::new(false),
+        &mut |_| {},
+    )
+    .unwrap_err();
+    assert!(error.contains("bad?.onnx"), "{error}");
+    assert!(error.contains("os error 123"), "{error}");
+    assert!(!destination.exists());
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn cancel_and_quit_preserve_previous_model_failure_log() {
+    let parent = temporary_directory("cancelled-diagnostics");
+    fs::create_dir_all(&parent).unwrap();
+    let log = parent.join("Model Install.log");
+    fs::write(&log, "original OS32 diagnostic").unwrap();
+    for reason in ["model setup cancelled", "quit during model setup"] {
+        let error = super::diagnose_model_result(
+            Err(reason.into()),
+            "compact",
+            &log,
+            &AtomicBool::new(true),
+        )
+        .unwrap_err();
+        assert_eq!(error, reason);
+        assert_eq!(
+            fs::read_to_string(&log).unwrap(),
+            "original OS32 diagnostic"
+        );
+        assert!(super::failure_log(&error).is_none());
+    }
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[test]
+fn model_log_write_failure_keeps_the_original_error_readable() {
+    let parent = temporary_directory("log-unavailable");
+    fs::create_dir_all(&parent).unwrap();
+    let blocked = parent.join("blocked");
+    fs::write(&blocked, b"not a directory").unwrap();
+    let error = super::diagnose_model_result(
+        Err("original OS5 failure".into()),
+        "compact",
+        &blocked.join("log"),
+        &AtomicBool::new(false),
+    )
+    .unwrap_err();
+    assert!(error.contains("original OS5 failure"));
+    assert!(error.contains("\nModel log unavailable: "));
+    fs::remove_dir_all(parent).unwrap();
+}
+
+#[test]
+fn fallback_diagnostics_append_without_wrapping_the_same_failure_twice() {
+    let parent = temporary_directory("fallback-log");
+    let log = parent.join("Model Install.log");
+    let active = AtomicBool::new(false);
+    let first =
+        super::diagnose_model_result(Err("first OS32".into()), "v2", &log, &active).unwrap_err();
+    let before = fs::read(&log).unwrap();
+    assert_eq!(
+        super::diagnose_model_result(Err(first.clone()), "v2", &log, &active).unwrap_err(),
+        first
+    );
+    assert_eq!(fs::read(&log).unwrap(), before);
+    super::diagnose_model_result(Err("fallback OS112".into()), "compact", &log, &active)
+        .unwrap_err();
+    let text = fs::read_to_string(&log).unwrap();
+    assert!(text.contains("first OS32") && text.contains("fallback OS112"));
+    fs::remove_dir_all(parent).unwrap();
+}

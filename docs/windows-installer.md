@@ -68,3 +68,23 @@ A deliberately failing signer was tested against the actual setup script.
 Organization policy that blocks PowerShell or constrains its language may prevent
 setup. The visible error should be provided to the administrator; no protection
 needs to be disabled for the supported install path.
+
+Setup keeps machine-readable results in `%LOCALAPPDATA%\Koett\Setup Logs`.
+Failures show a retry instruction and the log path; successful setup ends with
+Launch Koett. Added or modified files still get a plain preservation notice.
+Model installation failures name the archive entry and underlying Windows error;
+`Model Install.log` is in `%LOCALAPPDATA%\DybergCo\Koett\data\models`.
+Choose the model again or reopen Koett to retry after addressing disk space,
+permissions or another program locking files. Cancellation does not replace a
+previous diagnostic. Model failures offer an Open the log dialog, including
+failures before downloading or while loading the native engine.
+
+Visible installer regression checks live in
+`CrossPlatform/scripts/windows-lab/checks/installer-visible.ps1`. Stage it together
+with `helpers.ps1` and `installer-messages.ps1` in the Windows lab, then invoke it
+through the lab bridge with `-Setup` pointing to the installer. It rejects JSON
+and preview warnings throughout the wizard and checks the Launch Koett finish page.
+
+Only attempted operations create setup logs; cancelling at Welcome creates none.
+Completed-operation logs intentionally survive uninstall so diagnostics and
+preserved-file locations remain available alongside the retained application data.

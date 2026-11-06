@@ -21,6 +21,7 @@ ManifestDPIAware true
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Koett.exe"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch Koett"
 !insertmacro MUI_PAGE_FINISH
 !define MUI_UNCONFIRMPAGE_TEXT_TOP "Koett will be removed. Your settings, transcripts and models are kept. Added or changed app files are kept in LocalAppData\Koett Preserved Files."
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -30,7 +31,10 @@ ManifestDPIAware true
 !uninstfinalize '${SIGN_UNINSTALLER} "%1"' = 0
 !endif
 !macro ReadMessage PREFIX
+ StrCpy $1 ""
+ ClearErrors
  IfFileExists "$PLUGINSDIR\result.txt" 0 ${PREFIX}_message_done
+ ClearErrors
  FileOpen $2 "$PLUGINSDIR\result.txt" r
  IfErrors ${PREFIX}_message_done
  StrCpy $1 ""
@@ -44,15 +48,41 @@ ManifestDPIAware true
  FileClose $2
  ${PREFIX}_message_done:
 !macroend
+Var SetupLog
+Var SetupLogName
+Var SetupLogBase
+!macro PrepareLog
+ ClearErrors
+ CreateDirectory "$SetupLogBase"
+ IfErrors 0 +3
+ StrCpy $SetupLogBase "$TEMP"
+ StrCpy $SetupLog "$SetupLogBase\$SetupLogName"
+!macroend
+!macro LogOutput
+ !insertmacro PrepareLog
+ ClearErrors
+ FileOpen $2 "$SetupLog" a
+ IfErrors +4
+ FileSeek $2 0 END
+ FileWriteUTF16LE /BOM $2 "$1$\r$\n"
+ FileClose $2
+!macroend
 Var SetupMutex
 !macro SetupGuard
+ System::Call 'kernel32::GetCurrentProcessId() i .r8'
+ System::Call 'kernel32::GetTickCount() i .r9'
+ StrCpy $SetupLogName "Koett-setup-$8-$9.log"
+ StrCpy $SetupLogBase "$LOCALAPPDATA\Koett\Setup Logs"
+ StrCpy $SetupLog "$SetupLogBase\$SetupLogName"
  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\KoettSetup") p .r0 ?e'
  Pop $1
  StrCpy $SetupMutex $0
  StrCmp $0 0 setup_busy
  StrCmp $1 183 setup_busy setup_available
  setup_busy:
- MessageBox MB_OK|MB_ICONSTOP "Another Koett setup is running. Close it and retry." /SD IDOK
+ StrCpy $1 "Another Koett setup is running."
+ !insertmacro LogOutput
+ MessageBox MB_OK|MB_ICONSTOP "Close the other Koett setup and retry; details are in $SetupLog." /SD IDOK
  SetErrorLevel 1
  Abort
  setup_available:
@@ -65,7 +95,9 @@ Function .onInit
  StrCmp $0 "" version_ok
  ${VersionCompare} "$0" "${VERSION}" $1
  StrCmp $1 "1" 0 version_ok
- MessageBox MB_OK|MB_ICONSTOP "A newer Koett version is installed. Uninstall it first, then run this setup; your data is kept." /SD IDOK
+ StrCpy $1 "A newer Koett version is installed."
+ !insertmacro LogOutput
+ MessageBox MB_OK|MB_ICONSTOP "Uninstall the newer version before running setup; your data is kept and details are in $SetupLog." /SD IDOK
  SetErrorLevel 1
  Abort
  version_ok:
@@ -74,14 +106,16 @@ Section
  InitPluginsDir
  SetOutPath "$PLUGINSDIR\payload"
  File /r "${PAYLOAD}\*"
- nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\payload\manage-preview.ps1" -Action Install -Root "$INSTDIR" -Payload "$PLUGINSDIR\payload" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt"'
+ !insertmacro PrepareLog
+ nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\payload\manage-preview.ps1" -Action Install -Root "$INSTDIR" -Payload "$PLUGINSDIR\payload" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt" -LogPath "$SetupLog"'
  Pop $0
  Pop $1
+ !insertmacro LogOutput
  !insertmacro ReadMessage install
  StrCmp $0 "0" install_ok
  StrCmp $1 "" 0 +2
- StrCpy $1 "Setup timed out or stopped before reporting a reason at $INSTDIR. Run it again; your data is kept."
- MessageBox MB_OK|MB_ICONSTOP "Installation could not finish.$\r$\n$1" /SD IDOK
+ StrCpy $1 "Close Koett and run setup again."
+ MessageBox MB_OK|MB_ICONSTOP "Details: $SetupLog$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
  install_ok:
@@ -106,21 +140,25 @@ Function un.onInit
  !insertmacro SetupGuard
  SetShellVarContext current
  StrCmp $INSTDIR "$LOCALAPPDATA\Programs\Koett" valid
- MessageBox MB_OK|MB_ICONSTOP "Run the uninstaller from the installed Koett directory." /SD IDOK
+ StrCpy $1 "Uninstaller was started from an unexpected directory."
+ !insertmacro LogOutput
+ MessageBox MB_OK|MB_ICONSTOP "Run uninstall from Windows Installed apps; details are in $SetupLog." /SD IDOK
  Abort
  valid:
 FunctionEnd
 Section Uninstall
  InitPluginsDir
  SetOutPath "$TEMP"
- nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\manage-install.ps1" -Action Uninstall -Root "$INSTDIR" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt"'
+ !insertmacro PrepareLog
+ nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\manage-install.ps1" -Action Uninstall -Root "$INSTDIR" -ShortcutName Koett -MessagePath "$PLUGINSDIR\result.txt" -LogPath "$SetupLog"'
  Pop $0
  Pop $1
+ !insertmacro LogOutput
  !insertmacro ReadMessage uninstall
  StrCmp $0 "0" uninstall_ok
  StrCmp $1 "" 0 +2
- StrCpy $1 "Setup timed out or stopped before reporting a reason at $INSTDIR. Run it again; your data is kept."
- MessageBox MB_OK|MB_ICONSTOP "Uninstall could not finish.$\r$\n$1" /SD IDOK
+ StrCpy $1 "Close Koett and retry uninstall."
+ MessageBox MB_OK|MB_ICONSTOP "Details: $SetupLog$\r$\n$1" /SD IDOK
  SetErrorLevel 1
  Abort
  uninstall_ok:

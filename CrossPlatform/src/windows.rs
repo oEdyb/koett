@@ -13,6 +13,7 @@ pub mod media_cli;
 pub(crate) mod media_control;
 mod media_view;
 mod meter;
+mod model_failure;
 mod native_theme;
 mod paste_chord;
 mod paste_guard;
@@ -1193,7 +1194,12 @@ impl WindowsApp {
         if self.status != AppStatus::Ready || self.capture_pending || processing::busy() {
             if message == WM_CHANGE_MODEL {
                 processing::model_message(
-                    "Stop recording or finish setup before changing models".into(),
+                    if matches!(self.status, AppStatus::Error(_)) {
+                        "Reopen Koett to retry model setup"
+                    } else {
+                        "Stop recording or finish setup before changing models"
+                    }
+                    .into(),
                 );
             } else {
                 processing::formatting_status(
@@ -1331,6 +1337,25 @@ impl WindowsApp {
                         .unwrap_or(&message)
                         .to_string();
                     eprintln!("Koett: {message}");
+                    if !message.starts_with("@media-result:")
+                        && (crate::model::failure_log(&message).is_some()
+                            || message.contains("\nModel log unavailable: "))
+                    {
+                        self.pill_state.set(
+                            pill_state::Phase::Error {
+                                message: message
+                                    .lines()
+                                    .next()
+                                    .unwrap_or("Model setup failed")
+                                    .into(),
+                                rescue: false,
+                            },
+                            self.clock.elapsed().as_millis() as u64,
+                        );
+                        self.update_tray();
+                        self.update_overlay();
+                        model_failure::present(&message);
+                    }
                 }
                 EngineUpdate::Status(status) => {
                     let media_outcome = media_view::finish(&status);
@@ -1389,13 +1414,15 @@ impl WindowsApp {
                             self.pill_state.set(pill_state::Phase::Transcribing, now);
                             self.pill_state.media_result = self.pill_media;
                         }
-                        AppStatus::Error(message) => self.pill_state.set(
-                            pill_state::Phase::Error {
-                                message: message.clone(),
-                                rescue: true,
-                            },
-                            now,
-                        ),
+                        AppStatus::Error(message) => {
+                            self.pill_state.set(
+                                pill_state::Phase::Error {
+                                    message: message.clone(),
+                                    rescue: true,
+                                },
+                                now,
+                            );
+                        }
                         _ => {}
                     }
                     if let Some(outcome) = media_outcome {
@@ -1425,6 +1452,9 @@ impl WindowsApp {
                     self.status = status;
                     self.update_tray();
                     self.update_overlay();
+                    if let AppStatus::Error(message) = &self.status {
+                        model_failure::present(message);
+                    }
                 }
                 EngineUpdate::RecordingStarted(levels) => {
                     self.meter = meter::Meter::default();

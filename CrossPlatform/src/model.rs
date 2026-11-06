@@ -126,6 +126,28 @@ pub fn ensure_default_model(
 fn ensure_selected_model(
     selection: LocalModel,
     cancelled: &AtomicBool,
+    progress: impl FnMut(ModelProgress),
+) -> Result<PathBuf, String> {
+    let result = ensure_selected_model_inner(selection, cancelled, progress);
+    #[cfg(target_os = "windows")]
+    let result = report_model_result(selection, result, cancelled);
+    result
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn report_model_result(
+    selection: LocalModel,
+    result: Result<PathBuf, String>,
+    cancelled: &AtomicBool,
+) -> Result<PathBuf, String> {
+    let log = paths::model_install_log()
+        .unwrap_or_else(|_| std::env::temp_dir().join("Koett Model Install.log"));
+    diagnose_model_result(result, selection.id(), &log, cancelled)
+}
+
+fn ensure_selected_model_inner(
+    selection: LocalModel,
+    cancelled: &AtomicBool,
     mut progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
     let manifest = selection.manifest()?;
@@ -165,7 +187,7 @@ fn ensure_selected_model(
     let archive = transaction.join("model.tar.bz2.part");
     let vad_download = transaction.join("silero_vad.onnx.part");
     let download_total = asr.bytes + vad.bytes;
-    let result = (|| {
+    let result: Result<PathBuf, String> = (|| {
         download_file(
             "speech model",
             &asr.source_url,
@@ -449,6 +471,44 @@ fn tls_provider() -> TlsProvider {
     }
 }
 
+fn unpack_failure(path: &Path, error: &std::io::Error) -> String {
+    let mut cause: &dyn std::error::Error = error;
+    while let Some(source) = cause.source() {
+        cause = source;
+    }
+    format!("could not unpack model file {}: {cause}", path.display())
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn diagnose_model_result(
+    result: Result<PathBuf, String>,
+    model: &str,
+    log: &Path,
+    cancelled: &AtomicBool,
+) -> Result<PathBuf, String> {
+    result.map_err(|error| {
+        if cancelled.load(Ordering::Acquire) || error.contains("\nModel log: ") || error.contains("\nModel log unavailable: ") {
+            return error;
+        }
+        let details = format!("Model: {model}\n{error}\nRetry this command, choose the model again, or reopen Koett.\n");
+        let write = log.parent().map_or(Ok(()), fs::create_dir_all).and_then(|()| fs::OpenOptions::new().create(true).append(true).open(log).and_then(|mut file| file.write_all(details.as_bytes())));
+        match write {
+            Ok(()) => format!("{error}\nRetry this command, choose the model again, or reopen Koett.\nModel log: {}\n", log.display()),
+            Err(log_error) => format!("{error}\nRetry this command, choose the model again, or reopen Koett; \nModel log unavailable: {}: {log_error}", log.display()),
+        }
+    })
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn failure_log(message: &str) -> Option<&str> {
+    message
+        .rsplit_once("\nModel log: ")?
+        .1
+        .lines()
+        .next()
+        .filter(|path| !path.is_empty())
+}
+
 fn install_archive(
     archive: &Path,
     vad_download: &Path,
@@ -476,10 +536,20 @@ fn install_archive(
         if !kind.is_file() && !kind.is_dir() {
             return Err("the model archive contains an unsupported entry type".to_string());
         }
-        if !entry
-            .unpack_in(transaction)
-            .map_err(|error| format!("could not unpack the model archive: {error}"))?
-        {
+        let path = entry
+            .path()
+            .map_err(|error| format!("could not read model entry path: {error}"))?
+            .into_owned();
+        if !entry.unpack_in(transaction).map_err(|error| {
+            unpack_failure(
+                &transaction.join(
+                    path.components()
+                        .filter(|part| !matches!(part, std::path::Component::CurDir))
+                        .collect::<PathBuf>(),
+                ),
+                &error,
+            )
+        })? {
             return Err("the model archive contains an unsafe path".to_string());
         }
     }
