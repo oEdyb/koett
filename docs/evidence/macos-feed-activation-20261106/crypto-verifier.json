@@ -1,0 +1,6 @@
+{
+  "validExit": 0,
+  "validOutput": "Feed and archive Ed25519 signatures verified\n",
+  "tamperedExit": 1,
+  "tamperedArchiveExit": 1
+}
