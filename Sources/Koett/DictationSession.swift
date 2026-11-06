@@ -210,6 +210,7 @@ extension KoettController {
         mediaPauseTask?.cancel()
         recordingOverlay.stop()
         sketchOverlay.finish()
+        refreshDrawingKeyTap()
         let session = activeDictationID ?? beginDictationSession()
         switch speechEngine {
         case .parakeet, .parakeetV3, .parakeet110m:
