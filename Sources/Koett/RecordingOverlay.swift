@@ -555,7 +555,8 @@ final class RecordingOverlayController: NSObject {
         let size = NSSize(width: PillView.width, height: pillView.preferredHeight)
         panel.ignoresMouseEvents = false
         guard !dragging else { return }
-        guard let origin = position.origin(size: size, displays: PillDisplay.current) else {
+        guard let origin = position.origin(size: size, displays: PillDisplay.current,
+                                           preferredDisplayID: PillDisplay.mainID) else {
             panel.setContentSize(size)
             pillView.frame = NSRect(origin: .zero, size: size)
             return
