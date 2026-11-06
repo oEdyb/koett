@@ -2,9 +2,9 @@
   "sourceCommit": "7ef87560115fcf10ab5fb616973dbe2ccc49cdb3",
   "version": "0.3.1",
   "build": "5101",
-  "inputApp": "/Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app",
+  "inputApp": "$HOME/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app",
   "notarized": false,
   "distributable": false,
   "sha256": "648e164e91be15e841452c7bad5eeb4f2f829d466b5372976ea9780d3f6e26ab",
-  "executableUUID": "UUID: F949DA85-D0D2-3905-9129-03C59336B5DB (arm64) /Users/olle/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/MacOS/koett"
+  "executableUUID": "UUID: F949DA85-D0D2-3905-9129-03C59336B5DB (arm64) $HOME/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/MacOS/koett"
 }
