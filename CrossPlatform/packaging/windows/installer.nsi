@@ -11,18 +11,39 @@ OutFile "${OUTPUT}"
 RequestExecutionLevel user
 InstallDir "$LOCALAPPDATA\Programs\Koett"
 SetCompressor /SOLID zlib
+ManifestDPIAware true
 !define MUI_ABORTWARNING
+!define MUI_ICON "${__FILEDIR__}/Koett.ico"
+!define MUI_UNICON "${__FILEDIR__}/Koett.ico"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}/setup-sidebar.bmp"
+!define MUI_WELCOMEPAGE_TITLE "Install Koett"
+!define MUI_WELCOMEPAGE_TEXT "Close Koett before installing. Your settings and transcripts are kept."
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\versions\${VERSIONKEY}\Koett.exe"
 !insertmacro MUI_PAGE_FINISH
+!define MUI_UNCONFIRMPAGE_TEXT_TOP "Koett will be removed. Your settings, transcripts and models are kept."
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 !ifdef SIGN_UNINSTALLER
 !uninstfinalize '${SIGN_UNINSTALLER} "%1"'
 !endif
+Var SetupMutex
+!macro SetupGuard
+ System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\KoettSetup") p .r0 ?e'
+ Pop $1
+ StrCpy $SetupMutex $0
+ StrCmp $0 0 setup_busy
+ StrCmp $1 183 setup_busy setup_available
+ setup_busy:
+ MessageBox MB_OK|MB_ICONSTOP "Another Koett setup is running. Close it and retry." /SD IDOK
+ SetErrorLevel 1
+ Abort
+ setup_available:
+!macroend
 Function .onInit
+ !insertmacro SetupGuard
  SetShellVarContext current
  StrCpy $INSTDIR "$LOCALAPPDATA\Programs\Koett"
  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayVersion"
@@ -48,18 +69,21 @@ Section
  install_ok:
  SetOutPath "$INSTDIR"
  File /oname=manage-install.ps1 "${PAYLOAD}/manage-preview.ps1"
+ File /oname=Koett.ico "${__FILEDIR__}/Koett.ico"
  WriteUninstaller "$INSTDIR\Uninstall.exe"
+ CreateShortcut "$SMPROGRAMS\Koett.lnk" "$INSTDIR\versions\${VERSIONKEY}\Koett.exe" "" "$INSTDIR\Koett.ico"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayName" "Koett"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayVersion" "${VERSION}"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "Publisher" "Dyberg & Co AB"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "InstallLocation" "$INSTDIR"
- WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayIcon" "$INSTDIR\versions\${VERSIONKEY}\Koett.exe"
+ WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayIcon" "$INSTDIR\Koett.ico"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "QuietUninstallString" '$\"$INSTDIR\Uninstall.exe$\" /S'
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "NoModify" 1
  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "NoRepair" 1
 SectionEnd
 Function un.onInit
+ !insertmacro SetupGuard
  SetShellVarContext current
  StrCmp $INSTDIR "$LOCALAPPDATA\Programs\Koett" valid
  MessageBox MB_OK|MB_ICONSTOP "Run the uninstaller from the installed Koett directory."
@@ -77,6 +101,7 @@ Section Uninstall
  Abort
  uninstall_ok:
  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett"
+ Delete "$INSTDIR\Koett.ico"
  Delete "$INSTDIR\manage-install.ps1"
  Delete "$INSTDIR\Uninstall.exe"
  RMDir "$INSTDIR"

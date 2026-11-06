@@ -9,7 +9,7 @@ import subprocess
 from package_windows import digest, verify_payload
 
 
-def build(payload, output, compiler):
+def build(payload, output, compiler, uninstaller_sign_command=None):
     payload, output = Path(payload).resolve(), Path(output).resolve()
     prefix = '/' if os.name == 'nt' else '-'
     compiler_version = subprocess.check_output([compiler, prefix+'VERSION'], text=True).strip()
@@ -20,6 +20,11 @@ def build(payload, output, compiler):
     if os.name != 'nt' and (output == Path('/tmp') or Path('/tmp') in output.parents):
         raise ValueError('Build output must not use /tmp')
     release = verify_payload(payload)
+    cross = Path(__file__).resolve().parents[1]
+    for name, expected in [('NSIS-COPYING.txt', cross/'packaging/windows/NSIS-COPYING.txt'),
+                           ('manage-preview.ps1', cross/'scripts/manage_windows_preview.ps1')]:
+        if not (payload/name).is_file() or digest(payload/name) != digest(expected):
+            raise ValueError('Rebuild payload with the current installer manager and original NSIS notice')
     if release['architecture'] != 'x86_64':
         raise ValueError('Native ARM64 installer support is not verified')
     version = release['version']
@@ -27,7 +32,8 @@ def build(payload, output, compiler):
         raise ValueError('Invalid installer version')
     output.parent.mkdir(parents=True, exist_ok=True)
     script = Path(__file__).resolve().parents[1]/'packaging/windows/installer.nsi'
-    subprocess.run([compiler, prefix+'WX', prefix+'V2', prefix+'DOUTPUT='+str(output),
+    signing = [prefix+'DSIGN_UNINSTALLER='+uninstaller_sign_command] if uninstaller_sign_command else []
+    subprocess.run([compiler, *signing, prefix+'WX', prefix+'V2', prefix+'DOUTPUT='+str(output),
                     prefix+'DPAYLOAD='+str(payload), prefix+'DVERSION='+version,
                     prefix+'DVERSIONKEY='+digest(payload/'preview-release.json')[:16], str(script)], check=True)
     return {'installer': str(output), 'sha256': digest(output), 'version': version,
@@ -39,5 +45,6 @@ if __name__ == '__main__':
     parser.add_argument('--payload', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--compiler', default='makensis')
+    parser.add_argument('--uninstaller-sign-command', help='Trusted NSIS signing command prefix; receives the uninstaller path')
     args = parser.parse_args()
-    print(json.dumps(build(args.payload, args.output, args.compiler), indent=2))
+    print(json.dumps(build(args.payload, args.output, args.compiler, args.uninstaller_sign_command), indent=2))

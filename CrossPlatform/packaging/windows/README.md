@@ -10,6 +10,27 @@ shortcut is Ctrl+Shift+Space. Settings selects the microphone, shortcut, toggle 
 hold, model and optional formatting. Tray History, Words, drawing, pins and media
 remain native Windows surfaces. Ask is shelved.
 
+## Setup installer
+
+Open `Koett-Windows-x86_64-Setup.exe`, choose **Install**, then **Finish** to launch.
+Setup installs for the current Windows account without administrator access and
+adds **Koett** to Start and Settings → Apps → Installed apps.
+
+Close Koett before installing a newer setup. Upgrade keeps settings, transcripts,
+models and existing startup preference. Older installers refuse a downgrade.
+There is no Windows automatic updater or scheduled update task.
+
+To remove the app, choose **Koett → Uninstall** in Installed apps. Settings,
+transcripts and models remain in application data. Modified or busy app files
+cause a visible refusal rather than deletion of unknown files.
+
+These builds are unsigned: Windows has no verified publisher to show, and an
+Internet download may trigger SmartScreen or policy blocking. Checksums do not
+provide publisher trust. The isolated lab install does not establish reputation
+for a future public download; no signing account has been provisioned.
+
+The ZIP remains a portable/advanced preview option:
+
 ## Optional per-user preview installation
 
 From PowerShell in the extracted folder:
