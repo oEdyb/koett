@@ -1,0 +1,246 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        1760,
+        1116
+      ],
+      "case": "words",
+      "percent": 100,
+      "dpi": 96,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1280,
+        752
+      ],
+      "case": "processing",
+      "percent": 100,
+      "dpi": 96,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        1760,
+        1116
+      ],
+      "case": "correction",
+      "percent": 100,
+      "dpi": 96,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        2240,
+        1456
+      ],
+      "case": "words",
+      "percent": 150,
+      "dpi": 144,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1560,
+        992
+      ],
+      "case": "processing",
+      "percent": 150,
+      "dpi": 144,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        560,
+        254,
+        2000,
+        1274
+      ],
+      "case": "correction",
+      "percent": 150,
+      "dpi": 144,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        640,
+        144,
+        2560,
+        1504
+      ],
+      "case": "words",
+      "percent": 200,
+      "dpi": 192,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1840,
+        1232
+      ],
+      "case": "processing",
+      "percent": 200,
+      "dpi": 192,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        320,
+        72,
+        2240,
+        1432
+      ],
+      "case": "correction",
+      "percent": 200,
+      "dpi": 192,
+      "light": 1
+    },
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        1760,
+        1116
+      ],
+      "case": "words",
+      "percent": 100,
+      "dpi": 96,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1280,
+        752
+      ],
+      "case": "processing",
+      "percent": 100,
+      "dpi": 96,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        1760,
+        1116
+      ],
+      "case": "correction",
+      "percent": 100,
+      "dpi": 96,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        800,
+        436,
+        2240,
+        1456
+      ],
+      "case": "words",
+      "percent": 150,
+      "dpi": 144,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1560,
+        992
+      ],
+      "case": "processing",
+      "percent": 150,
+      "dpi": 144,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        560,
+        254,
+        2000,
+        1274
+      ],
+      "case": "correction",
+      "percent": 150,
+      "dpi": 144,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        640,
+        144,
+        2560,
+        1504
+      ],
+      "case": "words",
+      "percent": 200,
+      "dpi": 192,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        720,
+        272,
+        1840,
+        1232
+      ],
+      "case": "processing",
+      "percent": 200,
+      "dpi": 192,
+      "light": 0
+    },
+    {
+      "passed": true,
+      "rect": [
+        320,
+        72,
+        2240,
+        1432
+      ],
+      "case": "correction",
+      "percent": 200,
+      "dpi": 192,
+      "light": 0
+    }
+  ],
+  "scale_restored": 200,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Latest\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 5708,
+    "sha256": "B70ECF4FE49D2E955B97A8EE49C592703E7275B7DAA982AD3C7ED49E7A7C4089"
+  },
+  "theme_restored": true
+}

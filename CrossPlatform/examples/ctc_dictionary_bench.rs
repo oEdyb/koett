@@ -23,7 +23,7 @@ fn main() -> Result<(), String> {
     let mut ctc = ParakeetTranscriber::load(Path::new(&args[0]), 4)?;
     let mut plain = ParakeetTranscriber::load(Path::new(&args[1]), 4)?;
     let mut biased =
-        ParakeetTranscriber::load_with_dictionary(Path::new(&args[1]), 4, &dictionary)?;
+        ParakeetTranscriber::load_with_acoustic_dictionary(Path::new(&args[1]), 4, &dictionary)?;
     let mut results = BTreeMap::new();
     let mut files: Vec<_> = std::fs::read_dir(&args[3])
         .map_err(|e| e.to_string())?

@@ -189,6 +189,11 @@ impl TranscriptionWorker {
         self.shutdown();
     }
 
+    #[cfg(target_os = "windows")]
+    pub(crate) fn stop_for_windows_lab(&mut self) {
+        self.shutdown();
+    }
+
     fn shutdown(&mut self) {
         if let Ok(active) = self.active.lock()
             && let Some(active) = active.as_ref()

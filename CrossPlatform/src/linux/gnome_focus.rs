@@ -1,10 +1,8 @@
 use ashpd::zbus;
-use std::collections::HashMap;
 use std::sync::{OnceLock, mpsc};
 use std::time::{Duration, Instant};
 
 const WAIT: Duration = Duration::from_millis(250);
-const LIMIT: usize = 4096;
 
 pub fn desktop() -> bool {
     std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|value| {
@@ -21,12 +19,16 @@ struct Window {
     id: u32,
     pid: u32,
     app: String,
+    #[serde(default)]
+    modifiers: Option<u32>,
 }
 
+pub type Snapshot = (u32, String, Option<u8>);
+
 #[derive(Default)]
-struct Identities(HashMap<(String, u32), u32>);
+struct Identities(super::focus_tokens::FocusTokens<(String, u32)>);
 impl Identities {
-    fn resolve(&mut self, owner: String, raw: &str) -> Option<(u32, String)> {
+    fn resolve(&mut self, owner: String, raw: &str) -> Option<Snapshot> {
         let window: Window = serde_json::from_str(raw).ok()?;
         if window.protocol != 1
             || window.id == 0
@@ -38,28 +40,28 @@ impl Identities {
         {
             return None;
         }
-        let key = (owner, window.id);
-        let token = if let Some(token) = self.0.get(&key) {
-            *token
-        } else {
-            if self.0.len() >= LIMIT {
-                return None;
-            }
-            let token = u32::try_from(self.0.len() + 1).ok()?;
-            self.0.insert(key, token);
-            token
-        };
-        Some((token, window.app))
+        let token = self.0.token((owner, window.id))?;
+        Some((token, window.app, window.modifiers.map(held_modifiers)))
     }
 }
 
 struct Request {
     expires: Instant,
-    reply: mpsc::Sender<Option<(u32, String)>>,
+    reply: mpsc::Sender<Option<Snapshot>>,
 }
 static WORKER: OnceLock<Option<mpsc::SyncSender<Request>>> = OnceLock::new();
 
 pub fn focused() -> Option<(u32, String)> {
+    sample().map(|(id, app, _)| (id, app))
+}
+
+fn held_modifiers(mask: u32) -> u8 {
+    // Clutter: Shift, Control, Alt/Mod1, Mod3/4/5 and Super/Hyper/Meta.
+    // Caps/Num lock and pointer buttons must not block normal dictation.
+    u8::from(mask & (1 | 4 | 8 | 32 | 64 | 128 | (1 << 26) | (1 << 27) | (1 << 28)) != 0)
+}
+
+pub fn sample() -> Option<Snapshot> {
     let sender = WORKER
         .get_or_init(|| {
             let (tx, rx) = mpsc::sync_channel::<Request>(1);
@@ -169,6 +171,26 @@ mod tests {
         panic!("private GNOME controller did not finish");
     }
     #[test]
+    fn modifier_snapshot_tracks_held_keys_but_ignores_locks_and_buttons() {
+        for mask in [1, 4, 8, 32, 64, 128, 1 << 26, 1 << 27, 1 << 28] {
+            assert_eq!(held_modifiers(mask), 1);
+        }
+        assert_eq!(held_modifiers(2 | 16 | (1 << 8)), 0);
+        let mut ids = Identities::default();
+        assert_eq!(ids.resolve(":1.1".into(), &window(1)).unwrap().2, None);
+        let mut value: serde_json::Value = serde_json::from_str(&window(1)).unwrap();
+        value["modifiers"] = 5.into();
+        assert_eq!(
+            ids.resolve(":1.1".into(), &value.to_string()).unwrap().2,
+            Some(1)
+        );
+        value["modifiers"] = 0.into();
+        assert_eq!(
+            ids.resolve(":1.1".into(), &value.to_string()).unwrap().2,
+            Some(0)
+        );
+    }
+    #[test]
     fn distinct_windows_and_shell_restarts_never_reuse_tokens() {
         let mut ids = Identities::default();
         let first = ids.resolve(":1.1".into(), &window(1)).unwrap();
@@ -177,7 +199,7 @@ mod tests {
         assert_ne!(ids.resolve(":1.2".into(), &window(1)).unwrap().0, first.0);
     }
     #[test]
-    fn invalid_own_unknown_and_exhausted_identities_fail_closed() {
+    fn invalid_own_and_unknown_identities_fail_closed() {
         let mut ids = Identities::default();
         for raw in [
             "null".into(),
@@ -189,12 +211,5 @@ mod tests {
         ] {
             assert!(ids.resolve(":1.1".into(), &raw).is_none());
         }
-        for id in 1..=LIMIT as u32 {
-            assert!(ids.resolve(":1.1".into(), &window(id)).is_some());
-        }
-        assert!(
-            ids.resolve(":1.1".into(), &window(LIMIT as u32 + 1))
-                .is_none()
-        );
     }
 }

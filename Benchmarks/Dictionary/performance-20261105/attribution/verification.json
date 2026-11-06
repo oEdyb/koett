@@ -1,0 +1,34 @@
+{
+  "swift-test": {
+    "exitCode": 0
+  },
+  "release-build": {
+    "exitCode": 0
+  },
+  "diff-check": {
+    "exitCode": 0
+  },
+  "shell-syntax": {
+    "exitCode": 0
+  },
+  "packaging-plists": {
+    "exitCode": 0
+  },
+  "swiftTestCount": 438,
+  "swiftOptionalSkips": 13,
+  "swiftTestFailures": 0,
+  "swiftTestSeconds": 43.762,
+  "releaseBuildSeconds": 57.99,
+  "focusedRenamedSpyTests": {
+    "passed": 3,
+    "failures": 0
+  },
+  "review": {
+    "model": "Opus5.5",
+    "sourceHead": "d1b689a23b286dc5c8a40a925af6f70e88dc9c51",
+    "verdict": "APPROVE",
+    "runtimeOrCacheContractDefects": 0,
+    "laterChanges": "test rename, exact harness/provenance, resource recheck and report; product runtime code unchanged"
+  },
+  "proofLimits": "Unit tests cover cache reads/refresh; controller menu wiring has static review, not automated event-dispatch coverage."
+}

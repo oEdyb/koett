@@ -1,0 +1,117 @@
+--- a/Sources/Koett/DictationSession.swift
++++ b/Sources/Koett/DictationSession.swift
+@@ -207,0 +208 @@
++        let begin = ProcessInfo.processInfo.systemUptime
+@@ -208,0 +210 @@
++        let media = ProcessInfo.processInfo.systemUptime
+@@ -209,0 +212 @@
++        let overlay = ProcessInfo.processInfo.systemUptime
+@@ -210,0 +214 @@
++        let sketch = ProcessInfo.processInfo.systemUptime
+@@ -211,0 +216 @@
++        print("STOP_ENTRY mediaMS=\((media-begin)*1000) overlayMS=\((overlay-media)*1000) sketchMS=\((sketch-overlay)*1000) sessionMS=\((ProcessInfo.processInfo.systemUptime-sketch)*1000)")
+@@ -222,0 +228 @@
++        let stopBegan = ProcessInfo.processInfo.systemUptime
+@@ -223,0 +230 @@
++        print("RECORDER_STOP_TOTAL_MS \((ProcessInfo.processInfo.systemUptime-stopBegan)*1000)")
+@@ -226 +233,4 @@
+-        guard !handleMicrophoneFailure(recorder, url: url) else { return }
++        let checked = ProcessInfo.processInfo.systemUptime
++        let microphoneFailed = handleMicrophoneFailure(recorder, url: url)
++        let beforeState = ProcessInfo.processInfo.systemUptime
++        guard !microphoneFailed else { return }
+@@ -227,0 +238 @@
++        let afterState = ProcessInfo.processInfo.systemUptime
+@@ -228,0 +240 @@
++        print("STOP_STATE failureCheckMS=\((beforeState-checked)*1000) stateMS=\((afterState-beforeState)*1000) playMS=\((ProcessInfo.processInfo.systemUptime-afterState)*1000)")
+@@ -239,0 +252 @@
++        let overlayStart = ProcessInfo.processInfo.systemUptime
+@@ -240,0 +254 @@
++        print("STOP_SHOW_TRANSCRIBING_MS \((ProcessInfo.processInfo.systemUptime-overlayStart)*1000)")
+@@ -686,0 +701,5 @@
++        if let root = ProcessInfo.processInfo.environment["KOETT_AUDIT_ROOT"] {
++            let folder = URL(fileURLWithPath: root).appendingPathComponent("captured-wavs")
++            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
++            try? FileManager.default.copyItem(at: url, to: folder.appendingPathComponent(url.lastPathComponent))
++        }
+--- a/Sources/Koett/Koett.swift
++++ b/Sources/Koett/Koett.swift
+@@ -56,0 +57 @@
++    var loginPreference = LoginPreference()
+@@ -84,0 +86 @@
++                let menuStart = ProcessInfo.processInfo.systemUptime
+@@ -85,0 +88 @@
++                let menuEnd = ProcessInfo.processInfo.systemUptime
+@@ -86,0 +90 @@
++                if state == .transcribing { print("STATE_OBSERVER menuMS=\((menuEnd-menuStart)*1000) microphoneRefreshMS=\((ProcessInfo.processInfo.systemUptime-menuEnd)*1000)") }
+@@ -231,0 +236 @@
++        let modelLoadBegan = ProcessInfo.processInfo.systemUptime
+@@ -237,0 +243,2 @@
++        print("STARTUP_MODEL_LOAD_MS \((ProcessInfo.processInfo.systemUptime-modelLoadBegan)*1000)")
++        let modelWarmBegan = ProcessInfo.processInfo.systemUptime
+@@ -243,0 +251 @@
++        print("STARTUP_ASR_WARM_MS \((ProcessInfo.processInfo.systemUptime-modelWarmBegan)*1000)")
+--- a/Sources/Koett/KoettMenu.swift
++++ b/Sources/Koett/KoettMenu.swift
+@@ -94,0 +95 @@
++        let micBegan = ProcessInfo.processInfo.systemUptime
+@@ -95,0 +97 @@
++        print("MIC_MENU_MS \((ProcessInfo.processInfo.systemUptime-micBegan)*1000)")
+--- a/Sources/Koett/LoginPreference.swift
++++ b/Sources/Koett/LoginPreference.swift
+@@ -5,0 +6,8 @@
++    private var cachedStatus: SMAppService.Status?
++
++    mutating func menuStatus(refresh: Bool, read: () -> SMAppService.Status) -> SMAppService.Status {
++        if !refresh, let cachedStatus { return cachedStatus }
++        let status = read()
++        cachedStatus = status
++        return status
++    }
+@@ -14,3 +22,11 @@
+-        let status = SMAppService.mainApp.status
+-        let item = menuItem(title: status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login",
+-                            action: #selector(toggleStartAtLogin), selected: status == .enabled)
++        let item = menuItem(title: "Start at Login", action: #selector(toggleStartAtLogin), selected: false)
++        refreshLoginMenuItem(item, refresh: state == .ready)
++        return item
++    }
++
++    func refreshLoginMenuItem(_ item: NSMenuItem, refresh: Bool = true) {
++        let began = ProcessInfo.processInfo.systemUptime
++        let status = loginPreference.menuStatus(refresh: refresh) { SMAppService.mainApp.status }
++        print("LOGIN_STATUS_MS \((ProcessInfo.processInfo.systemUptime-began)*1000)")
++        item.title = status == .requiresApproval ? "Start at Login (Approval Required)" : "Start at Login"
++        item.state = status == .enabled ? .on : .off
+@@ -18 +33,0 @@
+-        return item
+--- a/Sources/Koett/MicrophoneInput.swift
++++ b/Sources/Koett/MicrophoneInput.swift
+@@ -136,0 +137 @@
++        let began = ProcessInfo.processInfo.systemUptime
+@@ -137,0 +139 @@
++        let stopped = ProcessInfo.processInfo.systemUptime
+@@ -138,0 +141 @@
++        let uninitialized = ProcessInfo.processInfo.systemUptime
+@@ -139,0 +143 @@
++        print("INPUT_DEINIT stopMS=\((stopped-began)*1000) uninitializeMS=\((uninitialized-stopped)*1000) disposeMS=\((ProcessInfo.processInfo.systemUptime-uninitialized)*1000)")
+--- a/Sources/Koett/MicrophoneMenu.swift
++++ b/Sources/Koett/MicrophoneMenu.swift
+@@ -41 +41,6 @@
+-        if menu === statusItem?.menu { refreshSketchPasteChordItem(in: menu) }
++        if menu === statusItem?.menu {
++            refreshSketchPasteChordItem(in: menu)
++            if let item = menu.items.first(where: { $0.action == #selector(toggleStartAtLogin) }) {
++                refreshLoginMenuItem(item)
++            }
++        }
+--- a/Sources/Koett/MicrophoneRecorder.swift
++++ b/Sources/Koett/MicrophoneRecorder.swift
+@@ -66,0 +67 @@
++        let began = ProcessInfo.processInfo.systemUptime
+@@ -67,0 +69 @@
++        let stopped = ProcessInfo.processInfo.systemUptime
+@@ -68,0 +71 @@
++        let closed = ProcessInfo.processInfo.systemUptime
+@@ -69,0 +73 @@
++        print("RECORDER_PARTS inputStopMS=\((stopped-began)*1000) fileCloseMS=\((closed-stopped)*1000)")

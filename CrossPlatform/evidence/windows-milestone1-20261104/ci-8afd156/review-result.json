@@ -1,0 +1,120 @@
+{
+  "ok": true,
+  "result": {
+    "modifier_race_refused": true,
+    "history_search_text": "selftargetmarker",
+    "unhovered_actions": true,
+    "steps": [
+      {
+        "step": "unhovered-actions",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 262810
+        },
+        "focus": {
+          "hwnd": 131344,
+          "process": "powershell",
+          "pid": 7728
+        },
+        "visible": false
+      },
+      {
+        "step": "modifier-wait-second-editor",
+        "rect": [
+          156,
+          156,
+          1556,
+          756
+        ],
+        "focus": {
+          "hwnd": 131468,
+          "process": "powershell",
+          "pid": 8552
+        }
+      },
+      {
+        "step": "modifier-wait-recovery",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 262810
+        },
+        "focus": {
+          "hwnd": 131468,
+          "process": "powershell",
+          "pid": 8552
+        },
+        "visible": true
+      },
+      {
+        "step": "history-search-refuses-self-paste",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 262172,
+          "process": "Koett",
+          "pid": 5156
+        }
+      },
+      {
+        "step": "history-pagination",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 262172,
+          "process": "Koett",
+          "pid": 5156
+        }
+      }
+    ],
+    "self_paste_refused": true,
+    "passed": true,
+    "cancel": true,
+    "history": true,
+    "own_focus": {
+      "hwnd": 262172,
+      "process": "Koett",
+      "pid": 5156
+    },
+    "switched": {
+      "hwnd": 131468,
+      "process": "powershell",
+      "pid": 8552
+    },
+    "pause": true,
+    "history_counts": [
+      50,
+      100,
+      110
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\Koett8afd\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 5156,
+      "sha256": "53DF56021A21411426535337DF16457A887075A45B312206763EA172D596454B"
+    },
+    "original_text": "",
+    "unhovered_names": [
+      "Cancel",
+      "Pause",
+      "History"
+    ],
+    "pagination": true,
+    "second_text": ""
+  },
+  "id": "1793829492231070762"
+}

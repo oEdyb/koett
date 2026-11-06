@@ -110,8 +110,8 @@ pub fn ensure_model(
     cancelled: &AtomicBool,
     progress: impl FnMut(ModelProgress),
 ) -> Result<PathBuf, String> {
-    if selection == LocalModel::Nemotron && !cfg!(target_os = "linux") {
-        return Err("Nemotron streaming is currently supported on Linux only".into());
+    if selection == LocalModel::Nemotron && !cfg!(any(target_os = "linux", target_os = "windows")) {
+        return Err("Nemotron streaming is currently supported on Linux and Windows only".into());
     }
     ensure_selected_model(selection, cancelled, progress)
 }
@@ -369,6 +369,14 @@ fn restore_cached_release(
             Ok(()) => return Ok(true),
             Err(error) => {
                 check_cancelled(cancelled)?;
+                // These prefixes belong to write_verified_download's destination
+                // operations. Another source cannot fix a full or unwritable disk.
+                if ["could not create ", "could not write ", "could not finish "]
+                    .iter()
+                    .any(|prefix| error.starts_with(prefix))
+                {
+                    return Err(error);
+                }
                 eprintln!("Cached release unavailable; trying another source: {error}");
             }
         }

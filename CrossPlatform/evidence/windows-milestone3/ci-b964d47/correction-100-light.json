@@ -1,0 +1,14 @@
+{
+  "step": "correction-100-light",
+  "rect": [
+    800,
+    436,
+    1760,
+    1116
+  ],
+  "focus": {
+    "hwnd": 591004,
+    "process": "Koett",
+    "pid": 5708
+  }
+}

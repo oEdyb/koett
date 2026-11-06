@@ -226,6 +226,17 @@ desktop dialog saying Koett could not start and exited 0, so a script saw succes
 media commands now print a JSON error and exit 1. `start`, `stop` and `toggle` keep the
 dialog on purpose, since a desktop keybinding has nowhere else to show it.
 
+## 2026-11-05: auto-paste stopped after 4096 windows until a restart
+
+Found in the audit of the Linux parity PRs. The KWin and GNOME focus checks remembered
+every window and refused new ones once 4096 were known, so an autostarted Koett ended up
+showing Not pasted for every new window, with no reason given. Tokens now come from a
+counter that never reuses a value, and the oldest identity is forgotten, so memory stays
+bounded and two windows still can not look like the same target. Also from the audit: a
+display change dropped a pin whose image was taken while its context was still being read,
+under a notice saying captured images are kept, and the X11 Esc grab retried on every loop
+when it failed.
+
 ## 2026-11-05: an emptied dictation wiped the clipboard, and X11 pasted with no focus
 
 Found in the audit of the Linux parity PRs. A replacement rule that removes a whole

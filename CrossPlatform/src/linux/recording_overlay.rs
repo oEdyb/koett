@@ -166,6 +166,7 @@ impl LayerShell {
             }
             zone(pointer, -1);
         }
+        super::output::track_layer_keyboard(window, exclusive_keyboard);
         Ok(())
     }
 
@@ -196,6 +197,7 @@ impl LayerShell {
             let keyboard = self.0.get::<IntFn>(b"gtk_layer_set_keyboard_mode\0")?;
             keyboard(window.to_glib_none().0, mode);
         }
+        super::output::track_layer_keyboard(window, mode == 1);
         Ok(())
     }
 }

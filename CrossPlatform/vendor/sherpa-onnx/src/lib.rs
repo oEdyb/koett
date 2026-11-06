@@ -1,4 +1,5 @@
 //! Safe Rust bindings for the public sherpa-onnx inference APIs.
+
 //!
 //! Modified by Koett: exclude unused TTS wrappers to match its ASR-only native build.
 //!
@@ -174,6 +175,8 @@
 //! }
 //! ```
 //!
+pub use sherpa_onnx_sys::{SHARED_CONTEXT_AVAILABLE, SHARED_CONTEXT_SHA256};
+
 mod audio_tagging;
 mod display;
 mod kws;

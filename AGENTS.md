@@ -15,14 +15,14 @@ rewrite the working Mac app or add a cross-platform shell.
 
 ## Takeover snapshot — 2026-09-14
 
-- Mac worktree: `/Users/olle/dev/local-voice-input`, branch `main`. Its latest
+- Mac worktree: `$HOME/dev/local-voice-input`, branch `main`. Its latest
   product commit is `fd83546` (agent transcription CLI, feature contracts split
   into `docs/`). Below it sit the unpushed local commits for recording-feedback
   accessibility (`b94bd4d`) and durable Copy/Paste Last Transcript recovery
   (`adf55db`). None of these are pushed or released.
 - Public state: `origin/main` is `5384daa`. The latest public release is
   notarized Apple-silicon `v0.1.1` from source commit `c72f834`.
-- Cross-platform worktree: `/Users/olle/dev/koett-cross-platform`, branch
+- Cross-platform worktree: `$HOME/dev/koett-cross-platform`, branch
   `feat/windows-linux-v0.1`, head `e85d0d0`. The branch matches its remote and
   backs draft PR #2. GitHub reports that the draft PR conflicts with `main`.
 - The cross-platform worktree also contains uncommitted KTT-002 work. It builds
@@ -212,7 +212,15 @@ Dictation and all audio transcription stay local.
 
 ## Required checks
 
-Run these after code changes:
+Use targeted local checks while working (development V17/V18). Run tests for
+changed behavior and its callers; syntax-check only scripts or metadata changed.
+For documentation-only changes, run `git diff --check`; skip builds, test suites
+and CI.
+
+When source changes need broad verification, one runner runs the relevant
+platform suite once right before merge. Shared build configuration
+or core changes can affect the full suite. Select from the macOS commands below
+according to the changed files; these are not an after-every-edit checklist:
 
 ```sh
 swift test
@@ -223,7 +231,22 @@ plutil -lint Packaging/Info.plist
 plutil -lint Packaging/Koett.entitlements
 ```
 
-If you install a new build, also verify:
+CI runs when a PR is marked ready and on main, not on draft PRs or other pushes.
+To run it on a PR already marked ready, run `gh pr ready --undo` and then
+`gh pr ready`. Pull requests and main use build caches. Releases, which use the
+manual run, build without them.
+
+Keep tests and CI fast. Push to CI only when the PR is ready to merge, after
+impacted local checks.
+Continue independent work while builds run; hand back run URLs when waiting is
+necessary. Never start benchmark cohorts. If a required number is missing, take
+one small targeted measurement.
+
+For a new release candidate, recheck only behavior changed since the last tested
+candidate. Repeat broader acceptance only when a regression or changed shared
+foundation warrants it. Record exactly what ran and what remains untested.
+
+If an installation is authorized and you install a new build, also verify:
 
 ```sh
 codesign --verify --deep --strict --verbose=2 /Applications/Koett.app
@@ -240,19 +263,22 @@ signature so macOS does not request Accessibility approval after each build.
 ## Linux implementation checks
 
 Windows/Linux code lives under `CrossPlatform/`; macOS remains native Swift.
-For Rust changes run `cargo fmt --check`, `cargo test --locked`,
-`cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`,
-and `cargo check --locked --target x86_64-pc-windows-msvc` there.
+Apply the check-selection rules above to Rust changes. Run `cargo fmt --check`
+and targeted tests with `cargo test --locked <test-filter>` there. At the final
+merge gate, run `cargo test --locked` once when the affected scope warrants it;
+select `cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`
+and `cargo check --locked --target x86_64-pc-windows-msvc` only for affected
+platforms and build paths. Documentation-only edits need none of these commands.
 Read `plan.md` and `docs/ui-design.md` before changing the port or history UI.
 Preserve failed-transcript recovery and keep storage off the audio callback.
 
 On Olle's Mac, read the canonical project card before substantial work:
 
-`/Users/olle/Documents/Notes/Agent/04 - Business/Project Cards/Local Voice Input.md`
+`$HOME/Documents/Notes/Agent/04 - Business/Project Cards/Local Voice Input.md`
 
 Record durable decisions and milestones in that card and in:
 
-`/Users/olle/Documents/Notes/Agent/Log.md`
+`$HOME/Documents/Notes/Agent/Log.md`
 
 Keep this as a current-state handoff, not a chronological session log. Replace
 stale status when the app changes instead of appending duplicate progress notes.

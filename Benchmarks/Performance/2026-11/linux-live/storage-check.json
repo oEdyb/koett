@@ -1,0 +1,9 @@
+{
+  "expected_saved": 151,
+  "actual_saved": 151,
+  "history_text_read_or_exported": false,
+  "failed_wav_files": 0,
+  "network_namespace_separate_from_host": true,
+  "after_three_launches_count": 151,
+  "all_wav_files_in_private_data": 0
+}

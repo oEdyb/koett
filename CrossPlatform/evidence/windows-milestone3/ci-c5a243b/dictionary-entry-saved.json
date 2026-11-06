@@ -1,0 +1,14 @@
+{
+  "step": "dictionary-entry-saved",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 262640,
+    "process": "Koett",
+    "pid": 472
+  }
+}

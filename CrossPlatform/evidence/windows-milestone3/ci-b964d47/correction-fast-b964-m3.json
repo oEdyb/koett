@@ -1,0 +1,23 @@
+{
+  "passed": false,
+  "cases": [
+    {
+      "case": "correction-save-does-not-change-history-or-dictionary",
+      "passed": true
+    },
+    {
+      "adopted": true,
+      "case": "fast-selection-does-not-adopt-before-everyday-warning",
+      "notice": "Added to dictionary",
+      "old_action_label": "Add to dictionary",
+      "passed": false
+    }
+  ],
+  "settings_restored": true,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Latest\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 5372,
+    "sha256": "B70ECF4FE49D2E955B97A8EE49C592703E7275B7DAA982AD3C7ED49E7A7C4089"
+  },
+  "history_unchanged": true
+}

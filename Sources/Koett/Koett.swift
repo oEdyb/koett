@@ -47,13 +47,14 @@ final class KoettController: NSObject {
     let replacementStore: ReplacementStore
     let vocabularyBooster = VocabularyBooster()
     let recordingOverlay = RecordingOverlayController()
-    let assistantPanel = AssistantPanelController()
-    let assistantClient = AssistantClient()
-    let assistantSpeech = CartesiaSpeechOutput()
+    lazy var assistantPanel = AssistantPanelController()
+    lazy var assistantClient = AssistantClient()
+    lazy var assistantSpeech = CartesiaSpeechOutput()
     let manager = AsrManager(config: .default)
     let nemotronAdapter: NemotronStreamingAdapter?
-    let startSound: AVAudioPlayer
-    let stopSound: AVAudioPlayer
+    private(set) var startSound: AVAudioPlayer?
+    private(set) var stopSound: AVAudioPlayer?
+    var loginPreference = LoginPreference()
     var recordingMode: RecordingMode
     var dictationShortcut: ShortcutBinding
     var mediaShortcut: ShortcutBinding
@@ -103,6 +104,7 @@ final class KoettController: NSObject {
     var lastDictationID: UInt64 = 0
     var dictationTask: Task<Void, Never>?
     var captureWatch: Timer?
+    var recordingDeadline: RecordingDeadline?
     var microphoneSelection: MicrophoneSelection
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
@@ -186,8 +188,6 @@ final class KoettController: NSObject {
         drawWhileDictating = defaults.bool(forKey: DrawKey.enabledDefaultsKey)
         drawKey = defaults.string(forKey: DrawKey.defaultsKey).flatMap(DrawKey.init(rawValue:)) ?? .shift
         pinSelectedText = defaults.object(forKey: DrawKey.pinSelectedTextDefaultsKey) as? Bool ?? true
-        startSound = try Self.soundPlayer(named: "Tink")
-        stopSound = try Self.soundPlayer(named: "Basso")
         super.init()
         transcriptPersistence.importHistoryInBackground()
         do {
@@ -225,6 +225,11 @@ final class KoettController: NSObject {
                 code: StartupErrorCode.accessibility.rawValue
             )
         }
+
+        // Prepare recording sounds after permission onboarding, rather than
+        // opening the playback device during controller construction.
+        startSound = try Self.soundPlayer(named: "Tink")
+        stopSound = try Self.soundPlayer(named: "Basso")
 
         let modelName = speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName
         setSetupStatus(.checkingModel(modelName))
@@ -571,7 +576,7 @@ final class KoettController: NSObject {
             modifierFlags: modifierFlags,
             keyIsDown: modifierKeyIsDown
         )
-        let assistantIsDown = assistantShortcut.modifierOnly
+        let assistantIsDown = AssistantAvailability.isEnabled && (assistantShortcut.modifierOnly
             ? assistantModifierTransition.releasedWithoutChord
             : assistantShortcut.matchesDown(
                 type: type,
@@ -579,6 +584,7 @@ final class KoettController: NSObject {
                 modifierFlags: modifierFlags,
                 isRepeat: isRepeat
             )
+        )
         if assistantIsDown {
             toggleAssistant()
             return
@@ -739,7 +745,7 @@ final class KoettController: NSObject {
             )
             return
         }
-        guard !ShortcutBinding.shortcutsConflict(
+        guard !AssistantAvailability.isEnabled || !ShortcutBinding.shortcutsConflict(
             dictation: binding,
             media: assistantShortcut,
             dictationUsesToggle: recordingMode == .toggle
@@ -764,7 +770,7 @@ final class KoettController: NSObject {
     }
 
     @objc func bindAssistantShortcut() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         DispatchQueue.main.async { [weak self] in
             self?.captureAssistantShortcut()
         }
@@ -792,7 +798,7 @@ final class KoettController: NSObject {
             )
             return
         }
-        guard !binding.conflicts(with: assistantShortcut) else {
+        guard !AssistantAvailability.isEnabled || !binding.conflicts(with: assistantShortcut) else {
             showShortcutConflict(
                 with: "Ask Shortcut",
                 binding: assistantShortcut
@@ -806,7 +812,7 @@ final class KoettController: NSObject {
     }
 
     private func captureAssistantShortcut() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         isCapturingShortcut = true
         defer {
             DispatchQueue.main.async { [weak self] in
@@ -844,13 +850,13 @@ final class KoettController: NSObject {
         guard state == .ready else { return }
         dictationShortcut = .defaultDictation
         mediaShortcut = .defaultMedia
-        assistantShortcut = .defaultAssistant
+        if AssistantAvailability.isEnabled { assistantShortcut = .defaultAssistant }
         dictationModifierState.reset()
         mediaModifierState.reset()
         assistantModifierState.reset()
         saveShortcut(dictationShortcut, key: "dictationShortcut")
         saveShortcut(mediaShortcut, key: "mediaShortcut")
-        saveShortcut(assistantShortcut, key: "assistantShortcut")
+        if AssistantAvailability.isEnabled { saveShortcut(assistantShortcut, key: "assistantShortcut") }
         rebuildMenu()
     }
 
@@ -874,7 +880,7 @@ final class KoettController: NSObject {
                 )
                 return
             }
-            if ShortcutBinding.shortcutsConflict(
+            if AssistantAvailability.isEnabled && ShortcutBinding.shortcutsConflict(
                 dictation: dictationShortcut,
                 media: assistantShortcut,
                 dictationUsesToggle: false

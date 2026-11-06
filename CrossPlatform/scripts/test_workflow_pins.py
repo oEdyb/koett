@@ -13,6 +13,8 @@ TOOLCHAIN = ROOT / "CrossPlatform/rust-toolchain.toml"
 CARGO_MANIFEST = ROOT / "CrossPlatform/Cargo.toml"
 
 ACTION_PINS = {
+    "actions/cache/restore": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+    "actions/cache/save": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "actions/dependency-review-action": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
@@ -27,7 +29,7 @@ def external_action_pins(workflow: str) -> list[tuple[str, str]]:
     for reference, version in uses_lines:
         if reference.startswith("./"):
             continue
-        match = re.fullmatch(r"([\w.-]+/[\w.-]+)@([0-9a-f]{40})", reference)
+        match = re.fullmatch(r"([\w.-]+/[\w.-]+(?:/[\w.-]+)*)@([0-9a-f]{40})", reference)
         if match is None or not version:
             raise ValueError(f"external action is not pinned to a reviewed full commit: {reference}")
         pins.append((match.group(1), match.group(2)))
@@ -54,6 +56,27 @@ class WorkflowPinTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "not pinned"):
             external_action_pins(workflow)
+
+    def test_pull_requests_run_ci_only_when_marked_ready(self) -> None:
+        pull_request = self.workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0]
+        self.assertIn("types: [ready_for_review]", pull_request)
+        self.assertIn("  push:\n    branches:\n      - main\n", self.workflow)
+
+    def test_releases_use_no_cache_and_only_main_saves_one(self) -> None:
+        restores = self.workflow.count("uses: actions/cache/restore@")
+        saves = self.workflow.count("uses: actions/cache/save@")
+        self.assertEqual(restores, 7)
+        self.assertEqual(saves, 7)
+        self.assertEqual(
+            self.workflow.count("if: github.event_name != 'workflow_dispatch'\n"
+                                "        uses: actions/cache/restore@"),
+            restores,
+        )
+        self.assertEqual(
+            len(re.findall(r"if: github\.event_name == 'push' && [^\n]*\n"
+                           r"        uses: actions/cache/save@", self.workflow)),
+            saves,
+        )
 
     def test_checkout_never_persists_credentials(self) -> None:
         checkout_steps = re.findall(

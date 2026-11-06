@@ -14,6 +14,8 @@ pub mod shortcut;
 pub mod sketch;
 pub mod state;
 pub mod transcription;
+#[cfg(all(test, not(target_os = "windows")))]
+mod windows_logic_tests;
 
 #[cfg(target_os = "linux")]
 pub mod linux;
@@ -25,4 +27,5 @@ pub mod windows;
 pub mod media_transcription;
 
 #[cfg(target_os = "linux")]
+#[cfg(feature = "ask")]
 pub mod assistant;

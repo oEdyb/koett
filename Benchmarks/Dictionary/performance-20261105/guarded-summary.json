@@ -1,0 +1,38 @@
+[
+  {
+    "seconds": 5,
+    "old_ms": 1262.2477500000002,
+    "current_ms": 1444.4114166666395,
+    "same_fixture_sha256": true,
+    "old_request_id": "04008B77-7663-4ED3-A42E-0B3B9DDA601A",
+    "current_request_id": "7BC3F5FA-8BE0-4C05-A352-FA07244B838B",
+    "guards_pass": true
+  },
+  {
+    "seconds": 30,
+    "old_ms": 1878.834083333345,
+    "current_ms": 1852.3589999999786,
+    "same_fixture_sha256": true,
+    "old_request_id": "101AF9D1-718D-4D1B-A92E-B9CE546B3269",
+    "current_request_id": "4D67F3CD-1110-40FA-863B-BCC4B87DBA06",
+    "guards_pass": true
+  },
+  {
+    "seconds": 120,
+    "old_ms": 5629.966416666719,
+    "current_ms": 5717.876041666614,
+    "same_fixture_sha256": true,
+    "old_request_id": "6B279662-EB1D-4D46-81D1-595896DA80A5",
+    "current_request_id": "0A0C7B9F-5073-41D5-AE54-D10B15CFA50B",
+    "guards_pass": true
+  },
+  {
+    "seconds": 600,
+    "old_ms": 25240.133291666665,
+    "current_ms": 49240.08541666649,
+    "same_fixture_sha256": true,
+    "old_request_id": "AD6FD86D-A4CF-49CD-ACA0-F40CAF51949E",
+    "current_request_id": "B438B9DB-797C-4339-903F-7F8A37C50341",
+    "guards_pass": true
+  }
+]

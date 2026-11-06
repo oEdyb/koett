@@ -1,21 +1,36 @@
+mod capture;
+mod clipboard;
+mod contact_sheet;
 mod desktop;
+mod draw_input;
+mod drawing;
+mod drawing_render;
+mod foreground;
+pub(crate) mod formatting_job;
 mod meter;
 mod native_theme;
+mod paste_chord;
 mod paste_guard;
+mod paste_security;
+mod paste_timing;
 mod pill;
 mod pill_buttons;
 mod pill_state;
+mod pin_policy;
+mod pin_reader;
+mod pixels;
 
 use std::cell::{Cell, RefCell};
 use std::mem::size_of;
 use std::ptr;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 use std::time::{Duration, Instant};
 
 use windows::Win32::Foundation::{
     COLORREF, CloseHandle, ERROR_ALREADY_EXISTS, ERROR_FILE_NOT_FOUND, ERROR_SUCCESS, GetLastError,
-    GlobalFree, HANDLE, HWND, POINT, RECT,
+    HANDLE, HWND, POINT, RECT,
 };
 use windows::Win32::Graphics::Gdi::{
     BeginPaint, CreateRoundRectRgn, CreateSolidBrush, DT_CENTER, DT_VCENTER, DeleteObject,
@@ -23,12 +38,7 @@ use windows::Win32::Graphics::Gdi::{
     MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow, PAINTSTRUCT, SetBkMode, SetTextColor,
     SetWindowRgn, TRANSPARENT,
 };
-use windows::Win32::System::DataExchange::{
-    CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
-};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalUnlock};
-use windows::Win32::System::Ole::CF_UNICODETEXT;
 use windows::Win32::System::Registry::{
     HKEY, HKEY_CURRENT_USER, KEY_SET_VALUE, REG_OPTION_NON_VOLATILE, REG_SZ, RRF_RT_REG_SZ,
     RegCloseKey, RegCreateKeyExW, RegDeleteValueW, RegGetValueW, RegSetValueExW,
@@ -52,11 +62,11 @@ use windows::Win32::UI::Shell::{
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CW_USEDEFAULT, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu,
     DestroyWindow, DispatchMessageW, GetClientRect, GetCursorPos, GetForegroundWindow, GetMessageW,
-    GetWindowThreadProcessId, HWND_TOPMOST, IDI_APPLICATION, KillTimer, LoadIconW, MA_NOACTIVATE,
-    MF_CHECKED, MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW, PostQuitMessage,
-    RegisterClassExW, RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL,
-    SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos, ShowWindow,
-    TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
+    GetWindowThreadProcessId, HWND_TOPMOST, IDI_APPLICATION, IsWindowVisible, KillTimer, LoadIconW,
+    MA_NOACTIVATE, MF_CHECKED, MF_DISABLED, MF_SEPARATOR, MF_STRING, MSG, MessageBoxW,
+    PostQuitMessage, RegisterClassExW, RegisterWindowMessageW, SW_HIDE, SW_SHOWNOACTIVATE,
+    SW_SHOWNORMAL, SWP_NOACTIVATE, SWP_SHOWWINDOW, SetForegroundWindow, SetTimer, SetWindowPos,
+    ShowWindow, TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WINDOW_EX_STYLE,
     WINDOW_STYLE, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY, WM_HOTKEY, WM_KEYDOWN, WM_LBUTTONUP,
     WM_MOUSEACTIVATE, WM_PAINT, WM_RBUTTONUP, WM_SYSKEYDOWN, WM_TIMER, WNDCLASSEXW,
     WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_POPUP,
@@ -68,10 +78,13 @@ use crate::history;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
 use crate::settings::Settings;
 use crate::shortcut::{Key, Modifiers, Shortcut};
-use crate::state::AppStatus;
+use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 const HOTKEY_ID: i32 = 1;
 const POLL_TIMER_ID: usize = 1;
+const WM_CHANGE_MODEL: u32 = 0x8054;
+const WM_CHANGE_FORMATTING: u32 = 0x8055;
+const WM_CANCEL_SETUP: u32 = 0x8056;
 const TRAY_MESSAGE: u32 = 0x8001;
 const NIN_KEYSELECT: u32 = NIN_SELECT | NINF_KEY;
 const MENU_CHANGE_SHORTCUT: usize = 1;
@@ -83,6 +96,10 @@ const MENU_COPY_LAST: usize = 6;
 const MENU_PAUSE: usize = 7;
 const MENU_CANCEL: usize = 8;
 const MENU_RECORD: usize = 9;
+const MENU_WORDS: usize = 10;
+const MENU_DRAW: usize = 11;
+const MENU_UNDO_DRAW: usize = 12;
+const MENU_PASTE_LAST: usize = 13;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -90,13 +107,20 @@ const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 // try_borrow instead of creating overlapping references from a raw pointer.
 static APP: AtomicPtr<RefCell<WindowsApp>> = AtomicPtr::new(ptr::null_mut());
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct PasteTarget {
+    hwnd: HWND,
+    pid: u32,
+}
+
 struct WindowsApp {
     hwnd: HWND,
     engine: Option<EngineHandle>,
     desktop_lab: bool,
     settings: Settings,
     status: AppStatus,
-    paste_target: Option<HWND>,
+    paste_target: Option<PasteTarget>,
+    last_target: Option<PasteTarget>,
     overlay: HWND,
     pill_renderer: RefCell<Option<pill::Renderer>>,
     last_render_error: Cell<Option<Instant>>,
@@ -109,10 +133,48 @@ struct WindowsApp {
     last_pill_key: Cell<Option<pill_state::PaintKey>>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
+    shortcut_latch: ShortcutLatch,
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
+    draw_input: Option<draw_input::Monitor>,
+    drawing: Option<drawing::Board>,
+    draw_locked: bool,
+    draw_lock_pending: bool,
+    pill_pressed: bool,
+    pending_result: Option<EngineUpdate>,
+    staged: Option<StagedPaste>,
+    last_bundle: Option<Rc<clipboard::Bundle>>,
+    clipboard_restore: Option<ClipboardRestore>,
+    draw_pointer: POINT,
+    capture_lab: Option<PendingCapture>,
+    capture_pending: bool,
     tray: NOTIFYICONDATAW,
     taskbar_created: u32,
+}
+
+struct PendingCapture {
+    started: Instant,
+    clipboard_sequence: u32,
+    result: std::sync::mpsc::Receiver<Result<pixels::Pixels, String>>,
+}
+
+struct StagedPaste {
+    offer: clipboard::Offer,
+    target: PasteTarget,
+    started: Instant,
+    model: String,
+    text: String,
+    raw: Option<String>,
+    saved: Option<bool>,
+    text_shortcut: crate::settings::PasteShortcut,
+}
+
+struct ClipboardRestore {
+    bundle: Rc<clipboard::Bundle>,
+    offer: clipboard::Offer,
+    target_pid: u32,
+    started: Instant,
+    posted: bool,
 }
 
 pub fn run() -> Result<(), String> {
@@ -146,8 +208,20 @@ pub fn run() -> Result<(), String> {
     let startup_warning: Option<String> = None;
     history::recovery::initialize_last()?;
     let restored_last = history::recovery::last().unwrap_or_default();
-    let desktop_lab = std::env::args().any(|argument| argument == "--desktop-lab");
-    let engine = (!desktop_lab).then(|| runtime::start(settings.clone()));
+    let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+    let desktop_lab = arguments.as_slice() == [std::ffi::OsString::from("--desktop-lab")];
+    let engine = match arguments.as_slice() {
+        [] => Some(runtime::start(settings.clone())),
+        [flag] if flag == "--microphone-open-timeout-lab" => Some(runtime::start(settings.clone())),
+        [_] if desktop_lab => None,
+        [flag, path] if flag == "--dictation-lab-wav" => {
+            Some(runtime::start_wav_lab(settings.clone(), path.into(), false))
+        }
+        [flag, path] if flag == "--dictation-lab-asr-failure" => {
+            Some(runtime::start_wav_lab(settings.clone(), path.into(), true))
+        }
+        _ => return Err("Use Koett.exe, --desktop-lab, --dictation-lab-wav FILE.wav, or --dictation-lab-asr-failure FILE.wav".into()),
+    };
     let app = Box::new(RefCell::new(WindowsApp {
         hwnd: HWND::default(),
         engine,
@@ -159,6 +233,7 @@ pub fn run() -> Result<(), String> {
             AppStatus::Starting
         },
         paste_target: None,
+        last_target: None,
         overlay: HWND::default(),
         pill_renderer: RefCell::new(None),
         last_render_error: Cell::new(None),
@@ -171,8 +246,21 @@ pub fn run() -> Result<(), String> {
         last_pill_key: Cell::new(None),
         shortcut_window: HWND::default(),
         registered_shortcut: None,
+        shortcut_latch: ShortcutLatch::default(),
         levels: None,
         recording_started: None,
+        draw_input: None,
+        drawing: None,
+        draw_locked: false,
+        draw_lock_pending: false,
+        pill_pressed: false,
+        pending_result: None,
+        staged: None,
+        last_bundle: None,
+        clipboard_restore: None,
+        draw_pointer: POINT::default(),
+        capture_lab: None,
+        capture_pending: false,
         tray: NOTIFYICONDATAW::default(),
         taskbar_created: 0,
     }));
@@ -342,6 +430,16 @@ unsafe fn run_message_loop(
         return Err("could not start the Koett event timer".to_string());
     }
     drop(app);
+    let _foreground = match foreground::Tracker::start() {
+        Ok(tracker) => Some(tracker),
+        Err(error) => {
+            eprintln!("Koett: {error}");
+            app_cell
+                .borrow_mut()
+                .notify_drawing("Tray Paste unavailable. Use Paste in the pill.");
+            None
+        }
+    };
     if let Some(error) = startup_warning {
         show_fatal_error(&format!(
             "Koett started, but start at login could not be enabled: {error}"
@@ -378,10 +476,128 @@ unsafe extern "system" fn window_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_RENDERFORMAT {
+        clipboard::render(wparam.0 as u32);
+        return Default::default();
+    }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_RENDERALLFORMATS {
+        clipboard::render_all(hwnd);
+        return Default::default();
+    }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_DESTROYCLIPBOARD {
+        clipboard::forget_delayed();
+    }
     let app_cell = APP.load(Ordering::Acquire);
     if !app_cell.is_null() {
         let app_cell = unsafe { &*app_cell };
         match message {
+            0x8058 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.desktop_lab
+                    && app.capture_lab.is_none()
+                {
+                    let sequence = unsafe {
+                        windows::Win32::System::DataExchange::GetClipboardSequenceNumber()
+                    };
+                    if let Err(error) = capture::exclude_own_windows() {
+                        let label = wide(&error);
+                        let _ = unsafe {
+                            windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                hwnd,
+                                PCWSTR(label.as_ptr()),
+                            )
+                        };
+                        return Default::default();
+                    }
+                    let monitor = unsafe {
+                        MonitorFromWindow(GetForegroundWindow(), MONITOR_DEFAULTTONEAREST)
+                    }
+                    .0 as usize;
+                    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+                    app.capture_lab = Some(PendingCapture {
+                        started: Instant::now(),
+                        clipboard_sequence: sequence,
+                        result: rx,
+                    });
+                    std::thread::spawn(move || {
+                        let _ = tx.send(capture::monitor(monitor));
+                    });
+                }
+                return Default::default();
+            }
+            0x8059 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.desktop_lab
+                {
+                    if wparam.0 == 0 {
+                        app.draw_input = None;
+                    } else if app.status == AppStatus::Recording {
+                        app.draw_input =
+                            draw_input::Monitor::start(hwnd, crate::settings::DrawKey::Shift).ok();
+                        app.drawing = drawing::Board::new(
+                            true,
+                            app.recording_started.unwrap_or_else(Instant::now),
+                        )
+                        .ok();
+                    }
+                }
+                return Default::default();
+            }
+            windows::Win32::UI::WindowsAndMessaging::WM_INPUT => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Some(input) = app.draw_input.as_mut()
+                {
+                    input.input(lparam, Instant::now());
+                }
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.poll_drawing();
+                    app.poll_staged();
+                }
+            }
+            windows::Win32::UI::WindowsAndMessaging::WM_INPUT_DEVICE_CHANGE => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Some(input) = app.draw_input.as_mut()
+                {
+                    input.device_changed();
+                }
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && app.draw_locked
+                {
+                    app.unlock_drawing();
+                    app.notify_drawing("Keyboard changed; draw lock ended");
+                }
+            }
+            0x8057 => {
+                if let Ok(app) = app_cell.try_borrow()
+                    && app.desktop_lab
+                {
+                    let label = wide(&match clipboard::lab_bundle(hwnd, wparam.0) {
+                        Ok(()) => "Clipboard ready".into(),
+                        Err(error) => error,
+                    });
+                    let _ = unsafe {
+                        windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                            hwnd,
+                            PCWSTR(label.as_ptr()),
+                        )
+                    };
+                }
+                return Default::default();
+            }
+            WM_CHANGE_MODEL | WM_CHANGE_FORMATTING | WM_CANCEL_SETUP => {
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    app.processing_request(message, wparam.0);
+                }
+                return Default::default();
+            }
+            0x8053 => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && let Ok(settings) = Settings::load()
+                {
+                    app.settings = settings;
+                }
+                return Default::default();
+            }
             0x8052 => {
                 if let Ok(mut app) = app_cell.try_borrow_mut()
                     && app.desktop_lab
@@ -396,15 +612,106 @@ unsafe extern "system" fn window_proc(
                 }
                 return Default::default();
             }
-            WM_HOTKEY => {
+            WM_HOTKEY if (2..=4).contains(&wparam.0) => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
-                    app.toggle();
+                    match wparam.0 {
+                        2 if app.status == AppStatus::Recording && app.drawing.is_some() => {
+                            if app.draw_locked || app.draw_lock_pending {
+                                app.unlock_drawing();
+                            } else {
+                                app.draw_lock_pending = true;
+                            }
+                        }
+                        3 if app.draw_locked || app.draw_lock_pending => app.unlock_drawing(),
+                        3 => app.handle_menu(MENU_CANCEL),
+                        4 if app.draw_locked => {
+                            if let Some(board) = app.drawing.as_mut() {
+                                board.undo_stroke();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                return Default::default();
+            }
+            WM_HOTKEY if wparam.0 == HOTKEY_ID as usize => {
+                if let Ok(mut app) = app_cell.try_borrow_mut()
+                    && matches!(
+                        app.status,
+                        AppStatus::Ready | AppStatus::Recording | AppStatus::Error(_)
+                    )
+                {
+                    let mode = app.settings.recording_mode;
+                    if let Some(intent) = app.shortcut_latch.press(mode) {
+                        app.recording_intent(intent);
+                    }
                 }
                 return Default::default();
             }
             WM_TIMER if wparam.0 == POLL_TIMER_ID => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    let app = &mut *app;
                     app.poll_updates();
+                    app.poll_drawing();
+                    app.poll_staged();
+                    if let Some(input) = app.draw_input.as_mut() {
+                        let mut point = POINT::default();
+                        let _ = unsafe { GetCursorPos(&mut point) };
+                        if point != app.draw_pointer {
+                            input.moved(Instant::now());
+                            app.draw_pointer = point;
+                        }
+                        let state = input.state(Instant::now());
+                        if app.desktop_lab {
+                            let label = wide(&format!(
+                                "Draw key: clicks={} ink={} audio_ms={}",
+                                state.protect_clicks,
+                                state.ink,
+                                app.levels.as_ref().map_or(0, AudioLevels::recorded_ms)
+                            ));
+                            let _ = unsafe {
+                                windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                    hwnd,
+                                    windows::core::PCWSTR(label.as_ptr()),
+                                )
+                            };
+                        }
+                    }
+                    if let Some(result) = app.capture_lab.as_ref().and_then(|pending| {
+                        pending.result.try_recv().ok().or_else(|| {
+                            (pending.started.elapsed() >= Duration::from_secs(3))
+                                .then(|| Err("Screen capture timed out".into()))
+                        })
+                    }) {
+                        let sequence = app
+                            .capture_lab
+                            .as_ref()
+                            .map(|pending| pending.clipboard_sequence)
+                            .unwrap_or(0);
+                        app.capture_lab = None;
+                        let result = result
+                            .and_then(|image| {
+                                clipboard::Bundle::new(&image, "M4 captured display".into())
+                            })
+                            .and_then(|b| b.copy_if_unchanged(hwnd, sequence).map(|_| ()));
+                        let label = wide(&match result {
+                            Ok(()) => "Capture ready".into(),
+                            Err(e) => e,
+                        });
+                        let _ = unsafe {
+                            windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                                hwnd,
+                                windows::core::PCWSTR(label.as_ptr()),
+                            )
+                        };
+                    }
+                    if app
+                        .registered_shortcut
+                        .is_none_or(|shortcut| !shortcut_is_down(shortcut))
+                        && let Some(intent) = app.shortcut_latch.release()
+                    {
+                        app.recording_intent(intent);
+                    }
                     if app.status == AppStatus::Recording {
                         let elapsed = app
                             .recording_started
@@ -481,6 +788,7 @@ unsafe extern "system" fn overlay_proc(
                 103 => 200,
                 104 => 260,
                 105 => 210,
+                106 => 20,
                 _ => -1,
             };
             if x >= 0
@@ -497,13 +805,31 @@ unsafe extern "system" fn overlay_proc(
     if message == WM_MOUSEACTIVATE {
         return windows::Win32::Foundation::LRESULT(MA_NOACTIVATE as isize);
     }
+    if message == windows::Win32::UI::WindowsAndMessaging::WM_LBUTTONDOWN {
+        let cell = APP.load(Ordering::Acquire);
+        if !cell.is_null()
+            && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
+        {
+            app.pill_pressed = true;
+            unsafe {
+                windows::Win32::UI::Input::KeyboardAndMouse::SetCapture(hwnd);
+            }
+        }
+        return Default::default();
+    }
     if message == WM_LBUTTONUP {
         let cell = APP.load(Ordering::Acquire);
         if !cell.is_null()
             && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
         {
+            let pressed = std::mem::take(&mut app.pill_pressed);
+            let _ = unsafe { windows::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture() };
             let dpi = unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(hwnd) }.max(96);
-            app.pill_click(((lparam.0 as u16 as i16) as i32) * 96 / dpi as i32, false);
+            let x = ((lparam.0 as i16) as i32) * 96 / dpi as i32;
+            let y = (((lparam.0 >> 16) as i16) as i32) * 96 / dpi as i32;
+            if pressed && (0..300).contains(&x) && (0..48).contains(&y) {
+                app.pill_click(x, false);
+            }
         }
         return Default::default();
     }
@@ -551,6 +877,93 @@ unsafe extern "system" fn shortcut_proc(
 }
 
 impl WindowsApp {
+    fn unlock_drawing(&mut self) {
+        self.draw_locked = false;
+        self.draw_lock_pending = false;
+        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 4) };
+        let audio = self.levels.as_ref().map_or(0, AudioLevels::recorded_ms);
+        if let Some(board) = self.drawing.as_mut() {
+            board.end_hold(audio);
+        }
+    }
+    fn recording_hotkeys(&mut self) {
+        if unsafe { RegisterHotKey(Some(self.hwnd), 3, MOD_NOREPEAT, 0x1b) }.is_err() {
+            self.notify_drawing("Escape shortcut unavailable; use Cancel in the pill or tray");
+        }
+        if self.drawing.is_some() && !self.settings.draw_lock_shortcut.is_empty() {
+            match self.settings.draw_lock_shortcut.parse::<Shortcut>() {
+                Ok(shortcut) if self.registered_shortcut != Some(shortcut) => {
+                    let (modifiers, key) = windows_shortcut(shortcut);
+                    if unsafe { RegisterHotKey(Some(self.hwnd), 2, modifiers | MOD_NOREPEAT, key) }
+                        .is_err()
+                    {
+                        self.notify_drawing(
+                            "Draw lock shortcut unavailable; change it in Settings",
+                        );
+                    }
+                }
+                _ => self.notify_drawing(
+                    "Choose a draw lock shortcut different from dictation in Settings",
+                ),
+            }
+        }
+    }
+    fn notify_drawing(&mut self, message: &str) {
+        set_wide_array(&mut self.tray.szInfoTitle, "Koett");
+        set_wide_array(&mut self.tray.szInfo, message);
+        self.tray.uFlags |= windows::Win32::UI::Shell::NIF_INFO;
+        let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
+        self.tray.uFlags &= !windows::Win32::UI::Shell::NIF_INFO;
+    }
+    fn poll_drawing(&mut self) {
+        let now = Instant::now();
+        let paused = self.levels.as_ref().is_some_and(AudioLevels::paused);
+        if self.draw_lock_pending
+            && ![VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
+                .iter()
+                .any(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0)
+        {
+            self.draw_lock_pending = false;
+            self.draw_locked = true;
+            if unsafe {
+                RegisterHotKey(Some(self.hwnd), 4, MOD_CONTROL | MOD_NOREPEAT, b'Z' as u32)
+            }
+            .is_err()
+            {
+                self.notify_drawing("Undo shortcut unavailable; use right-click while locked or Undo drawing in the tray");
+            }
+        }
+        let state = if paused {
+            if let Some(input) = self.draw_input.as_mut() {
+                input.suspend();
+            }
+            draw_input::State::default()
+        } else if self.draw_locked {
+            draw_input::State {
+                protect_clicks: true,
+                ink: true,
+                locked: true,
+                discard: false,
+            }
+        } else {
+            self.draw_input
+                .as_mut()
+                .map_or_else(Default::default, |input| input.state(now))
+        };
+        let audio_ms = self.levels.as_ref().map_or(0, AudioLevels::recorded_ms);
+        if let Some(board) = self.drawing.as_mut() {
+            board.update(state, audio_ms, now);
+            if let Some(message) = board.notice.take() {
+                set_wide_array(&mut self.tray.szInfoTitle, "Drawing unavailable");
+                set_wide_array(&mut self.tray.szInfo, &message);
+                self.tray.uFlags |= windows::Win32::UI::Shell::NIF_INFO;
+                let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
+                self.tray.uFlags &= !windows::Win32::UI::Shell::NIF_INFO;
+            }
+        }
+        self.pill_state.drawing = state.ink;
+    }
+
     fn lab_phase(&mut self, command: usize) {
         use pill_state::Phase;
         let now = self.clock.elapsed().as_millis() as u64;
@@ -568,13 +981,15 @@ impl WindowsApp {
             }
             3 => {
                 self.status = AppStatus::Ready;
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab result".into();
                 Phase::Done(self.last_transcript.clone())
             }
             4 => {
                 self.status = AppStatus::Ready;
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab recovery".into();
-                Phase::NotPasted
+                Phase::NotPasted { saved: true }
             }
             5 => Phase::Error {
                 message: "Recording saved · retry from History".into(),
@@ -599,6 +1014,7 @@ impl WindowsApp {
                 return;
             }
             12 => {
+                self.last_target = self.paste_target;
                 self.last_transcript = "Desktop lab media result".into();
                 self.pill_state
                     .set(Phase::Done(self.last_transcript.clone()), now);
@@ -615,50 +1031,153 @@ impl WindowsApp {
         };
         self.pill_state.set(phase, now);
         self.update_tray();
+        if self.status != AppStatus::Recording {
+            self.draw_input = None;
+        }
         self.update_overlay();
     }
 
-    fn toggle(&mut self) {
-        if self.desktop_lab {
-            self.lab_phase(if self.status == AppStatus::Recording {
-                2
+    fn processing_request(&mut self, message: u32, value: usize) {
+        use desktop::processing;
+        if message == WM_CANCEL_SETUP {
+            if processing::busy() {
+                crate::model::SWITCH_CANCELLED.store(true, Ordering::Release);
+                crate::formatting::CANCELLED.store(true, Ordering::Release);
+            }
+            return;
+        }
+        if self.status != AppStatus::Ready || self.capture_pending || processing::busy() {
+            if message == WM_CHANGE_MODEL {
+                processing::model_message(
+                    "Stop recording or finish setup before changing models".into(),
+                );
             } else {
-                1
+                processing::formatting_status(
+                    "Stop recording or finish setup before changing formatting".into(),
+                );
+            }
+            return;
+        }
+        let Some(engine) = &self.engine else {
+            return;
+        };
+        if message == WM_CHANGE_MODEL {
+            if let Some(model) = crate::model::LocalModel::ALL.get(value).copied() {
+                processing::model_status("Switching model…".into(), true);
+                if engine
+                    .commands
+                    .send(EngineCommand::SwitchModel(model))
+                    .is_err()
+                {
+                    processing::model_status("Dictation engine is unavailable".into(), false);
+                }
+            }
+        } else if let Some(formatting) = processing::decode_formatting(value) {
+            processing::formatting_status(if formatting.enabled {
+                "Preparing S1-mini…".into()
+            } else {
+                "Raw dictation".into()
             });
-            return;
-        }
-        if self.status != AppStatus::Ready
-            && self.status != AppStatus::Recording
-            && !matches!(self.status, AppStatus::Error(_))
-        {
-            return;
-        }
-        let focused = foreground_paste_target();
-        if self.status == AppStatus::Ready || matches!(self.status, AppStatus::Error(_)) {
-            self.paste_target = focused;
-        }
-        if self.status == AppStatus::Recording {
-            // Keep the app that was focused when recording started if the
-            // non-activating overlay is briefly reported during the stop.
-            if focused.is_some() {
-                self.paste_target = focused;
+            processing::formatting_busy(true);
+            if engine
+                .commands
+                .send(EngineCommand::Formatting(formatting))
+                .is_err()
+            {
+                processing::formatting_status("Dictation engine is unavailable".into());
+                processing::formatting_busy(false);
             }
         }
-        if let Some(engine) = &self.engine {
-            let _ = engine.commands.send(EngineCommand::Toggle);
+    }
+    fn toggle(&mut self) {
+        self.recording_intent(RecordingIntent::Toggle);
+    }
+
+    fn recording_intent(&mut self, intent: RecordingIntent) {
+        if self.desktop_lab {
+            match intent {
+                RecordingIntent::Start if self.status == AppStatus::Ready => self.lab_phase(1),
+                RecordingIntent::Stop if self.status == AppStatus::Recording => self.lab_phase(2),
+                RecordingIntent::Toggle => self.lab_phase(if self.status == AppStatus::Recording {
+                    2
+                } else {
+                    1
+                }),
+                _ => {}
+            }
+            return;
+        }
+        if self.pending_result.is_some() || self.staged.is_some() {
+            return;
+        }
+        if self.capture_pending && intent != RecordingIntent::Stop {
+            return;
+        }
+        if intent == RecordingIntent::Stop {
+            if let Some(engine) = &self.engine {
+                let _ = engine.commands.send(EngineCommand::Stop);
+            }
+            return;
+        }
+        if !matches!(
+            self.status,
+            AppStatus::Ready | AppStatus::Recording | AppStatus::Error(_)
+        ) {
+            return;
+        }
+        if intent == RecordingIntent::Start && self.status == AppStatus::Recording {
+            return;
+        }
+        if matches!(self.status, AppStatus::Ready | AppStatus::Error(_)) && !self.capture_pending {
+            self.paste_target = foreground_paste_target();
+            self.capture_pending = true;
+        }
+        if let Some(engine) = &self.engine
+            && engine.commands.send(intent.into()).is_err()
+        {
+            self.capture_pending = false;
+            self.pill_state.set(
+                pill_state::Phase::Error {
+                    message: "Dictation engine is unavailable; restart Koett".into(),
+                    rescue: false,
+                },
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.update_overlay();
         }
     }
 
     fn poll_updates(&mut self) {
         loop {
-            let update = self
-                .engine
-                .as_ref()
-                .and_then(|engine| engine.updates.try_recv().ok());
+            let update = if !self.drawing.as_ref().is_some_and(drawing::Board::busy)
+                && self.pending_result.is_some()
+            {
+                self.pending_result.take()
+            } else {
+                self.engine
+                    .as_ref()
+                    .and_then(|engine| engine.updates.try_recv().ok())
+            };
             let Some(update) = update else { break };
+            if matches!(update, EngineUpdate::TranscriptReady { .. })
+                && self.drawing.as_ref().is_some_and(drawing::Board::busy)
+            {
+                self.pending_result = Some(update);
+                continue;
+            }
             match update {
-                EngineUpdate::ActiveModel(_) => {}
+                EngineUpdate::ActiveModel(model) => {
+                    desktop::processing::model_status(format!("Ready: {model}"), false);
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                }
                 EngineUpdate::Notice(message) => {
+                    desktop::processing::notice(&message);
+                    if message == crate::runtime::LIMIT_WARNING {
+                        let now = self.clock.elapsed().as_millis() as u64;
+                        self.pill_state.show_notice(&message, now);
+                    }
                     let message = message
                         .strip_prefix("@model-notice:")
                         .unwrap_or(&message)
@@ -666,6 +1185,31 @@ impl WindowsApp {
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {
+                    let status = if status == AppStatus::Ready
+                        && (self.staged.is_some() || self.pending_result.is_some())
+                    {
+                        AppStatus::Transcribing
+                    } else {
+                        status
+                    };
+                    if status != AppStatus::Recording {
+                        self.draw_locked = false;
+                        self.draw_lock_pending = false;
+                        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 2) };
+                        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 4) };
+                        if status != AppStatus::Transcribing {
+                            let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
+                        }
+                        let audio_ms = self.levels.as_ref().map_or(0, AudioLevels::recorded_ms);
+                        if let Some(board) = self.drawing.as_mut() {
+                            board.stop(
+                                audio_ms,
+                                status != AppStatus::Transcribing && status != AppStatus::Ready,
+                            );
+                        }
+                        self.draw_input = None;
+                    }
+                    self.capture_pending = false;
                     let now = self.clock.elapsed().as_millis() as u64;
                     match &status {
                         AppStatus::Recording => {
@@ -683,6 +1227,9 @@ impl WindowsApp {
                         ),
                         _ => {}
                     }
+                    if status == AppStatus::Ready {
+                        desktop::processing::model_finished();
+                    }
                     self.status = status;
                     self.update_tray();
                     self.update_overlay();
@@ -691,6 +1238,35 @@ impl WindowsApp {
                     self.meter = meter::Meter::default();
                     self.levels = Some(levels);
                     self.recording_started = Some(Instant::now());
+                    self.drawing = None;
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                    if self.settings.draw_while_dictating {
+                        match drawing::Board::new(
+                            self.settings.pin_selected_text,
+                            self.recording_started.unwrap_or_else(Instant::now),
+                        )
+                        .and_then(|board| {
+                            draw_input::Monitor::start(self.hwnd, self.settings.draw_key)
+                                .map(|input| (board, input))
+                        }) {
+                            Ok((board, input)) => {
+                                self.drawing = Some(board);
+                                self.draw_input = Some(input);
+                            }
+                            Err(error) => {
+                                self.pill_state.set(
+                                    pill_state::Phase::Error {
+                                        message: error,
+                                        rescue: false,
+                                    },
+                                    self.clock.elapsed().as_millis() as u64,
+                                );
+                            }
+                        }
+                    }
+                    self.recording_hotkeys();
                     self.update_overlay();
                 }
                 EngineUpdate::ModelProgress(progress) => {
@@ -703,14 +1279,35 @@ impl WindowsApp {
                         ModelProgress::Installing => "Installing model".to_string(),
                         ModelProgress::Ready => "Loading model".to_string(),
                     };
+                    desktop::processing::model_status(text.clone(), true);
                     set_wide_array(&mut self.tray.szTip, &format!("Koett — {text}"));
                     let _ = unsafe { Shell_NotifyIconW(NIM_MODIFY, &self.tray) };
                 }
-                EngineUpdate::FormattingBusy(_) => {}
+                EngineUpdate::FormattingBusy(busy) => desktop::processing::formatting_busy(busy),
                 EngineUpdate::TranscriptReady {
-                    model, transcript, ..
+                    model,
+                    transcript,
+                    session,
                 } => {
-                    self.deliver(&model, &transcript.text, transcript.raw.as_deref());
+                    if self
+                        .engine
+                        .as_ref()
+                        .is_some_and(|engine| engine.dictation_cancelled(session))
+                    {
+                        continue;
+                    }
+                    match Settings::load() {
+                        Ok(saved) => self.settings.replacements = saved.replacements,
+                        Err(error) => eprintln!(
+                            "Koett: Settings unavailable; using last valid replacements: {error}"
+                        ),
+                    }
+                    let (text, raw) = completed_words(
+                        &transcript.text,
+                        transcript.raw.as_deref(),
+                        &self.settings.replacements,
+                    );
+                    self.deliver(&model, &text, raw.as_deref(), &transcript.words);
                 }
             }
         }
@@ -755,7 +1352,9 @@ impl WindowsApp {
                 {
                     position_overlay(
                         self.overlay,
-                        self.paste_target.unwrap_or_else(|| GetForegroundWindow()),
+                        self.paste_target
+                            .map(|target| target.hwnd)
+                            .unwrap_or_else(|| GetForegroundWindow()),
                     );
                 }
                 let _ = windows::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
@@ -783,13 +1382,19 @@ impl WindowsApp {
 
     fn pill_click(&mut self, x: i32, accessible: bool) {
         let now = self.clock.elapsed().as_millis() as u64;
+        if (0..40).contains(&x) && self.status == AppStatus::Recording {
+            self.recording_intent(RecordingIntent::Stop);
+            return;
+        }
         match &self.pill_state.phase {
             pill_state::Phase::Recording | pill_state::Phase::Transcribing
                 if self.pill_state.hovered || accessible =>
             {
                 if (40..100).contains(&x) {
+                    self.discard_drawing();
                     if let Some(engine) = &self.engine {
                         engine.cancel_dictation();
+                        let _ = engine.commands.send(EngineCommand::Cancel);
                     }
                     self.pill_state.set(pill_state::Phase::Hidden, now);
                     if self.desktop_lab {
@@ -806,23 +1411,19 @@ impl WindowsApp {
                     let _ = open_history();
                 }
             }
-            pill_state::Phase::Done(_) | pill_state::Phase::NotPasted => {
+            pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
                 if x >= 245 {
-                    if copy_text(self.hwnd, &self.last_transcript).is_ok() {
+                    if self.copy_last().is_ok() {
                         self.pill_state
                             .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
                         self.pill_state.copy(now);
                     }
-                } else if x >= 190 && matches!(self.pill_state.phase, pill_state::Phase::NotPasted)
+                } else if x >= 190
+                    && (self.last_bundle.is_some()
+                        || matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }))
                 {
-                    if let Some(target) = self.paste_target
-                        && copy_text(self.hwnd, &self.last_transcript).is_ok()
-                        && paste(target).is_ok()
-                    {
-                        self.pill_state
-                            .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
-                    }
-                } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted) {
+                    self.repeat_paste();
+                } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }) {
                     self.pill_state.set(pill_state::Phase::Hidden, now);
                 }
             }
@@ -910,7 +1511,295 @@ impl WindowsApp {
         }
     }
 
-    fn deliver(&mut self, model: &str, text: &str, raw: Option<&str>) {
+    fn refresh_paste_preferences(&mut self) {
+        if let Ok(settings) = Settings::load() {
+            self.settings.paste_shortcut = settings.paste_shortcut;
+            self.settings.image_paste_shortcuts = settings.image_paste_shortcuts;
+        }
+    }
+    fn can_repeat_paste(&self) -> bool {
+        !self.last_transcript.is_empty()
+            && self.staged.is_none()
+            && self.pending_result.is_none()
+            && !self.capture_pending
+            && matches!(self.status, AppStatus::Ready | AppStatus::Error(_))
+    }
+    fn post_image(
+        &mut self,
+        bundle: &Rc<clipboard::Bundle>,
+        target: PasteTarget,
+    ) -> Result<clipboard::Offer, String> {
+        if foreground_paste_target() != Some(target) {
+            return Err("Focus changed; drawing was not pasted".into());
+        }
+        let offer = bundle.image_first(self.hwnd)?;
+        if let Err(error) = paste_offered(
+            target,
+            offer,
+            paste_chord::image(&self.settings, target.pid),
+        ) {
+            self.clipboard_restore = Some(ClipboardRestore {
+                bundle: Rc::clone(bundle),
+                offer,
+                target_pid: target.pid,
+                started: Instant::now(),
+                posted: false,
+            });
+            return Err(error);
+        }
+        Ok(offer)
+    }
+    fn repeat_paste(&mut self) {
+        if !self.can_repeat_paste() {
+            return;
+        }
+        self.refresh_paste_preferences();
+        let saved = match self.pill_state.phase {
+            pill_state::Phase::NotPasted { saved } => saved,
+            _ => true,
+        };
+        let result = self
+            .last_target
+            .ok_or_else(|| "No external paste target".to_string())
+            .and_then(|target| {
+                if foreground_paste_target() != Some(target) {
+                    return Err("Focus changed; not pasted".into());
+                }
+                if let Some(bundle) = self.last_bundle.clone() {
+                    let offer = self.post_image(&bundle, target)?;
+                    self.staged = Some(StagedPaste {
+                        offer,
+                        target,
+                        started: Instant::now(),
+                        model: String::new(),
+                        text: self.last_transcript.clone(),
+                        raw: None,
+                        saved: Some(saved),
+                        text_shortcut: self.settings.paste_shortcut,
+                    });
+                } else {
+                    let offer = clipboard::text_offer(self.hwnd, &self.last_transcript)?;
+                    paste_offered(target, offer, self.settings.paste_shortcut)?;
+                    self.pill_state.set(
+                        pill_state::Phase::Done(self.last_transcript.clone()),
+                        self.clock.elapsed().as_millis() as u64,
+                    );
+                }
+                Ok(())
+            });
+        if let Err(error) = result {
+            eprintln!("Koett: {error}");
+            self.pill_state.set(
+                pill_state::Phase::NotPasted { saved },
+                self.clock.elapsed().as_millis() as u64,
+            );
+        }
+    }
+    fn discard_drawing(&mut self) {
+        self.draw_locked = false;
+        self.draw_lock_pending = false;
+        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 2) };
+        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
+        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 4) };
+        self.draw_input = None;
+        self.pending_result = None;
+        if let Some(mut board) = self.drawing.take() {
+            board.stop(0, true);
+        }
+        if let Some(staged) = self.staged.take()
+            && staged.saved.is_none()
+        {
+            self.record_delivery(
+                &staged.model,
+                &staged.text,
+                staged.raw.as_deref(),
+                Some("Drawing paste cancelled before text delivery".into()),
+            );
+        }
+    }
+    fn copy_last(&self) -> Result<(), String> {
+        if let Some(bundle) = &self.last_bundle {
+            bundle.copy(self.hwnd).map(|_| ())
+        } else {
+            copy_text(self.hwnd, &self.last_transcript)
+        }
+    }
+    fn poll_clipboard_restore(&mut self) {
+        let Some(restore) = self.clipboard_restore.as_ref() else {
+            return;
+        };
+        let (offer, read, _) = clipboard::rendered(restore.offer, restore.target_pid);
+        if !offer.unchanged() {
+            self.clipboard_restore = None;
+            return;
+        }
+        if restore.posted && !paste_timing::text_ready(restore.started, read, Instant::now()) {
+            return;
+        }
+        let restore = self
+            .clipboard_restore
+            .take()
+            .expect("clipboard restoration exists");
+        if let Err(error) = restore.bundle.restore(offer)
+            && offer.unchanged()
+        {
+            eprintln!("Koett: Clipboard recovery failed: {error}");
+            self.notify_drawing(
+                "Image and text could not be kept on the clipboard. Use tray Copy.",
+            );
+            if matches!(self.pill_state.phase, pill_state::Phase::Done(_))
+                && self
+                    .last_bundle
+                    .as_ref()
+                    .is_some_and(|bundle| Rc::ptr_eq(bundle, &restore.bundle))
+            {
+                self.pill_state.set(
+                    pill_state::Phase::Error {
+                        message: "Clipboard unavailable · use tray Copy".into(),
+                        rescue: true,
+                    },
+                    self.clock.elapsed().as_millis() as u64,
+                );
+                self.update_overlay();
+            }
+        }
+    }
+    fn poll_staged(&mut self) {
+        self.poll_clipboard_restore();
+        let Some(staged) = self.staged.as_ref() else {
+            return;
+        };
+        let (offer, read_at, image_requested) =
+            clipboard::rendered(staged.offer, staged.target.pid);
+        let ready = paste_timing::text_ready(staged.started, read_at, Instant::now());
+        if !ready {
+            return;
+        }
+        let staged = self.staged.take().expect("staged paste exists");
+        self.clipboard_restore = self.last_bundle.as_ref().map(|bundle| ClipboardRestore {
+            bundle: Rc::clone(bundle),
+            offer,
+            target_pid: staged.target.pid,
+            started: Instant::now(),
+            posted: false,
+        });
+        let result = if foreground_paste_target() != Some(staged.target) {
+            Err("Focus changed; text was not pasted".into())
+        } else {
+            offer
+                .replace_with_delayed_text(&staged.text)
+                .and_then(|offer| {
+                    let result = paste_offered(staged.target, offer, staged.text_shortcut);
+                    if let Some(restore) = self.clipboard_restore.as_mut() {
+                        restore.offer = offer;
+                        restore.started = Instant::now();
+                        restore.posted = result.is_ok();
+                    }
+                    result
+                })
+        };
+        let result = result.and_then(|()| {
+            if image_requested {
+                Ok(())
+            } else {
+                Err(
+                    "The target did not request an image. Use Copy in an image-capable editor."
+                        .into(),
+                )
+            }
+        });
+        if let Some(saved) = staged.saved {
+            self.pill_state.set(
+                pill_state::delivery_result(staged.text, result.is_ok(), saved, false),
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.pill_state.media_result = self.last_bundle.is_some();
+            if let Err(error) = result {
+                eprintln!("Koett: {error}");
+            }
+            self.update_overlay();
+        } else {
+            self.record_delivery(
+                &staged.model,
+                &staged.text,
+                staged.raw.as_deref(),
+                result.err(),
+            );
+        }
+    }
+
+    fn deliver(
+        &mut self,
+        model: &str,
+        text: &str,
+        raw: Option<&str>,
+        words: &[crate::annotation::TimedWord],
+    ) {
+        self.refresh_paste_preferences();
+        let frames = self
+            .drawing
+            .as_mut()
+            .map(drawing::Board::take_frames)
+            .unwrap_or_default();
+        if !frames.is_empty() {
+            let raw = raw.or(Some(text));
+            let anchors = frames
+                .iter()
+                .map(|frame| frame.start_ms.min(frame.end_ms) as f32 / 1000.0)
+                .collect::<Vec<_>>();
+            let summary = crate::annotation::keyframe_summary(text, words, &anchors);
+            let summary = summary
+                .lines()
+                .zip(&frames)
+                .map(|(bullet, frame)| {
+                    let mut lines = vec![bullet.to_owned()];
+                    if let Some(context) = &frame.context {
+                        lines.extend(context.lines().into_iter().map(|line| format!("  {line}")));
+                    }
+                    if frame.pin {
+                        lines.push(format!("  {}", frame.context_status));
+                    }
+                    lines.join("\n")
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            let result = contact_sheet::compose(&frames)
+                .and_then(|image| clipboard::Bundle::new(&image, summary.clone()));
+            match result {
+                Ok(bundle) => {
+                    let bundle = Rc::new(bundle);
+                    self.last_bundle = Some(Rc::clone(&bundle));
+                    self.last_transcript = summary.clone();
+                    let result = self
+                        .paste_target
+                        .ok_or_else(|| "No external paste target".to_string())
+                        .and_then(|target| {
+                            self.post_image(&bundle, target)
+                                .map(|offer| (offer, target))
+                        });
+                    match result {
+                        Ok((offer, target)) => {
+                            self.staged = Some(StagedPaste {
+                                offer,
+                                target,
+                                started: Instant::now(),
+                                model: model.into(),
+                                text: summary,
+                                raw: raw.map(str::to_owned),
+                                saved: None,
+                                text_shortcut: self.settings.paste_shortcut,
+                            });
+                        }
+                        Err(error) => self.record_delivery(model, &summary, raw, Some(error)),
+                    }
+                }
+                Err(error) => {
+                    self.last_bundle = None;
+                    self.record_delivery(model, text, raw, Some(error));
+                }
+            }
+            return;
+        }
         if text.trim().is_empty() {
             self.pill_state.set(
                 pill_state::Phase::Hidden,
@@ -919,16 +1808,32 @@ impl WindowsApp {
             self.update_overlay();
             return;
         }
-        let delivery_error = copy_text(self.hwnd, text)
-            .and_then(|()| {
-                self.paste_target
-                    .ok_or_else(|| "No external paste target. Transcript saved.".to_string())
+        self.last_bundle = None;
+        let delivery_error = clipboard::text_offer(self.hwnd, text)
+            .and_then(|offer| {
+                let target = self
+                    .paste_target
+                    .ok_or_else(|| "No external paste target. Transcript saved.".to_string())?;
+                paste_offered(target, offer, self.settings.paste_shortcut)
             })
-            .and_then(paste)
             .err();
+        self.record_delivery(model, text, raw, delivery_error);
+    }
+    fn record_delivery(
+        &mut self,
+        model: &str,
+        text: &str,
+        raw: Option<&str>,
+        delivery_error: Option<String>,
+    ) {
+        self.status = AppStatus::Ready;
+        let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
         self.last_transcript = text.to_string();
+        self.last_target = self.paste_target;
         let failed = delivery_error.is_some();
-        let history_error = match history::append_transcript_with_raw_resilient(model, text, raw) {
+        let storage = history::append_transcript_with_raw_resilient(model, text, raw);
+        let saved = storage.is_ok();
+        let history_error = match storage {
             Ok(Some(path)) => Some(format!(
                 "The main transcript history failed. Koett saved this transcript to {}",
                 path.display()
@@ -948,18 +1853,10 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let phase = if history_failed {
-            pill_state::Phase::Error {
-                message: "History failed · Copy from tray".into(),
-                rescue: true,
-            }
-        } else if failed {
-            pill_state::Phase::NotPasted
-        } else {
-            pill_state::Phase::Done(text.to_string())
-        };
+        let phase = pill_state::delivery_result(text.to_string(), !failed, saved, history_failed);
         self.pill_state
             .set(phase, self.clock.elapsed().as_millis() as u64);
+        self.pill_state.media_result = self.last_bundle.is_some();
         self.update_overlay();
     }
 
@@ -1002,6 +1899,7 @@ impl WindowsApp {
     }
 
     fn show_menu(&mut self, anchor: Option<POINT>) {
+        let menu_target = foreground::menu_target();
         unsafe {
             let Ok(menu) = CreatePopupMenu() else { return };
             let status = wide(&format!("Status: {}", status_text(&self.status)));
@@ -1029,6 +1927,41 @@ impl WindowsApp {
             let _ = AppendMenuW(menu, MF_STRING, MENU_SETTINGS, w!("Settings"));
             let _ = AppendMenuW(
                 menu,
+                MF_STRING
+                    | if self.settings.draw_while_dictating {
+                        MF_CHECKED
+                    } else {
+                        Default::default()
+                    }
+                    | if self.status == AppStatus::Recording {
+                        MF_DISABLED
+                    } else {
+                        Default::default()
+                    },
+                MENU_DRAW,
+                w!("Draw while dictating"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING
+                    | if self.status != AppStatus::Recording
+                        || !self.drawing.as_ref().is_some_and(drawing::Board::can_undo)
+                    {
+                        MF_DISABLED
+                    } else {
+                        Default::default()
+                    },
+                MENU_UNDO_DRAW,
+                w!("Undo drawing"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                MF_STRING,
+                MENU_WORDS,
+                w!("Dictionary and replacements…"),
+            );
+            let _ = AppendMenuW(
+                menu,
                 MF_STRING,
                 MENU_RECORD,
                 if self.status == AppStatus::Recording {
@@ -1046,6 +1979,16 @@ impl WindowsApp {
                 },
                 MENU_COPY_LAST,
                 w!("Copy last transcript"),
+            );
+            let _ = AppendMenuW(
+                menu,
+                if !self.can_repeat_paste() {
+                    MF_STRING | MF_DISABLED
+                } else {
+                    MF_STRING
+                },
+                MENU_PASTE_LAST,
+                w!("Paste last transcript"),
             );
             let _ = AppendMenuW(
                 menu,
@@ -1104,9 +2047,24 @@ impl WindowsApp {
                     None,
                 )
                 .0 as usize;
+                if selected == 0 {
+                    let current = GetForegroundWindow();
+                    if current == self.hwnd || foreground::is_tray(current) {
+                        let _ = Shell_NotifyIconW(NIM_SETFOCUS, &self.tray);
+                    }
+                } else if !matches!(
+                    selected,
+                    MENU_CHANGE_SHORTCUT | MENU_SETTINGS | MENU_WORDS | MENU_OPEN_HISTORY
+                ) && let Some(target) = menu_target
+                    && external_paste_target(target.hwnd) == Some(target)
+                {
+                    let current = GetForegroundWindow();
+                    if current == self.hwnd || foreground::is_tray(current) {
+                        let _ = SetForegroundWindow(target.hwnd);
+                    }
+                }
                 self.handle_menu(selected);
             }
-            let _ = Shell_NotifyIconW(NIM_SETFOCUS, &self.tray);
             let _ = DestroyMenu(menu);
         }
     }
@@ -1115,11 +2073,32 @@ impl WindowsApp {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
+            MENU_WORDS => desktop::open_words(self.hwnd),
+            MENU_DRAW => {
+                if self.status != AppStatus::Recording {
+                    if let Err(error) = Settings::update(|settings| {
+                        settings.draw_while_dictating = !settings.draw_while_dictating
+                    }) {
+                        show_fatal_error(&error);
+                    }
+                    if let Ok(settings) = Settings::load() {
+                        self.settings = settings;
+                    }
+                }
+            }
+            MENU_UNDO_DRAW => {
+                if self.status == AppStatus::Recording
+                    && let Some(board) = self.drawing.as_mut()
+                {
+                    board.undo();
+                }
+            }
             MENU_COPY_LAST => {
-                if let Err(e) = copy_text(self.hwnd, &self.last_transcript) {
+                if let Err(e) = self.copy_last() {
                     show_fatal_error(&e);
                 }
             }
+            MENU_PASTE_LAST => self.repeat_paste(),
             MENU_RECORD => self.toggle(),
             MENU_PAUSE => {
                 if let Some(levels) = &self.levels {
@@ -1128,8 +2107,10 @@ impl WindowsApp {
                 }
             }
             MENU_CANCEL => {
+                self.discard_drawing();
                 if let Some(engine) = &self.engine {
                     engine.cancel_dictation();
+                    let _ = engine.commands.send(EngineCommand::Cancel);
                 }
                 self.pill_state.set(
                     pill_state::Phase::Hidden,
@@ -1277,10 +2258,26 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
                 .recording_started
                 .map(|s| s.elapsed().as_secs())
                 .unwrap_or(0);
+            let events = app
+                .drawing
+                .as_ref()
+                .map(drawing::Board::events)
+                .unwrap_or_default();
+            let bands = events
+                .iter()
+                .filter_map(|event| {
+                    app.meter
+                        .band(event.start_ms, event.end_ms)
+                        .map(|(left, right)| (event.index, left, right))
+                })
+                .collect::<Vec<_>>();
             if let Err(error) = current.paint(
                 hwnd,
                 bounds,
-                &app.meter.positions(),
+                pill::TimelinePaint {
+                    bars: &app.meter.positions(),
+                    bands: &bands,
+                },
                 elapsed,
                 &app.pill_state,
                 app.clock.elapsed().as_millis() as u64,
@@ -1432,57 +2429,52 @@ fn windows_shortcut(shortcut: Shortcut) -> (HOT_KEY_MODIFIERS, u32) {
 }
 
 fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
-    let encoded = text.encode_utf16().chain([0]).collect::<Vec<_>>();
-    for _ in 0..10 {
-        if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
-            let result = unsafe { write_open_clipboard(&encoded) };
-            unsafe {
-                let _ = CloseClipboard();
-            }
-            return result;
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    Err("could not open the Windows clipboard".to_string())
+    clipboard::copy_text(owner, text)
 }
 
-unsafe fn write_open_clipboard(encoded: &[u16]) -> Result<(), String> {
-    unsafe { EmptyClipboard() }
-        .map_err(|error| format!("could not clear the Windows clipboard: {error}"))?;
-    let memory = unsafe { GlobalAlloc(GMEM_MOVEABLE, std::mem::size_of_val(encoded)) }
-        .map_err(|error| format!("could not allocate clipboard text: {error}"))?;
-    let destination = unsafe { GlobalLock(memory) }.cast::<u16>();
-    if destination.is_null() {
-        unsafe {
-            let _ = GlobalFree(Some(memory));
+fn shortcut_is_down(shortcut: Shortcut) -> bool {
+    let (_, key) = windows_shortcut(shortcut);
+    let mut keys = vec![VIRTUAL_KEY(key as u16)];
+    let modifiers = shortcut.modifiers;
+    for (required, key) in [
+        (modifiers.control, VK_CONTROL),
+        (modifiers.alt, VK_MENU),
+        (modifiers.shift, VK_SHIFT),
+    ] {
+        if required {
+            keys.push(key);
         }
-        return Err("could not lock clipboard text".to_string());
     }
-    unsafe {
-        ptr::copy_nonoverlapping(encoded.as_ptr(), destination, encoded.len());
-        let _ = GlobalUnlock(memory);
-    }
-    let result = unsafe { SetClipboardData(CF_UNICODETEXT.0.into(), Some(HANDLE(memory.0))) };
-    if let Err(error) = result {
-        unsafe {
-            let _ = GlobalFree(Some(memory));
-        }
-        return Err(format!("could not set clipboard text: {error}"));
-    }
-    Ok(())
+    keys.into_iter()
+        .all(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0)
+        && (!modifiers.super_key
+            || [VK_LWIN, VK_RWIN]
+                .into_iter()
+                .any(|key| unsafe { GetAsyncKeyState(i32::from(key.0)) } < 0))
 }
 
-fn external_paste_target(hwnd: HWND) -> Option<HWND> {
+fn external_paste_target(hwnd: HWND) -> Option<PasteTarget> {
     let mut pid = 0;
     unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
-    (!hwnd.is_invalid() && pid != 0 && pid != std::process::id()).then_some(hwnd)
+    (!hwnd.is_invalid()
+        && pid != 0
+        && pid != std::process::id()
+        && unsafe { IsWindowVisible(hwnd) }.as_bool()
+        && unsafe { windows::Win32::UI::WindowsAndMessaging::GetShellWindow() } != hwnd
+        && !foreground::is_tray(hwnd))
+    .then_some(PasteTarget { hwnd, pid })
 }
 
-fn foreground_paste_target() -> Option<HWND> {
+fn foreground_paste_target() -> Option<PasteTarget> {
     external_paste_target(unsafe { GetForegroundWindow() })
 }
 
-fn paste(expected: HWND) -> Result<(), String> {
+fn paste_offered(
+    expected: PasteTarget,
+    offer: clipboard::Offer,
+    shortcut: crate::settings::PasteShortcut,
+) -> Result<(), String> {
+    paste_security::check(expected.pid)?;
     let modifiers_are_down = || {
         [VK_CONTROL, VK_MENU, VK_SHIFT, VK_LWIN, VK_RWIN]
             .into_iter()
@@ -1498,15 +2490,20 @@ fn paste(expected: HWND) -> Result<(), String> {
             },
         },
     };
-    let inputs = [
-        keyboard(VK_CONTROL, Default::default()),
-        keyboard(VIRTUAL_KEY(b'V' as u16), Default::default()),
-        keyboard(VIRTUAL_KEY(b'V' as u16), KEYEVENTF_KEYUP),
-        keyboard(VK_CONTROL, KEYEVENTF_KEYUP),
-    ];
+    let mut inputs = vec![keyboard(VK_CONTROL, Default::default())];
+    if shortcut == crate::settings::PasteShortcut::CtrlShiftV {
+        inputs.push(keyboard(VK_SHIFT, Default::default()));
+    }
+    inputs.push(keyboard(VIRTUAL_KEY(b'V' as u16), Default::default()));
+    inputs.push(keyboard(VIRTUAL_KEY(b'V' as u16), KEYEVENTF_KEYUP));
+    if shortcut == crate::settings::PasteShortcut::CtrlShiftV {
+        inputs.push(keyboard(VK_SHIFT, KEYEVENTF_KEYUP));
+    }
+    inputs.push(keyboard(VK_CONTROL, KEYEVENTF_KEYUP));
     paste_guard::paste_when_ready(
         expected,
         modifiers_are_down,
+        || offer.verify(),
         foreground_paste_target,
         || {
             let inserted = unsafe { SendInput(&inputs, size_of::<INPUT>() as i32) };
@@ -1526,6 +2523,17 @@ fn wide(value: &str) -> Vec<u16> {
     value.encode_utf16().chain([0]).collect()
 }
 
+// Runtime restores dictionary spelling around optional cleanup. Literal rules run last.
+fn completed_words(
+    text: &str,
+    raw: Option<&str>,
+    rules: &[crate::replacements::Replacement],
+) -> (String, Option<String>) {
+    let final_text = crate::replacements::apply(text, rules);
+    let raw = raw.or_else(|| (final_text != text).then_some(text));
+    (final_text, raw.map(str::to_owned))
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -1533,6 +2541,44 @@ mod tests {
     use windows::Win32::UI::Input::KeyboardAndMouse::{MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT};
 
     use super::{Shortcut, tray_anchor, windows_shortcut};
+
+    #[test]
+    fn replacements_keep_original_asr_and_run_once_after_cleanup() {
+        use crate::replacements::Replacement;
+        let rules = [
+            Replacement {
+                phrase: "old portrait".into(),
+                replacement: "new portrait".into(),
+            },
+            Replacement {
+                phrase: "new portrait".into(),
+                replacement: "wrong cascade".into(),
+            },
+        ];
+        assert_eq!(
+            super::completed_words("old portrait", None, &rules),
+            ("new portrait".into(), Some("old portrait".into()))
+        );
+        assert_eq!(
+            super::completed_words("old portrait", Some("Original ASR"), &rules),
+            ("new portrait".into(), Some("Original ASR".into()))
+        );
+        assert_eq!(
+            super::completed_words("unchanged", None, &rules),
+            ("unchanged".into(), None)
+        );
+        assert_eq!(
+            super::completed_words(
+                "remove",
+                None,
+                &[Replacement {
+                    phrase: "remove".into(),
+                    replacement: String::new()
+                }]
+            ),
+            (String::new(), Some("remove".into()))
+        );
+    }
 
     #[test]
     fn every_window_in_this_process_is_ineligible_for_paste() {

@@ -153,7 +153,7 @@ Running as unit: run-p1030687-i5240400.scope; invocation ID: 26db553c32c74b37a61
    Compiling gdk4 v0.11.5
    Compiling tracing v0.1.44
    Compiling futures-lite v2.6.1
-   Compiling sherpa-onnx-sys v1.13.5 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx-sys)
+   Compiling sherpa-onnx-sys v1.13.5 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx-sys)
    Compiling async-broadcast v0.7.2
    Compiling zbus_macros v5.19.0
    Compiling field-offset v0.3.6
@@ -201,7 +201,7 @@ Running as unit: run-p1030687-i5240400.scope; invocation ID: 26db553c32c74b37a61
    Compiling num_threads v0.1.7
    Compiling deranged v0.5.8
    Compiling xkeysym v0.2.1
-   Compiling koett-engine v0.2.0-linux.1 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+   Compiling koett-engine v0.2.0-linux.1 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
    Compiling dasp_sample v0.11.0
    Compiling fallible-streaming-iterator v0.1.9
    Compiling pastey v0.2.3
@@ -216,7 +216,7 @@ Running as unit: run-p1030687-i5240400.scope; invocation ID: 26db553c32c74b37a61
    Compiling gtk4 v0.11.5
    Compiling tokio-tungstenite v0.30.0
    Compiling gdk4-wayland v0.11.5
-   Compiling sherpa-onnx v1.13.5 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx)
+   Compiling sherpa-onnx v1.13.5 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/vendor/sherpa-onnx)
    Compiling wayland-protocols-wlr v0.3.12
    Compiling arboard v3.6.1
    Compiling directories v6.0.0

@@ -95,7 +95,7 @@ pause media), Model & formatting (speech model download/switch, Raw/S1-mini and 
 controls; these apply right away), Draw on screen (Draw & Pin While Dictating, then its draw key, Include Selected Text in
 Pins, the page-link setup command and the keyboard options, each nested and disabled
 until its parent is on), Shortcuts, Words (dictionary and replacements),
-Ask About Screen, and General (start at login, About). Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
+and General (start at login, About). Use native sections and labeled controls; no JSON editor. Keep advanced model configuration out of the primary
 workflow. Changes show validation near the control and persist predictably. The microphone
 selection has one labeled live input-level meter for the selected option. Switching
 options clears the old reading and previews the new device; unavailable inputs
