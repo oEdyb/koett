@@ -362,9 +362,11 @@ jobs:
         include:
           - runner: ubuntu-22.04
             architecture: x86_64
+            machine: x86_64
             target: x86_64-unknown-linux-gnu
           - runner: ubuntu-22.04-arm
             architecture: arm64
+            machine: aarch64
             target: aarch64-unknown-linux-gnu
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
@@ -376,6 +378,11 @@ jobs:
       CARGO_INCREMENTAL: 0
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       KOETT_REQUIRE_SHARED_CONTEXT: 1
+      # Auto-update for archive installs. The public key only; the private key never comes
+      # near CI. Raise the build with every release, or no installed app will be offered it.
+      KOETT_UPDATE_FEED: https://github.com/oEdyb/koett/releases/latest/download/appcast-linux-${{ matrix.machine }}.json
+      KOETT_UPDATE_PUBLIC_KEY: I+ZaL5YxtKgUOxHWxzZApQ2914ztnA/Y24oYzdGXYrg=
+      KOETT_UPDATE_BUILD: "4"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -460,6 +467,12 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      # Here because it's the only place arm64 gets run, and a mismatch strands that install.
+      - name: Check the updater settings in the binary
+        run: |
+          test "$(target/release/koett update-build)" = "$KOETT_UPDATE_BUILD"
+          grep -aqF "$KOETT_UPDATE_FEED" target/release/koett
+          grep -aqF "$KOETT_UPDATE_PUBLIC_KEY" target/release/koett
       - name: Test runtime self-test retry policy
         run: python3 -m unittest discover -s scripts -p test_runtime_self_test.py
       - name: Runtime self-test

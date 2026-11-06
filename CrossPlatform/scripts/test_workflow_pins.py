@@ -120,6 +120,24 @@ class WorkflowPinTests(unittest.TestCase):
         self.assertIn("actions: write", trim.split("  dependency-review:", 1)[0])
         self.assertNotIn("run: cargo", trim.split("  dependency-review:", 1)[0])
 
+    def test_linux_builds_carry_a_real_update_feed_and_no_lab_switch(self) -> None:
+        linux = self.workflow.split("  linux:\n", 1)[1]
+        self.assertIn(
+            "KOETT_UPDATE_FEED: https://github.com/oEdyb/koett/releases/latest/download/"
+            "appcast-linux-${{ matrix.machine }}.json\n",
+            linux,
+        )
+        self.assertRegex(linux, r"KOETT_UPDATE_PUBLIC_KEY: [A-Za-z0-9+/]{43}=\n")
+        self.assertRegex(linux, r'KOETT_UPDATE_BUILD: "[1-9][0-9]*"\n')
+        self.assertEqual(linux.count("machine: x86_64\n") + linux.count("machine: aarch64\n"), 2)
+        for switch in ("KOETT_UPDATE_LOOPBACK_TESTING", "KOETT_UPDATE_LAB_FAULT"):
+            self.assertNotIn(switch, self.workflow)
+        before = self.workflow.split("  linux:\n", 1)[0]
+        self.assertNotIn("KOETT_UPDATE_", before)
+        self.assertIn('test "$(target/release/koett update-build)" = "$KOETT_UPDATE_BUILD"', linux)
+        self.assertLess(linux.index("--bin koett\n"), linux.index("update-build"))
+        self.assertLess(linux.index("update-build"), linux.index("name: Package"))
+
     def test_checkout_never_persists_credentials(self) -> None:
         checkout_steps = re.findall(
             r"uses:\s*actions/checkout@[0-9a-f]{40}[^\n]*\n"

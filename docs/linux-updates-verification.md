@@ -83,3 +83,22 @@ and then ran it again to build its answer, so it did the work but reported failu
 They can't be proven by pulling power here, so whether a real power loss leaves good files is
 untested. The normal path above was rerun on this source and passed: 67 checks in niri and the
 KWin pill case. GNOME wasn't rerun, because the extension didn't change.
+
+## Turned on for 0.3.1
+
+Lab, on 2026-11-06, at source `93c50b5`. A build with the exact production settings and public key:
+
+- **Tar layout:** the updater is on, and `update-build` prints 4. The real feed URL answers 404 until
+  the release exists. The check reports `http status: 404` and offers nothing, no version or download
+  appears, recording still works, and the failed check isn't saved as a successful one.
+- **Native layout:** the same binary, byte for byte, unpacked from the Arch package. `enabled` is false,
+  `check-updates` and `rollback-update` refuse even with no app running, and past the 60 s first check
+  there's no updates folder. `.deb` and `.rpm` use the same stage step but weren't unpacked here.
+- **Real HTTPS, through the updater's client:** it followed GitHub's redirect to the asset host and matched
+  `curl` byte for byte on a v0.3.0 checksum file, and refused plain HTTP.
+
+The update and recovery labs above were rerun on this source with lab-key fixtures: 67 and 62 checks
+pass. No fixture used the production key, and none can be accepted by a production build.
+
+Not run: a real update through a production feed, which can't exist before a release; arm64, beyond CI
+running `update-build` on it; and a real power loss.

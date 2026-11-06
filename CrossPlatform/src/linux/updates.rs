@@ -1,7 +1,9 @@
-//! Signed automatic updates. Inert unless a build carries a feed, a public key and a
-//! build number, which release builds don't yet. Checks in the background, downloads
-//! quietly, and installs only when Koett is idle, through the same `install.py` a
-//! person runs. The version it replaces stays on disk for `koett rollback-update`.
+//! Signed automatic updates for archive installs. A build needs a feed, a public key and
+//! a build number to do anything; release builds have them, and others stay inert. Checks
+//! in the background, downloads quietly, and installs only when Koett is idle, through the
+//! same `install.py` a person runs. The version it replaces stays on disk for
+//! `koett rollback-update`. Distribution packages share the binary but not the layout, so
+//! `install_location` leaves them to their package manager.
 use crate::update_feed::{self, Feed};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use sha2::{Digest, Sha256};
@@ -664,7 +666,10 @@ pub fn offline(command: &str) -> Option<serde_json::Value> {
         })),
         "rollback-update" => {
             let Some((config, (prefix, _))) = found else {
-                return Some(failure("updates_disabled", "This build has no update feed"));
+                return Some(failure(
+                    "updates_disabled",
+                    "This install doesn't update itself",
+                ));
             };
             let Some(previous) = target else {
                 let message = "There is no earlier version to go back to";
@@ -898,7 +903,7 @@ pub fn check_now() -> bool {
 pub fn control(command: &str) -> Option<serde_json::Value> {
     let disabled = || {
         serde_json::json!({"ok":false,"error":{"code":"updates_disabled",
-            "message":"This build has no update feed"}})
+            "message":"This install doesn't update itself"}})
     };
     match command {
         "update-status" => {
@@ -989,6 +994,8 @@ mod tests {
         for path in [
             "/home/a/dev/koett/target/release/koett",
             "/usr/bin/koett",
+            // Where the .deb, .rpm and Arch packages put it.
+            "/usr/lib/koett/libexec/koett",
             "/lib/koett/versions/abc/koett",
         ] {
             assert_eq!(install_location(Path::new(path)), None, "{path}");
