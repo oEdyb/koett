@@ -2,7 +2,7 @@ import AppKit
 import Sparkle
 
 @MainActor
-final class AppUpdater: NSObject, SPUUpdaterDelegate {
+final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
     let configuration: UpdateConfiguration?
     let gate: UpdateInstallGate
     private let bundle: Bundle
@@ -43,7 +43,9 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate {
         if updaterController == nil && !preparing && lastError == nil && isIdle() { prepare() }
     }
 
-    func checkForUpdates() {
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool { canCheck }
+
+    @objc func checkForUpdates() {
         guard canCheck else { return }
         lastError = nil
         if let updaterController { updaterController.checkForUpdates(nil) }

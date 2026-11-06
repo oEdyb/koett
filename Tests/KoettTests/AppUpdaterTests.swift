@@ -79,6 +79,12 @@ final class UpdateConfigurationTests: XCTestCase {
         XCTAssertFalse(updater.canCheck)
         XCTAssertNil(updater.rollbackURL)
         XCTAssertNil(updater.lastError)
+        let menu = NSMenu()
+        let item = NSMenuItem(title: "Check for Updates…", action: #selector(AppUpdater.checkForUpdates), keyEquivalent: "")
+        item.target = updater
+        menu.addItem(item)
+        menu.update()
+        XCTAssertFalse(item.isEnabled, "AppKit's automatic validation must keep the unconfigured action disabled")
     }
 }
 
