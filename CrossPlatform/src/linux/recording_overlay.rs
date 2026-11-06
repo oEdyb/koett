@@ -239,6 +239,7 @@ impl PillLayer {
     }
 }
 
+const GNOME_RETRY: std::time::Duration = std::time::Duration::from_secs(2);
 const WIDTH: i32 = 300;
 /// Every state is exactly this tall; nothing ever grows.
 const ROW: i32 = 48;
@@ -455,6 +456,8 @@ pub struct RecordingOverlay {
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
     layer_shell: PillLayer,
     closed: Rc<std::cell::Cell<bool>>,
+    gnome_monitor: RefCell<Option<gtk::gdk::Monitor>>,
+    gnome_retry: std::cell::Cell<Option<Instant>>,
     layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
@@ -768,9 +771,16 @@ impl RecordingOverlay {
             return None;
         }
         let closed = Rc::new(std::cell::Cell::new(false));
+        // GNOME turns the extension off during a screen lock, and turning it off
+        // closes the pill. Keep the window so it can come back without a restart.
+        let gnome = matches!(layer_shell, PillLayer::Gnome);
         window.connect_close_request({
             let closed = closed.clone();
-            move |_| {
+            move |window| {
+                if gnome && !closed.get() {
+                    window.set_visible(false);
+                    return gtk::glib::Propagation::Stop;
+                }
                 closed.set(true);
                 gtk::glib::Propagation::Proceed
             }
@@ -948,6 +958,8 @@ impl RecordingOverlay {
             tick,
             layer_shell,
             closed,
+            gnome_monitor: RefCell::new(None),
+            gnome_retry: std::cell::Cell::new(None),
             layout: RefCell::new(super::monitor_layout::MonitorLayout::new()),
         })
     }
@@ -963,6 +975,38 @@ impl RecordingOverlay {
     }
 
     /// Keeps Done and recovery up while the pointer rests on the pill.
+    /// On GNOME, a pill about to appear must be registered first: the extension
+    /// may have been turned off and on since, which forgets it, and an unregistered
+    /// window would map as an ordinary one. While the extension is off the pill stays
+    /// hidden and asks again every 2 s.
+    fn registered_to_show(&self, wanted: bool) -> bool {
+        if !wanted || self.window.is_visible() || !matches!(self.layer_shell, PillLayer::Gnome) {
+            return true;
+        }
+        let now = Instant::now();
+        if self
+            .gnome_retry
+            .get()
+            .is_some_and(|at| now.saturating_duration_since(at) < GNOME_RETRY)
+        {
+            return false;
+        }
+        let monitor = self.gnome_monitor.borrow().clone();
+        match self
+            .layer_shell
+            .choose_monitor(&self.window, monitor.as_ref())
+        {
+            Ok(()) => {
+                self.gnome_retry.set(None);
+                true
+            }
+            Err(_) => {
+                self.gnome_retry.set(Some(now));
+                false
+            }
+        }
+    }
+
     pub fn hovered(&self) -> bool {
         !self.closed.get() && self.state.borrow().hovered
     }
@@ -1004,12 +1048,14 @@ impl RecordingOverlay {
                 .and_then(|surface| surface.display().monitor_at_surface(&surface))
                 .filter(|monitor| layout.monitors.contains(monitor));
             self.window.set_visible(false);
-            if let Err(error) = self.layer_shell.choose_monitor(
-                &self.window,
-                previous.as_ref().or_else(|| layout.monitors.first()),
-            ) {
+            let chosen = previous.or_else(|| layout.monitors.first().cloned());
+            if let Err(error) = self
+                .layer_shell
+                .choose_monitor(&self.window, chosen.as_ref())
+            {
                 eprintln!("Recording overlay monitor change failed: {error}");
             }
+            self.gnome_monitor.replace(chosen);
             *self.layout.borrow_mut() = layout;
         }
         let recording = started.is_some();
@@ -1188,7 +1234,7 @@ impl RecordingOverlay {
             Phase::Recording | Phase::Transcribing | Phase::Done | Phase::Recovery | Phase::Media
         );
         self.window.set_can_target(target);
-        let visible = phase != Phase::Hidden;
+        let visible = phase != Phase::Hidden && self.registered_to_show(phase != Phase::Hidden);
         // Mapping a keyboard-none layer surface never requests activation.
         self.window.set_visible(visible);
         if let Some(surface) = self.window.surface() {
