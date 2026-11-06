@@ -7,6 +7,8 @@ use std::time::{Duration, Instant};
 
 static RECORDERS: AtomicUsize = AtomicUsize::new(0);
 static PREVIEW: Mutex<()> = Mutex::new(());
+#[cfg(test)]
+pub(super) static TEST_RECORDING: Mutex<()> = Mutex::new(());
 
 pub(crate) struct RecordingPriority;
 
@@ -225,6 +227,7 @@ mod tests {
 
     #[test]
     fn recording_waits_for_preview_release_and_blocks_preview_until_dropped() {
+        let _test_recording = TEST_RECORDING.lock().unwrap();
         let ownership = PREVIEW.lock().unwrap();
         let worker = std::thread::spawn(RecordingPriority::acquire);
         let deadline = Instant::now() + Duration::from_secs(1);

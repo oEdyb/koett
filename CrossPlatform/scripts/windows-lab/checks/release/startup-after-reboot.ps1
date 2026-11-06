@@ -1,0 +1,4 @@
+if($env:USERNAME-ne'KoettLab'-or$env:COMPUTERNAME-ne'KOETT-LAB'){throw 'These checks run only in the isolated Koett Windows lab guest'}
+$watch=[Diagnostics.Stopwatch]::StartNew();do{Start-Sleep -Milliseconds 200;$p=@(Get-Process Koett -ErrorAction SilentlyContinue);$r=Run-MediaCli 'status';if($r.exit-eq0){$status=$r.stdout|ConvertFrom-Json}}while(($p.Count-ne1-or$r.exit-ne0-or$status.status-ne'ready')-and$watch.ElapsedMilliseconds-lt40000)
+$expected=(Preview-Current)+'\Koett.exe';$artifact=if($p.Count){Get-LabArtifact}else{$null}
+@{passed=($p.Count-eq1-and$artifact.path-ceq$expected-and$artifact.sha256-eq'1520556302BEC6C3DD43A49E05D8961C7E86F1188535C944A2F8D0477254A2A6'-and$status.status-eq'ready'-and@((Get-NetAdapter)|Where-Object {$_.Status-eq'Up'}).Count-eq0);artifact=$artifact;status=$status;network=@(Get-NetAdapter|Select-Object Name,Status);focus=Get-LabFocus;expected=$expected}

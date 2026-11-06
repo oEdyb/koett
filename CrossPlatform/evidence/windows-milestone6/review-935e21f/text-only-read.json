@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "result": {
+    "step": {
+      "step": "text-only-original-paste-once",
+      "rect": [
+        91,
+        91,
+        1316,
+        791
+      ],
+      "screenshot_file": "text-only-read-result-step.png",
+      "focus": {
+        "hwnd": 66490,
+        "process": "powershell",
+        "pid": 5132
+      }
+    },
+    "focus": {
+      "hwnd": 66490,
+      "process": "powershell",
+      "pid": 5132
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 8744,
+      "sha256": "69253ADF55DE073F681B36E0463EFB7480289DAAB731FDBE00A4754532F7B9F2"
+    },
+    "text": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d",
+    "passed": true
+  },
+  "id": "1793945920248804902"
+}

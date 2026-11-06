@@ -23,6 +23,9 @@ mod pill_state;
 mod pin_policy;
 mod pin_reader;
 mod pixels;
+mod recovery;
+#[path = "linux/sounds.rs"]
+mod sounds;
 
 use std::cell::{Cell, RefCell};
 use std::mem::size_of;
@@ -109,6 +112,7 @@ const MENU_UNDO_DRAW: usize = 12;
 const MENU_PASTE_LAST: usize = 13;
 const MENU_MEDIA: usize = 14;
 const MENU_CHANGE_MEDIA_SHORTCUT: usize = 15;
+const MENU_RECOVERY: usize = 16;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -858,12 +862,11 @@ unsafe extern "system" fn window_proc(
                 return Default::default();
             }
             windows::Win32::UI::WindowsAndMessaging::WM_QUERYENDSESSION => {
-                let busy = app_cell.try_borrow().is_ok_and(|app| {
-                    app.engine.is_some()
-                        && matches!(app.status, AppStatus::Recording | AppStatus::Transcribing)
-                });
+                let busy = app_cell
+                    .try_borrow()
+                    .is_ok_and(|app| app.dictation_in_flight());
                 return windows::Win32::Foundation::LRESULT(isize::from(
-                    !busy && !media_view::needs_copy(),
+                    !busy && !media_view::needs_copy() && history::recovery::pending_count() == 0,
                 ));
             }
             WM_CLOSE => {
@@ -1330,6 +1333,11 @@ impl WindowsApp {
                 }
                 EngineUpdate::Status(status) => {
                     let media_outcome = media_view::finish(&status);
+                    if let Some(cue) = sounds::for_change(&self.status, &status)
+                        && Settings::load().is_ok_and(|settings| settings.recording_sounds)
+                    {
+                        sounds::play(cue);
+                    }
 
                     let status = if status == AppStatus::Ready
                         && (self.staged.is_some() || self.pending_result.is_some())
@@ -1614,7 +1622,7 @@ impl WindowsApp {
                         self.pill_state.copy(now);
                     }
                 } else if x >= 190
-                    && (self.last_bundle.is_some() && !self.pill_media
+                    && (self.pill_state.repeat_paste && !self.pill_media
                         || matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }))
                 {
                     self.repeat_paste();
@@ -1872,7 +1880,13 @@ impl WindowsApp {
                 let _ = engine.commands.send(EngineCommand::CancelMedia);
             }
         } else {
+            let parked = self.pending_result.is_some() || self.staged.is_some();
             self.discard_drawing();
+            if parked {
+                self.status = AppStatus::Ready;
+                self.capture_pending = false;
+                self.update_tray();
+            }
             if let Some(engine) = &self.engine {
                 engine.cancel_dictation();
                 let _ = engine.commands.send(EngineCommand::Cancel);
@@ -1989,16 +2003,12 @@ impl WindowsApp {
                     result
                 })
         };
-        let result = result.and_then(|()| {
-            if image_requested {
-                Ok(())
-            } else {
-                Err(
-                    "The target did not request an image. Use Copy in an image-capable editor."
-                        .into(),
-                )
-            }
-        });
+        let image_omitted = result.is_ok() && !image_requested;
+        if image_omitted {
+            eprintln!(
+                "Koett: Text pasted; the target did not request an image. Use Copy in an image-capable editor."
+            );
+        }
         if let Some(saved) = staged.saved {
             self.pill_state.set(
                 pill_state::delivery_result(staged.text, result.is_ok(), saved, false),
@@ -2016,6 +2026,14 @@ impl WindowsApp {
                 staged.raw.as_deref(),
                 result.err(),
             );
+        }
+        if image_omitted && matches!(self.pill_state.phase, pill_state::Phase::Done(_)) {
+            self.pill_state.set(
+                pill_state::Phase::Done("Text pasted · image unavailable · Copy to keep".into()),
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.pill_state.repeat_paste = false;
+            self.update_overlay();
         }
     }
 
@@ -2047,7 +2065,13 @@ impl WindowsApp {
                     if let Some(context) = &frame.context {
                         lines.extend(context.lines().into_iter().map(|line| format!("  {line}")));
                     }
-                    if frame.pin {
+                    if frame.pin
+                        && (frame.context.is_none()
+                            || frame
+                                .context_status
+                                .contains("Private mode: context omitted"))
+                        && !frame.context_status.is_empty()
+                    {
                         lines.push(format!("  {}", frame.context_status));
                     }
                     lines.join("\n")
@@ -2092,6 +2116,10 @@ impl WindowsApp {
             return;
         }
         if text.trim().is_empty() {
+            self.discard_drawing();
+            self.status = AppStatus::Ready;
+            self.capture_pending = false;
+            self.update_tray();
             self.pill_state.set(
                 pill_state::Phase::Hidden,
                 self.clock.elapsed().as_millis() as u64,
@@ -2317,6 +2345,7 @@ impl WindowsApp {
                 w!("Start at login"),
             );
             let _ = AppendMenuW(menu, MF_STRING, MENU_MEDIA, w!("Transcribe media…"));
+            let _ = AppendMenuW(menu, MF_STRING, MENU_RECOVERY, w!("Transcript recovery…"));
             let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
             let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("Quit Koett"));
 
@@ -2361,16 +2390,54 @@ impl WindowsApp {
         }
     }
 
+    fn dictation_in_flight(&self) -> bool {
+        self.capture_pending
+            || self.pending_result.is_some()
+            || self
+                .staged
+                .as_ref()
+                .is_some_and(|staged| staged.saved.is_none())
+            || matches!(self.status, AppStatus::Recording | AppStatus::Transcribing)
+    }
     fn request_quit(&self) {
-        if media_view::needs_copy()
+        if self.dictation_in_flight() {
+            unsafe {
+                let _ = MessageBoxW(
+                    Some(self.hwnd),
+                    w!("Finish or cancel dictation before quitting."),
+                    w!("Koett"),
+                    windows::Win32::UI::WindowsAndMessaging::MB_OK
+                        | windows::Win32::UI::WindowsAndMessaging::MB_ICONWARNING,
+                );
+            }
+            return;
+        }
+        let foreground = unsafe {
+            windows::Win32::UI::WindowsAndMessaging::GetAncestor(
+                GetForegroundWindow(),
+                windows::Win32::UI::WindowsAndMessaging::GA_ROOT,
+            )
+        };
+        let mut pid = 0;
+        unsafe {
+            GetWindowThreadProcessId(foreground, Some(&mut pid));
+        }
+        let owner = if pid == std::process::id() && unsafe { IsWindowVisible(foreground) }.as_bool()
+        {
+            foreground
+        } else {
+            self.hwnd
+        };
+        if (media_view::needs_copy() || history::recovery::pending_count() != 0)
             && unsafe {
                 MessageBoxW(
-                    Some(self.hwnd),
-                    w!("The media transcript is not saved. Quit without copying it?"),
+                    Some(owner),
+                    w!("Some transcripts are not saved. Quit without saving or copying them?"),
                     w!("Koett"),
                     windows::Win32::UI::WindowsAndMessaging::MB_YESNO
                         | windows::Win32::UI::WindowsAndMessaging::MB_ICONWARNING
-                        | windows::Win32::UI::WindowsAndMessaging::MB_DEFBUTTON2,
+                        | windows::Win32::UI::WindowsAndMessaging::MB_DEFBUTTON2
+                        | windows::Win32::UI::WindowsAndMessaging::MB_SETFOREGROUND,
                 )
             } != windows::Win32::UI::WindowsAndMessaging::IDYES
         {
@@ -2399,6 +2466,7 @@ impl WindowsApp {
                     media_view::open(engine.commands.clone());
                 }
             }
+            MENU_RECOVERY => recovery::open(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
             MENU_WORDS => desktop::open_words(self.hwnd),
             MENU_DRAW => {
@@ -2421,7 +2489,6 @@ impl WindowsApp {
                 }
             }
             MENU_COPY_LAST => {
-                self.pill_media = false;
                 if let Err(e) = self.copy_last() {
                     show_fatal_error(&e);
                 }
@@ -2867,6 +2934,116 @@ mod tests {
 
     use super::{Shortcut, tray_anchor, windows_shortcut};
 
+    fn review_app() -> super::WindowsApp {
+        use super::*;
+        let engine = None;
+        let desktop_lab = false;
+        let settings = Settings::default();
+        let restored_last = "Previous transcript".into();
+        WindowsApp {
+            hwnd: HWND::default(),
+            engine,
+            desktop_lab,
+            settings,
+            status: if desktop_lab {
+                AppStatus::Ready
+            } else {
+                AppStatus::Starting
+            },
+            paste_target: None,
+            last_target: None,
+            overlay: HWND::default(),
+            pill_renderer: RefCell::new(None),
+            last_render_error: Cell::new(None),
+            pill_buttons: None,
+            meter: meter::Meter::default(),
+            pill_state: pill_state::State::default(),
+            clock: Instant::now(),
+            last_transcript: restored_last,
+            pill_media: false,
+            last_pill_redraw: Cell::new(None),
+            last_pill_key: Cell::new(None),
+            shortcut_window: HWND::default(),
+            registered_shortcut: None,
+            registered_media_shortcut: None,
+            changing_media_shortcut: false,
+            shortcut_latch: ShortcutLatch::default(),
+            levels: None,
+            recording_started: None,
+            draw_input: None,
+            drawing: None,
+            draw_locked: false,
+            draw_lock_pending: false,
+            pill_pressed: false,
+            pending_result: None,
+            staged: None,
+            last_bundle: None,
+            clipboard_restore: None,
+            draw_pointer: POINT::default(),
+            capture_lab: None,
+            capture_pending: false,
+            tray: NOTIFYICONDATAW::default(),
+            taskbar_created: 0,
+        }
+    }
+    #[test]
+    fn cancel_parked_drawing_releases_busy_and_quit_guards() {
+        use super::*;
+        let mut app = review_app();
+        app.status = AppStatus::Transcribing;
+        app.pending_result = Some(EngineUpdate::TranscriptReady {
+            model: "fixture".into(),
+            session: 1,
+            transcript: crate::transcription::Transcript {
+                raw: None,
+                text: "spoken words".into(),
+                words: vec![],
+                audio_duration: Duration::from_secs(1),
+                transcription: Duration::ZERO,
+            },
+        });
+        assert!(app.dictation_in_flight());
+        app.cancel_current();
+        assert_eq!(app.status, AppStatus::Ready);
+        assert!(app.pending_result.is_none());
+        assert!(!app.dictation_in_flight());
+        assert!(app.can_repeat_paste());
+    }
+    #[test]
+    fn empty_parked_result_returns_ready_without_replacing_previous_text() {
+        use super::*;
+        let mut app = review_app();
+        app.status = AppStatus::Transcribing;
+        app.draw_locked = true;
+        app.draw_lock_pending = true;
+        // Use a private, otherwise unused chord rather than capturing Escape
+        // from another application while this regression runs.
+        unsafe { RegisterHotKey(None, 3, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, 0x7a) }.unwrap();
+        app.deliver("fixture", "", None, &[]);
+        assert!(
+            unsafe { UnregisterHotKey(None, 3) }.is_err(),
+            "empty completion must release its cancel hotkey"
+        );
+        assert!(!app.draw_locked);
+        assert!(!app.draw_lock_pending);
+        assert_eq!(app.status, AppStatus::Ready);
+        assert!(!app.dictation_in_flight());
+        assert_eq!(app.last_transcript, "Previous transcript");
+    }
+    #[test]
+    fn quit_guard_rejects_recording_transcribing_and_capture_open() {
+        use super::*;
+        let mut app = review_app();
+        for status in [AppStatus::Recording, AppStatus::Transcribing] {
+            app.status = status;
+            assert!(app.dictation_in_flight());
+        }
+        app.status = AppStatus::Ready;
+        app.capture_pending = true;
+        assert!(app.dictation_in_flight());
+        app.capture_pending = false;
+        assert!(!app.dictation_in_flight());
+    }
     #[test]
     fn replacements_keep_original_asr_and_run_once_after_cleanup() {
         use crate::replacements::Replacement;

@@ -1,0 +1,125 @@
+{
+  "ok": true,
+  "result": {
+    "start": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"start\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "start",
+      "exit": 0
+    },
+    "after_error": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "passed": false,
+    "again": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "after": {
+      "hwnd": 131962,
+      "process": "Koett",
+      "pid": 8436
+    },
+    "before": {
+      "hwnd": 131962,
+      "process": "Koett",
+      "pid": 8436
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 8436,
+      "sha256": "27E7976AB9C5478FC17DDA3EB2BB4E0260CEFE1194A21EB863CA00DEDA416384"
+    },
+    "cancel": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"cancel\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "cancel",
+      "exit": 0
+    },
+    "restart": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"start\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "start",
+      "exit": 0
+    },
+    "media_step": {
+      "step": "media-available-after-error",
+      "rect": [
+        365,
+        60,
+        1555,
+        935
+      ],
+      "screenshot_file": "error-ready-result-media_step.png",
+      "focus": {
+        "hwnd": 66494,
+        "process": "Koett",
+        "pid": 8436
+      }
+    },
+    "error_step": {
+      "step": "asr-failure-ready-rescue",
+      "rect": {
+        "left": 697,
+        "bottom": 968,
+        "top": 884,
+        "right": 1222,
+        "dpi": 168,
+        "hwnd": 393406
+      },
+      "screenshot_file": "error-ready-result-error_step.png",
+      "focus": {
+        "hwnd": 131962,
+        "process": "Koett",
+        "pid": 8436
+      },
+      "visible": true
+    },
+    "media": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"media\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "media",
+      "exit": 0
+    },
+    "stop": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"stop\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "stop",
+      "exit": 0
+    },
+    "settings": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"settings\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "settings",
+      "exit": 0
+    },
+    "clipboard": "ASR failure keeps clipboard",
+    "done": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    }
+  },
+  "id": "1793945437930892650"
+}

@@ -4,7 +4,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 static MESSAGE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| unsafe { RegisterWindowMessageW(w!("Koett.Automation.v1")) });
-const ACTIONS: [&str; 14] = [
+const ACTIONS: [&str; 17] = [
     "status",
     "start",
     "stop",
@@ -19,6 +19,9 @@ const ACTIONS: [&str; 14] = [
     "dictionary",
     "media",
     "quit",
+    "recovery",
+    "retry-save",
+    "copy-unsaved",
 ];
 pub(super) fn failure(code: &str, fix: &str, message: String) -> String {
     println!(
@@ -104,7 +107,7 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
         };
         println!(
             "{}",
-            serde_json::json!({"ok":true,"status":status,"paused":response&0x100!=0,"media_active":response&0x200!=0,"unsaved_media":response&0x400!=0,"outputs":[],"warnings":[]})
+            serde_json::json!({"ok":true,"status":status,"paused":response&0x100!=0,"media_active":response&0x200!=0,"unsaved_media":response&0x400!=0,"recovery_busy":response&0x800!=0,"unsaved_transcripts":response>>16,"outputs":[],"warnings":[]})
         );
     } else {
         println!(
@@ -143,7 +146,11 @@ pub(super) fn dispatch(
                             0
                         }
                         | if media_view::active() { 0x200 } else { 0 }
-                        | if media_view::needs_copy() { 0x400 } else { 0 },
+                        | if media_view::needs_copy() { 0x400 } else { 0 }
+                        | if recovery::busy() { 0x800 } else { 0 }
+                        | (isize::try_from(history::recovery::pending_count().min(65535))
+                            .unwrap_or(65535)
+                            << 16),
                 );
             }
             1 if !app.capture_pending
@@ -184,7 +191,20 @@ pub(super) fn dispatch(
             10 => app.handle_menu(MENU_OPEN_HISTORY),
             11 => app.handle_menu(MENU_WORDS),
             12 => app.handle_menu(MENU_MEDIA),
-            13 if !media_view::needs_copy() => app.request_quit(),
+            13 if !app.dictation_in_flight()
+                && !media_view::needs_copy()
+                && history::recovery::pending_count() == 0 =>
+            {
+                app.request_quit()
+            }
+            14 => recovery::open(),
+            15 => {
+                recovery::request(true, None).ok()?;
+                recovery::open();
+            }
+            16 if history::recovery::pending_count() != 0 => {
+                recovery::request(false, Some(app.hwnd)).ok()?;
+            }
             _ => return None,
         }
         Some(1)

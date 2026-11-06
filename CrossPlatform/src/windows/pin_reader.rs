@@ -117,6 +117,21 @@ impl Snapshot {
             && title(hwnd) == self.title
     }
     pub fn read(&self, selected: bool) -> Read {
+        match crate::settings::Settings::load() {
+            Ok(settings) => self.read_with_details(selected, settings.pin_page_details),
+            Err(_) => Read {
+                context: None,
+                status: "Image only · context settings unavailable".into(),
+            },
+        }
+    }
+    fn read_with_details(&self, selected: bool, enabled: bool) -> Read {
+        if !enabled {
+            return Read {
+                context: None,
+                status: "Image only · page details off".into(),
+            };
+        }
         self.read_options(selected, true)
     }
     pub fn read_source(&self) -> Read {
@@ -163,6 +178,7 @@ impl Snapshot {
             if root.CurrentProcessId()? != self.pid as i32 {
                 return Err(windows::core::Error::new(E_FAIL, "Window changed"));
             }
+            let root_check = root.clone();
             let walker = automation.ControlViewWalker()?;
             let deadline = Instant::now() + Duration::from_millis(800);
             let mut queue = std::collections::VecDeque::from([(root, false)]);
@@ -171,11 +187,24 @@ impl Snapshot {
                 title: clean(Some(&self.title), TITLE_LIMIT),
                 ..Default::default()
             };
-            let browser = matches!(
-                context.app.as_deref(),
-                Some("msedge" | "chrome" | "firefox")
-            );
-            let mut private = false;
+            let app = context.app.as_deref().unwrap_or_default();
+            let browser = browser_app(app);
+            let root_title = queue.front().unwrap().0.CurrentName()?.to_string();
+            let mut private = private_title(app, &self.title) || private_title(app, &root_title);
+            if private || (browser && root_title.trim().is_empty()) {
+                return Ok(Read {
+                    context: Some(PinContext {
+                        app: context.app,
+                        ..Default::default()
+                    }),
+                    status: if private {
+                        "Private mode: context omitted"
+                    } else {
+                        "Context unavailable: browser frame missing"
+                    }
+                    .into(),
+                });
+            }
             let mut password = automation
                 .GetFocusedElement()
                 .ok()
@@ -275,6 +304,15 @@ impl Snapshot {
                 context.link = None;
                 context.image = None;
             }
+            if browser && !frame_confirmed(&root_title, &root_check.CurrentName()?.to_string()) {
+                return Ok(Read {
+                    context: Some(PinContext {
+                        app: context.app,
+                        ..Default::default()
+                    }),
+                    status: "Context unavailable: browser frame changed".into(),
+                });
+            }
             if private {
                 context.title = None;
                 context.image = None;
@@ -289,11 +327,9 @@ impl Snapshot {
             if context.url.is_none() {
                 status.push("URL unavailable");
             }
-            status.push(if private {
-                "Private mode: context omitted"
-            } else {
-                "Private mode unknown"
-            });
+            if private {
+                status.push("Private mode: context omitted");
+            }
             if selected && context.selection.is_none() {
                 status.push(if password {
                     "Password text omitted"
@@ -318,6 +354,99 @@ impl Snapshot {
         }
     }
 }
+fn frame_confirmed(before: &str, after: &str) -> bool {
+    !before.trim().is_empty() && before == after
+}
+
+fn browser_app(app: &str) -> bool {
+    matches!(
+        app.to_ascii_lowercase().as_str(),
+        "msedge"
+            | "chrome"
+            | "chromium"
+            | "brave"
+            | "vivaldi"
+            | "opera"
+            | "firefox"
+            | "librewolf"
+            | "waterfox"
+            | "floorp"
+            | "zen"
+    )
+}
+fn private_title(app: &str, title: &str) -> bool {
+    if !browser_app(app) {
+        return false;
+    }
+    if matches!(
+        app.to_ascii_lowercase().as_str(),
+        "firefox" | "librewolf" | "waterfox" | "floorp" | "zen"
+    ) {
+        return ![
+            "Firefox",
+            "Firefox ESR",
+            "Firefox Nightly",
+            "Firefox Developer Edition",
+            "LibreWolf",
+            "Waterfox",
+            "Floorp",
+            "Zen",
+        ]
+        .iter()
+        .any(|brand| title.ends_with(brand));
+    }
+    let title = title.to_ascii_lowercase();
+    [
+        "incognito",
+        "inprivate",
+        "private browsing",
+        "(private)",
+        "private window",
+        "private tab",
+    ]
+    .iter()
+    .any(|mark| title.contains(mark))
+}
+
 fn inside(rect: RECT, point: POINT) -> bool {
     point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom
+}
+
+#[cfg(test)]
+mod privacy_tests {
+    use super::*;
+    #[test]
+    fn missing_or_changed_browser_frame_never_confirms_context() {
+        assert!(!frame_confirmed("", ""));
+        assert!(!frame_confirmed("Bank — Chrome", "Other — Chrome"));
+        assert!(frame_confirmed("Bank — Chrome", "Bank — Chrome"));
+    }
+    #[test]
+    fn browser_forks_and_private_titles_omit_context() {
+        for app in ["brave", "vivaldi", "opera", "msedge", "chrome"] {
+            assert!(browser_app(app));
+            assert!(private_title(app, "Secret (Private)"));
+            assert!(private_title(app, "Secret InPrivate"));
+            assert!(!private_title(app, "Public page"));
+        }
+        assert!(private_title(
+            "firefox",
+            "Secret — Firefox — Private Browsing"
+        ));
+        assert!(!private_title("firefox", "Public — Firefox"));
+    }
+    #[test]
+    fn disabled_page_details_do_not_touch_a_window_or_accessibility() {
+        let snapshot = Snapshot {
+            hwnd: 0,
+            pid: 0,
+            rect: RECT::default(),
+            title: "Private title".into(),
+            app: Some("browser".into()),
+            point: POINT::default(),
+        };
+        let read = snapshot.read_with_details(true, false);
+        assert!(read.context.is_none());
+        assert_eq!(read.status, "Image only · page details off");
+    }
 }

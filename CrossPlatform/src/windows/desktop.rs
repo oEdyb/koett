@@ -1,4 +1,5 @@
 mod correction;
+mod dictation_options;
 mod microphone;
 mod paste_shortcuts;
 pub(super) mod processing;
@@ -709,14 +710,13 @@ impl Window {
                 42,
                 [192, 368, 320, 30],
             )?;
-            let selected = self.control(
+            self.control(
                 w!("BUTTON"),
-                "Read selected text at pins",
-                WS_TABSTOP | WINDOW_STYLE(BS_AUTOCHECKBOX as u32),
+                "Dictation options…",
+                WS_TABSTOP,
                 43,
                 [24, 412, 264, 32],
             )?;
-            self.theme.apply_checkbox(selected);
             self.control(
                 w!("BUTTON"),
                 "Paste shortcuts…",
@@ -724,14 +724,6 @@ impl Window {
                 44,
                 [300, 412, 212, 32],
             )?;
-            unsafe {
-                SendMessageW(
-                    selected,
-                    BM_SETCHECK,
-                    Some(WPARAM(usize::from(settings.pin_selected_text))),
-                    None,
-                );
-            }
             self.control(
                 w!("BUTTON"),
                 "Model and formatting…",
@@ -1086,6 +1078,15 @@ impl Window {
                 Err(error) => super::show_fatal_error(&error),
             },
             34 => open_kind(true, false, true, HWND(self.owner as *mut _), None),
+            43 => {
+                let result = unsafe { GetDlgItem(Some(self.hwnd), 43) }
+                    .map_err(|error| error.to_string())
+                    .and_then(|anchor| dictation_options::show(self.hwnd, anchor));
+                set(
+                    self.detail,
+                    result.as_ref().err().map_or("", String::as_str),
+                );
+            }
             44 => {
                 let result = unsafe { GetDlgItem(Some(self.hwnd), 44) }
                     .map_err(|e| e.to_string())
@@ -1145,10 +1146,6 @@ impl Window {
                         }
                     }
                     edit.settings.draw_lock_shortcut = shortcut.to_owned();
-                    let selected =
-                        unsafe { GetDlgItem(Some(self.hwnd), 43) }.map_err(|e| e.to_string())?;
-                    edit.settings.pin_selected_text =
-                        unsafe { SendMessageW(selected, BM_GETCHECK, None, None) }.0 != 0;
                     if let Some(microphone) = microphone {
                         edit.settings.microphone = microphone;
                     }

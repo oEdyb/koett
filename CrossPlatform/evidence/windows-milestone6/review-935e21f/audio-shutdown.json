@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "result": {
+    "quit": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"quit\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "quit",
+      "exit": 0
+    },
+    "startup": null,
+    "passed": true,
+    "profile_backup_absent": true,
+    "shutdown_requested": true,
+    "narrator_count": 0,
+    "config_hash": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+    "app_count": 0,
+    "focus": {
+      "hwnd": 65778,
+      "process": "explorer",
+      "pid": 1004
+    }
+  },
+  "id": "1793946719340849838"
+}

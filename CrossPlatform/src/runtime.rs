@@ -1301,6 +1301,8 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
         .clone()
         .next(AppEvent::Recovered, None)
         .expect("an error can recover");
+    #[cfg(target_os = "windows")]
+    send_status(updates, status);
 }
 
 pub const LIMIT_WARNING: &str = "1 minute left";
@@ -1392,6 +1394,22 @@ type MediaOperation = (
 mod tests {
     use std::time::Duration;
 
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn capture_error_reports_error_then_ready_to_the_desktop() {
+        let (send, receive) = std::sync::mpsc::channel();
+        let mut status = crate::state::AppStatus::Recording;
+        super::recover_from_error(&send, &mut status, "Device removed".into());
+        assert!(matches!(
+            receive.recv().unwrap(),
+            super::EngineUpdate::Status(crate::state::AppStatus::Error(_))
+        ));
+        assert!(matches!(
+            receive.recv().unwrap(),
+            super::EngineUpdate::Status(crate::state::AppStatus::Ready)
+        ));
+        assert_eq!(status, crate::state::AppStatus::Ready);
+    }
     #[test]
     fn recording_limit_stops_the_recording_and_says_why() {
         let (updates, received) = std::sync::mpsc::channel();

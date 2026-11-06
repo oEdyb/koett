@@ -215,6 +215,14 @@ pub(super) fn render_all(owner: HWND) {
 pub(super) fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
     text_offer(owner, text).map(|_| ())
 }
+pub(super) fn copy_text_if_unchanged(owner: HWND, text: &str, sequence: u32) -> Result<(), String> {
+    publish(
+        owner,
+        &[(CF_UNICODETEXT.0.into(), &utf16(text)?)],
+        Condition::Sequence(sequence),
+    )
+    .map(|_| ())
+}
 pub(super) fn text_offer(owner: HWND, text: &str) -> Result<Offer, String> {
     publish(
         owner,
@@ -340,6 +348,11 @@ fn deferred(
     marker[..4].copy_from_slice(&std::process::id().to_le_bytes());
     marker[4..12].copy_from_slice(&NEXT.fetch_add(1, Ordering::Relaxed).to_le_bytes());
     let prepared = Memory::new(&marker)?;
+    let cloud = unsafe { RegisterClipboardFormatW(w!("CanUploadToCloudClipboard")) };
+    if cloud == 0 {
+        return Err("Could not disable cloud clipboard upload".into());
+    }
+    let cloud_data = Memory::new(&0u32.to_le_bytes())?;
     let mut open = None;
     for _ in 0..10 {
         if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
@@ -359,6 +372,7 @@ fn deferred(
     }
     unsafe { EmptyClipboard() }.map_err(|e| e.to_string())?;
     prepared.give(marker_format)?;
+    cloud_data.give(cloud)?;
     for (format, _) in &formats {
         unsafe {
             windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(0));
@@ -398,6 +412,11 @@ fn publish(owner: HWND, formats: &[(u32, &[u8])], expected: Condition) -> Result
         .map(|(id, data)| Memory::new(data).map(|m| (*id, m)))
         .collect::<Result<Vec<_>, _>>()?;
     prepared.push((marker_format, Memory::new(&marker)?));
+    let cloud = unsafe { RegisterClipboardFormatW(w!("CanUploadToCloudClipboard")) };
+    if cloud == 0 {
+        return Err("Could not disable cloud clipboard upload".into());
+    }
+    prepared.push((cloud, Memory::new(&0u32.to_le_bytes())?));
     let mut open = None;
     for _ in 0..10 {
         if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
@@ -479,6 +498,18 @@ pub(super) fn lab_bundle(owner: HWND, action: usize) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn assert_cloud_upload_disabled() {
+        unsafe {
+            let id = RegisterClipboardFormatW(w!("CanUploadToCloudClipboard"));
+            let handle = HGLOBAL(GetClipboardData(id).unwrap().0);
+            let data = GlobalLock(handle).cast::<u32>();
+            assert!(!data.is_null());
+            assert_eq!(*data, 0);
+            let _ = GlobalUnlock(handle);
+            let history = RegisterClipboardFormatW(w!("CanIncludeInClipboardHistory"));
+            assert!(IsClipboardFormatAvailable(history).is_err());
+        }
+    }
     #[test]
     fn rendered_receipts_ignore_known_observers_and_accept_anonymous_reads() {
         let offer = Offer {
@@ -538,6 +569,7 @@ mod tests {
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
         {
             let _open = Open;
+            assert_cloud_upload_disabled();
             assert!(
                 offer.current(),
                 "published sequence={} current={} owner={:?} expected={:?} marker={}",
@@ -561,6 +593,7 @@ mod tests {
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
         {
             let _open = Open;
+            assert_cloud_upload_disabled();
             render(CF_UNICODETEXT.0.into());
             assert!(
                 !unsafe { GetClipboardData(CF_UNICODETEXT.0.into()) }
@@ -584,6 +617,7 @@ mod tests {
         copy_text(owner, "new user copy").unwrap();
         assert!(bundle.restore(text).is_err());
         assert!(bundle.copy_if_unchanged(owner, sequence).is_err());
+        assert!(copy_text_if_unchanged(owner, "stale recovery copy", sequence).is_err());
         assert!(
             offer
                 .replace_with_text("must not replace user copy")
