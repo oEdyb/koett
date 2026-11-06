@@ -61,6 +61,18 @@ class WorkflowPinTests(unittest.TestCase):
         triggers = self.workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
         self.assertEqual(re.findall(r"(?m)^  (\w+):", triggers), ["workflow_dispatch"])
 
+    def test_windows_only_recheck_leaves_other_jobs_off(self) -> None:
+        for job in ['supply-chain', 'msrv', 'linux']:
+            self.assertIn('  ' + job + ':\n    if: ${{ !inputs.windows_only }}', self.workflow)
+        windows = self.workflow.split('  windows:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertNotIn('    if:', windows)
+        dependency = self.workflow.split('  dependency-review:\n', 1)[1].split('    runs-on:', 1)[0]
+        self.assertIn('!inputs.windows_only', dependency)
+        trimming = self.workflow.split('  cache-trim:\n', 1)[1].split('    runs-on:', 1)[0]
+        self.assertIn('!inputs.windows_only', trimming)
+        inputs = self.workflow.split('      windows_only:', 1)[1].split('permissions:', 1)[0]
+        self.assertIn('default: false', inputs)
+
     def test_releases_use_no_cache_and_only_main_saves_one(self) -> None:
         restores = self.workflow.count("uses: actions/cache/restore@")
         saves = self.workflow.count("uses: actions/cache/save@")
