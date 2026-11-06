@@ -6,6 +6,7 @@ import os
 import re
 from pathlib import Path
 import subprocess
+import tempfile
 from package_windows import digest, verify_payload
 
 
@@ -33,9 +34,15 @@ def build(payload, output, compiler, uninstaller_sign_command=None):
     output.parent.mkdir(parents=True, exist_ok=True)
     script = Path(__file__).resolve().parents[1]/'packaging/windows/installer.nsi'
     signing = [prefix+'DSIGN_UNINSTALLER='+uninstaller_sign_command] if uninstaller_sign_command else []
-    subprocess.run([compiler, *signing, prefix+'WX', prefix+'V2', prefix+'DOUTPUT='+str(output),
-                    prefix+'DPAYLOAD='+str(payload), prefix+'DVERSION='+version,
-                    prefix+'DVERSIONKEY='+digest(payload/'preview-release.json')[:16], str(script)], check=True)
+    with tempfile.TemporaryDirectory(prefix='koett-launcher-', dir=output.parent) as directory:
+        launcher = Path(directory)/'Koett.exe'
+        launcher_signing = [prefix+'DSIGN_LAUNCHER='+uninstaller_sign_command] if uninstaller_sign_command else []
+        subprocess.run([compiler, *launcher_signing, prefix+'WX', prefix+'V2', prefix+'DOUTPUT='+str(launcher),
+                        str(cross/'packaging/windows/launcher.nsi')], check=True)
+        subprocess.run([compiler, *signing, prefix+'WX', prefix+'V2', prefix+'DOUTPUT='+str(output),
+                        prefix+'DPAYLOAD='+str(payload), prefix+'DVERSION='+version,
+                        prefix+'DLAUNCHER='+str(launcher),
+                        prefix+'DVERSIONKEY='+digest(payload/'preview-release.json')[:16], str(script)], check=True)
     return {'installer': str(output), 'sha256': digest(output), 'version': version,
             'architecture': release['architecture'], 'signed': False}
 
@@ -45,6 +52,6 @@ if __name__ == '__main__':
     parser.add_argument('--payload', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--compiler', default='makensis')
-    parser.add_argument('--uninstaller-sign-command', help='Trusted NSIS signing command prefix; receives the uninstaller path')
+    parser.add_argument('--uninstaller-sign-command', help='Trusted NSIS signing prefix for the launcher and uninstaller; receives each executable path')
     args = parser.parse_args()
     print(json.dumps(build(args.payload, args.output, args.compiler, args.uninstaller_sign_command), indent=2))

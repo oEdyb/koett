@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "result": {
+    "focus": {
+      "hwnd": 394140,
+      "process": "Notepad",
+      "pid": 8840
+    },
+    "startup": null,
+    "data": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "E9CCE8B286A99539B53F2F227A083184EFB1617626B60779786C03E159BE568C",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "app_processes": 0,
+    "passed": true
+  },
+  "id": "1793973951738904615"
+}

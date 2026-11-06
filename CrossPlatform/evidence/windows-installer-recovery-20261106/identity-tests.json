@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "stdout": "\nrunning 1 test\ntest windows::install_identity::tests::only_versioned_installs_use_the_root_launcher ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 326 filtered out; finished in 0.00s\n\n",
+    "exit": 0,
+    "stderr": "",
+    "focus": {
+      "hwnd": 65782,
+      "process": "explorer",
+      "pid": 5008
+    },
+    "passed": true
+  },
+  "id": "1793969230506498410"
+}

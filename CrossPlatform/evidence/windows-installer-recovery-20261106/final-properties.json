@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "result": {
+    "taskbar_buttons": 1,
+    "step": {
+      "step": "final-start-and-taskbar-identity",
+      "rect": [
+        470,
+        0,
+        1450,
+        996
+      ],
+      "screenshot_file": "final-properties-1.png",
+      "focus": {
+        "hwnd": 1049550,
+        "process": "Koett",
+        "pid": 3448
+      }
+    },
+    "window_id": "DybergCo.Koett",
+    "passed": true,
+    "command": "\"C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\Koett.exe\"",
+    "icon": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\Koett.ico,0",
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\b78ff6e5b8a1a201\\Koett.exe",
+      "pid": 3448,
+      "sha256": "FEFA4BAD39BDB42ECED6DDA8CE96ADC96CC32C5D907D2F5765504FDB7819DDF1"
+    },
+    "display_name": "Koett",
+    "shortcut_id": "DybergCo.Koett",
+    "focus": {
+      "hwnd": 1049550,
+      "process": "Koett",
+      "pid": 3448
+    }
+  },
+  "id": "1793972543151138258"
+}

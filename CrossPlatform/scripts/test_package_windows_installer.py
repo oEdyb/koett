@@ -11,7 +11,9 @@ CROSS = Path(__file__).resolve().parents[1]
 
 class InstallerPolicyTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
+        directory = CROSS/'target'/'installer-policy-tests'
+        directory.mkdir(parents=True, exist_ok=True)
+        self.temp = tempfile.TemporaryDirectory(dir=directory)
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.payload = self.root/'payload'
@@ -21,33 +23,33 @@ class InstallerPolicyTests(unittest.TestCase):
         shutil.copy2(CROSS/'scripts/manage_windows_preview.ps1', self.payload/'manage-preview.ps1')
         self.release = {'version': '0.3.0', 'architecture': 'x86_64'}
 
-    def attempt(self, output=None, compiler_version='v3.12'):
+    def attempt(self, expected, output=None, compiler_version='v3.12'):
         with patch('package_windows_installer.subprocess.check_output', return_value=compiler_version), patch('package_windows_installer.verify_payload', return_value=self.release), patch('package_windows_installer.subprocess.run') as run:
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, expected):
                 build(self.payload, output or self.root/'Setup.exe', 'makensis')
             run.assert_not_called()
 
     def test_other_compiler_versions_are_refused(self):
-        self.attempt(compiler_version='v3.11')
+        self.attempt('pinned NSIS', compiler_version='v3.11')
 
     def test_unverified_architectures_and_invalid_versions_are_refused(self):
         self.release['architecture'] = 'aarch64'
-        self.attempt()
+        self.attempt('ARM64 installer support is not verified')
         self.release['architecture'] = 'x86_64'
         for version in ['0.3.0\nFile /r secret', '0..3', '0.3.70000']:
             self.release['version'] = version
-            self.attempt()
+            self.attempt('Invalid installer version')
 
     def test_output_cannot_mutate_verified_payload(self):
-        self.attempt(output=self.payload/'Setup.exe')
+        self.attempt('outside the verified payload', output=self.payload/'Setup.exe')
 
     def test_missing_or_modified_runtime_notice_and_manager_are_refused(self):
         for name in ['NSIS-COPYING.txt', 'manage-preview.ps1']:
             original = (self.payload/name).read_bytes()
             (self.payload/name).write_text('modified')
-            self.attempt()
+            self.attempt('current installer manager and original NSIS notice')
             (self.payload/name).unlink()
-            self.attempt()
+            self.attempt('current installer manager and original NSIS notice')
             (self.payload/name).write_bytes(original)
 
 

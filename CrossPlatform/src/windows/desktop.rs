@@ -343,6 +343,9 @@ fn run(
             None,
         )
         .map_err(|e| e.to_string())?;
+        if let Err(error) = super::install_identity::configure(hwnd) {
+            eprintln!("Could not configure Windows taskbar relaunch: {error}");
+        }
         fit_window(hwnd, None, settings, processing_view);
         let mut window = Window {
             theme: super::native_theme::Theme::new()?,
@@ -1352,6 +1355,9 @@ unsafe extern "system" fn proc(
         return LRESULT(0);
     }
     if message == WM_DESTROY {
+        if let Err(error) = super::install_identity::clear(hwnd) {
+            eprintln!("Could not clear Windows taskbar properties: {error}");
+        }
         unsafe {
             PostQuitMessage(0);
         }

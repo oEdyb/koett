@@ -1,0 +1,40 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "step": {
+      "step": "repair-with-real-media-tools",
+      "rect": [
+        543,
+        156,
+        1377,
+        840
+      ],
+      "screenshot_file": "final-rerun-1.png",
+      "focus": {
+        "hwnd": 721874,
+        "process": "Koett-Setup",
+        "pid": 8348
+      }
+    },
+    "focus": {
+      "hwnd": 721874,
+      "process": "Koett-Setup",
+      "pid": 8348
+    },
+    "after": {
+      "yt-dlp.exe": "66674953FE251B89F4D08C5F0E35E0728679BD67AB3D7D05C0562AF101DD3E7A",
+      "ffprobe.exe": "244C6842C1517211C43EDBCA716767517520EBB51687101AC8EBFD117F438444",
+      "ffmpeg.exe": "CC68AA459348B23AC5BA554534CEDC8D83E2B60B87505A31291101F220A840A1",
+      "user-config.txt": "A1343974D66998FCC6C7B6EF37B7AB671F043E5946E304B5AD0C5B0B0FA18129"
+    },
+    "before": {
+      "yt-dlp.exe": "66674953FE251B89F4D08C5F0E35E0728679BD67AB3D7D05C0562AF101DD3E7A",
+      "ffprobe.exe": "244C6842C1517211C43EDBCA716767517520EBB51687101AC8EBFD117F438444",
+      "ffmpeg.exe": "CC68AA459348B23AC5BA554534CEDC8D83E2B60B87505A31291101F220A840A1",
+      "user-config.txt": "A1343974D66998FCC6C7B6EF37B7AB671F043E5946E304B5AD0C5B0B0FA18129"
+    },
+    "changed_readme_sha256": "697DF34F105064E67990B46EE1FD1574987231B08BBCC935A1B87E2EE857499A"
+  },
+  "id": "1793971576324218902"
+}

@@ -8,6 +8,7 @@ mod drawing;
 mod drawing_render;
 mod foreground;
 pub(crate) mod formatting_job;
+mod install_identity;
 pub mod media_cli;
 pub(crate) mod media_control;
 mod media_view;
@@ -2773,6 +2774,7 @@ fn set_start_at_login(enabled: bool) -> Result<(), String> {
     let operation = if enabled {
         let executable = std::env::current_exe()
             .map_err(|error| format!("could not find the Koett executable: {error}"))?;
+        let executable = install_identity::launcher().unwrap_or(executable);
         let value = wide(&format!("\"{}\"", executable.display()));
         let bytes = unsafe {
             std::slice::from_raw_parts(value.as_ptr().cast::<u8>(), std::mem::size_of_val(&*value))

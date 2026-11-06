@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "exit": 1,
+  "output": "UninstFinalize command returned 256, aborting\nError - aborting creation process\n"
+}
