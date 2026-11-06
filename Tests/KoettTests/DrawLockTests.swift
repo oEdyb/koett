@@ -84,6 +84,15 @@ final class DrawLockTests: XCTestCase {
         XCTAssertEqual(DrawLock.shortcut(dictation: DrawLock.shortcuts[0], media: DrawLock.shortcuts[1], mode: .toggle), DrawLock.shortcuts[2])
     }
 
+    func testVoiceOverDockCommandIsNeverChosenForDrawLock() {
+        XCTAssertEqual(DrawLock.shortcut(dictation: .defaultDictation, media: .defaultMedia,
+            mode: .toggle, voiceOverEnabled: true), DrawLock.shortcuts[1])
+        XCTAssertEqual(DrawLock.shortcut(dictation: .defaultDictation, media: DrawLock.shortcuts[1],
+            mode: .toggle, voiceOverEnabled: true), DrawLock.shortcuts[2])
+        XCTAssertNil(DrawLock.shortcut(dictation: DrawLock.shortcuts[1], media: DrawLock.shortcuts[2],
+            mode: .toggle, voiceOverEnabled: true), "Keep the menu/CLI alternative instead of claiming VoiceOver's chord")
+    }
+
     func testRightClickUndoRemovesOnlyOneStrokeAndKeepsLockOpen() {
         var board = SketchBoard(startedAt: 0)
         _ = board.toggleLock(now: 0)
@@ -146,7 +155,7 @@ final class DrawLockTests: XCTestCase {
         controller.sketchOverlay.start(.init(id: id, key: .shift, frames: controller.sketchFrames,
             audioClock: { 0 }, includeSelection: false, onUpdate: { _ in }), startedAt: 0)
         controller.state = .recording
-        let flags = NSEvent.ModifierFlags([.control, .option]).rawValue
+        let flags = try XCTUnwrap(controller.drawLockShortcut).modifiersRawValue
         XCTAssertFalse(controller.consumeDrawLockKey(type: .keyDown, keyCode: 0, modifierFlags: flags, isRepeat: false))
         XCTAssertTrue(controller.consumeDrawLockKey(type: .keyDown, keyCode: 2, modifierFlags: flags, isRepeat: false))
         XCTAssertTrue(controller.sketchOverlay.isLocked)
