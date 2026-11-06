@@ -58,11 +58,18 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
 
     var skippedBuild: String? { rollbackPolicy.skippedBuild }
 
-    @objc func allowSkippedUpdate() {
-        guard isIdle(), !gate.isInstalling else { return }
-        rollbackPolicy.allowSkipped()
-        lastError = nil
-        changed()
+    @objc func allowSkippedUpdate() -> Bool {
+        guard isIdle(), !gate.isInstalling else { return false }
+        do {
+            try rollbackPolicy.allowSkipped()
+            lastError = nil
+            changed()
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            changed()
+            return false
+        }
     }
 
     private func prepare() {

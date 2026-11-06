@@ -14,7 +14,7 @@ import XCTest
         XCTAssertFalse(old.permits("11")); XCTAssertFalse(old.permits("10.9")); XCTAssertTrue(old.permits("12"))
         let restarted = UpdateRollbackPolicy(defaults: defaults, currentBuild: "10")
         restarted.observeLaunch(); XCTAssertFalse(restarted.permits("11"))
-        restarted.allowSkipped(); restarted.observeLaunch(); XCTAssertTrue(restarted.permits("11"))
+        try restarted.allowSkipped(); restarted.observeLaunch(); XCTAssertTrue(restarted.permits("11"))
     }
     func testSuccessfulNewBuildThenManualRestoreAlsoDetectsRollback() throws {
         let name = "koett-update-policy-\(UUID())"

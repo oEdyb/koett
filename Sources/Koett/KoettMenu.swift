@@ -230,7 +230,7 @@ extension KoettController {
         updates.isEnabled = appUpdater?.canCheck == true
         updates.toolTip = appUpdater?.lastError ?? (appUpdater?.configuration == nil ? "Updates are not enabled in this build." : nil)
         menu.addItem(updates)
-        if let updater = appUpdater, let skipped = updater.skippedBuild {
+        if let updater = appUpdater, updater.configuration != nil, let skipped = updater.skippedBuild {
             let retry = NSMenuItem(title: "Allow Skipped Update (\(skipped))", action: #selector(AppUpdater.allowSkippedUpdate), keyEquivalent: "")
             retry.target = updater
             menu.addItem(retry)

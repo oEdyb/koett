@@ -25,8 +25,11 @@ import Sparkle
         }
     }
     func willInstall(_ build: String) { defaults.set(build, forKey: Self.highestKey) }
-    func allowSkipped() {
+    func allowSkipped() throws {
         defaults.removeObject(forKey: Self.skippedKey)
         defaults.set(currentBuild, forKey: Self.highestKey)
+        guard defaults.synchronize() else {
+            throw NSError(domain: "Koett.Updates", code: 4, userInfo: [NSLocalizedDescriptionKey: "The update preference could not be saved."])
+        }
     }
 }
