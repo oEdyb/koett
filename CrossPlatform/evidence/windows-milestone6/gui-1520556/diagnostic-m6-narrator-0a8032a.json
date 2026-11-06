@@ -1,0 +1,63 @@
+{
+  "ok": true,
+  "result": {
+    "passed": false,
+    "step": {
+      "step": "narrator-recovery-close-keyboard",
+      "rect": [
+        308,
+        308,
+        1358,
+        1043
+      ],
+      "focus": {
+        "hwnd": 262320,
+        "process": "Koett",
+        "pid": 2840
+      },
+      "screenshot_local_source": "~/.cache/koett-windows/m6-narrator-0a8032a.json",
+      "screenshot_sha256": "2c072de36e1d04a5f0f0a009406fc5d9617614d6d5ac602b7dbd4cb014033a21",
+      "screenshot_bytes": 1553391,
+      "screenshot_scope": "Historical failure image retained in local source; omitted from Git to keep evidence small"
+    },
+    "fields": [
+      {
+        "name": "Copy unsaved",
+        "id": "1",
+        "type": "ControlType.Button",
+        "enabled": false
+      },
+      {
+        "name": "Retry save",
+        "id": "3",
+        "type": "ControlType.Button",
+        "enabled": false
+      },
+      {
+        "name": "Close",
+        "id": "2",
+        "type": "ControlType.Button",
+        "enabled": true
+      }
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 2840,
+      "sha256": "0A8032AF2082CC924E6E94C8E01E5EEB88D306E523DBBA53AF7DA759A0D75950"
+    },
+    "narrator": [
+      {
+        "Id": 4692,
+        "ProcessName": "Narrator"
+      }
+    ],
+    "status": {
+      "stdout": "{\"media_active\":false,\"ok\":true,\"outputs\":[],\"paused\":false,\"recovery_busy\":false,\"status\":\"ready\",\"unsaved_media\":false,\"unsaved_transcripts\":0,\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "status",
+      "exit": 0
+    },
+    "focus_name": "Copy unavailable \u00b7 try again or retry save"
+  },
+  "id": "1793939704584300445"
+}

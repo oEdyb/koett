@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "result": {
+    "passed": false,
+    "step": {
+      "step": "public-edge-source",
+      "rect": [
+        365,
+        60,
+        1555,
+        935
+      ],
+      "screenshot_file": "public-source-corrected-result-step.png",
+      "focus": {
+        "hwnd": 66548,
+        "process": "msedge",
+        "pid": 6256
+      }
+    },
+    "source": "",
+    "focus_in_editor": true,
+    "after": {
+      "hwnd": 66548,
+      "process": "msedge",
+      "pid": 6256
+    },
+    "before": {
+      "hwnd": 66548,
+      "process": "msedge",
+      "pid": 6256
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 8744,
+      "sha256": "69253ADF55DE073F681B36E0463EFB7480289DAAB731FDBE00A4754532F7B9F2"
+    }
+  },
+  "id": "1793946107279003050"
+}

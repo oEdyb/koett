@@ -95,6 +95,12 @@ The lower-level `koett-transcribe-engine.exe --offline --model-version compact
 .\koett-engine.exe app quit
 ```
 
+`recovery`, `retry-save` and `copy-unsaved` expose native unsaved-text recovery.
+`app status` also reports `unsaved_transcripts` and `recovery_busy`. Retry/copy
+acknowledge a background operation; inspect status and the recovery window for
+its result. Copy preserves a newer clipboard change and never discards pending
+records. CLI Quit refuses pending text.
+
 `toggle` is also available. Prefer explicit Start/Stop when retrying commands.
 An acknowledgement means the app handled the request, not that recording, ASR,
 paste or storage completed. Poll `app status` for `starting`, `ready`, `recording`,

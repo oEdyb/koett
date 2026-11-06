@@ -1,0 +1,16 @@
+warning: 'fix-macos-feature-parity': found 2 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /Users/olle/.t3/worktrees/local-voice-input/fix-macos-feature-parity/Tests/KoettTests/Dictionary/Fixtures/parity.json
+    /Users/olle/.t3/worktrees/local-voice-input/fix-macos-feature-parity/Tests/KoettTests/Fixtures/sketch-linking-golden.txt
+warning: 'fix-macos-feature-parity': failed to retrieve search paths with pkg-config; maybe pkg-config is not installed
+warning: 'fix-macos-feature-parity': couldn't find pc file for sqlite3
+Building for production...
+[Pre-planning 1 / 391]
+[Planning deferred tasks]
+[3 / 20]
+[4 / 11] FluidAudio
+[6 / 12] FluidAudio
+[10 / 11] koett-product
+[11 / 12] koett-product
+[14 / 16] koett-product
+[15 / 16] koett-product
+Build complete! (47,96 secs)

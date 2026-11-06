@@ -1,0 +1,87 @@
+{
+  "removedArchives": [
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/B.zip",
+      "sha256": "25a82cba4462ecccd71bfb9af085cd243519aec15a18ee667e58d8b5f7d50b89",
+      "bytes": 11064605
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/A.tar",
+      "sha256": "7025a26a000b8c75aac55e6c256e870f5f4c9d5d6d6a8cd5f1c1f9aac9dfd84f",
+      "bytes": 24648704
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/B.tar",
+      "sha256": "b996304d5be1904df13421c1967ba56185be31207fa1f51051b3cdd13ef7b66f",
+      "bytes": 24648704
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/damaged.zip",
+      "sha256": "9e1b39af35536e1bd539e9702428b1267ca97f775286c522d91611110040189a",
+      "bytes": 11064606
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/inert.tar",
+      "sha256": "73abc8a84324fe98b37b333a9ca7f8be7eb4907d94466e3f1e3a6c82f73ee4a1",
+      "bytes": 24648192
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/B.zip",
+      "sha256": "a3de55b51fca9958a7a2ed8827938321739191d1220b6807b5bee9bf63c5a61f",
+      "bytes": 11063896
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/A.tar",
+      "sha256": "6b197e77b0fbe4b9f18bfacacf2795bc4092556a82376e1f1a6d2945ce45ffcb",
+      "bytes": 24647680
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/B.tar",
+      "sha256": "4cfd21526e2f1c8d4f7281ddff0b38a7718674250b2e32124248e5dc6b01ef28",
+      "bytes": 24647680
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/damaged.zip",
+      "sha256": "22b7eca9b9397fd6cbafb5c6f5c7e8b5c22d8bd25a11ed83ea6ff5fd58a1052c",
+      "bytes": 11063897
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/inert.tar",
+      "sha256": "f464070136cd8ba3e470f9159505f2e1c40ff3fcb115030e4d47687be4ab49c1",
+      "bytes": 24647168
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/B.zip",
+      "sha256": "0d49dd285c28d9ad5723973b856dc2ec5a3932b070949cf3b5671aba4a5d7731",
+      "bytes": 11060732
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/A.tar",
+      "sha256": "b1f4d4e8217d3423035af964a7c028031efb1cd4f2ad6b3447279ffbefb5d235",
+      "bytes": 24637952
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/B.tar",
+      "sha256": "3cdb72ba752ab086f6703e44140ba8c65cf05e1e4b9b7b23d7a91a2610a6e5f8",
+      "bytes": 24637952
+    },
+    {
+      "path": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/damaged.zip",
+      "sha256": "2024f1e262ba81f259dac87a0c5ca6880efaecde229cb127e80c2f197e991697",
+      "bytes": 11060733
+    }
+  ],
+  "removedApps": [
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/B/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/B/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/damaged/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/initial-b175688/A/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/B/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/damaged/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/A/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/tested-61ce32e/inert/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/damaged/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/A/Koett.app",
+    "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates/inert/Koett.app"
+  ]
+}

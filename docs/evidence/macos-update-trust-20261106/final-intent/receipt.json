@@ -1,0 +1,110 @@
+[
+  {
+    "check": "final-intent-valid-update-installed",
+    "status": {
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "model": "parakeet",
+      "updates": {
+        "build": "7101",
+        "preparing": false,
+        "pending": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-d551470fa576583e6fccd66b93a7dbf27008bcf4.app",
+        "installing": false,
+        "enabled": true
+      },
+      "ok": true,
+      "phase": "ready",
+      "drawStrokeCount": 0
+    }
+  },
+  {
+    "check": "rollback-remains-on-old-build-1",
+    "status": {
+      "drawLocked": false,
+      "ok": true,
+      "phase": "ready",
+      "updates": {
+        "pending": false,
+        "build": "7100",
+        "enabled": true,
+        "skippedBuild": "7101",
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-ec1e4497cfa21cc013a2ce5ac997f3aa241c15b1.app",
+        "installing": false,
+        "error": "This update was skipped after rollback. A newer build is required.",
+        "preparing": false
+      },
+      "drawStrokeCount": 0,
+      "model": "parakeet",
+      "pasteAccessGranted": true
+    },
+    "archiveRequestsBefore": 3,
+    "archiveRequestsAfter": 3
+  },
+  {
+    "check": "rollback-remains-on-old-build-2",
+    "status": {
+      "drawLocked": false,
+      "drawStrokeCount": 0,
+      "ok": true,
+      "updates": {
+        "preparing": false,
+        "error": "This update was skipped after rollback. A newer build is required.",
+        "pending": false,
+        "installing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-ec1e4497cfa21cc013a2ce5ac997f3aa241c15b1.app",
+        "skippedBuild": "7101",
+        "build": "7100",
+        "enabled": true
+      },
+      "phase": "ready",
+      "pasteAccessGranted": true,
+      "model": "parakeet"
+    },
+    "archiveRequestsBefore": 3,
+    "archiveRequestsAfter": 3
+  },
+  {
+    "check": "explicit-allow",
+    "status": {
+      "pasteAccessGranted": true,
+      "ok": true,
+      "phase": "ready",
+      "updates": {
+        "preparing": false,
+        "build": "7100",
+        "pending": false,
+        "enabled": true,
+        "installing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-ec1e4497cfa21cc013a2ce5ac997f3aa241c15b1.app"
+      },
+      "drawLocked": false,
+      "model": "parakeet",
+      "drawStrokeCount": 0
+    }
+  },
+  {
+    "check": "explicit-allow-persists-and-retries",
+    "status": {
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "model": "parakeet",
+      "ok": true,
+      "phase": "ready",
+      "drawStrokeCount": 0,
+      "updates": {
+        "enabled": true,
+        "preparing": false,
+        "pending": false,
+        "installing": false,
+        "rollbackPath": "/Users/admin/Library/Application Support/Koett/Update Backups/Koett-d551470fa576583e6fccd66b93a7dbf27008bcf4.app",
+        "build": "7101"
+      }
+    }
+  },
+  {
+    "check": "binding",
+    "source": "bfe09f3ea630af9e4f9ec6e37caefbc73fa3ca36",
+    "binarySHA256": "8719edc97c9bf24f623d7e9acf1c53d9156d044f9d0ef40ebe2507733b98f13a"
+  }
+]

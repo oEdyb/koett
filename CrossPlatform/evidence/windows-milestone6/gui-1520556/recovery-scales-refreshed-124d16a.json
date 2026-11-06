@@ -1,0 +1,186 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "restored_theme": 0,
+    "checks": [
+      {
+        "passed": true,
+        "source": "204,275,544,249",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "389,536,173,32",
+        "light": 0,
+        "dpi": 96,
+        "scale": 100
+      },
+      {
+        "passed": true,
+        "source": "204,275,544,249",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "389,536,173,32",
+        "light": 1,
+        "dpi": 96,
+        "scale": 100
+      },
+      {
+        "passed": true,
+        "source": "217,323,818,376",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "495,717,260,48",
+        "light": 0,
+        "dpi": 144,
+        "scale": 150
+      },
+      {
+        "passed": true,
+        "source": "217,323,818,376",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "495,717,260,48",
+        "light": 1,
+        "dpi": 144,
+        "scale": 150
+      },
+      {
+        "passed": true,
+        "source": "229,370,1094,505",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "601,899,348,64",
+        "light": 0,
+        "dpi": 192,
+        "scale": 200
+      },
+      {
+        "passed": true,
+        "source": "229,370,1094,505",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        },
+        "transcribe": "601,899,348,64",
+        "light": 1,
+        "dpi": 192,
+        "scale": 200
+      }
+    ],
+    "restored_scale": 175,
+    "steps": [
+      {
+        "step": "media-100-theme-0",
+        "rect": [
+          176,
+          176,
+          776,
+          596
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-0.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      },
+      {
+        "step": "media-100-theme-1",
+        "rect": [
+          176,
+          176,
+          776,
+          596
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-1.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      },
+      {
+        "step": "media-150-theme-0",
+        "rect": [
+          176,
+          176,
+          1076,
+          806
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-2.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      },
+      {
+        "step": "media-150-theme-1",
+        "rect": [
+          176,
+          176,
+          1076,
+          806
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-3.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      },
+      {
+        "step": "media-200-theme-0",
+        "rect": [
+          176,
+          176,
+          1376,
+          1016
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-4.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      },
+      {
+        "step": "media-200-theme-1",
+        "rect": [
+          176,
+          176,
+          1376,
+          1016
+        ],
+        "screenshot_file": "recovery-scales-refreshed-124d16a-result-steps-5.png",
+        "focus": {
+          "hwnd": 262582,
+          "process": "Koett",
+          "pid": 1164
+        }
+      }
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 1164,
+      "sha256": "124D16A01BD68EFCD12260800E3A3AC310B8E7C74327A2E74709B2F920BDD31C"
+    }
+  },
+  "id": "1793938631401841471"
+}

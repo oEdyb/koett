@@ -22,6 +22,12 @@ extension KoettController {
             result(.init(code: code, message: message))
         }
         if command == "status" { return result() }
+        if command == "allow-skipped-update" {
+            guard let updater = appUpdater, updater.configuration != nil else { return fail("updates_disabled", "This build has no update feed configured.") }
+            guard isIdleForUpdates, !updater.gate.isInstalling else { return fail("busy", "Wait until Koett is idle.") }
+            guard updater.allowSkippedUpdate() else { return fail("save_failed", updater.lastError ?? "The update preference could not be saved.") }
+            return result()
+        }
         if command == "check-updates" {
             guard let updater = appUpdater, updater.configuration != nil else {
                 return fail("updates_disabled", "This build has no update feed configured.")
@@ -52,9 +58,12 @@ extension KoettController {
         }
         let idleCommands = ["start", "history", "dictionary", "copy-last", "paste-last", "retry-save", "transcribe-file", "transcribe-url"]
         guard idleCommands.contains(command) else {
-            return fail("unknown_command", "Use status, start, stop, pause, resume, cancel, undo, draw-lock, history, dictionary, check-updates, copy-last, paste-last, retry-save, transcribe-file PATH, or transcribe-url URL.")
+            return fail("unknown_command", "Use status, start, stop, pause, resume, cancel, undo, draw-lock, history, dictionary, check-updates, allow-skipped-update, copy-last, paste-last, retry-save, transcribe-file PATH, or transcribe-url URL.")
         }
-        guard canStartSession else { return fail("busy", "Wait until phase is ready, then retry.") }
+        guard canStartSession else {
+            if command == "start" { showUpdateReservationNoticeIfNeeded() }
+            return fail("busy", "Wait until phase is ready, then retry.")
+        }
         switch command {
         case "start":
             startRecordingIfReady()

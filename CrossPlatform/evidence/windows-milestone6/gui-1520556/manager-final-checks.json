@@ -1,0 +1,112 @@
+{
+  "ok": true,
+  "result": {
+    "profile_after": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "7FB86EE4B77EDC1ACC30BB7A57111EC07A359AA19A249BD26F3EE9D19CBC693D",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "reinstall": {
+      "stdout": "{\"action\":\"install\",\"root\":\"C:\\\\Users\\\\KoettLab\\\\AppData\\\\Local\\\\Programs\\\\Koett M6 \u00e5\u00e4\",\"signature\":\"unsigned-preview\",\"ok\":true,\"data_preserved\":true,\"outputs\":[],\"warnings\":[\"Unsigned preview; media tools and optional formatter are not bundled\"]}\r\n",
+      "stderr": "",
+      "json": {
+        "action": "install",
+        "root": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4",
+        "signature": "unsigned-preview",
+        "ok": true,
+        "data_preserved": true,
+        "outputs": [],
+        "warnings": [
+          "Unsigned preview; media tools and optional formatter are not bundled"
+        ]
+      },
+      "action": "Install",
+      "exit": 0
+    },
+    "outside_files_after": 1426,
+    "outside_files_before": 1426,
+    "startup_entry_removed": true,
+    "root_removed": true,
+    "second_uninstall": {
+      "stdout": "{\"action\":\"uninstall\",\"root\":\"C:\\\\Users\\\\KoettLab\\\\AppData\\\\Local\\\\Programs\\\\Koett M6 \u00e5\u00e4\",\"signature\":\"unsigned-preview\",\"ok\":true,\"data_preserved\":true,\"outputs\":[],\"warnings\":[\"Unsigned preview; media tools and optional formatter are not bundled\"]}\r\n",
+      "stderr": "",
+      "json": {
+        "action": "uninstall",
+        "root": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4",
+        "signature": "unsigned-preview",
+        "ok": true,
+        "data_preserved": true,
+        "outputs": [],
+        "warnings": [
+          "Unsigned preview; media tools and optional formatter are not bundled"
+        ]
+      },
+      "action": "Uninstall",
+      "exit": 0
+    },
+    "unsafe_path_guard": true,
+    "profile_preserved": true,
+    "fresh_install_startup_off": true,
+    "startup_restored": null,
+    "uninstall": {
+      "stdout": "{\"action\":\"uninstall\",\"root\":\"C:\\\\Users\\\\KoettLab\\\\AppData\\\\Local\\\\Programs\\\\Koett M6 \u00e5\u00e4\",\"signature\":\"unsigned-preview\",\"ok\":true,\"data_preserved\":true,\"outputs\":[],\"warnings\":[\"Unsigned preview; media tools and optional formatter are not bundled\"]}\r\n",
+      "stderr": "",
+      "json": {
+        "action": "uninstall",
+        "root": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4",
+        "signature": "unsigned-preview",
+        "ok": true,
+        "data_preserved": true,
+        "outputs": [],
+        "warnings": [
+          "Unsigned preview; media tools and optional formatter are not bundled"
+        ]
+      },
+      "action": "Uninstall",
+      "exit": 0
+    },
+    "focus": {
+      "hwnd": 196756,
+      "process": "Notepad",
+      "pid": 3136
+    },
+    "passed": true,
+    "shortcut_removed": true,
+    "unsafe": {
+      "stdout": "{\"error\":\"Unsafe payload path\",\"code\":\"preview_management_failed\",\"fix\":\"Close Koett, verify the extracted payload, and retry; application data is preserved\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\r\n",
+      "stderr": "",
+      "json": {
+        "error": "Unsafe payload path",
+        "code": "preview_management_failed",
+        "fix": "Close Koett, verify the extracted payload, and retry; application data is preserved",
+        "ok": false,
+        "outputs": [],
+        "warnings": []
+      },
+      "action": "Install",
+      "exit": 1
+    },
+    "profile_before": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "7FB86EE4B77EDC1ACC30BB7A57111EC07A359AA19A249BD26F3EE9D19CBC693D",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "junction_guard": true,
+    "profile_preserved_again": true,
+    "junction": {
+      "stdout": "{\"error\":\"Installation metadata or versions contain a reparse point\",\"code\":\"preview_management_failed\",\"fix\":\"Close Koett, verify the extracted payload, and retry; application data is preserved\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\r\n",
+      "stderr": "",
+      "json": {
+        "error": "Installation metadata or versions contain a reparse point",
+        "code": "preview_management_failed",
+        "fix": "Close Koett, verify the extracted payload, and retry; application data is preserved",
+        "ok": false,
+        "outputs": [],
+        "warnings": []
+      },
+      "action": "Uninstall",
+      "exit": 1
+    }
+  },
+  "id": "1793942386080395775"
+}

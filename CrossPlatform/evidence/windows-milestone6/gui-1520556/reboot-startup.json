@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "config": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+    "network": [
+      {
+        "Name": "Ethernet 2",
+        "Status": "Disconnected"
+      }
+    ],
+    "sha256": "1520556302BEC6C3DD43A49E05D8961C7E86F1188535C944A2F8D0477254A2A6",
+    "reboot_requested": true,
+    "target": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4\\versions\\f6e848adaa962caf\\Koett.exe",
+    "startup": "\"C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4\\versions\\f6e848adaa962caf\\Koett.exe\""
+  },
+  "id": "1793941638314505458"
+}

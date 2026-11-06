@@ -72,7 +72,8 @@ or fixture evidence. M4 merged in #119; see [M4 acceptance](windows-draw-pin.md)
 
 #128 merged as `3a367e19036c3b2a81f09ac750b43a6e1a2b5128` after all six
 checks passed on `47990ce`. It provides the offline Windows WAV adapter.
-The follow-up adds the native media window, bounded URL/file conversion,
+Native media #153 merged as `8a93b7739ad2efbed7690bd01650c51dc7395204`
+after all six checks passed on `94a50ea`. It adds the native media window, bounded URL/file conversion,
 focused public Edge source selection, opt-in GSMTC pause/resume and app commands.
 See [the Windows contract](windows-media.md) and [M5 acceptance](../CrossPlatform/evidence/windows-milestone5/media-1010c5b/README.md).
 Ask was shelved by main; this milestone does not restore it.
@@ -86,3 +87,11 @@ physical x64 and Qualcomm ARM64 microphone/display/sleep checks, and every open
 Windows row in [feature parity](feature-parity.md). Chrome and Firefox are not
 tested. Signing spend/identity and physical hardware remain external requirements;
 software gaps must remain explicit rather than be relabeled hardware limits.
+
+
+M6 preview hardening now has real x64 guest checks for recovery, recording cues,
+image-only pins, Unicode per-user install/upgrade/rollback/uninstall, startup and
+offline fresh app data. See [distribution gates](windows-release-gates.md) and
+[the acceptance receipt](../CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md).
+The signed release gate remains closed; open software, dependency and hardware
+work is listed explicitly there. No three-platform release is claimed.

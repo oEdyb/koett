@@ -1,0 +1,75 @@
+[
+  {
+    "check": "clean-finder-drag-installed",
+    "uid": 501,
+    "mode": "0o755",
+    "sparkleCurrent": "B",
+    "source": "7ef87560115fcf10ab5fb616973dbe2ccc49cdb3"
+  },
+  {
+    "check": "clean-installed-launch-ready",
+    "status": {
+      "phase": "ready",
+      "drawLocked": false,
+      "updates": {
+        "build": "5101",
+        "enabled": false,
+        "pending": false,
+        "installing": false,
+        "preparing": false
+      },
+      "pasteAccessGranted": true,
+      "ok": true,
+      "model": "parakeet"
+    }
+  },
+  {
+    "check": "native-uninstall-keeps-data",
+    "trash": "application file Koett.app of item .Trash of folder admin of folder Users of item .nofollow of startup disk"
+  },
+  {
+    "check": "previous-release-launch-ready",
+    "status": {
+      "phase": "ready",
+      "ok": true,
+      "model": "parakeet",
+      "pasteAccessGranted": true
+    }
+  },
+  {
+    "check": "finder-manual-upgrade-installed",
+    "uid": 501,
+    "mode": "0o755",
+    "sparkleCurrent": "B",
+    "previousBuild": "3",
+    "newBuild": "5101"
+  },
+  {
+    "check": "upgraded-launch-ready",
+    "status": {
+      "updates": {
+        "enabled": false,
+        "pending": false,
+        "installing": false,
+        "preparing": false,
+        "build": "5101"
+      },
+      "ok": true,
+      "model": "parakeet",
+      "pasteAccessGranted": true,
+      "drawLocked": false,
+      "phase": "ready"
+    }
+  },
+  {
+    "check": "upgrade-keeps-history-settings-and-data",
+    "historySHA256": "2a3480f0b018df2321dc9f8917f88162dd6f550d19710f19ac24d41e2d8855b9"
+  },
+  {
+    "check": "final-uninstall-keeps-history",
+    "trash": "application file Koett 11.21.44\u202fAM.app of item .Trash of folder admin of folder Users of item .nofollow of startup disk"
+  },
+  {
+    "check": "guest-original-state-restored-app-stopped"
+  }
+]

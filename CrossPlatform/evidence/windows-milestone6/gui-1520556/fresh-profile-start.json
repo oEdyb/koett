@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "result": {
+    "launch": {
+      "focus": {
+        "hwnd": 196634,
+        "process": "explorer",
+        "pid": 4804
+      },
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4\\versions\\f6e848adaa962caf\\Koett.exe",
+      "pid": 5292,
+      "status": {
+        "media_active": false,
+        "ok": true,
+        "outputs": [],
+        "paused": false,
+        "recovery_busy": false,
+        "status": "ready",
+        "unsaved_media": false,
+        "unsaved_transcripts": 0,
+        "warnings": []
+      },
+      "hash": "1520556302BEC6C3DD43A49E05D8961C7E86F1188535C944A2F8D0477254A2A6"
+    },
+    "before": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "7FB86EE4B77EDC1ACC30BB7A57111EC07A359AA19A249BD26F3EE9D19CBC693D",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    },
+    "passed": true,
+    "cache_preseeded": true,
+    "backup": "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett.m6-before-fresh",
+    "network": [
+      {
+        "Name": "Ethernet 2",
+        "Status": "Disconnected"
+      }
+    ],
+    "same_windows_account": true,
+    "copy_unsaved_empty": {
+      "stdout": "{\"code\":\"action_unavailable\",\"error\":\"Action unavailable in the current state\",\"fix\":\"Run koett-engine app status and check the foreground target\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "error: Action unavailable in the current state\n",
+      "action": "copy-unsaved",
+      "exit": 1
+    },
+    "paste_empty": {
+      "stdout": "{\"code\":\"action_unavailable\",\"error\":\"Action unavailable in the current state\",\"fix\":\"Run koett-engine app status and check the foreground target\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "error: Action unavailable in the current state\n",
+      "action": "paste-last",
+      "exit": 1
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4\\versions\\f6e848adaa962caf\\Koett.exe",
+      "pid": 5292,
+      "sha256": "1520556302BEC6C3DD43A49E05D8961C7E86F1188535C944A2F8D0477254A2A6"
+    },
+    "fresh_roaming_data": true,
+    "clipboard": "fresh preview sentinel",
+    "copy_empty": {
+      "stdout": "{\"code\":\"action_unavailable\",\"error\":\"Action unavailable in the current state\",\"fix\":\"Run koett-engine app status and check the foreground target\",\"ok\":false,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "error: Action unavailable in the current state\n",
+      "action": "copy-last",
+      "exit": 1
+    }
+  },
+  "id": "1793941868730800528"
+}

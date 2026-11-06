@@ -57,30 +57,56 @@ class WorkflowPinTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not pinned"):
             external_action_pins(workflow)
 
-    def test_every_non_draft_pull_request_runs_and_drafts_do_not(self) -> None:
-        pull_request = self.workflow.split("  pull_request:\n", 1)[1].split("  push:\n", 1)[0]
-        self.assertIn("types: [opened, reopened, synchronize, ready_for_review]", pull_request)
-        self.assertIn("  push:\n    branches:\n      - main\n", self.workflow)
-        jobs = self.workflow.split("jobs:\n", 1)[1]
-        for job in ("dependency-review", "supply-chain", "msrv", "windows", "linux"):
-            header = jobs.split(f"  {job}:\n", 1)[1].split("\n", 1)[0]
-            self.assertIn("!github.event.pull_request.draft", header, job)
+    def test_nothing_runs_unless_someone_starts_it(self) -> None:
+        triggers = self.workflow.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+        self.assertEqual(re.findall(r"(?m)^  (\w+):", triggers), ["workflow_dispatch"])
 
     def test_releases_use_no_cache_and_only_main_saves_one(self) -> None:
         restores = self.workflow.count("uses: actions/cache/restore@")
         saves = self.workflow.count("uses: actions/cache/save@")
-        self.assertEqual(restores, 7)
-        self.assertEqual(saves, 7)
+        self.assertEqual(restores, 9)
+        self.assertEqual(saves, 9)
         self.assertEqual(
-            self.workflow.count("if: github.event_name != 'workflow_dispatch'\n"
+            self.workflow.count("if: ${{ !inputs.clean }}\n"
                                 "        uses: actions/cache/restore@"),
             restores,
         )
         self.assertEqual(
-            len(re.findall(r"if: github\.event_name == 'push' && [^\n]*\n"
+            len(re.findall(r"if: github\.ref == 'refs/heads/main' && !inputs\.clean && [^\n]*\n"
                            r"        uses: actions/cache/save@", self.workflow)),
             saves,
         )
+
+    def test_cache_keys_stay_stable_between_commits(self) -> None:
+        keys = re.findall(r"(?m)^\s+key: (\S+.*)$", self.workflow)
+        self.assertTrue(keys)
+        for key in keys:
+            self.assertNotIn("github.sha", key)
+
+    def test_trimming_names_every_cache_main_saves(self) -> None:
+        keys = self.workflow.split("          CACHE_KEYS: |\n", 1)[1].split("        run: |", 1)[0]
+        listed = {line.strip() for line in keys.splitlines()}
+        expansions = [
+            {"${{ matrix.runner }}": "ubuntu-22.04", "${{ matrix.architecture }}": "x86_64"},
+            {"${{ matrix.runner }}": "ubuntu-22.04-arm", "${{ matrix.architecture }}": "arm64"},
+        ]
+        saved = re.findall(r"uses: actions/cache/save@[^\n]*\n\s+with:\n\s+path:(?:[^\n]*\n(?:\s{12}[^\n]*\n)*)\s+key: ([^\n]+)", self.workflow)
+        self.assertEqual(len(saved), 9)
+        for key in saved:
+            if key.startswith("apt-v1-"):
+                self.assertIn("steps.apt_month.outputs.month", key)
+                continue
+            for expansion in expansions:
+                expanded = key
+                for name, value in expansion.items():
+                    expanded = expanded.replace(name, value)
+                self.assertIn(expanded, listed)
+
+    def test_only_the_trim_job_can_write_to_actions(self) -> None:
+        self.assertEqual(self.workflow.count("actions: write"), 1)
+        trim = self.workflow.split("  cache-trim:\n", 1)[1].split("\n  supply-chain:", 1)[0]
+        self.assertIn("actions: write", trim.split("  dependency-review:", 1)[0])
+        self.assertNotIn("run: cargo", trim.split("  dependency-review:", 1)[0])
 
     def test_checkout_never_persists_credentials(self) -> None:
         checkout_steps = re.findall(
@@ -103,7 +129,6 @@ class WorkflowPinTests(unittest.TestCase):
 
     def test_linux_artifacts_are_installed_before_upload(self) -> None:
         self.assertIn('run: python3 scripts/check_linux_notices.py', self.workflow)
-        self.assertEqual(self.workflow.count('"Sources/Koett/Resources/AssistantRenderer/**"'), 2)
         linux = self.workflow.split('  linux:\n', 1)[1]
         self.assertIn('package_linux.py --flavor system-runtime --output dist', linux)
         self.assertIn("python3 -m unittest discover -s scripts -p 'test_package_linux*.py'", linux)

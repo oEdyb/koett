@@ -1,0 +1,35 @@
+   Compiling koett-engine v0.3.0 (/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.29s
+     Running unittests src/lib.rs (CrossPlatform/target/debug/deps/koett_engine-04fa7854bb7be8cf)
+
+running 9 tests
+test audio::tests::duration_uses_sample_count_and_rate ... ok
+test audio::tests::empty_recording_is_rejected ... ok
+test audio::tests::levels_report_rms_and_peak ... ok
+test audio::tests::collector_keeps_recovery_audio_and_forwards_the_same_samples ... ok
+test audio::tests::live_levels_convert_integer_stereo_and_reset_for_silence ... ok
+test audio::tests::missing_input_chooses_builtin_then_default_then_first ... ok
+test audio::tests::pause_clock_adds_up_pauses_and_ignores_repeats ... ok
+test audio::tests::recoverable_stream_notices_do_not_discard_recording ... ok
+test audio::tests::slow_live_decoder_loses_no_chunks ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 488 filtered out; finished in 0.01s
+
+     Running unittests src/bin/koett.rs (CrossPlatform/target/debug/deps/koett-8093ad58f15ad44e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (CrossPlatform/target/debug/deps/koett_engine-3c5ba07b53128853)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/koett-transcribe-engine.rs (CrossPlatform/target/debug/deps/koett_transcribe_engine-d0196228bda0c3cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

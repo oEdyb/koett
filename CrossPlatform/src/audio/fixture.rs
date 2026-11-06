@@ -33,6 +33,7 @@ impl MicrophoneRecorder {
         Ok((
             Self {
                 process: None,
+                retained_samples: None,
                 _capture_priority: priority,
                 stream: None,
                 collector: Some(collector),

@@ -1,0 +1,24 @@
+Windows Test at a49ab9b, job 127751854047, run 42175169543
+https://github.com/oEdyb/koett/actions/runs/42175169543/job/127751854047
+2026-11-06T06:35:53.4077616Z test windows::desktop::tests::history_pages_reach_all_rows_and_restart_for_new_search ... ok
+2026-11-06T06:35:53.4078351Z 
+2026-11-06T06:35:53.4078487Z failures:
+2026-11-06T06:35:53.4078658Z 
+2026-11-06T06:35:53.4079049Z ---- audio::preview::tests::recording_waits_for_preview_release_and_blocks_preview_until_dropped stdout ----
+2026-11-06T06:35:53.4079600Z 
+2026-11-06T06:35:53.4080021Z thread 'audio::preview::tests::recording_waits_for_preview_release_and_blocks_preview_until_dropped' (7520) panicked at src\audio\preview.rs:244:9:
+2026-11-06T06:35:53.4080899Z assertion failed: !recording()
+2026-11-06T06:35:53.4081271Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+2026-11-06T06:35:53.4081562Z 
+2026-11-06T06:35:53.4081863Z ---- audio::windows_capture::tests::standalone_capture_keeps_audio_when_collector_exit_times_out stdout ----
+2026-11-06T06:35:53.4082241Z 
+2026-11-06T06:35:53.4082668Z thread 'audio::windows_capture::tests::standalone_capture_keeps_audio_when_collector_exit_times_out' (9944) panicked at src\audio\windows_capture.rs:430:70:
+2026-11-06T06:35:53.4083440Z called `Result::unwrap()` on an `Err` value: "Microphone preview failed. Close Settings and retry."
+2026-11-06T06:35:53.4083776Z 
+2026-11-06T06:35:53.4083780Z 
+2026-11-06T06:35:53.4083867Z failures:
+2026-11-06T06:35:53.4084219Z     audio::preview::tests::recording_waits_for_preview_release_and_blocks_preview_until_dropped
+2026-11-06T06:35:53.4084795Z     audio::windows_capture::tests::standalone_capture_keeps_audio_when_collector_exit_times_out
+2026-11-06T06:35:53.4085114Z 
+2026-11-06T06:35:53.4085380Z test result: FAILED. 308 passed; 2 failed; 16 ignored; 0 measured; 0 filtered out; finished in 15.99s
+2026-11-06T06:35:53.4085722Z 

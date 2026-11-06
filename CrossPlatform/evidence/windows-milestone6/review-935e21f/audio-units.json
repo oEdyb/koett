@@ -1,0 +1,125 @@
+{
+  "ok": true,
+  "result": [
+    {
+      "focus": {
+        "hwnd": 65778,
+        "process": "explorer",
+        "pid": 1004
+      },
+      "results": [
+        {
+          "passed": true,
+          "filter": "audio::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 10,
+          "stdout": "\nrunning 10 tests\ntest audio::tests::collector_keeps_recovery_audio_and_forwards_the_same_samples ... ok\ntest audio::tests::drawing_clock_counts_audio_frames_and_excludes_pause ... ok\ntest audio::tests::duration_uses_sample_count_and_rate ... ok\ntest audio::tests::empty_recording_is_rejected ... ok\ntest audio::tests::levels_report_rms_and_peak ... ok\ntest audio::tests::live_levels_convert_integer_stereo_and_reset_for_silence ... ok\ntest audio::tests::missing_input_chooses_builtin_then_default_then_first ... ok\ntest audio::tests::pause_clock_adds_up_pauses_and_ignores_repeats ... ok\ntest audio::tests::recoverable_stream_notices_do_not_discard_recording ... ok\ntest audio::tests::slow_live_decoder_loses_no_chunks ... ok\n\ntest result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 316 filtered out; finished in 0.01s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "runtime::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 6,
+          "stdout": "\nrunning 6 tests\ntest runtime::tests::capture_error_reports_error_then_ready_to_the_desktop ... ok\ntest runtime::tests::model_name_uses_the_model_folder ... ok\ntest runtime::tests::paused_time_does_not_count_toward_the_limit ... ok\ntest runtime::tests::recording_limit_stops_the_recording_and_says_why ... ok\ntest runtime::tests::shutdown_cannot_be_reset_by_queued_model_setup ... ok\ntest runtime::tests::the_warning_comes_a_minute_before_the_stop ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 320 filtered out; finished in 0.03s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "audio::windows_capture::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 7,
+          "stdout": "\nrunning 7 tests\ntest audio::windows_capture::tests::hung_open_is_terminated_and_a_later_open_can_respond ... ok\ntest audio::windows_capture::tests::microphone_protocol_rejects_corrupt_and_unbounded_packets ... ok\ntest audio::windows_capture::tests::recording_limit_accepts_an_hour_and_rejects_past_the_shared_maximum ... ok\ntest audio::windows_capture::tests::slow_collector_exit_keeps_all_captured_samples ... ok\ntest audio::windows_capture::tests::stalled_reader_cleanup_has_a_deadline ... ok\ntest audio::windows_capture::tests::stalled_readers_keep_the_spawn_budget_until_they_exit ... ok\ntest audio::windows_capture::tests::standalone_capture_keeps_audio_when_collector_exit_times_out ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 319 filtered out; finished in 1.28s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 7,
+          "stdout": "\nrunning 7 tests\ntest windows::tests::cancel_parked_drawing_releases_busy_and_quit_guards ... ok\ntest windows::tests::default_shortcut_maps_to_win32 ... ok\ntest windows::tests::empty_parked_result_returns_ready_without_replacing_previous_text ... ok\ntest windows::tests::every_window_in_this_process_is_ineligible_for_paste ... ok\ntest windows::tests::quit_guard_rejects_recording_transcribing_and_capture_open ... ok\ntest windows::tests::replacements_keep_original_asr_and_run_once_after_cleanup ... ok\ntest windows::tests::tray_anchor_reads_signed_screen_coordinates ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 319 filtered out; finished in 0.01s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::sounds::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 3,
+          "stdout": "\nrunning 3 tests\ntest windows::sounds::tests::cues_follow_recording_like_the_mac ... ok\ntest windows::sounds::tests::the_start_is_high_and_the_stop_is_low ... ok\ntest windows::sounds::tests::tones_are_short_quiet_and_free_of_clicks ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 323 filtered out; finished in 0.00s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::recovery::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 1,
+          "stdout": "\nrunning 1 test\ntest windows::recovery::tests::close_always_works_and_copy_retry_require_available_text ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.00s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::recovery::keyboard_tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 1,
+          "stdout": "\nrunning 1 test\ntest windows::recovery::keyboard_tests::transcript_leaves_tab_enter_escape_to_dialog_but_keeps_copy_and_arrows ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.00s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::pin_reader::privacy_tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 3,
+          "stdout": "\nrunning 3 tests\ntest windows::pin_reader::privacy_tests::browser_forks_and_private_titles_omit_context ... ok\ntest windows::pin_reader::privacy_tests::disabled_page_details_do_not_touch_a_window_or_accessibility ... ok\ntest windows::pin_reader::privacy_tests::missing_or_changed_browser_frame_never_confirms_context ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 323 filtered out; finished in 0.00s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::desktop::dictation_options::tests",
+          "stderr": "",
+          "exit": 0,
+          "expected": 1,
+          "stdout": "\nrunning 1 test\ntest windows::desktop::dictation_options::tests::options_toggle_independently_and_cancel_changes_nothing ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.00s\n\n"
+        },
+        {
+          "passed": true,
+          "filter": "windows::clipboard::tests::native_bundle_round_trip_and_newer_copy_preservation",
+          "stderr": "",
+          "exit": 0,
+          "expected": 1,
+          "stdout": "\nrunning 1 test\ntest windows::clipboard::tests::native_bundle_round_trip_and_newer_copy_preservation ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.03s\n\n"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "step": {
+        "step": "recovery-empty",
+        "rect": [
+          176,
+          176,
+          1226,
+          911
+        ],
+        "screenshot_file": "audio-units-result-1-step.png",
+        "focus": {
+          "hwnd": 327846,
+          "process": "Koett",
+          "pid": 876
+        }
+      },
+      "status": {
+        "stdout": "{\"media_active\":false,\"ok\":true,\"outputs\":[],\"paused\":false,\"recovery_busy\":false,\"status\":\"ready\",\"unsaved_media\":false,\"unsaved_transcripts\":0,\"warnings\":[]}\n",
+        "stderr": "",
+        "action": "status",
+        "exit": 0
+      },
+      "open": {
+        "stdout": "{\"acknowledged\":true,\"action\":\"recovery\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+        "stderr": "",
+        "action": "recovery",
+        "exit": 0
+      }
+    }
+  ],
+  "id": "1793946645077417327"
+}

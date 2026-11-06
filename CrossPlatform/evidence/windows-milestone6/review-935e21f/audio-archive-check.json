@@ -1,0 +1,9 @@
+{
+  "archive": "/home/olle/.cache/koett-windows/m6-package-review-audio/Koett-Windows-x86_64.zip",
+  "canonical_notices": true,
+  "native_receipt": true,
+  "payload_hashes": true,
+  "architecture": "x86_64",
+  "signed": false,
+  "runtime_execution": false
+}

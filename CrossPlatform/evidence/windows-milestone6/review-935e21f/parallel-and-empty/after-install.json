@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "result": {
+    "pid": 8036,
+    "installer_parser_errors": 0,
+    "sha256": "E2A22B96A42ADA15F94C88178E166F6DADFD9A8F10435439EF2C1F7C899D3E4A",
+    "focus": {
+      "hwnd": 65776,
+      "process": "explorer",
+      "pid": 3736
+    },
+    "passed": true
+  },
+  "id": "1793947449131756895"
+}

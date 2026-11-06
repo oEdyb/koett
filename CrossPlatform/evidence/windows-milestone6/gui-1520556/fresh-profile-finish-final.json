@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "step": {
+      "step": "fresh-history-one-record",
+      "rect": [
+        440,
+        163,
+        2120,
+        1353
+      ],
+      "screenshot_file": "fresh-profile-finish-final-result-step.png",
+      "focus": {
+        "hwnd": 196756,
+        "process": "Notepad",
+        "pid": 3136
+      }
+    },
+    "original_profile_restored": true,
+    "startup_restored": "\"C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett M6 \u00e5\u00e4\\versions\\f6e848adaa962caf\\Koett.exe\"",
+    "fresh_data_preserved": "C:\\Users\\KoettLab\\KoettM6Packages\\fresh-app-data",
+    "history_rows": [
+      "2026-11-06 04:11  Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait"
+    ],
+    "profile_after": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "7FB86EE4B77EDC1ACC30BB7A57111EC07A359AA19A249BD26F3EE9D19CBC693D",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "6E3189068B97528DE45905862F965BAEF391BEFC72AEF41B5665F6FE7986B677"
+    }
+  },
+  "id": "1793942171645828868"
+}

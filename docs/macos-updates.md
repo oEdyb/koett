@@ -19,7 +19,9 @@ team LF8KF3G42Q. Failure stops updating and appears in the menu tooltip/status.
 The two newest verified copies are retained, including the previous app after a
 successful update. Settings, keys, history and models are not included or edited.
 
-Sparkle verifies the archive's Ed25519 signature before extraction, then verifies
+Signed feeds are required (`SURequireSignedFeed=true`) with unsigned fallback disabled
+(`SUSignedFeedFailureExpirationInterval=0`). Sparkle verifies the feed before parsing
+update metadata, then verifies the archive's Ed25519 signature before extraction and
 the app's Apple signature. Installation waits until Koett is ready, not recording,
 transcribing or processing media, not relaunching, not showing its result/recovery
 pill, and has no volatile transcript saves. The app reserves that idle state
@@ -56,49 +58,74 @@ This is release work requiring separate authorization; none of it ran here.
    `sparkle:edSignature` and `length` in the appcast enclosure, with the exact
    CFBundleVersion, minimum macOS 15 and immutable GitHub Release ZIP URL. SHA256
    remains a separate public release checksum, not a substitute for Ed25519.
+   Sign the final appcast with `koett-update-key --sign-feed appcast.xml`; keep
+   SURequireSignedFeed and zero failure-expiration enabled. Publish the exact signed
+   XML bytes and archive together only when authorized.
 6. Verify a real upgrade from the first updater-enabled app in a guest, then
    publish the authorized appcast/ZIP assets together. No live-host update was
    tested. Existing v0.3.0 users need one manual installation of an enabled build.
 
-## Signing key
+## Signing keys and lab isolation
 
-Private key material lives only in this Mac's **login Keychain**
+The unused original production key was retired after it signed local test builds.
+No enabled build shipped with it. Its private item is retained, not deleted or exported.
+The current production key lives only in this Mac's **login Keychain**
 (`~/Library/Keychains/login.keychain-db`), generic-password service
-`https://sparkle-project.org`, account `com.olledyberg.Koett.EdDSA.v1`, label
-`Koett update signing (Ed25519)`. The repository stores only the public key.
-The seed is base64 in Sparkle's compatible 32-byte Ed25519 format. Do not export
-it into the repo, a CI variable, command arguments, logs or an app bundle.
+`https://sparkle-project.org`, account **`com.olledyberg.Koett.EdDSA.production.v2`**,
+label **Koett PRODUCTION update signing v2 (Ed25519)**. Packaging/Info.plist stores
+only its public key. The distinct lab account is `com.olledyberg.Koett.EdDSA.lab.v1`.
+Neither private key is in a file, repository, guest, CI variable, log or app bundle.
 
-`scripts/create-macos-update-key.swift` creates/reads that item or signs an archive;
-it disables Keychain interaction and fails instead of prompting. Compile it and
-sign the executable with identifier `com.olledyberg.Koett.UpdateSigningKey` and
-the same Developer ID identity before using the existing item's access list:
+Compile `scripts/create-macos-update-key.swift` and sign its executable with
+identifier `com.olledyberg.Koett.UpdateSigningKey`, using Developer ID Application:
+Dyberg & Co AB (LF8KF3G42Q). `--create` returns/creates the production public key;
+`--lab --create` returns/creates the lab public key. Keychain interaction is disabled;
+a locked or denied item fails instead of prompting. No private-key export is supported.
 
-```sh
-swiftc scripts/create-macos-update-key.swift -o /PRIVATE/koett-update-key
-codesign --force --options runtime --identifier com.olledyberg.Koett.UpdateSigningKey \
-  --sign 'Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)' /PRIVATE/koett-update-key
-/PRIVATE/koett-update-key --sign /PRIVATE/Koett.zip
-```
+Production `--sign FINAL.zip` refuses local/test flags, wrong public keys, insecure
+or non-GitHub feed URLs, and apps that do not pass strict signing, stapled-ticket
+validation and Gatekeeper's Notarized Developer ID assessment. Production
+`--sign-feed appcast.xml` accepts HTTPS GitHub Release enclosures only. Use inline
+release notes. It appends Sparkle's signature block to a fresh unsigned XML file;
+any change afterward requires regenerating and signing a fresh feed. The appcast,
+archive and optional external notes are separate authenticated objects; this helper
+deliberately does not support external release-note files.
 
-For initial creation only, pass Sparkle's built tools directory instead of
-`--sign ARCHIVE`. Re-running creation prints the existing public key and never
-rotates/overwrites it. Sparkle's vendor command-line signer blocked in this host
-session and was stopped without desktop interaction; this helper signed the
-fixtures noninteractively. Sparkle's actual guest updater verified them.
+Labs must pass **`--lab`** for both archive and feed signing, embed the lab public
+key, and set `KoettLocalUpdateTesting=true` in the locally signed bundle. The lab
+key must differ from Packaging/Info.plist. Staging scripts require the explicit
+`KOETT_LAB_UPDATE_SIGNER` executable and cannot fall back to production mode.
+No production signature may be made for any lab archive or feed.
 
-## Roll back
+## Roll back and stay on the old build
 
-Quit Koett while idle. In Finder, Go to Folder →
+After the installer finishes, quit Koett while idle. Never replace an app while
+its installer is running. In Finder, Go to Folder →
 `~/Library/Application Support/Koett/Update Backups`. Keep the current application
 elsewhere, copy the desired verified older app to Applications as Koett.app, and
-launch it. User data stays in place. There is no automatic health rollback or
-one-click rollback UI in this change. If a bad update remains in the feed it can
-be offered again; remove/fix that release's appcast before rolling users back.
+launch it. User data stays in place.
+
+Before handing a verified update to installation, Koett durably records its target
+build. Merely finding or dismissing an offered update does not mark rollback intent.
+A failed intent write blocks installation and normal Quit until it can be saved. A lower build
+on the next launch identifies rollback or an unsuccessful installation. That build
+and earlier builds are excluded from automatic **and manual** checks, even if the
+bad update remains in a correctly signed feed. The exclusion survives restarts.
+A genuinely newer build is allowed. To retry the excluded build intentionally,
+choose **Allow Skipped Update (BUILD)**, or run `koett --control allow-skipped-update`,
+then check again. No other check silently clears the exclusion.
+
+There is no automatic health rollback or one-click app replacement. The old public
+v0.3.0 app has no updater and therefore cannot silently reinstall an update.
+A recording requested during installation reservation shows one short existing-pill
+notice: “Installing update · Try again shortly”. It never opens the microphone and
+the notice does not block the install itself.
 
 ## Evidence
 
-See [guest verification](macos-updates-verification.md). It covers a loopback
+See [trust and rollback verification](macos-update-trust-verification.md) for the
+current signing keys, signed-feed enforcement and persistent rollback. The earlier
+[guest verification](macos-updates-verification.md) covers a loopback
 feed, two locally Developer-ID-signed builds, rejected archive and application
 signatures, actual recording/transcription deferral and a retained rollback copy.
 It does not certify a published feed, notarized future asset, live-host update,

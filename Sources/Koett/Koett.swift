@@ -118,7 +118,7 @@ final class KoettController: NSObject {
     let microphoneDefaults: UserDefaults
     let availableMicrophones: @MainActor () throws -> [MicrophoneDevice]
     let defaultMicrophoneID: @MainActor () throws -> AudioDeviceID
-    var microphonePreview: MicrophonePreviewWindow?
+    var microphonePreview: (any MicrophonePreviewing)?
     var microphoneMonitor: MicrophoneAvailabilityMonitor?
     var recorder: MicrophoneRecorder?
     var recordingURL: URL?
@@ -918,7 +918,7 @@ final class KoettController: NSObject {
 
     var isIdleForUpdates: Bool {
         state == .ready && !isRelaunching && activeDictationID == nil
-            && !recordingOverlay.isPresented && !transcriptPersistence.hasVolatileTranscripts
+            && (!recordingOverlay.isPresented || appUpdater?.gate.hasReservationNotice == true) && !transcriptPersistence.hasVolatileTranscripts
     }
 
     func configureUpdates() {

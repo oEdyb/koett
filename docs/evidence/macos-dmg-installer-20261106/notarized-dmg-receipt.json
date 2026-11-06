@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "7ef87560115fcf10ab5fb616973dbe2ccc49cdb3",
+  "version": "0.3.1",
+  "build": "5101",
+  "inputApp": "$HOME/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app",
+  "notarized": true,
+  "distributable": true,
+  "appManifestSHA256": "1749c7b63fe1d7db4945f0c8dcfddf78ba7e19cc25d1f9fb065cad4024190611",
+  "notary": {
+    "status": "Accepted",
+    "message": "Processing complete",
+    "id": "50f1ed70-a67a-47d3-937c-e7c6d19c976d"
+  },
+  "gatekeeper": "$HOME/dev/koett-release-artifacts/v0.3.1/dmg-installer/Koett-0.3.1-macOS-arm64.dmg: accepted\nsource=Notarized Developer ID\n",
+  "sha256": "c4dd4ba5c3dbe33e115c2166ef0f2044e36bfadc8dd9b274487ace1f01909834",
+  "executableUUID": "UUID: F949DA85-D0D2-3905-9129-03C59336B5DB (arm64) $HOME/dev/koett-release-artifacts/v0.3.1/review-fixes/signing/fixed/Koett.app/Contents/MacOS/koett"
+}

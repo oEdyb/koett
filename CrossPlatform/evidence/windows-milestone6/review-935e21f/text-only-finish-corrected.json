@@ -1,0 +1,98 @@
+{
+  "ok": true,
+  "result": {
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 8744,
+      "sha256": "69253ADF55DE073F681B36E0463EFB7480289DAAB731FDBE00A4754532F7B9F2"
+    },
+    "passed": true,
+    "state": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "stable": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d",
+    "actions": [
+      "Copy"
+    ],
+    "before": {
+      "hwnd": 132036,
+      "process": "powershell",
+      "pid": 6336
+    },
+    "copy": {
+      "control": "ControlType.Button",
+      "invoke": true,
+      "name": "Copy"
+    },
+    "after": {
+      "hwnd": 132036,
+      "process": "powershell",
+      "pid": 6336
+    },
+    "window_step": {
+      "step": "text-only-one-transcript",
+      "rect": [
+        182,
+        182,
+        1407,
+        882
+      ],
+      "screenshot_file": "text-only-finish-corrected-result-window_step.png",
+      "focus": {
+        "hwnd": 132036,
+        "process": "powershell",
+        "pid": 6336
+      }
+    },
+    "text": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d",
+    "formats": [
+      "PNG",
+      "Format17",
+      "HTML Format",
+      "System.String",
+      "UnicodeText",
+      "Text",
+      "Koett.DrawingOffer",
+      "CanUploadToCloudClipboard",
+      "Locale",
+      "OEMText",
+      "System.Drawing.Bitmap",
+      "Bitmap",
+      "DeviceIndependentBitmap"
+    ],
+    "step": {
+      "step": "drawing-text-only-delivered",
+      "rect": {
+        "left": 697,
+        "bottom": 968,
+        "top": 884,
+        "right": 1222,
+        "dpi": 168,
+        "hwnd": 131778
+      },
+      "screenshot_file": "text-only-finish-corrected-result-step.png",
+      "focus": {
+        "hwnd": 132036,
+        "process": "powershell",
+        "pid": 6336
+      },
+      "visible": true
+    },
+    "stop": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"stop\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "stop",
+      "exit": 0
+    },
+    "clipboard": "- #1 (0:07) \u201cWell, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.\u201d"
+  },
+  "id": "1793945992145039116"
+}

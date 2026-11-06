@@ -176,6 +176,8 @@ impl AudioLevels {
 pub struct MicrophoneRecorder {
     #[cfg(target_os = "windows")]
     process: Option<windows_capture::Process>,
+    #[cfg(target_os = "windows")]
+    retained_samples: Option<Arc<Mutex<Vec<f32>>>>,
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     _capture_priority: preview::RecordingPriority,
     stream: Option<cpal::Stream>,
@@ -344,6 +346,8 @@ impl MicrophoneRecorder {
         Ok(Self {
             #[cfg(target_os = "windows")]
             process: None,
+            #[cfg(target_os = "windows")]
+            retained_samples: None,
             #[cfg(any(target_os = "linux", target_os = "windows"))]
             _capture_priority: capture_priority,
             stream: Some(stream),
@@ -375,7 +379,15 @@ impl MicrophoneRecorder {
     pub fn finish(self) -> Result<AudioRecording, String> {
         let (audio, warning) = self.finish_with_warning()?;
         match warning {
-            Some(error) => Err(error),
+            Some(error) => {
+                #[cfg(target_os = "windows")]
+                {
+                    eprintln!("Koett: {error}");
+                    Ok(audio)
+                }
+                #[cfg(not(target_os = "windows"))]
+                Err(error)
+            }
             None => Ok(audio),
         }
     }
@@ -395,7 +407,8 @@ impl MicrophoneRecorder {
             .take()
             .expect("a live recorder always has a collector");
         #[cfg(target_os = "windows")]
-        let samples = windows_capture::join(collector)?;
+        let (samples, close_warning) =
+            windows_capture::finish_samples(collector, self.retained_samples.take())?;
         #[cfg(not(target_os = "windows"))]
         let samples = collector
             .join()
@@ -416,6 +429,8 @@ impl MicrophoneRecorder {
             None
         };
 
+        #[cfg(target_os = "windows")]
+        let warning = warning.or(close_warning);
         let recording = AudioRecording::new(self.sample_rate, samples)?;
         let (rms, peak) = recording.levels();
         eprintln!("microphone_rms={rms:.6} microphone_peak={peak:.6}");

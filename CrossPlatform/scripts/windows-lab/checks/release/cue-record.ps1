@@ -1,0 +1,5 @@
+if($env:USERNAME-ne'KoettLab'-or$env:COMPUTERNAME-ne'KOETT-LAB'){throw 'These checks run only in the isolated Koett Windows lab guest'}
+$h=[LabDriver]::ByClass('KoettRecoveryWindow');if($h-eq[IntPtr]::Zero){$null=Run-MediaCli 'recovery';Start-Sleep -Milliseconds 300;$h=[LabDriver]::ByClass('KoettRecoveryWindow')};Activate-LabEditor $h;$before=Get-LabFocus
+$start=Run-MediaCli 'start';$watch=[Diagnostics.Stopwatch]::StartNew();do{Start-Sleep -Milliseconds 100;$s=(Run-MediaCli 'status').stdout|ConvertFrom-Json}while($s.status-ne'recording'-and$watch.ElapsedMilliseconds-lt10000);if($s.status-ne'recording'){throw 'Recording missing'};Start-Sleep -Milliseconds 7550;$stop=Run-MediaCli 'stop';$null=Wait-MediaDone
+$clip=[Windows.Forms.Clipboard]::GetText();$after=Get-LabFocus;$config=Get-Content ($env:APPDATA+'\DybergCo\Koett\config\settings.json') -Raw -Encoding UTF8|ConvertFrom-Json
+@{passed=($clip-match'Phoebe'-and$before.hwnd-eq$after.hwnd-and$before.pid-eq$after.pid);start=$start;stop=$stop;clipboard=$clip;before=$before;after=$after;recording_sounds=if($null-eq$config.recording_sounds){$true}else{$config.recording_sounds};artifact=Get-LabArtifact}
