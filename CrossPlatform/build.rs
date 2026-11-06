@@ -1,9 +1,19 @@
 use std::{fs, path::Path};
 fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
-        let manifest = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
+        let template = Path::new(&std::env::var("CARGO_MANIFEST_DIR").unwrap())
             .join("packaging/windows/Koett.manifest");
-        println!("cargo:rerun-if-changed={}", manifest.display());
+        println!("cargo:rerun-if-changed={}", template.display());
+        let version = std::env::var("CARGO_PKG_VERSION").unwrap();
+        let version = format!("{}.0", version.split('-').next().unwrap());
+        let manifest = Path::new(&std::env::var("OUT_DIR").unwrap()).join("Koett.manifest");
+        fs::write(
+            &manifest,
+            fs::read_to_string(template)
+                .unwrap()
+                .replace("@KOETT_VERSION@", &version),
+        )
+        .unwrap();
         println!("cargo:rustc-link-arg-bin=koett=/MANIFEST:EMBED");
         println!(
             "cargo:rustc-link-arg-bin=koett=/MANIFESTINPUT:{}",
