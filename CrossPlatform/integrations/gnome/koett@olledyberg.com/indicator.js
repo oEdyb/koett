@@ -1,5 +1,6 @@
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import St from 'gi://St';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -28,6 +29,23 @@ class KoettIndicator extends PanelMenu.Button {
         this._item('Paste last transcript', 'paste-last');
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this._item('Settings…', 'settings');
+        const updates = this._item('Check for Updates…', 'check-updates');
+        // Off in a build with no update feed. Ask the running app each time: the action
+        // group's cache still describes the process from before an update's restart.
+        this.menu.connect('open-state-changed', (_menu, open) => {
+            if (!open)
+                return;
+            Gio.DBus.session.call(APP, PATH, 'org.gtk.Actions', 'Describe',
+                new GLib.Variant('(s)', ['check-updates']), null, Gio.DBusCallFlags.NONE, 2000,
+                null, (connection, result) => {
+                    try {
+                        const [description] = connection.call_finish(result).deepUnpack();
+                        updates.setSensitive(description[0]);
+                    } catch {
+                        updates.setSensitive(false);
+                    }
+                });
+        });
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this._item('Quit Koett', 'quit');
         this._state = this._actions.connect('action-state-changed::recording',

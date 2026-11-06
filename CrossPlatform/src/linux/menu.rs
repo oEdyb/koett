@@ -58,6 +58,10 @@ pub(super) fn button() -> gtk::MenuButton {
         ),
         ("Drawing", &[("Undo Last Drawing", "app.undo-drawing")][..]),
         (
+            "Updates",
+            &[("Check for Updates…", "app.check-updates")][..],
+        ),
+        (
             "Recovery",
             &[
                 ("Copy unsaved transcripts", "app.copy-unsaved"),

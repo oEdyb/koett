@@ -55,6 +55,7 @@ Python 3.10+ is required. Verify the archive against its published SHA-256 file.
 To update, verify and extract the new archive, run its runtime check and installer
 with the same prefix, then quit and reopen Koett. Installing does not stop the
 old process. Previous application versions and your data are retained.
+Builds that carry an update feed do this themselves; see [Linux updates](../docs/linux-updates.md).
 
 To uninstall the default installation, turn off **Start at login** in Settings,
 quit Koett and remove these application files:

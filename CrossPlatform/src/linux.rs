@@ -263,6 +263,15 @@ impl ksni::Tray for LinuxTray {
             .into(),
             MenuItem::Separator,
             send("Settings…", true, TrayAction::OpenSettings),
+            StandardItem {
+                label: "Check for Updates…".to_string(),
+                enabled: updates::enabled(),
+                activate: Box::new(|_: &mut Self| {
+                    updates::check_now();
+                }),
+                ..Default::default()
+            }
+            .into(),
             MenuItem::Separator,
             StandardItem {
                 label: "Quit Koett".to_string(),
@@ -312,10 +321,15 @@ mod settings_view;
 mod sketch;
 mod sounds;
 mod theme;
+mod updates;
 mod window;
 mod x11_surface;
 
 pub fn run() -> Result<(), String> {
+    if std::env::args().nth(1).as_deref() == Some("update-build") {
+        updates::print_build();
+        return Ok(());
+    }
     if let Some(command) = std::env::args().nth(1).filter(|c| c.starts_with("menu-")) {
         if command == "menu-help" {
             println!(
@@ -355,6 +369,9 @@ pub fn run() -> Result<(), String> {
                 | "resume"
                 | "history"
                 | "dictionary"
+                | "check-updates"
+                | "update-status"
+                | "rollback-update"
         )
     }) {
         let response = match control::request(&command) {
@@ -362,7 +379,15 @@ pub fn run() -> Result<(), String> {
             Err(_)
                 if matches!(
                     command.as_str(),
-                    "status" | "pause" | "resume" | "undo" | "history" | "dictionary"
+                    "status"
+                        | "pause"
+                        | "resume"
+                        | "undo"
+                        | "history"
+                        | "dictionary"
+                        | "check-updates"
+                        | "update-status"
+                        | "rollback-update"
                 ) =>
             {
                 println!(
@@ -383,6 +408,8 @@ pub fn run() -> Result<(), String> {
                 | "status"
                 | "pause"
                 | "resume"
+                | "check-updates"
+                | "rollback-update"
         ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
             == false
         {
@@ -579,6 +606,7 @@ pub fn run() -> Result<(), String> {
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
     control::listen(actions.clone(), ui.clone())?;
+    updates::start(actions.clone(), ui.clone());
     menu_preferences::start_inputs();
     let startup_ui = ui.clone();
     std::thread::spawn(move || match history::recovery::initialize_last() {
@@ -2199,6 +2227,10 @@ impl LinuxEngine {
     }
 
     fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
+        // Held until the command has marked the app busy, so an install can't slip in.
+        let Some(_admitted) = updates::admit() else {
+            return;
+        };
         if matches!(command, EngineCommand::Cancel) {
             self.engine.cancel_dictation();
             // Sketches of a cancelled dictation are never pasted later.
@@ -3273,6 +3305,27 @@ mod menu_tests {
             (item.activate)(&mut tray);
             assert_eq!(receiver.recv().unwrap(), expected);
         }
+    }
+
+    #[test]
+    fn tray_shows_check_for_updates_but_disabled_without_a_feed() {
+        let _guard = runtime_test_guard();
+        let (action_sender, _) = mpsc::channel();
+        let tray = LinuxTray {
+            action_sender,
+            status: "Ready".into(),
+        };
+        let item = tray
+            .menu()
+            .into_iter()
+            .find_map(|item| match item {
+                ksni::MenuItem::Standard(item) if item.label == "Check for Updates…" => {
+                    Some(item)
+                }
+                _ => None,
+            })
+            .unwrap();
+        assert!(!item.enabled);
     }
 
     #[test]
