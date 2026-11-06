@@ -14787,14 +14787,14 @@
       "sha256": "f028e12a0eeb0a1c79810acff539785849a8513c6c7c478eddbcb95401168fec"
     },
     {
-      "bytes": 397,
+      "bytes": 663,
       "path": "Package.resolved",
-      "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416"
+      "sha256": "6c0254b77538372e8846c8f818da1aabb35e18f7aa7b6afecdcb4508f7ab8f02"
     },
     {
-      "bytes": 2339,
+      "bytes": 2602,
       "path": "Package.swift",
-      "sha256": "d4f45e2fd00f69020eb206af4a88b9ff5a52d4c4cf89904ace4622a4760894de"
+      "sha256": "7934377fa9e9539854f30cffb39a75e1a4053bf9c9080619daef1197af338be4"
     },
     {
       "bytes": 458,
