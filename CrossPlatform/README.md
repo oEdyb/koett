@@ -101,7 +101,7 @@ is unavailable, add a custom GNOME keyboard shortcut running `koett toggle`.
 Allow both **Remote Interaction** and **Clipboard Access** in the Remote Desktop
 prompt. Without the extension or portal
 permission, use History/Copy and paste manually. X11 uses native global shortcuts
-and XTest. X11 also has the recording pill, which can't be dragged there.
+and XTest. X11 also has the recording pill.
 
 Settings → Dictation → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 

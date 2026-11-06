@@ -32,6 +32,7 @@ def key(*names):
 from PIL import ImageGrab
 INK=lambda c:c[0]>230 and 30<c[1]<90 and 20<c[2]<80
 (out/'clip.log').unlink(missing_ok=True)
+(out/'config/koett/pill-position.json').unlink(missing_ok=True)
 (out/'clip.py').write_text('''import gi,sys
 gi.require_version("Gtk","4.0")
 from gi.repository import Gtk,Gdk,GLib
@@ -57,6 +58,15 @@ try:
   time.sleep(.1)
  xd('type','--delay','30','zz');time.sleep(.5);print('STEP typed via XTEST',repr(json.loads((out/'target-state.json').read_text())['text']) if (out/'target-state.json').exists() else None,'focus',xd('getwindowfocus'),tw,flush=True);print('STEP paste-target',subprocess.run([str(binary),'paste-target-status'],capture_output=True,text=True).stdout[:200],flush=True)
  cli('start');time.sleep(1.5)
+ pw=xd('search','--onlyvisible','--name','Koett recording').split()[0]
+ def geom(w):
+  g=dict(l.split('=') for l in xd('getwindowgeometry','--shell',w).splitlines() if '=' in l);return {k:int(g[k]) for k in ('X','Y','WIDTH','HEIGHT')}
+ g0=geom(pw);print('STEP pill start',g0,flush=True);xd('mousemove',g0['X']+20,g0['Y']+24);time.sleep(.3);xd('mousedown',1);time.sleep(.1)
+ for t in range(1,21):xd('mousemove',g0['X']+20-t*15,g0['Y']+24-t*20);time.sleep(.016)
+ time.sleep(.2);g1=geom(pw);ok('pill follows the pointer live',abs(g1['X']-(g0['X']-300))<=2 and abs(g1['Y']-(g0['Y']-400))<=2,g1);xd('mouseup',1);time.sleep(.5);g2=geom(pw);ok('pill stays',g2==g1,g2)
+ sv=out/'config/koett/pill-position.json';ok('position saved',sv.exists(),sv.read_text() if sv.exists() else None)
+ cli('cancel');time.sleep(1);cli('start');time.sleep(1.2);pw=xd('search','--onlyvisible','--name','Koett recording').split()[0];g3=geom(pw);ok('next recording opens there',abs(g3['X']-g1['X'])<=2 and abs(g3['Y']-g1['Y'])<=2,g3)
+ sv.unlink(missing_ok=True)
  print('STEP focus after start',xd('getwindowfocus'),tw,xd('search','--name','Koett'),flush=True)
  xd('mousemove',300,120);time.sleep(.2);key('shift-down');time.sleep(.3);xd('mousedown',1);time.sleep(.05)
  for t in range(1,16):xd('mousemove',300+t*20,120);time.sleep(.015)

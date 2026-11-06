@@ -1,3 +1,4 @@
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
@@ -8,6 +9,7 @@ export class Pills {
         this._entries = new Map();
         this._watches = new Map();
         this._watched = new WeakSet();
+        this._dragTimers = new Set();
         this._created = global.display.connect('window-created', (_display, window) => this._createdWindow(window));
         this._monitors = Main.layoutManager.connect('monitors-changed', () => {
             for (const entry of this._entries.values()) this._place(entry);
@@ -43,9 +45,45 @@ export class Pills {
         const entry = old || {pid, owner, cover, title: request.title, window: null,
             added: GLib.get_monotonic_time()};
         entry.monitor = request.monitor;
+        entry.origin = Array.isArray(request.origin) && request.origin.length === 2 &&
+            request.origin.every(Number.isSafeInteger) ? request.origin : null;
         this._entries.set(entry.title, entry);
         this._place(entry);
         return true;
+    }
+
+    // Follows the pointer until the button comes up; a dock can't use the window
+    // manager's own move. Resolves to where the pill landed, or null if it stayed.
+    dragPill(pid) {
+        const entry = [...this._entries.values()].find(e => !e.cover && e.pid === pid && e.window);
+        if (!entry) return Promise.resolve(null);
+        const window = entry.window;
+        const start = window.get_frame_rect();
+        const [startX, startY] = global.get_pointer();
+        let moved = false;
+        return new Promise(resolve => {
+            const timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 16, () => {
+                const [x, y, mask] = global.get_pointer();
+                const held = (mask & Clutter.ModifierType.BUTTON1_MASK) !== 0;
+                moved ||= Math.max(Math.abs(x - startX), Math.abs(y - startY)) >= 4;
+                if (held && moved && this._entries.get(entry.title) === entry && entry.window) {
+                    const monitor = Main.layoutManager.monitors.find(m =>
+                        x >= m.x && y >= m.y && x < m.x + m.width && y < m.y + m.height);
+                    if (monitor) {
+                        const clamp = (v, low, high) => Math.max(low, Math.min(v, high));
+                        const left = clamp(start.x + x - startX, monitor.x, monitor.x + monitor.width - start.width);
+                        const top = clamp(start.y + y - startY, monitor.y, monitor.y + monitor.height - start.height);
+                        entry.origin = [left, top];
+                        window.move_frame(false, left, top);
+                    }
+                }
+                if (held && entry.window) return GLib.SOURCE_CONTINUE;
+                this._dragTimers.delete(timer);
+                resolve(moved && entry.origin ? {x: entry.origin[0], y: entry.origin[1]} : null);
+                return GLib.SOURCE_REMOVE;
+            });
+            this._dragTimers.add(timer);
+        });
     }
 
     takePointer(take, pid) {
@@ -102,6 +140,14 @@ export class Pills {
             return;
         }
         const rect = window.get_frame_rect();
+        if (entry.origin && Main.layoutManager.monitors.some(m =>
+            entry.origin[0] >= m.x && entry.origin[1] >= m.y &&
+            entry.origin[0] + rect.width <= m.x + m.width &&
+            entry.origin[1] + rect.height <= m.y + m.height)) {
+            if (rect.x !== entry.origin[0] || rect.y !== entry.origin[1])
+                window.move_frame(false, entry.origin[0], entry.origin[1]);
+            return;
+        }
         const x = Math.round(monitor.x + (monitor.width - rect.width) / 2);
         const y = monitor.y + monitor.height - rect.height - 24;
         if (rect.x !== x || rect.y !== y) window.move_frame(false, x, y);
@@ -166,6 +212,8 @@ export class Pills {
     }
 
     destroy() {
+        for (const timer of this._dragTimers) GLib.source_remove(timer);
+        this._dragTimers.clear();
         global.display.disconnect(this._created);
         Main.layoutManager.disconnect(this._monitors);
         Gio.DBus.session.signal_unsubscribe(this._ownerWatch);

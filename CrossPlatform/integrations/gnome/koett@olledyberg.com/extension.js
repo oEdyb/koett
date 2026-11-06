@@ -16,6 +16,7 @@ const XML = `<node><interface name="com.olledyberg.Koett.Gnome1">
 <method name="Focus"><arg type="s" direction="out"/></method>
 <method name="WindowAt"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Input"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
+<method name="DragPill"><arg type="s" direction="out"/></method>
 </interface></node>`;
 
 function busCall(method, parameters, signature) {
@@ -87,6 +88,18 @@ export default class Koett extends Extension {
             result.error = String(error.message).slice(0, 160);
         }
         invocation.return_value(new GLib.Variant('(s)', [JSON.stringify(result)]));
+    }
+
+    // Moves Koett's own pill with the pointer while the button is held.
+    async DragPillAsync(_parameters, invocation) {
+        let result = null;
+        try {
+            const owner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const pid = name => busCall('GetConnectionUnixProcessID', new GLib.Variant('(s)', [name]), '(u)');
+            const [caller, app] = await Promise.all([pid(invocation.get_sender()), pid(owner)]);
+            if (this._enabled && caller === app) result = await this._pills?.dragPill(app) ?? null;
+        } catch { }
+        invocation.return_value(new GLib.Variant('(s)', [JSON.stringify(result ?? {})]));
     }
 
     // Whether Koett's own drawing surfaces take the pointer.

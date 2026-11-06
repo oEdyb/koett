@@ -118,6 +118,70 @@ pub fn cover(window: &gtk::Window, monitor: &gdk::Monitor) -> Result<(), String>
     Ok(())
 }
 
+thread_local! {
+    /// Where the user dragged the pill, in logical desktop coordinates.
+    static PILL_ORIGIN: std::cell::Cell<Option<(i32, i32)>> = const { std::cell::Cell::new(None) };
+}
+
+pub fn set_pill_origin(origin: Option<(i32, i32)>) {
+    PILL_ORIGIN.with(|place| place.set(origin));
+}
+
+/// Moves the pill with the pointer until the button comes up, then reports where it
+/// landed in logical coordinates, or `None` if it stayed put.
+pub fn follow_pointer(window: &gtk::Window, finished: impl FnOnce(Option<(i32, i32)>) + 'static) {
+    const BUTTON1: u16 = 1 << 8;
+    let Ok(xid) = xid(window) else {
+        return;
+    };
+    let Ok((connection, screen)) = connect() else {
+        return;
+    };
+    let root = connection.setup().roots[screen].root;
+    let scale = window.scale_factor();
+    let pointer =
+        move |connection: &RustConnection| connection.query_pointer(root).ok()?.reply().ok();
+    let origin = connection
+        .translate_coordinates(xid, root, 0, 0)
+        .ok()
+        .and_then(|cookie| cookie.reply().ok());
+    let (Some(start), Some(origin)) = (pointer(&connection), origin) else {
+        return;
+    };
+    let grab = (
+        i32::from(start.root_x) - i32::from(origin.dst_x),
+        i32::from(start.root_y) - i32::from(origin.dst_y),
+    );
+    let start = (i32::from(start.root_x), i32::from(start.root_y));
+    let mut moved = false;
+    let mut last = (i32::from(origin.dst_x), i32::from(origin.dst_y));
+    let finished = std::cell::Cell::new(Some(finished));
+    gtk::glib::timeout_add_local(std::time::Duration::from_millis(16), move || {
+        let Some(now) = pointer(&connection) else {
+            return gtk::glib::ControlFlow::Break;
+        };
+        let at = (i32::from(now.root_x), i32::from(now.root_y));
+        moved = moved || (at.0 - start.0).abs().max((at.1 - start.1).abs()) >= 4;
+        if moved && u16::from(now.mask) & BUTTON1 != 0 {
+            last = (at.0 - grab.0, at.1 - grab.1);
+            let _ =
+                connection.configure_window(xid, &ConfigureWindowAux::new().x(last.0).y(last.1));
+            let _ = connection.flush();
+        }
+        if u16::from(now.mask) & BUTTON1 == 0 {
+            let place = moved.then_some((last.0 / scale, last.1 / scale));
+            if place.is_some() {
+                set_pill_origin(place);
+            }
+            if let Some(finished) = finished.take() {
+                finished(place);
+            }
+            return gtk::glib::ControlFlow::Break;
+        }
+        gtk::glib::ControlFlow::Continue
+    });
+}
+
 /// Keeps the pill centred at the bottom of a monitor, whatever its height.
 pub fn pill(window: &gtk::Window, monitor: Option<&gdk::Monitor>) -> Result<(), String> {
     let xid = float(window)?;
@@ -131,6 +195,12 @@ pub fn pill(window: &gtk::Window, monitor: Option<&gdk::Monitor>) -> Result<(), 
     let scale = chosen.scale_factor();
     let place = move |surface_width: i32, surface_height: i32| {
         let (w, h) = (surface_width * scale, surface_height * scale);
+        if let Some((saved_x, saved_y)) = PILL_ORIGIN.with(std::cell::Cell::get) {
+            if let Err(error) = move_window(xid, saved_x * scale, saved_y * scale, None) {
+                eprintln!("Recording pill placement failed: {error}");
+            }
+            return;
+        }
         if let Err(error) = move_window(xid, x + (width - w) / 2, y + height - h - 24 * scale, None)
         {
             eprintln!("Recording pill placement failed: {error}");

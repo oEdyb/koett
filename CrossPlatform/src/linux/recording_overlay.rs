@@ -227,7 +227,9 @@ impl PillLayer {
     fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Self::Layer(layer) => Ok(layer.configure(window)?),
-            Self::Gnome => super::gnome_pill::configure(window, None),
+            Self::Gnome => {
+                super::gnome_pill::configure(window, None, position::saved_origin(window))
+            }
             Self::X11 => Ok(super::x11_surface::pill(window, None)?),
         }
     }
@@ -239,7 +241,9 @@ impl PillLayer {
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Self::Layer(layer) => Ok(layer.choose_monitor(window, monitor)?),
-            Self::Gnome => super::gnome_pill::configure(window, monitor),
+            Self::Gnome => {
+                super::gnome_pill::configure(window, monitor, position::saved_origin(window))
+            }
             Self::X11 => Ok(super::x11_surface::pill(window, monitor)?),
         }
     }
@@ -942,9 +946,13 @@ impl RecordingOverlay {
         let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
         shell.append(&layout);
         window.set_child(Some(&shell));
-        if let PillLayer::Layer(layer) = &layer_shell {
-            position::apply(&window, layer);
-            position::attach(&window, &shell, &layout, layer.clone());
+        match &layer_shell {
+            PillLayer::Layer(layer) => {
+                position::apply(&window, layer);
+                position::attach(&window, &shell, &layout, layer.clone());
+            }
+            PillLayer::Gnome => position::attach_follow(&window, &layout, true),
+            PillLayer::X11 => position::attach_follow(&window, &layout, false),
         }
         Some(Self {
             window,
@@ -1241,6 +1249,9 @@ impl RecordingOverlay {
         );
         self.window.set_can_target(target);
         let visible = phase != Phase::Hidden && self.registered_to_show(phase != Phase::Hidden);
+        if visible && !self.window.is_visible() && matches!(self.layer_shell, PillLayer::X11) {
+            super::x11_surface::set_pill_origin(position::saved_origin(&self.window));
+        }
         // Mapping a keyboard-none layer surface never requests activation.
         self.window.set_visible(visible);
         if let Some(surface) = self.window.surface() {
