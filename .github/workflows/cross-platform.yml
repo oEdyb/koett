@@ -467,6 +467,12 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      # Here because it's the only place arm64 gets run, and a mismatch strands that install.
+      - name: Check the updater settings in the binary
+        run: |
+          test "$(target/release/koett update-build)" = "$KOETT_UPDATE_BUILD"
+          grep -aqF "$KOETT_UPDATE_FEED" target/release/koett
+          grep -aqF "$KOETT_UPDATE_PUBLIC_KEY" target/release/koett
       - name: Test runtime self-test retry policy
         run: python3 -m unittest discover -s scripts -p test_runtime_self_test.py
       - name: Runtime self-test

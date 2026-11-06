@@ -134,6 +134,9 @@ class WorkflowPinTests(unittest.TestCase):
             self.assertNotIn(switch, self.workflow)
         before = self.workflow.split("  linux:\n", 1)[0]
         self.assertNotIn("KOETT_UPDATE_", before)
+        self.assertIn('test "$(target/release/koett update-build)" = "$KOETT_UPDATE_BUILD"', linux)
+        self.assertLess(linux.index("--bin koett\n"), linux.index("update-build"))
+        self.assertLess(linux.index("update-build"), linux.index("name: Package"))
 
     def test_checkout_never_persists_credentials(self) -> None:
         checkout_steps = re.findall(

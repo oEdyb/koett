@@ -98,3 +98,14 @@ version unproven; `koett rollback-update` undoes it. A restart that fails becaus
 ended marks that build skipped too, until a newer one arrives. Each install step has a time limit, so a hung installer can't leave
 dictation blocked. A manual check blocks nothing, but a rollback asked for during a download
 answers `busy`.
+
+Known rough edges, reviewed and left for later because each is rare and recoverable:
+
+- A quit that takes over 30 s can still close the old app later, after the update was already undone.
+  The next start is on the old version.
+- With a full disk, saving state fails, and that also blocks a rollback, including the watcher's.
+- A `rollback-update` answered `busy` stays queued and can run later.
+- The watcher counts a model that loads into an error as not started, so it can roll back a good
+  build when the fault is elsewhere. It's skipped until a newer one arrives.
+- If restarting fails after the watcher moved the launcher back, the launcher stays moved and
+  nothing is running. The next start is on the old version.

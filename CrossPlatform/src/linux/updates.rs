@@ -666,7 +666,10 @@ pub fn offline(command: &str) -> Option<serde_json::Value> {
         })),
         "rollback-update" => {
             let Some((config, (prefix, _))) = found else {
-                return Some(failure("updates_disabled", "This build has no update feed"));
+                return Some(failure(
+                    "updates_disabled",
+                    "This install doesn't update itself",
+                ));
             };
             let Some(previous) = target else {
                 let message = "There is no earlier version to go back to";
@@ -900,7 +903,7 @@ pub fn check_now() -> bool {
 pub fn control(command: &str) -> Option<serde_json::Value> {
     let disabled = || {
         serde_json::json!({"ok":false,"error":{"code":"updates_disabled",
-            "message":"This build has no update feed"}})
+            "message":"This install doesn't update itself"}})
     };
     match command {
         "update-status" => {
