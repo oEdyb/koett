@@ -7,6 +7,17 @@ final class UpdateConfigurationTests: XCTestCase {
         UpdateConfiguration(info: info.merging(["SURequireSignedFeed": true, "SUVerifyUpdateBeforeExtraction": true,
             "SUSignedFeedFailureExpirationInterval": 0]) { $1 })
     }
+    func testReleaseBundleEnablesPinnedSignedLatestFeed() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("Packaging/Info.plist"))
+        let info = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        let config = try XCTUnwrap(UpdateConfiguration(info: info))
+        XCTAssertEqual(config.feed.absoluteString, "https://github.com/oEdyb/koett/releases/latest/download/appcast.xml")
+        XCTAssertEqual(info["SUPublicEDKey"] as? String, "/SY2ckG+UXlqU0Y0Upiv2p8NuQGIBd8GZlNY2Seu/QE=")
+        XCTAssertNil(info["KoettLocalUpdateTesting"])
+        XCTAssertEqual((info["SUSignedFeedFailureExpirationInterval"] as? NSNumber)?.doubleValue, 0)
+    }
+
     func testMissingSignedFeedSafetyKeepsUpdatesInert() {
         XCTAssertNil(UpdateConfiguration(info: ["SUFeedURL": "https://example.test/feed", "SUPublicEDKey": Data(repeating: 1, count: 32).base64EncodedString()]))
     }

@@ -1,11 +1,13 @@
 # Mac updates
 
-Sparkle **2.10.1** is pinned in Package.swift/Package.resolved. This source has
-**no SUFeedURL**, so it starts no updater, creates no update backups and makes no
-update requests. Check for Updates is visible but disabled. The frozen v0.3.0
-ZIP and installed app are unchanged; they do not acquire updating from this PR.
+Sparkle **2.10.1** is pinned in Package.swift/Package.resolved. Starting with
+v0.3.1, the signed Mac bundle uses this stable feed:
+`https://github.com/oEdyb/koett/releases/latest/download/appcast.xml`.
+The production Ed25519 key is unchanged. Existing v0.3.0 installations have no
+updater and need one manual DMG installation to bootstrap it. The installed host
+app and earlier frozen assets are not modified by this source change.
 
-## Behavior once enabled
+## Runtime behavior
 
 The signed bundle supplies an HTTPS appcast URL and an Ed25519 public key.
 Sparkle checks in the background and downloads updates automatically. A manual
@@ -32,17 +34,20 @@ The standard updater may show an error for a manual check; background failures
 are available through the menu tooltip and local-control status. A downloaded
 update is retained while busy. No recording limit is shortened to install it.
 
-## Enable a future release
+## Package and publish an enabled release
 
-This is release work requiring separate authorization; none of it ran here.
+The release owner sequences publication after the guest, signature and same-source
+artifact gates. Source activation is not permission to publish an unfinished
+asset. Keep the existing draft until its verified replacement is ready.
 
-1. Choose a stable HTTPS appcast asset URL on GitHub Releases, for example
-   `https://github.com/oEdyb/koett/releases/latest/download/appcast.xml`. Every
-   release using that URL must include its appcast asset. Never point production
-   at a draft or the local test server.
-2. Put that URL in **SUFeedURL** in Packaging/Info.plist; retain SUPublicEDKey.
-   Keep **KoettLocalUpdateTesting absent**. It only allows literal loopback HTTP
-   in explicitly signed guest fixtures. There is no defaults/environment override.
+1. Keep the stable feed URL above. Every **Latest** release must carry
+   `appcast.xml` and the immutable ZIP named by it, even when other platform assets
+   are also released. A platform-only Latest without the Mac feed breaks checks
+   until those assets are restored. Prereleases must not replace Latest.
+2. Keep **SUFeedURL** and **SUPublicEDKey** in Packaging/Info.plist. Keep
+   **KoettLocalUpdateTesting absent**. Literal loopback HTTP and the separate lab
+   key are only for explicitly signed guest fixtures; no defaults/environment
+   override can change the production endpoint.
 3. Increment CFBundleVersion monotonically and set the public version. Build a
    clean pinned source, assemble resources and run `scripts/embed-sparkle.sh APP
    IDENTITY` **before signing the outer app**. It embeds the framework, preserves
@@ -54,16 +59,45 @@ This is release work requiring separate authorization; none of it ran here.
 4. Sign with Developer ID LF8KF3G42Q, notarize, staple, validate the app, then zip
    that final stapled app. Sign the **exact final ZIP** with the update key. Any
    rezip or stapling afterward invalidates the archive signature.
-5. Build/sign the helper below and run `koett-update-key --sign FINAL.zip`. Use its
-   `sparkle:edSignature` and `length` in the appcast enclosure, with the exact
-   CFBundleVersion, minimum macOS 15 and immutable GitHub Release ZIP URL. SHA256
-   remains a separate public release checksum, not a substitute for Ed25519.
-   Sign the final appcast with `koett-update-key --sign-feed appcast.xml`; keep
-   SURequireSignedFeed and zero failure-expiration enabled. Publish the exact signed
-   XML bytes and archive together only when authorized.
-6. Verify a real upgrade from the first updater-enabled app in a guest, then
-   publish the authorized appcast/ZIP assets together. No live-host update was
-   tested. Existing v0.3.0 users need one manual installation of an enabled build.
+5. Name the immutable archive `Koett-VERSION-macOS-arm64.zip`. Build/sign the
+   Keychain helper below, then generate and verify the exact final bytes:
+
+   ```sh
+   python3 scripts/create-macos-appcast.py \
+     --archive /absolute/artifacts/Koett-0.3.1-macOS-arm64.zip \
+     --output /absolute/artifacts/appcast.xml \
+     --signer /absolute/tools/koett-update-key
+   ```
+
+   It reads version/build/minimum OS/full source stamp from the ZIP, requires the
+   production feed/key, signs the archive, writes the immutable versioned GitHub
+   enclosure, signs the feed and verifies both Ed25519 signatures with CryptoKit.
+   The production helper refuses non-notarized or lab apps. No private key is
+   exported. It also emits a feed checksum and path-free receipt. No upload/tag
+   or publication occurs. Do not edit or rezip signed bytes afterward.
+6. Put `appcast.xml`, `Koett-0.3.1-macOS-arm64.zip`, its checksum, and the separately
+   notarized/stapled `Koett-0.3.1-macOS-arm64.dmg` in the verified private draft.
+   The appcast enclosure is
+   `https://github.com/oEdyb/koett/releases/download/v0.3.1/Koett-0.3.1-macOS-arm64.zip`.
+   All platform artifacts and receipts must use the same final frozen source.
+   Publish/set Latest only after gates; never point an appcast at draft/untagged
+   download URLs or upload a production-signed fixture.
+7. Before publication, check an existing Latest asset's redirect and the expected
+   missing future feed/archive paths. After publication, fetch the actual
+   `latest/download/appcast.xml`, require its redirect to the versioned release,
+   verify its exact bytes/hash/signature and the immutable ZIP. A prepublish404
+   is not a postpublish pass. The release owner must close this gate before
+   announcing that updates are live.
+
+## Missing feed
+
+Before publication the existing Latest release can legitimately lack
+`appcast.xml`. A404 or unavailable feed leaves dictation usable; the background
+failure appears in the update menu tooltip/local-control status. Manual Check for
+Updates uses Sparkle's ordinary error interface. Automatic checks retry on later
+checks/launches; signed-feed failure never expires into an unsigned fallback.
+A missing feed must not be treated as a successful update check or used to
+silently disable signature validation.
 
 ## Signing keys and lab isolation
 

@@ -1,0 +1,33 @@
+{
+  "latestExisting": {
+    "url": "https://github.com/oEdyb/koett/releases/latest/download/Koett-0.3.0-macOS-arm64.zip",
+    "exit": 0,
+    "statuses": [
+      "HTTP/2 302 ",
+      "HTTP/2 302 ",
+      "HTTP/2 200 "
+    ],
+    "locations": [
+      "location: https://github.com/oEdyb/koett/releases/download/v0.3.0/Koett-0.3.0-macOS-arm64.zip"
+    ]
+  },
+  "latestFeed": {
+    "url": "https://github.com/oEdyb/koett/releases/latest/download/appcast.xml",
+    "exit": 0,
+    "statuses": [
+      "HTTP/2 302 ",
+      "HTTP/2 404 "
+    ],
+    "locations": [
+      "location: https://github.com/oEdyb/koett/releases/download/v0.3.0/appcast.xml"
+    ]
+  },
+  "futureZIP": {
+    "url": "https://github.com/oEdyb/koett/releases/download/v0.3.1/Koett-0.3.1-macOS-arm64.zip",
+    "exit": 0,
+    "statuses": [
+      "HTTP/2 404 "
+    ],
+    "locations": []
+  }
+}
