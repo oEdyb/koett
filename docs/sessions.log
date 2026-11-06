@@ -9,3 +9,5 @@
 [2026-11-06 04:00] | PR | What it adds | Merge SHA | |---|---|---| | #77 | GNOME drawing background capture | `240121a574f64461e6f769a9f3383eaae8c88b73` | 
 [2026-11-06 04:57] PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
 [2026-11-06 04:59] The real CI run on #155 is in progress, and it merges when green. PR https://github.com/oEdyb/koett/pull/155, head `bc6c341ae58edae57b1314ac12d39f320f207b67`, CI in progress, no reviews. 
+[2026-11-06 05:22] Still waiting on that main run for `6c2e78e`. PR https://github.com/oEdyb/koett/pull/155, head `dc069a66b82864ca6f64334ec8446a5685a7afc3`, merged, checks passed on the PR, no reviews. 
+[2026-11-06 05:32] All the review fixes and Linux auto-update are merged, and main is green at `6c2e78e`. Auto-update stays switched off until a build carries a feed. There were 68 CI runs since midnight, and I'm openin
