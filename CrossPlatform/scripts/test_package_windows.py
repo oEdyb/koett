@@ -2,6 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 import struct
+import os
+import subprocess
 import tempfile
 import tomllib
 import xml.etree.ElementTree as ET
@@ -31,10 +33,24 @@ class WindowsPayloadTests(unittest.TestCase):
 
     def test_native_manifest_version_matches_cargo(self):
         cross = Path(__file__).resolve().parents[1]
-        version = tomllib.loads((cross/'Cargo.toml').read_text())['package']['version'].split('-')[0]+'.0'
-        manifest = ET.parse(cross/'packaging/windows/Koett.manifest')
-        identity = manifest.getroot().find('{urn:schemas-microsoft-com:asm.v1}assemblyIdentity')
-        self.assertEqual(identity.attrib['version'], version)
+        source_version = tomllib.loads((cross/'Cargo.toml').read_text())['package']['version']
+        target = cross/'target'
+        target.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=target) as temporary:
+            output = Path(temporary)
+            executable = output/('manifest-build.exe' if os.name == 'nt' else 'manifest-build')
+            subprocess.run(['rustc', str(cross/'build.rs'), '-o', str(executable)], check=True)
+            for version in [source_version, '9.8.7-preview.1']:
+                env = dict(os.environ, CARGO_CFG_TARGET_OS='windows',
+                           CARGO_MANIFEST_DIR=str(cross), CARGO_PKG_VERSION=version,
+                           OUT_DIR=str(output))
+                env.pop('CARGO_FEATURE_ASK', None)
+                result = subprocess.run([str(executable)], env=env, check=True,
+                                        capture_output=True, text=True)
+                manifest = ET.parse(output/'Koett.manifest')
+                identity = manifest.getroot().find('{urn:schemas-microsoft-com:asm.v1}assemblyIdentity')
+                self.assertEqual(identity.attrib['version'], version.split('-')[0]+'.0')
+                self.assertIn('/MANIFESTINPUT:'+str(output/'Koett.manifest'), result.stdout)
 
     def test_checksum_verified_payload_is_explicitly_unsigned(self):
         self.assertEqual(verify_payload(self.root)['signature'], 'unsigned-preview')
