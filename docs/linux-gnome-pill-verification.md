@@ -91,9 +91,12 @@ Stop only that named lab after collecting evidence.
 
 ## Screen lock
 
-Not run on a real lock. The extension's `metadata.json` sets no `session-modes`, and GNOME
-Shell disables such extensions while the screen is locked. Disabling the extension closes
-the pill, and the native run above confirmed Koett needs a restart to get it back. So a
-screen lock very likely loses the pill until Koett restarts, while recording itself
-continues. Checking this needs the private GNOME session rebuilt, because its start steps
-were not saved.
+Not run on a real lock, because the headless runtime has no lock screen. The extension's
+`metadata.json` sets no `session-modes`, and GNOME Shell disables such extensions while the
+screen is locked, which closes the pill. Koett now keeps the window, registers the pill again
+before showing it, and tries again every 2 s while the extension is off, so the pill returns
+without a restart. On 2026-11-06 `pill-return.py` passed on Shell 51.1 by turning the extension
+off and on: during a recording, while idle before the next recording, and with a recording
+started while it was off. Each time the pill returned as one above-all dock window in its usual
+place, focus stayed on the target, and no ordinary window appeared while the extension was off.
+Koett started while the extension is off still has no pill until a restart.
