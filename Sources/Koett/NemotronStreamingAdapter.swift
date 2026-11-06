@@ -99,14 +99,26 @@ final class LiveAudioStore: Sendable {
         let isFinished: Bool
     }
 
+    private final class Chunk: @unchecked Sendable {
+        let samples: UnsafeMutablePointer<Float>
+        init(frames: Int) {
+            samples = .allocate(capacity: frames)
+            samples.initialize(repeating: 0, count: frames)
+        }
+        deinit { samples.deallocate() }
+    }
+
     private struct State {
-        var samples: [Float]
+        var chunks: [Chunk]
         var frameCount = 0
         var isFinished = false
     }
 
     let sampleRate: Double
     private let state: Mutex<State>
+    private let maximumFrames: Int
+    private let chunkFrames: Int
+    private let capturedFrameCount = Atomic<Int>(0)
     private let droppedFrameCount = Atomic<Int>(0)
     private let paused = Atomic<Bool>(false)
     var isPaused: Bool {
@@ -116,18 +128,37 @@ final class LiveAudioStore: Sendable {
 
     init(sampleRate: Double, maximumDuration: TimeInterval) {
         self.sampleRate = sampleRate
-        state = Mutex(State(
-            samples: Array(repeating: 0, count: Int(ceil(sampleRate * maximumDuration)))
-        ))
+        maximumFrames = max(0, Int(ceil(sampleRate * maximumDuration)))
+        chunkFrames = max(1, min(maximumFrames, Int(ceil(sampleRate * 5))))
+        state = Mutex(State(chunks: maximumFrames > 0 ? [Chunk(frames: chunkFrames)] : []))
+    }
+
+    var allocatedFrameCapacity: Int { state.withLock { $0.chunks.count * chunkFrames } }
+
+    // Only the consumer allocates ahead; the audio callback never grows storage.
+    private func prepareCapacity() {
+        let needed = state.withLock { state -> Int in
+            guard !state.isFinished else { return 0 }
+            let frames = min(maximumFrames, state.frameCount + chunkFrames * 2)
+            return max(0, (frames + chunkFrames - 1) / chunkFrames - state.chunks.count)
+        }
+        guard needed > 0 else { return }
+        let chunks = (0..<needed).map { _ in Chunk(frames: chunkFrames) }
+        state.withLock { state in
+            guard !state.isFinished else { return }
+            state.chunks.append(contentsOf: chunks)
+        }
     }
 
     var duration: TimeInterval { state.withLock { Double($0.frameCount) / sampleRate } }
+    var capturedDuration: TimeInterval { Double(capturedFrameCount.load(ordering: .acquiring)) / sampleRate }
 
     func reset() {
         state.withLock { state in
             state.frameCount = 0
             state.isFinished = false
         }
+        capturedFrameCount.store(0, ordering: .releasing)
         droppedFrameCount.store(0, ordering: .releasing)
         isPaused = false
     }
@@ -140,22 +171,26 @@ final class LiveAudioStore: Sendable {
             return
         }
 
+        _ = capturedFrameCount.wrappingAdd(requestedFrames, ordering: .releasing)
         let channelCount = Int(buffer.format.channelCount)
         let copiedFrames = state.withLockIfAvailable { state in
             guard !state.isFinished else { return 0 }
-            let availableFrames = state.samples.count - state.frameCount
+            let availableFrames = min(maximumFrames, state.chunks.count * chunkFrames) - state.frameCount
             let framesToCopy = min(requestedFrames, availableFrames)
             guard framesToCopy > 0 else { return 0 }
 
             if channelCount == 1 {
-                state.samples.withUnsafeMutableBufferPointer { destination in
-                    destination.baseAddress!
-                        .advanced(by: state.frameCount)
-                        .update(from: input[0], count: framesToCopy)
+                var offset = 0
+                while offset < framesToCopy {
+                    let frame = state.frameCount + offset
+                    let count = min(framesToCopy - offset, chunkFrames - frame % chunkFrames)
+                    state.chunks[frame / chunkFrames].samples.advanced(by: frame % chunkFrames)
+                        .update(from: input[0].advanced(by: offset), count: count)
+                    offset += count
                 }
             } else {
                 for frame in 0..<framesToCopy {
-                    state.samples[state.frameCount + frame] = 0
+                    state.chunks[(state.frameCount + frame) / chunkFrames].samples[(state.frameCount + frame) % chunkFrames] = 0
                 }
                 var liveChannels: Float = 0
                 for channel in 0..<channelCount {
@@ -164,12 +199,12 @@ final class LiveAudioStore: Sendable {
                     guard power / Float(framesToCopy) > 1e-8 else { continue }
                     liveChannels += 1
                     for frame in 0..<framesToCopy {
-                        state.samples[state.frameCount + frame] += input[channel][frame]
+                        state.chunks[(state.frameCount + frame) / chunkFrames].samples[(state.frameCount + frame) % chunkFrames] += input[channel][frame]
                     }
                 }
                 if liveChannels > 1 {
                     for frame in 0..<framesToCopy {
-                        state.samples[state.frameCount + frame] /= liveChannels
+                        state.chunks[(state.frameCount + frame) / chunkFrames].samples[(state.frameCount + frame) % chunkFrames] /= liveChannels
                     }
                 }
             }
@@ -191,14 +226,22 @@ final class LiveAudioStore: Sendable {
     }
 
     func read(from startFrame: Int, maximumFrames: Int) -> Read {
-        state.withLock { state in
+        prepareCapacity()
+        return state.withLock { state in
             let endFrame = min(state.frameCount, startFrame + maximumFrames)
             let chunk: StreamingAudioChunk?
             if endFrame > startFrame {
-                chunk = StreamingAudioChunk(
-                    samples: Array(state.samples[startFrame..<endFrame]),
-                    sampleRate: sampleRate
-                )
+                var samples = [Float](repeating: 0, count: endFrame - startFrame)
+                samples.withUnsafeMutableBufferPointer { destination in
+                    var frame = startFrame
+                    while frame < endFrame {
+                        let count = min(endFrame - frame, chunkFrames - frame % chunkFrames)
+                        destination.baseAddress!.advanced(by: frame - startFrame).update(
+                            from: state.chunks[frame / chunkFrames].samples.advanced(by: frame % chunkFrames), count: count)
+                        frame += count
+                    }
+                }
+                chunk = StreamingAudioChunk(samples: samples, sampleRate: sampleRate)
             } else {
                 chunk = nil
             }
@@ -224,6 +267,8 @@ final class NemotronLiveRecorder {
         let error: Error?
     }
 
+    var currentTime: TimeInterval { store.capturedDuration }
+
     private let adapter: any StreamingTranscriptionAdapter
     private let input: any MicrophoneCapturing
     private let inputFormat: AVAudioFormat
@@ -239,7 +284,7 @@ final class NemotronLiveRecorder {
     convenience init(
         adapter: any StreamingTranscriptionAdapter,
         device: MicrophoneDevice,
-        maximumDuration: TimeInterval = 600
+        maximumDuration: TimeInterval = RecordingLimit.defaultLimit.seconds
     ) throws {
         try self.init(adapter: adapter, input: MicrophoneInput(device: device), maximumDuration: maximumDuration)
     }
@@ -247,7 +292,7 @@ final class NemotronLiveRecorder {
     init(
         adapter: any StreamingTranscriptionAdapter,
         input: any MicrophoneCapturing,
-        maximumDuration: TimeInterval = 600
+        maximumDuration: TimeInterval = RecordingLimit.defaultLimit.seconds
     ) throws {
         self.adapter = adapter
         self.input = input

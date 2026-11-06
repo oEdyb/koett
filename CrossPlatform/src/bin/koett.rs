@@ -2,6 +2,19 @@
 
 #[cfg(target_os = "windows")]
 fn main() {
+    if koett_engine::audio::windows_capture::helper_requested() {
+        std::process::exit(match koett_engine::audio::windows_capture::helper() {
+            Ok(()) => 0,
+            Err(_) => 1,
+        });
+    }
+    if std::env::args()
+        .nth(1)
+        .is_some_and(|s| s == "ask" || s.starts_with("ask-"))
+    {
+        eprintln!("Ask is not available in this build");
+        std::process::exit(1);
+    }
     if let Err(error) = koett_engine::windows::run() {
         koett_engine::windows::show_fatal_error(&error);
     }
@@ -25,6 +38,9 @@ fn main() {
                         | "failed-transcripts"
                         | "failed-recordings"
                         | "quit"
+                        | "media"
+                        | "transcribe-url"
+                        | "transcribe-file"
                 )
         }) {
             println!(

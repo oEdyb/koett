@@ -1,0 +1,19 @@
+{
+  "model_before": "nemotron",
+  "model": "parakeet_v2",
+  "passed": true,
+  "guest_free_kib_after": 4921428,
+  "model_after": "parakeet_v2",
+  "guest_free_kib_before": 4262300,
+  "load_ms": 2427.1582000000003,
+  "stop_to_text_ms": 430.26160000000004,
+  "fixture": "official Compact test_wavs/0.wav, same prerecorded input for each model",
+  "phase": "Koett Done. Well, I don't wish to see it any more, observed Phebe, turning away her eyes. It",
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3-fd\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 6208,
+    "sha256": "86D83E56FEA70F800B1A9B314C61319B59C8700A91B05D6F712733B3ECA70FD0"
+  },
+  "text": "Well, I don't wish to see it any more, observed Phebe, turning away her eyes. It is certainly very like the old portrait.",
+  "choice": "Parakeet v2 600M \u00b7 English"
+}

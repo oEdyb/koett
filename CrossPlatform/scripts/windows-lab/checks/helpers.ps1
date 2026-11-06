@@ -58,13 +58,17 @@ public class LabActivation{
 function Activate-LabEditor([IntPtr]$window){
  [LabNative]::ShowWindow($window,9)|Out-Null
  [LabActivation]::SetWindowPos($window,[IntPtr](-1),0,0,0,0,0x13)|Out-Null
- $r=[LabDriver]::RectOf($window);[LabDriver]::SetCursorPos(($r[0]+60),($r[1]+85))|Out-Null
+ $r=[LabDriver]::RectOf($window);[LabDriver]::SetCursorPos(($r[0]+[Math]::Min(200,($r[2]-$r[0])/2)),($r[1]+20))|Out-Null
  [LabActivation]::Click();Start-Sleep -Milliseconds 120
  [LabActivation]::SetWindowPos($window,[IntPtr](-2),0,0,0,0,0x13)|Out-Null
  $f=Get-LabFocus;if($f.hwnd-ne$window.ToInt64()){throw "Editor activation failed: $($f.hwnd) != $window"}
 }
 
 function Get-LabArtifact {
- $app=Get-Process Koett -ErrorAction Stop|Select-Object -First 1
+ $owner=[LabDriver]::ByClass('KoettOwnerWindow')
+ if($owner-eq[IntPtr]::Zero){throw 'Koett owner window missing'}
+ $processId=[uint32]0
+ [LabNative]::GetWindowThreadProcessId($owner,[ref]$processId)|Out-Null
+ $app=Get-Process -Id $processId -ErrorAction Stop
  @{pid=$app.Id;path=$app.Path;sha256=(Get-FileHash $app.Path).Hash}
 }

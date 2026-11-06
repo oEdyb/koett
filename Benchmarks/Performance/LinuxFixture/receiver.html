@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>Koett performance receiver</title>
+<style>body{font:20px sans-serif;background:#fafafa;color:#222;padding:50px}#target{min-height:600px;border:1px solid #777;padding:24px;outline:none}img{max-width:400px}</style>
+<div id="target" contenteditable="true" aria-label="Paste target"></div>
+<script>
+const fs=require('fs'),crypto=require('crypto');const out=process.env.KOETT_PERF_RECEIPTS;
+const target=document.querySelector('#target');let events=[];
+function record(kind,extra){events.push({kind,time_ns:process.hrtime.bigint().toString(),...extra});fs.writeFileSync(out,JSON.stringify(events));}
+target.onpaste=async e=>{e.preventDefault();const text=e.clipboardData.getData('text/plain');for(const item of e.clipboardData.items){if(item.type.startsWith('image/')){const f=item.getAsFile();const img=new Image();img.src=URL.createObjectURL(f);await img.decode();target.append(img);record('image',{bytes:f.size,width:img.width,height:img.height});}}
+if(text){target.append(document.createTextNode(text));record('text',{nonce:(text.match(/AUDIT[0-9]+/)||[])[0]||null,bytes:Buffer.byteLength(text),sha256:crypto.createHash('sha256').update(text).digest('hex')});}};
+setInterval(()=>{const cmd=process.env.KOETT_PERF_RESET;if(fs.existsSync(cmd)){fs.unlinkSync(cmd);target.replaceChildren();events=[];target.focus();record('reset',{});}},25);
+target.focus();record('ready',{});
+</script>

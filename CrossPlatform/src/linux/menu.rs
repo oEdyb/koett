@@ -42,6 +42,7 @@ pub(super) fn is_control_message(message: &str) -> bool {
 pub(super) fn button() -> gtk::MenuButton {
     let model = gtk::gio::Menu::new();
     for (title, items) in [
+        #[cfg(feature = "ask")]
         (
             "Ask",
             &[("Ask", "app.ask"), ("Cancel Ask", "app.cancel-ask")][..],
@@ -72,6 +73,7 @@ pub(super) fn button() -> gtk::MenuButton {
         for (label, action) in items {
             submenu.append(Some(label), Some(action));
         }
+        #[cfg(feature = "ask")]
         if title == "Ask" {
             let submenu = submenu.clone();
             let mut previous = "Ask";

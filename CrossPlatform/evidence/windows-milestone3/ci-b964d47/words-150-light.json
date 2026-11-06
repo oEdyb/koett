@@ -1,0 +1,14 @@
+{
+  "step": "words-150-light",
+  "rect": [
+    800,
+    436,
+    2240,
+    1456
+  ],
+  "focus": {
+    "hwnd": 66664,
+    "process": "Koett",
+    "pid": 5708
+  }
+}

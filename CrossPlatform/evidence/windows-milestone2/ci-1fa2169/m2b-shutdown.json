@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "result": {
+    "focus": {
+      "hwnd": 66512,
+      "process": "powershell",
+      "pid": 8892
+    },
+    "shutdown": "full Windows shutdown requested"
+  },
+  "id": "1793834286239568456"
+}

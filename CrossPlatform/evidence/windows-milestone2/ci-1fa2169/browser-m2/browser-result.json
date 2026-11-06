@@ -1,0 +1,17 @@
+{
+  "step": "browser-result",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 131720
+  },
+  "focus": {
+    "hwnd": 66360,
+    "process": "msedge",
+    "pid": 8816
+  },
+  "visible": true
+}

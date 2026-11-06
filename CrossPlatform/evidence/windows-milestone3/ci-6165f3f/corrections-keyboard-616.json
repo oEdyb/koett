@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "correction-save-does-not-change-history-or-dictionary",
+      "passed": true
+    },
+    {
+      "case": "everyday-warning-and-explicit-add-anyway",
+      "warning": "\u201call\u201d is an everyday word. Adding it changes every occurrence you dictate.",
+      "passed": true
+    },
+    {
+      "case": "dismiss-suggestion-does-not-write-dictionary",
+      "passed": true
+    },
+    {
+      "case": "correction-write-failure-preserves-all-stores",
+      "notice": "could not save corrections: Access is denied. (os error 5)",
+      "passed": true
+    }
+  ],
+  "settings_restored": true,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3Full\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 8820,
+    "sha256": "38D40B1E35C733D638C0EBF2D5347262B0D4BE2E87A8E624170648FDC2D14F1F"
+  },
+  "history_unchanged": true,
+  "selection_method": "keyboard fallback after UIA select; pure UIA failed and remains open until rebuilt retest"
+}

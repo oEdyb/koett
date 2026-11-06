@@ -237,6 +237,9 @@ def _manual_component(repo_root: Path, source: dict[str, Any]) -> tuple[dict[str
 
 def _input_records(repo_root: Path, policy_path: Path) -> list[dict[str, Any]]:
     paths = [
+        "CrossPlatform/scripts/build_asr_native.py",
+        "CrossPlatform/scripts/shared_context_patch.py",
+        "CrossPlatform/scripts/shared_context.patch",
         "CrossPlatform/Cargo.lock",
         "CrossPlatform/Cargo.toml",
         "CrossPlatform/vendor/sherpa-onnx/koett-provenance.json",

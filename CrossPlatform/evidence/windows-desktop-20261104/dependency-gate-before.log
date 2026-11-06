@@ -1,7 +1,7 @@
 Traceback (most recent call last):
-  File "/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/scripts/check_windows_dependencies.py", line 66, in <module>
+  File "<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/scripts/check_windows_dependencies.py", line 66, in <module>
     print(json.dumps(verify(parser.parse_args().executable), indent=2))
                      ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/olle/.t3/worktrees/koett/t3-0711006b/CrossPlatform/scripts/check_windows_dependencies.py", line 59, in verify
+  File "<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform/scripts/check_windows_dependencies.py", line 59, in verify
     raise ValueError('Windows executable requires non-system DLLs: '+', '.join(external))
 ValueError: Windows executable requires non-system DLLs: vcruntime140.dll, vcruntime140_1.dll

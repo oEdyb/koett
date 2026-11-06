@@ -92,6 +92,15 @@ fn run() -> Result<(), String> {
 }
 
 fn run_self_test() -> Result<(), String> {
+    if env::var_os("KOETT_REQUIRE_SHARED_CONTEXT").is_some()
+        && !sherpa_onnx::SHARED_CONTEXT_AVAILABLE
+    {
+        return Err("release self-test requires verified shared-context native libraries".into());
+    }
+    eprintln!(
+        "shared_context_sha256={:?}",
+        sherpa_onnx::SHARED_CONTEXT_SHA256
+    );
     let (_, sample, mut transcriber) = load_self_test()?;
     eprintln!("self_test_stage=decode");
     let result = transcriber.transcribe(&sample)?;
@@ -241,8 +250,8 @@ fn parse_arguments() -> Result<Arguments, String> {
         let seconds = values[2]
             .parse::<f64>()
             .map_err(|_| "microphone duration must be a positive number".to_string())?;
-        if !seconds.is_finite() || seconds <= 0.0 || seconds > 600.0 {
-            return Err("microphone duration must be between 0 and 600 seconds".to_string());
+        if !seconds.is_finite() || seconds <= 0.0 || seconds > 7200.0 {
+            return Err("microphone duration must be between 0 and 7200 seconds".to_string());
         }
         Input::Microphone(Duration::from_secs_f64(seconds))
     } else {

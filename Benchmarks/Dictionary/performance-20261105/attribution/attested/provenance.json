@@ -1,0 +1,2730 @@
+{
+  "bindings": {
+    "old": {
+      "collectorSHA256": "8d932f294567a4f5f54bc8cb3bf8d32351484f54f5eee189b48b33fcc4b5562a",
+      "resourceHelperSHA256": "59083a6ca4768d321cc88ee97b3ab4651b3e33c6c645b53926af0536fad96e2e",
+      "hostRuntimeSHA256": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+      "driverSourceSHA256": "e7f9b890e84bd12a4996e7c8aef2443d5d16d79cb16672030e9c7cf4a6112c08",
+      "driverBinarySHA256": "5cd009bad0fcb35b3fc0fff204a79d4f9e883f7eb419493da198060b1853c1c1",
+      "fixtureInputSourceSHA256": "4ae322d01ad7df52553c6602c5a30c7bc4d9b7cd01011de646776e35435ca16e",
+      "fixtureInputObjectSHA256": "53ed4ba7a3595c2b4f32c1ede5713becff95912dba944dce9566c7825b04d00b",
+      "appBinarySHA256": "bae2702282b2126ba28fe001b8373a74c7181a5863fd0427b458b6215a8103a5",
+      "sourceManifestSHA256": "a6acc1c5a8efe2df6b2f645e5e2bdebf91b2520ee1ca232bdb538890b917d82e",
+      "mode": "old",
+      "cacheFlag": false,
+      "sourceBase": "c72f83415b1d760c30316f07fc776f09b0ebdc0b"
+    },
+    "baseline": {
+      "collectorSHA256": "8d932f294567a4f5f54bc8cb3bf8d32351484f54f5eee189b48b33fcc4b5562a",
+      "resourceHelperSHA256": "59083a6ca4768d321cc88ee97b3ab4651b3e33c6c645b53926af0536fad96e2e",
+      "hostRuntimeSHA256": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+      "driverSourceSHA256": "e7f9b890e84bd12a4996e7c8aef2443d5d16d79cb16672030e9c7cf4a6112c08",
+      "driverBinarySHA256": "5cd009bad0fcb35b3fc0fff204a79d4f9e883f7eb419493da198060b1853c1c1",
+      "fixtureInputSourceSHA256": "4ae322d01ad7df52553c6602c5a30c7bc4d9b7cd01011de646776e35435ca16e",
+      "fixtureInputObjectSHA256": "53ed4ba7a3595c2b4f32c1ede5713becff95912dba944dce9566c7825b04d00b",
+      "appBinarySHA256": "6f0c80ae89647978de45b5abe7ae4d69fad3673bf1ff2dd80402d4e2e7e8af68",
+      "sourceManifestSHA256": "5a779d8da5c680c877aae30fc6e0a78d4bf0bfe680393e9651ceb5af328fd613",
+      "mode": "baseline",
+      "cacheFlag": false,
+      "sourceBase": "85dde5153e0fd4cf50ed3b91813ffc9166d779fc"
+    },
+    "cached": {
+      "collectorSHA256": "8d932f294567a4f5f54bc8cb3bf8d32351484f54f5eee189b48b33fcc4b5562a",
+      "resourceHelperSHA256": "59083a6ca4768d321cc88ee97b3ab4651b3e33c6c645b53926af0536fad96e2e",
+      "hostRuntimeSHA256": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+      "driverSourceSHA256": "e7f9b890e84bd12a4996e7c8aef2443d5d16d79cb16672030e9c7cf4a6112c08",
+      "driverBinarySHA256": "5cd009bad0fcb35b3fc0fff204a79d4f9e883f7eb419493da198060b1853c1c1",
+      "fixtureInputSourceSHA256": "4ae322d01ad7df52553c6602c5a30c7bc4d9b7cd01011de646776e35435ca16e",
+      "fixtureInputObjectSHA256": "53ed4ba7a3595c2b4f32c1ede5713becff95912dba944dce9566c7825b04d00b",
+      "appBinarySHA256": "6f0c80ae89647978de45b5abe7ae4d69fad3673bf1ff2dd80402d4e2e7e8af68",
+      "sourceManifestSHA256": "5a779d8da5c680c877aae30fc6e0a78d4bf0bfe680393e9651ceb5af328fd613",
+      "mode": "cached",
+      "cacheFlag": true,
+      "sourceBase": "85dde5153e0fd4cf50ed3b91813ffc9166d779fc"
+    },
+    "production": {
+      "collectorSHA256": "8d932f294567a4f5f54bc8cb3bf8d32351484f54f5eee189b48b33fcc4b5562a",
+      "resourceHelperSHA256": "59083a6ca4768d321cc88ee97b3ab4651b3e33c6c645b53926af0536fad96e2e",
+      "hostRuntimeSHA256": "cb3cd561be49a62057cca242cb74b5ccd142123509adf46847870dd2a89705c6",
+      "driverSourceSHA256": "e7f9b890e84bd12a4996e7c8aef2443d5d16d79cb16672030e9c7cf4a6112c08",
+      "driverBinarySHA256": "5cd009bad0fcb35b3fc0fff204a79d4f9e883f7eb419493da198060b1853c1c1",
+      "fixtureInputSourceSHA256": "4ae322d01ad7df52553c6602c5a30c7bc4d9b7cd01011de646776e35435ca16e",
+      "fixtureInputObjectSHA256": "53ed4ba7a3595c2b4f32c1ede5713becff95912dba944dce9566c7825b04d00b",
+      "appBinarySHA256": "2f6fb29c03e4b85b0c1d9122118ff756f0aa81b1a327a41be818201120fb9f60",
+      "sourceManifestSHA256": "efa7ead760a771c1ee0beecb4b51e0936e97236ff227ed7fefed5513a1b708cd",
+      "mode": "production",
+      "cacheFlag": false,
+      "sourceBase": "85dde5153e0fd4cf50ed3b91813ffc9166d779fc"
+    }
+  },
+  "sources": {
+    "old": {
+      "files": [
+        {
+          "path": "Package.resolved",
+          "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416",
+          "bytes": 397
+        },
+        {
+          "path": "Package.swift",
+          "sha256": "6185201d97c6f998b1d400bb8ab1d7a67068e0415d723bbb1a1a9c66ede35621",
+          "bytes": 1996
+        },
+        {
+          "path": "Packaging/Info.plist",
+          "sha256": "b439c12b3b307df61083d2661f1edeb30edaf2960ebf268b904aaf5706ed5944",
+          "bytes": 1143
+        },
+        {
+          "path": "Packaging/Koett.entitlements",
+          "sha256": "834cd1c4a1910472cf8e732bcb3c44b39b5fbbde7d3ef7f39a8b5ed6e13a4be0",
+          "bytes": 323
+        },
+        {
+          "path": "Sources/AppleSpeechBaseline/AppleSpeechBaseline.swift",
+          "sha256": "bbf55ca1f794a534da85a97aa150a0f3e1458432e84fd1ff7c8c28052e655a94",
+          "bytes": 3892
+        },
+        {
+          "path": "Sources/AudioMicroscope/AudioMicroscope.swift",
+          "sha256": "40d4e32ca61cd6c5c8b8a9a6b1dbffae3e9957ea88ef49e47f20c12098a49687",
+          "bytes": 10954
+        },
+        {
+          "path": "Sources/AudioMicroscope/Transcription.swift",
+          "sha256": "ef95d50942183b4469dea61c551278d368f843dedb765cf8e5edfdc09b73e26d",
+          "bytes": 1337
+        },
+        {
+          "path": "Sources/Koett/AssistantAPIKeyStore.swift",
+          "sha256": "226afc100dbb498de198de12d16bc703d46fec8176639fd861b52701605346f8",
+          "bytes": 2842
+        },
+        {
+          "path": "Sources/Koett/AssistantClient.swift",
+          "sha256": "1d72b8d1b2a729525fc2adc7a02e8b7fd7da51578a7a93e290c25b56fbb2f9f2",
+          "bytes": 5546
+        },
+        {
+          "path": "Sources/Koett/AssistantConfiguration.swift",
+          "sha256": "79e78d9eb935737a6a7bc7f254375aa3291eeb0250bbaba11a93fdaec6fc3ee7",
+          "bytes": 2582
+        },
+        {
+          "path": "Sources/Koett/AssistantMarkdown.swift",
+          "sha256": "3b9d704eae90435ae6145abefecd328b050bcd213b9068988bb9f10f2c2437b4",
+          "bytes": 5688
+        },
+        {
+          "path": "Sources/Koett/AssistantPanel.swift",
+          "sha256": "dee90ac6030372076b1825db478575475498ae45cbacb5975181ded627b32e93",
+          "bytes": 8392
+        },
+        {
+          "path": "Sources/Koett/AssistantSession.swift",
+          "sha256": "5e362eeacdaef4b3ce1c391a74c3d6e2d2b2ad55a0928c0f9c7697fda379b289",
+          "bytes": 11641
+        },
+        {
+          "path": "Sources/Koett/AuditFixture.swift",
+          "sha256": "4b7498cacff8521cd478e1cd12be44c1961010b893b37bc80aa5425cceae84a3",
+          "bytes": 3264
+        },
+        {
+          "path": "Sources/Koett/BrowserMedia.swift",
+          "sha256": "d8d2b3ed5eb903aac9f16e4efd63ab5fbd52d264da71f28f0d99b80e5240fb09",
+          "bytes": 14342
+        },
+        {
+          "path": "Sources/Koett/CartesiaSpeechOutput.swift",
+          "sha256": "083e49ea759bcb8c19937fc649bdcab442ad0034b7b47d4486451f207de07c1e",
+          "bytes": 12290
+        },
+        {
+          "path": "Sources/Koett/DictationFailurePresentation.swift",
+          "sha256": "7124e0586ea9c6135bede05bb957e1e1169a0b94212fbcf8185e4c68558edd39",
+          "bytes": 701
+        },
+        {
+          "path": "Sources/Koett/DictationSession.swift",
+          "sha256": "3190605a741d5c726d3bf2b6b9f041fc09960b6217b33b9de5f2e19d29c1f58b",
+          "bytes": 19976
+        },
+        {
+          "path": "Sources/Koett/FailedRecordingStore.swift",
+          "sha256": "29419394ccb4a2470de201a100ff06c6a626d461df6f6cb148c8db1190c3f1b8",
+          "bytes": 1381
+        },
+        {
+          "path": "Sources/Koett/FailedTranscriptStore.swift",
+          "sha256": "76f8993d4ac931258dc1d73f1411917318c86dccb52a03f13f1b4b0c21e39669",
+          "bytes": 1543
+        },
+        {
+          "path": "Sources/Koett/FormattingPopover.swift",
+          "sha256": "548ed8804408f805d52b1d80153473a37c03210c97a6e89db1bef1d8ae19471b",
+          "bytes": 5833
+        },
+        {
+          "path": "Sources/Koett/Koett.swift",
+          "sha256": "a9f463d07337e373c75e560992757c117459ec661731607d30a8a519737a2e97",
+          "bytes": 31580
+        },
+        {
+          "path": "Sources/Koett/KoettApp.swift",
+          "sha256": "5b4b691dec98337d61d8c1c5302d10ed759591950bdc7c757c2cf54096ee6c9e",
+          "bytes": 9504
+        },
+        {
+          "path": "Sources/Koett/KoettMenu.swift",
+          "sha256": "85e9040a1bc9c8c3e131d5a90c119d9c6edc4a27b5641c093040512cecd49bd6",
+          "bytes": 10385
+        },
+        {
+          "path": "Sources/Koett/MediaSession.swift",
+          "sha256": "24e75fe213ee66261b9c982b8560a0752a07f2c1f19685ba001fb8d29e48b4e3",
+          "bytes": 5545
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptStore.swift",
+          "sha256": "c8fdf9eb4687008b38913a9a6b17b7f5a82e2d4f2fe52cce1308407e7303574a",
+          "bytes": 2593
+        },
+        {
+          "path": "Sources/Koett/NemotronStreamingAdapter.swift",
+          "sha256": "35fa9eec9031c09fc77d28a308fa46cc8c4d5030889b5684d8fbf9bc504e7e8d",
+          "bytes": 10001
+        },
+        {
+          "path": "Sources/Koett/RecordingOverlay.swift",
+          "sha256": "0fc6ae5e64cb577199c9370a3c4cc1aa99349cbd2625f76e3dfed7d8f4c683c9",
+          "bytes": 18001
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md",
+          "sha256": "2eb0fa55711b775069784eee60e149fd5b4ad2a876f98778b85c84735f809b23",
+          "bytes": 458
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE-MPL.txt",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+          "bytes": 16725
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify.js",
+          "sha256": "c2f26ea4fc0d88141c9aa430eb515ac86fce59418ceebd85fa475b87a8d6c3e6",
+          "bytes": 29204
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_AMS-Regular.woff2",
+          "sha256": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",
+          "bytes": 28076
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Bold.woff2",
+          "sha256": "de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c",
+          "bytes": 6912
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Regular.woff2",
+          "sha256": "5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b",
+          "bytes": 6908
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Bold.woff2",
+          "sha256": "74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f",
+          "bytes": 11348
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Regular.woff2",
+          "sha256": "51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc",
+          "bytes": 11316
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Bold.woff2",
+          "sha256": "0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021",
+          "bytes": 25324
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-BoldItalic.woff2",
+          "sha256": "99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b",
+          "bytes": 16780
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Italic.woff2",
+          "sha256": "97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267",
+          "bytes": 16988
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Regular.woff2",
+          "sha256": "c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866",
+          "bytes": 26272
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-BoldItalic.woff2",
+          "sha256": "dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1",
+          "bytes": 16400
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-Italic.woff2",
+          "sha256": "7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264",
+          "bytes": 16440
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Bold.woff2",
+          "sha256": "e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62",
+          "bytes": 12216
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Italic.woff2",
+          "sha256": "00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a",
+          "bytes": 12028
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Regular.woff2",
+          "sha256": "68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342",
+          "bytes": 10344
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Script-Regular.woff2",
+          "sha256": "036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b",
+          "bytes": 9644
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size1-Regular.woff2",
+          "sha256": "6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe",
+          "bytes": 5468
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size2-Regular.woff2",
+          "sha256": "d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd",
+          "bytes": 5208
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size3-Regular.woff2",
+          "sha256": "73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995",
+          "bytes": 3624
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
+          "sha256": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
+          "bytes": 4928
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2",
+          "sha256": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+          "bytes": 13568
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt",
+          "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+          "bytes": 1514
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.css",
+          "sha256": "9f208d022102b1d0c7aebfecd8e42ca7997d5de636649d2b31ea63093d809019",
+          "bytes": 1315
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.js",
+          "sha256": "8ab71eb09c51f501e5e25157d9cff100e46cc29bcbfc744d0b746d451fca7f53",
+          "bytes": 129254
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/index.html",
+          "sha256": "d38358a6772e1458c0c2ae61d726d4c2f0ba1f8102d8b5f14101f4c01edeac22",
+          "bytes": 877
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt",
+          "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+          "bytes": 1107
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
+          "sha256": "e5372d199bcdae8b4de71d0f7ceba72a4ba12774a27c60a6f1f77d03b3228ee4",
+          "bytes": 3486
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.css",
+          "sha256": "180c2d77d434d7da51d6625c50a964d4fd6fdbdb9bc8796a0a016c30c49931fb",
+          "bytes": 24727
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.js",
+          "sha256": "2ec5916941ef4383e0314eaabcc712301b06001d9fb68e08d751d2bae5a27a1a",
+          "bytes": 272179
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt",
+          "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+          "bytes": 2942
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked.js",
+          "sha256": "eaccee2fb9fb3b2c09e873a5504da82507850d9e677bd720122ac49e2a03982a",
+          "bytes": 43897
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.css",
+          "sha256": "8bb4ea7c5801d7116c53beb69fee98abde3f5f645a94fef880da9f9a2e3f7128",
+          "bytes": 2499
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.js",
+          "sha256": "ac50615fb3681db58fb488d866286a99718b63febc5f554f11c247a3656988d6",
+          "bytes": 1418
+        },
+        {
+          "path": "Sources/Koett/S1MiniCleaner.swift",
+          "sha256": "9d148ff368a90e1b17932fe82ce8c67198750a0e06d9cb53fb91496b5ededb04",
+          "bytes": 16241
+        },
+        {
+          "path": "Sources/Koett/ScreenContextCapture.swift",
+          "sha256": "c4799a7a4c3038498346d3176a4c4895d0430cb681c9321da97e7ba2da98780b",
+          "bytes": 2270
+        },
+        {
+          "path": "Sources/Koett/SetupStatus.swift",
+          "sha256": "9727d090b54faa9176367dba8c2090bd5ce61fabe9c4baa823ef3317aa8e4c09",
+          "bytes": 2084
+        },
+        {
+          "path": "Sources/Koett/ShortcutBinding.swift",
+          "sha256": "62f594f849ea0bd6801053e0608477b9e5dda6092d00fa4b56f164d77bab1666",
+          "bytes": 13318
+        },
+        {
+          "path": "Sources/Koett/TranscriptStore.swift",
+          "sha256": "be9a401c6143116590d8ba4ca99044007ff30a4f44e144c7e8c286ec04d3f06f",
+          "bytes": 1698
+        },
+        {
+          "path": "Sources/NemotronStreamingBaseline/NemotronStreamingBaseline.swift",
+          "sha256": "e18d2616729963627e74d66ab850689088fa46ccdd3996a12f2b571a004305e4",
+          "bytes": 8816
+        },
+        {
+          "path": "Sources/NoiseMixer/NoiseMixer.swift",
+          "sha256": "12d6582ecf33dc93ba7e64d264ba8b897a0bee1d772fe22ec64c8c1ecb5eccb7",
+          "bytes": 7967
+        },
+        {
+          "path": "Sources/ParakeetBaseline/ParakeetBaseline.swift",
+          "sha256": "85ca173d43e9fa1c108c6427b46a200219ea3a1ae7b9dbc813c913bb38c51e44",
+          "bytes": 5521
+        },
+        {
+          "path": "Sources/SentenceRecorder/SentenceRecorder.swift",
+          "sha256": "14d597a45add936d407dec8b07ae3625188d0cad5ade601d0e0982843a7396c4",
+          "bytes": 5127
+        }
+      ],
+      "sha256": "a6acc1c5a8efe2df6b2f645e5e2bdebf91b2520ee1ca232bdb538890b917d82e"
+    },
+    "baseline": {
+      "files": [
+        {
+          "path": "Package.resolved",
+          "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416",
+          "bytes": 397
+        },
+        {
+          "path": "Package.swift",
+          "sha256": "d4f45e2fd00f69020eb206af4a88b9ff5a52d4c4cf89904ace4622a4760894de",
+          "bytes": 2339
+        },
+        {
+          "path": "Packaging/Info.plist",
+          "sha256": "b1af80a18b8d98b878fd7a9a8a78d57beb56015e2769df02bad0b16c50f5e312",
+          "bytes": 1151
+        },
+        {
+          "path": "Packaging/Koett.entitlements",
+          "sha256": "834cd1c4a1910472cf8e732bcb3c44b39b5fbbde7d3ef7f39a8b5ed6e13a4be0",
+          "bytes": 323
+        },
+        {
+          "path": "Sources/AppleSpeechBaseline/AppleSpeechBaseline.swift",
+          "sha256": "bbf55ca1f794a534da85a97aa150a0f3e1458432e84fd1ff7c8c28052e655a94",
+          "bytes": 3892
+        },
+        {
+          "path": "Sources/AudioMicroscope/AudioMicroscope.swift",
+          "sha256": "40d4e32ca61cd6c5c8b8a9a6b1dbffae3e9957ea88ef49e47f20c12098a49687",
+          "bytes": 10954
+        },
+        {
+          "path": "Sources/AudioMicroscope/Transcription.swift",
+          "sha256": "ef95d50942183b4469dea61c551278d368f843dedb765cf8e5edfdc09b73e26d",
+          "bytes": 1337
+        },
+        {
+          "path": "Sources/CSQLite/module.modulemap",
+          "sha256": "bbfe59a972a3e8e09e347c04bc22c0eacd2544881af8a4b6068bfc30b38466e8",
+          "bytes": 80
+        },
+        {
+          "path": "Sources/CSQLite/shim.h",
+          "sha256": "10f28d34b689904e44a735989e5a6820cdf1925b8fa54f65fb0fbf0f1e40e9fe",
+          "bytes": 378
+        },
+        {
+          "path": "Sources/Koett/AssistantAPIKeyStore.swift",
+          "sha256": "226afc100dbb498de198de12d16bc703d46fec8176639fd861b52701605346f8",
+          "bytes": 2842
+        },
+        {
+          "path": "Sources/Koett/AssistantClient.swift",
+          "sha256": "730ca9a804222cce039be898c703fcb4d95367c2a266a09372027a29aaf52e74",
+          "bytes": 8548
+        },
+        {
+          "path": "Sources/Koett/AssistantConfiguration.swift",
+          "sha256": "eb23e923fb569ee329082def6caaf5ce6a58fa9b2deb184119d19f872d720bb4",
+          "bytes": 2629
+        },
+        {
+          "path": "Sources/Koett/AssistantMarkdown.swift",
+          "sha256": "3b9d704eae90435ae6145abefecd328b050bcd213b9068988bb9f10f2c2437b4",
+          "bytes": 5688
+        },
+        {
+          "path": "Sources/Koett/AssistantPanel.swift",
+          "sha256": "2cf95a165344b6c6f1606b4a6cc84dd433e4a803e172032c623899b2b0f3f186",
+          "bytes": 9618
+        },
+        {
+          "path": "Sources/Koett/AssistantSession.swift",
+          "sha256": "f2e7b7bc4aa67bc5b4fade8b11335684029e29aa3f30940e1fcf0dad2e67a53c",
+          "bytes": 12794
+        },
+        {
+          "path": "Sources/Koett/AssistantSpeechConnection.swift",
+          "sha256": "0c275ea04d7c02ffa52287cfde0646f3d8512846d2abe9d60b77ccaa4233870e",
+          "bytes": 1577
+        },
+        {
+          "path": "Sources/Koett/AssistantWorkLifecycle.swift",
+          "sha256": "390e0727a3e78c47f2dd7ec63db78f2dd9602ced9be2fbed7303c221ef439463",
+          "bytes": 2074
+        },
+        {
+          "path": "Sources/Koett/AuditFixture.swift",
+          "sha256": "4b7498cacff8521cd478e1cd12be44c1961010b893b37bc80aa5425cceae84a3",
+          "bytes": 3264
+        },
+        {
+          "path": "Sources/Koett/BrowserMedia.swift",
+          "sha256": "ae5937ce4db7f2eae29dd917894a0c0d4a09dfceb69ffa81281d18387f0b63b5",
+          "bytes": 15869
+        },
+        {
+          "path": "Sources/Koett/CartesiaSpeechOutput.swift",
+          "sha256": "e35bbf2d205e731aac5885d160e347ca1ac139f07850399b6d8367f9651d8acc",
+          "bytes": 13520
+        },
+        {
+          "path": "Sources/Koett/ControlCommands.swift",
+          "sha256": "05f385089ac24dccb3259e92698fb2b07bf3390cd6bf2e05962d4b3a33271b51",
+          "bytes": 3827
+        },
+        {
+          "path": "Sources/Koett/DictationDelivery.swift",
+          "sha256": "4104763400e2abad0dea23789b4669a3737ea0887cb0d34a7f7b928baf92f05d",
+          "bytes": 1170
+        },
+        {
+          "path": "Sources/Koett/DictationFailurePresentation.swift",
+          "sha256": "d31f56580e838ed99d698c7d4ed121fdd3d3693b147a349b121528fe39a92b19",
+          "bytes": 865
+        },
+        {
+          "path": "Sources/Koett/DictationSession.swift",
+          "sha256": "1ad6a903266fd294b39f000c2b463316c35f48f8f990ec1e62d4c16c86f8cb34",
+          "bytes": 30630
+        },
+        {
+          "path": "Sources/Koett/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CommonWords.swift",
+          "sha256": "982a6524948e36a84f7755da702e58123f351df3ae27972ac28f011eeb8eac88",
+          "bytes": 1621
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CorrectionLearner.swift",
+          "sha256": "650e71bd07e8770cb016fe1c94e6c089970e2eeced382fd22c7f796efbe6aa23",
+          "bytes": 6445
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Corrections.swift",
+          "sha256": "1552952bc5a0521966c5d19233e8b99f5ca34c57c878abcaad88bebaa7a6fc06",
+          "bytes": 6322
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Dictionary.swift",
+          "sha256": "ecb6a3387556bfeca6f660d13180c9d738c9c2cf159421ebf690c83e6172a863",
+          "bytes": 6471
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryAdoption.swift",
+          "sha256": "30345a15f8e5840830ea12d3cf43812f06ec0589576a106e451acd5093abfca6",
+          "bytes": 6521
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionarySpelling.swift",
+          "sha256": "548468d8455002252ed91eca3abbda9a84be36b1fa7f472f14dfe15cbac950df",
+          "bytes": 8215
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryStore.swift",
+          "sha256": "68830f1c7c72bb0d0a855d9277be986e929d3eac1346f7e8fb51541c0bb725f3",
+          "bytes": 1425
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryWindow.swift",
+          "sha256": "7c1443b90479dd8ecfccdfcac4289fafbdced09a2c44b3f500e78d81c6ec07ea",
+          "bytes": 9015
+        },
+        {
+          "path": "Sources/Koett/Dictionary/FixWordView.swift",
+          "sha256": "4f87bf8fb5f9406c6e4eb31db4ac482648708e04f78df50aa1f6434eb2d0b5f8",
+          "bytes": 4656
+        },
+        {
+          "path": "Sources/Koett/Dictionary/VocabularyBooster.swift",
+          "sha256": "e60a444bfffe353ec90805ab4e126b9543f1a29293988d18cc2485af592057d3",
+          "bytes": 8263
+        },
+        {
+          "path": "Sources/Koett/DrawHoldGate.swift",
+          "sha256": "aa69942bec5546ff04fff27f25f34e17c22ea99e6d18aeca5e92c57462be080c",
+          "bytes": 711
+        },
+        {
+          "path": "Sources/Koett/DrawKey.swift",
+          "sha256": "fc27a2f27181e003f433412ba92b30847ceb725df673d0cbc70a1b9b85c5c3f7",
+          "bytes": 1455
+        },
+        {
+          "path": "Sources/Koett/EditMenu.swift",
+          "sha256": "30622db78a1ef0c5c5f516f9ba27b1fc553e41077148d0a907965046b2a2b74f",
+          "bytes": 1329
+        },
+        {
+          "path": "Sources/Koett/EscapeKeyMonitor.swift",
+          "sha256": "dc59824b5a2a56a481a9a53ba8463c7d13e7b892a8698cefb40ae90264a60843",
+          "bytes": 1317
+        },
+        {
+          "path": "Sources/Koett/FailedRecordingStore.swift",
+          "sha256": "29419394ccb4a2470de201a100ff06c6a626d461df6f6cb148c8db1190c3f1b8",
+          "bytes": 1381
+        },
+        {
+          "path": "Sources/Koett/FailedTranscriptStore.swift",
+          "sha256": "92e757a5b07b89e4250c0803a421c584a158da2c3b6d18cc680714b42c9086fc",
+          "bytes": 3592
+        },
+        {
+          "path": "Sources/Koett/FormattingPopover.swift",
+          "sha256": "548ed8804408f805d52b1d80153473a37c03210c97a6e89db1bef1d8ae19471b",
+          "bytes": 5833
+        },
+        {
+          "path": "Sources/Koett/HistoryDatabase.swift",
+          "sha256": "d642c53b3f67559e312ea6427108fad1383436e71724e759bce9761c75443f6c",
+          "bytes": 5845
+        },
+        {
+          "path": "Sources/Koett/HistoryImport.swift",
+          "sha256": "f2a5263f1fe400db03c14a16165bfb5f80b7b27d11ee85e6d899b6ecbbb9d67a",
+          "bytes": 13022
+        },
+        {
+          "path": "Sources/Koett/HistoryModel.swift",
+          "sha256": "13523eae84b5ad753eca3a6b80ba8e1273658600cce1bf0630919d891a1c5dc4",
+          "bytes": 3808
+        },
+        {
+          "path": "Sources/Koett/HistorySummary.swift",
+          "sha256": "951e98af0831538f75df5b66486b50e6b029e59f79a89270f4a467bfc5f7ebf0",
+          "bytes": 405
+        },
+        {
+          "path": "Sources/Koett/HistoryWindow.swift",
+          "sha256": "187cc34e089f6887a05420f033091bad592bb08bfd97f181755bb1c9d37b3b8f",
+          "bytes": 10540
+        },
+        {
+          "path": "Sources/Koett/InputLevelPreview.swift",
+          "sha256": "30697ad678e4349a8e433887912ace0ca68f27ad4e9542bb5a37aadc6d29d104",
+          "bytes": 1694
+        },
+        {
+          "path": "Sources/Koett/Koett.swift",
+          "sha256": "c012a2b72dc528a669b039efad2445028a2499b7688e6490ea73acfce67237d2",
+          "bytes": 39518
+        },
+        {
+          "path": "Sources/Koett/KoettApp.swift",
+          "sha256": "43c3eb0c67e408e0b23fe4f23c2b2f361f4bdb2fd3f5bdb3a52c88cbe23f14b0",
+          "bytes": 12024
+        },
+        {
+          "path": "Sources/Koett/KoettMenu.swift",
+          "sha256": "88e9dd63f4c3e14f48c2bd30701c90fbb7d99c12cf02448e256e022a3d710043",
+          "bytes": 14274
+        },
+        {
+          "path": "Sources/Koett/LastTranscriptDelivery.swift",
+          "sha256": "39931ebe6fcb942b58e9313bc6c1ebe578ac9bd9657e9a6121211c37305c093f",
+          "bytes": 4363
+        },
+        {
+          "path": "Sources/Koett/LocalControlSocket.swift",
+          "sha256": "2a098c0a9da55c3debb4c0d829e2eb7ab2b22bdff034fb0bfe1e48d4d95452cd",
+          "bytes": 8251
+        },
+        {
+          "path": "Sources/Koett/LoginPreference.swift",
+          "sha256": "ce11eff6ec3e0569d47e2e80d082e03d2774676e23b3a3e62e53a06fd38ec275",
+          "bytes": 2034
+        },
+        {
+          "path": "Sources/Koett/MediaPause.swift",
+          "sha256": "728695eee69dd42b9e7102fb7f2fb63b1cc6edf76ebe5537c9477b3017454b8b",
+          "bytes": 3906
+        },
+        {
+          "path": "Sources/Koett/MediaSession.swift",
+          "sha256": "785ddccfb4cb7778740fe90bf0896b917d082d4087825f14f657bd2c43efc3a5",
+          "bytes": 7149
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptPersistence.swift",
+          "sha256": "c71651edabf9f9aeb0b4867588b3498d43ecd954f2c02cf95cec8314c615509f",
+          "bytes": 1494
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptStore.swift",
+          "sha256": "85d60c55267f0f45fde485c8fb24c670b63dd93d8d03303771d5caf14f72ac45",
+          "bytes": 1653
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailability.swift",
+          "sha256": "a1db02026bf63ae4fc7116f94e8c1053aaf4b0eaf53cd469a652050b4e62d2bd",
+          "bytes": 3667
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailabilityMonitor.swift",
+          "sha256": "cbcb228d6ed6362ca1bb2c4ec4db9e9a71e985a474156bd764c1ac5a97e3154a",
+          "bytes": 6567
+        },
+        {
+          "path": "Sources/Koett/MicrophoneInput.swift",
+          "sha256": "c8e3ab0d4cebbf77ed3d5c4afcb8f6977de6c73303566359eeb69223b3656056",
+          "bytes": 8820
+        },
+        {
+          "path": "Sources/Koett/MicrophoneMenu.swift",
+          "sha256": "f91f6d57f180c8d6de199bdd4c39f2f690f3053b871c6dad7a4291d0e8f35eb1",
+          "bytes": 2488
+        },
+        {
+          "path": "Sources/Koett/MicrophonePreviewWindow.swift",
+          "sha256": "c8fe9fe449f23614f61dcc371662260c285511296ef03c8b274cea8cb5d6b126",
+          "bytes": 4804
+        },
+        {
+          "path": "Sources/Koett/MicrophoneRecorder.swift",
+          "sha256": "69c209cabc3dbcc94da41b85bbefe22f5e1bf9b614da1e0165a61cf4b7a8c6bc",
+          "bytes": 12243
+        },
+        {
+          "path": "Sources/Koett/MicrophoneSelection.swift",
+          "sha256": "09c87b9df98f27abccb83b607a487f4a16d59b7cfd8d74e4b5e3517ad31b12a9",
+          "bytes": 5161
+        },
+        {
+          "path": "Sources/Koett/NemotronStreamingAdapter.swift",
+          "sha256": "b284042636567dd944241b3e0dbb4a7dc7b221ffcaed583d8ff74fa77268da0f",
+          "bytes": 11387
+        },
+        {
+          "path": "Sources/Koett/PasteDiagnostics.swift",
+          "sha256": "98b9c586d2a681394e2e956f18b7f3072c2dbc65626202cdd18fa505f5d0cd40",
+          "bytes": 2154
+        },
+        {
+          "path": "Sources/Koett/PasteEvents.swift",
+          "sha256": "0df13fb8609e41ada5451fefeef2e3a8cdd2ed0555c08168ec4308cbf7aa2883",
+          "bytes": 508
+        },
+        {
+          "path": "Sources/Koett/PasteReadiness.swift",
+          "sha256": "a64f3512584ae0e1941f1fa2a3e7dd2660ab185517c2e0098e00249215335c88",
+          "bytes": 5202
+        },
+        {
+          "path": "Sources/Koett/PasteTarget.swift",
+          "sha256": "3d6bb54adfe9f1e6e435dd32f8255b8b354ead6094712de7243ea8878a9b0650",
+          "bytes": 1715
+        },
+        {
+          "path": "Sources/Koett/PermissionOnboarding.swift",
+          "sha256": "4ecfad4fbf605dd1b7bcecb7721a7ea200e1843345e4cca915370eab2824c3d0",
+          "bytes": 1739
+        },
+        {
+          "path": "Sources/Koett/Permissions.swift",
+          "sha256": "2b8352550aaaefd82abb2e3e6dff2901d462213e7cf16888720b4d31078e04bd",
+          "bytes": 5799
+        },
+        {
+          "path": "Sources/Koett/PermissionsWindow.swift",
+          "sha256": "e65833deda5669ff6d3709c259294cefbc7ec8d495a3f92e1ae243be8888df2b",
+          "bytes": 4337
+        },
+        {
+          "path": "Sources/Koett/PillButton.swift",
+          "sha256": "2d907fb69b2330e59298ee85fd4ba642d4af20da02e962f028eedb1caebf4e09",
+          "bytes": 3045
+        },
+        {
+          "path": "Sources/Koett/PillPalette.swift",
+          "sha256": "fa51b1c533e73277782026538bbc3a7532a81685491b5c9243e34ba6e4e8e2ac",
+          "bytes": 1800
+        },
+        {
+          "path": "Sources/Koett/PillTimeline.swift",
+          "sha256": "38c58c143095f2853a7376b32bbdb8ec57b600fe03acc7c71e7bb3103befbc70",
+          "bytes": 4894
+        },
+        {
+          "path": "Sources/Koett/PillView.swift",
+          "sha256": "ad38a5fc4d8d8824864c3bdeeb4c65619cdf33b740ab2db28bf98824387979d8",
+          "bytes": 17805
+        },
+        {
+          "path": "Sources/Koett/PinContext.swift",
+          "sha256": "7cb750a129aa145ca41cb266cb5f6e6ed983b012858ddfc150956f047c4de161",
+          "bytes": 4028
+        },
+        {
+          "path": "Sources/Koett/PinContextReader.swift",
+          "sha256": "409c5fc6c2564d4268ded712d09a90ac082883a22f8729f3f83c6ae3fdc8a8f2",
+          "bytes": 9366
+        },
+        {
+          "path": "Sources/Koett/RecordingOverlay.swift",
+          "sha256": "d6cc54336272f8b9f2db08bb49415e169aa21b0dff8b1fad0d3d7d5312d02c61",
+          "bytes": 18707
+        },
+        {
+          "path": "Sources/Koett/Replacements.swift",
+          "sha256": "2a3797ed436cb30b53f9dd618a2c56a246db54f5d39fafecb4ef157f5fc93c39",
+          "bytes": 5949
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md",
+          "sha256": "2eb0fa55711b775069784eee60e149fd5b4ad2a876f98778b85c84735f809b23",
+          "bytes": 458
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE-MPL.txt",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+          "bytes": 16725
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify.js",
+          "sha256": "c2f26ea4fc0d88141c9aa430eb515ac86fce59418ceebd85fa475b87a8d6c3e6",
+          "bytes": 29204
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_AMS-Regular.woff2",
+          "sha256": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",
+          "bytes": 28076
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Bold.woff2",
+          "sha256": "de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c",
+          "bytes": 6912
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Regular.woff2",
+          "sha256": "5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b",
+          "bytes": 6908
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Bold.woff2",
+          "sha256": "74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f",
+          "bytes": 11348
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Regular.woff2",
+          "sha256": "51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc",
+          "bytes": 11316
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Bold.woff2",
+          "sha256": "0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021",
+          "bytes": 25324
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-BoldItalic.woff2",
+          "sha256": "99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b",
+          "bytes": 16780
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Italic.woff2",
+          "sha256": "97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267",
+          "bytes": 16988
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Regular.woff2",
+          "sha256": "c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866",
+          "bytes": 26272
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-BoldItalic.woff2",
+          "sha256": "dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1",
+          "bytes": 16400
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-Italic.woff2",
+          "sha256": "7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264",
+          "bytes": 16440
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Bold.woff2",
+          "sha256": "e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62",
+          "bytes": 12216
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Italic.woff2",
+          "sha256": "00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a",
+          "bytes": 12028
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Regular.woff2",
+          "sha256": "68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342",
+          "bytes": 10344
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Script-Regular.woff2",
+          "sha256": "036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b",
+          "bytes": 9644
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size1-Regular.woff2",
+          "sha256": "6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe",
+          "bytes": 5468
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size2-Regular.woff2",
+          "sha256": "d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd",
+          "bytes": 5208
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size3-Regular.woff2",
+          "sha256": "73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995",
+          "bytes": 3624
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
+          "sha256": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
+          "bytes": 4928
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2",
+          "sha256": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+          "bytes": 13568
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt",
+          "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+          "bytes": 1514
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.css",
+          "sha256": "9f208d022102b1d0c7aebfecd8e42ca7997d5de636649d2b31ea63093d809019",
+          "bytes": 1315
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.js",
+          "sha256": "8ab71eb09c51f501e5e25157d9cff100e46cc29bcbfc744d0b746d451fca7f53",
+          "bytes": 129254
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/index.html",
+          "sha256": "d38358a6772e1458c0c2ae61d726d4c2f0ba1f8102d8b5f14101f4c01edeac22",
+          "bytes": 877
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt",
+          "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+          "bytes": 1107
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
+          "sha256": "e5372d199bcdae8b4de71d0f7ceba72a4ba12774a27c60a6f1f77d03b3228ee4",
+          "bytes": 3486
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.css",
+          "sha256": "180c2d77d434d7da51d6625c50a964d4fd6fdbdb9bc8796a0a016c30c49931fb",
+          "bytes": 24727
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.js",
+          "sha256": "2ec5916941ef4383e0314eaabcc712301b06001d9fb68e08d751d2bae5a27a1a",
+          "bytes": 272179
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt",
+          "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+          "bytes": 2942
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked.js",
+          "sha256": "eaccee2fb9fb3b2c09e873a5504da82507850d9e677bd720122ac49e2a03982a",
+          "bytes": 43897
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.css",
+          "sha256": "8bb4ea7c5801d7116c53beb69fee98abde3f5f645a94fef880da9f9a2e3f7128",
+          "bytes": 2499
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.js",
+          "sha256": "ac50615fb3681db58fb488d866286a99718b63febc5f554f11c247a3656988d6",
+          "bytes": 1418
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/NOTICE.md",
+          "sha256": "2c3143721bf936403db07a254a43dab6c4f92e224190800187573f09cc719820",
+          "bytes": 964
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/SCOWL-Copyright.txt",
+          "sha256": "283326a422e29c510e2ba6805518c418ce3c35ed1fadc3eec83d2da4f6c5a055",
+          "bytes": 11758
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words-sv.txt",
+          "sha256": "d32e5b4a5caf716b1a26785ef9782e03e38016f7eb625c54b472449b2671954e",
+          "bytes": 217551
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words.txt",
+          "sha256": "f68ffc0c6cff2a6bc0695ce9d33d6afb227e582fac977d7ac2a1a596d359247e",
+          "bytes": 91187
+        },
+        {
+          "path": "Sources/Koett/Resources/History/schema.sql",
+          "sha256": "ab96820dfd95fb4c39f108517d727f3038b5172e7958381af2dc95bb52733dea",
+          "bytes": 2064
+        },
+        {
+          "path": "Sources/Koett/S1MiniCleaner.swift",
+          "sha256": "1ddc8ccf3c774f2c252c61637edf887182b20b8670f9ab90adbe5854dcdfd966",
+          "bytes": 18819
+        },
+        {
+          "path": "Sources/Koett/ScreenContextCapture.swift",
+          "sha256": "d69d843554ce67bdb6caed82e8af8eece4364d9b7dd82cd4aec95d8eca1d4be0",
+          "bytes": 2381
+        },
+        {
+          "path": "Sources/Koett/SetupStatus.swift",
+          "sha256": "7651968a01fc49355dca52785ca5ec144abf6171cbdf97af0e2a270504388f43",
+          "bytes": 2380
+        },
+        {
+          "path": "Sources/Koett/ShortcutBinding.swift",
+          "sha256": "3cb69d504ede457c26f4dc75875bbdeed0273f2d13adc68a5680fb1dd4e9c7a0",
+          "bytes": 13492
+        },
+        {
+          "path": "Sources/Koett/SketchBoard.swift",
+          "sha256": "7290c716273cca214baf5a3c1826b59f6f9ffa42dc7124570b238d38a4302488",
+          "bytes": 12284
+        },
+        {
+          "path": "Sources/Koett/SketchCapture.swift",
+          "sha256": "5404ecd963293fbc3e875b113fb476d8ec62e2f9feb0513bd428c1f49883d25c",
+          "bytes": 1664
+        },
+        {
+          "path": "Sources/Koett/SketchClipboard.swift",
+          "sha256": "80e6e3ad14a35311db0b64baebafc95d029b0c2d467ad906f56811aa345f64e2",
+          "bytes": 1135
+        },
+        {
+          "path": "Sources/Koett/SketchDictation.swift",
+          "sha256": "507d1dc77a5931b3beebb112a2fe225ad7d751da03fcab2eb9a5d37b756b642c",
+          "bytes": 9412
+        },
+        {
+          "path": "Sources/Koett/SketchFrames.swift",
+          "sha256": "5e5b3d218247b1877b2d268a357d692ff5c95528b6cebbcbea985f680e3fddfc",
+          "bytes": 2778
+        },
+        {
+          "path": "Sources/Koett/SketchLinking.swift",
+          "sha256": "be0a7e9c6cab2e60a03c62669d2136ee2dde03289a0723811d7e8c9840b1fa4b",
+          "bytes": 9325
+        },
+        {
+          "path": "Sources/Koett/SketchOverlay.swift",
+          "sha256": "5b4cdb2e0117b09a0ade6035deb2c872ef15ac2b87c1dd1bfd56fa355d85b904",
+          "bytes": 13540
+        },
+        {
+          "path": "Sources/Koett/SketchPaste.swift",
+          "sha256": "4932b1f37825942a4c848c87f22a3da7b6909840fa79d0230f373edd6a1fe3bb",
+          "bytes": 5989
+        },
+        {
+          "path": "Sources/Koett/SketchPasteChord.swift",
+          "sha256": "8a72f759ba7f05f2ac36e963bfbe10d63c3b9d67d3ec5141d8d5a658183cabc7",
+          "bytes": 2225
+        },
+        {
+          "path": "Sources/Koett/SketchSheet.swift",
+          "sha256": "e6fb2dd005f788f03c6d49ce621f56762929d9b1c8f7d0bedb5c835d25f4c466",
+          "bytes": 9292
+        },
+        {
+          "path": "Sources/Koett/SpeechEngine.swift",
+          "sha256": "1bf2a27c1ed22815464264d8eefd0b38c1903b64568c10aedcead43ef8e58fb4",
+          "bytes": 1139
+        },
+        {
+          "path": "Sources/Koett/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/Koett/TerminationProtection.swift",
+          "sha256": "1a1b59fa9cfc28029dc0145354f7e0cc108eca0084999f02836773a0499e3ab3",
+          "bytes": 989
+        },
+        {
+          "path": "Sources/Koett/TranscriptFileLock.swift",
+          "sha256": "960f8b985ef4e95995ae5ad7f41813b797db6d40be05d0418eb662cebea774f6",
+          "bytes": 945
+        },
+        {
+          "path": "Sources/Koett/TranscriptPersistence.swift",
+          "sha256": "7318bf32a9317d8757661e2a53f7984bb965ca5f71f7768e4332291f6a28a809",
+          "bytes": 10169
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecord.swift",
+          "sha256": "e7fae3b2bccfe3d2809d291e1d954e16f6102775ccb9d5e851fcd52739547071",
+          "bytes": 1290
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecovery.swift",
+          "sha256": "7abeb38f7b34b94b2756c43ed91a0ec79f614c4ef6508828e1672e0d19bf2b37",
+          "bytes": 2588
+        },
+        {
+          "path": "Sources/Koett/TranscriptStore.swift",
+          "sha256": "5992133cc4a87cd6f2106e384eb70d5623a96e8f29fd185fd60df97cecad71ed",
+          "bytes": 7907
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/LongDictationBenchmark.swift",
+          "sha256": "699bff692a28d1d5fb20b436e23a20e635d3daf8775c6026bd64eb7a1520a131",
+          "bytes": 3522
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/PreparationBenchmark.swift",
+          "sha256": "2b7ee629e98ebae8ee725788b4376698fb216d65920ccbfc0bd648f9e4595130",
+          "bytes": 3879
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/NemotronStreamingBaseline/NemotronStreamingBaseline.swift",
+          "sha256": "e18d2616729963627e74d66ab850689088fa46ccdd3996a12f2b571a004305e4",
+          "bytes": 8816
+        },
+        {
+          "path": "Sources/NoiseMixer/NoiseMixer.swift",
+          "sha256": "12d6582ecf33dc93ba7e64d264ba8b897a0bee1d772fe22ec64c8c1ecb5eccb7",
+          "bytes": 7967
+        },
+        {
+          "path": "Sources/ParakeetBaseline/ParakeetBaseline.swift",
+          "sha256": "b6f753cb01e1cf47680c3d28dcf1271002643735842b5fed273b1956d53a58bd",
+          "bytes": 7829
+        },
+        {
+          "path": "Sources/SentenceRecorder/SentenceRecorder.swift",
+          "sha256": "14d597a45add936d407dec8b07ae3625188d0cad5ade601d0e0982843a7396c4",
+          "bytes": 5127
+        }
+      ],
+      "sha256": "5a779d8da5c680c877aae30fc6e0a78d4bf0bfe680393e9651ceb5af328fd613"
+    },
+    "cached": {
+      "files": [
+        {
+          "path": "Package.resolved",
+          "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416",
+          "bytes": 397
+        },
+        {
+          "path": "Package.swift",
+          "sha256": "d4f45e2fd00f69020eb206af4a88b9ff5a52d4c4cf89904ace4622a4760894de",
+          "bytes": 2339
+        },
+        {
+          "path": "Packaging/Info.plist",
+          "sha256": "b1af80a18b8d98b878fd7a9a8a78d57beb56015e2769df02bad0b16c50f5e312",
+          "bytes": 1151
+        },
+        {
+          "path": "Packaging/Koett.entitlements",
+          "sha256": "834cd1c4a1910472cf8e732bcb3c44b39b5fbbde7d3ef7f39a8b5ed6e13a4be0",
+          "bytes": 323
+        },
+        {
+          "path": "Sources/AppleSpeechBaseline/AppleSpeechBaseline.swift",
+          "sha256": "bbf55ca1f794a534da85a97aa150a0f3e1458432e84fd1ff7c8c28052e655a94",
+          "bytes": 3892
+        },
+        {
+          "path": "Sources/AudioMicroscope/AudioMicroscope.swift",
+          "sha256": "40d4e32ca61cd6c5c8b8a9a6b1dbffae3e9957ea88ef49e47f20c12098a49687",
+          "bytes": 10954
+        },
+        {
+          "path": "Sources/AudioMicroscope/Transcription.swift",
+          "sha256": "ef95d50942183b4469dea61c551278d368f843dedb765cf8e5edfdc09b73e26d",
+          "bytes": 1337
+        },
+        {
+          "path": "Sources/CSQLite/module.modulemap",
+          "sha256": "bbfe59a972a3e8e09e347c04bc22c0eacd2544881af8a4b6068bfc30b38466e8",
+          "bytes": 80
+        },
+        {
+          "path": "Sources/CSQLite/shim.h",
+          "sha256": "10f28d34b689904e44a735989e5a6820cdf1925b8fa54f65fb0fbf0f1e40e9fe",
+          "bytes": 378
+        },
+        {
+          "path": "Sources/Koett/AssistantAPIKeyStore.swift",
+          "sha256": "226afc100dbb498de198de12d16bc703d46fec8176639fd861b52701605346f8",
+          "bytes": 2842
+        },
+        {
+          "path": "Sources/Koett/AssistantClient.swift",
+          "sha256": "730ca9a804222cce039be898c703fcb4d95367c2a266a09372027a29aaf52e74",
+          "bytes": 8548
+        },
+        {
+          "path": "Sources/Koett/AssistantConfiguration.swift",
+          "sha256": "eb23e923fb569ee329082def6caaf5ce6a58fa9b2deb184119d19f872d720bb4",
+          "bytes": 2629
+        },
+        {
+          "path": "Sources/Koett/AssistantMarkdown.swift",
+          "sha256": "3b9d704eae90435ae6145abefecd328b050bcd213b9068988bb9f10f2c2437b4",
+          "bytes": 5688
+        },
+        {
+          "path": "Sources/Koett/AssistantPanel.swift",
+          "sha256": "2cf95a165344b6c6f1606b4a6cc84dd433e4a803e172032c623899b2b0f3f186",
+          "bytes": 9618
+        },
+        {
+          "path": "Sources/Koett/AssistantSession.swift",
+          "sha256": "f2e7b7bc4aa67bc5b4fade8b11335684029e29aa3f30940e1fcf0dad2e67a53c",
+          "bytes": 12794
+        },
+        {
+          "path": "Sources/Koett/AssistantSpeechConnection.swift",
+          "sha256": "0c275ea04d7c02ffa52287cfde0646f3d8512846d2abe9d60b77ccaa4233870e",
+          "bytes": 1577
+        },
+        {
+          "path": "Sources/Koett/AssistantWorkLifecycle.swift",
+          "sha256": "390e0727a3e78c47f2dd7ec63db78f2dd9602ced9be2fbed7303c221ef439463",
+          "bytes": 2074
+        },
+        {
+          "path": "Sources/Koett/AuditFixture.swift",
+          "sha256": "4b7498cacff8521cd478e1cd12be44c1961010b893b37bc80aa5425cceae84a3",
+          "bytes": 3264
+        },
+        {
+          "path": "Sources/Koett/BrowserMedia.swift",
+          "sha256": "ae5937ce4db7f2eae29dd917894a0c0d4a09dfceb69ffa81281d18387f0b63b5",
+          "bytes": 15869
+        },
+        {
+          "path": "Sources/Koett/CartesiaSpeechOutput.swift",
+          "sha256": "e35bbf2d205e731aac5885d160e347ca1ac139f07850399b6d8367f9651d8acc",
+          "bytes": 13520
+        },
+        {
+          "path": "Sources/Koett/ControlCommands.swift",
+          "sha256": "05f385089ac24dccb3259e92698fb2b07bf3390cd6bf2e05962d4b3a33271b51",
+          "bytes": 3827
+        },
+        {
+          "path": "Sources/Koett/DictationDelivery.swift",
+          "sha256": "4104763400e2abad0dea23789b4669a3737ea0887cb0d34a7f7b928baf92f05d",
+          "bytes": 1170
+        },
+        {
+          "path": "Sources/Koett/DictationFailurePresentation.swift",
+          "sha256": "d31f56580e838ed99d698c7d4ed121fdd3d3693b147a349b121528fe39a92b19",
+          "bytes": 865
+        },
+        {
+          "path": "Sources/Koett/DictationSession.swift",
+          "sha256": "1ad6a903266fd294b39f000c2b463316c35f48f8f990ec1e62d4c16c86f8cb34",
+          "bytes": 30630
+        },
+        {
+          "path": "Sources/Koett/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CommonWords.swift",
+          "sha256": "982a6524948e36a84f7755da702e58123f351df3ae27972ac28f011eeb8eac88",
+          "bytes": 1621
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CorrectionLearner.swift",
+          "sha256": "650e71bd07e8770cb016fe1c94e6c089970e2eeced382fd22c7f796efbe6aa23",
+          "bytes": 6445
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Corrections.swift",
+          "sha256": "1552952bc5a0521966c5d19233e8b99f5ca34c57c878abcaad88bebaa7a6fc06",
+          "bytes": 6322
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Dictionary.swift",
+          "sha256": "ecb6a3387556bfeca6f660d13180c9d738c9c2cf159421ebf690c83e6172a863",
+          "bytes": 6471
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryAdoption.swift",
+          "sha256": "30345a15f8e5840830ea12d3cf43812f06ec0589576a106e451acd5093abfca6",
+          "bytes": 6521
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionarySpelling.swift",
+          "sha256": "548468d8455002252ed91eca3abbda9a84be36b1fa7f472f14dfe15cbac950df",
+          "bytes": 8215
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryStore.swift",
+          "sha256": "68830f1c7c72bb0d0a855d9277be986e929d3eac1346f7e8fb51541c0bb725f3",
+          "bytes": 1425
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryWindow.swift",
+          "sha256": "7c1443b90479dd8ecfccdfcac4289fafbdced09a2c44b3f500e78d81c6ec07ea",
+          "bytes": 9015
+        },
+        {
+          "path": "Sources/Koett/Dictionary/FixWordView.swift",
+          "sha256": "4f87bf8fb5f9406c6e4eb31db4ac482648708e04f78df50aa1f6434eb2d0b5f8",
+          "bytes": 4656
+        },
+        {
+          "path": "Sources/Koett/Dictionary/VocabularyBooster.swift",
+          "sha256": "e60a444bfffe353ec90805ab4e126b9543f1a29293988d18cc2485af592057d3",
+          "bytes": 8263
+        },
+        {
+          "path": "Sources/Koett/DrawHoldGate.swift",
+          "sha256": "aa69942bec5546ff04fff27f25f34e17c22ea99e6d18aeca5e92c57462be080c",
+          "bytes": 711
+        },
+        {
+          "path": "Sources/Koett/DrawKey.swift",
+          "sha256": "fc27a2f27181e003f433412ba92b30847ceb725df673d0cbc70a1b9b85c5c3f7",
+          "bytes": 1455
+        },
+        {
+          "path": "Sources/Koett/EditMenu.swift",
+          "sha256": "30622db78a1ef0c5c5f516f9ba27b1fc553e41077148d0a907965046b2a2b74f",
+          "bytes": 1329
+        },
+        {
+          "path": "Sources/Koett/EscapeKeyMonitor.swift",
+          "sha256": "dc59824b5a2a56a481a9a53ba8463c7d13e7b892a8698cefb40ae90264a60843",
+          "bytes": 1317
+        },
+        {
+          "path": "Sources/Koett/FailedRecordingStore.swift",
+          "sha256": "29419394ccb4a2470de201a100ff06c6a626d461df6f6cb148c8db1190c3f1b8",
+          "bytes": 1381
+        },
+        {
+          "path": "Sources/Koett/FailedTranscriptStore.swift",
+          "sha256": "92e757a5b07b89e4250c0803a421c584a158da2c3b6d18cc680714b42c9086fc",
+          "bytes": 3592
+        },
+        {
+          "path": "Sources/Koett/FormattingPopover.swift",
+          "sha256": "548ed8804408f805d52b1d80153473a37c03210c97a6e89db1bef1d8ae19471b",
+          "bytes": 5833
+        },
+        {
+          "path": "Sources/Koett/HistoryDatabase.swift",
+          "sha256": "d642c53b3f67559e312ea6427108fad1383436e71724e759bce9761c75443f6c",
+          "bytes": 5845
+        },
+        {
+          "path": "Sources/Koett/HistoryImport.swift",
+          "sha256": "f2a5263f1fe400db03c14a16165bfb5f80b7b27d11ee85e6d899b6ecbbb9d67a",
+          "bytes": 13022
+        },
+        {
+          "path": "Sources/Koett/HistoryModel.swift",
+          "sha256": "13523eae84b5ad753eca3a6b80ba8e1273658600cce1bf0630919d891a1c5dc4",
+          "bytes": 3808
+        },
+        {
+          "path": "Sources/Koett/HistorySummary.swift",
+          "sha256": "951e98af0831538f75df5b66486b50e6b029e59f79a89270f4a467bfc5f7ebf0",
+          "bytes": 405
+        },
+        {
+          "path": "Sources/Koett/HistoryWindow.swift",
+          "sha256": "187cc34e089f6887a05420f033091bad592bb08bfd97f181755bb1c9d37b3b8f",
+          "bytes": 10540
+        },
+        {
+          "path": "Sources/Koett/InputLevelPreview.swift",
+          "sha256": "30697ad678e4349a8e433887912ace0ca68f27ad4e9542bb5a37aadc6d29d104",
+          "bytes": 1694
+        },
+        {
+          "path": "Sources/Koett/Koett.swift",
+          "sha256": "c012a2b72dc528a669b039efad2445028a2499b7688e6490ea73acfce67237d2",
+          "bytes": 39518
+        },
+        {
+          "path": "Sources/Koett/KoettApp.swift",
+          "sha256": "43c3eb0c67e408e0b23fe4f23c2b2f361f4bdb2fd3f5bdb3a52c88cbe23f14b0",
+          "bytes": 12024
+        },
+        {
+          "path": "Sources/Koett/KoettMenu.swift",
+          "sha256": "88e9dd63f4c3e14f48c2bd30701c90fbb7d99c12cf02448e256e022a3d710043",
+          "bytes": 14274
+        },
+        {
+          "path": "Sources/Koett/LastTranscriptDelivery.swift",
+          "sha256": "39931ebe6fcb942b58e9313bc6c1ebe578ac9bd9657e9a6121211c37305c093f",
+          "bytes": 4363
+        },
+        {
+          "path": "Sources/Koett/LocalControlSocket.swift",
+          "sha256": "2a098c0a9da55c3debb4c0d829e2eb7ab2b22bdff034fb0bfe1e48d4d95452cd",
+          "bytes": 8251
+        },
+        {
+          "path": "Sources/Koett/LoginPreference.swift",
+          "sha256": "ce11eff6ec3e0569d47e2e80d082e03d2774676e23b3a3e62e53a06fd38ec275",
+          "bytes": 2034
+        },
+        {
+          "path": "Sources/Koett/MediaPause.swift",
+          "sha256": "728695eee69dd42b9e7102fb7f2fb63b1cc6edf76ebe5537c9477b3017454b8b",
+          "bytes": 3906
+        },
+        {
+          "path": "Sources/Koett/MediaSession.swift",
+          "sha256": "785ddccfb4cb7778740fe90bf0896b917d082d4087825f14f657bd2c43efc3a5",
+          "bytes": 7149
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptPersistence.swift",
+          "sha256": "c71651edabf9f9aeb0b4867588b3498d43ecd954f2c02cf95cec8314c615509f",
+          "bytes": 1494
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptStore.swift",
+          "sha256": "85d60c55267f0f45fde485c8fb24c670b63dd93d8d03303771d5caf14f72ac45",
+          "bytes": 1653
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailability.swift",
+          "sha256": "a1db02026bf63ae4fc7116f94e8c1053aaf4b0eaf53cd469a652050b4e62d2bd",
+          "bytes": 3667
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailabilityMonitor.swift",
+          "sha256": "cbcb228d6ed6362ca1bb2c4ec4db9e9a71e985a474156bd764c1ac5a97e3154a",
+          "bytes": 6567
+        },
+        {
+          "path": "Sources/Koett/MicrophoneInput.swift",
+          "sha256": "c8e3ab0d4cebbf77ed3d5c4afcb8f6977de6c73303566359eeb69223b3656056",
+          "bytes": 8820
+        },
+        {
+          "path": "Sources/Koett/MicrophoneMenu.swift",
+          "sha256": "f91f6d57f180c8d6de199bdd4c39f2f690f3053b871c6dad7a4291d0e8f35eb1",
+          "bytes": 2488
+        },
+        {
+          "path": "Sources/Koett/MicrophonePreviewWindow.swift",
+          "sha256": "c8fe9fe449f23614f61dcc371662260c285511296ef03c8b274cea8cb5d6b126",
+          "bytes": 4804
+        },
+        {
+          "path": "Sources/Koett/MicrophoneRecorder.swift",
+          "sha256": "69c209cabc3dbcc94da41b85bbefe22f5e1bf9b614da1e0165a61cf4b7a8c6bc",
+          "bytes": 12243
+        },
+        {
+          "path": "Sources/Koett/MicrophoneSelection.swift",
+          "sha256": "09c87b9df98f27abccb83b607a487f4a16d59b7cfd8d74e4b5e3517ad31b12a9",
+          "bytes": 5161
+        },
+        {
+          "path": "Sources/Koett/NemotronStreamingAdapter.swift",
+          "sha256": "b284042636567dd944241b3e0dbb4a7dc7b221ffcaed583d8ff74fa77268da0f",
+          "bytes": 11387
+        },
+        {
+          "path": "Sources/Koett/PasteDiagnostics.swift",
+          "sha256": "98b9c586d2a681394e2e956f18b7f3072c2dbc65626202cdd18fa505f5d0cd40",
+          "bytes": 2154
+        },
+        {
+          "path": "Sources/Koett/PasteEvents.swift",
+          "sha256": "0df13fb8609e41ada5451fefeef2e3a8cdd2ed0555c08168ec4308cbf7aa2883",
+          "bytes": 508
+        },
+        {
+          "path": "Sources/Koett/PasteReadiness.swift",
+          "sha256": "a64f3512584ae0e1941f1fa2a3e7dd2660ab185517c2e0098e00249215335c88",
+          "bytes": 5202
+        },
+        {
+          "path": "Sources/Koett/PasteTarget.swift",
+          "sha256": "3d6bb54adfe9f1e6e435dd32f8255b8b354ead6094712de7243ea8878a9b0650",
+          "bytes": 1715
+        },
+        {
+          "path": "Sources/Koett/PermissionOnboarding.swift",
+          "sha256": "4ecfad4fbf605dd1b7bcecb7721a7ea200e1843345e4cca915370eab2824c3d0",
+          "bytes": 1739
+        },
+        {
+          "path": "Sources/Koett/Permissions.swift",
+          "sha256": "2b8352550aaaefd82abb2e3e6dff2901d462213e7cf16888720b4d31078e04bd",
+          "bytes": 5799
+        },
+        {
+          "path": "Sources/Koett/PermissionsWindow.swift",
+          "sha256": "e65833deda5669ff6d3709c259294cefbc7ec8d495a3f92e1ae243be8888df2b",
+          "bytes": 4337
+        },
+        {
+          "path": "Sources/Koett/PillButton.swift",
+          "sha256": "2d907fb69b2330e59298ee85fd4ba642d4af20da02e962f028eedb1caebf4e09",
+          "bytes": 3045
+        },
+        {
+          "path": "Sources/Koett/PillPalette.swift",
+          "sha256": "fa51b1c533e73277782026538bbc3a7532a81685491b5c9243e34ba6e4e8e2ac",
+          "bytes": 1800
+        },
+        {
+          "path": "Sources/Koett/PillTimeline.swift",
+          "sha256": "38c58c143095f2853a7376b32bbdb8ec57b600fe03acc7c71e7bb3103befbc70",
+          "bytes": 4894
+        },
+        {
+          "path": "Sources/Koett/PillView.swift",
+          "sha256": "ad38a5fc4d8d8824864c3bdeeb4c65619cdf33b740ab2db28bf98824387979d8",
+          "bytes": 17805
+        },
+        {
+          "path": "Sources/Koett/PinContext.swift",
+          "sha256": "7cb750a129aa145ca41cb266cb5f6e6ed983b012858ddfc150956f047c4de161",
+          "bytes": 4028
+        },
+        {
+          "path": "Sources/Koett/PinContextReader.swift",
+          "sha256": "409c5fc6c2564d4268ded712d09a90ac082883a22f8729f3f83c6ae3fdc8a8f2",
+          "bytes": 9366
+        },
+        {
+          "path": "Sources/Koett/RecordingOverlay.swift",
+          "sha256": "d6cc54336272f8b9f2db08bb49415e169aa21b0dff8b1fad0d3d7d5312d02c61",
+          "bytes": 18707
+        },
+        {
+          "path": "Sources/Koett/Replacements.swift",
+          "sha256": "2a3797ed436cb30b53f9dd618a2c56a246db54f5d39fafecb4ef157f5fc93c39",
+          "bytes": 5949
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md",
+          "sha256": "2eb0fa55711b775069784eee60e149fd5b4ad2a876f98778b85c84735f809b23",
+          "bytes": 458
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE-MPL.txt",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+          "bytes": 16725
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify.js",
+          "sha256": "c2f26ea4fc0d88141c9aa430eb515ac86fce59418ceebd85fa475b87a8d6c3e6",
+          "bytes": 29204
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_AMS-Regular.woff2",
+          "sha256": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",
+          "bytes": 28076
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Bold.woff2",
+          "sha256": "de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c",
+          "bytes": 6912
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Regular.woff2",
+          "sha256": "5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b",
+          "bytes": 6908
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Bold.woff2",
+          "sha256": "74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f",
+          "bytes": 11348
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Regular.woff2",
+          "sha256": "51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc",
+          "bytes": 11316
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Bold.woff2",
+          "sha256": "0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021",
+          "bytes": 25324
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-BoldItalic.woff2",
+          "sha256": "99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b",
+          "bytes": 16780
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Italic.woff2",
+          "sha256": "97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267",
+          "bytes": 16988
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Regular.woff2",
+          "sha256": "c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866",
+          "bytes": 26272
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-BoldItalic.woff2",
+          "sha256": "dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1",
+          "bytes": 16400
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-Italic.woff2",
+          "sha256": "7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264",
+          "bytes": 16440
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Bold.woff2",
+          "sha256": "e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62",
+          "bytes": 12216
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Italic.woff2",
+          "sha256": "00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a",
+          "bytes": 12028
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Regular.woff2",
+          "sha256": "68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342",
+          "bytes": 10344
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Script-Regular.woff2",
+          "sha256": "036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b",
+          "bytes": 9644
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size1-Regular.woff2",
+          "sha256": "6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe",
+          "bytes": 5468
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size2-Regular.woff2",
+          "sha256": "d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd",
+          "bytes": 5208
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size3-Regular.woff2",
+          "sha256": "73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995",
+          "bytes": 3624
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
+          "sha256": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
+          "bytes": 4928
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2",
+          "sha256": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+          "bytes": 13568
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt",
+          "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+          "bytes": 1514
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.css",
+          "sha256": "9f208d022102b1d0c7aebfecd8e42ca7997d5de636649d2b31ea63093d809019",
+          "bytes": 1315
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.js",
+          "sha256": "8ab71eb09c51f501e5e25157d9cff100e46cc29bcbfc744d0b746d451fca7f53",
+          "bytes": 129254
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/index.html",
+          "sha256": "d38358a6772e1458c0c2ae61d726d4c2f0ba1f8102d8b5f14101f4c01edeac22",
+          "bytes": 877
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt",
+          "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+          "bytes": 1107
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
+          "sha256": "e5372d199bcdae8b4de71d0f7ceba72a4ba12774a27c60a6f1f77d03b3228ee4",
+          "bytes": 3486
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.css",
+          "sha256": "180c2d77d434d7da51d6625c50a964d4fd6fdbdb9bc8796a0a016c30c49931fb",
+          "bytes": 24727
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.js",
+          "sha256": "2ec5916941ef4383e0314eaabcc712301b06001d9fb68e08d751d2bae5a27a1a",
+          "bytes": 272179
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt",
+          "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+          "bytes": 2942
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked.js",
+          "sha256": "eaccee2fb9fb3b2c09e873a5504da82507850d9e677bd720122ac49e2a03982a",
+          "bytes": 43897
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.css",
+          "sha256": "8bb4ea7c5801d7116c53beb69fee98abde3f5f645a94fef880da9f9a2e3f7128",
+          "bytes": 2499
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.js",
+          "sha256": "ac50615fb3681db58fb488d866286a99718b63febc5f554f11c247a3656988d6",
+          "bytes": 1418
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/NOTICE.md",
+          "sha256": "2c3143721bf936403db07a254a43dab6c4f92e224190800187573f09cc719820",
+          "bytes": 964
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/SCOWL-Copyright.txt",
+          "sha256": "283326a422e29c510e2ba6805518c418ce3c35ed1fadc3eec83d2da4f6c5a055",
+          "bytes": 11758
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words-sv.txt",
+          "sha256": "d32e5b4a5caf716b1a26785ef9782e03e38016f7eb625c54b472449b2671954e",
+          "bytes": 217551
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words.txt",
+          "sha256": "f68ffc0c6cff2a6bc0695ce9d33d6afb227e582fac977d7ac2a1a596d359247e",
+          "bytes": 91187
+        },
+        {
+          "path": "Sources/Koett/Resources/History/schema.sql",
+          "sha256": "ab96820dfd95fb4c39f108517d727f3038b5172e7958381af2dc95bb52733dea",
+          "bytes": 2064
+        },
+        {
+          "path": "Sources/Koett/S1MiniCleaner.swift",
+          "sha256": "1ddc8ccf3c774f2c252c61637edf887182b20b8670f9ab90adbe5854dcdfd966",
+          "bytes": 18819
+        },
+        {
+          "path": "Sources/Koett/ScreenContextCapture.swift",
+          "sha256": "d69d843554ce67bdb6caed82e8af8eece4364d9b7dd82cd4aec95d8eca1d4be0",
+          "bytes": 2381
+        },
+        {
+          "path": "Sources/Koett/SetupStatus.swift",
+          "sha256": "7651968a01fc49355dca52785ca5ec144abf6171cbdf97af0e2a270504388f43",
+          "bytes": 2380
+        },
+        {
+          "path": "Sources/Koett/ShortcutBinding.swift",
+          "sha256": "3cb69d504ede457c26f4dc75875bbdeed0273f2d13adc68a5680fb1dd4e9c7a0",
+          "bytes": 13492
+        },
+        {
+          "path": "Sources/Koett/SketchBoard.swift",
+          "sha256": "7290c716273cca214baf5a3c1826b59f6f9ffa42dc7124570b238d38a4302488",
+          "bytes": 12284
+        },
+        {
+          "path": "Sources/Koett/SketchCapture.swift",
+          "sha256": "5404ecd963293fbc3e875b113fb476d8ec62e2f9feb0513bd428c1f49883d25c",
+          "bytes": 1664
+        },
+        {
+          "path": "Sources/Koett/SketchClipboard.swift",
+          "sha256": "80e6e3ad14a35311db0b64baebafc95d029b0c2d467ad906f56811aa345f64e2",
+          "bytes": 1135
+        },
+        {
+          "path": "Sources/Koett/SketchDictation.swift",
+          "sha256": "507d1dc77a5931b3beebb112a2fe225ad7d751da03fcab2eb9a5d37b756b642c",
+          "bytes": 9412
+        },
+        {
+          "path": "Sources/Koett/SketchFrames.swift",
+          "sha256": "5e5b3d218247b1877b2d268a357d692ff5c95528b6cebbcbea985f680e3fddfc",
+          "bytes": 2778
+        },
+        {
+          "path": "Sources/Koett/SketchLinking.swift",
+          "sha256": "be0a7e9c6cab2e60a03c62669d2136ee2dde03289a0723811d7e8c9840b1fa4b",
+          "bytes": 9325
+        },
+        {
+          "path": "Sources/Koett/SketchOverlay.swift",
+          "sha256": "5b4cdb2e0117b09a0ade6035deb2c872ef15ac2b87c1dd1bfd56fa355d85b904",
+          "bytes": 13540
+        },
+        {
+          "path": "Sources/Koett/SketchPaste.swift",
+          "sha256": "4932b1f37825942a4c848c87f22a3da7b6909840fa79d0230f373edd6a1fe3bb",
+          "bytes": 5989
+        },
+        {
+          "path": "Sources/Koett/SketchPasteChord.swift",
+          "sha256": "8a72f759ba7f05f2ac36e963bfbe10d63c3b9d67d3ec5141d8d5a658183cabc7",
+          "bytes": 2225
+        },
+        {
+          "path": "Sources/Koett/SketchSheet.swift",
+          "sha256": "e6fb2dd005f788f03c6d49ce621f56762929d9b1c8f7d0bedb5c835d25f4c466",
+          "bytes": 9292
+        },
+        {
+          "path": "Sources/Koett/SpeechEngine.swift",
+          "sha256": "1bf2a27c1ed22815464264d8eefd0b38c1903b64568c10aedcead43ef8e58fb4",
+          "bytes": 1139
+        },
+        {
+          "path": "Sources/Koett/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/Koett/TerminationProtection.swift",
+          "sha256": "1a1b59fa9cfc28029dc0145354f7e0cc108eca0084999f02836773a0499e3ab3",
+          "bytes": 989
+        },
+        {
+          "path": "Sources/Koett/TranscriptFileLock.swift",
+          "sha256": "960f8b985ef4e95995ae5ad7f41813b797db6d40be05d0418eb662cebea774f6",
+          "bytes": 945
+        },
+        {
+          "path": "Sources/Koett/TranscriptPersistence.swift",
+          "sha256": "7318bf32a9317d8757661e2a53f7984bb965ca5f71f7768e4332291f6a28a809",
+          "bytes": 10169
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecord.swift",
+          "sha256": "e7fae3b2bccfe3d2809d291e1d954e16f6102775ccb9d5e851fcd52739547071",
+          "bytes": 1290
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecovery.swift",
+          "sha256": "7abeb38f7b34b94b2756c43ed91a0ec79f614c4ef6508828e1672e0d19bf2b37",
+          "bytes": 2588
+        },
+        {
+          "path": "Sources/Koett/TranscriptStore.swift",
+          "sha256": "5992133cc4a87cd6f2106e384eb70d5623a96e8f29fd185fd60df97cecad71ed",
+          "bytes": 7907
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/LongDictationBenchmark.swift",
+          "sha256": "699bff692a28d1d5fb20b436e23a20e635d3daf8775c6026bd64eb7a1520a131",
+          "bytes": 3522
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/PreparationBenchmark.swift",
+          "sha256": "2b7ee629e98ebae8ee725788b4376698fb216d65920ccbfc0bd648f9e4595130",
+          "bytes": 3879
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/NemotronStreamingBaseline/NemotronStreamingBaseline.swift",
+          "sha256": "e18d2616729963627e74d66ab850689088fa46ccdd3996a12f2b571a004305e4",
+          "bytes": 8816
+        },
+        {
+          "path": "Sources/NoiseMixer/NoiseMixer.swift",
+          "sha256": "12d6582ecf33dc93ba7e64d264ba8b897a0bee1d772fe22ec64c8c1ecb5eccb7",
+          "bytes": 7967
+        },
+        {
+          "path": "Sources/ParakeetBaseline/ParakeetBaseline.swift",
+          "sha256": "b6f753cb01e1cf47680c3d28dcf1271002643735842b5fed273b1956d53a58bd",
+          "bytes": 7829
+        },
+        {
+          "path": "Sources/SentenceRecorder/SentenceRecorder.swift",
+          "sha256": "14d597a45add936d407dec8b07ae3625188d0cad5ade601d0e0982843a7396c4",
+          "bytes": 5127
+        }
+      ],
+      "sha256": "5a779d8da5c680c877aae30fc6e0a78d4bf0bfe680393e9651ceb5af328fd613"
+    },
+    "production": {
+      "files": [
+        {
+          "path": "Package.resolved",
+          "sha256": "e6de5b1a78cdd92f36d46185ced8c5e627496ef10f2452abc6a8f00b0bd65416",
+          "bytes": 397
+        },
+        {
+          "path": "Package.swift",
+          "sha256": "d4f45e2fd00f69020eb206af4a88b9ff5a52d4c4cf89904ace4622a4760894de",
+          "bytes": 2339
+        },
+        {
+          "path": "Packaging/Info.plist",
+          "sha256": "b1af80a18b8d98b878fd7a9a8a78d57beb56015e2769df02bad0b16c50f5e312",
+          "bytes": 1151
+        },
+        {
+          "path": "Packaging/Koett.entitlements",
+          "sha256": "834cd1c4a1910472cf8e732bcb3c44b39b5fbbde7d3ef7f39a8b5ed6e13a4be0",
+          "bytes": 323
+        },
+        {
+          "path": "Sources/AppleSpeechBaseline/AppleSpeechBaseline.swift",
+          "sha256": "bbf55ca1f794a534da85a97aa150a0f3e1458432e84fd1ff7c8c28052e655a94",
+          "bytes": 3892
+        },
+        {
+          "path": "Sources/AudioMicroscope/AudioMicroscope.swift",
+          "sha256": "40d4e32ca61cd6c5c8b8a9a6b1dbffae3e9957ea88ef49e47f20c12098a49687",
+          "bytes": 10954
+        },
+        {
+          "path": "Sources/AudioMicroscope/Transcription.swift",
+          "sha256": "ef95d50942183b4469dea61c551278d368f843dedb765cf8e5edfdc09b73e26d",
+          "bytes": 1337
+        },
+        {
+          "path": "Sources/CSQLite/module.modulemap",
+          "sha256": "bbfe59a972a3e8e09e347c04bc22c0eacd2544881af8a4b6068bfc30b38466e8",
+          "bytes": 80
+        },
+        {
+          "path": "Sources/CSQLite/shim.h",
+          "sha256": "10f28d34b689904e44a735989e5a6820cdf1925b8fa54f65fb0fbf0f1e40e9fe",
+          "bytes": 378
+        },
+        {
+          "path": "Sources/Koett/AssistantAPIKeyStore.swift",
+          "sha256": "226afc100dbb498de198de12d16bc703d46fec8176639fd861b52701605346f8",
+          "bytes": 2842
+        },
+        {
+          "path": "Sources/Koett/AssistantClient.swift",
+          "sha256": "730ca9a804222cce039be898c703fcb4d95367c2a266a09372027a29aaf52e74",
+          "bytes": 8548
+        },
+        {
+          "path": "Sources/Koett/AssistantConfiguration.swift",
+          "sha256": "eb23e923fb569ee329082def6caaf5ce6a58fa9b2deb184119d19f872d720bb4",
+          "bytes": 2629
+        },
+        {
+          "path": "Sources/Koett/AssistantMarkdown.swift",
+          "sha256": "3b9d704eae90435ae6145abefecd328b050bcd213b9068988bb9f10f2c2437b4",
+          "bytes": 5688
+        },
+        {
+          "path": "Sources/Koett/AssistantPanel.swift",
+          "sha256": "2cf95a165344b6c6f1606b4a6cc84dd433e4a803e172032c623899b2b0f3f186",
+          "bytes": 9618
+        },
+        {
+          "path": "Sources/Koett/AssistantSession.swift",
+          "sha256": "f2e7b7bc4aa67bc5b4fade8b11335684029e29aa3f30940e1fcf0dad2e67a53c",
+          "bytes": 12794
+        },
+        {
+          "path": "Sources/Koett/AssistantSpeechConnection.swift",
+          "sha256": "0c275ea04d7c02ffa52287cfde0646f3d8512846d2abe9d60b77ccaa4233870e",
+          "bytes": 1577
+        },
+        {
+          "path": "Sources/Koett/AssistantWorkLifecycle.swift",
+          "sha256": "390e0727a3e78c47f2dd7ec63db78f2dd9602ced9be2fbed7303c221ef439463",
+          "bytes": 2074
+        },
+        {
+          "path": "Sources/Koett/AuditFixture.swift",
+          "sha256": "4b7498cacff8521cd478e1cd12be44c1961010b893b37bc80aa5425cceae84a3",
+          "bytes": 3264
+        },
+        {
+          "path": "Sources/Koett/BrowserMedia.swift",
+          "sha256": "ae5937ce4db7f2eae29dd917894a0c0d4a09dfceb69ffa81281d18387f0b63b5",
+          "bytes": 15869
+        },
+        {
+          "path": "Sources/Koett/CartesiaSpeechOutput.swift",
+          "sha256": "e35bbf2d205e731aac5885d160e347ca1ac139f07850399b6d8367f9651d8acc",
+          "bytes": 13520
+        },
+        {
+          "path": "Sources/Koett/ControlCommands.swift",
+          "sha256": "05f385089ac24dccb3259e92698fb2b07bf3390cd6bf2e05962d4b3a33271b51",
+          "bytes": 3827
+        },
+        {
+          "path": "Sources/Koett/DictationDelivery.swift",
+          "sha256": "4104763400e2abad0dea23789b4669a3737ea0887cb0d34a7f7b928baf92f05d",
+          "bytes": 1170
+        },
+        {
+          "path": "Sources/Koett/DictationFailurePresentation.swift",
+          "sha256": "d31f56580e838ed99d698c7d4ed121fdd3d3693b147a349b121528fe39a92b19",
+          "bytes": 865
+        },
+        {
+          "path": "Sources/Koett/DictationSession.swift",
+          "sha256": "94c13b3f433de63baf039382aa82da67ad28749d4dbbfe3d57573d04a1022a3c",
+          "bytes": 30298
+        },
+        {
+          "path": "Sources/Koett/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CommonWords.swift",
+          "sha256": "982a6524948e36a84f7755da702e58123f351df3ae27972ac28f011eeb8eac88",
+          "bytes": 1621
+        },
+        {
+          "path": "Sources/Koett/Dictionary/CorrectionLearner.swift",
+          "sha256": "650e71bd07e8770cb016fe1c94e6c089970e2eeced382fd22c7f796efbe6aa23",
+          "bytes": 6445
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Corrections.swift",
+          "sha256": "1552952bc5a0521966c5d19233e8b99f5ca34c57c878abcaad88bebaa7a6fc06",
+          "bytes": 6322
+        },
+        {
+          "path": "Sources/Koett/Dictionary/Dictionary.swift",
+          "sha256": "ecb6a3387556bfeca6f660d13180c9d738c9c2cf159421ebf690c83e6172a863",
+          "bytes": 6471
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryAdoption.swift",
+          "sha256": "30345a15f8e5840830ea12d3cf43812f06ec0589576a106e451acd5093abfca6",
+          "bytes": 6521
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionarySpelling.swift",
+          "sha256": "548468d8455002252ed91eca3abbda9a84be36b1fa7f472f14dfe15cbac950df",
+          "bytes": 8215
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryStore.swift",
+          "sha256": "68830f1c7c72bb0d0a855d9277be986e929d3eac1346f7e8fb51541c0bb725f3",
+          "bytes": 1425
+        },
+        {
+          "path": "Sources/Koett/Dictionary/DictionaryWindow.swift",
+          "sha256": "7c1443b90479dd8ecfccdfcac4289fafbdced09a2c44b3f500e78d81c6ec07ea",
+          "bytes": 9015
+        },
+        {
+          "path": "Sources/Koett/Dictionary/FixWordView.swift",
+          "sha256": "4f87bf8fb5f9406c6e4eb31db4ac482648708e04f78df50aa1f6434eb2d0b5f8",
+          "bytes": 4656
+        },
+        {
+          "path": "Sources/Koett/Dictionary/VocabularyBooster.swift",
+          "sha256": "e60a444bfffe353ec90805ab4e126b9543f1a29293988d18cc2485af592057d3",
+          "bytes": 8263
+        },
+        {
+          "path": "Sources/Koett/DrawHoldGate.swift",
+          "sha256": "aa69942bec5546ff04fff27f25f34e17c22ea99e6d18aeca5e92c57462be080c",
+          "bytes": 711
+        },
+        {
+          "path": "Sources/Koett/DrawKey.swift",
+          "sha256": "fc27a2f27181e003f433412ba92b30847ceb725df673d0cbc70a1b9b85c5c3f7",
+          "bytes": 1455
+        },
+        {
+          "path": "Sources/Koett/EditMenu.swift",
+          "sha256": "30622db78a1ef0c5c5f516f9ba27b1fc553e41077148d0a907965046b2a2b74f",
+          "bytes": 1329
+        },
+        {
+          "path": "Sources/Koett/EscapeKeyMonitor.swift",
+          "sha256": "dc59824b5a2a56a481a9a53ba8463c7d13e7b892a8698cefb40ae90264a60843",
+          "bytes": 1317
+        },
+        {
+          "path": "Sources/Koett/FailedRecordingStore.swift",
+          "sha256": "29419394ccb4a2470de201a100ff06c6a626d461df6f6cb148c8db1190c3f1b8",
+          "bytes": 1381
+        },
+        {
+          "path": "Sources/Koett/FailedTranscriptStore.swift",
+          "sha256": "92e757a5b07b89e4250c0803a421c584a158da2c3b6d18cc680714b42c9086fc",
+          "bytes": 3592
+        },
+        {
+          "path": "Sources/Koett/FormattingPopover.swift",
+          "sha256": "548ed8804408f805d52b1d80153473a37c03210c97a6e89db1bef1d8ae19471b",
+          "bytes": 5833
+        },
+        {
+          "path": "Sources/Koett/HistoryDatabase.swift",
+          "sha256": "d642c53b3f67559e312ea6427108fad1383436e71724e759bce9761c75443f6c",
+          "bytes": 5845
+        },
+        {
+          "path": "Sources/Koett/HistoryImport.swift",
+          "sha256": "f2a5263f1fe400db03c14a16165bfb5f80b7b27d11ee85e6d899b6ecbbb9d67a",
+          "bytes": 13022
+        },
+        {
+          "path": "Sources/Koett/HistoryModel.swift",
+          "sha256": "13523eae84b5ad753eca3a6b80ba8e1273658600cce1bf0630919d891a1c5dc4",
+          "bytes": 3808
+        },
+        {
+          "path": "Sources/Koett/HistorySummary.swift",
+          "sha256": "951e98af0831538f75df5b66486b50e6b029e59f79a89270f4a467bfc5f7ebf0",
+          "bytes": 405
+        },
+        {
+          "path": "Sources/Koett/HistoryWindow.swift",
+          "sha256": "187cc34e089f6887a05420f033091bad592bb08bfd97f181755bb1c9d37b3b8f",
+          "bytes": 10540
+        },
+        {
+          "path": "Sources/Koett/InputLevelPreview.swift",
+          "sha256": "30697ad678e4349a8e433887912ace0ca68f27ad4e9542bb5a37aadc6d29d104",
+          "bytes": 1694
+        },
+        {
+          "path": "Sources/Koett/Koett.swift",
+          "sha256": "27ab11b1966f36e2b97439b1423e15b23a981de24fdcce695a46f79ec4121d5a",
+          "bytes": 39562
+        },
+        {
+          "path": "Sources/Koett/KoettApp.swift",
+          "sha256": "43c3eb0c67e408e0b23fe4f23c2b2f361f4bdb2fd3f5bdb3a52c88cbe23f14b0",
+          "bytes": 12024
+        },
+        {
+          "path": "Sources/Koett/KoettMenu.swift",
+          "sha256": "88e9dd63f4c3e14f48c2bd30701c90fbb7d99c12cf02448e256e022a3d710043",
+          "bytes": 14274
+        },
+        {
+          "path": "Sources/Koett/LastTranscriptDelivery.swift",
+          "sha256": "39931ebe6fcb942b58e9313bc6c1ebe578ac9bd9657e9a6121211c37305c093f",
+          "bytes": 4363
+        },
+        {
+          "path": "Sources/Koett/LocalControlSocket.swift",
+          "sha256": "2a098c0a9da55c3debb4c0d829e2eb7ab2b22bdff034fb0bfe1e48d4d95452cd",
+          "bytes": 8251
+        },
+        {
+          "path": "Sources/Koett/LoginPreference.swift",
+          "sha256": "fde7919db7d8d49f79c88a8bcbfbd9baaabe12647e13e32e7d594037a3f557dd",
+          "bytes": 2196
+        },
+        {
+          "path": "Sources/Koett/MediaPause.swift",
+          "sha256": "728695eee69dd42b9e7102fb7f2fb63b1cc6edf76ebe5537c9477b3017454b8b",
+          "bytes": 3906
+        },
+        {
+          "path": "Sources/Koett/MediaSession.swift",
+          "sha256": "785ddccfb4cb7778740fe90bf0896b917d082d4087825f14f657bd2c43efc3a5",
+          "bytes": 7149
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptPersistence.swift",
+          "sha256": "c71651edabf9f9aeb0b4867588b3498d43ecd954f2c02cf95cec8314c615509f",
+          "bytes": 1494
+        },
+        {
+          "path": "Sources/Koett/MediaTranscriptStore.swift",
+          "sha256": "85d60c55267f0f45fde485c8fb24c670b63dd93d8d03303771d5caf14f72ac45",
+          "bytes": 1653
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailability.swift",
+          "sha256": "a1db02026bf63ae4fc7116f94e8c1053aaf4b0eaf53cd469a652050b4e62d2bd",
+          "bytes": 3667
+        },
+        {
+          "path": "Sources/Koett/MicrophoneAvailabilityMonitor.swift",
+          "sha256": "cbcb228d6ed6362ca1bb2c4ec4db9e9a71e985a474156bd764c1ac5a97e3154a",
+          "bytes": 6567
+        },
+        {
+          "path": "Sources/Koett/MicrophoneInput.swift",
+          "sha256": "c8e3ab0d4cebbf77ed3d5c4afcb8f6977de6c73303566359eeb69223b3656056",
+          "bytes": 8820
+        },
+        {
+          "path": "Sources/Koett/MicrophoneMenu.swift",
+          "sha256": "e1a5d1f4f6a980af11f8e6a57846587fca0655adfc06b1e11b02ecf391ae92ba",
+          "bytes": 2665
+        },
+        {
+          "path": "Sources/Koett/MicrophonePreviewWindow.swift",
+          "sha256": "c8fe9fe449f23614f61dcc371662260c285511296ef03c8b274cea8cb5d6b126",
+          "bytes": 4804
+        },
+        {
+          "path": "Sources/Koett/MicrophoneRecorder.swift",
+          "sha256": "69c209cabc3dbcc94da41b85bbefe22f5e1bf9b614da1e0165a61cf4b7a8c6bc",
+          "bytes": 12243
+        },
+        {
+          "path": "Sources/Koett/MicrophoneSelection.swift",
+          "sha256": "09c87b9df98f27abccb83b607a487f4a16d59b7cfd8d74e4b5e3517ad31b12a9",
+          "bytes": 5161
+        },
+        {
+          "path": "Sources/Koett/NemotronStreamingAdapter.swift",
+          "sha256": "b284042636567dd944241b3e0dbb4a7dc7b221ffcaed583d8ff74fa77268da0f",
+          "bytes": 11387
+        },
+        {
+          "path": "Sources/Koett/PasteDiagnostics.swift",
+          "sha256": "98b9c586d2a681394e2e956f18b7f3072c2dbc65626202cdd18fa505f5d0cd40",
+          "bytes": 2154
+        },
+        {
+          "path": "Sources/Koett/PasteEvents.swift",
+          "sha256": "0df13fb8609e41ada5451fefeef2e3a8cdd2ed0555c08168ec4308cbf7aa2883",
+          "bytes": 508
+        },
+        {
+          "path": "Sources/Koett/PasteReadiness.swift",
+          "sha256": "a64f3512584ae0e1941f1fa2a3e7dd2660ab185517c2e0098e00249215335c88",
+          "bytes": 5202
+        },
+        {
+          "path": "Sources/Koett/PasteTarget.swift",
+          "sha256": "3d6bb54adfe9f1e6e435dd32f8255b8b354ead6094712de7243ea8878a9b0650",
+          "bytes": 1715
+        },
+        {
+          "path": "Sources/Koett/PermissionOnboarding.swift",
+          "sha256": "4ecfad4fbf605dd1b7bcecb7721a7ea200e1843345e4cca915370eab2824c3d0",
+          "bytes": 1739
+        },
+        {
+          "path": "Sources/Koett/Permissions.swift",
+          "sha256": "2b8352550aaaefd82abb2e3e6dff2901d462213e7cf16888720b4d31078e04bd",
+          "bytes": 5799
+        },
+        {
+          "path": "Sources/Koett/PermissionsWindow.swift",
+          "sha256": "e65833deda5669ff6d3709c259294cefbc7ec8d495a3f92e1ae243be8888df2b",
+          "bytes": 4337
+        },
+        {
+          "path": "Sources/Koett/PillButton.swift",
+          "sha256": "2d907fb69b2330e59298ee85fd4ba642d4af20da02e962f028eedb1caebf4e09",
+          "bytes": 3045
+        },
+        {
+          "path": "Sources/Koett/PillPalette.swift",
+          "sha256": "fa51b1c533e73277782026538bbc3a7532a81685491b5c9243e34ba6e4e8e2ac",
+          "bytes": 1800
+        },
+        {
+          "path": "Sources/Koett/PillTimeline.swift",
+          "sha256": "38c58c143095f2853a7376b32bbdb8ec57b600fe03acc7c71e7bb3103befbc70",
+          "bytes": 4894
+        },
+        {
+          "path": "Sources/Koett/PillView.swift",
+          "sha256": "ad38a5fc4d8d8824864c3bdeeb4c65619cdf33b740ab2db28bf98824387979d8",
+          "bytes": 17805
+        },
+        {
+          "path": "Sources/Koett/PinContext.swift",
+          "sha256": "7cb750a129aa145ca41cb266cb5f6e6ed983b012858ddfc150956f047c4de161",
+          "bytes": 4028
+        },
+        {
+          "path": "Sources/Koett/PinContextReader.swift",
+          "sha256": "409c5fc6c2564d4268ded712d09a90ac082883a22f8729f3f83c6ae3fdc8a8f2",
+          "bytes": 9366
+        },
+        {
+          "path": "Sources/Koett/RecordingOverlay.swift",
+          "sha256": "d6cc54336272f8b9f2db08bb49415e169aa21b0dff8b1fad0d3d7d5312d02c61",
+          "bytes": 18707
+        },
+        {
+          "path": "Sources/Koett/Replacements.swift",
+          "sha256": "2a3797ed436cb30b53f9dd618a2c56a246db54f5d39fafecb4ef157f5fc93c39",
+          "bytes": 5949
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/THIRD-PARTY-NOTICES.md",
+          "sha256": "2eb0fa55711b775069784eee60e149fd5b4ad2a876f98778b85c84735f809b23",
+          "bytes": 458
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE-MPL.txt",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+          "bytes": 16725
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "bytes": 11358
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/dompurify.js",
+          "sha256": "c2f26ea4fc0d88141c9aa430eb515ac86fce59418ceebd85fa475b87a8d6c3e6",
+          "bytes": 29204
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_AMS-Regular.woff2",
+          "sha256": "0cdd387c9590a1a9f9794560022dbb59654a7d86f187aa0c81495ad42d3a7308",
+          "bytes": 28076
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Bold.woff2",
+          "sha256": "de7701e42cf1f4cf0b766c03fb27977207eee2f4fd5d76fa82188406da43ea4c",
+          "bytes": 6912
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Caligraphic-Regular.woff2",
+          "sha256": "5d53e70ad607c2352162dec9e0923fb54ecdafaccbf604cd8dcf7d00facb989b",
+          "bytes": 6908
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Bold.woff2",
+          "sha256": "74444efd593c005e3f4573b44524704c0af0a937fe911cca9e94068d0d140d3f",
+          "bytes": 11348
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Fraktur-Regular.woff2",
+          "sha256": "51814d270d06ff0255dba0799994fa4d8c84d11f09951d47595f4abb1f3602dc",
+          "bytes": 11316
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Bold.woff2",
+          "sha256": "0f60d1b897938ec918c8ce073092411baf9438f6739465693ff18b0f9d20b021",
+          "bytes": 25324
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-BoldItalic.woff2",
+          "sha256": "99cd42a3c072d918f2f44984a807cf7aa16e13545fd0875fc07c6c65f99e715b",
+          "bytes": 16780
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Italic.woff2",
+          "sha256": "97479ca6cce906abc961ecac96faa5f9ca2e61b8e7670d475826bcdee9a7c267",
+          "bytes": 16988
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Main-Regular.woff2",
+          "sha256": "c2342cd8b869e01752a9321dc17213fc40d4d04c79688c1d43f2cf316abd7866",
+          "bytes": 26272
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-BoldItalic.woff2",
+          "sha256": "dc47344dbb6cb5b655c8460d561f4df5f501b90c804ad3c6cec65fe322351ab1",
+          "bytes": 16400
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Math-Italic.woff2",
+          "sha256": "7af58c5ec8f132a2ddde9027c6d7814decce4d3b822a11192a42a20e2e973264",
+          "bytes": 16440
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Bold.woff2",
+          "sha256": "e99ae51144bf1232efcc1bfe5add36262c6866b0faab24fa75740e1b98577a62",
+          "bytes": 12216
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Italic.woff2",
+          "sha256": "00b26ac825e2095056396e0553b8ac26d3f8ad158c3826e28b4c45b385c4714a",
+          "bytes": 12028
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_SansSerif-Regular.woff2",
+          "sha256": "68e8c73ef42afd3ccec58bf0fba302cce448938e7fc020a5e31f8a952eee1342",
+          "bytes": 10344
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Script-Regular.woff2",
+          "sha256": "036d4e95149b69ff9bcc0cd55771efeb25ffa3947293e69acd78d5ac328c684b",
+          "bytes": 9644
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size1-Regular.woff2",
+          "sha256": "6b47c40166b6dbe21a5dfca7718413f2147fd2399be1ba605d8ad39cedf25dfe",
+          "bytes": 5468
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size2-Regular.woff2",
+          "sha256": "d04c54219f9eaec6d4d4fd42dfb28785975a4794d6b2fc71e566b9cd6db842dd",
+          "bytes": 5208
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size3-Regular.woff2",
+          "sha256": "73d591271b1604960cb10bb90fee021670af7297017e0e98480b332d11f51995",
+          "bytes": 3624
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Size4-Regular.woff2",
+          "sha256": "a4af7d414440a1c1790825cfb700cf9cf43b0f2c4b04f0ebc523011ad9853ec0",
+          "bytes": 4928
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/fonts/KaTeX_Typewriter-Regular.woff2",
+          "sha256": "71d517d67827787cfabdf186914cc3358eda539e37931941f2b2fd4a21f68c0b",
+          "bytes": 13568
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight-LICENSE.txt",
+          "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490",
+          "bytes": 1514
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.css",
+          "sha256": "9f208d022102b1d0c7aebfecd8e42ca7997d5de636649d2b31ea63093d809019",
+          "bytes": 1315
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/highlight.js",
+          "sha256": "8ab71eb09c51f501e5e25157d9cff100e46cc29bcbfc744d0b746d451fca7f53",
+          "bytes": 129254
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/index.html",
+          "sha256": "d38358a6772e1458c0c2ae61d726d4c2f0ba1f8102d8b5f14101f4c01edeac22",
+          "bytes": 877
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-LICENSE.txt",
+          "sha256": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3",
+          "bytes": 1107
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex-auto-render.js",
+          "sha256": "e5372d199bcdae8b4de71d0f7ceba72a4ba12774a27c60a6f1f77d03b3228ee4",
+          "bytes": 3486
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.css",
+          "sha256": "180c2d77d434d7da51d6625c50a964d4fd6fdbdb9bc8796a0a016c30c49931fb",
+          "bytes": 24727
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/katex.js",
+          "sha256": "2ec5916941ef4383e0314eaabcc712301b06001d9fb68e08d751d2bae5a27a1a",
+          "bytes": 272179
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked-LICENSE.txt",
+          "sha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c",
+          "bytes": 2942
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/marked.js",
+          "sha256": "eaccee2fb9fb3b2c09e873a5504da82507850d9e677bd720122ac49e2a03982a",
+          "bytes": 43897
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.css",
+          "sha256": "8bb4ea7c5801d7116c53beb69fee98abde3f5f645a94fef880da9f9a2e3f7128",
+          "bytes": 2499
+        },
+        {
+          "path": "Sources/Koett/Resources/AssistantRenderer/renderer.js",
+          "sha256": "ac50615fb3681db58fb488d866286a99718b63febc5f554f11c247a3656988d6",
+          "bytes": 1418
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/NOTICE.md",
+          "sha256": "2c3143721bf936403db07a254a43dab6c4f92e224190800187573f09cc719820",
+          "bytes": 964
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/SCOWL-Copyright.txt",
+          "sha256": "283326a422e29c510e2ba6805518c418ce3c35ed1fadc3eec83d2da4f6c5a055",
+          "bytes": 11758
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words-sv.txt",
+          "sha256": "d32e5b4a5caf716b1a26785ef9782e03e38016f7eb625c54b472449b2671954e",
+          "bytes": 217551
+        },
+        {
+          "path": "Sources/Koett/Resources/Dictionary/common-words.txt",
+          "sha256": "f68ffc0c6cff2a6bc0695ce9d33d6afb227e582fac977d7ac2a1a596d359247e",
+          "bytes": 91187
+        },
+        {
+          "path": "Sources/Koett/Resources/History/schema.sql",
+          "sha256": "ab96820dfd95fb4c39f108517d727f3038b5172e7958381af2dc95bb52733dea",
+          "bytes": 2064
+        },
+        {
+          "path": "Sources/Koett/S1MiniCleaner.swift",
+          "sha256": "1ddc8ccf3c774f2c252c61637edf887182b20b8670f9ab90adbe5854dcdfd966",
+          "bytes": 18819
+        },
+        {
+          "path": "Sources/Koett/ScreenContextCapture.swift",
+          "sha256": "d69d843554ce67bdb6caed82e8af8eece4364d9b7dd82cd4aec95d8eca1d4be0",
+          "bytes": 2381
+        },
+        {
+          "path": "Sources/Koett/SetupStatus.swift",
+          "sha256": "7651968a01fc49355dca52785ca5ec144abf6171cbdf97af0e2a270504388f43",
+          "bytes": 2380
+        },
+        {
+          "path": "Sources/Koett/ShortcutBinding.swift",
+          "sha256": "3cb69d504ede457c26f4dc75875bbdeed0273f2d13adc68a5680fb1dd4e9c7a0",
+          "bytes": 13492
+        },
+        {
+          "path": "Sources/Koett/SketchBoard.swift",
+          "sha256": "7290c716273cca214baf5a3c1826b59f6f9ffa42dc7124570b238d38a4302488",
+          "bytes": 12284
+        },
+        {
+          "path": "Sources/Koett/SketchCapture.swift",
+          "sha256": "5404ecd963293fbc3e875b113fb476d8ec62e2f9feb0513bd428c1f49883d25c",
+          "bytes": 1664
+        },
+        {
+          "path": "Sources/Koett/SketchClipboard.swift",
+          "sha256": "80e6e3ad14a35311db0b64baebafc95d029b0c2d467ad906f56811aa345f64e2",
+          "bytes": 1135
+        },
+        {
+          "path": "Sources/Koett/SketchDictation.swift",
+          "sha256": "507d1dc77a5931b3beebb112a2fe225ad7d751da03fcab2eb9a5d37b756b642c",
+          "bytes": 9412
+        },
+        {
+          "path": "Sources/Koett/SketchFrames.swift",
+          "sha256": "5e5b3d218247b1877b2d268a357d692ff5c95528b6cebbcbea985f680e3fddfc",
+          "bytes": 2778
+        },
+        {
+          "path": "Sources/Koett/SketchLinking.swift",
+          "sha256": "be0a7e9c6cab2e60a03c62669d2136ee2dde03289a0723811d7e8c9840b1fa4b",
+          "bytes": 9325
+        },
+        {
+          "path": "Sources/Koett/SketchOverlay.swift",
+          "sha256": "5b4cdb2e0117b09a0ade6035deb2c872ef15ac2b87c1dd1bfd56fa355d85b904",
+          "bytes": 13540
+        },
+        {
+          "path": "Sources/Koett/SketchPaste.swift",
+          "sha256": "4932b1f37825942a4c848c87f22a3da7b6909840fa79d0230f373edd6a1fe3bb",
+          "bytes": 5989
+        },
+        {
+          "path": "Sources/Koett/SketchPasteChord.swift",
+          "sha256": "8a72f759ba7f05f2ac36e963bfbe10d63c3b9d67d3ec5141d8d5a658183cabc7",
+          "bytes": 2225
+        },
+        {
+          "path": "Sources/Koett/SketchSheet.swift",
+          "sha256": "e6fb2dd005f788f03c6d49ce621f56762929d9b1c8f7d0bedb5c835d25f4c466",
+          "bytes": 9292
+        },
+        {
+          "path": "Sources/Koett/SpeechEngine.swift",
+          "sha256": "1bf2a27c1ed22815464264d8eefd0b38c1903b64568c10aedcead43ef8e58fb4",
+          "bytes": 1139
+        },
+        {
+          "path": "Sources/Koett/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/Koett/TerminationProtection.swift",
+          "sha256": "1a1b59fa9cfc28029dc0145354f7e0cc108eca0084999f02836773a0499e3ab3",
+          "bytes": 989
+        },
+        {
+          "path": "Sources/Koett/TranscriptFileLock.swift",
+          "sha256": "960f8b985ef4e95995ae5ad7f41813b797db6d40be05d0418eb662cebea774f6",
+          "bytes": 945
+        },
+        {
+          "path": "Sources/Koett/TranscriptPersistence.swift",
+          "sha256": "7318bf32a9317d8757661e2a53f7984bb965ca5f71f7768e4332291f6a28a809",
+          "bytes": 10169
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecord.swift",
+          "sha256": "e7fae3b2bccfe3d2809d291e1d954e16f6102775ccb9d5e851fcd52739547071",
+          "bytes": 1290
+        },
+        {
+          "path": "Sources/Koett/TranscriptRecovery.swift",
+          "sha256": "7abeb38f7b34b94b2756c43ed91a0ec79f614c4ef6508828e1672e0d19bf2b37",
+          "bytes": 2588
+        },
+        {
+          "path": "Sources/Koett/TranscriptStore.swift",
+          "sha256": "5992133cc4a87cd6f2106e384eb70d5623a96e8f29fd185fd60df97cecad71ed",
+          "bytes": 7907
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/DictationTranscriber.swift",
+          "sha256": "d79fba6fd835a89ddac7fb63db74b814abb119ec05cc8c126e862fd93b6dca8c",
+          "bytes": 5147
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/LongDictationBenchmark.swift",
+          "sha256": "699bff692a28d1d5fb20b436e23a20e635d3daf8775c6026bd64eb7a1520a131",
+          "bytes": 3522
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/PreparationBenchmark.swift",
+          "sha256": "2b7ee629e98ebae8ee725788b4376698fb216d65920ccbfc0bd648f9e4595130",
+          "bytes": 3879
+        },
+        {
+          "path": "Sources/LongDictationBenchmark/SpeechTrimmer.swift",
+          "sha256": "171e58270c7b0a41a200971a2fdb94b6198b5df2993b63c684ccbf53677d17f5",
+          "bytes": 4034
+        },
+        {
+          "path": "Sources/NemotronStreamingBaseline/NemotronStreamingBaseline.swift",
+          "sha256": "e18d2616729963627e74d66ab850689088fa46ccdd3996a12f2b571a004305e4",
+          "bytes": 8816
+        },
+        {
+          "path": "Sources/NoiseMixer/NoiseMixer.swift",
+          "sha256": "12d6582ecf33dc93ba7e64d264ba8b897a0bee1d772fe22ec64c8c1ecb5eccb7",
+          "bytes": 7967
+        },
+        {
+          "path": "Sources/ParakeetBaseline/ParakeetBaseline.swift",
+          "sha256": "b6f753cb01e1cf47680c3d28dcf1271002643735842b5fed273b1956d53a58bd",
+          "bytes": 7829
+        },
+        {
+          "path": "Sources/SentenceRecorder/SentenceRecorder.swift",
+          "sha256": "14d597a45add936d407dec8b07ae3625188d0cad5ade601d0e0982843a7396c4",
+          "bytes": 5127
+        }
+      ],
+      "sha256": "efa7ead760a771c1ee0beecb4b51e0936e97236ff227ed7fefed5513a1b708cd"
+    }
+  },
+  "scope": "hashes computed before launch, checked again after source termination; native M5 owned-target test",
+  "compiler": "Apple Swift6.4 swiftlang-6.4.0.34.1",
+  "originalProductionBinaryReused": true
+}

@@ -1,6 +1,5 @@
 import AppKit
 import AVFoundation
-import ScreenCaptureKit
 
 /// The macOS privacy permissions Koett uses. Input Monitoring is not listed:
 /// the shortcut's event tap and the draw key's modifier monitors run on
@@ -22,7 +21,7 @@ enum PermissionKind: String, CaseIterable, Sendable {
         switch self {
         case .microphone: "To hear you"
         case .accessibility: "For shortcuts and pasting"
-        case .screenRecording: "For drawing and Ask"
+        case .screenRecording: "For drawing and pins"
         }
     }
 
@@ -56,6 +55,8 @@ struct PermissionRow: Equatable, Sendable {
         case allow
         /// Opens the exact System Settings pane.
         case openSettings
+        /// Re-run an explicit capability check after a failed check.
+        case check
     }
 
     let kind: PermissionKind
@@ -63,6 +64,7 @@ struct PermissionRow: Equatable, Sendable {
     let action: Action?
     /// Screen Recording often applies only after Koett restarts.
     let offersRelaunch: Bool
+    var capability: Bool? = nil
 
     /// Microphone status comes from AVFoundation; the others are a granted flag
     /// plus whether Koett has already shown the system prompt.
@@ -96,17 +98,21 @@ struct PermissionRow: Equatable, Sendable {
     }
 }
 
-/// Reads and requests permissions. Every read is live; Screen Recording also
-/// takes a real ScreenCaptureKit probe, because its preflight answer can stay
-/// stale until relaunch.
+/// System grants remain live. Actual capabilities are checked only after an
+/// explicit user action; listing displays is not proof that capture works.
 @MainActor
 final class PermissionCenter {
     private let defaults: UserDefaults
-    private(set) var screenProbeSucceeded = false
-    private var probing = false
+    private var capabilities: [PermissionKind: Bool] = [:]
+    private let capabilityProbe: @MainActor (PermissionKind) async -> Bool
+    private let grantOverride: (@MainActor (PermissionKind) -> Bool)?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard,
+         capabilityProbe: @escaping @MainActor (PermissionKind) async -> Bool = PermissionCapabilities.check,
+         granted: (@MainActor (PermissionKind) -> Bool)? = nil) {
         self.defaults = defaults
+        self.capabilityProbe = capabilityProbe
+        self.grantOverride = granted
     }
 
     func asked(_ kind: PermissionKind) -> Bool {
@@ -114,10 +120,11 @@ final class PermissionCenter {
     }
 
     func isGranted(_ kind: PermissionKind) -> Bool {
-        switch kind {
+        if let grantOverride { return grantOverride(kind) }
+        return switch kind {
         case .microphone: AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         case .accessibility: AXIsProcessTrusted()
-        case .screenRecording: CGPreflightScreenCaptureAccess() || screenProbeSucceeded
+        case .screenRecording: CGPreflightScreenCaptureAccess()
         }
     }
 
@@ -128,12 +135,16 @@ final class PermissionCenter {
     var allGranted: Bool { PermissionKind.allCases.allSatisfy(isGranted) }
 
     func row(_ kind: PermissionKind) -> PermissionRow {
-        PermissionRow.make(
+        let granted = isGranted(kind)
+        var row = PermissionRow.make(
             kind,
-            microphone: AVCaptureDevice.authorizationStatus(for: .audio),
-            granted: isGranted(kind),
+            microphone: grantOverride == nil ? AVCaptureDevice.authorizationStatus(for: .audio)
+                : (granted ? .authorized : .denied),
+            granted: granted,
             asked: asked(kind)
         )
+        row.capability = granted ? capabilities[kind] : nil
+        return row
     }
 
     func perform(_ action: PermissionRow.Action, for kind: PermissionKind) {
@@ -148,20 +159,18 @@ final class PermissionCenter {
             if !CGRequestScreenCaptureAccess() { NSWorkspace.shared.open(kind.settingsURL) }
         case (.openSettings, _):
             NSWorkspace.shared.open(kind.settingsURL)
+        case (.check, _): break // PermissionsModel owns the async check.
         }
     }
 
-    /// Checks Screen Recording with a real capture query, only after Koett has
-    /// asked, so the probe never raises the system prompt by itself.
-    func probeScreenRecording() async {
-        guard !probing, asked(.screenRecording), !CGPreflightScreenCaptureAccess() else { return }
-        probing = true
-        defer { probing = false }
-        do {
-            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-            screenProbeSucceeded = !content.displays.isEmpty
-        } catch {
-            screenProbeSucceeded = false
+    /// Flags authorize attempting a check, but only the real API result marks it ready.
+    /// Never request access from here: unavailable permissions retain their Allow/Settings action.
+    func checkCapabilities(_ kinds: [PermissionKind] = PermissionKind.allCases) async {
+        for kind in kinds {
+            guard isGranted(kind) else { capabilities[kind] = nil; continue }
+            let result = await capabilityProbe(kind)
+            capabilities[kind] = isGranted(kind) ? result : nil
         }
     }
+
 }

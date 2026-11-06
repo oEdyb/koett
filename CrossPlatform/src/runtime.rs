@@ -152,7 +152,29 @@ impl EngineHandle {
     }
 }
 
+enum CaptureSource {
+    Microphone,
+    #[cfg(target_os = "windows")]
+    WavFixture {
+        path: std::path::PathBuf,
+        fail_asr: bool,
+    },
+}
+
+#[cfg(target_os = "windows")]
+pub(crate) fn start_wav_lab(
+    settings: Settings,
+    path: std::path::PathBuf,
+    fail_asr: bool,
+) -> EngineHandle {
+    start_source(settings, CaptureSource::WavFixture { path, fail_asr })
+}
+
 pub fn start(settings: Settings) -> EngineHandle {
+    start_source(settings, CaptureSource::Microphone)
+}
+
+fn start_source(settings: Settings, source: CaptureSource) -> EngineHandle {
     let (command_sender, command_receiver) = mpsc::channel();
     let (update_sender, update_receiver) = mpsc::channel();
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -170,6 +192,7 @@ pub fn start(settings: Settings) -> EngineHandle {
             worker_cancelled,
             worker_ask_cancelled,
             worker_sessions,
+            source,
         )
     });
 
@@ -190,8 +213,9 @@ fn run(
     cancelled: Arc<AtomicBool>,
     ask_cancelled: Arc<AtomicBool>,
     sessions: Arc<DictationSessions>,
+    source: CaptureSource,
 ) {
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(all(target_os = "linux", feature = "ask")))]
     let _ = ask_cancelled;
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
@@ -256,20 +280,22 @@ fn run(
         preparation = Some(start_formatting(settings.formatting, updates.clone()));
     }
     let mut capture_started = None::<std::time::Instant>;
+    let mut recording_limit = Duration::from_secs(60 * 60);
+    let mut limit_warned = false;
     let mut recorder = None;
     let mut background: Option<BackgroundSession> = None;
     #[cfg(target_os = "linux")]
     let mut media_operation: Option<MediaOperation> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut ask_image: Option<Vec<u8>> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut answer: Option<crate::assistant::Answer> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut screen_capture: Option<crate::assistant::screen::Capture> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut speech: Option<crate::assistant::speech::Speech> = None;
     loop {
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if (ask_image.is_some() || answer.is_some())
             && let Some(active) = &speech
         {
@@ -279,11 +305,11 @@ fn run(
                 ));
             }
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if ask_cancelled.load(Ordering::Acquire) {
             speech = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if let Some(active) = &answer {
             for event in active.updates.try_iter() {
                 let value = match event {
@@ -409,11 +435,11 @@ fn run(
             let _ = updates.send(EngineUpdate::FormattingBusy(false));
             send_status(&updates, &status);
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let screen_result = screen_capture
             .as_ref()
             .and_then(|capture| capture.result.try_recv().ok());
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let capture_start = if let Some(result) = screen_result {
             screen_capture = None;
             match result {
@@ -435,20 +461,27 @@ fn run(
         } else {
             false
         };
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(all(target_os = "linux", feature = "ask")))]
         let capture_start = false;
         let command = if capture_start {
             EngineCommand::Start
         } else if status == AppStatus::Recording {
-            match commands.recv_timeout(
-                Duration::from_secs(10 * 60).saturating_sub(
-                    capture_started
-                        .map(|started| started.elapsed())
-                        .unwrap_or_default(),
-                ),
-            ) {
+            match commands.recv_timeout(until_next_limit_step(
+                recording_limit,
+                capture_started
+                    .map(|started| started.elapsed())
+                    .unwrap_or_default(),
+                limit_warned,
+            )) {
                 Ok(command) => command,
-                Err(RecvTimeoutError::Timeout) => recording_limit_reached(&updates),
+                Err(RecvTimeoutError::Timeout) if !limit_warned => {
+                    limit_warned = true;
+                    let _ = updates.send(EngineUpdate::Notice(LIMIT_WARNING.to_string()));
+                    continue;
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    recording_limit_reached(&updates, recording_limit)
+                }
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         } else {
@@ -461,16 +494,16 @@ fn run(
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let stopping_question = matches!(command, EngineCommand::AskStop | EngineCommand::Stop)
             || matches!(command, EngineCommand::Ask | EngineCommand::Toggle)
                 && ask_image.is_some()
                 && status == AppStatus::Recording;
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if !(capture_start || stopping_question) {
             speech = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = match command {
             EngineCommand::AskStart if status == AppStatus::Ready => EngineCommand::Ask,
             EngineCommand::AskStop if status == AppStatus::Recording && ask_image.is_some() => {
@@ -479,7 +512,7 @@ fn run(
             EngineCommand::AskStart | EngineCommand::AskStop => continue,
             other => other,
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = if ask_image.is_some()
             && status == AppStatus::Recording
             && matches!(
@@ -505,7 +538,7 @@ fn run(
         } else {
             command
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         let command = match command {
             EngineCommand::Ask if status == AppStatus::Recording && ask_image.is_some() => {
                 EngineCommand::Stop
@@ -575,7 +608,7 @@ fn run(
             }
             other => other,
         };
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if !matches!(
             command,
             EngineCommand::Start
@@ -586,7 +619,7 @@ fn run(
         ) {
             screen_capture = None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_os = "linux", feature = "ask"))]
         if matches!(command, EngineCommand::Start | EngineCommand::Toggle)
             && !capture_start
             && ask_image.is_none()
@@ -603,10 +636,13 @@ fn run(
             EngineCommand::Ask
             | EngineCommand::CancelAsk
             | EngineCommand::AskStart
-            | EngineCommand::AskStop => unreachable!(),
+            | EngineCommand::AskStop => continue,
             #[cfg(target_os = "linux")]
             EngineCommand::Media(source) => {
-                answer = None;
+                #[cfg(feature = "ask")]
+                {
+                    answer = None;
+                }
                 if status != AppStatus::Ready || preparation.is_some() {
                     continue;
                 }
@@ -719,6 +755,8 @@ fn run(
                 ));
             }
             EngineCommand::Toggle | EngineCommand::Start if status == AppStatus::Ready => {
+                #[cfg(target_os = "windows")]
+                send_status(&updates, &AppStatus::Starting);
                 let mut current = match Settings::load() {
                     Ok(current) => {
                         settings = current.clone();
@@ -731,8 +769,13 @@ fn run(
                         settings.clone()
                     }
                 };
-                let input_resolution =
-                    crate::audio::resolve_recording_input(current.microphone.as_deref());
+                let input_resolution = match &source {
+                    CaptureSource::Microphone => {
+                        crate::audio::resolve_recording_input(current.microphone.as_deref())
+                    }
+                    #[cfg(target_os = "windows")]
+                    CaptureSource::WavFixture { .. } => Ok(current.microphone.clone()),
+                };
                 let mut input_notice = None;
                 match input_resolution.as_ref() {
                     Ok(replacement) if replacement != &current.microphone => {
@@ -765,15 +808,21 @@ fn run(
                     media_notice(&updates, media.pause());
                 }
                 match input_resolution
-                    .and_then(|_| {
-                        MicrophoneRecorder::start_streaming_with_device(
-                            current.microphone.as_deref(),
-                        )
+                    .and_then(|_| match &source {
+                        CaptureSource::Microphone => {
+                            MicrophoneRecorder::start_streaming_with_device(
+                                current.microphone.as_deref(),
+                            )
+                        }
+                        #[cfg(target_os = "windows")]
+                        CaptureSource::WavFixture { path, .. } => {
+                            crate::audio::windows_capture::start_wav_proxy(path)
+                        }
                     })
                     .and_then(|(started, audio_chunks)| {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         let offline = ask_image.is_some();
-                        #[cfg(not(target_os = "linux"))]
+                        #[cfg(not(all(target_os = "linux", feature = "ask")))]
                         let offline = false;
                         let session = if offline {
                             transcription.record_offline(started.sample_rate(), audio_chunks)?
@@ -785,6 +834,9 @@ fn run(
                     Ok((started, session)) => {
                         sessions.begin();
                         capture_started = Some(std::time::Instant::now());
+                        recording_limit =
+                            Duration::from_secs(u64::from(current.recording_limit_minutes) * 60);
+                        limit_warned = false;
                         let levels = started.levels();
                         recorder = Some(started);
                         background = Some(session);
@@ -795,7 +847,7 @@ fn run(
                         let _ = updates.send(EngineUpdate::RecordingStarted(levels));
                     }
                     Err(error) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         {
                             if ask_image.take().is_some() {
                                 speech = None;
@@ -820,7 +872,7 @@ fn run(
                     .expect("recording can always stop");
                 send_status(&updates, &status);
 
-                #[cfg(target_os = "linux")]
+                #[cfg(all(target_os = "linux", feature = "ask"))]
                 if ask_image.is_some() {
                     let _ = updates.send(EngineUpdate::Ask(
                         serde_json::json!({"phase": "Transcribing locally…"}),
@@ -840,6 +892,12 @@ fn run(
                         .take()
                         .ok_or_else(|| "background transcription is missing".to_string())?;
                     let (audio, warning) = audio?;
+                    #[cfg(target_os = "windows")]
+                    if matches!(&source, CaptureSource::WavFixture { fail_asr: true, .. }) {
+                        drop(session);
+                        transcription.stop_for_windows_lab();
+                        return transcription.transcribe(audio);
+                    }
                     if let Some(warning) = warning {
                         let _ = updates.send(EngineUpdate::Notice(warning));
                         drop(session);
@@ -850,7 +908,7 @@ fn run(
                 })();
                 match result {
                     Ok(mut transcript) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         if let Some(image) = ask_image.take() {
                             let storage =
                                 crate::history::append_question_resilient(&model, &transcript.text);
@@ -933,7 +991,7 @@ fn run(
                         send_status(&updates, &status);
                     }
                     Err(error) => {
-                        #[cfg(target_os = "linux")]
+                        #[cfg(all(target_os = "linux", feature = "ask"))]
                         {
                             if ask_image.take().is_some() {
                                 speech = None;
@@ -950,7 +1008,7 @@ fn run(
                 drop(recorder.take());
                 drop(background.take());
                 capture_started = None;
-                #[cfg(target_os = "linux")]
+                #[cfg(all(target_os = "linux", feature = "ask"))]
                 if ask_image.take().is_some() {
                     speech = None;
                     let _ = updates.send(EngineUpdate::Ask(
@@ -1049,8 +1107,10 @@ fn load_worker(
     updates: &Sender<EngineUpdate>,
 ) -> Result<TranscriptionWorker, String> {
     if selection == model::LocalModel::Nemotron {
-        if !cfg!(target_os = "linux") {
-            return Err("Nemotron streaming is currently supported on Linux only".into());
+        if !cfg!(any(target_os = "linux", target_os = "windows")) {
+            return Err(
+                "Nemotron streaming is currently supported on Linux and Windows only".into(),
+            );
         }
         let nemotron = crate::transcription::NemotronTranscriber::load(directory)?;
         let backup = model::ensure_model(model::LocalModel::ParakeetV2, cancelled, |progress| {
@@ -1196,10 +1256,34 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
         .expect("an error can recover");
 }
 
-pub const LIMIT_NOTICE: &str = "Stopped at the 10-minute limit";
+pub const LIMIT_WARNING: &str = "1 minute left";
+const LIMIT_WARNING_BEFORE: Duration = Duration::from_secs(60);
 
-fn recording_limit_reached(updates: &Sender<EngineUpdate>) -> EngineCommand {
-    let _ = updates.send(EngineUpdate::Notice(LIMIT_NOTICE.to_string()));
+fn limit_notice(limit: Duration) -> String {
+    format!("Stopped at the {}-minute limit", limit.as_secs() / 60)
+}
+
+pub fn is_limit_notice(text: &str) -> bool {
+    text.starts_with("Stopped at the ") && text.ends_with("-minute limit")
+}
+
+/// How long to wait for a command before the warning, then before the stop.
+fn until_next_limit_step(limit: Duration, elapsed: Duration, warned: bool) -> Duration {
+    if warned {
+        limit
+    } else {
+        limit.saturating_sub(LIMIT_WARNING_BEFORE)
+    }
+    .saturating_sub(elapsed)
+}
+
+fn recording_limit_reached(updates: &Sender<EngineUpdate>, limit: Duration) -> EngineCommand {
+    if std::env::var_os("KOETT_CAPTURE_TIMINGS").is_some()
+        && let Ok(elapsed) = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+    {
+        eprintln!("capture_limit_stop_unix_ns={}", elapsed.as_nanos());
+    }
+    let _ = updates.send(EngineUpdate::Notice(limit_notice(limit)));
     EngineCommand::Toggle
 }
 
@@ -1240,17 +1324,36 @@ type MediaOperation = (
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     #[test]
     fn recording_limit_stops_the_recording_and_says_why() {
         let (updates, received) = std::sync::mpsc::channel();
         assert!(matches!(
-            super::recording_limit_reached(&updates),
+            super::recording_limit_reached(&updates, Duration::from_secs(60 * 60)),
             super::EngineCommand::Toggle
         ));
         assert!(matches!(
             received.try_recv(),
-            Ok(super::EngineUpdate::Notice(message)) if message == super::LIMIT_NOTICE
+            Ok(super::EngineUpdate::Notice(message))
+                if message == "Stopped at the 60-minute limit"
+                    && super::is_limit_notice(&message)
         ));
+        assert!(!super::is_limit_notice(super::LIMIT_WARNING));
+    }
+
+    #[test]
+    fn the_warning_comes_a_minute_before_the_stop() {
+        let limit = Duration::from_secs(60 * 60);
+        let wait = |elapsed, warned| {
+            super::until_next_limit_step(limit, Duration::from_secs(elapsed), warned).as_secs()
+        };
+        assert_eq!(wait(0, false), 59 * 60);
+        assert_eq!(wait(11 * 60, false), 48 * 60);
+        assert_eq!(wait(59 * 60, false), 0);
+        assert_eq!(wait(59 * 60, true), 60);
+        assert_eq!(wait(60 * 60, true), 0);
+        assert_eq!(wait(61 * 60, true), 0);
     }
 
     use std::path::Path;

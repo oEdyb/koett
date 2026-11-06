@@ -1,0 +1,2102 @@
+{
+  "n01-en-GB-RyanNeural": {
+    "audio_seconds": 3.168,
+    "biased_ms": 150.422859,
+    "ctc_ms": 24.726623999999997,
+    "plain_ms": 71.923469,
+    "raw": "I bought a coat and a new pair of boots",
+    "sidecar_biased": "I bought a coat and a new pair of boots",
+    "sidecar_plain": "I bought a coat and a new pair of boots",
+    "spelling": "I bought a coat and a new pair of boots"
+  },
+  "n01-en-US-AndrewNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 120.77826,
+    "ctc_ms": 20.941095,
+    "plain_ms": 59.995056,
+    "raw": "I bought a coat and a new pair of boots.",
+    "sidecar_biased": "I bought a coat and a new pair of boots.",
+    "sidecar_plain": "I bought a coat and a new pair of boots.",
+    "spelling": "I bought a coat and a new pair of boots."
+  },
+  "n01-en-US-EmmaNeural": {
+    "audio_seconds": 2.496,
+    "biased_ms": 115.510066,
+    "ctc_ms": 22.362282,
+    "plain_ms": 64.244403,
+    "raw": "I bought a coat and a new pair of boots",
+    "sidecar_biased": "I bought a coat and a new pair of boots",
+    "sidecar_plain": "I bought a coat and a new pair of boots",
+    "spelling": "I bought a coat and a new pair of boots"
+  },
+  "n02-en-GB-RyanNeural": {
+    "audio_seconds": 2.928,
+    "biased_ms": 139.670821,
+    "ctc_ms": 24.604083999999997,
+    "plain_ms": 66.152708,
+    "raw": "The parrot sat on the kitchen counter",
+    "sidecar_biased": "The parrot sat on the kitchen counter",
+    "sidecar_plain": "The parrot sat on the kitchen counter",
+    "spelling": "The parrot sat on the kitchen counter"
+  },
+  "n02-en-US-AndrewNeural": {
+    "audio_seconds": 2.04,
+    "biased_ms": 109.000945,
+    "ctc_ms": 19.090751,
+    "plain_ms": 53.968345,
+    "raw": "The parrots sat on the kitchen counter",
+    "sidecar_biased": "The parrots sat on the kitchen counter",
+    "sidecar_plain": "The parrots sat on the kitchen counter",
+    "spelling": "The parrots sat on the kitchen counter"
+  },
+  "n02-en-US-EmmaNeural": {
+    "audio_seconds": 2.448,
+    "biased_ms": 124.04437,
+    "ctc_ms": 20.672165999999997,
+    "plain_ms": 58.19902200000001,
+    "raw": "The parrot sat on the kitchen counter",
+    "sidecar_biased": "The parrot sat on the kitchen counter",
+    "sidecar_plain": "The parrot sat on the kitchen counter",
+    "spelling": "The parrot sat on the kitchen counter"
+  },
+  "n03-en-GB-RyanNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 127.17766,
+    "ctc_ms": 24.623935,
+    "plain_ms": 65.491279,
+    "raw": "She sent a short note to the team",
+    "sidecar_biased": "She sent a short note to the team",
+    "sidecar_plain": "She sent a short note to the team",
+    "spelling": "She sent a short note to the team"
+  },
+  "n03-en-US-AndrewNeural": {
+    "audio_seconds": 1.992,
+    "biased_ms": 112.353065,
+    "ctc_ms": 21.472393999999998,
+    "plain_ms": 56.183348,
+    "raw": "She sent a short note to the team",
+    "sidecar_biased": "She sent a short note to the team",
+    "sidecar_plain": "She sent a short note to the team",
+    "spelling": "She sent a short note to the team"
+  },
+  "n03-en-US-EmmaNeural": {
+    "audio_seconds": 2.304,
+    "biased_ms": 118.445346,
+    "ctc_ms": 24.510685000000002,
+    "plain_ms": 61.099013,
+    "raw": "She sent a short note to the team",
+    "sidecar_biased": "She sent a short note to the team",
+    "sidecar_plain": "She sent a short note to the team",
+    "spelling": "She sent a short note to the team"
+  },
+  "n04-en-GB-RyanNeural": {
+    "audio_seconds": 3.048,
+    "biased_ms": 143.74080899999998,
+    "ctc_ms": 30.458486999999998,
+    "plain_ms": 72.939076,
+    "raw": "We need a group decision before lunch",
+    "sidecar_biased": "We need a group decision before lunch",
+    "sidecar_plain": "We need a group decision before lunch",
+    "spelling": "We need a group decision before lunch"
+  },
+  "n04-en-US-AndrewNeural": {
+    "audio_seconds": 2.2800000000000002,
+    "biased_ms": 112.616145,
+    "ctc_ms": 20.563147,
+    "plain_ms": 55.605849,
+    "raw": "We need a group decision before launch",
+    "sidecar_biased": "We need a group decision before launch",
+    "sidecar_plain": "We need a group decision before launch",
+    "spelling": "We need a group decision before launch"
+  },
+  "n04-en-US-EmmaNeural": {
+    "audio_seconds": 2.544,
+    "biased_ms": 118.78760600000001,
+    "ctc_ms": 20.706717,
+    "plain_ms": 55.44641,
+    "raw": "We need a group decision before lunch",
+    "sidecar_biased": "We need a group decision before lunch",
+    "sidecar_plain": "We need a group decision before lunch",
+    "spelling": "We need a group decision before lunch"
+  },
+  "n05-en-GB-RyanNeural": {
+    "audio_seconds": 2.928,
+    "biased_ms": 155.86117199999998,
+    "ctc_ms": 23.420139,
+    "plain_ms": 66.302396,
+    "raw": "The quQeen visited the city last summer",
+    "sidecar_biased": "The quQeen visited the city last summer",
+    "sidecar_plain": "The quQeen visited the city last summer",
+    "spelling": "The quQeen visited the city last summer"
+  },
+  "n05-en-US-AndrewNeural": {
+    "audio_seconds": 2.376,
+    "biased_ms": 112.548955,
+    "ctc_ms": 26.02542,
+    "plain_ms": 64.238483,
+    "raw": "The quQeen visited the city last summer",
+    "sidecar_biased": "The quQeen visited the city last summer",
+    "sidecar_plain": "The quQeen visited the city last summer",
+    "spelling": "The quQeen visited the city last summer"
+  },
+  "n05-en-US-EmmaNeural": {
+    "audio_seconds": 2.64,
+    "biased_ms": 125.825924,
+    "ctc_ms": 23.547518,
+    "plain_ms": 65.809708,
+    "raw": "The quQeen visited the city last summer.",
+    "sidecar_biased": "The quQeen visited the city last summer.",
+    "sidecar_plain": "The quQeen visited the city last summer.",
+    "spelling": "The quQeen visited the city last summer."
+  },
+  "n06-en-GB-RyanNeural": {
+    "audio_seconds": 2.952,
+    "biased_ms": 135.585354,
+    "ctc_ms": 26.928147,
+    "plain_ms": 72.511788,
+    "raw": "He drove the cart across the field",
+    "sidecar_biased": "He drove the cart across the field",
+    "sidecar_plain": "He drove the cart across the field",
+    "spelling": "He drove the cart across the field"
+  },
+  "n06-en-US-AndrewNeural": {
+    "audio_seconds": 2.136,
+    "biased_ms": 110.18359199999999,
+    "ctc_ms": 20.976274999999998,
+    "plain_ms": 53.735516,
+    "raw": "He drove the cart across the field",
+    "sidecar_biased": "He drove the cart across the field",
+    "sidecar_plain": "He drove the cart across the field",
+    "spelling": "He drove the cart across the field"
+  },
+  "n06-en-US-EmmaNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 114.07597999999999,
+    "ctc_ms": 19.83267,
+    "plain_ms": 59.794376,
+    "raw": "He drove the cart across the field.",
+    "sidecar_biased": "He drove the cart across the field.",
+    "sidecar_plain": "He drove the cart across the field.",
+    "spelling": "He drove the cart across the field."
+  },
+  "n07-en-GB-RyanNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 141.379606,
+    "ctc_ms": 29.687419,
+    "plain_ms": 69.064868,
+    "raw": "Hold on, I will call you back in a minute",
+    "sidecar_biased": "Hold on, I will call you back in a minute",
+    "sidecar_plain": "Hold on, I will call you back in a minute",
+    "spelling": "Hold on, I will call you back in a minute"
+  },
+  "n07-en-US-AndrewNeural": {
+    "audio_seconds": 2.664,
+    "biased_ms": 127.22834999999999,
+    "ctc_ms": 24.379455,
+    "plain_ms": 59.918476999999996,
+    "raw": "Hold on, I will call you back in a minute",
+    "sidecar_biased": "Hold on, I will call you back in a minute",
+    "sidecar_plain": "Hold on, I will call you back in a minute",
+    "spelling": "Hold on, I will call you back in a minute"
+  },
+  "n07-en-US-EmmaNeural": {
+    "audio_seconds": 2.424,
+    "biased_ms": 122.17969500000001,
+    "ctc_ms": 22.571521,
+    "plain_ms": 57.126615,
+    "raw": "Hold on, I will call you back in a minute",
+    "sidecar_biased": "Hold on, I will call you back in a minute",
+    "sidecar_plain": "Hold on, I will call you back in a minute",
+    "spelling": "Hold on, I will call you back in a minute"
+  },
+  "n08-en-GB-RyanNeural": {
+    "audio_seconds": 3.456,
+    "biased_ms": 155.304744,
+    "ctc_ms": 28.294573,
+    "plain_ms": 74.357102,
+    "raw": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_biased": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_plain": "Jacob and Matthias went fishing on Sunday",
+    "spelling": "Jacob and Matthias went fishing on Sunday"
+  },
+  "n08-en-US-AndrewNeural": {
+    "audio_seconds": 2.7119999999999997,
+    "biased_ms": 129.808192,
+    "ctc_ms": 25.389841999999998,
+    "plain_ms": 61.97835,
+    "raw": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_biased": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_plain": "Jacob and Matthias went fishing on Sunday",
+    "spelling": "Jacob and Matthias went fishing on Sunday"
+  },
+  "n08-en-US-EmmaNeural": {
+    "audio_seconds": 2.808,
+    "biased_ms": 137.181039,
+    "ctc_ms": 23.589617999999998,
+    "plain_ms": 65.55124900000001,
+    "raw": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_biased": "Jacob and Matthias went fishing on Sunday",
+    "sidecar_plain": "Jacob and Matthias went fishing on Sunday",
+    "spelling": "Jacob and Matthias went fishing on Sunday"
+  },
+  "n09-en-GB-RyanNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 149.314002,
+    "ctc_ms": 24.344845,
+    "plain_ms": 71.656441,
+    "raw": "The old coat hangs behind the door",
+    "sidecar_biased": "The old coat hangs behind the door",
+    "sidecar_plain": "The old coat hangs behind the door",
+    "spelling": "The old coat hangs behind the door"
+  },
+  "n09-en-US-AndrewNeural": {
+    "audio_seconds": 2.184,
+    "biased_ms": 115.68139500000001,
+    "ctc_ms": 21.376863999999998,
+    "plain_ms": 57.086035,
+    "raw": "The old coat hangs behind the door",
+    "sidecar_biased": "The old coat hangs behind the door",
+    "sidecar_plain": "The old coat hangs behind the door",
+    "spelling": "The old coat hangs behind the door"
+  },
+  "n09-en-US-EmmaNeural": {
+    "audio_seconds": 2.352,
+    "biased_ms": 116.638012,
+    "ctc_ms": 22.535441,
+    "plain_ms": 54.760382,
+    "raw": "The old coat hangs behind the door",
+    "sidecar_biased": "The old coat hangs behind the door",
+    "sidecar_plain": "The old coat hangs behind the door",
+    "spelling": "The old coat hangs behind the door"
+  },
+  "n10-en-GB-RyanNeural": {
+    "audio_seconds": 3.144,
+    "biased_ms": 142.10578500000003,
+    "ctc_ms": 24.647294,
+    "plain_ms": 71.74345,
+    "raw": "Cloud storage is cheaper than it used to be",
+    "sidecar_biased": "Cloud storage is cheaper than it used to be",
+    "sidecar_plain": "Cloud storage is cheaper than it used to be",
+    "spelling": "Cloud storage is cheaper than it used to be"
+  },
+  "n10-en-US-AndrewNeural": {
+    "audio_seconds": 2.496,
+    "biased_ms": 117.03575099999999,
+    "ctc_ms": 21.644813,
+    "plain_ms": 58.25241200000001,
+    "raw": "Cloud storage is cheaper than it used to be",
+    "sidecar_biased": "Cloud storage is cheaper than it used to be",
+    "sidecar_plain": "Cloud storage is cheaper than it used to be",
+    "spelling": "Cloud storage is cheaper than it used to be"
+  },
+  "n10-en-US-EmmaNeural": {
+    "audio_seconds": 2.784,
+    "biased_ms": 129.865512,
+    "ctc_ms": 27.141837,
+    "plain_ms": 61.984829999999995,
+    "raw": "Cloud storage is cheaper than it used to be",
+    "sidecar_biased": "Cloud storage is cheaper than it used to be",
+    "sidecar_plain": "Cloud storage is cheaper than it used to be",
+    "spelling": "Cloud storage is cheaper than it used to be"
+  },
+  "n11-en-GB-RyanNeural": {
+    "audio_seconds": 3.072,
+    "biased_ms": 146.67492,
+    "ctc_ms": 24.581785,
+    "plain_ms": 71.284162,
+    "raw": "Fortunately, the train arrived on time",
+    "sidecar_biased": "Fortunately, the train arrived on time",
+    "sidecar_plain": "Fortunately, the train arrived on time",
+    "spelling": "Fortunately, the train arrived on time"
+  },
+  "n11-en-US-AndrewNeural": {
+    "audio_seconds": 2.376,
+    "biased_ms": 119.318075,
+    "ctc_ms": 22.85792,
+    "plain_ms": 57.117834,
+    "raw": "Fortunately, the train arrived on time",
+    "sidecar_biased": "Fortunately, the train arrived on time",
+    "sidecar_plain": "Fortunately, the train arrived on time",
+    "spelling": "Fortunately, the train arrived on time"
+  },
+  "n11-en-US-EmmaNeural": {
+    "audio_seconds": 2.664,
+    "biased_ms": 126.568342,
+    "ctc_ms": 23.100339,
+    "plain_ms": 61.302212000000004,
+    "raw": "Fortunately, the train arrived on time",
+    "sidecar_biased": "Fortunately, the train arrived on time",
+    "sidecar_plain": "Fortunately, the train arrived on time",
+    "spelling": "Fortunately, the train arrived on time"
+  },
+  "n12-en-GB-RyanNeural": {
+    "audio_seconds": 3.216,
+    "biased_ms": 150.353249,
+    "ctc_ms": 26.852508,
+    "plain_ms": 72.29597799999999,
+    "raw": "The tower was built more than a hundred years ago",
+    "sidecar_biased": "The tower was built more than a hundred years ago",
+    "sidecar_plain": "The tower was built more than a hundred years ago",
+    "spelling": "The tower was built more than a hundred years ago"
+  },
+  "n12-en-US-AndrewNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 140.013451,
+    "ctc_ms": 22.569261,
+    "plain_ms": 62.571937999999996,
+    "raw": "The tower was built more than a hundred years ago",
+    "sidecar_biased": "The tower was built more than a hundred years ago",
+    "sidecar_plain": "The tower was built more than a hundred years ago",
+    "spelling": "The tower was built more than a hundred years ago"
+  },
+  "n12-en-US-EmmaNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 140.23930000000001,
+    "ctc_ms": 26.492269,
+    "plain_ms": 70.139945,
+    "raw": "The tower was built more than a hundred years ago",
+    "sidecar_biased": "The tower was built more than a hundred years ago",
+    "sidecar_plain": "The tower was built more than a hundred years ago",
+    "spelling": "The tower was built more than a hundred years ago"
+  },
+  "n13-en-GB-RyanNeural": {
+    "audio_seconds": 3.456,
+    "biased_ms": 152.34909299999998,
+    "ctc_ms": 26.553048999999998,
+    "plain_ms": 73.29309500000001,
+    "raw": "Please fix the typo in the second paragraph",
+    "sidecar_biased": "Please fix the typo in the second paragraph",
+    "sidecar_plain": "Please fix the typo in the second paragraph",
+    "spelling": "Please fix the typo in the second paragraph"
+  },
+  "n13-en-US-AndrewNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 133.387111,
+    "ctc_ms": 23.208769,
+    "plain_ms": 61.013963,
+    "raw": "Please fix the typo in the second paragraph",
+    "sidecar_biased": "Please fix the typo in the second paragraph",
+    "sidecar_plain": "Please fix the typo in the second paragraph",
+    "spelling": "Please fix the typo in the second paragraph"
+  },
+  "n13-en-US-EmmaNeural": {
+    "audio_seconds": 3.024,
+    "biased_ms": 140.040851,
+    "ctc_ms": 26.392739,
+    "plain_ms": 68.104081,
+    "raw": "Please fix the typo in the second paragraph",
+    "sidecar_biased": "Please fix the typo in the second paragraph",
+    "sidecar_plain": "Please fix the typo in the second paragraph",
+    "spelling": "Please fix the typo in the second paragraph"
+  },
+  "n14-en-GB-RyanNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 134.984467,
+    "ctc_ms": 24.265874999999998,
+    "plain_ms": 68.11231099999999,
+    "raw": "The weather in the bay was calm and sunny",
+    "sidecar_biased": "The weather in the bay was calm and sunny",
+    "sidecar_plain": "The weather in the bay was calm and sunny",
+    "spelling": "The weather in the bay was calm and sunny"
+  },
+  "n14-en-US-AndrewNeural": {
+    "audio_seconds": 2.544,
+    "biased_ms": 119.57889300000001,
+    "ctc_ms": 20.229978,
+    "plain_ms": 56.243068,
+    "raw": "The weather in the bay was calm and sunny",
+    "sidecar_biased": "The weather in the bay was calm and sunny",
+    "sidecar_plain": "The weather in the bay was calm and sunny",
+    "spelling": "The weather in the bay was calm and sunny"
+  },
+  "n14-en-US-EmmaNeural": {
+    "audio_seconds": 2.52,
+    "biased_ms": 126.657671,
+    "ctc_ms": 23.392849000000002,
+    "plain_ms": 64.24104299999999,
+    "raw": "The weather in the bay was calm and sunny",
+    "sidecar_biased": "The weather in the bay was calm and sunny",
+    "sidecar_plain": "The weather in the bay was calm and sunny",
+    "spelling": "The weather in the bay was calm and sunny"
+  },
+  "n15-en-GB-RyanNeural": {
+    "audio_seconds": 3.456,
+    "biased_ms": 153.34186,
+    "ctc_ms": 28.431643,
+    "plain_ms": 80.873672,
+    "raw": "I want to grow tomatoes in the garden this year",
+    "sidecar_biased": "I want to grow tomatoes in the garden this year",
+    "sidecar_plain": "I want to grow tomatoes in the garden this year",
+    "spelling": "I want to grow tomatoes in the garden this year"
+  },
+  "n15-en-US-AndrewNeural": {
+    "audio_seconds": 2.352,
+    "biased_ms": 123.366901,
+    "ctc_ms": 19.867780000000003,
+    "plain_ms": 55.697439,
+    "raw": "I want to grow tomatoes in the garden this year",
+    "sidecar_biased": "I want to grow tomatoes in the garden this year",
+    "sidecar_plain": "I want to grow tomatoes in the garden this year",
+    "spelling": "I want to grow tomatoes in the garden this year"
+  },
+  "n15-en-US-EmmaNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 147.022499,
+    "ctc_ms": 25.044283,
+    "plain_ms": 70.351364,
+    "raw": "I want to grow tomatoes in the garden this year",
+    "sidecar_biased": "I want to grow tomatoes in the garden this year",
+    "sidecar_plain": "I want to grow tomatoes in the garden this year",
+    "spelling": "I want to grow tomatoes in the garden this year"
+  },
+  "n16-en-GB-RyanNeural": {
+    "audio_seconds": 3.48,
+    "biased_ms": 163.291549,
+    "ctc_ms": 30.175397999999998,
+    "plain_ms": 88.73401799999999,
+    "raw": "The superbase price does not include tax",
+    "sidecar_biased": "The superbase price does not include tax",
+    "sidecar_plain": "The superbase price does not include tax",
+    "spelling": "The superbase price does not include tax"
+  },
+  "n16-en-US-AndrewNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 131.78057700000002,
+    "ctc_ms": 24.020156,
+    "plain_ms": 63.767543999999994,
+    "raw": "The super base price does not include tax",
+    "sidecar_biased": "The super base price does not include tax",
+    "sidecar_plain": "The super base price does not include tax",
+    "spelling": "The super base price does not include tax"
+  },
+  "n16-en-US-EmmaNeural": {
+    "audio_seconds": 2.976,
+    "biased_ms": 139.207113,
+    "ctc_ms": 25.531542,
+    "plain_ms": 66.911054,
+    "raw": "The super base price does not include tax",
+    "sidecar_biased": "The super base price does not include tax",
+    "sidecar_plain": "The super base price does not include tax",
+    "spelling": "The super base price does not include tax"
+  },
+  "n17-en-GB-RyanNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 133.073982,
+    "ctc_ms": 23.868427,
+    "plain_ms": 68.43999000000001,
+    "raw": "Can you send me the code from yesterday",
+    "sidecar_biased": "Can you send me the code from yesterday",
+    "sidecar_plain": "Can you send me the code from yesterday",
+    "spelling": "Can you send me the code from yesterday"
+  },
+  "n17-en-US-AndrewNeural": {
+    "audio_seconds": 1.968,
+    "biased_ms": 109.131756,
+    "ctc_ms": 22.374011,
+    "plain_ms": 52.999936999999996,
+    "raw": "Can you send me the code from yesterday",
+    "sidecar_biased": "Can you send me the code from yesterday",
+    "sidecar_plain": "Can you send me the code from yesterday",
+    "spelling": "Can you send me the code from yesterday"
+  },
+  "n17-en-US-EmmaNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 112.280286,
+    "ctc_ms": 23.079700000000003,
+    "plain_ms": 55.935767999999996,
+    "raw": "Can you send me the code from yesterday?",
+    "sidecar_biased": "Can you send me the code from yesterday?",
+    "sidecar_plain": "Can you send me the code from yesterday?",
+    "spelling": "Can you send me the code from yesterday?"
+  },
+  "n18-en-GB-RyanNeural": {
+    "audio_seconds": 2.592,
+    "biased_ms": 126.57363199999999,
+    "ctc_ms": 24.345835,
+    "plain_ms": 59.139649000000006,
+    "raw": "That matters more than the deadline",
+    "sidecar_biased": "That matters more than the deadline",
+    "sidecar_plain": "That matters more than the deadline",
+    "spelling": "That matters more than the deadline"
+  },
+  "n18-en-US-AndrewNeural": {
+    "audio_seconds": 2.016,
+    "biased_ms": 107.90961899999999,
+    "ctc_ms": 20.480427,
+    "plain_ms": 57.48436400000001,
+    "raw": "That matters more than the deadline",
+    "sidecar_biased": "That matters more than the deadline",
+    "sidecar_plain": "That matters more than the deadline",
+    "spelling": "That matters more than the deadline"
+  },
+  "n18-en-US-EmmaNeural": {
+    "audio_seconds": 2.232,
+    "biased_ms": 114.880567,
+    "ctc_ms": 26.790488,
+    "plain_ms": 56.358218,
+    "raw": "That matters more than the deadline",
+    "sidecar_biased": "That matters more than the deadline",
+    "sidecar_plain": "That matters more than the deadline",
+    "spelling": "That matters more than the deadline"
+  },
+  "n19-en-GB-RyanNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 138.833494,
+    "ctc_ms": 26.313389,
+    "plain_ms": 69.63008699999999,
+    "raw": "The audio was too fluid to follow",
+    "sidecar_biased": "The audio was too fluid to follow",
+    "sidecar_plain": "The audio was too fluid to follow",
+    "spelling": "The audio was too fluid to follow"
+  },
+  "n19-en-US-AndrewNeural": {
+    "audio_seconds": 2.2800000000000002,
+    "biased_ms": 110.52525100000001,
+    "ctc_ms": 23.406388,
+    "plain_ms": 56.563307,
+    "raw": "The audio was too fluid to follow",
+    "sidecar_biased": "The audio was too fluid to follow",
+    "sidecar_plain": "The audio was too fluid to follow",
+    "spelling": "The audio was too fluid to follow"
+  },
+  "n19-en-US-EmmaNeural": {
+    "audio_seconds": 2.328,
+    "biased_ms": 112.130277,
+    "ctc_ms": 22.82178,
+    "plain_ms": 57.111824999999996,
+    "raw": "The audio was too fluid to follow",
+    "sidecar_biased": "The audio was too fluid to follow",
+    "sidecar_plain": "The audio was too fluid to follow",
+    "spelling": "The audio was too fluid to follow"
+  },
+  "n20-en-GB-RyanNeural": {
+    "audio_seconds": 2.952,
+    "biased_ms": 145.430034,
+    "ctc_ms": 26.929128,
+    "plain_ms": 76.609035,
+    "raw": "We ordered a pizza and some salad",
+    "sidecar_biased": "We ordered a pizza and some salad",
+    "sidecar_plain": "We ordered a pizza and some salad",
+    "spelling": "We ordered a pizza and some salad"
+  },
+  "n20-en-US-AndrewNeural": {
+    "audio_seconds": 2.328,
+    "biased_ms": 115.04996700000001,
+    "ctc_ms": 23.390568000000002,
+    "plain_ms": 56.113008,
+    "raw": "We ordered a pizza and some salad",
+    "sidecar_biased": "We ordered a pizza and some salad",
+    "sidecar_plain": "We ordered a pizza and some salad",
+    "spelling": "We ordered a pizza and some salad"
+  },
+  "n20-en-US-EmmaNeural": {
+    "audio_seconds": 2.304,
+    "biased_ms": 116.943752,
+    "ctc_ms": 25.92314,
+    "plain_ms": 57.770043,
+    "raw": "We ordered a pizza and some salad",
+    "sidecar_biased": "We ordered a pizza and some salad",
+    "sidecar_plain": "We ordered a pizza and some salad",
+    "spelling": "We ordered a pizza and some salad"
+  },
+  "n21-en-GB-RyanNeural": {
+    "audio_seconds": 3.36,
+    "biased_ms": 154.057288,
+    "ctc_ms": 25.948051,
+    "plain_ms": 73.210285,
+    "raw": "The meeting starts at nine to morrow morning",
+    "sidecar_biased": "The meeting starts at nine to morrow morning",
+    "sidecar_plain": "The meeting starts at nine to morrow morning",
+    "spelling": "The meeting starts at nine to morrow morning"
+  },
+  "n21-en-US-AndrewNeural": {
+    "audio_seconds": 2.328,
+    "biased_ms": 117.22518099999999,
+    "ctc_ms": 24.371975,
+    "plain_ms": 63.131856,
+    "raw": "The meeting starts at nine tomorrow morning",
+    "sidecar_biased": "The meeting starts at nine tomorrow morning",
+    "sidecar_plain": "The meeting starts at nine tomorrow morning",
+    "spelling": "The meeting starts at nine tomorrow morning"
+  },
+  "n21-en-US-EmmaNeural": {
+    "audio_seconds": 2.616,
+    "biased_ms": 127.490719,
+    "ctc_ms": 21.516364,
+    "plain_ms": 59.807607,
+    "raw": "The meeting starts at nine tomorrow morning",
+    "sidecar_biased": "The meeting starts at nine tomorrow morning",
+    "sidecar_plain": "The meeting starts at nine tomorrow morning",
+    "spelling": "The meeting starts at nine tomorrow morning"
+  },
+  "n22-en-GB-RyanNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 145.25439400000002,
+    "ctc_ms": 24.519045,
+    "plain_ms": 72.968087,
+    "raw": "Her sister moved to Gothenberurg in the spring",
+    "sidecar_biased": "Her sister moved to Gothenberurg in the spring",
+    "sidecar_plain": "Her sister moved to Gothenberurg in the spring",
+    "spelling": "Her sister moved to Gothenberurg in the spring"
+  },
+  "n22-en-US-AndrewNeural": {
+    "audio_seconds": 2.52,
+    "biased_ms": 116.274354,
+    "ctc_ms": 21.547694999999997,
+    "plain_ms": 56.848505,
+    "raw": "Her sister moved to Gothenburg in the spring",
+    "sidecar_biased": "Her sister moved to Gothenburg in the spring",
+    "sidecar_plain": "Her sister moved to Gothenburg in the spring",
+    "spelling": "Her sister moved to Gothenburg in the spring"
+  },
+  "n22-en-US-EmmaNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 130.696369,
+    "ctc_ms": 21.800744,
+    "plain_ms": 61.636131,
+    "raw": "Her sister moved to Gothenburg in the spring",
+    "sidecar_biased": "Her sister moved to Gothenburg in the spring",
+    "sidecar_plain": "Her sister moved to Gothenburg in the spring",
+    "spelling": "Her sister moved to Gothenburg in the spring"
+  },
+  "n23-en-GB-RyanNeural": {
+    "audio_seconds": 2.664,
+    "biased_ms": 124.980537,
+    "ctc_ms": 22.086433,
+    "plain_ms": 63.24452599999999,
+    "raw": "The highighland cattle stood in the rain",
+    "sidecar_biased": "The highighland cattle stood in the rain",
+    "sidecar_plain": "The highighland cattle stood in the rain",
+    "spelling": "The highighland cattle stood in the rain"
+  },
+  "n23-en-US-AndrewNeural": {
+    "audio_seconds": 2.088,
+    "biased_ms": 136.013643,
+    "ctc_ms": 20.944376000000002,
+    "plain_ms": 52.619839,
+    "raw": "The Highland cattle stood in the rain",
+    "sidecar_biased": "The Highland cattle stood in the rain",
+    "sidecar_plain": "The Highland cattle stood in the rain",
+    "spelling": "The Highland cattle stood in the rain"
+  },
+  "n23-en-US-EmmaNeural": {
+    "audio_seconds": 2.376,
+    "biased_ms": 123.81918999999999,
+    "ctc_ms": 23.753507,
+    "plain_ms": 58.494951,
+    "raw": "The highighland cattle stood in the rain",
+    "sidecar_biased": "The highighland cattle stood in the rain",
+    "sidecar_plain": "The highighland cattle stood in the rain",
+    "spelling": "The highighland cattle stood in the rain"
+  },
+  "n24-en-GB-RyanNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 125.701664,
+    "ctc_ms": 23.560508000000002,
+    "plain_ms": 62.296099,
+    "raw": "Put the kettle on and make some tea",
+    "sidecar_biased": "Put the kettle on and make some tea",
+    "sidecar_plain": "Put the kettle on and make some tea",
+    "spelling": "Put the kettle on and make some tea"
+  },
+  "n24-en-US-AndrewNeural": {
+    "audio_seconds": 2.136,
+    "biased_ms": 111.286239,
+    "ctc_ms": 21.175205,
+    "plain_ms": 55.47352,
+    "raw": "Put the kettle on and make some tea",
+    "sidecar_biased": "Put the kettle on and make some tea",
+    "sidecar_plain": "Put the kettle on and make some tea",
+    "spelling": "Put the kettle on and make some tea"
+  },
+  "n24-en-US-EmmaNeural": {
+    "audio_seconds": 2.232,
+    "biased_ms": 114.250769,
+    "ctc_ms": 20.590627,
+    "plain_ms": 53.435576999999995,
+    "raw": "Put the kettle on and make some tea",
+    "sidecar_biased": "Put the kettle on and make some tea",
+    "sidecar_plain": "Put the kettle on and make some tea",
+    "spelling": "Put the kettle on and make some tea"
+  },
+  "n25-en-GB-RyanNeural": {
+    "audio_seconds": 3.096,
+    "biased_ms": 138.380776,
+    "ctc_ms": 26.24061,
+    "plain_ms": 74.309312,
+    "raw": "The car was parked outside the hotel",
+    "sidecar_biased": "The car was parked outside the hotel",
+    "sidecar_plain": "The car was parked outside the hotel",
+    "spelling": "The car was parked outside the hotel"
+  },
+  "n25-en-US-AndrewNeural": {
+    "audio_seconds": 2.184,
+    "biased_ms": 113.305213,
+    "ctc_ms": 24.326416,
+    "plain_ms": 58.51074,
+    "raw": "The car was parked outside the hotel",
+    "sidecar_biased": "The car was parked outside the hotel",
+    "sidecar_plain": "The car was parked outside the hotel",
+    "spelling": "The car was parked outside the hotel"
+  },
+  "n25-en-US-EmmaNeural": {
+    "audio_seconds": 2.52,
+    "biased_ms": 115.64803599999999,
+    "ctc_ms": 21.688074,
+    "plain_ms": 59.643897,
+    "raw": "The car was parked outside the hotel",
+    "sidecar_biased": "The car was parked outside the hotel",
+    "sidecar_plain": "The car was parked outside the hotel",
+    "spelling": "The car was parked outside the hotel"
+  },
+  "n26-en-GB-RyanNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 125.70383399999999,
+    "ctc_ms": 22.686920999999998,
+    "plain_ms": 59.745527,
+    "raw": "Can you look at the budget again?",
+    "sidecar_biased": "Can you look at the budget again?",
+    "sidecar_plain": "Can you look at the budget again?",
+    "spelling": "Can you look at the budget again?"
+  },
+  "n26-en-US-AndrewNeural": {
+    "audio_seconds": 1.8719999999999999,
+    "biased_ms": 105.56025600000001,
+    "ctc_ms": 21.580284000000002,
+    "plain_ms": 53.297677,
+    "raw": "Can you look at the budget again",
+    "sidecar_biased": "Can you look at the budget again",
+    "sidecar_plain": "Can you look at the budget again",
+    "spelling": "Can you look at the budget again"
+  },
+  "n26-en-US-EmmaNeural": {
+    "audio_seconds": 2.064,
+    "biased_ms": 107.981089,
+    "ctc_ms": 23.319838,
+    "plain_ms": 51.813721,
+    "raw": "Can you look at the budget again",
+    "sidecar_biased": "Can you look at the budget again",
+    "sidecar_plain": "Can you look at the budget again",
+    "spelling": "Can you look at the budget again"
+  },
+  "n27-en-GB-RyanNeural": {
+    "audio_seconds": 3.216,
+    "biased_ms": 155.842902,
+    "ctc_ms": 36.669677,
+    "plain_ms": 77.423113,
+    "raw": "We should hire another designer next quarter",
+    "sidecar_biased": "We should hire another designer next quarter",
+    "sidecar_plain": "We should hire another designer next quarter",
+    "spelling": "We should hire another designer next quarter"
+  },
+  "n27-en-US-AndrewNeural": {
+    "audio_seconds": 2.448,
+    "biased_ms": 131.192017,
+    "ctc_ms": 21.368814,
+    "plain_ms": 58.550711,
+    "raw": "We should hire another designer next quarter",
+    "sidecar_biased": "We should hire another designer next quarter",
+    "sidecar_plain": "We should hire another designer next quarter",
+    "spelling": "We should hire another designer next quarter"
+  },
+  "n27-en-US-EmmaNeural": {
+    "audio_seconds": 2.808,
+    "biased_ms": 131.810426,
+    "ctc_ms": 36.04928,
+    "plain_ms": 67.367613,
+    "raw": "We should hire another designer next quarter",
+    "sidecar_biased": "We should hire another designer next quarter",
+    "sidecar_plain": "We should hire another designer next quarter",
+    "spelling": "We should hire another designer next quarter"
+  },
+  "n28-en-GB-RyanNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 149.87387999999999,
+    "ctc_ms": 27.540815,
+    "plain_ms": 74.701241,
+    "raw": "The parakeets in the park are loud in the morning",
+    "sidecar_biased": "The parakeets in the park are loud in the morning",
+    "sidecar_plain": "The parakeets in the park are loud in the morning",
+    "spelling": "The parakeets in the park are loud in the morning"
+  },
+  "n28-en-US-AndrewNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 144.60067600000002,
+    "ctc_ms": 27.002128,
+    "plain_ms": 67.601933,
+    "raw": "The parakeets in the park are loud in the morning",
+    "sidecar_biased": "The parakeets in the park are loud in the morning",
+    "sidecar_plain": "The parakeets in the park are loud in the morning",
+    "spelling": "The parakeets in the park are loud in the morning"
+  },
+  "n28-en-US-EmmaNeural": {
+    "audio_seconds": 2.928,
+    "biased_ms": 138.883445,
+    "ctc_ms": 23.549288,
+    "plain_ms": 66.913524,
+    "raw": "The parakeets in the park are loud in the morning",
+    "sidecar_biased": "The parakeets in the park are loud in the morning",
+    "sidecar_plain": "The parakeets in the park are loud in the morning",
+    "spelling": "The parakeets in the park are loud in the morning"
+  },
+  "n29-en-GB-RyanNeural": {
+    "audio_seconds": 2.856,
+    "biased_ms": 134.740107,
+    "ctc_ms": 24.862484000000002,
+    "plain_ms": 70.817503,
+    "raw": "Thanks, that sounds good to me",
+    "sidecar_biased": "Thanks, that sounds good to me",
+    "sidecar_plain": "Thanks, that sounds good to me",
+    "spelling": "Thanks, that sounds good to me"
+  },
+  "n29-en-US-AndrewNeural": {
+    "audio_seconds": 1.92,
+    "biased_ms": 96.662673,
+    "ctc_ms": 25.707760999999998,
+    "plain_ms": 48.373112000000006,
+    "raw": "Thanks. That sounds good to me.",
+    "sidecar_biased": "Thanks. That sounds good to me.",
+    "sidecar_plain": "Thanks. That sounds good to me.",
+    "spelling": "Thanks. That sounds good to me."
+  },
+  "n29-en-US-EmmaNeural": {
+    "audio_seconds": 1.8719999999999999,
+    "biased_ms": 99.862173,
+    "ctc_ms": 24.574064,
+    "plain_ms": 47.762913999999995,
+    "raw": "Thanks, that sounds good to me",
+    "sidecar_biased": "Thanks, that sounds good to me",
+    "sidecar_plain": "Thanks, that sounds good to me",
+    "spelling": "Thanks, that sounds good to me"
+  },
+  "n30-en-GB-RyanNeural": {
+    "audio_seconds": 3.312,
+    "biased_ms": 149.138103,
+    "ctc_ms": 32.923149,
+    "plain_ms": 71.976659,
+    "raw": "Remember to back up your files every week",
+    "sidecar_biased": "Remember to back up your files every week",
+    "sidecar_plain": "Remember to back up your files every week",
+    "spelling": "Remember to back up your files every week"
+  },
+  "n30-en-US-AndrewNeural": {
+    "audio_seconds": 2.6879999999999997,
+    "biased_ms": 127.827298,
+    "ctc_ms": 26.990237999999998,
+    "plain_ms": 66.15468700000001,
+    "raw": "Remember to back upp your files every week",
+    "sidecar_biased": "Remember to back upp your files every week",
+    "sidecar_plain": "Remember to back upp your files every week",
+    "spelling": "Remember to back upp your files every week"
+  },
+  "n30-en-US-EmmaNeural": {
+    "audio_seconds": 2.808,
+    "biased_ms": 135.114666,
+    "ctc_ms": 29.27169,
+    "plain_ms": 63.98237399999999,
+    "raw": "Remember to back up your files every week",
+    "sidecar_biased": "Remember to back up your files every week",
+    "sidecar_plain": "Remember to back up your files every week",
+    "spelling": "Remember to back up your files every week"
+  },
+  "p01-en-GB-RyanNeural": {
+    "audio_seconds": 3.7439999999999998,
+    "biased_ms": 171.555454,
+    "ctc_ms": 33.488527999999995,
+    "plain_ms": 79.673016,
+    "raw": "Coet turns my voice into text without the cloud",
+    "sidecar_biased": "Koett turns my voice into text without the cloud",
+    "sidecar_plain": "Coet turns my voice into text without the cloud",
+    "spelling": "Coet turns my voice into text without the cloud"
+  },
+  "p01-en-US-AndrewNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 146.620471,
+    "ctc_ms": 29.09881,
+    "plain_ms": 70.600804,
+    "raw": "Cat turns my voice into text without the cloud",
+    "sidecar_biased": "Cat turns my voice into text without the cloud",
+    "sidecar_plain": "Cat turns my voice into text without the cloud",
+    "spelling": "Cat turns my voice into text without the cloud"
+  },
+  "p01-en-US-EmmaNeural": {
+    "audio_seconds": 3.144,
+    "biased_ms": 148.650834,
+    "ctc_ms": 28.396683,
+    "plain_ms": 69.998335,
+    "raw": "Coat turns my voice into text without the cloud",
+    "sidecar_biased": "Coat turns my voice into text without the cloud",
+    "sidecar_plain": "Coat turns my voice into text without the cloud",
+    "spelling": "Coat turns my voice into text without the cloud"
+  },
+  "p02-en-GB-RyanNeural": {
+    "audio_seconds": 4.032,
+    "biased_ms": 176.887888,
+    "ctc_ms": 31.916972,
+    "plain_ms": 88.19398000000001,
+    "raw": "Open Co it and press the option key to start dictating",
+    "sidecar_biased": "Open Koett and press the option key to start dictating",
+    "sidecar_plain": "Open Co it and press the option key to start dictating",
+    "spelling": "Open Co it and press the option key to start dictating"
+  },
+  "p02-en-US-AndrewNeural": {
+    "audio_seconds": 3.48,
+    "biased_ms": 159.634361,
+    "ctc_ms": 30.327647,
+    "plain_ms": 76.473745,
+    "raw": "Open code and press the option key to start dictating",
+    "sidecar_biased": "Open code and press the option key to start dictating",
+    "sidecar_plain": "Open code and press the option key to start dictating",
+    "spelling": "Open code and press the option key to start dictating"
+  },
+  "p02-en-US-EmmaNeural": {
+    "audio_seconds": 3.384,
+    "biased_ms": 157.77418600000001,
+    "ctc_ms": 32.466881,
+    "plain_ms": 82.338588,
+    "raw": "Open code and press the option key to start dictating",
+    "sidecar_biased": "Open code and press the option key to start dictating",
+    "sidecar_plain": "Open code and press the option key to start dictating",
+    "spelling": "Open code and press the option key to start dictating"
+  },
+  "p03-en-GB-RyanNeural": {
+    "audio_seconds": 3.504,
+    "biased_ms": 162.414422,
+    "ctc_ms": 30.606656,
+    "plain_ms": 80.831792,
+    "raw": "The parakeet model runs locally on the laptop",
+    "sidecar_biased": "The parakeet model runs locally on the laptop",
+    "sidecar_plain": "The parakeet model runs locally on the laptop",
+    "spelling": "The Parakeet model runs locally on the laptop"
+  },
+  "p03-en-US-AndrewNeural": {
+    "audio_seconds": 3.0,
+    "biased_ms": 145.52158400000002,
+    "ctc_ms": 32.436321,
+    "plain_ms": 76.743674,
+    "raw": "The parakeet model runs locally on the laptop",
+    "sidecar_biased": "The parakeet model runs locally on the laptop",
+    "sidecar_plain": "The parakeet model runs locally on the laptop",
+    "spelling": "The Parakeet model runs locally on the laptop"
+  },
+  "p03-en-US-EmmaNeural": {
+    "audio_seconds": 3.048,
+    "biased_ms": 143.38855999999998,
+    "ctc_ms": 32.063932,
+    "plain_ms": 72.457648,
+    "raw": "The parakeute model runs locally on the laptop",
+    "sidecar_biased": "The Parakeet model runs locally on the laptop",
+    "sidecar_plain": "The Parakeet model runs locally on the laptop",
+    "spelling": "The parakeute model runs locally on the laptop"
+  },
+  "p04-en-GB-RyanNeural": {
+    "audio_seconds": 3.528,
+    "biased_ms": 155.24032400000002,
+    "ctc_ms": 29.803669000000003,
+    "plain_ms": 76.838804,
+    "raw": "We compiled Spperons from the pinsource tag",
+    "sidecar_biased": "We compiled Spperons from the pinsource tag",
+    "sidecar_plain": "We compiled Spperons from the pinsource tag",
+    "spelling": "We compiled Spperons from the pinsource tag"
+  },
+  "p04-en-US-AndrewNeural": {
+    "audio_seconds": 2.88,
+    "biased_ms": 145.403314,
+    "ctc_ms": 27.775645,
+    "plain_ms": 69.066479,
+    "raw": "We compiled shirp belalongs from the pin source tag.",
+    "sidecar_biased": "We compiled shirp belalongs from the pin source tag.",
+    "sidecar_plain": "We compiled shirp belalongs from the pin source tag.",
+    "spelling": "We compiled shirp belalongs from the pin source tag."
+  },
+  "p04-en-US-EmmaNeural": {
+    "audio_seconds": 3.072,
+    "biased_ms": 149.770931,
+    "ctc_ms": 27.275596,
+    "plain_ms": 71.508761,
+    "raw": "We compiled shpbonks from the pin source tag",
+    "sidecar_biased": "We compiled shpbonks from the pin source tag",
+    "sidecar_plain": "We compiled shpbonks from the pin source tag",
+    "spelling": "We compiled shpbonks from the pin source tag"
+  },
+  "p05-en-GB-RyanNeural": {
+    "audio_seconds": 3.912,
+    "biased_ms": 175.288103,
+    "ctc_ms": 36.261539,
+    "plain_ms": 89.578616,
+    "raw": "Nematron streams partial results every half second",
+    "sidecar_biased": "Nemotron streams partial results every half second",
+    "sidecar_plain": "Nematron streams partial results every half second",
+    "spelling": "Nematron streams partial results every half second"
+  },
+  "p05-en-US-AndrewNeural": {
+    "audio_seconds": 3.336,
+    "biased_ms": 153.80347899999998,
+    "ctc_ms": 30.837245,
+    "plain_ms": 74.441292,
+    "raw": "Nematron streams partial results every half second",
+    "sidecar_biased": "Nemotron streams partial results every half second",
+    "sidecar_plain": "Nematron streams partial results every half second",
+    "spelling": "Nematron streams partial results every half second"
+  },
+  "p05-en-US-EmmaNeural": {
+    "audio_seconds": 3.48,
+    "biased_ms": 156.23449,
+    "ctc_ms": 31.499933000000002,
+    "plain_ms": 77.791262,
+    "raw": "Nematron streams partial results every half second",
+    "sidecar_biased": "Nemotron streams partial results every half second",
+    "sidecar_plain": "Nematron streams partial results every half second",
+    "spelling": "Nematron streams partial results every half second"
+  },
+  "p06-en-GB-RyanNeural": {
+    "audio_seconds": 3.912,
+    "biased_ms": 163.84161799999998,
+    "ctc_ms": 29.740089,
+    "plain_ms": 81.4393,
+    "raw": "On the Mac we use Fuid audio for speech recognition",
+    "sidecar_biased": "On the Mac we use FluidAudio for speech recognition",
+    "sidecar_plain": "On the Mac we use FluidAudio for speech recognition",
+    "spelling": "On the Mac we use Fuid audio for speech recognition"
+  },
+  "p06-en-US-AndrewNeural": {
+    "audio_seconds": 3.36,
+    "biased_ms": 154.892426,
+    "ctc_ms": 29.638909,
+    "plain_ms": 71.65792,
+    "raw": "On the Mac, we use flluid audio for speech recognition.",
+    "sidecar_biased": "On the Mac, we use FluidAudio for speech recognition.",
+    "sidecar_plain": "On the Mac, we use FluidAudio for speech recognition.",
+    "spelling": "On the Mac, we use flluid audio for speech recognition."
+  },
+  "p06-en-US-EmmaNeural": {
+    "audio_seconds": 3.528,
+    "biased_ms": 157.215238,
+    "ctc_ms": 33.887976,
+    "plain_ms": 79.130437,
+    "raw": "On the Mac, we use flluid audio for speech recognition",
+    "sidecar_biased": "On the Mac, we use FluidAudio for speech recognition",
+    "sidecar_plain": "On the Mac, we use FluidAudio for speech recognition",
+    "spelling": "On the Mac, we use flluid audio for speech recognition"
+  },
+  "p07-en-GB-RyanNeural": {
+    "audio_seconds": 3.816,
+    "biased_ms": 165.22499299999998,
+    "ctc_ms": 29.772599,
+    "plain_ms": 77.010014,
+    "raw": "Send a backlink report to Nordic Rank by Friday",
+    "sidecar_biased": "Send a backlink report to Nordicrank by Friday",
+    "sidecar_plain": "Send a backlink report to Nordicrank by Friday",
+    "spelling": "Send a backlink report to Nordicrank by Friday"
+  },
+  "p07-en-US-AndrewNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 168.640973,
+    "ctc_ms": 32.022131,
+    "plain_ms": 84.117133,
+    "raw": "Send the Backlink report to Nordickrank by Friday",
+    "sidecar_biased": "Send the Backlink report to Nordicrank by Friday",
+    "sidecar_plain": "Send the Backlink report to Nordickrank by Friday",
+    "spelling": "Send the Backlink report to Nordickrank by Friday"
+  },
+  "p07-en-US-EmmaNeural": {
+    "audio_seconds": 3.2640000000000002,
+    "biased_ms": 146.986579,
+    "ctc_ms": 28.061114,
+    "plain_ms": 75.19895,
+    "raw": "Send the backlink report to Nordic Rank by Friday",
+    "sidecar_biased": "Send the backlink report to Nordicrank by Friday",
+    "sidecar_plain": "Send the backlink report to Nordic Rank by Friday",
+    "spelling": "Send the backlink report to Nordicrank by Friday"
+  },
+  "p08-en-GB-RyanNeural": {
+    "audio_seconds": 3.408,
+    "biased_ms": 157.98953600000002,
+    "ctc_ms": 30.390918,
+    "plain_ms": 75.152179,
+    "raw": "I logged into Hoger to check the invoices",
+    "sidecar_biased": "I logged into Hogia to check the invoices",
+    "sidecar_plain": "I logged into Hoger to check the invoices",
+    "spelling": "I logged into Hoger to check the invoices"
+  },
+  "p08-en-US-AndrewNeural": {
+    "audio_seconds": 2.64,
+    "biased_ms": 128.026387,
+    "ctc_ms": 25.446192,
+    "plain_ms": 61.640022,
+    "raw": "I logged into Hogia to check the invoices.",
+    "sidecar_biased": "I logged into Hogia to check the invoices.",
+    "sidecar_plain": "I logged into Hogia to check the invoices.",
+    "spelling": "I logged into Hogia to check the invoices."
+  },
+  "p08-en-US-EmmaNeural": {
+    "audio_seconds": 2.88,
+    "biased_ms": 142.29903399999998,
+    "ctc_ms": 26.16914,
+    "plain_ms": 75.71876800000001,
+    "raw": "I logged into Hogia to check the invoices.",
+    "sidecar_biased": "I logged into Hogia to check the invoices.",
+    "sidecar_plain": "I logged into Hogia to check the invoices.",
+    "spelling": "I logged into Hogia to check the invoices."
+  },
+  "p09-en-GB-RyanNeural": {
+    "audio_seconds": 3.384,
+    "biased_ms": 154.143317,
+    "ctc_ms": 30.647666,
+    "plain_ms": 76.797155,
+    "raw": "Jacob wants a demo of the booking app tomorrow",
+    "sidecar_biased": "Yakob wants a demo of the booking app tomorrow",
+    "sidecar_plain": "Jacob wants a demo of the booking app tomorrow",
+    "spelling": "Jacob wants a demo of the booking app tomorrow"
+  },
+  "p09-en-US-AndrewNeural": {
+    "audio_seconds": 2.64,
+    "biased_ms": 137.55706800000002,
+    "ctc_ms": 26.947236999999998,
+    "plain_ms": 62.84337800000001,
+    "raw": "Jacob wants a demo of the booking app tomorrow.",
+    "sidecar_biased": "Yakob wants a demo of the booking app tomorrow.",
+    "sidecar_plain": "Jacob wants a demo of the booking app tomorrow.",
+    "spelling": "Jacob wants a demo of the booking app tomorrow."
+  },
+  "p09-en-US-EmmaNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 142.429313,
+    "ctc_ms": 29.062050999999997,
+    "plain_ms": 74.98584,
+    "raw": "Jacob wants a demo of the booking app tomorrow",
+    "sidecar_biased": "Yakob wants a demo of the booking app tomorrow",
+    "sidecar_plain": "Jacob wants a demo of the booking app tomorrow",
+    "spelling": "Jacob wants a demo of the booking app tomorrow"
+  },
+  "p10-en-GB-RyanNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 152.965871,
+    "ctc_ms": 27.562606,
+    "plain_ms": 72.688157,
+    "raw": "Machios paid the last three invoices",
+    "sidecar_biased": "Machios paid the last three invoices",
+    "sidecar_plain": "Machios paid the last three invoices",
+    "spelling": "Machios paid the last three invoices"
+  },
+  "p10-en-US-AndrewNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 132.757754,
+    "ctc_ms": 27.375586000000002,
+    "plain_ms": 64.792571,
+    "raw": "Matyas paid the last three invoices",
+    "sidecar_biased": "Matyas paid the last three invoices",
+    "sidecar_plain": "Matyas paid the last three invoices",
+    "spelling": "Matyas paid the last three invoices"
+  },
+  "p10-en-US-EmmaNeural": {
+    "audio_seconds": 2.64,
+    "biased_ms": 144.875536,
+    "ctc_ms": 25.180142,
+    "plain_ms": 62.711238,
+    "raw": "Matyas paid the last three invoices.",
+    "sidecar_biased": "Matyas paid the last three invoices.",
+    "sidecar_plain": "Matyas paid the last three invoices.",
+    "spelling": "Matyas paid the last three invoices."
+  },
+  "p11-en-GB-RyanNeural": {
+    "audio_seconds": 3.816,
+    "biased_ms": 158.333205,
+    "ctc_ms": 31.709032999999998,
+    "plain_ms": 80.996121,
+    "raw": "Hi, this is O Diberurg calling about the meeting",
+    "sidecar_biased": "Hi, this is O Diberurg calling about the meeting",
+    "sidecar_plain": "Hi, this is O Diberurg calling about the meeting",
+    "spelling": "Hi, this is O Diberurg calling about the meeting"
+  },
+  "p11-en-US-AndrewNeural": {
+    "audio_seconds": 2.928,
+    "biased_ms": 141.218117,
+    "ctc_ms": 29.919947,
+    "plain_ms": 66.76135599999999,
+    "raw": "Hi, this is all Diber callalling about the meeting",
+    "sidecar_biased": "Hi, this is all Diber callalling about the meeting",
+    "sidecar_plain": "Hi, this is all Diber callalling about the meeting",
+    "spelling": "Hi, this is all Diber callalling about the meeting"
+  },
+  "p11-en-US-EmmaNeural": {
+    "audio_seconds": 2.928,
+    "biased_ms": 136.92127000000002,
+    "ctc_ms": 26.311159,
+    "plain_ms": 67.362014,
+    "raw": "Hi, this is All Diberg calling about the meeting",
+    "sidecar_biased": "Hi, this is All Diberg calling about the meeting",
+    "sidecar_plain": "Hi, this is All Diberg calling about the meeting",
+    "spelling": "Hi, this is All Diberg calling about the meeting"
+  },
+  "p12-en-GB-RyanNeural": {
+    "audio_seconds": 3.024,
+    "biased_ms": 141.953175,
+    "ctc_ms": 27.344616,
+    "plain_ms": 77.39156299999999,
+    "raw": "O will review the pool request tonight",
+    "sidecar_biased": "O will review the pool request tonight",
+    "sidecar_plain": "O will review the pool request tonight",
+    "spelling": "O will review the pool request tonight"
+  },
+  "p12-en-US-AndrewNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 117.620009,
+    "ctc_ms": 26.25435,
+    "plain_ms": 58.321090999999996,
+    "raw": "All will review the poll request tonight.",
+    "sidecar_biased": "All will review the poll request tonight.",
+    "sidecar_plain": "All will review the poll request tonight.",
+    "spelling": "All will review the poll request tonight."
+  },
+  "p12-en-US-EmmaNeural": {
+    "audio_seconds": 2.568,
+    "biased_ms": 122.456785,
+    "ctc_ms": 28.328413,
+    "plain_ms": 63.081887,
+    "raw": "All will review the poull request tonight",
+    "sidecar_biased": "All will review the poull request tonight",
+    "sidecar_plain": "All will review the poull request tonight",
+    "spelling": "All will review the poull request tonight"
+  },
+  "p13-en-GB-RyanNeural": {
+    "audio_seconds": 3.7439999999999998,
+    "biased_ms": 156.67774,
+    "ctc_ms": 32.997499,
+    "plain_ms": 79.72037499999999,
+    "raw": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_biased": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_plain": "The cluster runs on Kubernetes with three nodes",
+    "spelling": "The cluster runs on Kubernetes with three nodes"
+  },
+  "p13-en-US-AndrewNeural": {
+    "audio_seconds": 3.168,
+    "biased_ms": 147.977247,
+    "ctc_ms": 28.345833000000002,
+    "plain_ms": 69.017798,
+    "raw": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_biased": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_plain": "The cluster runs on Kubernetes with three nodes",
+    "spelling": "The cluster runs on Kubernetes with three nodes"
+  },
+  "p13-en-US-EmmaNeural": {
+    "audio_seconds": 3.144,
+    "biased_ms": 146.125212,
+    "ctc_ms": 28.221863,
+    "plain_ms": 71.519451,
+    "raw": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_biased": "The cluster runs on Kubernetes with three nodes",
+    "sidecar_plain": "The cluster runs on Kubernetes with three nodes",
+    "spelling": "The cluster runs on Kubernetes with three nodes"
+  },
+  "p14-en-GB-RyanNeural": {
+    "audio_seconds": 4.392,
+    "biased_ms": 183.617838,
+    "ctc_ms": 34.785283,
+    "plain_ms": 88.95665699999999,
+    "raw": "Store the bookings in Poster SQL instead of a flat file",
+    "sidecar_biased": "Store the bookings in PostgreSQL instead of a flat file",
+    "sidecar_plain": "Store the bookings in PostgreSQL instead of a flat file",
+    "spelling": "Store the bookings in Poster SQL instead of a flat file"
+  },
+  "p14-en-US-AndrewNeural": {
+    "audio_seconds": 3.936,
+    "biased_ms": 167.434427,
+    "ctc_ms": 30.256135999999998,
+    "plain_ms": 84.532322,
+    "raw": "Store the bookings in post RcQL instead of a flat file",
+    "sidecar_biased": "Store the bookings in PostgreSQL instead of a flat file",
+    "sidecar_plain": "Store the bookings in PostgreSQL instead of a flat file",
+    "spelling": "Store the bookings in post RcQL instead of a flat file"
+  },
+  "p14-en-US-EmmaNeural": {
+    "audio_seconds": 4.008,
+    "biased_ms": 175.541062,
+    "ctc_ms": 32.339061,
+    "plain_ms": 86.818884,
+    "raw": "Store the bookings in Postgres QL instead of a flat file",
+    "sidecar_biased": "Store the bookings in PostgreSQL instead of a flat file",
+    "sidecar_plain": "Store the bookings in PostgreSQL instead of a flat file",
+    "spelling": "Store the bookings in PostgreSQL instead of a flat file"
+  },
+  "p15-en-GB-RyanNeural": {
+    "audio_seconds": 4.08,
+    "biased_ms": 176.806668,
+    "ctc_ms": 34.232355,
+    "plain_ms": 92.55058700000001,
+    "raw": "Tori bundles the webView into a small desktop app.",
+    "sidecar_biased": "Tori bundles the webView into a small desktop app.",
+    "sidecar_plain": "Tori bundles the webView into a small desktop app.",
+    "spelling": "Tori bundles the webView into a small desktop app."
+  },
+  "p15-en-US-AndrewNeural": {
+    "audio_seconds": 3.768,
+    "biased_ms": 163.448559,
+    "ctc_ms": 29.813669,
+    "plain_ms": 82.315937,
+    "raw": "Towerry bundles the web view into a small desktop app",
+    "sidecar_biased": "Towerry bundles the web view into a small desktop app",
+    "sidecar_plain": "Towerry bundles the web view into a small desktop app",
+    "spelling": "Towerry bundles the web view into a small desktop app"
+  },
+  "p15-en-US-EmmaNeural": {
+    "audio_seconds": 3.504,
+    "biased_ms": 166.24489,
+    "ctc_ms": 32.234041,
+    "plain_ms": 82.643727,
+    "raw": "Towerry bundles the webView into a small desktop app",
+    "sidecar_biased": "Towerry bundles the webView into a small desktop app",
+    "sidecar_plain": "Towerry bundles the webView into a small desktop app",
+    "spelling": "Towerry bundles the webView into a small desktop app"
+  },
+  "p16-en-GB-RyanNeural": {
+    "audio_seconds": 3.6959999999999997,
+    "biased_ms": 187.58323499999997,
+    "ctc_ms": 34.185315,
+    "plain_ms": 96.56498400000001,
+    "raw": "The settings window is written in GTK four",
+    "sidecar_biased": "The settings window is written in GTK4 four",
+    "sidecar_plain": "The settings window is written in GTK4 four",
+    "spelling": "The settings window is written in GTK four"
+  },
+  "p16-en-US-AndrewNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 147.287349,
+    "ctc_ms": 30.737746,
+    "plain_ms": 78.32864000000001,
+    "raw": "The settings window is written in GTK four",
+    "sidecar_biased": "The settings window is written in GTK4 four",
+    "sidecar_plain": "The settings window is written in GTK4 four",
+    "spelling": "The settings window is written in GTK four"
+  },
+  "p16-en-US-EmmaNeural": {
+    "audio_seconds": 3.144,
+    "biased_ms": 167.946925,
+    "ctc_ms": 31.996291000000003,
+    "plain_ms": 71.763481,
+    "raw": "The settings window is written in GTK four",
+    "sidecar_biased": "The settings window is written in GTK4 four",
+    "sidecar_plain": "The settings window is written in GTK4 four",
+    "spelling": "The settings window is written in GTK four"
+  },
+  "p17-en-GB-RyanNeural": {
+    "audio_seconds": 3.48,
+    "biased_ms": 168.90419300000002,
+    "ctc_ms": 46.091219,
+    "plain_ms": 87.18607200000001,
+    "raw": "Superbase handles the login and the database",
+    "sidecar_biased": "Superbase handles the login and the database",
+    "sidecar_plain": "Superbase handles the login and the database",
+    "spelling": "Superbase handles the login and the database"
+  },
+  "p17-en-US-AndrewNeural": {
+    "audio_seconds": 3.096,
+    "biased_ms": 151.202777,
+    "ctc_ms": 29.034771,
+    "plain_ms": 70.11360499999999,
+    "raw": "Suabase handles the login and the database",
+    "sidecar_biased": "Supabase handles the login and the database",
+    "sidecar_plain": "Suabase handles the login and the database",
+    "spelling": "Suabase handles the login and the database"
+  },
+  "p17-en-US-EmmaNeural": {
+    "audio_seconds": 3.096,
+    "biased_ms": 150.025581,
+    "ctc_ms": 29.32135,
+    "plain_ms": 78.76214800000001,
+    "raw": "Superabase handles the login and the database",
+    "sidecar_biased": "Supabase handles the login and the database",
+    "sidecar_plain": "Superabase handles the login and the database",
+    "spelling": "Superabase handles the login and the database"
+  },
+  "p18-en-GB-RyanNeural": {
+    "audio_seconds": 3.12,
+    "biased_ms": 151.125026,
+    "ctc_ms": 31.965942,
+    "plain_ms": 74.326943,
+    "raw": "The landing page is built with Svelte kit.",
+    "sidecar_biased": "The landing page is built with SvelteKit.",
+    "sidecar_plain": "The landing page is built with Svelte kit.",
+    "spelling": "The landing page is built with SvelteKit."
+  },
+  "p18-en-US-AndrewNeural": {
+    "audio_seconds": 2.52,
+    "biased_ms": 120.52644099999999,
+    "ctc_ms": 28.031674,
+    "plain_ms": 61.288572,
+    "raw": "The landing page is built with Sveltekit",
+    "sidecar_biased": "The landing page is built with Sveltekit",
+    "sidecar_plain": "The landing page is built with Sveltekit",
+    "spelling": "The landing page is built with SvelteKit"
+  },
+  "p18-en-US-EmmaNeural": {
+    "audio_seconds": 2.544,
+    "biased_ms": 122.421875,
+    "ctc_ms": 23.186509,
+    "plain_ms": 61.736661,
+    "raw": "The landing page is built with Svelte Kit",
+    "sidecar_biased": "The landing page is built with SvelteKit",
+    "sidecar_plain": "The landing page is built with SvelteKit",
+    "spelling": "The landing page is built with SvelteKit"
+  },
+  "p19-en-GB-RyanNeural": {
+    "audio_seconds": 4.032,
+    "biased_ms": 179.51568,
+    "ctc_ms": 38.803430999999996,
+    "plain_ms": 85.586878,
+    "raw": "Export the receipts to Fortnox before the end of the month",
+    "sidecar_biased": "Export the receipts to Fortnox before the end of the month",
+    "sidecar_plain": "Export the receipts to Fortnox before the end of the month",
+    "spelling": "Export the receipts to Fortnox before the end of the month"
+  },
+  "p19-en-US-AndrewNeural": {
+    "audio_seconds": 3.528,
+    "biased_ms": 161.19700600000002,
+    "ctc_ms": 29.064660999999997,
+    "plain_ms": 80.38772399999999,
+    "raw": "Export the receipts to F Knox before the end of the month",
+    "sidecar_biased": "Export the receipts to Fortnox before the end of the month",
+    "sidecar_plain": "Export the receipts to F Knox before the end of the month",
+    "spelling": "Export the receipts to F Knox before the end of the month"
+  },
+  "p19-en-US-EmmaNeural": {
+    "audio_seconds": 3.7439999999999998,
+    "biased_ms": 181.772513,
+    "ctc_ms": 30.861626,
+    "plain_ms": 80.078964,
+    "raw": "Export the receipts to Fortnox before the end of the month",
+    "sidecar_biased": "Export the receipts to Fortnox before the end of the month",
+    "sidecar_plain": "Export the receipts to Fortnox before the end of the month",
+    "spelling": "Export the receipts to Fortnox before the end of the month"
+  },
+  "p20-en-GB-RyanNeural": {
+    "audio_seconds": 3.816,
+    "biased_ms": 180.774746,
+    "ctc_ms": 29.873668,
+    "plain_ms": 79.822726,
+    "raw": "Scatterirkit sent a letter about the VAT return",
+    "sidecar_biased": "Skatteverket sent a letter about the VAT return",
+    "sidecar_plain": "Scatterirkit sent a letter about the VAT return",
+    "spelling": "Scatterirkit sent a letter about the VAT return"
+  },
+  "p20-en-US-AndrewNeural": {
+    "audio_seconds": 3.024,
+    "biased_ms": 178.52201300000002,
+    "ctc_ms": 25.492812,
+    "plain_ms": 72.009629,
+    "raw": "Scatterket sent a letter about the VAT return",
+    "sidecar_biased": "Scatterket sent a letter about the VAT return",
+    "sidecar_plain": "Scatterket sent a letter about the VAT return",
+    "spelling": "Scatterket sent a letter about the VAT return"
+  },
+  "p20-en-US-EmmaNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 181.55667400000002,
+    "ctc_ms": 30.480887000000003,
+    "plain_ms": 83.98557199999999,
+    "raw": "Scatterwket sent a letter about the VAT return",
+    "sidecar_biased": "Scatterwket sent a letter about the VAT return",
+    "sidecar_plain": "Scatterwket sent a letter about the VAT return",
+    "spelling": "Scatterwket sent a letter about the VAT return"
+  },
+  "p21-en-GB-RyanNeural": {
+    "audio_seconds": 3.2640000000000002,
+    "biased_ms": 172.86451,
+    "ctc_ms": 36.184098999999996,
+    "plain_ms": 86.596925,
+    "raw": "I am taking the train to Gotborg on Monday",
+    "sidecar_biased": "I am taking the train to Göteborg on Monday",
+    "sidecar_plain": "I am taking the train to Gotborg on Monday",
+    "spelling": "I am taking the train to Gotborg on Monday"
+  },
+  "p21-en-US-AndrewNeural": {
+    "audio_seconds": 2.568,
+    "biased_ms": 158.010906,
+    "ctc_ms": 30.006878,
+    "plain_ms": 74.144173,
+    "raw": "I am taking the train to Gataborg on Monday",
+    "sidecar_biased": "I am taking the train to Göteborg on Monday",
+    "sidecar_plain": "I am taking the train to Gataborg on Monday",
+    "spelling": "I am taking the train to Gataborg on Monday"
+  },
+  "p21-en-US-EmmaNeural": {
+    "audio_seconds": 2.88,
+    "biased_ms": 166.523799,
+    "ctc_ms": 33.954535,
+    "plain_ms": 87.48710299999999,
+    "raw": "I am taking the train to Geburg on Monday.",
+    "sidecar_biased": "I am taking the train to Göteborg on Monday.",
+    "sidecar_plain": "I am taking the train to Geburg on Monday.",
+    "spelling": "I am taking the train to Geburg on Monday."
+  },
+  "p22-en-GB-RyanNeural": {
+    "audio_seconds": 2.6879999999999997,
+    "biased_ms": 160.09712000000002,
+    "ctc_ms": 29.242839999999998,
+    "plain_ms": 75.653218,
+    "raw": "Let's grab a feka after the call",
+    "sidecar_biased": "Let's grab a feka after the call",
+    "sidecar_plain": "Let's grab a feka after the call",
+    "spelling": "Let's grab a feka after the call"
+  },
+  "p22-en-US-AndrewNeural": {
+    "audio_seconds": 1.992,
+    "biased_ms": 129.630323,
+    "ctc_ms": 32.044562,
+    "plain_ms": 71.344751,
+    "raw": "Let's grab a FICA after the call",
+    "sidecar_biased": "Let's grab a fika after the call",
+    "sidecar_plain": "Let's grab a FICA after the call",
+    "spelling": "Let's grab a FICA after the call"
+  },
+  "p22-en-US-EmmaNeural": {
+    "audio_seconds": 2.4,
+    "biased_ms": 119.60697300000001,
+    "ctc_ms": 33.901506,
+    "plain_ms": 61.398112,
+    "raw": "Let's grab a fika after the call.",
+    "sidecar_biased": "Let's grab a fika after the call.",
+    "sidecar_plain": "Let's grab a fika after the call.",
+    "spelling": "Let's grab a fika after the call."
+  },
+  "p23-en-GB-RyanNeural": {
+    "audio_seconds": 3.7199999999999998,
+    "biased_ms": 163.542029,
+    "ctc_ms": 34.307334000000004,
+    "plain_ms": 89.473896,
+    "raw": "The server is a small Hetzna machine in Helsinki",
+    "sidecar_biased": "The server is a small Hetzner machine in Helsinki",
+    "sidecar_plain": "The server is a small Hetzner machine in Helsinki",
+    "spelling": "The server is a small Hetzna machine in Helsinki"
+  },
+  "p23-en-US-AndrewNeural": {
+    "audio_seconds": 3.24,
+    "biased_ms": 152.954761,
+    "ctc_ms": 28.673032000000003,
+    "plain_ms": 76.732305,
+    "raw": "The server is a small Hetzer machine in Helsinki",
+    "sidecar_biased": "The server is a small Hetzner machine in Helsinki",
+    "sidecar_plain": "The server is a small Hetzner machine in Helsinki",
+    "spelling": "The server is a small Hetzer machine in Helsinki"
+  },
+  "p23-en-US-EmmaNeural": {
+    "audio_seconds": 3.192,
+    "biased_ms": 147.322658,
+    "ctc_ms": 29.083371,
+    "plain_ms": 72.415589,
+    "raw": "The server is a small Hetzner machine in Helsinki",
+    "sidecar_biased": "The server is a small Hetzner machine in Helsinki",
+    "sidecar_plain": "The server is a small Hetzner machine in Helsinki",
+    "spelling": "The server is a small Hetzner machine in Helsinki"
+  },
+  "p24-en-GB-RyanNeural": {
+    "audio_seconds": 4.128,
+    "biased_ms": 175.726661,
+    "ctc_ms": 32.380399999999995,
+    "plain_ms": 88.40273,
+    "raw": "Cartiza reads the first sentence of the answer out loud",
+    "sidecar_biased": "Cartesia reads the first sentence of the answer out loud",
+    "sidecar_plain": "Cartiza reads the first sentence of the answer out loud",
+    "spelling": "Cartiza reads the first sentence of the answer out loud"
+  },
+  "p24-en-US-AndrewNeural": {
+    "audio_seconds": 3.384,
+    "biased_ms": 180.519196,
+    "ctc_ms": 28.149993000000002,
+    "plain_ms": 75.653789,
+    "raw": "Cartesia reads the first sentence of the answer out loud",
+    "sidecar_biased": "Cartesia reads the first sentence of the answer out loud",
+    "sidecar_plain": "Cartesia reads the first sentence of the answer out loud",
+    "spelling": "Cartesia reads the first sentence of the answer out loud"
+  },
+  "p24-en-US-EmmaNeural": {
+    "audio_seconds": 3.432,
+    "biased_ms": 174.90918399999998,
+    "ctc_ms": 30.749646,
+    "plain_ms": 84.10275200000001,
+    "raw": "Cartesia reads the first sentence of the answer out loud",
+    "sidecar_biased": "Cartesia reads the first sentence of the answer out loud",
+    "sidecar_plain": "Cartesia reads the first sentence of the answer out loud",
+    "spelling": "Cartesia reads the first sentence of the answer out loud"
+  },
+  "p25-en-GB-RyanNeural": {
+    "audio_seconds": 3.48,
+    "biased_ms": 189.665099,
+    "ctc_ms": 33.224438,
+    "plain_ms": 95.39035799999999,
+    "raw": "Ask uses Grock because it answers very quickly",
+    "sidecar_biased": "Ask uses Groq because it answers very quickly",
+    "sidecar_plain": "Ask uses Grock because it answers very quickly",
+    "spelling": "Ask uses Grock because it answers very quickly"
+  },
+  "p25-en-US-AndrewNeural": {
+    "audio_seconds": 2.976,
+    "biased_ms": 167.400617,
+    "ctc_ms": 37.820584,
+    "plain_ms": 81.66334,
+    "raw": "Ask Ues Grock because it answers very quickly",
+    "sidecar_biased": "Ask Ues Grock because it answers very quickly",
+    "sidecar_plain": "Ask Ues Grock because it answers very quickly",
+    "spelling": "Ask Ues Grock because it answers very quickly"
+  },
+  "p25-en-US-EmmaNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 148.220697,
+    "ctc_ms": 28.203654,
+    "plain_ms": 73.424154,
+    "raw": "Ask usees Grock because it answers very quickly",
+    "sidecar_biased": "Ask usees Grock because it answers very quickly",
+    "sidecar_plain": "Ask usees Grock because it answers very quickly",
+    "spelling": "Ask usees Grock because it answers very quickly"
+  },
+  "p26-en-GB-RyanNeural": {
+    "audio_seconds": 4.344,
+    "biased_ms": 195.90345000000002,
+    "ctc_ms": 36.440078,
+    "plain_ms": 100.452082,
+    "raw": "The default model is Quen with twenty seven billion parameters",
+    "sidecar_biased": "The default model is Qwen with twenty seven billion parameters",
+    "sidecar_plain": "The default model is Quen with twenty seven billion parameters",
+    "spelling": "The default model is Quen with twenty seven billion parameters"
+  },
+  "p26-en-US-AndrewNeural": {
+    "audio_seconds": 3.864,
+    "biased_ms": 171.838743,
+    "ctc_ms": 29.754459,
+    "plain_ms": 85.298759,
+    "raw": "The default model is uin with twenty seven billion parameters",
+    "sidecar_biased": "The default model is uin with twenty seven billion parameters",
+    "sidecar_plain": "The default model is uin with twenty seven billion parameters",
+    "spelling": "The default model is uin with twenty seven billion parameters"
+  },
+  "p26-en-US-EmmaNeural": {
+    "audio_seconds": 3.792,
+    "biased_ms": 169.90467,
+    "ctc_ms": 30.818455,
+    "plain_ms": 83.267295,
+    "raw": "The default model is Qin with twenty seven billion parameters",
+    "sidecar_biased": "The default model is Qwen with twenty seven billion parameters",
+    "sidecar_plain": "The default model is Qin with twenty seven billion parameters",
+    "spelling": "The default model is Qin with twenty seven billion parameters"
+  },
+  "p27-en-GB-RyanNeural": {
+    "audio_seconds": 3.624,
+    "biased_ms": 151.447015,
+    "ctc_ms": 30.948745,
+    "plain_ms": 85.278159,
+    "raw": "Save the notes in Obsidian under the project folder",
+    "sidecar_biased": "Save the notes in Obsidian under the project folder",
+    "sidecar_plain": "Save the notes in Obsidian under the project folder",
+    "spelling": "Save the notes in Obsidian under the project folder"
+  },
+  "p27-en-US-AndrewNeural": {
+    "audio_seconds": 3.168,
+    "biased_ms": 146.075132,
+    "ctc_ms": 29.655869000000003,
+    "plain_ms": 72.594458,
+    "raw": "Save the notes in Obsidian under the project folder",
+    "sidecar_biased": "Save the notes in Obsidian under the project folder",
+    "sidecar_plain": "Save the notes in Obsidian under the project folder",
+    "spelling": "Save the notes in Obsidian under the project folder"
+  },
+  "p27-en-US-EmmaNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 153.155821,
+    "ctc_ms": 29.930958,
+    "plain_ms": 75.11563,
+    "raw": "Save the notes in Obsidian under the project folder",
+    "sidecar_biased": "Save the notes in Obsidian under the project folder",
+    "sidecar_plain": "Save the notes in Obsidian under the project folder",
+    "spelling": "Save the notes in Obsidian under the project folder"
+  },
+  "p28-en-GB-RyanNeural": {
+    "audio_seconds": 3.504,
+    "biased_ms": 192.323681,
+    "ctc_ms": 29.033921,
+    "plain_ms": 77.899501,
+    "raw": "Global shortcuts work differently on Weyland",
+    "sidecar_biased": "Global shortcuts work differently on Wayland",
+    "sidecar_plain": "Global shortcuts work differently on Wayland",
+    "spelling": "Global shortcuts work differently on Weyland"
+  },
+  "p28-en-US-AndrewNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 150.40442000000002,
+    "ctc_ms": 40.912015000000004,
+    "plain_ms": 82.417167,
+    "raw": "Global shortcuts work differently on Weyland",
+    "sidecar_biased": "Global shortcuts work differently on Wayland",
+    "sidecar_plain": "Global shortcuts work differently on Wayland",
+    "spelling": "Global shortcuts work differently on Weyland"
+  },
+  "p28-en-US-EmmaNeural": {
+    "audio_seconds": 2.904,
+    "biased_ms": 141.317947,
+    "ctc_ms": 25.246343,
+    "plain_ms": 65.34698,
+    "raw": "Global shortcuts work differently on Weayland",
+    "sidecar_biased": "Global shortcuts work differently on Wayland",
+    "sidecar_plain": "Global shortcuts work differently on Wayland",
+    "spelling": "Global shortcuts work differently on Weayland"
+  },
+  "p29-en-GB-RyanNeural": {
+    "audio_seconds": 3.6959999999999997,
+    "biased_ms": 167.074268,
+    "ctc_ms": 31.135815,
+    "plain_ms": 81.182451,
+    "raw": "My desktop is Hyperand with a single monitor",
+    "sidecar_biased": "My desktop is Hyperand with a single monitor",
+    "sidecar_plain": "My desktop is Hyperand with a single monitor",
+    "spelling": "My desktop is Hyperand with a single monitor"
+  },
+  "p29-en-US-AndrewNeural": {
+    "audio_seconds": 2.88,
+    "biased_ms": 145.837304,
+    "ctc_ms": 27.625746,
+    "plain_ms": 65.654028,
+    "raw": "My desktop is Hyperlland with a single monitor.",
+    "sidecar_biased": "My desktop is Hyperlland with a single monitor.",
+    "sidecar_plain": "My desktop is Hyperlland with a single monitor.",
+    "spelling": "My desktop is Hyperlland with a single monitor."
+  },
+  "p29-en-US-EmmaNeural": {
+    "audio_seconds": 3.12,
+    "biased_ms": 143.24622100000002,
+    "ctc_ms": 28.646321999999998,
+    "plain_ms": 68.57370999999999,
+    "raw": "My desktop is Hyperlan with a single monitor.",
+    "sidecar_biased": "My desktop is Hyprland with a single monitor.",
+    "sidecar_plain": "My desktop is Hyperlan with a single monitor.",
+    "spelling": "My desktop is Hyperlan with a single monitor."
+  },
+  "p30-en-GB-RyanNeural": {
+    "audio_seconds": 3.84,
+    "biased_ms": 159.048503,
+    "ctc_ms": 32.792170000000006,
+    "plain_ms": 77.948761,
+    "raw": "Ask Claude to write the tests and codecs to review them.",
+    "sidecar_biased": "Ask Claude to write the tests and Codex to review them.",
+    "sidecar_plain": "Ask Claude to write the tests and codecs to review them.",
+    "spelling": "Ask Claude to write the tests and codecs to review them."
+  },
+  "p30-en-US-AndrewNeural": {
+    "audio_seconds": 3.24,
+    "biased_ms": 150.0071,
+    "ctc_ms": 30.260707,
+    "plain_ms": 73.79155399999999,
+    "raw": "askk Claude to write the tests and codex to review them",
+    "sidecar_biased": "askk Claude to write the tests and codex to review them",
+    "sidecar_plain": "askk Claude to write the tests and codex to review them",
+    "spelling": "askk Claude to write the tests and Codex to review them"
+  },
+  "p30-en-US-EmmaNeural": {
+    "audio_seconds": 3.288,
+    "biased_ms": 154.640846,
+    "ctc_ms": 29.834737999999998,
+    "plain_ms": 76.922625,
+    "raw": "Ask Claude to write the tests in codex to review them",
+    "sidecar_biased": "Ask Claude to write the tests in codex to review them",
+    "sidecar_plain": "Ask Claude to write the tests in codex to review them",
+    "spelling": "Ask Claude to write the tests in Codex to review them"
+  },
+  "p31-en-GB-RyanNeural": {
+    "audio_seconds": 3.456,
+    "biased_ms": 152.09391399999998,
+    "ctc_ms": 33.440378,
+    "plain_ms": 79.80828500000001,
+    "raw": "Run parakeet through Sprons on Linux",
+    "sidecar_biased": "Run parakeet through Sprons on Linux",
+    "sidecar_plain": "Run parakeet through Sprons on Linux",
+    "spelling": "Run Parakeet through Sprons on Linux"
+  },
+  "p31-en-US-AndrewNeural": {
+    "audio_seconds": 2.808,
+    "biased_ms": 141.23873700000001,
+    "ctc_ms": 24.860363,
+    "plain_ms": 66.12074799999999,
+    "raw": "run parakeet through shir blonks on Linux",
+    "sidecar_biased": "run parakeet through shir blonks on Linux",
+    "sidecar_plain": "run parakeet through shir blonks on Linux",
+    "spelling": "run Parakeet through shir blonks on Linux"
+  },
+  "p31-en-US-EmmaNeural": {
+    "audio_seconds": 2.808,
+    "biased_ms": 147.45919800000001,
+    "ctc_ms": 26.854458,
+    "plain_ms": 67.68580200000001,
+    "raw": "Run parakeet through shirp bonks on Linux",
+    "sidecar_biased": "Run parakeet through shirp bonks on Linux",
+    "sidecar_plain": "Run parakeet through shirp bonks on Linux",
+    "spelling": "Run Parakeet through shirp bonks on Linux"
+  },
+  "p32-en-GB-RyanNeural": {
+    "audio_seconds": 3.2640000000000002,
+    "biased_ms": 160.06503,
+    "ctc_ms": 29.31037,
+    "plain_ms": 75.63373800000001,
+    "raw": "Jacob and all met in Gatborg for a Fica",
+    "sidecar_biased": "Yakob and all met in Göteborg for a fika",
+    "sidecar_plain": "Jacob and all met in Gatborg for a Fica",
+    "spelling": "Jacob and all met in Gatborg for a Fica"
+  },
+  "p32-en-US-AndrewNeural": {
+    "audio_seconds": 2.784,
+    "biased_ms": 144.929136,
+    "ctc_ms": 28.473943000000002,
+    "plain_ms": 70.970752,
+    "raw": "Jacob and all metet in Gataborg for a Fica",
+    "sidecar_biased": "Yakob and all metet in Gataborg for a Fica",
+    "sidecar_plain": "Jacob and all metet in Gataborg for a Fica",
+    "spelling": "Jacob and all metet in Gataborg for a Fica"
+  },
+  "p32-en-US-EmmaNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 182.35743200000002,
+    "ctc_ms": 36.369999,
+    "plain_ms": 90.82368100000001,
+    "raw": "Jacob and all met in Gotabburg for a Fica",
+    "sidecar_biased": "Yakob and all met in Göteborg for a fika",
+    "sidecar_plain": "Jacob and all met in Gotabburg for a fika",
+    "spelling": "Jacob and all met in Gotabburg for a Fica"
+  },
+  "p33-en-GB-RyanNeural": {
+    "audio_seconds": 3.768,
+    "biased_ms": 179.141191,
+    "ctc_ms": 39.04287,
+    "plain_ms": 83.23607600000001,
+    "raw": "Move the database from Superbase to a Hetna server",
+    "sidecar_biased": "Move the database from Supabase to a Hetzner server",
+    "sidecar_plain": "Move the database from Superbase to a Hetna server",
+    "spelling": "Move the database from Superbase to a Hetna server"
+  },
+  "p33-en-US-AndrewNeural": {
+    "audio_seconds": 3.528,
+    "biased_ms": 166.064131,
+    "ctc_ms": 35.84295,
+    "plain_ms": 88.522329,
+    "raw": "Move the database from Superabase to a Hetzner server",
+    "sidecar_biased": "Move the database from Supabase to a Hetzner server",
+    "sidecar_plain": "Move the database from Superabase to a Hetzner server",
+    "spelling": "Move the database from Superabase to a Hetzner server"
+  },
+  "p33-en-US-EmmaNeural": {
+    "audio_seconds": 3.552,
+    "biased_ms": 173.521049,
+    "ctc_ms": 31.683793,
+    "plain_ms": 87.62741100000001,
+    "raw": "Move the database from Supabase to a Hetzner server",
+    "sidecar_biased": "Move the database from Supabase to a Hetzner server",
+    "sidecar_plain": "Move the database from Supabase to a Hetzner server",
+    "spelling": "Move the database from Supabase to a Hetzner server"
+  },
+  "p34-en-GB-RyanNeural": {
+    "audio_seconds": 3.048,
+    "biased_ms": 146.29315100000002,
+    "ctc_ms": 28.246633,
+    "plain_ms": 73.54751499999999,
+    "raw": "Nordic rank pays through Fort Knox",
+    "sidecar_biased": "Nordicrank pays through Fortnox",
+    "sidecar_plain": "Nordicrank pays through Fortnox",
+    "spelling": "Nordicrank pays through Fort Knox"
+  },
+  "p34-en-US-AndrewNeural": {
+    "audio_seconds": 2.304,
+    "biased_ms": 125.65205500000002,
+    "ctc_ms": 27.141467,
+    "plain_ms": 60.172705,
+    "raw": "Nordicrank pays through four knocks",
+    "sidecar_biased": "Nordicrank pays through four knocks",
+    "sidecar_plain": "Nordicrank pays through four knocks",
+    "spelling": "Nordicrank pays through four knocks"
+  },
+  "p34-en-US-EmmaNeural": {
+    "audio_seconds": 2.424,
+    "biased_ms": 131.959356,
+    "ctc_ms": 28.318413,
+    "plain_ms": 61.237972,
+    "raw": "Nordic Rank pays through Fort Knox",
+    "sidecar_biased": "Nordicrank pays through Fortnox",
+    "sidecar_plain": "Nordicrank pays through Fort Knox",
+    "spelling": "Nordicrank pays through Fort Knox"
+  },
+  "p35-en-GB-RyanNeural": {
+    "audio_seconds": 3.504,
+    "biased_ms": 199.440979,
+    "ctc_ms": 42.304731,
+    "plain_ms": 79.733235,
+    "raw": "Motios asked Whether Coet works on Weyland",
+    "sidecar_biased": "Motios asked Whether Coet works on Wayland",
+    "sidecar_plain": "Motios asked Whether Coet works on Wayland",
+    "spelling": "Motios asked Whether Coet works on Weyland"
+  },
+  "p35-en-US-AndrewNeural": {
+    "audio_seconds": 2.568,
+    "biased_ms": 146.048072,
+    "ctc_ms": 42.12325,
+    "plain_ms": 89.280947,
+    "raw": "Matias asked whether Coat works on Wyland",
+    "sidecar_biased": "Matias asked whether Coat works on Wayland",
+    "sidecar_plain": "Matias asked whether Coat works on Wayland",
+    "spelling": "Matias asked whether Coat works on Wyland"
+  },
+  "p35-en-US-EmmaNeural": {
+    "audio_seconds": 2.7359999999999998,
+    "biased_ms": 144.115338,
+    "ctc_ms": 34.185025,
+    "plain_ms": 71.466412,
+    "raw": "Madias asks whether Cat works on Weyland",
+    "sidecar_biased": "Madias asks whether Cat works on Wayland",
+    "sidecar_plain": "Madias asks whether Cat works on Wayland",
+    "spelling": "Madias asks whether Cat works on Weyland"
+  },
+  "p36-en-GB-RyanNeural": {
+    "audio_seconds": 3.6959999999999997,
+    "biased_ms": 175.834462,
+    "ctc_ms": 37.342106,
+    "plain_ms": 89.238666,
+    "raw": "Compare Nematron with parakeet on the same clips",
+    "sidecar_biased": "Compare Nemotron with parakeet on the same clips",
+    "sidecar_plain": "Compare Nematron with parakeet on the same clips",
+    "spelling": "Compare Nematron with Parakeet on the same clips"
+  },
+  "p36-en-US-AndrewNeural": {
+    "audio_seconds": 3.024,
+    "biased_ms": 189.872189,
+    "ctc_ms": 35.032733,
+    "plain_ms": 83.934292,
+    "raw": "Compare Nematron with parakeet on the same clips",
+    "sidecar_biased": "Compare Nemotron with parakeet on the same clips",
+    "sidecar_plain": "Compare Nematron with parakeet on the same clips",
+    "spelling": "Compare Nematron with Parakeet on the same clips"
+  },
+  "p36-en-US-EmmaNeural": {
+    "audio_seconds": 3.312,
+    "biased_ms": 176.832348,
+    "ctc_ms": 45.76849,
+    "plain_ms": 99.79152400000001,
+    "raw": "Compare Nematron with parakeet on the same clips",
+    "sidecar_biased": "Compare Nemotron with parakeet on the same clips",
+    "sidecar_plain": "Compare Nematron with parakeet on the same clips",
+    "spelling": "Compare Nematron with Parakeet on the same clips"
+  },
+  "p37-en-GB-RyanNeural": {
+    "audio_seconds": 3.552,
+    "biased_ms": 175.612132,
+    "ctc_ms": 35.876619999999996,
+    "plain_ms": 83.314935,
+    "raw": "Grock serves Quinn faster than the other providers",
+    "sidecar_biased": "Groq serves Qwen faster than the other providers",
+    "sidecar_plain": "Grock serves Quinn faster than the other providers",
+    "spelling": "Grock serves Quinn faster than the other providers"
+  },
+  "p37-en-US-AndrewNeural": {
+    "audio_seconds": 3.0,
+    "biased_ms": 211.360502,
+    "ctc_ms": 33.027908000000004,
+    "plain_ms": 89.735576,
+    "raw": "Grock serves Quinn faster than the other providers",
+    "sidecar_biased": "Grock serves Quinn faster than the other providers",
+    "sidecar_plain": "Grock serves Quinn faster than the other providers",
+    "spelling": "Grock serves Quinn faster than the other providers"
+  },
+  "p37-en-US-EmmaNeural": {
+    "audio_seconds": 3.216,
+    "biased_ms": 184.27554600000002,
+    "ctc_ms": 42.47638,
+    "plain_ms": 106.577883,
+    "raw": "Grock serves Quinn faster than the other providers",
+    "sidecar_biased": "Groq serves Quinn faster than the other providers",
+    "sidecar_plain": "Grock serves Quinn faster than the other providers",
+    "spelling": "Grock serves Quinn faster than the other providers"
+  },
+  "p38-en-GB-RyanNeural": {
+    "audio_seconds": 3.7439999999999998,
+    "biased_ms": 267.49242,
+    "ctc_ms": 53.666996000000005,
+    "plain_ms": 111.08164,
+    "raw": "Hoggier and Scatterwkit both need the same numbers",
+    "sidecar_biased": "Hogia and Scatterwkit both need the same numbers",
+    "sidecar_plain": "Hogia and Scatterwkit both need the same numbers",
+    "spelling": "Hoggier and Scatterwkit both need the same numbers"
+  },
+  "p38-en-US-AndrewNeural": {
+    "audio_seconds": 3.432,
+    "biased_ms": 161.711735,
+    "ctc_ms": 29.679779,
+    "plain_ms": 74.93912,
+    "raw": "Hogia and Scatterairkit both need the same numbers",
+    "sidecar_biased": "Hogia and Skatteverket both need the same numbers",
+    "sidecar_plain": "Hogia and Scatterairkit both need the same numbers",
+    "spelling": "Hogia and Scatterairkit both need the same numbers"
+  },
+  "p38-en-US-EmmaNeural": {
+    "audio_seconds": 3.096,
+    "biased_ms": 146.539231,
+    "ctc_ms": 28.845181,
+    "plain_ms": 69.67549700000001,
+    "raw": "Hogy and Scatterfirkit both need the same numbers",
+    "sidecar_biased": "Hogia and Scatterfirkit both need the same numbers",
+    "sidecar_plain": "Hogy and Scatterfirkit both need the same numbers",
+    "spelling": "Hogy and Scatterfirkit both need the same numbers"
+  },
+  "p39-en-GB-RyanNeural": {
+    "audio_seconds": 3.384,
+    "biased_ms": 154.561936,
+    "ctc_ms": 28.987731,
+    "plain_ms": 79.926806,
+    "raw": "Claude wrote the Tori prototype last week",
+    "sidecar_biased": "Claude wrote the Tauri prototype last week",
+    "sidecar_plain": "Claude wrote the Tauri prototype last week",
+    "spelling": "Claude wrote the Tori prototype last week"
+  },
+  "p39-en-US-AndrewNeural": {
+    "audio_seconds": 2.952,
+    "biased_ms": 140.067901,
+    "ctc_ms": 27.630075,
+    "plain_ms": 65.924198,
+    "raw": "Claud wrote the Towerry prototype last week",
+    "sidecar_biased": "Claude wrote the Towerry prototype last week",
+    "sidecar_plain": "Claude wrote the Towerry prototype last week",
+    "spelling": "Claud wrote the Towerry prototype last week"
+  },
+  "p39-en-US-EmmaNeural": {
+    "audio_seconds": 2.856,
+    "biased_ms": 143.123142,
+    "ctc_ms": 29.40319,
+    "plain_ms": 74.037363,
+    "raw": "Claude wrote the Towerry prototype last week",
+    "sidecar_biased": "Claude wrote the Towerry prototype last week",
+    "sidecar_plain": "Claude wrote the Towerry prototype last week",
+    "spelling": "Claude wrote the Towerry prototype last week"
+  },
+  "p40-en-GB-RyanNeural": {
+    "audio_seconds": 2.832,
+    "biased_ms": 129.620412,
+    "ctc_ms": 24.373575000000002,
+    "plain_ms": 68.263841,
+    "raw": "Dyberg is spelled with a Y",
+    "sidecar_biased": "Dyberg is spelled with a Y",
+    "sidecar_plain": "Dyberg is spelled with a Y",
+    "spelling": "Dyberg is spelled with a Y"
+  },
+  "p40-en-US-AndrewNeural": {
+    "audio_seconds": 2.016,
+    "biased_ms": 111.63445800000001,
+    "ctc_ms": 27.130207,
+    "plain_ms": 59.106699,
+    "raw": "Diberg is spelled with A Y",
+    "sidecar_biased": "Dyberg is spelled with A Y",
+    "sidecar_plain": "Dyberg is spelled with A Y",
+    "spelling": "Diberg is spelled with A Y"
+  },
+  "p40-en-US-EmmaNeural": {
+    "audio_seconds": 2.064,
+    "biased_ms": 115.689046,
+    "ctc_ms": 24.965593000000002,
+    "plain_ms": 53.597806,
+    "raw": "Diberg is spelled with a Y",
+    "sidecar_biased": "Dyberg is spelled with a Y",
+    "sidecar_plain": "Diberg is spelled with a Y",
+    "spelling": "Diberg is spelled with a Y"
+  }
+}

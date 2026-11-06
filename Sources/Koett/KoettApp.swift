@@ -68,6 +68,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-groq-key-if-missing") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 if try AssistantAPIKeyStore.load(for: .groq) != nil {
                     print("Groq API key is already in Keychain.")
@@ -94,6 +98,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-cartesia-key") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 guard let key = ProcessInfo.processInfo.environment[
                     "CARTESIA_API_KEY"
@@ -171,7 +179,7 @@ private struct Koett {
 
     private static func unregisterLoginItem() throws {
         let service = SMAppService.mainApp
-        if service.status != .notRegistered {
+        try LoginPreference.unregisterIfRegistered(status: service.status) {
             try service.unregister()
         }
         print("Login Item disabled.")

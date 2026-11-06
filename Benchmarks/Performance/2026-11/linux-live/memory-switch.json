@@ -1,0 +1,250 @@
+{
+  "before": {
+    "VmHWM": 1393148,
+    "VmRSS": 1393148,
+    "scope_current": 1753370624,
+    "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+  },
+  "switches": [
+    {
+      "terms": 0,
+      "result": {
+        "nonce": "AUDIT109758597297917",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 3.713426819602707,
+        "recording_wall_s": 5.116567775,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 52.067866,
+        "stop_to_text_ms": 354.48556,
+        "start_ns": 109758717838590,
+        "capture_ready_ns": 109758769906456,
+        "stop_ns": 109763886474231,
+        "stop_realtime_ns": 1793855693920725469,
+        "receipt_ns": 109764240959791,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 98,
+        "text_sha256": "918459cbcd02de7548baf79892814d96f458bb0922ada685626e91a4abb317d9",
+        "rss_kib": 1393148,
+        "loadavg": [
+          0.83642578125,
+          2.2060546875,
+          2.5078125
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1755578368,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    },
+    {
+      "terms": 20,
+      "result": {
+        "nonce": "AUDIT109765909889494",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 4.104338991537233,
+        "recording_wall_s": 5.116536437,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 42.174508,
+        "stop_to_text_ms": 358.589347,
+        "start_ns": 109766040164016,
+        "capture_ready_ns": 109766082338524,
+        "stop_ns": 109771198874961,
+        "stop_realtime_ns": 1793855701233126079,
+        "receipt_ns": 109771557464308,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 98,
+        "text_sha256": "b5be080610daf08b9f8e8ff4c37c7d9ec422d64188f14d6e04d48e8afcf9f81e",
+        "rss_kib": 1393148,
+        "loadavg": [
+          0.849609375,
+          2.185546875,
+          2.49951171875
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1755471872,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    },
+    {
+      "terms": 0,
+      "result": {
+        "nonce": "AUDIT109773236882549",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 3.910303706457601,
+        "recording_wall_s": 5.114692234,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 62.742313,
+        "stop_to_text_ms": 312.201012,
+        "start_ns": 109773419117078,
+        "capture_ready_ns": 109773481859391,
+        "stop_ns": 109778596551625,
+        "stop_realtime_ns": 1793855708630802733,
+        "receipt_ns": 109778908752637,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 99,
+        "text_sha256": "c29bfb5089d96a74cd892b1f78a4b86db27ccd0cc7777a1a22a19cbd3759958a",
+        "rss_kib": 1393148,
+        "loadavg": [
+          1.2607421875,
+          2.2294921875,
+          2.5107421875
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1756553216,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    },
+    {
+      "terms": 20,
+      "result": {
+        "nonce": "AUDIT109780533065811",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 3.9081316386750875,
+        "recording_wall_s": 5.117534886,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 42.106898,
+        "stop_to_text_ms": 368.426926,
+        "start_ns": 109780663294383,
+        "capture_ready_ns": 109780705401281,
+        "stop_ns": 109785822936167,
+        "stop_realtime_ns": 1793855715857187475,
+        "receipt_ns": 109786191363093,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 98,
+        "text_sha256": "b7d7f0cd238ce5c0cc8e125d78d5e92cf04f1a34b0e7462a611a90cf987c1726",
+        "rss_kib": 1393148,
+        "loadavg": [
+          1.400390625,
+          2.24267578125,
+          2.513671875
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1756172288,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    },
+    {
+      "terms": 0,
+      "result": {
+        "nonce": "AUDIT109787861560684",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 3.913468469791832,
+        "recording_wall_s": 5.110556059,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 60.915319,
+        "stop_to_text_ms": 346.721354,
+        "start_ns": 109787990709210,
+        "capture_ready_ns": 109788051624529,
+        "stop_ns": 109793162180588,
+        "stop_realtime_ns": 1793855723196431886,
+        "receipt_ns": 109793508901942,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 99,
+        "text_sha256": "5a18f6464195215785a26701d2e627aa723450c24c80945c7ce1b9326eb3cee6",
+        "rss_kib": 1393148,
+        "loadavg": [
+          1.2646484375,
+          2.18505859375,
+          2.49169921875
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1756524544,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    },
+    {
+      "terms": 20,
+      "result": {
+        "nonce": "AUDIT109795205683830",
+        "stop_kind": "manual_control",
+        "text_event_count": 1,
+        "feature": "off",
+        "seconds": 5,
+        "overlay_ready_ms": null,
+        "drawing_count": 0,
+        "captured_count": 0,
+        "recording_cpu_percent": 3.91180896781676,
+        "recording_wall_s": 5.112724104,
+        "process_peak_rss_kib": 1393148,
+        "press_to_open_ms": 52.618965,
+        "stop_to_text_ms": 356.342354,
+        "start_ns": 109795336279431,
+        "capture_ready_ns": 109795388898396,
+        "stop_ns": 109800501622500,
+        "stop_realtime_ns": 1793855730535873608,
+        "receipt_ns": 109800857964854,
+        "image_to_text_ms": null,
+        "image_count": 0,
+        "text_bytes": 99,
+        "text_sha256": "9a67dcbb3d201b3d2e76e3c5d57c36be6acd7bcfc7806da9d6f24abf210cd6d7",
+        "rss_kib": 1393148,
+        "loadavg": [
+          1.2431640625,
+          2.1650390625,
+          2.4833984375
+        ]
+      },
+      "memory": {
+        "VmHWM": 1393148,
+        "VmRSS": 1393148,
+        "scope_current": 1757016064,
+        "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+      }
+    }
+  ],
+  "after": {
+    "VmHWM": 1393148,
+    "VmRSS": 1393148,
+    "scope_current": 1757016064,
+    "events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+  }
+}

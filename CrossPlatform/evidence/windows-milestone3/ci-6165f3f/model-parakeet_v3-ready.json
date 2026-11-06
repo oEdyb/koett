@@ -1,0 +1,14 @@
+{
+  "step": "model-parakeet_v3-ready",
+  "rect": [
+    720,
+    272,
+    1840,
+    1232
+  ],
+  "focus": {
+    "hwnd": 131942,
+    "process": "Koett",
+    "pid": 7152
+  }
+}

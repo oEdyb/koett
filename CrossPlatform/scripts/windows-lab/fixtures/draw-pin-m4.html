@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Koett M4 Browser</title>
+<style>body{font:22px sans-serif;margin:32px;max-width:1000px}label{display:block;margin:18px 0 8px}#editor{border:2px solid #777;padding:20px;min-height:220px}#editor{white-space:pre-wrap}#editor img{max-width:400px;max-height:300px}textarea{width:100%;height:180px}input{font:inherit}</style>
+<label for="editor">M4 drawing editor</label>
+<div id="editor" contenteditable="true" role="textbox" aria-label="M4 drawing editor" aria-multiline="true">Selected public phrase</div>
+<p><a id="link" href="https://example.com/pin-target">Pin fixture link</a></p>
+<label for="secret">Password fixture</label><input id="secret" type="password" value="private-test-password">
+<label for="forged">Address field fixture</label><input id="forged" aria-label="Address and search bar" value="https://forged.invalid/">
+<label for="receipt">Paste receipt</label><textarea id="receipt" readonly></textarea>
+<script>
+const caseName=new URLSearchParams(location.search).get("case");if(caseName)document.title+=" "+caseName;
+const nativePaste=caseName?.startsWith("copy-native");
+const events=[];
+function update(){receipt.value=JSON.stringify(events);}
+editor.addEventListener('paste',event=>{
+ if(!nativePaste)event.preventDefault();
+ const row={at_ms:performance.now(),types:[...event.clipboardData.types],images:0,html_bytes:event.clipboardData.getData('text/html').length,text:event.clipboardData.getData('text/plain')};
+ for(const item of event.clipboardData.items){
+  if(item.kind==='file'&&item.type.startsWith('image/')){
+   const file=item.getAsFile();if(file){row.images++;if(!nativePaste){const image=document.createElement('img');image.src=URL.createObjectURL(file);image.alt='Pasted contact sheet';editor.append(image);}}
+  }
+ }
+ if(row.text&&!nativePaste)editor.append(document.createTextNode(row.text));
+ events.push(row);if(events.length>50)events.shift();update();
+ if(nativePaste)setTimeout(()=>{row.native_images=editor.querySelectorAll('img').length;row.native_text=editor.innerText;update();fetch('/m4-paste-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:document.title,event:row,events})}).catch(()=>{});},100);
+ if(!nativePaste)fetch('/m4-paste-event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:document.title,event:row,events})}).catch(()=>{});
+});
+update();editor.focus();
+</script>

@@ -1,0 +1,74 @@
+--- a/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
++++ b/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
+@@ -15,6 +15,7 @@
+ #include <vector>
+ 
+ #include "sherpa-onnx/csrc/macros.h"
++#include "sherpa-onnx/csrc/onnx-utils.h"
+ #include "sherpa-onnx/csrc/offline-recognizer-impl.h"
+ #include "sherpa-onnx/csrc/offline-recognizer.h"
+ #include "sherpa-onnx/csrc/offline-transducer-greedy-search-nemo-decoder.h"
+@@ -50,7 +51,7 @@
+     if (config_.decoding_method == "greedy_search") {
+       decoder_ = std::make_unique<OfflineTransducerGreedySearchNeMoDecoder>(
+           model_.get(), config_.blank_penalty, model_->IsTDT());
+-    } else if (config_.decoding_method == "modified_beam_search") {
++    } else if ((config_.decoding_method == "modified_beam_search" || config_.decoding_method == "koett_context")) {
+       // Initialize BPE encoder if provided
+       if (!config_.model_config.bpe_vocab.empty()) {
+         bpe_encoder_ = std::make_unique<ssentencepiece::Ssentencepiece>(
+@@ -89,7 +90,7 @@
+     if (config_.decoding_method == "greedy_search") {
+       decoder_ = std::make_unique<OfflineTransducerGreedySearchNeMoDecoder>(
+           model_.get(), config_.blank_penalty, model_->IsTDT());
+-    } else if (config_.decoding_method == "modified_beam_search") {
++    } else if ((config_.decoding_method == "modified_beam_search" || config_.decoding_method == "koett_context")) {
+       // Initialize BPE encoder if provided
+       if (!config_.model_config.bpe_vocab.empty()) {
+         auto buf = ReadFile(mgr, config_.model_config.bpe_vocab);
+@@ -189,9 +190,16 @@
+       features_pointer[i] = &features[i];
+     }
+ 
+-    std::array<int64_t, 1> features_length_shape = {n};
++    const bool shared = config_.decoding_method == "koett_context" && n == 2 &&
++        !ss[0]->GetContextGraph() && ss[1]->GetContextGraph() &&
++        features_vec[0] == features_vec[1];
++    const int32_t encoder_batch = shared ? 1 : n;
++    if (shared) {
++      features_pointer.resize(1);
++    }
++    std::array<int64_t, 1> features_length_shape = {encoder_batch};
+     Ort::Value x_length = Ort::Value::CreateTensor(
+-        memory_info, features_length_vec.data(), n,
++        memory_info, features_length_vec.data(), encoder_batch,
+         features_length_shape.data(), features_length_shape.size());
+ 
+     Ort::Value x = PadSequence(model_->Allocator(), features_pointer, 0);
+@@ -202,8 +210,24 @@
+ 
+     Ort::Value encoder_out = Transpose12(model_->Allocator(), &t[0]);
+ 
+-    auto results =
+-        decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    std::vector<OfflineTransducerDecoderResult> results;
++    if (config_.decoding_method == "koett_context" && n == 1 &&
++        !ss[0]->GetContextGraph()) {
++      OfflineTransducerGreedySearchNeMoDecoder greedy(
++          model_.get(), config_.blank_penalty, model_->IsTDT());
++      results = greedy.Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    } else if (shared) {
++      OfflineTransducerGreedySearchNeMoDecoder greedy(
++          model_.get(), config_.blank_penalty, model_->IsTDT());
++      auto plain = greedy.Decode(Clone(model_->Allocator(), &encoder_out),
++                                Clone(model_->Allocator(), &t[1]), ss, 1);
++      auto biased = decoder_->Decode(std::move(encoder_out), std::move(t[1]),
++                                     ss + 1, 1);
++      results.push_back(std::move(plain[0]));
++      results.push_back(std::move(biased[0]));
++    } else {
++      results = decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    }
+ 
+     int32_t frame_shift_ms = 10;
+     for (int32_t i = 0; i != n; ++i) {

@@ -1,0 +1,14 @@
+{
+  "step": "history-original-asr-copy-after-word-transforms",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 524926,
+    "process": "Koett",
+    "pid": 5708
+  }
+}

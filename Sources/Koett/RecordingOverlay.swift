@@ -85,6 +85,8 @@ final class RecordingOverlayController: NSObject {
         frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight)
     )
     private lazy var panel: NSPanel = makePanel()
+    private let position: PillPosition
+    private var dragging = false
     private weak var recorder: MicrophoneRecorder?
     private var startedAt: TimeInterval?
     /// The dictation whose sketch bands the pill shows. Kept after Stop so late
@@ -92,6 +94,7 @@ final class RecordingOverlayController: NSObject {
     private(set) var sketchSession: UInt64?
     private var timer: Timer?
     private var lastRedraw: TimeInterval = 0
+    private var recordingNoticeUntil: TimeInterval?
     private var dismissWorkItem: DispatchWorkItem?
     /// Set when a dismiss came due while hovered; the pill leaves once the pointer does.
     private var dismissOnExit = false
@@ -110,8 +113,11 @@ final class RecordingOverlayController: NSObject {
     var onOpenHistory: (() -> Void)?
     var onPasteAgain: (() -> Void)?
 
-    override init() {
+    init(defaults: UserDefaults = .standard) {
+        position = PillPosition(defaults: defaults)
         super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(screensChanged),
+            name: NSApplication.didChangeScreenParametersNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(displayOptionsDidChange(_:)),
@@ -120,6 +126,18 @@ final class RecordingOverlayController: NSObject {
         )
         pillView.onHoverChange = { [weak self] in self?.hoverChanged() }
         pillView.onDismiss = { [weak self] in self?.fadeOut() }
+        pillView.onDrag = { [weak self] origin in
+            guard let self else { return }
+            dragging = true
+            panel.setFrameOrigin(origin)
+        }
+        pillView.onDragEnd = { [weak self] in
+            guard let self else { return }
+            dragging = false
+            panel.setFrameOrigin(position.save(origin: panel.frame.origin, size: panel.frame.size,
+                                               displays: PillDisplay.current))
+            hoverChanged()
+        }
         pillView.pauseButton.action = { [weak self] in self?.togglePause() }
         pillView.historyButton.action = { [weak self] in
             guard let self else { return }
@@ -147,6 +165,8 @@ final class RecordingOverlayController: NSObject {
         self.sketchSession = sketchSession
         pauseChanged = controls?.pauseChanged
         startedAt = ProcessInfo.processInfo.systemUptime
+        pillView.recordingNotice = nil
+        recordingNoticeUntil = nil
         pillView.timeline.reset()
         pillView.elapsed = 0
         pillView.hasRecordingControls = controls != nil
@@ -155,6 +175,18 @@ final class RecordingOverlayController: NSObject {
         pillView.cancelButton.action = controls.map { controls in { controls.cancel() } }
         show(.recording(paused: false))
         startTimer()
+    }
+
+    func showRecordingNotice(_ text: String) {
+        guard case .recording = pillView.content else { return }
+        pillView.recordingNotice = text
+        recordingNoticeUntil = ProcessInfo.processInfo.systemUptime + 5
+        NSAccessibility.post(element: NSApplication.shared, notification: .announcementRequested,
+            userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
+    }
+
+    func raiseAboveDrawing() {
+        if isPresented { panel.orderFrontRegardless() }
     }
 
     /// Hides the pill. The finished timeline stays for the transcribing and done states.
@@ -206,11 +238,15 @@ final class RecordingOverlayController: NSObject {
 
     /// Morphs the transcribing pill, in place and at the same size, into the
     /// pasted result with Copy, then fades it out shortly after.
-    func showDone(text: String, png: Data? = nil) {
+    func showDone(text: String, png: Data? = nil, drawingFailed: Bool = false) {
         guard isShowingTranscribing else { return }
         let from = pillView.content
         resultText = text
         resultPNG = png
+        if drawingFailed {
+            showError("Text pasted · Drawing failed", keepUntilClicked: true)
+            return
+        }
         show(.done(preview: RecordingOverlayFormat.transcriptPreview(text)))
         startMorph(from: from)
         dismiss(after: Self.doneDisplayDuration)
@@ -304,6 +340,7 @@ final class RecordingOverlayController: NSObject {
     }
 
     private func hide() {
+        dragging = false
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         dismissOnExit = false
@@ -408,7 +445,7 @@ final class RecordingOverlayController: NSObject {
         dismissWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            if holdWhileHovered && pillView.hovered && pillView.acceptsMouse {
+            if dragging || (holdWhileHovered && pillView.hovered && pillView.acceptsMouse) {
                 dismissOnExit = true
             } else {
                 fadeOut()
@@ -420,6 +457,10 @@ final class RecordingOverlayController: NSObject {
 
     @objc private func tick(_ timer: Timer) {
         let now = ProcessInfo.processInfo.systemUptime
+        if let until = recordingNoticeUntil, now >= until {
+            pillView.recordingNotice = nil
+            recordingNoticeUntil = nil
+        }
         switch pillView.content {
         case .recording:
             guard let recorder, recorder.isRecording, let startedAt else {
@@ -503,17 +544,21 @@ final class RecordingOverlayController: NSObject {
 
     /// Sizes the panel for the current content. The bottom edge stays put,
     /// so the strip never moves under the pointer when the action row appears.
+    @objc private func screensChanged() {
+        if isPresented { layoutPanel() }
+    }
+
     private func layoutPanel() {
         let size = NSSize(width: PillView.width, height: pillView.preferredHeight)
-        panel.ignoresMouseEvents = !pillView.acceptsMouse
-        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+        panel.ignoresMouseEvents = false
+        guard !dragging else { return }
+        guard let origin = position.origin(size: size, displays: PillDisplay.current) else {
             panel.setContentSize(size)
             pillView.frame = NSRect(origin: .zero, size: size)
             return
         }
-        let visible = screen.visibleFrame
         panel.setFrame(
-            NSRect(x: visible.midX - size.width / 2, y: visible.minY + 72, width: size.width, height: size.height),
+            NSRect(origin: origin, size: size),
             display: true
         )
         pillView.frame = NSRect(origin: .zero, size: size)
