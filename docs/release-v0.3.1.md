@@ -15,7 +15,7 @@ Koett 0.3.1 adds native installers and expands drawing, recording and media tool
 - Linux ARM64 is a CI-tested preview; ARM64 desktop use remains untested on hardware.
 - Windows setup is unsigned. SmartScreen may report an unknown publisher or block it; organization policy may prevent running it. Checksums detect corruption but do not replace signing.
 - On Linux, a named microphone cannot be shared with Discord or another app in this version. Choose **System default microphone** if recording cannot start.
-- Native Linux packages update through the package manager. Installing a local package does not add a repository or arrange automatic package updates. Private archive installs retain their separate updater. Update feeds remain disabled for this candidate.
+- Native Linux packages update through the package manager. Installing a local package does not add a repository or arrange automatic package updates. Linux tar installs include signed automatic updates. Mac installs include Sparkle automatic updates. Native Linux packages and Windows do not auto-update. Existing 0.3.0 installs have no feed and must install 0.3.1 manually to get these updates.
 - Drawing captures screen content into the pasted image. Receiving apps must support image paste; Copy and History preserve text when automatic paste fails.
 
 Hardware-specific gaps and the exact source/asset identity are recorded in the accompanying verification receipt.
@@ -24,6 +24,6 @@ Hardware-specific gaps and the exact source/asset identity are recorded in the a
 
 Build all assets from one frozen source commit: Mac version 0.3.1 (build 4), Linux and Windows version 0.3.1. Run the manual cross-platform workflow on main with `clean=true`. Build and notarize the Mac DMG from that same commit. Keep final asset hashes and verification receipts outside the frozen source.
 
-Stage a draft release only. Leave update feeds disabled. The draft must contain the notarized Mac DMG, Linux Debian/RPM/Arch packages for both architectures, and Windows Setup.exe, with checksums. Verify each source revision and download every attached asset back to verify its checksum. A successful CI run does not prove desktop or hardware acceptance.
+Stage and verify a private draft first. Enable the signed production feeds for Mac and Linux tar installs. The draft must contain the notarized Mac DMG and Sparkle update ZIP/appcast, Linux tar archives and signed feeds for both architectures, Linux Debian/RPM/Arch packages, and Windows Setup.exe, with checksums. Verify each source revision and download every attached asset back to verify its checksum. A successful CI run does not prove desktop or hardware acceptance. Before publishing as Latest, prove a real higher-version fixture update and rollback in isolated Mac and Linux tar installations. Verify all assets and feed targets, then remove the superseded draft. After publishing, download every public asset back, compare checksums and verify all latest/download feed redirects. A missing feed must leave the installed app usable.
 
 Outstanding hardware limits include Linux ARM64 desktop use, subjective sound-cue acceptance, and physical Windows hardware, signing, Internet SmartScreen and Chrome acceptance. Final Mac hardware limits come from the Mac artifact verification receipt. These are not represented as passing checks.
