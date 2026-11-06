@@ -98,8 +98,8 @@ fn app_only(app: String) -> PinContext {
     }
 }
 
-/// Google Chrome and Chromium. Their compositor title is the same in Incognito;
-/// only the accessible frame's name carries the marker.
+/// Browsers built on Chromium, by native, Flatpak and Snap app ID. Their compositor
+/// title is the same in a private window; only the accessible frame's name differs.
 fn is_chromium(app: &str) -> bool {
     matches!(
         app.to_ascii_lowercase().replace(' ', "-").as_str(),
@@ -107,26 +107,77 @@ fn is_chromium(app: &str) -> bool {
             | "google-chrome-stable"
             | "google-chrome-beta"
             | "google-chrome-unstable"
+            | "com.google.chrome"
             | "chromium"
             | "chromium-browser"
+            | "chromium_chromium"
             | "org.chromium.chromium"
-            | "com.google.chrome"
+            | "brave"
+            | "brave-browser"
+            | "brave-browser-beta"
+            | "brave-browser-nightly"
+            | "brave_brave"
+            | "com.brave.browser"
+            | "microsoft-edge"
+            | "microsoft-edge-stable"
+            | "microsoft-edge-beta"
+            | "microsoft-edge-dev"
+            | "com.microsoft.edge"
+            | "vivaldi"
+            | "vivaldi-stable"
+            | "vivaldi-snapshot"
+            | "vivaldi_vivaldi"
+            | "com.vivaldi.vivaldi"
+            | "opera"
+            | "opera_opera"
+            | "com.opera.opera"
     )
 }
 
+/// Browsers built on Firefox, by native, Flatpak and Snap app ID.
 fn is_firefox(app: &str) -> bool {
-    let app = app.to_ascii_lowercase();
     matches!(
-        app.as_str(),
-        "firefox" | "firefox-esr" | "org.mozilla.firefox" | "mozilla-firefox" | "mozilla firefox"
+        app.to_ascii_lowercase().replace(' ', "-").as_str(),
+        "firefox"
+            | "firefox-esr"
+            | "firefox-nightly"
+            | "firefox-developer-edition"
+            | "firefox_firefox"
+            | "org.mozilla.firefox"
+            | "mozilla-firefox"
+            | "librewolf"
+            | "io.gitlab.librewolf-community"
+            | "waterfox"
+            | "floorp"
+            | "zen"
+            | "zen-browser"
+            | "app.zen_browser.zen"
     )
 }
 
-/// English window titles that say a window is private. Absence proves nothing:
-/// other browsers and languages rely on the Include Page Details switch.
+/// The product name ends a normal window's title in every language. A private window
+/// adds a translated phrase, usually after it, so anything else counts as private.
+const FIREFOX_BRANDS: [&str; 8] = [
+    "Firefox",
+    "Firefox ESR",
+    "Firefox Nightly",
+    "Firefox Developer Edition",
+    "LibreWolf",
+    "Waterfox",
+    "Floorp",
+    "Zen",
+];
+
+/// Marks that browsers built on Chromium put in a private window's title.
+const CHROMIUM_MARKS: [&str; 3] = ["(Incognito)", "(Private)", "InPrivate"];
+
+/// Whether a window's title says or implies it is private. Absence proves nothing for
+/// other browsers: those rely on the Include Page Details switch.
 fn private_title(app: &str, title: &str) -> bool {
-    (is_chromium(app) && title.ends_with(" (Incognito)"))
-        || (is_firefox(app) && title.ends_with("Private Browsing"))
+    if is_firefox(app) {
+        return !FIREFOX_BRANDS.iter().any(|brand| title.ends_with(brand));
+    }
+    is_chromium(app) && CHROMIUM_MARKS.iter().any(|mark| title.contains(mark))
 }
 
 fn point_in_window(
@@ -798,24 +849,35 @@ mod tests {
             ("google-chrome", "Bank - Google Chrome (Incognito)"),
             ("Google Chrome", "Bank - Google Chrome (Incognito)"),
             ("chromium", "Bank - Chromium (Incognito)"),
+            ("chromium_chromium", "Bank - Chromium (Incognito)"),
+            ("brave-browser", "Bank - Brave (Private)"),
+            ("com.microsoft.Edge", "[InPrivate] Bank - Microsoft Edge"),
             ("firefox", "Bank — Mozilla Firefox Private Browsing"),
             (
                 "org.mozilla.firefox",
                 "Bank — Mozilla Firefox Private Browsing",
             ),
+            ("firefox_firefox", "Bank — Mozilla Firefox Private Browsing"),
+            ("firefox", "Sida — Mozilla Firefox Privat surfning"),
+            ("firefox", "Page — Mozilla Firefox (Navigation privée)"),
+            ("librewolf", "Bank — LibreWolf Private Browsing"),
         ] {
             assert!(super::private_title(app, title), "{app} {title}");
         }
         for (app, title) in [
             ("google-chrome", "Bank - Google Chrome"),
+            ("vivaldi-stable", "Bank - Vivaldi"),
             ("firefox", "Bank — Mozilla Firefox"),
-            ("firefox", "Bank (Incognito) — Mozilla Firefox"),
+            ("firefox", "Mozilla Firefox"),
+            ("firefox-esr", "Bank — Firefox ESR"),
             ("kitty", "notes (Incognito)"),
             ("kitty", "Private Browsing"),
             ("google-chrome", "Private Browsing"),
         ] {
             assert!(!super::private_title(app, title), "{app} {title}");
         }
+        assert!(super::is_chromium("Vivaldi"));
+        assert!(!super::is_chromium("kitty"));
     }
 
     #[test]

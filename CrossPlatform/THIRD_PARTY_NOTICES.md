@@ -6,6 +6,19 @@ those of their respective authors. `components.json` identifies source crate
 and native notice provenance; it is a source superset across Cargo targets,
 not a claim that every crate is present in a Linux binary.
 
+## Mac application updates
+
+The Mac app links Sparkle 2.10.1, pinned to source revision
+`ab7d71291238df6e0492143b120c9b696a35f603`:
+https://github.com/sparkle-project/Sparkle/tree/ab7d71291238df6e0492143b120c9b696a35f603 .
+Sparkle uses the MIT license; its complete upstream notice also retains the
+BSD-2-Clause notices for bsdiff/SUSignatureVerifier, the MIT notice for sais-lite,
+and the Zlib notice for the portable Ed25519 implementation. The unmodified
+full text is in the source at `Packaging/Notices/Sparkle-LICENSE.txt` and ships
+inside the Mac app as `Contents/Resources/Sparkle-LICENSE.txt`.
+Sparkle is not a Linux or Windows runtime dependency. These source-wide notices
+do not imply that its Mac framework is included in the native Linux package.
+
 ## Linux application and runtimes
 
 Rust dependencies are pinned by `Cargo.lock`. Their original license and

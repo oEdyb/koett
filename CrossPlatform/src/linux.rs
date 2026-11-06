@@ -2468,7 +2468,12 @@ impl X11Output {
     fn deliver_image(&mut self, png: &[u8], target: Option<u32>) -> Result<(), String> {
         x11_surface::set_clipboard_png(png.to_vec())?;
         require_x11_target(target, self.focused_window())?;
-        self.paste(PasteShortcut::default())?;
+        let rules = Settings::load()?.image_paste_shortcuts;
+        let chord = target
+            .into_iter()
+            .flat_map(x11_surface::window_classes)
+            .find(|name| rules.contains_key(name));
+        self.paste(image_paste::resolve(chord.as_deref(), &rules))?;
         std::thread::sleep(Duration::from_millis(500));
         Ok(())
     }

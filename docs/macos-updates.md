@@ -44,7 +44,10 @@ This is release work requiring separate authorization; none of it ran here.
 3. Increment CFBundleVersion monotonically and set the public version. Build a
    clean pinned source, assemble resources and run `scripts/embed-sparkle.sh APP
    IDENTITY` **before signing the outer app**. It embeds the framework, preserves
-   vendor helper signatures, signs the outer framework and includes its licenses.
+   the Downloader's required entitlements, signs Installer.xpc, Downloader.xpc,
+   Autoupdate and Updater.app before the enclosing framework, and includes licenses.
+   Sparkle's downloaded helpers are ad-hoc signed; preserving those signatures is
+   insufficient for notarization. Follow its [manual signing instructions](https://sparkle-project.org/documentation/sandboxing/).
    `install-macos.sh` already calls it. Other release packaging must do so too.
 4. Sign with Developer ID LF8KF3G42Q, notarize, staple, validate the app, then zip
    that final stapled app. Sign the **exact final ZIP** with the update key. Any
@@ -74,7 +77,7 @@ the same Developer ID identity before using the existing item's access list:
 ```sh
 swiftc scripts/create-macos-update-key.swift -o /PRIVATE/koett-update-key
 codesign --force --options runtime --identifier com.olledyberg.Koett.UpdateSigningKey \
-  --sign 'Developer ID Application: Olle Dyberg (LF8KF3G42Q)' /PRIVATE/koett-update-key
+  --sign 'Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)' /PRIVATE/koett-update-key
 /PRIVATE/koett-update-key --sign /PRIVATE/Koett.zip
 ```
 

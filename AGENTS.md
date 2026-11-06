@@ -268,6 +268,9 @@ merge gate, run `cargo test --locked` once when the affected scope warrants it;
 select `cargo clippy --all-targets -- -D warnings`, `cargo build --release --locked`
 and `cargo check --locked --target x86_64-pc-windows-msvc` only for affected
 platforms and build paths. Documentation-only edits need none of these commands.
+Before merging a change to a dependency or a file the supply-chain inventory hashes, run
+`python3 scripts/generate_supply_chain_inventory.py --check` in `CrossPlatform/`. That includes
+`Package.swift` and `Package.resolved`, so a Mac dependency change needs it too.
 Read `plan.md` and `docs/ui-design.md` before changing the port or history UI.
 Preserve failed-transcript recovery and keep storage off the audio callback.
 
