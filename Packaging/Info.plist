@@ -13,17 +13,17 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.1</string>
+    <string>0.3.0</string>
     <key>CFBundleVersion</key>
-    <string>2</string>
+    <string>3</string>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Koett records microphone audio only during an active dictation.</string>
+    <string>Koett uses the microphone for dictation, input level previews, and permission checks.</string>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>Koett captures one screen image when you ask a screen-aware question.</string>
+    <string>Koett captures the screen when you draw or pin.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Koett reads the current browser tab URL only when you start media transcription.</string>
 </dict>

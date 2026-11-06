@@ -1,0 +1,14 @@
+{
+  "step": "startup-on-saved",
+  "rect": [
+    26,
+    26,
+    986,
+    706
+  ],
+  "focus": {
+    "hwnd": 197074,
+    "process": "Koett",
+    "pid": 4708
+  }
+}

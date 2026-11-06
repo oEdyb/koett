@@ -3,6 +3,7 @@ name: Windows and Linux
 on:
   workflow_dispatch:
   pull_request:
+    types: [ready_for_review]
     paths:
       - "CrossPlatform/**"
       - "Sources/Koett/Resources/History/**"
@@ -51,8 +52,12 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
+      - name: Test Windows dependency gate
+        run: python3 scripts/test_windows_dependencies.py
       - name: Test native build configuration
         run: python3 scripts/test_build_asr_native.py
+      - name: Test pinned encoder-sharing patch
+        run: python3 scripts/test_shared_context_patch.py
       - name: Test ASR wrapper provenance
         run: python3 scripts/test_sherpa_wrapper.py
       - name: Test build receipts
@@ -73,6 +78,8 @@ jobs:
   msrv:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    env:
+      CARGO_INCREMENTAL: 0
     defaults:
       run:
         working-directory: CrossPlatform
@@ -89,12 +96,45 @@ jobs:
             libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
       - name: Install minimum Rust
         run: rustup toolchain install 1.92.0 --profile minimal
+      - name: Restore Cargo cache
+        id: cargo_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
+            cargo-v1-msrv-
       - name: Check minimum Rust
         run: DOCS_RS=1 cargo +1.92.0 check --locked --all-targets
+      - name: Drop Koett's own build output from the cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
+      - name: Save Cargo cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
 
   windows:
     runs-on: windows-2025
-    timeout-minutes: 20
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_INCREMENTAL: 0
+      CMAKE_BUILD_PARALLEL_LEVEL: 4
+      KOETT_REQUIRE_SHARED_CONTEXT: 1
     defaults:
       run:
         working-directory: CrossPlatform
@@ -107,27 +147,96 @@ jobs:
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
+      - name: Parse Windows lab checks
+        shell: pwsh
+        run: ./scripts/check_powershell.ps1
+      - name: Restore native libraries
+        id: native_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            CrossPlatform/native-build/lib
+            CrossPlatform/native-build/build-receipt.json
+          key: native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
       - name: Build ASR-only native libraries
-        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026"
+        if: steps.native_cache.outputs.cache-hit != 'true'
+        run: python scripts/build_asr_native.py --generator "Visual Studio 18 2026" --jobs 4
+      - name: Save native libraries
+        if: github.event_name == 'push' && steps.native_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            CrossPlatform/native-build/lib
+            CrossPlatform/native-build/build-receipt.json
+          key: native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+      - name: Restore Cargo cache
+        id: cargo_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
+            cargo-v1-windows-2025-
+      - name: Restore speech model
+        id: model_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/AppData/Local/DybergCo/Koett/data/models
+          key: model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+      - name: Require Windows shared-context native patch
+        shell: pwsh
+        run: >-
+          python -c "import json; from pathlib import Path; import sys; sys.path.insert(0, 'scripts'); from shared_context_patch import PATCHED_SHA256; receipt=json.loads(Path('native-build/build-receipt.json').read_text()); assert receipt['target']=='x86_64-pc-windows-msvc'; assert receipt['shared_context_sha256']==PATCHED_SHA256; assert ('patch='+PATCHED_SHA256+'\n') in Path('native-build/lib/koett-context.txt').read_text()"
       - name: Test
         run: cargo test --locked
       - name: Lint
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Build native transcription CLI
+        run: cargo build --release --locked --bin koett-transcribe-engine
+      - name: Check clean-Windows DLL dependencies
+        run: python scripts/check_windows_dependencies.py target/release/koett.exe
+      - name: Check transcription CLI DLL dependencies
+        run: python scripts/check_windows_dependencies.py target/release/koett-transcribe-engine.exe
+      - name: Test Windows self-test retry policy
+        shell: pwsh
+        run: ./scripts/test_windows_self_test.ps1
       - name: Runtime self-test
-        run: cargo run --release --locked --bin koett-engine -- --self-test
+        shell: pwsh
+        run: |
+          cargo build --release --locked --bin koett-engine
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./scripts/run_windows_self_test.ps1
       - name: Runtime long-input probe
         timeout-minutes: 5
         run: cargo run --release --locked --bin koett-engine -- --long-self-test 420
+      - name: Save speech model
+        if: github.event_name == 'push' && steps.model_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/AppData/Local/DybergCo/Koett/data/models
+          key: model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
       - name: Package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
           Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
+          Copy-Item target/release/koett-engine.exe dist/Koett-Windows-x86_64/koett-engine.exe
+          Copy-Item target/release/koett-transcribe-engine.exe dist/Koett-Windows-x86_64/koett-transcribe-engine.exe
           Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
           Copy-Item -Recurse packaging/notices dist/Koett-Windows-x86_64/notices
           Copy-Item native-build/build-receipt.json dist/Koett-Windows-x86_64/native-build-receipt.json
+          New-Item -ItemType Directory -Force dist/Koett-Windows-x86_64/sources | Out-Null
+          Copy-Item scripts/build_asr_native.py,scripts/shared_context_patch.py,scripts/shared_context.patch dist/Koett-Windows-x86_64/sources/
           Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
       - name: Verify Windows archive notices
         run: python scripts/check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip
@@ -145,6 +254,20 @@ jobs:
             CrossPlatform/dist/Koett-Windows-x86_64.zip.sha256
             CrossPlatform/dist/Koett-Windows-x86_64.zip.build-receipt.json
           if-no-files-found: error
+      - name: Drop Koett's own build output from the cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
+      - name: Save Cargo cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
 
   linux:
     strategy:
@@ -164,7 +287,9 @@ jobs:
         working-directory: CrossPlatform
     env:
       CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+      KOETT_REQUIRE_SHARED_CONTEXT: 1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -180,17 +305,64 @@ jobs:
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
           rustup default 1.98.0
+      - name: Restore native libraries
+        id: native_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            CrossPlatform/native-build/lib
+            CrossPlatform/native-build/build-receipt.json
+          key: native-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
       - name: Build ASR-only native libraries
+        if: steps.native_cache.outputs.cache-hit != 'true'
         run: python3 scripts/build_asr_native.py --jobs 2
+      - name: Save native libraries
+        if: github.event_name == 'push' && steps.native_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            CrossPlatform/native-build/lib
+            CrossPlatform/native-build/build-receipt.json
+          key: native-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+      - name: Restore Cargo cache
+        id: cargo_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          restore-keys: |
+            cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
+            cargo-v1-${{ matrix.runner }}-
+      - name: Restore speech model
+        id: model_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/koett/models
+          key: model-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
       - name: Test
         run: cargo test --locked
       - name: Lint
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
+      - name: Test runtime self-test retry policy
+        run: python3 -m unittest discover -s scripts -p test_runtime_self_test.py
       - name: Runtime self-test
         id: asr_self_test
-        run: cargo run --release --locked --bin koett-engine -- --self-test
+        run: python3 scripts/run_runtime_self_test.py cargo run --release --locked --bin koett-engine -- --self-test
+      - name: Save speech model
+        if: github.event_name == 'push' && steps.model_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.local/share/koett/models
+          key: model-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
       - name: Capture native inference failure
         if: failure() && steps.asr_self_test.outcome == 'failure'
         run: |
@@ -232,3 +404,17 @@ jobs:
             CrossPlatform/dist/Koett-Linux-*.tar.gz.sha256
             CrossPlatform/dist/Koett-Linux-*.tar.gz.build-receipt.json
           if-no-files-found: error
+      - name: Drop Koett's own build output from the cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: rm -rf target/*/incremental target/*/koett* target/*/deps/*koett* target/*/build/koett*
+      - name: Save Cargo cache
+        if: github.event_name == 'push' && steps.cargo_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            CrossPlatform/target
+          key: cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}

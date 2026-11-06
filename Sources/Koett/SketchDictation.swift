@@ -7,12 +7,17 @@ struct SketchedDictation {
     let rawText: String?
     let sheet: Data?
     let frameCount: Int
+    let drawingFailed: Bool
 }
 
 extension KoettController {
     static let sketchCaptureWait: Duration = .seconds(8)
 
     var effectiveDrawKey: DrawKey { DrawKey.effective(drawKey, dictation: dictationShortcut) }
+    var drawLockShortcut: ShortcutBinding? {
+        DrawLock.shortcut(dictation: dictationShortcut, media: mediaShortcut, mode: recordingMode,
+                          voiceOverEnabled: NSWorkspace.shared.isVoiceOverEnabled)
+    }
 
     func drawMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Draw on Screen")
@@ -23,6 +28,10 @@ extension KoettController {
         )
         toggle.isEnabled = state == .ready
         menu.addItem(toggle)
+        let lock = menuItem(title: drawLockMenuTitle, action: #selector(toggleDrawLock), selected: sketchOverlay.isLocked)
+        lock.tag = Self.drawLockTag
+        lock.isEnabled = state == .recording && sketchOverlay.isActive
+        menu.addItem(lock)
         let undo = menuItem(title: "Undo Last Drawing", action: #selector(undoLastDrawing), selected: false)
         undo.tag = Self.sketchUndoTag
         undo.isEnabled = state == .recording && sketchOverlay.canUndo
@@ -65,7 +74,43 @@ extension KoettController {
         sketchOverlay.undoLast()
     }
 
+    private var drawLockMenuTitle: String {
+        let title = sketchOverlay.isLocked ? "Finish Draw Lock" : "Draw Lock"
+        return drawLockShortcut.map { "\(title) (\($0.displayName))" } ?? title
+    }
+
+    @objc func toggleDrawLock() {
+        guard state == .recording, drawWhileDictating else { return }
+        sketchOverlay.toggleLock()
+    }
+
+    func consumeDrawLockKey(type: NSEvent.EventType, keyCode: UInt16, modifierFlags: UInt, isRepeat: Bool) -> Bool {
+        guard keyCode == 2 else { return false }
+        if type == .keyUp, drawLockKeyDown {
+            drawLockKeyDown = false
+            return true
+        }
+        guard type == .keyDown else { return false }
+        if drawLockKeyDown { return true }
+        guard state == .recording, sketchOverlay.isActive,
+              drawLockShortcut?.matchesDown(type: type, keyCode: keyCode,
+                                           modifierFlags: modifierFlags, isRepeat: false) == true else { return false }
+        drawLockKeyDown = true
+        noteModifierInterruption()
+        if !isRepeat { toggleDrawLock() }
+        return true
+    }
+
+    func handleDictationEscape() {
+        if state == .recording, sketchOverlay.isLocked {
+            sketchOverlay.toggleLock()
+        } else {
+            cancelDictation()
+        }
+    }
+
     static let sketchUndoTag = 0x5344
+    static let drawLockTag = 0x534C
     static let sketchPasteChordTag = 0x5343
 
     /// Names the app the sheet would paste into now and its chord. The status
@@ -89,6 +134,11 @@ extension KoettController {
     func refreshSketchPasteChordItem(in menu: NSMenu) {
         let draw = menu.items.first { $0.submenu?.title == "Draw on Screen" }?.submenu
         draw?.item(withTag: Self.sketchUndoTag)?.isEnabled = state == .recording && sketchOverlay.canUndo
+        if let lock = draw?.item(withTag: Self.drawLockTag) {
+            lock.title = drawLockMenuTitle
+            lock.state = sketchOverlay.isLocked ? .on : .off
+            lock.isEnabled = state == .recording && sketchOverlay.isActive
+        }
         if let item = draw?.item(withTag: Self.sketchPasteChordTag) {
             refreshSketchPasteChordItem(item)
         }
@@ -148,7 +198,11 @@ extension KoettController {
             audioClock: { [weak recorder] in recorder?.currentTime ?? 0 },
             includeSelection: pinSelectedText,
             onUpdate: { update in overlay.applySketch(update, session: session) },
-            includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true
+            includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true,
+            onLockChange: { locked in
+                overlay.showRecordingNotice(locked ? "Draw lock" : "Draw lock off")
+                overlay.raiseAboveDrawing()
+            }
         ), startedAt: startedAt)
     }
 
@@ -166,12 +220,14 @@ extension KoettController {
         session: UInt64
     ) async -> SketchedDictation {
         if await !sketchFrames.wait(session, timeout: Self.sketchCaptureWait) {
+            sketchFrames.markCaptureFailed(session)
             fputs("Warning: sketch captures timed out; pasting the finished ones\n", stderr)
             sketchOverlay.abandonPendingCaptures(session)
         }
         let frames = sketchFrames.take(session)
         guard !frames.isEmpty else {
-            return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0)
+            return SketchedDictation(text: text, rawText: rawText, sheet: nil, frameCount: 0,
+                                     drawingFailed: sketchFrames.hasFailedCaptures(session))
         }
         let summary = PinContext.annotate(
             SketchLinking.keyframeSummary(finalText: text, words: words, anchors: frames.map(\.start)),
@@ -179,7 +235,8 @@ extension KoettController {
         )
         let sheet = SketchSheet.contactSheet(frames.map(\.image)).flatMap(SketchSheet.png)
         if sheet == nil { fputs("Warning: contact sheet could not be drawn\n", stderr) }
-        return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count)
+        return SketchedDictation(text: summary, rawText: text, sheet: sheet, frameCount: frames.count,
+                                 drawingFailed: sheet == nil || sketchFrames.hasFailedCaptures(session))
     }
 
     /// Called after delivery, so the window never takes focus before Command-V.
@@ -192,6 +249,7 @@ extension KoettController {
     func deliverSketch(
         text: String,
         png: Data,
+        prepared: Bool? = nil,
         pasteboard: NSPasteboard = .general,
         persist: () -> TranscriptPersistence.Outcome = {
             TranscriptPersistence.Outcome(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
@@ -203,6 +261,12 @@ extension KoettController {
             png: png, text: text, pasteboard: pasteboard,
             postImage: { self.postPasteKey(flags: chord.flags) },
             postText: pasteAtCursor,
+            prepareImage: {
+                if let prepared { return prepared }
+                return await self.pasteCoordinator.prepare(stage: .sketchImage)
+            },
+            prepareText: { await self.pasteCoordinator.prepare(stage: .sketchText) },
+            clipboardFailure: { self.pasteCoordinator.externalFailure($0) },
             persist: persist
         )
     }

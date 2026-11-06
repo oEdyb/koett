@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "result": {
+    "formatter_children": [],
+    "shutdown": "full shutdown requested",
+    "history_restored_sha256": "9411F0BC77566CC565F53961ACBFE748D20442A51F4D0FFF4A2E6957163B6427",
+    "settings_restored_sha256": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+    "passed": true
+  },
+  "id": "1793881076530208404"
+}

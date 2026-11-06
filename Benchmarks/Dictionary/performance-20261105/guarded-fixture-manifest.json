@@ -1,0 +1,30 @@
+[
+  {
+    "seconds": 5,
+    "fixture": "5s-marked.wav",
+    "expectedAudioNonce": "purple banana",
+    "sha256": "d3a368fe3160e4c0d6ac02468ee5000994da83a91c8522582891808f8fb5db99",
+    "prefixSeconds": 2.4065
+  },
+  {
+    "seconds": 30,
+    "fixture": "30s-marked.wav",
+    "expectedAudioNonce": "silver panda",
+    "sha256": "f94fa627160b8796f99eb3381cca3d7d5d7ffd7d7fb3876b3e768ce5030330ba",
+    "prefixSeconds": 2.27875
+  },
+  {
+    "seconds": 120,
+    "fixture": "120s-marked.wav",
+    "expectedAudioNonce": "yellow rabbit",
+    "sha256": "af735c9ac3528829b3429853d5a3549fe4f9463b36cd39bf78128c10ac71b03c",
+    "prefixSeconds": 2.302
+  },
+  {
+    "seconds": 600,
+    "fixture": "600s-marked.wav",
+    "expectedAudioNonce": "orange zebra",
+    "sha256": "62c1e88ee3d691bce4a98eedd272b9e3ea43b673b1372eb1d7a239b5aca06fce",
+    "prefixSeconds": 2.3484375
+  }
+]

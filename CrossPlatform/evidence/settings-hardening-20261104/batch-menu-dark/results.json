@@ -124,7 +124,7 @@
   ],
   "renderer": "default",
   "app_cpu_affinity": "one inherited allowed CPU to expose real ASR busy state",
-  "binary": "/home/olle/.t3/worktrees/koett/t3-48d4ddbd/target/verification/koett",
+  "binary": "<build-home>/.t3/worktrees/koett/t3-48d4ddbd/target/verification/koett",
   "theme": "dark",
   "tray": "disposable private watcher and actual dbusmenu dispatch; no rendered tray host"
 }

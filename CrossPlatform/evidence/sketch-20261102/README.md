@@ -70,7 +70,8 @@ Typing never blocked (2026-11-03, drawing on, no opt-in, lab `koett-typing`):
 Phantom Shift (2026-11-04, lab `koett-realshift`; Shift from `lab-grabbed-shift.py`,
 gesture from `lab-gesture.c`, pill visible in every frame; ink = sampled red pixels):
 
-17. `17-old-build-virtual-shift-draws.png`: the build then installed (`8b4e91af`),
+17. Screenshot removed from the current tree during the release privacy audit
+    (it exposed a build-local file URL). The historical observation was: the build then installed (`8b4e91af`),
     only the virtual Shift held: ink 601, pencil and band. The bug.
 18. `18-fixed-virtual-shift-no-ink.png`: the fix, same input: ink 0.
 19. `19-fixed-named-lab-keyboard-draws.png`: the fix with that device named in

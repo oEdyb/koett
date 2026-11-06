@@ -5,7 +5,7 @@
   "patch_commit": "21d3eb76b68d6758122eddaf00b5823f9b2d7f34",
   "patch_sha256": "f2d4b12c7dcd5bd98cf20df429fac67ba764fb0dac42271f4d58eafb06840535",
   "protocols_commit": "02e63e74a807afed95bc25a386173110afef24e3",
-  "library": "/home/olle/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
+  "library": "<build-home>/.cache/koett/runtime-builds/gtk-4.24.1-21d3eb7/runtime/lib/libgtk-4.so.1.2400.1",
   "library_sha256": "4c7b561bdea19407b7d795072360b1be6c5f5860d87f315580501c97d9f7d204",
   "prefix": "/tmp/koett-gtk-upstream-fix/runtime",
   "meson_options": {

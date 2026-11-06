@@ -1,0 +1,12 @@
+{
+  "qmp_command": "set_link",
+  "arguments": {
+    "name": "n0",
+    "up": false
+  },
+  "result": {
+    "return": {}
+  },
+  "timing": "before the two recorded offline CPU WAV launches",
+  "guest_shutdown": true
+}

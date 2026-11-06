@@ -1,0 +1,46 @@
+{
+  "source_head": "7a25584384851b5c787e3895258f40a5aae6fd77",
+  "guest_running_after_checks": false,
+  "build_limits": {
+    "jobs": 4,
+    "nice": 10,
+    "MemoryMax": "12G"
+  },
+  "linux": {
+    "cargo_test_locked": {
+      "passed": 388,
+      "ignored": 17,
+      "failed": 0,
+      "additional_isolation_test_passed": 1
+    },
+    "cargo_clippy_all_targets_warnings_denied": "passed",
+    "cargo_build_release_locked": "passed",
+    "native_libraries": "existing pinned ASR-only Linux cache"
+  },
+  "windows": {
+    "metadata_clippy": "passed",
+    "flags": [
+      "DOCS_RS=1",
+      "LIBSQLITE3_SYS_USE_PKG_CONFIG=1",
+      "PKG_CONFIG_ALLOW_CROSS=1"
+    ],
+    "limitation": "native Windows libraries were not linked locally; real Windows used the earlier unmodified CI artifact e63e65a",
+    "latest_runtime_fixes": "not yet retested in a new linked executable"
+  },
+  "standalone_rust_tests": {
+    "meter": 5,
+    "pill_state": 5
+  },
+  "python_tests": {
+    "supply_chain_inventory": 10,
+    "windows_dependencies": 4
+  },
+  "other_checks": {
+    "cargo_fmt_check": "passed",
+    "git_diff_check": "passed",
+    "inventory_generator_check": "passed",
+    "zsh_installer_syntax": "passed",
+    "packaging_plists": "parsed with Python plistlib",
+    "swift_test_and_release": "not run; Apple SDK unavailable"
+  }
+}

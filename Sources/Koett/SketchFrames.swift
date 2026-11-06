@@ -20,11 +20,13 @@ final class SketchFrames {
     private var session: UInt64?
     private var open = false
     private var frames: [SketchFrame] = []
+    private var failedCapture = false
 
     func begin(_ session: UInt64) {
         self.session = session
         open = false
         frames.removeAll()
+        failedCapture = false
     }
 
     /// Drops a cancelled or failed dictation's frames and rejects its late captures.
@@ -33,6 +35,16 @@ final class SketchFrames {
         self.session = nil
         open = false
         frames.removeAll()
+        failedCapture = false
+    }
+
+    func markCaptureFailed(_ session: UInt64) {
+        guard self.session == session else { return }
+        failedCapture = true
+    }
+
+    func hasFailedCaptures(_ session: UInt64) -> Bool {
+        self.session == session && failedCapture
     }
 
     /// Marks the dictation's overlay as still capturing.

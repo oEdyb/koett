@@ -1,0 +1,572 @@
+{
+  "ok": true,
+  "result": {
+    "save_dialog": 263444,
+    "steps": [
+      {
+        "step": "history-unicode-copy-e63",
+        "rect": [
+          320,
+          72,
+          2240,
+          1432
+        ],
+        "focus": {
+          "hwnd": 459632,
+          "process": "Koett",
+          "pid": 5976
+        }
+      },
+      {
+        "step": "history-export-dialog-e63",
+        "rect": [
+          333,
+          130,
+          1613,
+          1090
+        ],
+        "focus": {
+          "hwnd": 263444,
+          "process": "Koett",
+          "pid": 5976
+        }
+      }
+    ],
+    "export": {
+      "control": "ControlType.Button",
+      "invoke": true,
+      "name": "Export\u2026"
+    },
+    "copied": "Fixture: Swedish \u00c5\u00c4\u00d6 \u2014 Unicode stays intact.\nSecond line for history Copy and Export.",
+    "copy": {
+      "control": "ControlType.Button",
+      "invoke": true,
+      "name": "Copy"
+    },
+    "controls": [
+      {
+        "hwnd": 66874,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 0,
+        "name": "Command Module",
+        "id": "FolderBandModuleInner",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "&Help",
+        "id": "HelpButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Details",
+        "id": "ViewControl",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "View Slider",
+        "id": "SplitMenuButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Organize",
+        "id": "{7DDC1264-7E4D-4F74-BBC0-D191987C8D0F}",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "New folder",
+        "id": "{E44616AD-6DF1-4B94-85A4-E465AE8A19DB}",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 66902,
+        "name": "Control Host",
+        "id": "ProperTreeHost",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 66906,
+        "name": "Namespace Tree Control",
+        "id": "100",
+        "type": "ControlType.Tree"
+      },
+      {
+        "hwnd": 0,
+        "name": "Vertical Scroll Bar",
+        "id": "Vertical ScrollBar",
+        "type": "ControlType.ScrollBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Back by small amount",
+        "id": "SmallDecrement",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Back by large amount",
+        "id": "LargeDecrement",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Thumb",
+        "id": "Thumb",
+        "type": "ControlType.Thumb"
+      },
+      {
+        "hwnd": 0,
+        "name": "Forward by large amount",
+        "id": "LargeIncrement",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Forward by small amount",
+        "id": "SmallIncrement",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Desktop",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Home",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Gallery",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "OneDrive",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Desktop",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Downloads",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Documents",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Pictures",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Music",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Videos",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "This PC",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Network",
+        "id": "",
+        "type": "ControlType.TreeItem"
+      },
+      {
+        "hwnd": 66878,
+        "name": "Shell Folder View",
+        "id": "listview",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 66880,
+        "name": "Items View",
+        "id": "",
+        "type": "ControlType.List"
+      },
+      {
+        "hwnd": 66890,
+        "name": "Horizontal",
+        "id": "HorizontalScrollBar",
+        "type": "ControlType.ScrollBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Column left",
+        "id": "",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Position",
+        "id": "",
+        "type": "ControlType.Custom"
+      },
+      {
+        "hwnd": 0,
+        "name": "Page right",
+        "id": "",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Column right",
+        "id": "",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Header",
+        "id": "",
+        "type": "ControlType.Header"
+      },
+      {
+        "hwnd": 0,
+        "name": "Name",
+        "id": "System.ItemNameDisplay",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "Filter dropdown",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Date modified",
+        "id": "System.DateModified",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "Filter dropdown",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Type",
+        "id": "System.ItemTypeText",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "Filter dropdown",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Size",
+        "id": "System.Size",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "Filter dropdown",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "No items match your search.",
+        "id": "EmptyTextFocusable",
+        "type": "ControlType.Text"
+      },
+      {
+        "hwnd": 0,
+        "name": "File name:",
+        "id": "SaveDialogLabel",
+        "type": "ControlType.Text"
+      },
+      {
+        "hwnd": 66916,
+        "name": "File name:",
+        "id": "FileNameControlHost",
+        "type": "ControlType.ComboBox"
+      },
+      {
+        "hwnd": 66920,
+        "name": "File name:",
+        "id": "1001",
+        "type": "ControlType.Edit"
+      },
+      {
+        "hwnd": 66918,
+        "name": "File name:",
+        "id": "ListBox",
+        "type": "ControlType.List"
+      },
+      {
+        "hwnd": 0,
+        "name": "Drop Down Button",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Save as type:",
+        "id": "SaveDialogLabel",
+        "type": "ControlType.Text"
+      },
+      {
+        "hwnd": 66938,
+        "name": "Save as type:",
+        "id": "FileTypeControlHost",
+        "type": "ControlType.ComboBox"
+      },
+      {
+        "hwnd": 66940,
+        "name": "Save as type:",
+        "id": "ListBox",
+        "type": "ControlType.List"
+      },
+      {
+        "hwnd": 0,
+        "name": "Text files",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "All files",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Drop Down Button",
+        "id": "DropDown",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Save Fields",
+        "id": "SaveDialogPreviewMetadataInner",
+        "type": "ControlType.Tree"
+      },
+      {
+        "hwnd": 0,
+        "name": "Application Controls",
+        "id": "AppControlsModuleInner",
+        "type": "ControlType.Tree"
+      },
+      {
+        "hwnd": 394100,
+        "name": "",
+        "id": "",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Hide Folders",
+        "id": "Item 103",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 328448,
+        "name": "Save",
+        "id": "1",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 394086,
+        "name": "Cancel",
+        "id": "2",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 262286,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 656222,
+        "name": "",
+        "id": "40965",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 327882,
+        "name": "Navigation buttons",
+        "id": "",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Back (Alt + Left Arrow)",
+        "id": "Item 256",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Forward (Alt + Right Arrow)",
+        "id": "Item 257",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Recent locations",
+        "id": "Item 258",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 262408,
+        "name": "Up band",
+        "id": "",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Up to \"Desktop\" (Alt + Up Arrow)",
+        "id": "Item 256",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 525570,
+        "name": "Loading",
+        "id": "",
+        "type": "ControlType.ProgressBar"
+      },
+      {
+        "hwnd": 132386,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 197884,
+        "name": "Address: Documents",
+        "id": "1001",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "All locations",
+        "id": "Item 1280",
+        "type": "ControlType.SplitButton"
+      },
+      {
+        "hwnd": 0,
+        "name": "Documents",
+        "id": "Item 1281",
+        "type": "ControlType.MenuItem"
+      },
+      {
+        "hwnd": 197670,
+        "name": "Address band",
+        "id": "",
+        "type": "ControlType.ToolBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "Previous Locations",
+        "id": "Item 202",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 0,
+        "name": "Refresh \"Documents\" (F5)",
+        "id": "Item 102",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 132308,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 132374,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 328998,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 0,
+        "name": "Search Box",
+        "id": "SearchEditBox",
+        "type": "ControlType.Edit"
+      },
+      {
+        "hwnd": 0,
+        "name": "Search",
+        "id": "SearchBoxSearchButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "hwnd": 66872,
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "hwnd": 0,
+        "name": "Save As",
+        "id": "TitleBar",
+        "type": "ControlType.TitleBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "System Menu Bar",
+        "id": "SystemMenuBar",
+        "type": "ControlType.MenuBar"
+      },
+      {
+        "hwnd": 0,
+        "name": "System",
+        "id": "Item 1",
+        "type": "ControlType.MenuItem"
+      },
+      {
+        "hwnd": 0,
+        "name": "Close",
+        "id": "Close",
+        "type": "ControlType.Button"
+      }
+    ]
+  },
+  "id": "1793818894138899498"
+}

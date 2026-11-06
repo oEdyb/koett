@@ -1,0 +1,14 @@
+{
+  "step": "dark-settings-e63",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 328626,
+    "process": "Koett",
+    "pid": 5976
+  }
+}

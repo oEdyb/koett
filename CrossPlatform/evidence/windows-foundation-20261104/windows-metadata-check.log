@@ -1,0 +1,17 @@
+Running as unit: run-p61424-i4268882.scope; invocation ID: 9e10353bb02640dda1df6d4d2ba34e1d
+   Compiling libsqlite3-sys v0.39.1
+    Checking rusqlite v0.41.0
+    Checking koett-engine v0.2.0-linux.1 (<build-home>/.t3/worktrees/koett/t3-0711006b/CrossPlatform)
+warning: unused imports: `DT_SINGLELINE` and `SelectObject`
+  --> src/windows.rs:15:46
+   |
+15 |     BeginPaint, CreateSolidBrush, DT_CENTER, DT_SINGLELINE, DT_VCENTER, DeleteObject, DrawTextW,
+   |                                              ^^^^^^^^^^^^^
+...
+18 |     SelectObject, SetBkMode, SetTextColor, TRANSPARENT,
+   |     ^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `koett-engine` (lib) generated 1 warning (run `cargo fix --lib -p koett-engine` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s

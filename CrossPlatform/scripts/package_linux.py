@@ -11,6 +11,8 @@ import tarfile
 from pathlib import Path
 
 from check_linux_notices import validate
+from build_asr_native import SOURCE_COMMIT
+from shared_context_patch import PATCHED_SHA256
 
 
 def digest(path):
@@ -19,6 +21,18 @@ def digest(path):
         for block in iter(lambda: source.read(1024 * 1024), b""):
             value.update(block)
     return value.hexdigest()
+
+
+def validate_native_receipt(path):
+    try:
+        receipt = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        raise ValueError("native build receipt is missing or invalid; rerun scripts/build_asr_native.py") from error
+    if (not isinstance(receipt, dict)
+            or receipt.get('source_commit') != SOURCE_COMMIT
+            or receipt.get('shared_context_sha256') != PATCHED_SHA256):
+        raise ValueError("native build lacks the reviewed shared-context decoder; rerun scripts/build_asr_native.py")
+    return receipt
 
 
 def main():
@@ -39,6 +53,8 @@ def main():
     binary = args.binary.resolve()
     if not binary.is_file():
         parser.error(f"binary not found: {binary}")
+    native = args.native_build_receipt or ((args.asr_runtime / "build-receipt.json") if args.flavor == "current-pc" else root / "native-build/build-receipt.json")
+    validate_native_receipt(native)
     validate(root)
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True))
@@ -69,6 +85,10 @@ def main():
             shutil.copy2(gtk_build / source_name, sources / source_name)
         shutil.copy2(root / "scripts/build_linux_gtk_runtime.py", sources / "build_linux_gtk_runtime.py")
         shutil.copy2(args.asr_runtime.resolve() / "build-receipt.json", sources / "asr-build-receipt.json")
+    sources = destination / "sources"
+    sources.mkdir(exist_ok=True)
+    for source_name in ("build_asr_native.py", "shared_context_patch.py", "shared_context.patch"):
+        shutil.copy2(root / "scripts" / source_name, sources / source_name)
     for filename in ["install.sh", "com.olledyberg.Koett.desktop", "com.olledyberg.Koett.svg"]:
         shutil.copy2(root / "packaging/linux" / filename, destination / filename)
     (destination / "install.sh").chmod(0o755)
@@ -76,6 +96,7 @@ def main():
     for filename in ["README.md", "THIRD_PARTY_NOTICES.md"]:
         shutil.copy2(root / filename, destination / filename)
     shutil.copy2(root.parent / "LICENSE", destination / "LICENSE")
+    shutil.copytree(root / "integrations/gnome", destination / "integrations/gnome")
     receipt = {"kind": "linux-preview-candidate" if args.flavor == "system-runtime" else "local-candidate-not-public-release", "flavor": args.flavor,
                "runtime": "app-scoped CachyOS GTK and llama; ASR statically linked" if args.flavor == "current-pc" else "host GTK >= 4.6, ALSA and ELF dependencies; ASR statically linked; llama optional", "source_revision": revision,
                "source_dirty": dirty, "binary_sha256": digest(binary),
@@ -86,9 +107,7 @@ def main():
         shutil.copy2(root / "packaging/linux/SYSTEM-RUNTIME.md", destination / "SYSTEM-RUNTIME.md")
     notices = root / "packaging/notices"
     shutil.copytree(notices, destination / "notices")
-    native = args.native_build_receipt or ((args.asr_runtime / "build-receipt.json") if args.flavor == "current-pc" else root / "native-build/build-receipt.json")
-    if native.exists():
-        shutil.copy2(native, destination / "native-build-receipt.json")
+    shutil.copy2(native, destination / "native-build-receipt.json")
     (destination / "candidate.json").write_text(json.dumps(receipt, indent=2) + "\n")
     files = {str(path.relative_to(destination)): digest(path)
              for path in sorted(destination.rglob("*")) if path.is_file()}

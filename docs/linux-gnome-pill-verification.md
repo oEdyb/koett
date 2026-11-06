@@ -62,6 +62,16 @@ The lab also has no StatusNotifierWatcher without an indicator extension; GNOME
 tray/menu integration or explicit provider setup remains open. Native app windows
 and the local CLI remain available. No host install was done for this PR.
 
+## Drawing background capture
+
+The extension's `Capture` call returns one monitor as a PNG, held only in memory. It answers
+only the process that owns Koett's GTK application name, refuses during the overview, a modal
+dialog, a lock or a monitor change, and hides only Koett's own pill while it captures. A failure
+keeps the dictation. On 2026-11-06 `capture-check.py` passed on Shell 51.1 with main merged:
+real pixels, an invalid monitor, the overview, a stalled Shell that timed out at 5 s, and the
+extension turned off and on. Nothing calls it on GNOME until a drawing surface exists.
+Evidence: `CrossPlatform/evidence/gnome-capture-20261104/`.
+
 ## Reproduce
 
 Use the staged runtime/package-hash procedure in `linux-gnome-focus-verification.md`.
@@ -78,3 +88,12 @@ scope. Its exact private runtime and Pulse server guards reject host execution.
 It launches a real fullscreen editor, checks the production pill, injects input
 only through the private Mutter RemoteDesktop session, and quits its apps.
 Stop only that named lab after collecting evidence.
+
+## Screen lock
+
+Not run on a real lock. The extension's `metadata.json` sets no `session-modes`, and GNOME
+Shell disables such extensions while the screen is locked. Disabling the extension closes
+the pill, and the native run above confirmed Koett needs a restart to get it back. So a
+screen lock very likely loses the pill until Koett restarts, while recording itself
+continues. Checking this needs the private GNOME session rebuilt, because its start steps
+were not saved.

@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import AVFoundation
 import CoreGraphics
 import Darwin
@@ -25,7 +26,7 @@ extension KoettController {
 
     func startRecordingIfReady() {
         guard canStartSession else { return }
-        assistantSpeech.stop()
+        if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         do {
             try startRecording()
         } catch {
@@ -80,7 +81,8 @@ extension KoettController {
         }
 
         let device = try selectedMicrophone()
-        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device)
+        let nemotronRecorder = try NemotronLiveRecorder(adapter: nemotronAdapter, device: device,
+            maximumDuration: RecordingLimit.load(from: microphoneDefaults).seconds + 1)
         try startNemotronRecording(live: nemotronRecorder) { try startFileRecording(device: device) }
     }
 
@@ -130,6 +132,7 @@ extension KoettController {
 
     @discardableResult
     func beginDictationSession() -> UInt64 {
+        recordingDeadline = RecordingDeadline(limit: RecordingLimit.load(from: microphoneDefaults))
         lastDictationID &+= 1
         activeDictationID = lastDictationID
         return lastDictationID
@@ -530,32 +533,40 @@ extension KoettController {
         let textReadyAt = ProcessInfo.processInfo.systemUptime
         guard !sketched.text.isEmpty else {
             guard !rawText.isEmpty else {
+                if sketched.drawingFailed, claimDelivery(session) {
+                    recordingOverlay.showError("Drawing failed · No speech", keepUntilClicked: true)
+                }
                 print("No speech detected. Clipboard unchanged.")
                 return .finished
             }
             guard claimDelivery(session) else { return .finished }
             try saveTranscript(prepared)
+            if sketched.drawingFailed {
+                recordingOverlay.showError("Text saved · Drawing failed", keepUntilClicked: true)
+            }
             print("S1-mini removed filler-only text. Clipboard unchanged.")
             return .finished
         }
+        let readyToPaste = await pasteCoordinator.prepare(stage: sketched.sheet == nil ? .dictation : .sketchImage)
         guard claimDelivery(session) else { return .finished }
         let final = PreparedDictation(text: sketched.text, model: prepared.model, rawText: sketched.rawText)
         deliveredText = final.text
         let pastePostedAt: TimeInterval
         if let sheet = sketched.sheet {
-            pastePostedAt = try await deliverSketch(text: final.text, png: sheet) {
+            pastePostedAt = try await deliverSketch(text: final.text, png: sheet, prepared: readyToPaste) {
                 self.persistTranscript(final.text, model: final.model, rawText: final.rawText, keepAsLast: true, image: sheet)
             }
         } else {
-            pastePostedAt = try deliver(final)
+            pastePostedAt = try deliver(final, readyToPaste: readyToPaste)
         }
-        recordingOverlay.showDone(text: final.text, png: sketched.sheet)
+        recordingOverlay.showDone(text: final.text, png: sketched.sheet, drawingFailed: sketched.drawingFailed)
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
     /// Text that was saved but not pasted gets the Not pasted pill with Paste again.
     private func showDeliveryFailure(_ error: Error, text: String?) {
-        if let text, recordingOverlay.showNotPasted(text: text, png: lastTranscript == text ? lastTranscriptImage : nil) { return }
+        if let text, recordingOverlay.showNotPasted(text: text, png: lastTranscript == text ? lastTranscriptImage : nil,
+            reason: pasteCoordinator.lastFailure?.message) { return }
         recordingOverlay.showError(
             DictationFailurePresentation.message(
                 error: error.localizedDescription,
@@ -600,15 +611,17 @@ extension KoettController {
         }
     }
 
-    private func deliver(_ transcript: PreparedDictation) throws -> TimeInterval {
+    private func deliver(_ transcript: PreparedDictation, readyToPaste: Bool) throws -> TimeInterval {
         try DictationDelivery.deliver(
             transcript.text,
             writeToClipboard: { text in
                 let pasteboard = NSPasteboard.general
                 pasteboard.clearContents()
-                return pasteboard.setString(text, forType: .string)
+                let written = pasteboard.setString(text, forType: .string)
+                if !written { self.pasteCoordinator.externalFailure(.clipboardUnavailable) }
+                return written
             },
-            postPaste: pasteAtCursor,
+            postPaste: { readyToPaste && self.pasteAtCursor() },
             persist: {
                 persistTranscript(
                     transcript.text,
@@ -636,7 +649,8 @@ extension KoettController {
         }
     }
 
-    func play(_ player: AVAudioPlayer) {
+    func play(_ player: AVAudioPlayer?) {
+        guard let player else { return }
         player.stop()
         player.currentTime = 0
         _ = player.play()
@@ -646,31 +660,27 @@ extension KoettController {
         postPasteKey(flags: .maskCommand)
     }
 
-    /// Posts V with `flags` (Command for text; Control for images in terminals).
-    func postPasteKey(flags: CGEventFlags) -> Bool {
-        guard state != .transcribing || automaticPasteTarget?.isCurrent == true,
-              let foreground = NSWorkspace.shared.frontmostApplication,
-              foreground.processIdentifier != ProcessInfo.processInfo.processIdentifier,
-              CGEventSource.flagsState(.combinedSessionState)
-                .intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift]).isEmpty else { return false }
-        guard let source = CGEventSource(stateID: .hidSystemState),
-              let keyDown = CGEvent(
-                  keyboardEventSource: source,
-                  virtualKey: 9,
-                  keyDown: true
-              ),
-              let keyUp = CGEvent(
-                  keyboardEventSource: source,
-                  virtualKey: 9,
-                  keyDown: false
-              ) else {
-            return false
-        }
+    var pasteAccessGranted: Bool { AXIsProcessTrusted() && CGPreflightPostEventAccess() }
 
-        keyDown.flags = flags
-        keyUp.flags = flags
-        keyDown.post(tap: .cghidEventTap)
-        keyUp.post(tap: .cghidEventTap)
+    func pasteSnapshot() -> PasteSnapshot {
+        let access = pasteAccessGranted
+        let foreground = NSWorkspace.shared.frontmostApplication
+        return PasteSnapshot(access: access,
+            targetFailure: access ? (automaticPasteTarget?.failure ?? (automaticPasteTarget == nil ? .noTarget : nil)) : nil,
+            physicalFlags: CGEventSource.flagsState(.hidSystemState).rawValue,
+            combinedFlags: CGEventSource.flagsState(.combinedSessionState).rawValue,
+            expectedPID: automaticPasteTarget?.identity.pid, foregroundPID: foreground?.processIdentifier,
+            expectedApp: automaticPasteTarget?.identity.bundleID, foregroundApp: foreground?.bundleIdentifier)
+    }
+
+    func postPasteKey(flags: CGEventFlags) -> Bool {
+        pasteCoordinator.post(flags: flags)
+    }
+
+    func postPasteEvent(flags: CGEventFlags) -> Bool {
+        guard let events = PasteEvents.make(flags: flags) else { return false }
+        events.down.post(tap: .cghidEventTap)
+        events.up.post(tap: .cghidEventTap)
         return true
     }
 

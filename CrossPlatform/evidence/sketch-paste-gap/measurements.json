@@ -1,0 +1,97 @@
+{
+  "host_before": {
+    "source_revision": "61e121e13044a7eb1df8d4ebf3fb8b1a889884d3",
+    "pid": 2546805,
+    "image_step": 2,
+    "text_step": 3,
+    "image_post_timestamp_ms": 1793838203076,
+    "text_post_timestamp_ms": 1793838203847,
+    "gap_ms": 771,
+    "fixed_wait_ms": 700,
+    "text_preparation_ms": 71,
+    "attempts_per_step": 1,
+    "physical_modifier_mask": 0,
+    "png_bytes": 219053
+  },
+  "method": "Private nested niri. Baseline uses the original output.rs from 61e121e with the same clipboard owner/native keyboard as the candidate. Times are paste_post differences, not ASR duration. Browser DOM and actual paste events are checked separately. No host after measurement or installation.",
+  "summary": [
+    {
+      "target": "t3",
+      "version": "before",
+      "n": 6,
+      "median_ms": 776.0,
+      "min_ms": 766,
+      "max_ms": 778,
+      "visible_image_to_text_median_ms": 693.9499999955297
+    },
+    {
+      "target": "t3",
+      "version": "after",
+      "n": 6,
+      "median_ms": 201.0,
+      "min_ms": 189,
+      "max_ms": 227,
+      "visible_image_to_text_median_ms": 123.44999998807907
+    },
+    {
+      "target": "chrome",
+      "version": "before",
+      "n": 6,
+      "median_ms": 775.0,
+      "min_ms": 766,
+      "max_ms": 776,
+      "visible_image_to_text_median_ms": 753.1500000059605
+    },
+    {
+      "target": "chrome",
+      "version": "after",
+      "n": 6,
+      "median_ms": 197.5,
+      "min_ms": 188,
+      "max_ms": 211,
+      "visible_image_to_text_median_ms": 184.14999999850988
+    },
+    {
+      "target": "kitty-agent",
+      "version": "before",
+      "n": 2,
+      "median_ms": 776.0,
+      "min_ms": 776,
+      "max_ms": 776
+    },
+    {
+      "target": "kitty-agent",
+      "version": "after",
+      "n": 2,
+      "median_ms": 194.5,
+      "min_ms": 191,
+      "max_ms": 198
+    },
+    {
+      "target": "kitty-plain",
+      "version": "before",
+      "n": 2,
+      "median_ms": 778.0,
+      "min_ms": 773,
+      "max_ms": 783
+    },
+    {
+      "target": "kitty-plain",
+      "version": "after",
+      "n": 2,
+      "median_ms": 768.0,
+      "min_ms": 763,
+      "max_ms": 773
+    }
+  ],
+  "large_fixture": {
+    "width": 2048,
+    "height": 1536,
+    "panels": 6,
+    "bytes": 8701340,
+    "sha256": "4ee12a8a3a4f61ab47052208b310094a724a6d960dc735c2ddd232b61d045795"
+  },
+  "messages_sent": 0,
+  "user_text_logged": false,
+  "cases_file": "cases.jsonl"
+}

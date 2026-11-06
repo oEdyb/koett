@@ -1,0 +1,14 @@
+{
+  "step": "correction-backtab-leaves-multiline-field",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 721066,
+    "process": "Koett",
+    "pid": 5932
+  }
+}

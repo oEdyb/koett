@@ -71,6 +71,7 @@ pub(super) fn show(
     let draw_page = section(&stack, "draw", "Draw on screen");
     let shortcuts_page = section(&stack, "shortcuts", "Shortcuts");
     let words = section(&stack, "words", "Words");
+    #[cfg(feature = "ask")]
     let ask = section(&stack, "ask", "Ask About Screen");
     let general = section(&stack, "general", "General");
     let microphone = group(&dictation, "Microphone");
@@ -112,6 +113,7 @@ pub(super) fn show(
         &settings.dictionary,
     );
     let replacements = group(&words, "Replacements");
+    #[cfg(feature = "ask")]
     super::ask_settings::build(&group(&ask, "Assistant"));
     stack.set_visible_child_name(page.unwrap_or("audio"));
     let footer = gtk::Box::new(gtk::Orientation::Horizontal, 12);
@@ -181,12 +183,20 @@ pub(super) fn show(
         "toggle"
     }));
     row(&recording, "Recording mode", &mode);
+    let recording_limit = gtk::ComboBoxText::new();
+    for minutes in crate::settings::RECORDING_LIMIT_CHOICES {
+        recording_limit.append(Some(&minutes.to_string()), &format!("{minutes} minutes"));
+    }
+    recording_limit.set_active_id(Some(&settings.recording_limit_minutes.to_string()));
+    row(&recording, "Recording limit", &recording_limit);
     let shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.shortcut.clone()));
+    #[cfg(feature = "ask")]
     let ask_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.ask_shortcut.clone()));
     let media_shortcut = std::rc::Rc::new(std::cell::RefCell::new(settings.media_shortcut.clone()));
     let wayland = std::env::var_os("WAYLAND_DISPLAY").is_some();
     for (label, shortcut, default) in [
         ("Dictation", shortcut.clone(), "Ctrl+Shift+Space"),
+        #[cfg(feature = "ask")]
         ("Ask About Screen", ask_shortcut.clone(), "Ctrl+Alt+Space"),
         ("Transcribe media", media_shortcut.clone(), "Ctrl+Shift+T"),
     ] {
@@ -403,9 +413,6 @@ Toggle: koett toggle
 Hold press: koett start
 Hold release: koett stop
 Cancel: koett cancel
-Ask toggle: koett ask
-Ask press: koett ask-start
-Ask release: koett ask-stop
 Media: open Koett → Transcribe media
 
 Escape cancels while recording with keyboard access. Settings → Draw on screen has the setup. Otherwise use Cancel on the pill or bind koett cancel to a desktop shortcut.",
@@ -432,6 +439,9 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     pause_media.set_use_underline(true);
     pause_media.set_active(settings.pause_media);
     recording.append(&pause_media);
+    let recording_sounds = gtk::CheckButton::with_label("Play start and stop sounds");
+    recording_sounds.set_active(settings.recording_sounds);
+    recording.append(&recording_sounds);
     let drawing = group(&draw_page, "Drawing");
     let image_rules = gtk::TextView::new();
     image_rules.set_monospace(true);
@@ -465,6 +475,8 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
         DrawKey::Alt => "alt",
     }));
     row(&draw_options, "Draw key", &draw_key);
+    let draw_lock = std::rc::Rc::new(std::cell::RefCell::new(settings.draw_lock_shortcut.clone()));
+    draw_lock_row(&draw_options, draw_lock.clone());
     let pin_selection = gtk::CheckButton::with_label("Include Selected Text in Pins");
     pin_selection.set_active(settings.pin_selected_text);
     draw_options.append(&pin_selection);
@@ -480,7 +492,7 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     });
     draw_options.append(&page_links);
     draw_options.append(&help(
-        "Typing keeps working while you record. To see the draw key, Koett checks physical keyboards for Shift, Ctrl, Alt, Super and whether another key is down, only while a drawing dictation records. It never reads typed text.",
+        "Typing keeps working while you record. To see the draw key, Koett checks physical keyboards for Shift, Ctrl, Alt, Super, the draw lock key and whether another key is down, only while a drawing dictation records. It never reads typed text.",
     ));
     let (access_text, access_ready) = match super::sketch::keys::Keyboards::open() {
         Ok(keyboards) if keyboards.unreadable() > 0 => (
@@ -587,7 +599,10 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
         move |_| {
             let mut updated = settings.clone();
             updated.shortcut = shortcut.borrow().clone();
-            updated.ask_shortcut = ask_shortcut.borrow().clone();
+            #[cfg(feature = "ask")]
+            {
+                updated.ask_shortcut = ask_shortcut.borrow().clone();
+            }
             updated.media_shortcut = media_shortcut.borrow().clone();
             updated.start_at_login = login.is_active();
             updated.microphone = input
@@ -599,6 +614,12 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
             } else {
                 RecordingMode::Toggle
             };
+            if let Some(minutes) = recording_limit
+                .active_id()
+                .and_then(|minutes| minutes.parse().ok())
+            {
+                updated.recording_limit_minutes = minutes;
+            }
             let mut rules = Vec::new();
             for (phrase, replacement, container) in entries.borrow().iter() {
                 if container.parent().is_none() {
@@ -649,9 +670,15 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
                 }
             };
             updated.pause_media = pause_media.is_active();
+            updated.recording_sounds = recording_sounds.is_active();
             updated.draw_while_dictating = draw.is_active();
             updated.draw_may_take_keyboard = may_take.is_active();
             updated.pin_selected_text = pin_selection.is_active();
+            updated.draw_lock_shortcut = draw_lock.borrow().clone();
+            if !updated.draw_lock_shortcut.is_empty() && updated.effective_draw_lock().is_none() {
+                error.set_text("Draw lock key conflicts with another Koett shortcut.");
+                return;
+            }
             updated.draw_key = match draw_key.active_id().as_deref() {
                 Some("control") => DrawKey::Control,
                 Some("alt") => DrawKey::Alt,
@@ -847,6 +874,77 @@ fn add_pair(pairs: &gtk::Box, entries: &Pairs, phrase: &str, replacement: &str) 
         move |_| pairs.remove(&row)
     });
     entries.borrow_mut().push((from, to, row));
+}
+
+/// Press-to-set row for the draw-lock chord. Koett reads this chord from key state
+/// during a recording, so setting it needs no desktop shortcut registration.
+fn draw_lock_row(options: &gtk::Box, chord: std::rc::Rc<std::cell::RefCell<String>>) {
+    let label = |value: &str| {
+        if value.is_empty() {
+            "Disabled".to_string()
+        } else {
+            value.to_string()
+        }
+    };
+    let button = gtk::Button::with_label(&label(&chord.borrow()));
+    button.set_hexpand(true);
+    let line = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    line.append(&button);
+    row(options, "Draw lock key", &line);
+    let capturing = std::rc::Rc::new(std::cell::Cell::new(false));
+    button.connect_clicked({
+        let capturing = capturing.clone();
+        move |button| {
+            capturing.set(true);
+            button.set_label("Press a shortcut…");
+            button.grab_focus();
+        }
+    });
+    let keys = gtk::EventControllerKey::new();
+    keys.connect_key_pressed({
+        let button = button.clone();
+        let chord = chord.clone();
+        move |_, key, _, modifiers| {
+            if !capturing.get() {
+                return gtk::glib::Propagation::Proceed;
+            }
+            let name = key.name().unwrap_or_default();
+            if ["Control", "Shift", "Alt", "Super", "Meta"]
+                .iter()
+                .any(|modifier| name.starts_with(modifier))
+            {
+                return gtk::glib::Propagation::Stop;
+            }
+            capturing.set(false);
+            match captured_shortcut(key, modifiers)
+                .ok()
+                .map(|value| value.to_string())
+                .filter(|value| super::sketch::keys::LockChord::parse(value).is_some())
+            {
+                Some(value) => {
+                    button.set_label(&value);
+                    *chord.borrow_mut() = value;
+                }
+                None => button.set_label(&label(&chord.borrow())),
+            }
+            gtk::glib::Propagation::Stop
+        }
+    });
+    button.add_controller(keys);
+    for (title, value) in [("Clear", ""), ("Reset", crate::settings::DEFAULT_DRAW_LOCK)] {
+        let reset = gtk::Button::with_label(title);
+        let chord = chord.clone();
+        let button = button.clone();
+        reset.connect_clicked(move |_| {
+            *chord.borrow_mut() = value.to_string();
+            button.set_label(if value.is_empty() { "Disabled" } else { value });
+        });
+        super::menu::set_accessible_label(
+            reset.upcast_ref(),
+            &format!("{title} draw lock shortcut"),
+        );
+        line.append(&reset);
+    }
 }
 
 fn captured_shortcut(

@@ -13,8 +13,8 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   keyboard devices whenever they're readable, so the overlay never takes
   keyboard focus. About 60 times a second it samples which keys are held
   (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly contains
-  every held key), keeps only Shift/Ctrl/Alt/Super and a yes/no for "another key
-  is down", stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
+  every held key), keeps only Shift/Ctrl/Alt/Super, a yes/no for "another key
+  is down", the chosen draw-lock key and, while locked, Z, stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
   opens keyboards only while a dictation with drawing records. Keyboards are
   found through sysfs capabilities and rescanned every 2 s, so hot-plugged ones
   join and unplugged handles are dropped; unreadable ones are reported.
@@ -67,6 +67,23 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Frames are scoped to one recording. Every recording start, with drawing on or
   off, starts a new scope; a cancelled or failed recording discards its frames,
   and captures finishing after their recording ended are rejected.
+- **Draw lock** (Linux). `Ctrl+Alt+D`, set under Settings › Draw on screen, toggles
+  it while recording. `koett draw-lock` does the same, so a desktop keybinding can
+  run it and keep the key from reaching the focused app. While locked the mouse
+  draws only with the left button down, and lifting it doesn't end the sketch: every
+  stroke joins one sketch, so one image, per monitor touched. Clicks reach no app,
+  no pin is dropped, and typing keeps working because the overlay never takes
+  keyboard focus. The pill shows the pencil for the whole lock in its usual row and
+  stays clickable, so Stop and Cancel always work.
+- Toggling off, stopping the recording or pressing Esc captures the sketches. Esc
+  does not cancel while locked, because losing a dictation to a reflex is worse than
+  a second key press; the next Esc cancels as usual. A lock ends itself if every
+  keyboard disappears, since nothing else could toggle it off.
+- While locked, right-click and Ctrl+Z remove the last stroke. Koett samples key
+  state and doesn't consume keys, so the focused app also gets the Ctrl+Z; right-click
+  reaches no app. The lock key is a physical key position and the app sees it too. A
+  lock key equal to another Koett shortcut is rejected in Settings, and ignored if it
+  arrives that way as the default.
 - Recognizer word timestamps link speech to sketches: each sketch owns the words
   from the start of the clause in progress when it began until the next sketch;
   words before the first sketch belong to it. Clauses break at `, . ; : ? ! …`
@@ -80,17 +97,13 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   the text is pasted with the configured chord as
   `- #N (M:SS) “words”` bullets (`- #N (M:SS) marked` when nothing was said).
   Without sketches dictation is unchanged.
-- After the text is read (portal: up to 1.5 s plus 160 ms; wl-copy:
-  700 ms), the clipboard offers the same sheet as `image/png` and bullets as
-  `text/plain` / `text/plain;charset=utf-8` on the portal path. Without the
-  clipboard portal, `wl-copy` leaves `image/png` selected instead: GTK cannot
-  reliably claim the clipboard automatically without a fresh focused input
-  event. Ctrl+V can reuse the sketch;
-  plain-text targets can read the bullets from the combined offer. Done and
-  Not pasted **Copy** offer both PNG and text using the button's input event;
-  Not pasted **Paste** replays image then text. The most
-  recent sketch is retained in memory until another dictation completes.
-  A failed image delivery keeps the result in Not pasted even if text succeeds.
+- After text delivery settles (portal: read, up to 1.5 s plus 160 ms;
+  fallback: 700 ms), both paths retain PNG, HTML containing the image and text,
+  and plain text. The fallback uses an in-process data-control owner. Targets
+  choose which formats to read. Done and Not pasted **Copy** offer the same
+  bundle; Not pasted **Paste** delivers image then text. The most recent sketch
+  remains in memory until another dictation completes. An image-delivery failure
+  keeps Not pasted and suppresses the following text key.
 - History stores the bullet text, with the plain transcript as raw text. Images
   stay in memory only, like Ask's screen image; nothing is written to disk
   except the portal's own screenshot file, which Koett deletes immediately.
@@ -108,7 +121,7 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 | KDE Plasma 6 (Wayland) | layer-shell | Screenshot portal (one-time "Allow apps to take screenshots") | Verified end to end in private KWin 6.8.1 lab |
 | niri | layer-shell | `grim -o OUTPUT` (wlr-screencopy) | Same code paths; not run on Olle's visible desktop (needs authorization) |
 | Sway, Hyprland, other wlroots | layer-shell | grim, else portal | Unverified |
-| GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected |
+| GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected. The extension can take the background image, but there is no drawing surface yet |
 | X11 | no layer-shell | — | Unavailable; dictation unaffected |
 
 - The ink (and the recording pill when the ink is near it) is part of the
@@ -118,13 +131,28 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   virtual output, so multi-monitor drawing is not yet verified on hardware.
 - On Linux, click keyframes and spoken cue keyframes are not implemented. Pins are:
   rules, context and limits are in `screen-context-proposal.md`.
-- `wl-copy` cannot report when the target read the image, so the wlroots path
-  waits a fixed 700 ms before switching the clipboard to text. The portal path
-  waits for the actual read (max 1.5 s) plus 160 ms.
+- The fallback observes full image-transfer completion and a 120 ms minimum
+  image-processing interval before the guarded text step. Started transfers get
+  up to 1.5 s; targets with no observed PNG read retain the 700 ms fallback.
+  The portal still waits for a read (max 1.5 s) plus 160 ms. Measurements and
+  limits: `CrossPlatform/evidence/sketch-paste-gap/`.
 - Nemotron streaming and merged long chunks fall back to evenly estimated word
   times, so linking there is approximate.
 
 ## Mac (built 2026-11-02, live check pending)
+
+Mac draw lock is recording-scoped: Ctrl+Option+D toggles left-button drawing,
+with one sketch per display across pointer lifts. Hover movement adds no ink.
+The Draw on Screen menu also toggles it and shows a non-conflicting alternative
+shortcut when needed. With VoiceOver running, Control-Option-D remains its
+Dock command and draw lock starts with Control-Shift-D. The first Esc captures and unlocks; the second distinct
+Esc cancels dictation, while held-key repeats are ignored. Right-click undoes
+one stroke without reaching the focused app; Command-Z or Control-Z also undo
+one stroke, but those observed keys still reach the focused app. Stop captures
+open ink; Cancel discards it. The existing pill stays unchanged in size/style,
+briefly names the mode, and its buttons remain above the drawing surfaces.
+The local `draw-lock` command and `drawLocked` status expose the same state.
+
 
 Same output as Linux: one numbered contact sheet, then the same
 `- #N (M:SS) “words”` bullets. Files: `SketchLinking.swift` (port of

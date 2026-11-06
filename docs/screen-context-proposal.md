@@ -123,8 +123,11 @@ If the YouTube time cannot be read, the link is the plain video URL.
 - Password fields are never read. Koett's own windows are never pinned.
 - Mac needs no new permission: Accessibility and Screen Recording are already
   granted for paste and drawing.
-- Known gap: private/incognito windows are not detected on Mac yet. Their URL
-  is pasted like any other; you see it before sending.
+- Mac recognizes the English Chrome/Chromium accessible-window Incognito marker
+  and omits all page metadata, retaining only the app name. Missing Chrome window
+  identity also omits page metadata. Other browsers/languages are not verified;
+  turn off Include Page Details in Pins for explicit image-only context. The
+  screenshot still contains the content deliberately captured.
 
 ## Linux
 
@@ -203,6 +206,6 @@ window open.
 
 ## Open questions
 
-1. Should private/incognito windows drop the URL (needs an AppleScript check and
-   its Automation prompt), or is "you see it before sending" enough?
+1. Broader private-window signals for other browsers/languages remain open.
+   The English Chrome AX marker needs no Automation permission.
 2. After the trial week: remove Ask entirely, or keep only its spoken replies?

@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "result": {
+    "steps": [
+      {
+        "step": "uia-changed-target-refused",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131422
+        },
+        "focus": {
+          "hwnd": 131628,
+          "process": "powershell",
+          "pid": 9028
+        },
+        "visible": true
+      },
+      {
+        "step": "second-editor-untouched",
+        "rect": [
+          208,
+          208,
+          1608,
+          808
+        ],
+        "focus": {
+          "hwnd": 131628,
+          "process": "powershell",
+          "pid": 9028
+        }
+      }
+    ],
+    "refused_new_target": true,
+    "second_editor_text": "",
+    "original_text_before": "Desktop lab recovery",
+    "original_text_after": "Desktop lab recovery",
+    "passed": true,
+    "original": {
+      "hwnd": 131582,
+      "process": "powershell",
+      "pid": 2708
+    },
+    "switched": {
+      "hwnd": 131628,
+      "process": "powershell",
+      "pid": 9028
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\Koett23\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 7316,
+      "sha256": "FDB8206D8A96F6DB4D424D1FDA7CA80C3E77C3225EFE331038C1055A9283E19E"
+    },
+    "after": {
+      "hwnd": 131628,
+      "process": "powershell",
+      "pid": 9028
+    },
+    "second_text_before": ""
+  },
+  "id": "1793827300110557778"
+}

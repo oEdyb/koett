@@ -1,0 +1,5 @@
+windows	Test	2026-11-05T12:48:21.7269683Z test windows::desktop::correction::tests::everyday_adoption_requires_the_current_warning_to_be_presented ... ok
+windows	Test	2026-11-05T12:48:21.7279926Z test windows::desktop::processing::tests::model_cancel_finishes_progress_without_hiding_an_existing_error ... ok
+windows	Test	2026-11-05T12:48:21.9359360Z test windows::desktop::tests::multiline_tab_reaches_the_next_enabled_form_action ... ok
+windows	Test	2026-11-05T12:48:22.4368217Z test windows::desktop::correction::tests::dictionary_and_corrections_match_the_swift_parity_fixture ... ok
+windows	Test	2026-11-05T12:48:33.9128960Z test result: ok. 231 passed; 0 failed; 12 ignored; 0 measured; 0 filtered out; finished in 18.07s

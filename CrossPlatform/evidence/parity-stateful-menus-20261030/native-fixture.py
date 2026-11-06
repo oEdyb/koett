@@ -14,7 +14,7 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('theme', choices=['light', 'dark'], nargs='?', default='light')
 parser.add_argument('--lab', default='koett-stateful-menus')
-parser.add_argument('--binary', type=Path, default=Path('/home/olle/dev/koett/CrossPlatform/target/release/koett'))
+parser.add_argument('--binary', type=Path, default=Path(str(Path.home() / 'dev/koett/CrossPlatform/target/release/koett')))
 parser.add_argument('--output', type=Path)
 parser.add_argument('--expected-gtk-library', type=Path)
 args = parser.parse_args()

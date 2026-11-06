@@ -1,0 +1,10 @@
+{
+  "models": {
+    "silero-vad": 1063427,
+    "parakeet-ctc-110m-coreml": 102803869,
+    "nemotron-streaming": 1253252837,
+    "parakeet-tdt-0.6b-v2": 464413250,
+    "parakeet-tdt-0.6b-v3": 483257242
+  },
+  "meaning": "logical files, not physical APFS clone growth"
+}

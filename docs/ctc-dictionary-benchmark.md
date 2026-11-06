@@ -1,5 +1,12 @@
 # Parakeet 110M acoustic dictionary bias
 
+**Release policy (2026-11-05):** the sidecar below is benchmark-only. Normal
+110M dictation keeps greedy ASR and spelling corrections, even with v2 present.
+The historical holdout recovered 30/108 terms with spelling versus 76/108 with
+the bounded sidecar: 46 fewer. This is historical evidence, not a new rerun.
+The fresh 210-clip rerun recovered 45/162 with spelling versus 111/162 with the
+bounded sidecar (66 fewer); see [current latency work](dictionary-latency-2026-11.md).
+
 Measured 2026-11-04, Linux x86_64, Ryzen 5 9600X, CPU execution. Rust 1.94.0;
 pinned sherpa-onnx 1.13.5 and existing int8 model manifests. No dependency upgrade.
 No new audio was synthesized or sent to a service for these measurements.
@@ -22,12 +29,13 @@ activate it; a missing or invalid model leaves CTC working. `menu-status` report
 `ctc_dictionary_bias`. Advanced local runs can point `KOETT_CTC_BIAS_MODEL` at a
 copied v2 folder; its files must still match the pinned v2 manifest.
 
-The sidecar has a **250 ms budget per decode unit**, including dictionary update,
+The sidecar has a **budget per decode unit of 250 ms plus 40 ms per second of audio,
+capped at 1 s**, including dictionary update,
 decoding and adoption. Loading, busy, failed, oversized, disconnected, expired or
 late results retain the exact primary CTC text at the ASR boundary. That raw text
 still receives the independent user spelling/formatting/replacement policy.
 This is not a 250 ms limit on the primary ASR or on a whole multi-segment file.
-Long chunks can exceed the budget and deliberately fall back.
+A unit that misses its budget deliberately falls back.
 
 Native ONNX decoding cannot be interrupted safely through this API. There is
 one cached worker per process, at most one active request and a bounded channel;
@@ -132,3 +140,72 @@ After rebasing on main with #61 and #64: cargo fmt --check, cargo test --locked
 as errors, release build and git diff --check passed. The Windows MSVC cross-check
 was attempted but blocked by missing lib.exe/native build tools on Linux.
 Independent review and real microphone/long-session acceptance remain pending.
+
+## How long a unit the old budget covered
+
+This measured the fixed 250 ms budget, which the scaling below replaced. Measured 2026-11-05 on the Ryzen 5 9600X with `ctc_dictionary_length_bench`: the v2
+sidecar's own decode, four threads, three dictionary terms, five runs per length, audio
+looped from `test_wavs/0.wav`.
+
+| Audio | Median | Worst | Within 250 ms |
+|---|---|---|---|
+| 1 s | 68 ms | 69 ms | Yes |
+| 2 s | 98 ms | 101 ms | Yes |
+| 3 s | 140 ms | 145 ms | Yes |
+| 4 s | 178 ms | 188 ms | Yes |
+| 5 s | 210 ms | 215 ms | Yes |
+| 6 s | 243 ms | 251 ms | No |
+| 8 s | 310 ms | 315 ms | No |
+| 10 s | 410 ms | 832 ms | No |
+| 15 s | 653 ms | 812 ms | No |
+| 20 s | 902 ms | 931 ms | No |
+
+Dictation up to 20 s decodes as one unit, so above about 6 s of audio on this CPU the
+sidecar's result arrives too late and the raw text is kept. Slower CPUs fall back sooner.
+For scale, 71% of the 879 dictations in Olle's history have more than 15 words, about 6 s
+of normal speech. A dictation over 20 s is split by speech pauses, so its shorter segments
+may still fit; this table does not measure that. In short, 110M dictionary bias mostly
+helps short dictations today, and the earlier recall figures came from short clips.
+
+Also confirmed by reading `ctc_bias.rs`: after a timeout the worker keeps decoding on four
+threads, and `menu-status` says the worker is ready even if every request is falling back.
+
+```sh
+cargo run --release --locked --example ctc_dictionary_length_bench -- V2_MODEL WAV
+```
+
+## Scaling the budget with audio length
+
+Measured 2026-11-05 with `ctc_dictionary_budget_bench`, Ryzen 5 9600X, two-thread primary
+and four-thread sidecar. Each length is 12 dictations built from corpus clips, one voice
+each, with spelling applied, and the sidecar idle before each call. Raw is the same audio
+with no dictionary. Added wait compares each dictation with its own raw decode.
+
+| Length | Raw recall | Fixed 250 ms | Scaled | Scaled added wait, median (worst) | % of length |
+|---|---:|---:|---:|---:|---:|
+| 4 s | 4 / 24 | 12 | 16 | 238 ms (276) | 6.0 |
+| 6 s | 6 / 30 | 8 | 19 | 279 ms (321) | 4.6 |
+| 8 s | 11 / 43 | 11 | 26 | 370 ms (431) | 4.6 |
+| 10 s | 12 / 49 | 12 | 29 | 443 ms (515) | 4.4 |
+| 15 s | 21 / 75 | 21 | 46 | 646 ms (705) | 4.3 |
+| 20 s | 30 / 95 | 60 | 60 | 723 ms (840) | 3.6 |
+| 40 s | 57 / 188 | 123 | 123 | 1495 ms (1578) | 3.7 |
+| 60 s | 89 / 284 | 184 | 184 | 2234 ms (2343) | 3.7 |
+
+From about 6 s to 15 s the fixed budget paid its whole wait and gained nothing. Dictations
+of 20 s and over are split at pauses, so they were already covered and did not change. Dictionary
+terms in negative speech stayed at 0, apart from one at 60 s under both budgets.
+
+The bar was set before measuring: added wait at most 5% of the length and at most 1 s per
+decode unit. It holds from 6 s up. At 4 s it is 6.0%, against 5.9% with the fixed budget, so
+this change did not cause it. Across a 60 s dictation the units add up to about 2.2 s.
+
+On one CPU core the sidecar misses every budget up to at least 8 s: recall equals raw, as a
+fallback should, and the wait is 462 to 629 ms median, 674 ms worst, for no gain. The old
+budget would have cost those machines about 250 ms. That run was stopped after 8 s by its
+time limit. This is a real cost on very slow machines, and only for users with 110M, a
+dictionary and v2 downloaded.
+
+All of this uses synthetic TTS voices, not microphone speech. Raw data is in
+[fixed](../Benchmarks/Dictionary/ctc-budget-20261105/fixed.json) and
+[scaled](../Benchmarks/Dictionary/ctc-budget-20261105/scaled.json).

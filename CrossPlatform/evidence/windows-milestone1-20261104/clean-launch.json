@@ -1,0 +1,12 @@
+{
+  "focus": {
+    "hwnd": 262330,
+    "process": "WindowsTerminal",
+    "pid": 5892
+  },
+  "exe": "C:\\Users\\KoettLab\\Koett892\\Koett-Windows-x86_64\\Koett.exe",
+  "sha256": "52D4C841A6DC630664CAF243FF532F12CA25EFCE3DC02DFC1029DE77A2DE8C12",
+  "running": true,
+  "vc_runtime_present": false,
+  "pid": 4708
+}

@@ -30,7 +30,9 @@ function busCall(method, parameters, signature) {
 export default class Koett extends Extension {
     enable() {
         this._enabled = true;
-        this._pills = new Pills();
+        this._pills = typeof Meta.Window.prototype.inhibit_mapped === 'function' &&
+            typeof Meta.Window.prototype.hide_from_window_list === 'function'
+            ? new Pills() : null;
         this._captures = new Captures();
         this._object = Gio.DBusExportedObject.wrapJSObject(XML, this);
         this._object.export(Gio.DBus.session, PATH);
@@ -46,7 +48,7 @@ export default class Koett extends Extension {
         this._object = null;
     }
 
-    PillStatus() { return JSON.stringify({protocol: 1, pill: this._enabled}); }
+    PillStatus() { return JSON.stringify({protocol: 1, pill: Boolean(this._enabled && this._pills)}); }
 
     async PillAsync([raw], invocation) {
         let ok = false;
@@ -56,7 +58,7 @@ export default class Koett extends Extension {
             const [caller, app] = await Promise.all([pid(invocation.get_sender()), pid(owner)]);
             const current = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
             if (this._enabled && owner === current && caller === app)
-                ok = this._pills.register(JSON.parse(raw), app, owner);
+                ok = this._pills?.register(JSON.parse(raw), app, owner) ?? false;
         } catch { }
         invocation.return_value(new GLib.Variant('(s)', [JSON.stringify({ok})]));
     }
@@ -98,7 +100,7 @@ export default class Koett extends Extension {
                     ![Meta.WindowType.DESKTOP, Meta.WindowType.DOCK].includes(window.get_window_type()) &&
                     window.showing_on_its_workspace() && app && app.toLowerCase() !== APP.toLowerCase()) {
                     result = {protocol: 1, id: window.get_stable_sequence(),
-                        pid: window.get_pid(), app};
+                        pid: window.get_pid(), app, modifiers: global.get_pointer()[2] >>> 0};
                 }
             }
         } catch {

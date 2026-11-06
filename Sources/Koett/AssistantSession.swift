@@ -18,7 +18,7 @@ extension KoettController {
     }
 
     private func startAssistantRecording() {
-        guard canStartSession else { return }
+        guard AssistantAvailability.isEnabled, canStartSession else { return }
         assistantSpeech.stop()
 
         do {
@@ -189,6 +189,121 @@ extension KoettController {
         }
     }
 
+    func addAssistantMenu(to menu: NSMenu) {
+        guard AssistantAvailability.isEnabled else { return }
+        let assistantMenu = NSMenu(title: "Ask About Screen")
+        let askTitle: String
+        switch state {
+        case .assistantRecording:
+            askTitle = "Stop Asking"
+        case .assistantWorking:
+            askTitle = "Interrupt and Ask"
+        default:
+            askTitle = "Ask About Screen"
+        }
+        let askItem = menuItem(
+            title: askTitle,
+            action: #selector(askAboutScreen),
+            selected: false
+        )
+        askItem.isEnabled = state == .ready
+            || state == .assistantRecording
+            || state == .assistantWorking
+        assistantMenu.addItem(askItem)
+        let assistantShortcutItem = menuItem(
+            title: "Shortcut: \(assistantShortcut.displayName)",
+            action: #selector(bindAssistantShortcut),
+            selected: false
+        )
+        assistantShortcutItem.isEnabled = state == .ready
+        assistantMenu.addItem(assistantShortcutItem)
+        assistantMenu.addItem(.separator())
+        for provider in AssistantProvider.allCases {
+            let item = menuItem(
+                title: "Provider: \(provider.displayName)",
+                action: providerSelector(provider),
+                selected: assistantProvider == provider
+            )
+            item.isEnabled = state == .ready
+            assistantMenu.addItem(item)
+        }
+        let configuration = try? AssistantConfiguration.load(
+            provider: assistantProvider
+        )
+        let modelName = configuration?.model ?? "Not set"
+        let modelItem = menuItem(
+            title: "Assistant Model: \(modelName)",
+            action: #selector(setAssistantModel),
+            selected: false
+        )
+        modelItem.isEnabled = state == .ready
+        assistantMenu.addItem(modelItem)
+        if assistantProvider == .custom {
+            let endpointItem = menuItem(
+                title: "Set Custom Endpoint…",
+                action: #selector(setCustomAssistantEndpoint),
+                selected: false
+            )
+            endpointItem.isEnabled = state == .ready
+            assistantMenu.addItem(endpointItem)
+        }
+        let keyItem = menuItem(
+            title: "Set \(assistantProvider.displayName) API Key…",
+            action: #selector(setAssistantAPIKey),
+            selected: false
+        )
+        keyItem.isEnabled = state == .ready
+        assistantMenu.addItem(keyItem)
+        assistantMenu.addItem(.separator())
+        let speakItem = menuItem(
+            title: "Speak Replies",
+            action: #selector(toggleAssistantSpeech),
+            selected: assistantSpeechEnabled
+        )
+        speakItem.isEnabled = state == .ready
+        assistantMenu.addItem(speakItem)
+
+        let voiceMenu = NSMenu(title: "Voice")
+        for voice in AssistantVoice.allCases {
+            let item = menuItem(
+                title: voice.displayName,
+                action: voiceSelector(voice),
+                selected: assistantVoice == voice
+            )
+            item.isEnabled = state == .ready
+            voiceMenu.addItem(item)
+        }
+        let voiceItem = NSMenuItem(
+            title: "Voice: \(assistantVoice.displayName)",
+            action: nil,
+            keyEquivalent: ""
+        )
+        voiceItem.submenu = voiceMenu
+        assistantMenu.addItem(voiceItem)
+
+        let cartesiaKeyItem = menuItem(
+            title: "Set Cartesia API Key…",
+            action: #selector(setCartesiaAPIKey),
+            selected: false
+        )
+        cartesiaKeyItem.isEnabled = state == .ready
+        assistantMenu.addItem(cartesiaKeyItem)
+        assistantMenu.addItem(menuItem(
+            title: "Screen Recording Permission…",
+            action: #selector(showPermissions),
+            selected: false
+        ))
+
+        let assistantRootItem = NSMenuItem(
+            title: "Ask About Screen",
+            action: nil,
+            keyEquivalent: ""
+        )
+        assistantRootItem.submenu = assistantMenu
+        menu.addItem(assistantRootItem)
+        menu.addItem(.separator())
+    }
+
     func providerSelector(_ provider: AssistantProvider) -> Selector {
         switch provider {
         case .groq: #selector(useGroqProvider)
@@ -224,7 +339,7 @@ extension KoettController {
     }
 
     @objc func toggleAssistantSpeech() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         assistantSpeechEnabled.toggle()
         UserDefaults.standard.set(
             assistantSpeechEnabled,
@@ -257,7 +372,7 @@ extension KoettController {
     }
 
     private func setAssistantVoice(_ voice: AssistantVoice) {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         assistantSpeech.stop()
         assistantVoice = voice
         UserDefaults.standard.set(voice.rawValue, forKey: "assistantVoice")
@@ -265,14 +380,14 @@ extension KoettController {
     }
 
     private func setAssistantProvider(_ provider: AssistantProvider) {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         assistantProvider = provider
         UserDefaults.standard.set(provider.rawValue, forKey: "assistantProvider")
         rebuildMenu()
     }
 
     @objc func setAssistantModel() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         let current = UserDefaults.standard.string(
             forKey: "assistantModel.\(assistantProvider.rawValue)"
         ) ?? assistantProvider.defaultModel
@@ -289,7 +404,7 @@ extension KoettController {
     }
 
     @objc func setCustomAssistantEndpoint() {
-        guard state == .ready, assistantProvider == .custom else { return }
+        guard AssistantAvailability.isEnabled, state == .ready, assistantProvider == .custom else { return }
         let current = UserDefaults.standard.string(
             forKey: "assistantEndpoint.custom"
         ) ?? assistantProvider.defaultEndpoint
@@ -308,7 +423,7 @@ extension KoettController {
     }
 
     @objc func setAssistantAPIKey() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         guard let key = promptForText(
             title: "Set \(assistantProvider.displayName) API Key",
             message: "Koett stores this key in your macOS Keychain.",
@@ -325,7 +440,7 @@ extension KoettController {
     }
 
     @objc func setCartesiaAPIKey() {
-        guard state == .ready else { return }
+        guard AssistantAvailability.isEnabled, state == .ready else { return }
         guard let key = promptForText(
             title: "Set Cartesia API Key",
             message: "Koett stores this key in your macOS Keychain.",

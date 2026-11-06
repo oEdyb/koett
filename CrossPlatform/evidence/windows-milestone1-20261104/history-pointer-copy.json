@@ -1,0 +1,14 @@
+{
+  "step": "history-pointer-copy",
+  "rect": [
+    26,
+    26,
+    986,
+    706
+  ],
+  "focus": {
+    "hwnd": 458846,
+    "process": "Koett",
+    "pid": 4708
+  }
+}

@@ -31,7 +31,9 @@ private struct Koett {
             let reply: ControlReply
             do { reply = try LocalControlSocket.request(commands) }
             catch { reply = .failure("unavailable", error.localizedDescription) }
-            if let data = try? JSONEncoder().encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            if let data = try? encoder.encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
             exit(reply.ok ? EXIT_SUCCESS : EXIT_FAILURE)
         }
 
@@ -66,6 +68,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-groq-key-if-missing") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 if try AssistantAPIKeyStore.load(for: .groq) != nil {
                     print("Groq API key is already in Keychain.")
@@ -92,6 +98,10 @@ private struct Koett {
         }
 
         if arguments.contains("--import-cartesia-key") {
+            guard AssistantAvailability.isEnabled else {
+                fputs("Unsupported command. Run koett --help.\n", stderr)
+                exit(EXIT_FAILURE)
+            }
             do {
                 guard let key = ProcessInfo.processInfo.environment[
                     "CARTESIA_API_KEY"
@@ -126,7 +136,9 @@ private struct Koett {
             let speechEngine = SpeechEngine.selected(arguments: Array(arguments), defaults: .standard)
             let controller = try KoettController(
                 defaults: .standard,
-                speechEngine: speechEngine
+                speechEngine: speechEngine,
+                pasteDiagnostics: PasteDiagnostics(directory: URL.applicationSupportDirectory
+                    .appendingPathComponent("Koett/Diagnostics", isDirectory: true))
             )
             let delegate = KoettDelegate(controller: controller)
             let application = NSApplication.shared
@@ -167,7 +179,7 @@ private struct Koett {
 
     private static func unregisterLoginItem() throws {
         let service = SMAppService.mainApp
-        if service.status != .notRegistered {
+        try LoginPreference.unregisterIfRegistered(status: service.status) {
             try service.unregister()
         }
         print("Login Item disabled.")

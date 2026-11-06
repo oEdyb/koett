@@ -1273,7 +1273,7 @@ dependencies = [
 
 [[package]]
 name = "koett-engine"
-version = "0.2.0-linux.1"
+version = "0.3.0"
 dependencies = [
  "arboard",
  "ashpd",
@@ -1304,8 +1304,11 @@ dependencies = [
  "url",
  "uuid",
  "wayland-client",
+ "wayland-protocols-misc",
  "wayland-protocols-wlr",
  "windows",
+ "windows-core",
+ "windows-numerics",
  "x11rb",
  "xkeysym",
 ]
@@ -2225,6 +2228,7 @@ name = "sherpa-onnx-sys"
 version = "1.13.5"
 dependencies = [
  "bzip2 0.4.4",
+ "sha2",
  "tar",
  "ureq 2.12.1",
 ]
@@ -2849,6 +2853,19 @@ dependencies = [
  "bitflags",
  "wayland-backend",
  "wayland-client",
+ "wayland-scanner",
+]
+
+[[package]]
+name = "wayland-protocols-misc"
+version = "0.3.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e9567599ef23e09b8dad6e429e5738d4509dfc46b3b21f32841a304d16b29c8"
+dependencies = [
+ "bitflags",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-protocols",
  "wayland-scanner",
 ]
 

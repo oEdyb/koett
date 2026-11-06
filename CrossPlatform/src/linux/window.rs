@@ -6,14 +6,26 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DrawingRequest {
+    Status,
+    Undo,
+    ToggleLock,
+}
+
 pub enum Update {
-    DrawingCommand(bool, Sender<serde_json::Value>, Instant),
+    DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
+    RecordingControl(
+        super::menu_preferences::RecordingControl,
+        Sender<serde_json::Value>,
+    ),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
     Show(String),
     Settings(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Shortcut(String),
@@ -61,15 +73,20 @@ fn build_window(
     record.add_css_class("koett-record");
     record.set_sensitive(false);
     header.pack_start(&record);
+    #[cfg(feature = "ask")]
     let ask_button = gtk::Button::with_label("Ask");
+    #[cfg(feature = "ask")]
     let ask_actions = actions.clone();
+    #[cfg(feature = "ask")]
     ask_button.connect_clicked(move |_| {
         let _ = ask_actions.send(TrayAction::Ask);
     });
+    #[cfg(feature = "ask")]
     header.pack_start(&ask_button);
     let settings_button = gtk::Button::from_icon_name("preferences-system-symbolic");
     settings_button.set_tooltip_text(Some("Settings"));
     super::menu::set_accessible_label(settings_button.upcast_ref(), "Settings");
+    #[cfg(feature = "ask")]
     super::menu_preferences::attach(application);
     header.pack_end(&super::menu::button());
     header.pack_end(&settings_button);
@@ -231,8 +248,11 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    #[cfg(feature = "ask")]
     for (name, command) in [
+        #[cfg(feature = "ask")]
         ("ask", TrayAction::Ask),
+        #[cfg(feature = "ask")]
         ("cancel-ask", TrayAction::CancelAsk),
     ] {
         let action = gtk::gio::SimpleAction::new(name, None);
@@ -352,6 +372,7 @@ fn build_window(
     application.add_action(&quit);
     application.set_accels_for_action("app.quit", &["<Control>q"]);
 
+    #[cfg(feature = "ask")]
     let ask = super::ask_view::AskView::new(application, actions.clone());
     let overlay = super::recording_overlay::RecordingOverlay::new(
         application,
@@ -368,6 +389,7 @@ fn build_window(
     // outcome. Keep showing the decoding pill until the outcome (or SETTLE),
     // so it morphs straight into Done instead of hiding and remapping.
     let mut settling_until = None::<Instant>;
+    let mut delivery_pending = false;
     let sketch = super::sketch::SketchOverlay::new().map(Rc::new);
     let undo_drawing = gtk::gio::SimpleAction::new("undo-drawing", None);
     undo_drawing.set_enabled(false);
@@ -390,7 +412,7 @@ fn build_window(
     let mut recovery_until = None::<Instant>;
     let mut notice_until = None::<Instant>;
     let mut pill_message = None::<(String, Instant)>;
-    let mut stopped_at_limit = false;
+    let mut stopped_at_limit = None::<String>;
     let mut feedback = super::feedback::CaptureFeedback::default();
     let mut audio_levels = None::<crate::audio::AudioLevels>;
     gtk::glib::timeout_add_local(Duration::from_millis(80), {
@@ -416,6 +438,7 @@ fn build_window(
                         media_result = false;
                         recovery_until = None;
                     }
+                    #[cfg(feature = "ask")]
                     if let Some(payload) = message.strip_prefix("@ask:") {
                         if let Ok(value) = serde_json::from_str(payload) {
                             ask.update(&value);
@@ -435,10 +458,28 @@ fn build_window(
                     }
                 }
                 match update {
-                    Update::DrawingCommand(undo, reply, expires) => {
+                    Update::RecordingControl(command, reply) => {
+                        let _ = reply.send(super::menu_preferences::recording_control(
+                            command,
+                            audio_levels.as_ref(),
+                        ));
+                    }
+                    Update::DrawingCommand(request, reply, expires) => {
                         let value = if Instant::now() >= expires {
                             serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
-                        } else if undo {
+                        } else if request == DrawingRequest::ToggleLock {
+                            if recording_started.is_some()
+                                && sketch.as_ref().is_some_and(|sketch| sketch.toggle_lock())
+                            {
+                                sketch
+                                    .as_ref()
+                                    .map_or(serde_json::json!({"ok":true}), |sketch| {
+                                        sketch.status()
+                                    })
+                            } else {
+                                serde_json::json!({"ok":false,"error":{"code":"no_drawing_session","message":"Draw lock needs a recording with drawing on"}})
+                            }
+                        } else if request == DrawingRequest::Undo {
                             if recording_started.is_some()
                                 && sketch.as_ref().is_some_and(|sketch| sketch.undo_last())
                             {
@@ -456,6 +497,7 @@ fn build_window(
                         asking_until = Some(Instant::now() + Duration::from_secs(20));
                         media_result = false;
                         recovery_until = None;
+                        #[cfg(feature = "ask")]
                         ask.hide();
                         gtk::glib::timeout_add_local_once(Duration::from_millis(100), move || {
                             let _ = ack.send(());
@@ -503,20 +545,27 @@ fn build_window(
                     }
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
-                    Update::Delivered => {
+                    Update::DeliveryStarted => {
+                        delivery_pending = true;
                         settling_until = None;
-                        if std::mem::take(&mut stopped_at_limit) {
+                        done_until = None;
+                        recovery_until = None;
+                        closing = false;
+                    }
+                    Update::Delivered => {
+                        delivery_pending = false;
+                        settling_until = None;
+                        if let Some(limit_notice) = stopped_at_limit.take() {
                             done_until = None;
-                            pill_message = Some((
-                                crate::runtime::LIMIT_NOTICE.to_string(),
-                                Instant::now() + PILL_MESSAGE_DURATION,
-                            ));
+                            pill_message =
+                                Some((limit_notice, Instant::now() + PILL_MESSAGE_DURATION));
                         } else {
                             done_until = Some(Instant::now() + DONE_DURATION);
                         }
                         done_fading = None;
                     }
                     Update::DeliveryFailed => {
+                        delivery_pending = false;
                         settling_until = None;
                         done_until = None;
                         if latest_completed.borrow().is_some() {
@@ -632,7 +681,7 @@ fn build_window(
                         done_until = None;
                         done_fading = None;
                         recovery_until = None;
-                        stopped_at_limit = false;
+                        stopped_at_limit = None;
                     }
                     Update::Status(message) if message.starts_with("@error:") => {
                         let error = message.trim_start_matches("@error:");
@@ -647,8 +696,12 @@ fn build_window(
                         let phase = message
                             .trim_start_matches("@notice:")
                             .trim_start_matches("@model-notice:");
-                        if phase == crate::runtime::LIMIT_NOTICE {
-                            stopped_at_limit = true;
+                        if crate::runtime::is_limit_notice(phase) {
+                            stopped_at_limit = Some(phase.to_string());
+                        }
+                        if phase == crate::runtime::LIMIT_WARNING {
+                            pill_message =
+                                Some((phase.to_string(), Instant::now() + PILL_MESSAGE_DURATION));
                         }
                         if phase == "Dictation cancelled" {
                             settling_until = None;
@@ -686,6 +739,7 @@ fn build_window(
                             settling_until = Some(Instant::now() + SETTLE);
                         }
                         if recording {
+                            delivery_pending = false;
                             settling_until = None;
                         }
                         if recording && recording_started.is_none() {
@@ -698,7 +752,7 @@ fn build_window(
                             notice = None;
                             notice_until = None;
                             pill_message = None;
-                            stopped_at_limit = false;
+                            stopped_at_limit = None;
                         }
                         if !recording {
                             if recording_started.is_some() {
@@ -840,7 +894,9 @@ fn build_window(
                 overlay.update(
                     if media_result && recovering {
                         "Media result"
-                    } else if settling_until.is_some_and(|until| Instant::now() < until) {
+                    } else if delivery_pending
+                        || settling_until.is_some_and(|until| Instant::now() < until)
+                    {
                         "Transcribing…"
                     } else {
                         &state

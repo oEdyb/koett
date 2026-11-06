@@ -1,0 +1,18 @@
+CAPTURE baseline 5s repeat=0
+VERIFIED baseline 5s 155.8269166853279ms
+CAPTURE cached 5s repeat=0
+VERIFIED cached 5s 145.27883334085345ms
+CAPTURE cached 5s repeat=1
+VERIFIED cached 5s 137.54641660489142ms
+CAPTURE baseline 5s repeat=1
+VERIFIED baseline 5s 152.27016666904092ms
+CAPTURE baseline 5s repeat=2
+VERIFIED baseline 5s 162.77566668577492ms
+CAPTURE cached 5s repeat=2
+VERIFIED cached 5s 146.05125004891306ms
+CAPTURE cached 120s repeat=3
+VERIFIED cached 120s 592.5609166733921ms
+CAPTURE baseline 120s repeat=3
+VERIFIED baseline 120s 615.980250062421ms
+ALL 8 CACHE COMPARISON RECEIPTS PASSED; outputs identical
+CLEANUP {"clipboardRestored": true, "stopped": true}

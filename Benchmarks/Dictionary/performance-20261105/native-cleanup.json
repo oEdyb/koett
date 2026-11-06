@@ -1,0 +1,9 @@
+{
+  "collectorExitCode": 0,
+  "accepted": 24,
+  "cleanup": {
+    "clipboardRestored": true,
+    "stopped": true
+  },
+  "scope": "owned receiver/source apps; original clipboard representations retained only in memory"
+}

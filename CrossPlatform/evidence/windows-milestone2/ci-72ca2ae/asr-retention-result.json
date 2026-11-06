@@ -1,0 +1,24 @@
+{
+  "fault_passed": true,
+  "failure_history_unchanged": true,
+  "retained_audio": [
+    {
+      "sample_rate": 16000,
+      "riff": "RIFF",
+      "sha256": "98BC246ADEF04677DB931EB337D383C5FAD221013A5DB5E4D6AA65FD2FA3A16C",
+      "name": "recording-472-0.wav",
+      "bytes": 61484
+    }
+  ],
+  "phase": "Koett. the transcription worker stopped unexpectedly. Recording saved: C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Failed Recordings\\recording-472-0.wav",
+  "clipboard_after_failure": "M2 clipboard sentinel",
+  "passed": true,
+  "failure_editor": "",
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM2d\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 4788,
+    "sha256": "F76957A65485FFCAEE8333153F88CE9438E0F68E0A9928B34EBC40277A52C7E3"
+  },
+  "successful_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+  "additional_success_audio": 0
+}

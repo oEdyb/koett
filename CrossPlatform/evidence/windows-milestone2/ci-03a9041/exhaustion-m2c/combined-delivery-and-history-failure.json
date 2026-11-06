@@ -1,0 +1,17 @@
+{
+  "step": "combined-delivery-and-history-failure",
+  "rect": {
+    "left": 980,
+    "bottom": 1476,
+    "top": 1380,
+    "right": 1580,
+    "dpi": 192,
+    "hwnd": 197008
+  },
+  "focus": {
+    "hwnd": 131914,
+    "process": "powershell",
+    "pid": 4004
+  },
+  "visible": true
+}
