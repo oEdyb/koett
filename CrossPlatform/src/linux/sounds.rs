@@ -1,5 +1,5 @@
-//! Recording start and stop cues, matching the Mac: a high tick when capture has
-//! begun and a low tone when it ends. They are synthesized here because the Mac uses
+//! Recording start and stop cues: a soft rising tone when capture has begun and a low
+//! tone when it ends. They are synthesized here because the Mac uses
 //! macOS system sounds, which Koett can not ship. Playback runs on its own short-lived
 //! thread, so a slow or missing output device never delays recording or transcription.
 use crate::state::AppStatus;
@@ -27,12 +27,19 @@ pub(super) fn for_change(old: &AppStatus, new: &AppStatus) -> Option<Cue> {
     }
 }
 
-/// Mono samples for a cue at a sample rate.
+/// The slider feels even when it's squared, since hearing is closer to logarithmic.
+fn gain(volume: u32) -> f32 {
+    let volume = volume.min(100) as f32 / 100.0;
+    volume * volume
+}
+
+/// Mono samples for a cue at a sample rate, at full volume.
 fn tone(cue: Cue, rate: u32) -> Vec<f32> {
-    // (seconds, fundamental Hz, decay seconds, attack seconds, peak)
-    let (length, pitch, decay, attack, peak) = match cue {
-        Cue::Start => (0.14, 2093.0, 0.035, 0.002, 0.35),
-        Cue::Stop => (0.26, 196.0, 0.07, 0.005, 0.45),
+    // (seconds, start Hz, end Hz, overtone, decay seconds, attack seconds, peak)
+    let (length, from, to, overtone, decay, attack, peak) = match cue {
+        // Olle found 2093 Hz "really high-pitched", so this rises gently from B4 to E5.
+        Cue::Start => (0.16, 494.0, 659.0, 0.15, 0.07, 0.008, 0.28),
+        Cue::Stop => (0.26, 196.0, 196.0, 0.35, 0.07, 0.005, 0.45),
     };
     let rate = rate as f32;
     let count = (length * rate) as usize;
@@ -40,19 +47,22 @@ fn tone(cue: Cue, rate: u32) -> Vec<f32> {
     (0..count)
         .map(|index| {
             let time = index as f32 / rate;
-            let wave = (TAU * pitch * time).sin() + 0.35 * (TAU * pitch * 2.0 * time).sin();
+            // The integral of the pitch, so a glide doesn't click or change its range.
+            let turns = from * time + (to - from) * time * time / (2.0 * length);
+            let wave = (TAU * turns).sin() + overtone * (TAU * 2.0 * turns).sin();
             let rise = (time / attack).min(1.0);
             let tail = ((count - index) as f32 / fade).min(1.0);
-            peak / 1.35 * wave * (-time / decay).exp() * rise * tail
+            peak / (1.0 + overtone) * wave * (-time / decay).exp() * rise * tail
         })
         .collect()
 }
 
-pub(super) fn play(cue: Cue) {
+/// Plays on its own thread. `volume` is the saved percentage.
+pub(super) fn play(cue: Cue, volume: u32) {
     let spawned = std::thread::Builder::new()
         .name("koett-cue".into())
         .spawn(move || {
-            if let Err(error) = play_now(cue) {
+            if let Err(error) = play_now(cue, volume) {
                 eprintln!("Recording sound unavailable: {error}");
             }
         });
@@ -61,14 +71,19 @@ pub(super) fn play(cue: Cue) {
     }
 }
 
-fn play_now(cue: Cue) -> Result<(), String> {
+fn play_now(cue: Cue, volume: u32) -> Result<(), String> {
     let device = cpal::default_host()
         .default_output_device()
         .ok_or("no output device")?;
     let config = device
         .default_output_config()
         .map_err(|error| error.to_string())?;
-    let samples = Arc::new(tone(cue, config.sample_rate()));
+    let gain = gain(volume);
+    let samples: Vec<f32> = tone(cue, config.sample_rate())
+        .into_iter()
+        .map(|sample| sample * gain)
+        .collect();
+    let samples = Arc::new(samples);
     let length = samples.len() as f32 / config.sample_rate() as f32;
     let format = config.sample_format();
     let config = config.config();
@@ -142,7 +157,7 @@ mod tests {
 
     #[test]
     fn tones_are_short_quiet_and_free_of_clicks() {
-        for (cue, longest) in [(Cue::Start, 0.15), (Cue::Stop, 0.27)] {
+        for (cue, longest) in [(Cue::Start, 0.17), (Cue::Stop, 0.27)] {
             for rate in [44_100, 48_000] {
                 let samples = tone(cue, rate);
                 assert!((samples.len() as f32) < longest * rate as f32);
@@ -154,14 +169,34 @@ mod tests {
         }
     }
 
+    fn crossings_per_second(samples: &[f32], rate: f32) -> f32 {
+        let flips = samples.windows(2).filter(|w| w[0] * w[1] < 0.0).count() as f32;
+        flips / 2.0 / (samples.len() as f32 / rate)
+    }
+
     #[test]
-    fn the_start_is_high_and_the_stop_is_low() {
-        let crossings = |samples: &[f32], rate: f32| {
-            let flips = samples.windows(2).filter(|w| w[0] * w[1] < 0.0).count() as f32;
-            flips / (samples.len() as f32 / rate)
-        };
-        let high = crossings(&tone(Cue::Start, 48_000), 48_000.0);
-        let low = crossings(&tone(Cue::Stop, 48_000), 48_000.0);
-        assert!(high > low * 4.0, "{high} vs {low}");
+    fn the_start_is_low_enough_but_still_above_the_stop() {
+        let start = crossings_per_second(&tone(Cue::Start, 48_000), 48_000.0);
+        let stop = crossings_per_second(&tone(Cue::Stop, 48_000), 48_000.0);
+        assert!(start < 1_000.0, "was about 2093 Hz: {start}");
+        assert!(start > stop * 1.5, "{start} vs {stop}");
+    }
+
+    #[test]
+    fn the_start_rises() {
+        let samples = tone(Cue::Start, 48_000);
+        let (early, late) = samples.split_at(samples.len() / 2);
+        assert!(
+            crossings_per_second(late, 48_000.0) > crossings_per_second(early, 48_000.0),
+            "a rise reads as beginning"
+        );
+    }
+
+    #[test]
+    fn volume_scales_evenly_and_never_amplifies() {
+        assert_eq!(gain(100), 1.0);
+        assert_eq!(gain(50), 0.25);
+        assert!((gain(5) - 0.0025).abs() < 1e-6);
+        assert_eq!(gain(500), 1.0);
     }
 }
