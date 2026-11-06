@@ -96,10 +96,10 @@ Automatic paste requires a supported focus check. GNOME Wayland needs the
 explicitly enabled [Koett Shell extension](integrations/gnome/README.md).
 The Linux archive includes its files; copy them as described there, log out/in,
 and enable the extension. GNOME 46 supplies focus checks; GNOME 51 also supplies
-the recording pill. Other Shell versions need verification. If GlobalShortcuts
+the recording pill and drawing. Other Shell versions need verification. If GlobalShortcuts
 is unavailable, add a custom GNOME keyboard shortcut running `koett toggle`.
 Allow both **Remote Interaction** and **Clipboard Access** in the Remote Desktop
-prompt. Drawing remains unavailable on GNOME. Without the extension or portal
+prompt. Without the extension or portal
 permission, use History/Copy and paste manually. X11 uses native global shortcuts
 and XTest.
 

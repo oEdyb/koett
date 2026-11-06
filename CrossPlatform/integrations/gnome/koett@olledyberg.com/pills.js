@@ -7,6 +7,7 @@ export class Pills {
     constructor() {
         this._entries = new Map();
         this._watches = new Map();
+        this._watched = new WeakSet();
         this._created = global.display.connect('window-created', (_display, window) => this._createdWindow(window));
         this._monitors = Main.layoutManager.connect('monitors-changed', () => {
             for (const entry of this._entries.values()) this._place(entry);
@@ -24,7 +25,8 @@ export class Pills {
     }
 
     register(request, pid, owner) {
-        if (!request || !/^Koett pill [0-9a-f-]{36}$/.test(request.title) ||
+        const cover = request?.cover === true;
+        if (!request || !(cover ? /^Koett sketch [0-9a-f-]{36}$/ : /^Koett pill [0-9a-f-]{36}$/).test(request.title) ||
             !Array.isArray(request.monitor) || request.monitor.length !== 4 ||
             !request.monitor.every(Number.isSafeInteger)) return false;
         const monitor = Main.layoutManager.monitors.find(m =>
@@ -32,12 +34,60 @@ export class Pills {
         if (!monitor) return false;
         const old = this._entries.get(request.title);
         if (old && (old.pid !== pid || old.owner !== owner)) return false;
-        if (!old && this._entries.size >= 4) return false;
-        const entry = old || {pid, owner, title: request.title, window: null};
+        // A drawing surface lasts one dictation; forget any that never appeared.
+        const stale = GLib.get_monotonic_time() - 10 * 1000 * 1000;
+        for (const [title, entry] of this._entries) {
+            if (entry.cover && !entry.window && entry.added < stale) this._entries.delete(title);
+        }
+        if (!old && this._entries.size >= 20) return false;
+        const entry = old || {pid, owner, cover, title: request.title, window: null,
+            added: GLib.get_monotonic_time()};
         entry.monitor = request.monitor;
         this._entries.set(entry.title, entry);
         this._place(entry);
         return true;
+    }
+
+    takePointer(take, pid) {
+        this._takesPointer = take;
+        for (const entry of this._entries.values()) {
+            if (entry.cover && entry.pid === pid) {
+                this._syncInput(entry);
+                this._refreshPointer(entry);
+            }
+        }
+        return true;
+    }
+
+    // Mutter keeps the pointer on the old surface until something under it changes.
+    // Hidden and shown in one tick, so nothing is painted in between.
+    _refreshPointer(entry) {
+        const actor = entry.window?.get_compositor_private();
+        actor?.hide();
+        actor?.show();
+    }
+
+    // A window Mutter can't hit passes every press and key straight through.
+    _syncInput(entry) {
+        const actor = entry.window?.get_compositor_private();
+        if (!actor) return;
+        const take = this._takesPointer === true;
+        const apply = parent => {
+            for (const child of parent.get_children()) {
+                child.reactive = take;
+                // Mutter turns this back on with each commit from the app.
+                if (!this._watched.has(child)) {
+                    this._watched.add(child);
+                    child.connect('notify::reactive', () => {
+                        const wanted = this._takesPointer === true;
+                        if (child.reactive !== wanted) child.reactive = wanted;
+                    });
+                    child.connect('child-added', () => this._syncInput(entry));
+                }
+                apply(child);
+            }
+        };
+        apply(actor);
     }
 
     _place(entry) {
@@ -47,6 +97,10 @@ export class Pills {
             .every((v, i) => v === entry.monitor[i])) || Main.layoutManager.primaryMonitor;
         if (!monitor) return;
         const window = entry.window;
+        if (entry.cover) {
+            window.move_resize_frame(false, monitor.x, monitor.y, monitor.width, monitor.height);
+            return;
+        }
         const rect = window.get_frame_rect();
         const x = Math.round(monitor.x + (monitor.width - rect.width) / 2);
         const y = monitor.y + monitor.height - rect.height - 24;
@@ -68,7 +122,16 @@ export class Pills {
                 const shown = window.connect('shown', () => {
                     window.make_above();
                     this._place(entry);
+                    if (entry.cover) this._syncInput(entry);
                 });
+                // The surface actor can arrive after the window is created. It must
+                // never take a press the user meant for the app below.
+                if (entry.cover) {
+                    const actor = window.get_compositor_private();
+                    const sync = () => this._syncInput(entry);
+                    actor?.connect('child-added', sync);
+                    actor?.connect('first-frame', sync);
+                }
                 window.stick();
                 const size = window.connect('size-changed', () => this._place(entry));
                 const unmanaged = window.connect('unmanaged', () => {
@@ -77,6 +140,7 @@ export class Pills {
                     window.disconnect(shown);
                     entry.window = null;
                     entry.disconnect = null;
+                    if (entry.cover) this._entries.delete(entry.title);
                 });
                 entry.disconnect = () => { window.disconnect(size); window.disconnect(shown); window.disconnect(unmanaged); };
                 this._place(entry);

@@ -50,8 +50,7 @@ is pending. Evidence: `CrossPlatform/evidence/gnome-pill-20261104/`.
 
 ## Open work
 
-This is the recording pill step. GNOME drawing surfaces, Shift input/gestures,
-capture exclusion and pointer context still need implementation. No screenshot
+This is the recording pill step. No screenshot
 or clipboard consumption claim is inferred from the controller's test screenshots.
 The screenshot method exists only in the private test extension, not production.
 
@@ -69,8 +68,30 @@ only the process that owns Koett's GTK application name, refuses during the over
 dialog, a lock or a monitor change, and hides only Koett's own pill while it captures. A failure
 keeps the dictation. On 2026-11-06 `capture-check.py` passed on Shell 51.1 with main merged:
 real pixels, an invalid monitor, the overview, a stalled Shell that timed out at 5 s, and the
-extension turned off and on. Nothing calls it on GNOME until a drawing surface exists.
+extension turned off and on.
 Evidence: `CrossPlatform/evidence/gnome-capture-20261104/`.
+
+## Drawing
+
+GNOME has no layer-shell, so each monitor gets a transparent GTK window that the extension
+makes a dock above everything. It stays hidden from the window list and takes no focus.
+GTK's input region didn't work here: Mutter kept the pointer on the old surface. So the
+extension's `Input` call switches whether Mutter can hit the window, and hides and shows its
+actor in one tick to refresh pointer focus. `WindowAt` names the window under a pin. Both answer
+only the process that owns Koett's GTK application name, and `WindowAt` refuses during a lock,
+the overview or a modal dialog. The draw key is read from keyboards as elsewhere, because a
+dock can't hold keyboard focus, so the focus opt-in doesn't apply on GNOME.
+
+On 2026-11-06 `draw-check.py` passed 28 checks on Shell 51.1, with a virtual keyboard and real
+speech: typing and clicks reach the app outside a hold, a Shift stroke draws and is captured, a
+Shift click pins and names the window, draw lock, Esc and `koett undo` work, clicks pass right
+after drawing, the surface goes when the extension turns off and returns on the next recording.
+`capture-check.py`, `pill-check.py` and `pill-return.py` passed with the same extension.
+Evidence: `CrossPlatform/evidence/gnome-draw-20261106/`.
+
+Not tested: real hardware, a real keyboard, several monitors, a real lock, and the contact sheet
+pasted into an app, because `wl-paste` has no GNOME clipboard path. If the extension turns off
+during a recording, drawing stays off until the next recording.
 
 ## Reproduce
 
