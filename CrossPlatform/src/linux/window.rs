@@ -141,6 +141,7 @@ fn build_window(
     recovery.set_visible(false);
     let latest_completed = Rc::new(RefCell::new(None::<String>));
     let latest_media = Rc::new(RefCell::new(None::<String>));
+    let media_results = Rc::new(std::cell::Cell::new(0_u64));
     let latest_delivery = Rc::new(RefCell::new(None::<String>));
     recovery.connect_clicked({
         let actions = actions.clone();
@@ -278,6 +279,7 @@ fn build_window(
     let media_action = gtk::gio::SimpleAction::new("media-manual", None);
     media_action.connect_activate({
         let latest = latest_media.clone();
+        let results = media_results.clone();
         let status = status.clone();
         let window = window.clone();
         let actions = actions.clone();
@@ -286,6 +288,7 @@ fn build_window(
                 window.clone(),
                 actions.clone(),
                 latest.clone(),
+                results.clone(),
                 status.clone(),
             )
         }
@@ -591,6 +594,7 @@ fn build_window(
                             .trim_start_matches("@notice:@media-result:")
                             .to_string();
                         *latest_media.borrow_mut() = Some(text.clone());
+                        media_results.set(media_results.get() + 1);
                         *latest_delivery.borrow_mut() = Some(text);
                         recovery.set_visible(true);
                         recovery_until = Some(Instant::now() + Duration::from_secs(10));

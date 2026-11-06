@@ -6,6 +6,7 @@ pub(super) fn show(
     window: gtk::ApplicationWindow,
     actions: Sender<TrayAction>,
     latest_completed: Rc<RefCell<Option<String>>>,
+    results: Rc<std::cell::Cell<u64>>,
     status: gtk::Label,
 ) {
     let dialog = gtk::Window::builder()
@@ -54,9 +55,10 @@ pub(super) fn show(
     content.append(&scroll);
     let copy = gtk::Button::with_label("Copy");
     content.append(&copy);
-    // What was showing when the user started a new job. It stays hidden, so a
-    // failure can't sit next to an older transcript.
-    let replaced = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
+    // Which result was showing when the user started a new job. It stays hidden, so a
+    // failure can't sit next to an older transcript. Results are counted rather than
+    // compared, because the same file gives the same text twice.
+    let replaced = std::rc::Rc::new(std::cell::Cell::new(None::<u64>));
     let latest = latest_completed.clone();
     copy.set_sensitive(latest.borrow().is_some());
     copy.connect_clicked(move |button| {
@@ -74,11 +76,12 @@ pub(super) fn show(
         let copy = copy.clone();
         let choose = choose.clone();
         let replaced = replaced.clone();
+        let results = results.clone();
         move || {
             let current = latest
                 .borrow()
                 .clone()
-                .filter(|text| replaced.borrow().as_ref() != Some(text));
+                .filter(|_| replaced.get() != Some(results.get()));
             copy.set_sensitive(current.is_some());
             if current.is_none() {
                 result.buffer().set_text("");
@@ -124,9 +127,9 @@ pub(super) fn show(
         let entry = entry.clone();
         let start = start.clone();
         let replaced = replaced.clone();
-        let latest = latest_completed.clone();
+        let results = results.clone();
         move || {
-            *replaced.borrow_mut() = latest.borrow().clone();
+            replaced.set(Some(results.get()));
             let _ = actions.send(TrayAction::Media(entry.text().to_string()));
             start.set_sensitive(false);
         }
@@ -142,10 +145,10 @@ pub(super) fn show(
         let dialog = dialog.clone();
         let phase = phase.clone();
         let replaced = replaced.clone();
-        let latest = latest_completed.clone();
+        let results = results.clone();
         move |button| {
             let replaced = replaced.clone();
-            let latest = latest.clone();
+            let results = results.clone();
             let picker = gtk::FileChooserNative::new(
                 Some("Transcribe Media File"),
                 Some(&dialog),
@@ -166,7 +169,7 @@ pub(super) fn show(
                     let path = path.to_string_lossy().into_owned();
                     match crate::media_transcription::validate_file(&path) {
                         Ok(()) => {
-                            *replaced.borrow_mut() = latest.borrow().clone();
+                            replaced.set(Some(results.get()));
                             let _ = actions.send(TrayAction::Media(path));
                             button.set_sensitive(false);
                         }
