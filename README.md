@@ -20,6 +20,8 @@ Change your setup from the menu bar. On Mac, Recording Limit offers 10, 30, 60 (
 
 On Mac, drag the pill's background to move it to any display. Its position is remembered across recordings and restarts. Buttons still click normally; if the display is disconnected, the pill returns on-screen.
 
+Mac source builds include **Check for Updates…**. [Automatic updates](docs/macos-updates.md) stay disabled until a signed release includes its update feed.
+
 For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in Settings. If the microphone will not start, set **Microphone** to **System default microphone**; in this version, a named device cannot be shared with apps such as Discord.
 
 [Source setup](CrossPlatform/README.md#build) · [CLI](docs/transcribe-cli.md) · [Issues](https://github.com/oEdyb/koett/issues) · [Contributing](CONTRIBUTING.md) · [Apache 2.0](LICENSE)

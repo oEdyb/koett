@@ -24,6 +24,7 @@ Commands:
 - `undo`: remove the last drawing/pin during recording.
 - `draw-lock`: toggle multi-stroke drawing during recording; requires drawing enabled. Status includes `drawLocked`.
 - `history`, `dictionary`: open the existing native window.
+- `check-updates`: the same foreground check as the menu; requires an enabled feed and an idle app/updater.
 - `copy-last`, `paste-last`: use the same recovery actions as the menu.
 - `retry-save`: retry pending stable transcript IDs.
 - `transcribe-file /absolute/file`: transcribe local audio/video.
@@ -33,6 +34,11 @@ Model launch flags remain `--parakeet`, `--parakeet-v3`, `--parakeet-110m` and
 `--nemotron`; they override a launch without changing the saved model. Native
 shortcut recorders and provider/Keychain settings remain in their existing UI;
 control does not dump secrets or edit preferences through unchecked JSON.
+
+Status includes `updates`: feed enabled, backup preparation, pending installation,
+install reservation, current build, last error and verified rollback path. A
+successful `check-updates` reply means the check started, not that installation
+finished. `updates_disabled` means the signed bundle contains no usable feed.
 
 Examples:
 
