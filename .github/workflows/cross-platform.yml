@@ -232,19 +232,17 @@ jobs:
         with:
           path: ~/AppData/Local/DybergCo/Koett/data/models
           key: model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
-      - name: Package
+      - name: Test Windows packaging policy
+        run: python -m unittest discover -s scripts -p 'test_package_windows.py'
+      - name: Check Windows preview manager syntax
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path dist/Koett-Windows-x86_64
-          Copy-Item target/release/koett.exe dist/Koett-Windows-x86_64/Koett.exe
-          Copy-Item target/release/koett-engine.exe dist/Koett-Windows-x86_64/koett-engine.exe
-          Copy-Item target/release/koett-transcribe-engine.exe dist/Koett-Windows-x86_64/koett-transcribe-engine.exe
-          Copy-Item README.md,THIRD_PARTY_NOTICES.md,../LICENSE dist/Koett-Windows-x86_64/
-          Copy-Item -Recurse packaging/notices dist/Koett-Windows-x86_64/notices
-          Copy-Item native-build/build-receipt.json dist/Koett-Windows-x86_64/native-build-receipt.json
-          New-Item -ItemType Directory -Force dist/Koett-Windows-x86_64/sources | Out-Null
-          Copy-Item scripts/build_asr_native.py,scripts/shared_context_patch.py,scripts/shared_context.patch dist/Koett-Windows-x86_64/sources/
-          Compress-Archive -Path dist/Koett-Windows-x86_64 -DestinationPath dist/Koett-Windows-x86_64.zip
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path scripts/manage_windows_preview.ps1), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | Format-List; exit 1 }
+      - name: Package
+        run: python scripts/package_windows.py
       - name: Verify Windows archive notices
         run: python scripts/check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip
       - name: Write checksum and build receipt

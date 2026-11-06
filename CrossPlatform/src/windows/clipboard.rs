@@ -215,6 +215,14 @@ pub(super) fn render_all(owner: HWND) {
 pub(super) fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
     text_offer(owner, text).map(|_| ())
 }
+pub(super) fn copy_text_if_unchanged(owner: HWND, text: &str, sequence: u32) -> Result<(), String> {
+    publish(
+        owner,
+        &[(CF_UNICODETEXT.0.into(), &utf16(text)?)],
+        Condition::Sequence(sequence),
+    )
+    .map(|_| ())
+}
 pub(super) fn text_offer(owner: HWND, text: &str) -> Result<Offer, String> {
     publish(
         owner,
@@ -584,6 +592,7 @@ mod tests {
         copy_text(owner, "new user copy").unwrap();
         assert!(bundle.restore(text).is_err());
         assert!(bundle.copy_if_unchanged(owner, sequence).is_err());
+        assert!(copy_text_if_unchanged(owner, "stale recovery copy", sequence).is_err());
         assert!(
             offer
                 .replace_with_text("must not replace user copy")

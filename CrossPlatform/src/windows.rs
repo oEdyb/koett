@@ -23,6 +23,9 @@ mod pill_state;
 mod pin_policy;
 mod pin_reader;
 mod pixels;
+mod recovery;
+#[path = "linux/sounds.rs"]
+mod sounds;
 
 use std::cell::{Cell, RefCell};
 use std::mem::size_of;
@@ -109,6 +112,7 @@ const MENU_UNDO_DRAW: usize = 12;
 const MENU_PASTE_LAST: usize = 13;
 const MENU_MEDIA: usize = 14;
 const MENU_CHANGE_MEDIA_SHORTCUT: usize = 15;
+const MENU_RECOVERY: usize = 16;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -863,7 +867,7 @@ unsafe extern "system" fn window_proc(
                         && matches!(app.status, AppStatus::Recording | AppStatus::Transcribing)
                 });
                 return windows::Win32::Foundation::LRESULT(isize::from(
-                    !busy && !media_view::needs_copy(),
+                    !busy && !media_view::needs_copy() && history::recovery::pending_count() == 0,
                 ));
             }
             WM_CLOSE => {
@@ -1330,6 +1334,11 @@ impl WindowsApp {
                 }
                 EngineUpdate::Status(status) => {
                     let media_outcome = media_view::finish(&status);
+                    if let Some(cue) = sounds::for_change(&self.status, &status)
+                        && Settings::load().is_ok_and(|settings| settings.recording_sounds)
+                    {
+                        sounds::play(cue);
+                    }
 
                     let status = if status == AppStatus::Ready
                         && (self.staged.is_some() || self.pending_result.is_some())
@@ -2317,6 +2326,7 @@ impl WindowsApp {
                 w!("Start at login"),
             );
             let _ = AppendMenuW(menu, MF_STRING, MENU_MEDIA, w!("Transcribe media…"));
+            let _ = AppendMenuW(menu, MF_STRING, MENU_RECOVERY, w!("Transcript recovery…"));
             let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
             let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("Quit Koett"));
 
@@ -2362,15 +2372,32 @@ impl WindowsApp {
     }
 
     fn request_quit(&self) {
-        if media_view::needs_copy()
+        let foreground = unsafe {
+            windows::Win32::UI::WindowsAndMessaging::GetAncestor(
+                GetForegroundWindow(),
+                windows::Win32::UI::WindowsAndMessaging::GA_ROOT,
+            )
+        };
+        let mut pid = 0;
+        unsafe {
+            GetWindowThreadProcessId(foreground, Some(&mut pid));
+        }
+        let owner = if pid == std::process::id() && unsafe { IsWindowVisible(foreground) }.as_bool()
+        {
+            foreground
+        } else {
+            self.hwnd
+        };
+        if (media_view::needs_copy() || history::recovery::pending_count() != 0)
             && unsafe {
                 MessageBoxW(
-                    Some(self.hwnd),
-                    w!("The media transcript is not saved. Quit without copying it?"),
+                    Some(owner),
+                    w!("Some transcripts are not saved. Quit without saving or copying them?"),
                     w!("Koett"),
                     windows::Win32::UI::WindowsAndMessaging::MB_YESNO
                         | windows::Win32::UI::WindowsAndMessaging::MB_ICONWARNING
-                        | windows::Win32::UI::WindowsAndMessaging::MB_DEFBUTTON2,
+                        | windows::Win32::UI::WindowsAndMessaging::MB_DEFBUTTON2
+                        | windows::Win32::UI::WindowsAndMessaging::MB_SETFOREGROUND,
                 )
             } != windows::Win32::UI::WindowsAndMessaging::IDYES
         {
@@ -2399,6 +2426,7 @@ impl WindowsApp {
                     media_view::open(engine.commands.clone());
                 }
             }
+            MENU_RECOVERY => recovery::open(),
             MENU_SETTINGS => desktop::open(true, self.hwnd),
             MENU_WORDS => desktop::open_words(self.hwnd),
             MENU_DRAW => {

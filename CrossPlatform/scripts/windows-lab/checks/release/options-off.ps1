@@ -1,0 +1,2 @@
+if($env:USERNAME-ne'KoettLab'-or$env:COMPUTERNAME-ne'KOETT-LAB'){throw 'These checks run only in the isolated Koett Windows lab guest'}
+$r=@((Set-LabOption 'Recording sounds' 'recording_sounds' $false $true),(Set-LabOption 'Include page details in pins' 'pin_page_details' $false $true),(Set-LabOption 'Read selected text at pins' 'pin_selected_text' $true $false),(Set-LabOption 'Read selected text at pins' 'pin_selected_text' $false $false));@{passed=$true;options=$r;artifact=Get-LabArtifact}

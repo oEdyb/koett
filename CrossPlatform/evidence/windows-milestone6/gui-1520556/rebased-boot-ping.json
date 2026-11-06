@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "result": {
+    "hash": "1520556302BEC6C3DD43A49E05D8961C7E86F1188535C944A2F8D0477254A2A6",
+    "processes": [],
+    "focus": {
+      "hwnd": 65780,
+      "process": "explorer",
+      "pid": 3172
+    }
+  },
+  "id": "1793943766168048398"
+}

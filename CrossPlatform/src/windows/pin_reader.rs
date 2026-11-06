@@ -117,6 +117,21 @@ impl Snapshot {
             && title(hwnd) == self.title
     }
     pub fn read(&self, selected: bool) -> Read {
+        match crate::settings::Settings::load() {
+            Ok(settings) => self.read_with_details(selected, settings.pin_page_details),
+            Err(_) => Read {
+                context: None,
+                status: "Image only · context settings unavailable".into(),
+            },
+        }
+    }
+    fn read_with_details(&self, selected: bool, enabled: bool) -> Read {
+        if !enabled {
+            return Read {
+                context: None,
+                status: "Image only · page details off".into(),
+            };
+        }
         self.read_options(selected, true)
     }
     pub fn read_source(&self) -> Read {
@@ -320,4 +335,23 @@ impl Snapshot {
 }
 fn inside(rect: RECT, point: POINT) -> bool {
     point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom
+}
+
+#[cfg(test)]
+mod privacy_tests {
+    use super::*;
+    #[test]
+    fn disabled_page_details_do_not_touch_a_window_or_accessibility() {
+        let snapshot = Snapshot {
+            hwnd: 0,
+            pid: 0,
+            rect: RECT::default(),
+            title: "Private title".into(),
+            app: Some("browser".into()),
+            point: POINT::default(),
+        };
+        let read = snapshot.read_with_details(true, false);
+        assert!(read.context.is_none());
+        assert_eq!(read.status, "Image only · page details off");
+    }
 }
