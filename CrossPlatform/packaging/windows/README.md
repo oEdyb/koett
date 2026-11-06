@@ -18,16 +18,28 @@ adds **Koett** to Start and Settings → Apps → Installed apps.
 
 Close Koett before installing a newer setup. Upgrade keeps settings, transcripts,
 models and existing startup preference. Older installers refuse a downgrade.
-There is no Windows automatic updater or scheduled update task.
+There is no Windows automatic updater or scheduled update task. Start and new
+taskbar pins use a stable launcher across upgrades. Recreate any pin made with
+an earlier preview once, from the new Start entry.
 
 To remove the app, choose **Koett → Uninstall** in Installed apps. Settings,
-transcripts and models remain in application data. Modified or busy app files
-cause a visible refusal rather than deletion of unknown files.
+transcripts and models remain in application data. Added or changed version files, including files added to `tools/`, are moved to
+`%LOCALAPPDATA%\Koett Preserved Files` and their location is shown. Incomplete
+removal can be retried; a busy path is named with the next step.
 
 These builds are unsigned: Windows has no verified publisher to show, and an
 Internet download may trigger SmartScreen or policy blocking. Checksums do not
 provide publisher trust. The isolated lab install does not establish reputation
 for a future public download; no signing account has been provisioned.
+
+### Moving from Koett Preview
+
+In the old preview, turn **Start at login** off, then quit it before running the
+native setup. This prevents its existing `Run\Koett` entry from launching the
+old preview. After installing, enable startup in the new Koett if wanted. Both
+installs share the same settings and transcript data; removing the old preview
+through its own manager keeps that data. Setup does not delete a separate
+preview install or take over an unrelated startup entry.
 
 The ZIP remains a portable/advanced preview option:
 

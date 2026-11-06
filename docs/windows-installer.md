@@ -25,9 +25,19 @@ non-x64 payloads, unsafe version values, and output inside the payload. Original
 NSIS notices travel with the installed payload. Compression uses zlib.
 
 The existing hash-verified version manager stages upgrades before updating the
-current pointer. It refuses running applications, modified files and unknown
-version files. The installer and uninstaller share a local setup mutex. Only
-owned files, the current-user Start link and the Koett uninstall registration
+current pointer. It refuses applications running in the current Windows session. Uninstall moves
+version folders into a removal stage before deleting verified app files. Changed,
+missing or added files and interrupted removal residue are kept outside the
+installation in `%LOCALAPPDATA%\Koett Preserved Files`, with the location shown.
+A retry can complete after a partial deletion. Same-version repair also keeps
+changed files before replacing the app. Reparse points are never followed during
+payload validation. Refusals name the path and the next step.
+
+The installer and uninstaller share a local setup mutex. Start, startup and new
+taskbar pins use a stable launcher; Settings/History windows provide explicit
+Windows taskbar relaunch properties pointing at it. Old preview pins need one
+replacement. Preview startup migration is described in the Windows package README.
+Only owned files, the current-user Start link and the Koett uninstall registration
 are removed. User application data is outside the installation tree.
 
 ## Signing and distribution
@@ -39,7 +49,7 @@ reputation. Checksums provide integrity, not publisher identity.
 
 A future signing pipeline must sign application executables before the payload
 manifest is generated, pass `--uninstaller-sign-command` to sign the embedded
-uninstaller, then sign the final setup before checksums and receipts are made.
+uninstaller, the hook also signs the embedded stable launcher. Then sign the final setup before checksums and receipts are made.
 The signing hook accepts a trusted command prefix and appends the generated
 uninstaller path. No certificate, timestamp service or signing account has been
 provisioned or tested.
@@ -49,3 +59,10 @@ Store distribution remain separate decisions. Recommended order: provision
 Authenticode signing before a public installer release; consider winget after
 that release has stable URLs and checksums. No Store submission is required for
 the standalone installer.
+
+The signing commands require exit code zero, as documented by NSIS
+[`!uninstfinalize` and `!finalize`](https://nsis.sourceforge.io/Docs/Chapter5.html#uninstfinalize).
+A deliberately failing signer was tested against the actual setup script.
+Organization policy that blocks PowerShell or constrains its language may prevent
+setup. The visible error should be provided to the administrator; no protection
+needs to be disabled for the supported install path.

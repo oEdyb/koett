@@ -64,6 +64,8 @@ windows = { version = "=0.62.2", features = [
     "Win32_UI_Controls_Dialogs",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_Storage_EnhancedStorage",
     "Win32_UI_WindowsAndMessaging",
 ] }
 ureq = { version = "=3.4.0", default-features = false, features = ["native-tls", "platform-verifier"] }
