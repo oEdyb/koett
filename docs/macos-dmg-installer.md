@@ -92,7 +92,8 @@ Suggested Mac README install text:
 Five impacted Python packaging tests passed; no Swift source changed, so no Swift
 suite or benchmark ran. The local signed candidate passed image verification and
 strict image signing. A second candidate exercised the new mounted-image manifest
-check successfully. No shared workflow was edited or dispatched.
+check successfully. No shared workflow was edited. The separate manual pre-merge
+batch CI run is linked from the pull request; it is not Mac GUI acceptance.
 
 The disposable macOS 15 guest exercised an actual mouse drag from the mounted DMG
 onto Applications, launch to `phase=ready`, native Finder Trash uninstall, install
