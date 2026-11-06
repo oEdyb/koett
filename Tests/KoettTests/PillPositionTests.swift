@@ -22,6 +22,35 @@ final class PillPositionTests: XCTestCase {
         }
     }
 
+    func testUndraggedPillPrefersActiveDisplayOverFirstScreen() throws {
+        try withPosition { position in
+            XCTAssertEqual(position.origin(size: size, displays: [primary, secondary], preferredDisplayID: 2),
+                           NSPoint(x: -1110, y: 172))
+            XCTAssertEqual(position.origin(size: size, displays: [primary, secondary], preferredDisplayID: 99),
+                           NSPoint(x: 570, y: 102))
+            XCTAssertNil(position.origin(size: size, displays: [], preferredDisplayID: 2))
+        }
+    }
+
+    func testRememberedDragWinsOverTheActiveDisplay() throws {
+        try withPosition { position in
+            let saved = NSPoint(x: 200, y: 400)
+            _ = position.save(origin: saved, size: size, displays: [primary, secondary])
+            XCTAssertEqual(position.origin(size: size, displays: [primary, secondary], preferredDisplayID: 2), saved)
+        }
+    }
+
+    func testMissingSavedDisplayFallsBackToActiveWithoutOverwritingDrag() throws {
+        try withPosition { position in
+            let saved = NSPoint(x: 200, y: 400)
+            _ = position.save(origin: saved, size: size, displays: [primary, secondary])
+            let third = PillDisplay(id: 3, visibleFrame: NSRect(x: 1440, y: 0, width: 1280, height: 720))
+            XCTAssertEqual(position.origin(size: size, displays: [secondary, third], preferredDisplayID: 3),
+                           NSPoint(x: 1930, y: 72))
+            XCTAssertEqual(position.origin(size: size, displays: [primary, secondary], preferredDisplayID: 2), saved)
+        }
+    }
+
     func testPositionOnOtherDisplaySurvivesNewStoreAndCoordinateChanges() throws {
         try withPosition { position in
             let point = NSPoint(x: -1600, y: 500)

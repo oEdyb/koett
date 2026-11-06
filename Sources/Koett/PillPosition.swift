@@ -4,6 +4,10 @@ struct PillDisplay {
     let id: Int
     let visibleFrame: NSRect
 
+    @MainActor static var mainID: Int? {
+        (NSScreen.main?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.intValue
+    }
+
     @MainActor static var current: [Self] {
         NSScreen.screens.map {
             Self(id: ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.intValue ?? 0,
@@ -16,8 +20,8 @@ struct PillPosition {
     static let key = "pillPosition"
     let defaults: UserDefaults
 
-    func origin(size: NSSize, displays: [PillDisplay]) -> NSPoint? {
-        guard let first = displays.first else { return nil }
+    func origin(size: NSSize, displays: [PillDisplay], preferredDisplayID: Int? = nil) -> NSPoint? {
+        guard let fallback = displays.first(where: { $0.id == preferredDisplayID }) ?? displays.first else { return nil }
         if let saved = defaults.dictionary(forKey: Self.key),
            let id = saved["display"] as? Int,
            let x = saved["x"] as? Double, let y = saved["y"] as? Double,
@@ -28,8 +32,8 @@ struct PillPosition {
                                  y: frame.minY + y * max(0, frame.height - size.height)),
                          size: size, to: frame)
         }
-        return clamp(NSPoint(x: first.visibleFrame.midX - size.width / 2,
-                             y: first.visibleFrame.minY + 72), size: size, to: first.visibleFrame)
+        return clamp(NSPoint(x: fallback.visibleFrame.midX - size.width / 2,
+                             y: fallback.visibleFrame.minY + 72), size: size, to: fallback.visibleFrame)
     }
 
     func save(origin: NSPoint, size: NSSize, displays: [PillDisplay]) -> NSPoint {
