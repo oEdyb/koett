@@ -43,6 +43,17 @@ class DiskImageTests(unittest.TestCase):
             run.assert_not_called()
             self.assertEqual(output.read_bytes(), b'keep me')
 
+    def test_refuses_existing_receipt_without_overwriting_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = self.app(directory)
+            output = Path(directory) / 'candidate.dmg'
+            receipt = output.with_suffix('.receipt.json')
+            receipt.write_bytes(b'keep prior evidence')
+            with patch.object(dmg, 'run') as run, self.assertRaises(ValueError):
+                dmg.package(app, output, 'identity')
+            run.assert_not_called()
+            self.assertEqual(receipt.read_bytes(), b'keep prior evidence')
+
     def test_refuses_lab_build_before_signing_or_submitting(self):
         with tempfile.TemporaryDirectory() as directory:
             app = self.app(directory)

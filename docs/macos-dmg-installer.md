@@ -86,3 +86,38 @@ Suggested Mac README install text:
 - [Apple: packaging Mac software](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution)
 - [Apple: notarizing Mac software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution)
 - [Sparkle: preserve framework links and executable permissions](https://sparkle-project.org/documentation/)
+
+## Local acceptance — 2026-11-06
+
+Five impacted Python packaging tests passed; no Swift source changed, so no Swift
+suite or benchmark ran. The local signed candidate passed image verification and
+strict image signing. A second candidate exercised the new mounted-image manifest
+check successfully. No shared workflow was edited or dispatched.
+
+The disposable macOS 15 guest exercised an actual mouse drag from the mounted DMG
+onto Applications, launch to `phase=ready`, native Finder Trash uninstall, install
+and launch of the previous public 0.3.0 ZIP, Finder replacement with the DMG app,
+launch to ready again, and final uninstall. The installed app's file hashes,
+symlinks and modes matched the image. It was owned by UID501, mode0755 and writable
+by the guest user; Sparkle's `Versions/Current → B` and executable Autoupdate
+survived. Strict codesign, stapler and app Gatekeeper assessment passed. A settings
+sentinel and exact History database hash survived upgrade; uninstall kept local
+data. The prior guest app/data/preferences were restored afterward.
+
+The payload was the already notarized Sparkle-signing probe app, version0.3.1,
+build5101, source `7ef87560115fcf10ab5fb616973dbe2ccc49cdb3`, executable UUID
+`F949DA85-D0D2-3905-9129-03C59336B5DB`. It is a packaging fixture, not a current-main
+release candidate. The previous public app was the unchanged frozen0.3.0/build3
+from source115d6907. This isolates packaging changes without another product build
+or broader acceptance repeat. The real installed host Koett and frozen ZIP were
+not changed. No release, tag, GitHub draft/asset or live feed was created or edited.
+
+**Pending:** an Apple-only submission of the new outer DMG requires clarification
+of the task's simultaneous “notarized” and “no outside repo submission” constraints.
+The local candidate is intentionally `distributable=false`; the input app's ticket
+is not misrepresented as a DMG ticket. No new DMG notarization is claimed yet.
+First-launch permission denials, a pristine TCC database, Intel, managed/non-admin
+install and a live Sparkle upgrade were not retested by this packaging change.
+
+Exact driver, receipts, hashes and inspected Finder screenshot:
+[evidence](evidence/macos-dmg-installer-20261106/).

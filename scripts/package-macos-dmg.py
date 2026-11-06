@@ -56,7 +56,8 @@ def tree_manifest(app):
 
 def package(app, output, identity, profile=None):
     app, output = app.resolve(), output.absolute()
-    if output.suffix != '.dmg' or output.exists():
+    sidecars = [output.with_suffix(suffix) for suffix in ['.notary.json', '.receipt.json', '.dmg.sha256']]
+    if output.suffix != '.dmg' or any(path.exists() for path in [output, *sidecars]):
         raise ValueError('Choose a new .dmg output path; existing artifacts are never overwritten')
     info = validate_app(app)
     before = tree_manifest(app)
@@ -75,6 +76,17 @@ def package(app, output, identity, profile=None):
         run('ditto', layout, stage / '.DS_Store')
         run('hdiutil', 'create', '-srcfolder', stage, '-volname', 'Koett', '-fs', 'HFS+',
             '-format', 'UDZO', '-srcowners', 'off', '-anyowners', output)
+    with tempfile.TemporaryDirectory(prefix='koett-dmg-mount-') as mount:
+        run('hdiutil', 'attach', '-nobrowse', '-readonly', '-mountpoint', mount, output)
+        try:
+            mounted = Path(mount)
+            if tree_manifest(mounted / 'Koett.app') != before:
+                raise ValueError('Disk image changed app content, symlinks or permissions')
+            if (mounted / 'Applications').readlink() != Path('/Applications'):
+                raise ValueError('Disk image is missing the Applications shortcut')
+        finally:
+            run('hdiutil', 'detach', mount)
+    receipt['appManifestSHA256'] = hashlib.sha256(json.dumps(before, sort_keys=True).encode()).hexdigest()
     run('codesign', '--force', '--timestamp', '--sign', identity,
         '--identifier', 'com.olledyberg.Koett.dmg', output)
     run('codesign', '--verify', '--strict', output)
