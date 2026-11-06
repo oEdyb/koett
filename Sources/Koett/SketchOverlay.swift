@@ -39,6 +39,7 @@ final class SketchOverlay {
 
     var isActive: Bool { session != nil }
     var canUndo: Bool { board.map { !$0.finishing && !$0.groups.isEmpty } ?? false }
+    var strokeCount: Int { board?.groups.reduce(0) { $0 + $1.strokes.count } ?? 0 }
 
     func undoLast() {
         guard var board, let session, let undone = board.undoLast() else { return }
