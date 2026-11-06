@@ -69,6 +69,7 @@ enum PinContextReader {
             return (nil, nil)
         }
         var webArea: AXUIElement?
+        var child: AXUIElement?
         var element = hit
         for _ in 0..<parentDepth where !expired(deadline) {
             guard let current = element else { break }
@@ -83,21 +84,19 @@ enum PinContextReader {
                 webArea = current
                 context.url = url(current) ?? context.url
                 context.title = string(current, kAXTitleAttribute) ?? context.title
-            case "AXGroup":
-                // Chromium's window document exposes its URL even before its
-                // renderer web area exists. Never treat a nested page group as it.
-                if context.url == nil, PinContextPrivacy.isChromiumBrowser(bundleID),
-                   let parent = self.element(attribute(current, kAXParentAttribute)),
-                   string(parent, kAXRoleAttribute) == "AXWindow" {
-                    context.url = url(current)
-                    if context.title == nil { context.title = string(current, kAXTitleAttribute) }
-                }
             case "AXWindow":
+                // Chromium exposes its document URL on the direct window child
+                // before the renderer web area is ready. Nested groups do not qualify.
+                if context.url == nil, PinContextPrivacy.isChromiumBrowser(bundleID),
+                   let child, string(child, kAXRoleAttribute) == "AXGroup" {
+                    context.url = url(child)
+                }
                 if context.title == nil { context.title = string(current, kAXTitleAttribute) }
                 return (webArea, current)
             default:
                 break
             }
+            child = current
             element = self.element(attribute(current, kAXParentAttribute))
         }
         return (webArea, nil)
