@@ -158,6 +158,12 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
+            if let Ok(command) = std::str::from_utf8(&bytes)
+                && let Some(value) = super::updates::control(command)
+            {
+                let _ = stream.write_all(value.to_string().as_bytes());
+                continue;
+            }
             if let Some(window) = window_request(&bytes) {
                 let _ = ui.send(super::window::Update::Status(window.into()));
                 let _ = stream.write_all(b"{\"ok\":true,\"status\":\"window_requested\"}");

@@ -262,6 +262,12 @@ fn build_window(
         gtk::gio::SimpleAction::new_stateful("recording", None, &false.to_variant());
     recording_state.set_enabled(false);
     application.add_action(&recording_state);
+    let check_updates = gtk::gio::SimpleAction::new("check-updates", None);
+    check_updates.set_enabled(super::updates::enabled());
+    check_updates.connect_activate(|_, _| {
+        super::updates::check_now();
+    });
+    application.add_action(&check_updates);
     #[cfg(feature = "ask")]
     for (name, command) in [
         #[cfg(feature = "ask")]
@@ -436,6 +442,15 @@ fn build_window(
         move || {
             shortcut.set_visible(window.width() >= 650);
             meter_label.set_visible(window.width() >= 650);
+            super::updates::set_ui_state(
+                overlay.as_ref().is_some_and(|overlay| overlay.is_shown())
+                    || gtk::Window::list_toplevels().iter().any(|toplevel| {
+                        toplevel.downcast_ref::<gtk::Window>().is_some_and(|other| {
+                            other.is_visible() && (other.is_active() || other.is_modal())
+                        })
+                    }),
+                window.is_visible(),
+            );
             for update in updates.try_iter() {
                 if let Update::Status(message) = &update {
                     if message == "@undo-drawing" {

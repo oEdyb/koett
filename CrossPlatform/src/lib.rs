@@ -20,6 +20,8 @@ mod windows_logic_tests;
 
 #[cfg(target_os = "linux")]
 pub mod linux;
+#[cfg(target_os = "linux")]
+pub mod update_feed;
 
 #[cfg(target_os = "windows")]
 pub mod windows;

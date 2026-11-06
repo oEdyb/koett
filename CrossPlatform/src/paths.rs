@@ -74,6 +74,9 @@ pub fn last_transcript() -> Result<PathBuf, String> {
 pub fn media_transcripts_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Media Transcripts"))
 }
+pub fn updates_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_local_dir().join("updates"))
+}
 pub fn failed_recordings_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Failed Recordings"))
 }

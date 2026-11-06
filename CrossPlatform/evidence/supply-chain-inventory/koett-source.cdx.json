@@ -14381,6 +14381,7 @@
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/libloading@0.9.0",
         "pkg:cargo/log@0.4.34",
+        "pkg:cargo/ring@0.17.14",
         "pkg:cargo/ringbuf@0.5.2",
         "pkg:cargo/rusqlite@0.41.0",
         "pkg:cargo/serde@1.0.229",
