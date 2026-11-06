@@ -6,3 +6,4 @@
 [2026-11-03 21:40] Noted: it's 21:40 local, 20 minutes before the cutoff. I'm waiting for the three agents already running and won't start new ones, before or after 22:00. 
 [2026-11-03 21:43] I checked the cleanup agent's filler finding against the local history. Parakeet v2 writes "um/uh" at 2.46% of words and 110M at 0.60%, though those ran on different days. I'm still waiting on the oth
 [2026-11-03 21:44] One to go, the model comparison. Vocabulary is back: non-word forms are safe, but a blanket `scroll → Scrawl` would be wrong in 8 of the 14 "scroll" hits. 
+[2026-11-06 04:53] The update labs are rerunning on the final source, now with the slow-download case. Once they pass, #155 gets its one CI run. PR https://github.com/oEdyb/koett/pull/155, head `9be1472c6e1ab12cfa2b899b
