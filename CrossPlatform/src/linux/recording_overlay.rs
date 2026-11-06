@@ -270,7 +270,9 @@ pub(super) fn error_row(status: &str) -> &'static str {
         .strip_prefix("Error: ")
         .unwrap_or(status)
         .to_lowercase();
-    if error.contains("microphone") || error.contains("input device") {
+    if error.contains("media") || error.contains("browser document") {
+        "Media failed"
+    } else if error.contains("microphone") || error.contains("input device") {
         "Microphone couldn't start"
     } else if error.contains("download") {
         "Model download failed"
@@ -1240,6 +1242,14 @@ mod tests {
             "Model download failed"
         );
         assert_eq!(super::error_row("Error: anything"), "Dictation failed");
+        for media in [
+            "Error: Media tool failed: unsupported, blocked or login-required source",
+            "Error: Media downloader returned an invalid local file",
+            "Error: invalid or oversized media audio",
+            "Focus one browser document, or enter its URL",
+        ] {
+            assert_eq!(super::error_row(media), "Media failed");
+        }
         assert_eq!(super::error_row("clipboard unavailable"), "Copy failed");
         assert_eq!(super::error_row("paste chord failed"), "Paste failed");
         assert_eq!(super::error_row("could not write history"), "Save failed");

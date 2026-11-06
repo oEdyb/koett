@@ -702,6 +702,21 @@ fn build_window(
                         notice = Some(error.to_string());
                         notice_until = Some(Instant::now() + Duration::from_secs(8));
                     }
+                    Update::Status(message)
+                        if message.strip_prefix("@notice:").is_some_and(|notice| {
+                            notice.starts_with(crate::runtime::MEDIA_ERROR)
+                        }) =>
+                    {
+                        let error = message
+                            .trim_start_matches("@notice:")
+                            .trim_start_matches(crate::runtime::MEDIA_ERROR);
+                        pill_message = Some((
+                            super::recording_overlay::error_row("media").to_string(),
+                            Instant::now() + PILL_MESSAGE_DURATION,
+                        ));
+                        notice = Some(error.to_string());
+                        notice_until = Some(Instant::now() + Duration::from_secs(8));
+                    }
                     Update::Status(message) if message.starts_with("@notice:") => {
                         let phase = message
                             .trim_start_matches("@notice:")
