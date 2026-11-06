@@ -15,6 +15,10 @@ pub enum DrawingRequest {
 
 pub enum Update {
     DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
+    RecordingControl(
+        super::menu_preferences::RecordingControl,
+        Sender<serde_json::Value>,
+    ),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
@@ -454,6 +458,12 @@ fn build_window(
                     }
                 }
                 match update {
+                    Update::RecordingControl(command, reply) => {
+                        let _ = reply.send(super::menu_preferences::recording_control(
+                            command,
+                            audio_levels.as_ref(),
+                        ));
+                    }
                     Update::DrawingCommand(request, reply, expires) => {
                         let value = if Instant::now() >= expires {
                             serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
