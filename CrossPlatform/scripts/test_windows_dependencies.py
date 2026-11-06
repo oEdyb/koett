@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import hashlib
+import json
 import struct
 import tempfile
 import unittest
@@ -12,6 +14,7 @@ from check_windows_dependencies import imports, verify
 def executable(name, delayed=False):
     data=bytearray(2048)
     data[:2]=b'MZ';struct.pack_into('<I',data,60,128);data[128:132]=b'PE\0\0'
+    struct.pack_into('<H',data,132,0x8664)
     struct.pack_into('<H',data,134,1);struct.pack_into('<H',data,148,240)
     optional=152;struct.pack_into('<H',data,optional,0x20b)
     struct.pack_into('<Q',data,optional+24,0x140000000)
@@ -37,12 +40,21 @@ class DependencyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / 'Koett.zip'
             for dependency, accepted in [('KERNEL32.dll', True), ('VCRUNTIME140_1.dll', False)]:
+                files = {
+                    'Koett.exe': executable('KERNEL32.dll'),
+                    'koett-engine.exe': executable(dependency),
+                    'koett-transcribe-engine.exe': executable(dependency),
+                    **{name: b'fixture' for name in [
+                        'THIRD_PARTY_NOTICES.md', 'LICENSE', 'native-build-receipt.json']},
+                }
+                release = {
+                    'format': 1, 'architecture': 'x86_64', 'signature': 'unsigned-preview',
+                    'files': {name: hashlib.sha256(data).hexdigest() for name, data in files.items()},
+                }
                 with zipfile.ZipFile(archive, 'w') as package:
-                    package.writestr('Koett/Koett.exe', executable('KERNEL32.dll'))
-                    package.writestr('Koett/koett-engine.exe', executable(dependency))
-                    package.writestr('Koett/koett-transcribe-engine.exe', executable(dependency))
-                    for name in ['THIRD_PARTY_NOTICES.md', 'LICENSE', 'native-build-receipt.json']:
-                        package.writestr('Koett/' + name, 'fixture')
+                    for name, data in files.items():
+                        package.writestr('Koett/' + name, data)
+                    package.writestr('Koett/preview-release.json', json.dumps(release))
                 with patch('check_windows_archive.verify_notices'):
                     if accepted:
                         self.assertFalse(verify_archive(archive)['runtime_execution'])

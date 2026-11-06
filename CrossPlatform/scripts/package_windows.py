@@ -8,7 +8,6 @@ from pathlib import Path, PurePosixPath
 import shutil
 import struct
 import subprocess
-import tomllib
 import zipfile
 
 CROSS = Path(__file__).resolve().parents[1]
@@ -16,8 +15,11 @@ EXES = ['Koett.exe', 'koett-engine.exe', 'koett-transcribe-engine.exe']
 
 
 def digest(path):
+    result = hashlib.sha256()
     with Path(path).open('rb') as handle:
-        return hashlib.file_digest(handle, 'sha256').hexdigest()
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            result.update(chunk)
+    return result.hexdigest()
 
 
 def architecture(path):
@@ -68,6 +70,9 @@ def verify_payload(root):
 
 
 def package(binaries, native_receipt, output):
+    # Only archive creation needs TOML; validators also run on Python 3.10.
+    import tomllib
+
     binaries, output = Path(binaries), Path(output)
     arch = architecture(binaries/'koett.exe')
     root = output/f'Koett-Windows-{arch}'
