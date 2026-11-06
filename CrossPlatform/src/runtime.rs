@@ -1252,6 +1252,7 @@ fn media_failed(updates: &Sender<EngineUpdate>, error: String, cancelled: &Atomi
 #[cfg(target_os = "linux")]
 pub const MEDIA_ERROR: &str = "@media-error:";
 
+#[cfg(target_os = "linux")]
 fn media_notice(updates: &Sender<EngineUpdate>, result: Result<(), String>) {
     if let Err(error) = result {
         let _ = updates.send(EngineUpdate::Notice(format!("Media control: {error}")));
