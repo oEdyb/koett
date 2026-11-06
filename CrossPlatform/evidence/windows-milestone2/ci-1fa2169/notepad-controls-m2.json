@@ -1,0 +1,122 @@
+{
+  "ok": true,
+  "result": {
+    "hold_start": "Koett Recording",
+    "cancel_text": "",
+    "cancel_phase": "Koett",
+    "passed": true,
+    "pause_resume": true,
+    "pause_text": "Any moreore? observed Phoebe, turning away her eyes, It is certainly very like the old portrait",
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM2b\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 8684,
+      "sha256": "A748F48808A25673D6C61A9F4925C6FB0E5D0138886CD8D8C40FC92F4E823876"
+    },
+    "hold": true,
+    "resumed": "Koett Recording",
+    "hold_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "steps": [
+      {
+        "step": "hold-mode-saved",
+        "rect": [
+          720,
+          312,
+          1840,
+          1192
+        ],
+        "focus": {
+          "hwnd": 131840,
+          "process": "Koett",
+          "pid": 8684
+        }
+      },
+      {
+        "step": "hold-recording",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "hold-result",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "real-paused",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "resumed-result",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "real-cancelled",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": false
+      }
+    ],
+    "paused": "Koett Paused"
+  },
+  "id": "1793833653769292631"
+}

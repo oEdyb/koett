@@ -1,0 +1,32 @@
+{
+  "baseline": {
+    "term_recall": 0.3025,
+    "term_hits": 49,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1443,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0
+  },
+  "spelling": {
+    "term_recall": 0.3765,
+    "term_hits": 61,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.1235,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0
+  },
+  "boosted-koett": {
+    "term_recall": 0.7222,
+    "term_hits": 117,
+    "term_total": 162,
+    "false_terms": 0,
+    "wer_positive": 0.058,
+    "wer_negative": 0.0028,
+    "broken_negatives": 0,
+    "collateral_words": 0
+  }
+}

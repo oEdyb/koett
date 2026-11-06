@@ -82,6 +82,8 @@ fn cleanup_budget(tokens: usize) -> Duration {
 
 pub struct Cleaner {
     child: Child,
+    #[cfg(target_os = "windows")]
+    _job: crate::windows::formatting_job::Job,
     endpoint: String,
     key: String,
     pub(crate) keepalive: Option<std::sync::mpsc::Sender<()>>,
@@ -253,11 +255,17 @@ impl Cleaner {
             .stdout(Stdio::null())
             .stderr(Stdio::null());
         bind_to_parent(&mut command);
+        #[cfg(target_os = "windows")]
+        let job = crate::windows::formatting_job::Job::new()?;
         let child = command
             .spawn()
             .map_err(|e| format!("Install llama.cpp (llama-server): {e}"))?;
+        #[cfg(target_os = "windows")]
+        let (child, job) = job.supervise(child)?;
         let mut cleaner = Self {
             child,
+            #[cfg(target_os = "windows")]
+            _job: job,
             endpoint: format!("http://127.0.0.1:{port}"),
             key,
             keepalive: None,
@@ -365,7 +373,12 @@ fn bind_to_parent(command: &mut Command) {
         });
     }
 }
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "windows")]
+fn bind_to_parent(command: &mut Command) {
+    use std::os::windows::process::CommandExt as _;
+    command.creation_flags(windows::Win32::System::Threading::CREATE_NO_WINDOW.0);
+}
+#[cfg(not(any(target_os = "linux", target_os = "windows")))]
 fn bind_to_parent(_: &mut Command) {}
 
 pub fn final_text(value: &Value) -> Result<String, String> {

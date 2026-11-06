@@ -228,6 +228,7 @@ final class SketchOverlay {
             }
         case .failure(let error):
             failedCaptures += 1
+            session.frames.markCaptureFailed(session.id)
             fputs("Sketch capture failed: \(error.localizedDescription)\n", stderr)
             publish(board.failed(id))
         }

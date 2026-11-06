@@ -1,0 +1,748 @@
+{
+  "passed": true,
+  "scope": "Native keyboard/UIA exposure with Narrator running; spoken pronunciation is not independently transcribed",
+  "narrator_running_during_navigation": true,
+  "artifact": {
+    "path": "C:\\Users\\KoettLab\\KoettM3-c7\\Koett-Windows-x86_64\\Koett.exe",
+    "pid": 5932,
+    "sha256": "DDF86B8DEB4CEBF253F6EB6DE4D3ACCB855ABD2C1240246A0574B22F51E1E382"
+  },
+  "cases": [
+    {
+      "navigation": [
+        {
+          "class": "ComboBox",
+          "name": "Dictionary",
+          "id": "40",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Term",
+          "id": "41",
+          "type": "ControlType.Edit",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Sounds like (comma-separated)",
+          "id": "42",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save entry",
+          "id": "43",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Remove entry",
+          "id": "44",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "New entry",
+          "id": "50",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Import\u2026",
+          "id": "45",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Export\u2026",
+          "id": "46",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Dictionary",
+          "id": "40",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Term",
+          "id": "41",
+          "type": "ControlType.Edit",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Sounds like (comma-separated)",
+          "id": "42",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save entry",
+          "id": "43",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Remove entry",
+          "id": "44",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "New entry",
+          "id": "50",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Import\u2026",
+          "id": "45",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Export\u2026",
+          "id": "46",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Dictionary",
+          "id": "40",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Term",
+          "id": "41",
+          "type": "ControlType.Edit",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "Sounds like (comma-separated)",
+          "id": "42",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        }
+      ],
+      "case": "narrator-words-keyboard",
+      "missing": [],
+      "passed": true
+    },
+    {
+      "navigation": [
+        {
+          "class": "ComboBox",
+          "name": "Speech model",
+          "id": "60",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Switch model",
+          "id": "61",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Format dictation (S1-mini)",
+          "id": "63",
+          "type": "ControlType.CheckBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Style",
+          "id": "64",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Structure",
+          "id": "65",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Context",
+          "id": "66",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Apply formatting",
+          "id": "67",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Speech model",
+          "id": "60",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Switch model",
+          "id": "61",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Format dictation (S1-mini)",
+          "id": "63",
+          "type": "ControlType.CheckBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Style",
+          "id": "64",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Structure",
+          "id": "65",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Context",
+          "id": "66",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Apply formatting",
+          "id": "67",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Speech model",
+          "id": "60",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Switch model",
+          "id": "61",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Format dictation (S1-mini)",
+          "id": "63",
+          "type": "ControlType.CheckBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Style",
+          "id": "64",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Structure",
+          "id": "65",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Context",
+          "id": "66",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Apply formatting",
+          "id": "67",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "ComboBox",
+          "name": "Speech model",
+          "id": "60",
+          "type": "ControlType.ComboBox",
+          "ancestor_ids": [
+            "",
+            ""
+          ]
+        }
+      ],
+      "case": "narrator-processing-keyboard",
+      "missing": [],
+      "passed": true
+    },
+    {
+      "labels": [
+        {
+          "expected": "Speech model",
+          "name": "Speech model",
+          "id": "60",
+          "passed": true
+        },
+        {
+          "expected": "Style",
+          "name": "Style",
+          "id": "64",
+          "passed": true
+        },
+        {
+          "expected": "Structure",
+          "name": "Structure",
+          "id": "65",
+          "passed": true
+        },
+        {
+          "expected": "Context",
+          "name": "Context",
+          "id": "66",
+          "passed": true
+        }
+      ],
+      "case": "native-model-and-formatting-accessible-labels",
+      "passed": true
+    },
+    {
+      "navigation": [
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save correction",
+          "id": "80",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save correction",
+          "id": "80",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save correction",
+          "id": "80",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save correction",
+          "id": "80",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Button",
+          "name": "Save correction",
+          "id": "80",
+          "type": "ControlType.Button",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "",
+          "name": "",
+          "id": "",
+          "type": "ControlType.ListItem",
+          "ancestor_ids": [
+            "11",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What Koett wrote",
+          "id": "85",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        },
+        {
+          "class": "Edit",
+          "name": "What you said",
+          "id": "86",
+          "type": "ControlType.Document",
+          "ancestor_ids": [
+            "",
+            "",
+            ""
+          ]
+        }
+      ],
+      "case": "narrator-correction-keyboard",
+      "missing": [],
+      "passed": true
+    }
+  ]
+}

@@ -69,7 +69,9 @@ enum LocalControlSocket {
         try line.withUnsafeBytes { bytes in
             var offset = 0
             while offset < bytes.count {
-                let count = Darwin.write(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                // A client can disconnect before a reply. Suppress SIGPIPE on
+                // each send so it becomes a recoverable EPIPE instead of app exit.
+                let count = Darwin.send(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset, MSG_NOSIGNAL)
                 guard count > 0 else { throw failure("Control reply could not be delivered.") }
                 offset += count
             }
@@ -77,14 +79,14 @@ enum LocalControlSocket {
     }
 
     static func request(_ arguments: [String], at url: URL = defaultURL) throws -> ControlReply {
+        let data = try JSONEncoder().encode(arguments)
+        guard data.count < 2_048 else { throw failure("Control command exceeds the size limit.") }
         let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         guard descriptor >= 0 else { throw failure("Control socket could not open.") }
         defer { Darwin.close(descriptor) }
         configure(descriptor)
         let connected = try address(url.path) { Darwin.connect(descriptor, $0, $1) }
         guard connected == 0 else { throw failure("Koett is not running with local control. Start the installed app and retry.") }
-        let data = try JSONEncoder().encode(arguments)
-        guard data.count < 2_048 else { throw failure("Control command exceeds the size limit.") }
         try writeLine(data, to: descriptor)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

@@ -222,10 +222,16 @@ a browser pin. Details: docs/screen-context-proposal.md.
 
 ## 2026-11-05: the pill's drag moves a copy, not the pill
 
-The real pill stays in place, invisible at 1/255 opacity, and keeps the pointer grab
+On Linux, the real pill stays in place, invisible at 1/255 opacity, and keeps the pointer grab
 while an input-free live copy follows the pointer onto any monitor. On release the real
 pill moves there. This gives one code path for every compositor and exact pointer offsets.
 The cost is a second window for the length of a drag.
+
+On Mac, AppKit tracks the drag while the nonactivating panel moves directly.
+Dragging its background keeps the existing appearance and button hit targets.
+Position is saved relative to the display's visible frame, keyed by display ID;
+rearranging or resizing a display keeps the pill on it. A disconnected display
+falls back to the first available screen without erasing the saved position.
 
 ## 2026-11-05: Esc ends draw lock instead of cancelling
 
@@ -243,3 +249,12 @@ Koett can not ship, so the Linux cues are generated in code with no audio files.
 the Mac there is a Settings switch, on by default, because Olle films with Koett and a
 sound in a take should be his choice. In a lab where the microphone hears the speaker
 directly, the transcript was identical with the cues on and off.
+
+## 2026-11-05: recordings stop at a limit you choose, 60 minutes by default
+
+Olle asked why there was a 10-minute limit; there was no reason beyond bounding memory.
+Settings offers 10, 30, 60 and 120 minutes, and a value outside those in a settings file
+becomes 60. The pill says "1 minute left" once, and the stop still saves and pastes. The
+whole recording stays in memory in case decoding fails. An 11-minute lab run grew by 192 KB/s
+at 48 kHz, so that is about 690 MB at 60 minutes and 1.4 GB at 120, only while recording. Live decoding drops audio as it goes, so
+its memory doesn't grow with length.

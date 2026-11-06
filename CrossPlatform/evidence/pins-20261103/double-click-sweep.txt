@@ -1,5 +1,5 @@
 grabbed /dev/input/event31
-/home/olle/.cache/koett-pins-lab/t13.sh: line 25: dra: command not found
+<build-home>/.cache/koett-pins-lab/t13.sh: line 25: dra: command not found
 == dbl-100 presses=0
 - #1 (0:05) “I love you”'
 

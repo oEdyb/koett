@@ -1,10 +1,10 @@
 {
   "scope": "CURRENT-PC CachyOS private candidate; not a public release or portable GTK bundle",
   "source_revision": "37705a4452739a511d62a1bfd9c237bb8ea6b5a4",
-  "archive": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/final/Koett-Linux-x86_64-37705a44.tar.gz",
+  "archive": "<build-home>/.cache/koett/private-tests/koett-package-currentpc/final/Koett-Linux-x86_64-37705a44.tar.gz",
   "archive_sha256": "405e8f19bf8b68f81afae003b9fde221d153822a0f312fdd4b5560f1f3119bdf",
-  "launcher": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/bin/koett",
-  "version_tree": "/home/olle/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689",
+  "launcher": "<build-home>/.cache/koett/private-tests/koett-package-currentpc/clean install/bin/koett",
+  "version_tree": "<build-home>/.cache/koett/private-tests/koett-package-currentpc/clean install/lib/koett/versions/8f77d9d5b285f6be0a766689",
   "binary_sha256": "fe9babba1c90cecb8d0bc86b6ca1ee116b6bc5b2fafe2df0ee24f146f05e14aa",
   "gtk_sha256": "a6a8876857058a9b78ef681c9f57465a2cc664a8baa9a5123c7660598c51ef5a",
   "file_manifest_sha256": "8f77d9d5b285f6be0a76668910a323138b812888c2d5b03a420aa0577d009ed7",

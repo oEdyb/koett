@@ -1,0 +1,14 @@
+{
+  "step": "processing-100-dark",
+  "rect": [
+    720,
+    272,
+    1280,
+    752
+  ],
+  "focus": {
+    "hwnd": 590466,
+    "process": "Koett",
+    "pid": 5708
+  }
+}

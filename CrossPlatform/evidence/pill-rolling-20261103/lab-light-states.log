@@ -44,5 +44,5 @@ Captured recovery-after-6s
     "Cancel discards capture: no history row, no paste, pill hidden",
     "`koett cancel` discards the active dictation"
   ],
-  "evidence": "/home/olle/dev/koett-pill-timeline/CrossPlatform/evidence/pill-rolling-20261103/light-states"
+  "evidence": "<build-home>/dev/koett-pill-timeline/CrossPlatform/evidence/pill-rolling-20261103/light-states"
 }

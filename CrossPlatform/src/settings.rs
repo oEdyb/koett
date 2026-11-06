@@ -50,6 +50,22 @@ pub enum DrawKey {
     Alt,
 }
 
+pub const RECORDING_LIMIT_CHOICES: [u32; 4] = [10, 30, 60, 120];
+const DEFAULT_RECORDING_LIMIT_MINUTES: u32 = 60;
+
+/// Anything but one of the choices becomes the default, so a hand-edited value
+/// can neither reject the whole settings file nor set an unsupported limit.
+fn recording_limit_or_default<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<u32, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(value
+        .as_u64()
+        .and_then(|minutes| u32::try_from(minutes).ok())
+        .filter(|minutes| RECORDING_LIMIT_CHOICES.contains(minutes))
+        .unwrap_or(DEFAULT_RECORDING_LIMIT_MINUTES))
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -60,6 +76,8 @@ pub struct Settings {
     pub start_at_login: bool,
     pub microphone: Option<String>,
     pub recording_mode: RecordingMode,
+    #[serde(deserialize_with = "recording_limit_or_default")]
+    pub recording_limit_minutes: u32,
     pub replacements: Vec<crate::replacements::Replacement>,
     pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
@@ -86,11 +104,16 @@ impl Default for Settings {
         Self {
             formatting: crate::formatting::Formatting::default(),
             shortcut: "Ctrl+Shift+Space".to_string(),
-            ask_shortcut: "Ctrl+Alt+Space".to_string(),
+            ask_shortcut: if cfg!(feature = "ask") {
+                "Ctrl+Alt+Space".into()
+            } else {
+                String::new()
+            },
             media_shortcut: "Ctrl+Shift+T".to_string(),
             start_at_login: true,
             microphone: None,
             recording_mode: RecordingMode::Toggle,
+            recording_limit_minutes: DEFAULT_RECORDING_LIMIT_MINUTES,
             replacements: Vec::new(),
             dictionary: Vec::new(),
             pause_media: false,
@@ -143,6 +166,9 @@ impl Settings {
                     if value.get(action).is_some() {
                         continue;
                     }
+                    if action == "ask_shortcut" && !cfg!(feature = "ask") {
+                        continue;
+                    }
                     let candidate = if action == "ask_shortcut" {
                         &settings.ask_shortcut
                     } else {
@@ -151,11 +177,13 @@ impl Settings {
                     let parsed = candidate.parse::<crate::shortcut::Shortcut>().ok();
                     let other = if action == "ask_shortcut" {
                         &settings.media_shortcut
-                    } else {
+                    } else if cfg!(feature = "ask") {
                         &settings.ask_shortcut
+                    } else {
+                        ""
                     };
                     if parsed.is_some()
-                        && [&settings.shortcut, other].iter().any(|binding| {
+                        && [settings.shortcut.as_str(), other].iter().any(|binding| {
                             binding.parse::<crate::shortcut::Shortcut>().ok() == parsed
                         })
                     {
@@ -191,12 +219,13 @@ impl Settings {
             .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
         let mut normalized = self.clone();
         for value in [
-            &mut normalized.shortcut,
-            &mut normalized.ask_shortcut,
-            &mut normalized.media_shortcut,
+            Some(&mut normalized.shortcut),
+            cfg!(feature = "ask").then_some(&mut normalized.ask_shortcut),
+            Some(&mut normalized.media_shortcut),
         ]
         .into_iter()
         .take(ACTIVE_SHORTCUT_COUNT)
+        .flatten()
         {
             if !value.is_empty() {
                 *value = value.parse::<crate::shortcut::Shortcut>()?.to_string();
@@ -253,6 +282,9 @@ impl Settings {
         if self.recording_mode != opened.recording_mode {
             merged.recording_mode = self.recording_mode;
         }
+        if self.recording_limit_minutes != opened.recording_limit_minutes {
+            merged.recording_limit_minutes = self.recording_limit_minutes;
+        }
         if self.start_at_login != opened.start_at_login {
             merged.start_at_login = self.start_at_login;
         }
@@ -300,18 +332,33 @@ impl Settings {
             .draw_lock_shortcut
             .parse::<crate::shortcut::Shortcut>()
             .ok()?;
-        [&self.shortcut, &self.ask_shortcut, &self.media_shortcut]
-            .into_iter()
-            .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
-            .then_some(self.draw_lock_shortcut.as_str())
+        [
+            self.shortcut.as_str(),
+            if cfg!(feature = "ask") {
+                self.ask_shortcut.as_str()
+            } else {
+                ""
+            },
+            self.media_shortcut.as_str(),
+        ]
+        .into_iter()
+        .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
+        .then_some(self.draw_lock_shortcut.as_str())
     }
 
     pub fn validate_shortcuts(&self) -> Result<(), String> {
         let mut seen = Vec::new();
         for (name, value) in [
-            ("Dictation", &self.shortcut),
-            ("Ask", &self.ask_shortcut),
-            ("Media", &self.media_shortcut),
+            ("Dictation", self.shortcut.as_str()),
+            (
+                "Ask",
+                if cfg!(feature = "ask") {
+                    self.ask_shortcut.as_str()
+                } else {
+                    ""
+                },
+            ),
+            ("Media", self.media_shortcut.as_str()),
         ]
         .into_iter()
         .take(ACTIVE_SHORTCUT_COUNT)
@@ -355,6 +402,55 @@ mod tests {
     }
 
     #[test]
+    fn recording_limit_is_valid_from_any_settings_file() {
+        let path = temporary_file("recording-limit");
+        for (saved, minutes) in [
+            (r#"{"shortcut":"Ctrl+Shift+Space"}"#, 60),
+            (r#"{"recording_limit_minutes":10}"#, 10),
+            (r#"{"recording_limit_minutes":120}"#, 120),
+            (r#"{"recording_limit_minutes":7}"#, 60),
+            (r#"{"recording_limit_minutes":0}"#, 60),
+            (r#"{"recording_limit_minutes":-5}"#, 60),
+            (r#"{"recording_limit_minutes":99999999999}"#, 60),
+            (r#"{"recording_limit_minutes":"long"}"#, 60),
+            (r#"{"recording_limit_minutes":null}"#, 60),
+        ] {
+            std::fs::write(&path, saved).unwrap();
+            assert_eq!(
+                super::Settings::load_from(&path)
+                    .unwrap()
+                    .recording_limit_minutes,
+                minutes,
+                "{saved}"
+            );
+        }
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn editor_keeps_a_recording_limit_changed_elsewhere() {
+        let opened = super::Settings::default();
+        let mut current = opened.clone();
+        current.recording_limit_minutes = 120;
+        let merged = opened.clone().merge_editor(&opened, current);
+        assert_eq!(merged.recording_limit_minutes, 120);
+        let mut edited = opened.clone();
+        edited.recording_limit_minutes = 10;
+        let merged = edited.merge_editor(&opened, opened.clone());
+        assert_eq!(merged.recording_limit_minutes, 10);
+    }
+
+    #[test]
+    fn the_capture_ceiling_allows_every_choice() {
+        for minutes in super::RECORDING_LIMIT_CHOICES {
+            assert!(
+                std::time::Duration::from_secs(u64::from(minutes) * 60)
+                    <= crate::audio::MAX_RECORDING_DURATION
+            );
+        }
+    }
+
+    #[test]
     fn draw_lock_defaults_on_and_steps_aside_for_another_shortcut() {
         let old: Settings = serde_json::from_str(r#"{"draw_while_dictating":true}"#).unwrap();
         assert_eq!(old.draw_lock_shortcut, super::DEFAULT_DRAW_LOCK);
@@ -368,8 +464,12 @@ mod tests {
         settings.ask_shortcut = "Alt+Ctrl+D".into();
         assert_eq!(
             settings.effective_draw_lock(),
-            None,
-            "same chord, any order"
+            if cfg!(feature = "ask") {
+                None
+            } else {
+                Some("Ctrl+Alt+D")
+            },
+            "only active shortcuts reserve chords"
         );
         assert!(settings.validate_shortcuts().is_ok(), "saving still works");
         settings.ask_shortcut = String::new();
@@ -433,6 +533,21 @@ mod tests {
         fs::remove_file(path).unwrap();
     }
 
+    #[cfg(not(feature = "ask"))]
+    #[test]
+    fn shelved_ask_settings_load_and_save_without_reserving_shortcuts() {
+        let path = temporary_file("shelved-ask");
+        fs::write(&path, r#"{"shortcut":"Ctrl+Alt+Space","ask_shortcut":"obsolete shortcut","ask":{"enabled":true}}"#).unwrap();
+        let settings = Settings::load_from(&path).unwrap();
+        settings.validate_shortcuts().unwrap();
+        settings.save_to(&path).unwrap();
+        assert_eq!(
+            Settings::load_from(&path).unwrap().ask_shortcut,
+            "obsolete shortcut"
+        );
+        fs::remove_file(path).unwrap();
+    }
+
     #[test]
     fn missing_file_uses_small_public_defaults() {
         let path = temporary_file("missing-settings");
@@ -476,7 +591,7 @@ mod tests {
                 .unwrap()
                 .validate_shortcuts()
                 .is_err(),
-            cfg!(target_os = "linux")
+            cfg!(all(target_os = "linux", feature = "ask"))
         );
         fs::remove_file(path).unwrap();
     }
@@ -620,12 +735,19 @@ mod tests {
     fn shortcuts_migrate_validate_and_merge_independently() {
         let opened: Settings =
             serde_json::from_str(r#"{"shortcut":"Alt+K","pause_media":true}"#).unwrap();
-        assert_eq!(opened.ask_shortcut, "Ctrl+Alt+Space");
+        assert_eq!(
+            opened.ask_shortcut,
+            if cfg!(feature = "ask") {
+                "Ctrl+Alt+Space"
+            } else {
+                ""
+            }
+        );
         assert_eq!(opened.media_shortcut, "Ctrl+Shift+T");
         assert!(opened.validate_shortcuts().is_ok());
         let mut edited = opened.clone();
         edited.ask_shortcut = "control+shift+t".into();
-        if cfg!(target_os = "linux") {
+        if cfg!(all(target_os = "linux", feature = "ask")) {
             assert!(
                 edited
                     .validate_shortcuts()

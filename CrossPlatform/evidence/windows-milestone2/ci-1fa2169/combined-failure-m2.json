@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "result": {
+    "passed": false,
+    "actions": [],
+    "readonly_restored": true,
+    "phase": "Koett. History failed \u00b7 Copy from tray",
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM2b\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 8684,
+      "sha256": "A748F48808A25673D6C61A9F4925C6FB0E5D0138886CD8D8C40FC92F4E823876"
+    },
+    "steps": [
+      {
+        "step": "combined-delivery-and-history-failure",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 66512,
+          "process": "powershell",
+          "pid": 8892
+        },
+        "visible": true
+      }
+    ]
+  },
+  "id": "1793834166235156115"
+}

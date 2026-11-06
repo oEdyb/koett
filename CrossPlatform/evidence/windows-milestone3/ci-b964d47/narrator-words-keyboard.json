@@ -1,0 +1,14 @@
+{
+  "step": "narrator-words-keyboard",
+  "rect": [
+    320,
+    72,
+    2240,
+    1432
+  ],
+  "focus": {
+    "hwnd": 131260,
+    "process": "Koett",
+    "pid": 8472
+  }
+}

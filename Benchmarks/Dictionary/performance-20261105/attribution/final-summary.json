@@ -1,0 +1,227 @@
+{
+  "original24BytesUnchanged": true,
+  "original24SHA256": "e98998d004bad47e491f08239a3d9e828180ff34b53d1758f427f6ef9d8abffd",
+  "componentTrials": 60,
+  "historicalCacheAblation": [
+    {
+      "mode": "baseline",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        155.8269166853279,
+        152.27016666904092,
+        162.77566668577492
+      ],
+      "medianMilliseconds": 155.8269166853279,
+      "worstMilliseconds": 162.77566668577492,
+      "count": 3
+    },
+    {
+      "mode": "baseline",
+      "seconds": 120,
+      "valuesMilliseconds": [
+        615.980250062421
+      ],
+      "medianMilliseconds": 615.980250062421,
+      "worstMilliseconds": 615.980250062421,
+      "count": 1
+    },
+    {
+      "mode": "cached",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        145.27883334085345,
+        137.54641660489142,
+        146.05125004891306
+      ],
+      "medianMilliseconds": 145.27883334085345,
+      "worstMilliseconds": 146.05125004891306,
+      "count": 3
+    },
+    {
+      "mode": "cached",
+      "seconds": 120,
+      "valuesMilliseconds": [
+        592.5609166733921
+      ],
+      "medianMilliseconds": 592.5609166733921,
+      "worstMilliseconds": 592.5609166733921,
+      "count": 1
+    }
+  ],
+  "historicalProduction": [
+    {
+      "mode": "production",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        165.5858332524076,
+        137.5058749690652,
+        181.3392082694918
+      ],
+      "medianMilliseconds": 165.5858332524076,
+      "worstMilliseconds": 181.3392082694918,
+      "count": 3
+    },
+    {
+      "mode": "production",
+      "seconds": 120,
+      "valuesMilliseconds": [
+        638.1688333349302
+      ],
+      "medianMilliseconds": 638.1688333349302,
+      "worstMilliseconds": 638.1688333349302,
+      "count": 1
+    }
+  ],
+  "attested": [
+    {
+      "mode": "baseline",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        154.58158333785832
+      ],
+      "medianMilliseconds": 154.58158333785832,
+      "worstMilliseconds": 154.58158333785832,
+      "count": 1
+    },
+    {
+      "mode": "cached",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        152.26662496570498
+      ],
+      "medianMilliseconds": 152.26662496570498,
+      "worstMilliseconds": 152.26662496570498,
+      "count": 1
+    },
+    {
+      "mode": "old",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        156.56725002918392,
+        147.35854172613472,
+        153.50024995859712
+      ],
+      "medianMilliseconds": 153.50024995859712,
+      "worstMilliseconds": 156.56725002918392,
+      "count": 3
+    },
+    {
+      "mode": "production",
+      "seconds": 5,
+      "valuesMilliseconds": [
+        146.30370831582695,
+        135.98787505179644,
+        184.24066668376327
+      ],
+      "medianMilliseconds": 146.30370831582695,
+      "worstMilliseconds": 184.24066668376327,
+      "count": 3
+    },
+    {
+      "mode": "production",
+      "seconds": 120,
+      "valuesMilliseconds": [
+        636.1100416397676
+      ],
+      "medianMilliseconds": 636.1100416397676,
+      "worstMilliseconds": 636.1100416397676,
+      "count": 1
+    }
+  ],
+  "resourceSummaries": {
+    "old": {
+      "launchToReadyMilliseconds": [
+        1069.557375041768,
+        578.2335000112653,
+        484.73791708238423
+      ],
+      "controlToFirstInjectedBufferObservedMilliseconds": [
+        179.72054169513285,
+        184.3373749870807,
+        202.28345831856132
+      ],
+      "idleCPUPercentOneCore": [
+        0.04432394561459966,
+        0.041854381678609345,
+        0.04657344209275771
+      ],
+      "idleRSSBytes": [
+        124665856,
+        127254528,
+        127238144
+      ],
+      "recordingCPUPercentOneCore": [
+        0.2735052737053118,
+        0.2902920328015535,
+        0.25591533808079503
+      ],
+      "recordingMaximumRSSBytes": [
+        125222912,
+        127811584,
+        127827968
+      ],
+      "postTargetSettledRSSBytes": [
+        126484480,
+        126435328,
+        126484480
+      ],
+      "postTargetPhysicalFootprintBytes": [
+        35849032,
+        36225864,
+        36094792
+      ],
+      "privateAppLogicalBytes": 18281342
+    },
+    "production": {
+      "launchToReadyMilliseconds": [
+        1005.0285829929635,
+        660.6325840111822,
+        543.3685410534963,
+        555.9064579429105
+      ],
+      "controlToFirstInjectedBufferObservedMilliseconds": [
+        101.00737505126745,
+        92.87933330051601,
+        97.72487496957183,
+        104.9412083812058
+      ],
+      "idleCPUPercentOneCore": [
+        0.053736212637104444,
+        0.05623294319535325,
+        0.055663236741633794,
+        0.05403964354239094
+      ],
+      "idleRSSBytes": [
+        163708928,
+        163889152,
+        163905536,
+        163807232
+      ],
+      "recordingCPUPercentOneCore": [
+        0.31941817711763276,
+        0.3385606254657263,
+        0.3081938892398583,
+        0.3594838442244042
+      ],
+      "recordingMaximumRSSBytes": [
+        180764672,
+        180961280,
+        181010432,
+        190021632
+      ],
+      "postTargetSettledRSSBytes": [
+        163119104,
+        164200448,
+        164233216,
+        207519744
+      ],
+      "postTargetPhysicalFootprintBytes": [
+        43287440,
+        43172728,
+        43402128,
+        60818320
+      ],
+      "privateAppLogicalBytes": 21145034
+    }
+  }
+}

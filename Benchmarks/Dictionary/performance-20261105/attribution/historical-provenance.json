@@ -1,0 +1,17 @@
+{
+  "historicalCacheAndBaseline": {
+    "binarySHA256": null,
+    "reason": "The prototype executable was overwritten before its hash was recorded. Exact collector is preserved; cache source is reconstructed from recorded preparation steps. No historical binary attestation is claimed."
+  },
+  "historicalProduction": {
+    "binarySHA256": "2f6fb29c03e4b85b0c1d9122118ff756f0aa81b1a327a41be818201120fb9f60",
+    "hashRecordedBeforeHistoricalRun": false,
+    "reason": "Final executable frozen after the historical production cohort; same executable reused with pre-launch hashes in attested cohort."
+  },
+  "newAttested": {
+    "source": "attested/provenance.json",
+    "binaryAndSourceBindingsBeforeLaunch": true,
+    "sourceAndBinaryRecheckedAfterRun": true,
+    "note": "Fresh cache rebuild validates reproducibility; its hash is not assigned retrospectively to historical cache receipts."
+  }
+}

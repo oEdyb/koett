@@ -3,5 +3,5 @@ model_load_ms=881.9
    in_sample_rate: 24000
    output_sample_rate: 16000
 
-/home/olle/.cache/koett/model-evaluations/parakeet-v3/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav	Ask not what your country can do for you, ask what you can do for your country.
-source=/home/olle/.cache/koett/model-evaluations/parakeet-v3/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav audio_seconds=3.845 transcribe_ms=122.6 realtime_factor=0.03190
+<build-home>/.cache/koett/model-evaluations/parakeet-v3/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav	Ask not what your country can do for you, ask what you can do for your country.
+source=<build-home>/.cache/koett/model-evaluations/parakeet-v3/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/test_wavs/en.wav audio_seconds=3.845 transcribe_ms=122.6 realtime_factor=0.03190

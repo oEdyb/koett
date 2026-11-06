@@ -37,9 +37,8 @@ Lab evidence runs the debug build against Koett's packaged GTK runtime
 (4.24.1 + upstream `21d3eb76`). The host's unpatched 4.24.1 can abort in AT-SPI
 `GetChildAtIndex` when an accessibility client walks windows while one hides.
 
-Linux recordings stop at 10 minutes (engine limit). The lab shows the 20:00 strip
-with the debug-only `KOETT_DEBUG_PILL_TIME_SCALE=4`, which runs only the pill's
-clock four times faster, using real audio.
+The lab shows the 20:00 strip with the debug-only `KOETT_DEBUG_PILL_TIME_SCALE=4`, which runs
+only the pill's clock four times faster, using real audio.
 
 ## Sketch-event interface
 

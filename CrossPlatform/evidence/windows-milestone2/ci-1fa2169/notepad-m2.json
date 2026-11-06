@@ -1,0 +1,74 @@
+{
+  "ok": true,
+  "result": {
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM2b\\Koett-Windows-x86_64\\Koett.exe",
+      "pid": 8684,
+      "sha256": "A748F48808A25673D6C61A9F4925C6FB0E5D0138886CD8D8C40FC92F4E823876"
+    },
+    "phase_samples": [
+      "Koett Transcribing",
+      "Koett Done. Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. I"
+    ],
+    "editor_text": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait.",
+    "passed": true,
+    "original_focus": {
+      "hwnd": 131254,
+      "process": "Notepad",
+      "pid": 8092
+    },
+    "before": "",
+    "steps": [
+      {
+        "step": "notepad-real-recording",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "notepad-real-result",
+        "rect": {
+          "left": 980,
+          "bottom": 1476,
+          "top": 1380,
+          "right": 1580,
+          "dpi": 192,
+          "hwnd": 131720
+        },
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        },
+        "visible": true
+      },
+      {
+        "step": "notepad-recognized-text",
+        "rect": [
+          344,
+          344,
+          2264,
+          1436
+        ],
+        "focus": {
+          "hwnd": 131254,
+          "process": "Notepad",
+          "pid": 8092
+        }
+      }
+    ],
+    "clipboard": "Well, I don't wish to see it any more, observed Phoebe, turning away her eyes. It is certainly very like the old portrait."
+  },
+  "id": "1793833568743802108"
+}

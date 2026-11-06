@@ -86,6 +86,7 @@ const SHORTCUT_ID: &str = "toggle-recording";
 enum TrayAction {
     Menu(String, menu_preferences::Reply),
     Ask,
+    #[cfg_attr(not(feature = "ask"), allow(dead_code))]
     CancelAsk,
     AskStart,
     AskStop,
@@ -110,6 +111,7 @@ enum TrayUpdate {
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
+    DeliveryStarted,
     Delivered,
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
@@ -191,6 +193,7 @@ impl ksni::Tray for LinuxTray {
             .into()
         }
         let recording = menu::recording_action(&self.status);
+        #[cfg(feature = "ask")]
         let (ask_label, asking) = menu_preferences::ask_state();
         let last = history::recovery::last_available();
         let mut items = vec![
@@ -208,6 +211,7 @@ impl ksni::Tray for LinuxTray {
                         && QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)),
                 TrayAction::Toggle,
             ),
+            #[cfg(feature = "ask")]
             send(
                 if asking {
                     ask_label
@@ -218,6 +222,7 @@ impl ksni::Tray for LinuxTray {
                 TrayAction::Ask,
             ),
         ];
+        #[cfg(feature = "ask")]
         if asking {
             items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
         }
@@ -273,7 +278,9 @@ impl ksni::Tray for LinuxTray {
     }
 }
 
+#[cfg(feature = "ask")]
 mod ask_settings;
+#[cfg(feature = "ask")]
 mod ask_view;
 mod browser_media;
 mod clipboard_owner;
@@ -282,6 +289,7 @@ mod dictionary_view;
 mod escape;
 mod feedback;
 mod fix_word_view;
+mod focus_tokens;
 mod formatting_view;
 mod gnome_focus;
 mod gnome_pill;
@@ -295,6 +303,7 @@ mod menu;
 mod menu_preferences;
 mod models_view;
 mod monitor_layout;
+mod native_keyboard;
 mod output;
 mod permissions_view;
 mod recording_overlay;
@@ -334,14 +343,31 @@ pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| {
         matches!(
             c.as_str(),
-            "permissions" | "permissions-status" | "drawing-status" | "undo-drawing" | "draw-lock"
+            "permissions"
+                | "permissions-status"
+                | "drawing-status"
+                | "undo-drawing"
+                | "draw-lock"
+                | "status"
+                | "pause"
+                | "resume"
         )
     }) {
-        let response = control::request(&command)?;
+        let response = match control::request(&command) {
+            Ok(response) => response,
+            Err(_) if matches!(command.as_str(), "status" | "pause" | "resume") => {
+                println!(
+                    "{}",
+                    serde_json::json!({"ok":false,"error":{"code":"not_running","message":"Start Koett and retry"}})
+                );
+                std::process::exit(1);
+            }
+            Err(error) => return Err(error),
+        };
         println!("{response}");
         if matches!(
             command.as_str(),
-            "drawing-status" | "undo-drawing" | "draw-lock"
+            "drawing-status" | "undo-drawing" | "draw-lock" | "status" | "pause" | "resume"
         ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]
             == false
         {
@@ -373,7 +399,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("media-help") {
         println!(
             "{}",
-            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
+            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","transcribe-url HTTP(S)_URL","transcribe-file ABSOLUTE_PATH","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
         );
         return Ok(());
     }
@@ -408,10 +434,12 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     }
     let mut command = std::env::args().nth(1).unwrap_or_else(|| "show".into());
+    #[cfg(feature = "ask")]
     if command == "ask-status" {
         println!("{}", control::ask_status()?);
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-help" {
         println!(
             "{}",
@@ -419,6 +447,7 @@ pub fn run() -> Result<(), String> {
         );
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-speech-configure" {
         use std::io::Read;
         let mut input = String::new();
@@ -435,6 +464,7 @@ pub fn run() -> Result<(), String> {
         println!("{{\"ok\":true}}");
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-speech-status" {
         println!(
             "{}",
@@ -442,6 +472,7 @@ pub fn run() -> Result<(), String> {
         );
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-configure" {
         use std::io::Read;
         let mut input = String::new();
@@ -458,6 +489,7 @@ pub fn run() -> Result<(), String> {
         println!("{{\"ok\":true}}");
         return Ok(());
     }
+    #[cfg(feature = "ask")]
     if command == "ask-key" {
         use std::io::Read;
         let provider = std::env::args()
@@ -476,6 +508,10 @@ pub fn run() -> Result<(), String> {
         println!("{{\"ok\":true}}");
         return Ok(());
     }
+    #[cfg(not(feature = "ask"))]
+    if command == "ask" || command.starts_with("ask-") {
+        return Err("Ask is not available in this build".into());
+    }
     if command == "media" {
         let source = std::env::args()
             .nth(2)
@@ -484,6 +520,27 @@ pub fn run() -> Result<(), String> {
             return Err("Usage: koett media HTTP(S)_URL".into());
         }
         crate::media_transcription::validate_url(&source)?;
+        command = format!("media {source}");
+    }
+    // The Mac control names, for scripts that work on both.
+    if command == "transcribe-url" || command == "transcribe-file" {
+        let usage = format!(
+            "Usage: koett {command} {}",
+            if command == "transcribe-url" {
+                "HTTP(S)_URL"
+            } else {
+                "ABSOLUTE_PATH"
+            }
+        );
+        let source = std::env::args().nth(2).ok_or(usage.clone())?;
+        if std::env::args().count() != 3 {
+            return Err(usage);
+        }
+        if command == "transcribe-url" {
+            crate::media_transcription::validate_url(&source)?;
+        } else {
+            crate::media_transcription::validate_file(&source)?;
+        }
         command = format!("media {source}");
     }
     if matches!(command.as_str(), "show" | "--background")
@@ -549,6 +606,9 @@ pub fn run() -> Result<(), String> {
                     }
                     TrayUpdate::DeliveryFailed => {
                         let _ = worker_ui.send(window::Update::DeliveryFailed);
+                    }
+                    TrayUpdate::DeliveryStarted => {
+                        let _ = worker_ui.send(window::Update::DeliveryStarted);
                     }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
@@ -646,9 +706,13 @@ fn run_x11(
     let mut blocked_keys = std::collections::HashSet::new();
     let mut bindings = Vec::new();
     for value in [
-        &settings.shortcut,
-        &settings.ask_shortcut,
-        &settings.media_shortcut,
+        settings.shortcut.as_str(),
+        if cfg!(feature = "ask") {
+            settings.ask_shortcut.as_str()
+        } else {
+            ""
+        },
+        settings.media_shortcut.as_str(),
     ] {
         let key = if value.is_empty() {
             None
@@ -678,15 +742,16 @@ fn run_x11(
     // time, so Esc keeps working everywhere else.
     let escape = HotKey::new(None, global_hotkey::hotkey::Code::Escape);
     let mut escape_registered = false;
+    let mut escape_recording = false;
     loop {
         let recording = app.status == AppStatus::Recording;
-        if recording != escape_registered {
-            escape_registered = if recording {
-                hotkeys.register(escape).is_ok()
-            } else {
+        // Once per recording: a failed grab must not retry on every loop.
+        if recording != escape_recording {
+            escape_recording = recording;
+            escape_registered = recording && hotkeys.register(escape).is_ok();
+            if !recording {
                 let _ = hotkeys.unregister(escape);
-                false
-            };
+            }
         }
         while let Ok(action) = actions.try_recv() {
             let (action, paste_request) = match action {
@@ -738,11 +803,13 @@ fn run_x11(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let target = paste_request
                         .as_ref()
                         .map_or_else(|| output.focused_window(), |request| request.target);
                     let pasted = recovery::last_text()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -812,11 +879,17 @@ fn run_x11(
                     && let Some(capture) = capture.as_ref()
                 {
                     let chord = match index {
-                        0 => &settings.shortcut,
-                        1 => &settings.ask_shortcut,
-                        _ => &settings.media_shortcut,
+                        0 => settings.shortcut.as_str(),
+                        1 => {
+                            if cfg!(feature = "ask") {
+                                settings.ask_shortcut.as_str()
+                            } else {
+                                ""
+                            }
+                        }
+                        _ => settings.media_shortcut.as_str(),
                     };
-                    let _ = capture.try_send(chord.clone());
+                    let _ = capture.try_send(chord.to_string());
                 }
                 let intent =
                     x11_shortcut_intent(latch, settings.recording_mode, event.state, editing);
@@ -890,9 +963,13 @@ fn run_x11(
                 && updated.validate_shortcuts().is_ok()
             {
                 let next_values = [
-                    &updated.shortcut,
-                    &updated.ask_shortcut,
-                    &updated.media_shortcut,
+                    updated.shortcut.as_str(),
+                    if cfg!(feature = "ask") {
+                        updated.ask_shortcut.as_str()
+                    } else {
+                        ""
+                    },
+                    updated.media_shortcut.as_str(),
                 ];
                 let old_values = [
                     settings.shortcut.clone(),
@@ -902,7 +979,10 @@ fn run_x11(
                 if next_values
                     .iter()
                     .zip(&old_values)
-                    .any(|(next, old)| *next != old)
+                    .enumerate()
+                    .any(|(index, (next, old))| {
+                        (index != 1 || cfg!(feature = "ask")) && *next != old
+                    })
                 {
                     let desired: Vec<Option<HotKey>> = next_values
                         .iter()
@@ -1090,6 +1170,25 @@ mod portal_binding_tests {
     }
 }
 
+// Registry is a newer optional host-identification interface. Older portal
+// frontends still authorize RemoteDesktop/Clipboard through their own prompts.
+async fn register_portal_host(connection: ashpd::zbus::Connection) -> Result<(), String> {
+    let app_id = APP_ID
+        .parse()
+        .map_err(|error| format!("invalid Koett application ID: {error}"))?;
+    match ashpd::register_host_app_with_connection(connection, app_id).await {
+        Ok(()) => Ok(()),
+        Err(ashpd::Error::PortalNotFound(interface))
+            if interface.as_str() == "org.freedesktop.host.portal.Registry" =>
+        {
+            Ok(())
+        }
+        Err(error) => Err(format!(
+            "could not register Koett with the desktop portal: {error}"
+        )),
+    }
+}
+
 async fn shortcut_events(
     settings: Settings,
     actions: Sender<TrayAction>,
@@ -1099,12 +1198,7 @@ async fn shortcut_events(
     let connection = ashpd::zbus::Connection::session()
         .await
         .map_err(|error| format!("could not connect to the desktop portal: {error}"))?;
-    let app_id = APP_ID
-        .parse()
-        .map_err(|error| format!("invalid Koett application ID: {error}"))?;
-    ashpd::register_host_app_with_connection(connection.clone(), app_id)
-        .await
-        .map_err(|error| format!("could not register Koett with the desktop portal: {error}"))?;
+    register_portal_host(connection.clone()).await?;
 
     let shortcuts = GlobalShortcuts::with_connection(connection.clone())
         .await
@@ -1126,6 +1220,7 @@ async fn shortcut_events(
     let mut requested = Vec::new();
     for (id, label, value) in [
         (SHORTCUT_ID, "Dictation", &settings.shortcut),
+        #[cfg(feature = "ask")]
         ("ask", "Ask", &settings.ask_shortcut),
         ("media", "Transcribe media", &settings.media_shortcut),
     ] {
@@ -1156,6 +1251,7 @@ async fn shortcut_events(
     }
     let enabled: std::collections::HashSet<String> = [
         (SHORTCUT_ID, &settings.shortcut),
+        #[cfg(feature = "ask")]
         ("ask", &settings.ask_shortcut),
         ("media", &settings.media_shortcut),
     ]
@@ -1377,6 +1473,7 @@ async fn run_wayland(
                     update_tray_status(tray, "@undo-drawing");
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
+                    delivery_started(tray);
                     let pasted = match recovery::last_text() {
                         Ok(text) => {
                             let now = paste_request
@@ -1394,14 +1491,20 @@ async fn run_wayland(
                             let before_text = output
                                 .as_ref()
                                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-                            let result = match &output {
-                                Some(output) => {
-                                    output.deliver(&text, now, settings.paste_shortcut).await
+                            let result = if let Err(error) = &image_delivery {
+                                Err(error.clone())
+                            } else {
+                                match &output {
+                                    Some(output) => {
+                                        output.deliver(&text, now, settings.paste_shortcut).await
+                                    }
+                                    None if png.is_some() => output::deliver_sketch_text(
+                                        &text,
+                                        now,
+                                        settings.paste_shortcut,
+                                    ),
+                                    None => output::deliver(&text, now, settings.paste_shortcut),
                                 }
-                                None if png.is_some() => {
-                                    output::deliver_sketch_text(&text, now, settings.paste_shortcut)
-                                }
-                                None => output::deliver(&text, now, settings.paste_shortcut),
                             };
                             let copied = if let Some(png) = &png {
                                 settle_sketch_text(output.as_ref(), before_text).await;
@@ -1413,6 +1516,7 @@ async fn run_wayland(
                         }
                         Err(error) => Err(error),
                     };
+                    report_delivery(tray, &pasted);
                     if let Some(request) = paste_request {
                         request.finish(pasted.clone());
                     }
@@ -1533,12 +1637,16 @@ async fn run_wayland(
             let before_text = output
                 .as_ref()
                 .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-            let text_delivery = match &output {
-                Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
-                None if sheet.is_some() => {
-                    output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+            let text_delivery = if let Err(error) = &image_delivery {
+                Err(error.clone())
+            } else {
+                match &output {
+                    Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
+                    None if sheet.is_some() => {
+                        output::deliver_sketch_text(&text, target, settings.paste_shortcut)
+                    }
+                    None => output::deliver(&text, target, settings.paste_shortcut),
                 }
-                None => output::deliver(&text, target, settings.paste_shortcut),
             };
             let mut delivered = image_delivery.and(text_delivery);
             if let Some(png) = &sheet {
@@ -2180,6 +2288,7 @@ impl LinuxEngine {
                         self.capture_pending = false;
                         QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
                     }
+                    #[cfg(feature = "ask")]
                     crate::assistant::update_status(&value);
                     status_changed(&format!("@ask:{}", value));
                 }
@@ -2198,6 +2307,9 @@ impl LinuxEngine {
                     self.configuration_pending = false;
                     self.stop_sent = false;
                     recording_cue(&self.status, &status);
+                    if let Ok(mut phase) = menu_preferences::PHASE.write() {
+                        *phase = menu_preferences::phase_name(&status);
+                    }
                     self.status = status;
                     self.capture_pending = false;
                     QUIT_BUSY.store(
@@ -2521,12 +2633,7 @@ async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>)
 
 impl WaylandOutput {
     async fn new(connection: ashpd::zbus::Connection) -> Result<Self, String> {
-        let app_id = APP_ID
-            .parse()
-            .map_err(|error| format!("invalid Koett application ID: {error}"))?;
-        ashpd::register_host_app_with_connection(connection.clone(), app_id)
-            .await
-            .map_err(|error| format!("could not identify Koett to the paste portal: {error}"))?;
+        register_portal_host(connection.clone()).await?;
         let remote_desktop = RemoteDesktop::with_connection(connection.clone())
             .await
             .map_err(|error| format!("automatic paste is unavailable: {error}"))?;
@@ -2643,11 +2750,10 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the contact sheet: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("target window changed".into());
-        }
-        trace.post();
-        self.press(image_paste::for_target(target)?).await?;
+        trace.prepare_paste(target)?;
+        let chord = trace.image_chord(target)?;
+        trace.post()?;
+        self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
         while self.served.load(std::sync::atomic::Ordering::Acquire) == before
             && Instant::now() < deadline
@@ -2699,10 +2805,8 @@ impl WaylandOutput {
             )
             .await
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
-        if !output::target_unchanged(target) {
-            return Err("Copied · paste into your target application".into());
-        }
-        trace.post();
+        trace.prepare_paste(target)?;
+        trace.post()?;
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result
@@ -2890,10 +2994,16 @@ fn sketch_delivery(
     }
 }
 
+fn delivery_started(tray: Option<&TrayUpdates>) {
+    if let Some(tray) = tray {
+        let _ = tray.sender.send(TrayUpdate::DeliveryStarted);
+    }
+}
 fn cache_completed(tray: Option<&TrayUpdates>, text: &str) {
     if text.trim().is_empty() {
         return;
     }
+    delivery_started(tray);
     if let Some(tray) = tray {
         let _ = tray.sender.send(TrayUpdate::Completed(text.to_owned()));
     }
@@ -2981,6 +3091,22 @@ mod delivery_tests {
     }
 
     #[test]
+    fn result_stays_pending_until_typed_delivery_outcome_including_recovery_failure() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        cache_completed(Some(&tray), "private fixture");
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryStarted)
+        ));
+        assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Completed(_))));
+        report_delivery(Some(&tray), &Err("target changed".into()));
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryFailed)
+        ));
+    }
+    #[test]
     fn delivery_recovery_is_typed_and_independent_of_storage() {
         let (sender, receiver) = mpsc::channel();
         let tray = TrayUpdates { sender };
@@ -3016,6 +3142,10 @@ mod delivery_tests {
         assert!(
             error.contains("clipboard failed") && error.contains("history and fallback failed")
         );
+        assert!(matches!(
+            receiver.recv().unwrap(),
+            TrayUpdate::DeliveryStarted
+        ));
         assert!(
             matches!(receiver.recv().unwrap(), TrayUpdate::Completed(text) if text == "Recover this exact result")
         );
@@ -3072,9 +3202,15 @@ mod menu_tests {
         };
         tray.activate(0, 0);
         assert_eq!(receiver.recv().unwrap(), TrayAction::OpenTranscripts);
+        #[cfg(not(feature = "ask"))]
+        assert!(tray.menu().iter().all(|item| match item {
+            ksni::MenuItem::Standard(item) => !item.label.contains("Ask"),
+            _ => true,
+        }));
         for (label, expected) in [
             ("Record", TrayAction::Toggle),
             ("History", TrayAction::OpenTranscripts),
+            #[cfg(feature = "ask")]
             ("Ask About Screen", TrayAction::Ask),
             ("Settings…", TrayAction::OpenSettings),
             ("Quit Koett", TrayAction::Quit),
