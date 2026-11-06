@@ -235,6 +235,13 @@ CI runs on non-draft PRs, for each push to them, and on main. Drafts run nothing
 work in a draft and mark it ready when it's about to merge. Pull requests and main use
 build caches. Releases, which use the manual run, build without them.
 
+Batch related fixes into one PR. Every push to a ready PR costs a full run, so push all of
+it, then mark it ready. A main run is skipped when the merge is exactly the tree the PR's
+green run tested and main's caches exist; it still runs if main moved, so update the
+branch before marking ready when something has merged. Docs and most of
+`CrossPlatform/evidence/` trigger nothing. A draft's push still lists a skipped run, which
+costs no minutes: GitHub has no way to filter drafts before a run is created.
+
 Keep tests and CI fast. Push to CI only when the PR is ready to merge, after
 impacted local checks.
 Continue independent work while builds run; hand back run URLs when waiting is

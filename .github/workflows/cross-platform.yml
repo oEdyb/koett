@@ -6,30 +6,110 @@ on:
     types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "CrossPlatform/**"
+      - "!CrossPlatform/BENCHMARK.md"
+      - "!CrossPlatform/evidence/**"
+      - "CrossPlatform/evidence/supply-chain-inventory/**"
+      - "CrossPlatform/evidence/blocked-604ed15/**"
+      - "CrossPlatform/evidence/gnome-capture-20261104/capture.png"
       - "Sources/Koett/Resources/History/**"
       - "Sources/Koett/Resources/AssistantRenderer/**"
+      - "Packaging/Notices/**"
+      - "LICENSE"
       - "Package.swift"
       - "Package.resolved"
+      - ".gitattributes"
       - ".github/workflows/cross-platform.yml"
   push:
     branches:
       - main
     paths:
       - "CrossPlatform/**"
+      - "!CrossPlatform/BENCHMARK.md"
+      - "!CrossPlatform/evidence/**"
+      - "CrossPlatform/evidence/supply-chain-inventory/**"
+      - "CrossPlatform/evidence/blocked-604ed15/**"
+      - "CrossPlatform/evidence/gnome-capture-20261104/capture.png"
       - "Sources/Koett/Resources/History/**"
       - "Sources/Koett/Resources/AssistantRenderer/**"
+      - "Packaging/Notices/**"
+      - "LICENSE"
       - "Package.swift"
       - "Package.resolved"
+      - ".gitattributes"
       - ".github/workflows/cross-platform.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: cross-platform-${{ github.ref }}
+  # A draft's event must not cancel a real run that started just before it.
+  group: cross-platform-${{ github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'real' }}
   cancel-in-progress: true
 
 jobs:
+  # A merge whose exact tree already passed on its pull request doesn't need a second run.
+  # Only ever runs on main, and anything short of proof leaves skip empty, which runs CI.
+  decide:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.gate.outputs.skip }}
+      keys: ${{ steps.gate.outputs.keys }}
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check whether the pull request already tested this
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Every cache main must have saved. Keep in step with the jobs below.
+          CACHE_KEYS: |
+            cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-linux-x86_64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            cargo-v2-linux-arm64-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+            native-v1-windows-2025-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            native-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            native-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/scripts/build_asr_native.py', 'CrossPlatform/scripts/shared_context_patch.py', 'CrossPlatform/scripts/shared_context.patch') }}
+            model-v1-windows-2025-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+            model-v1-ubuntu-22.04-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+            model-v1-ubuntu-22.04-arm-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
+        run: |
+          month=$(date -u +%Y%m)
+          export CACHE_KEYS="$CACHE_KEYS"$'\n'"apt-v1-x86_64-$month"$'\n'"apt-v1-arm64-$month"
+          python3 scripts/ci_main_gate.py decide
+
+  # Replaced caches would otherwise sit there for a week, counting against the 10 GB limit.
+  cache-trim:
+    needs: [decide, msrv, windows, linux]
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.decide.outputs.skip != 'true' && needs.decide.outputs.keys != '' }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    defaults:
+      run:
+        working-directory: CrossPlatform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Delete replaced caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEYS: ${{ needs.decide.outputs.keys }}
+        run: python3 scripts/ci_main_gate.py trim
+
   dependency-review:
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-22.04
@@ -41,7 +121,8 @@ jobs:
           retry-on-snapshot-warnings-timeout: 120
 
   supply-chain:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
+    needs: decide
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     defaults:
@@ -57,6 +138,8 @@ jobs:
           rustup default 1.98.0
       - name: Check workflow pins
         run: python3 scripts/test_workflow_pins.py
+      - name: Test the main-run gate
+        run: python3 scripts/test_ci_main_gate.py
       - name: Test Windows dependency gate
         run: python3 scripts/test_windows_dependencies.py
       - name: Test native build configuration
@@ -79,9 +162,22 @@ jobs:
         run: cargo install cargo-audit --version 0.22.2 --locked
       - name: Audit locked dependencies
         run: cargo audit
+      # What the main-run gate compares a merge against. Last, so it means this job passed.
+      - name: Record the tree this run tested
+        if: github.event_name == 'pull_request'
+        run: git rev-parse "HEAD^{tree}" > tested-tree.txt
+      - name: Upload the record
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tested-tree
+          path: CrossPlatform/tested-tree.txt
+          retention-days: 14
+          if-no-files-found: error
 
   msrv:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
+    needs: decide
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
@@ -93,13 +189,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The Azure mirror sometimes crawls: 16.5 MB once took 7 minutes. A monthly key picks
+      # up new versions, and anything missing from the cache still downloads.
+      - name: Pick system package cache
+        id: apt_month
+        run: echo "month=$(date -u +%Y%m)" >> "$GITHUB_OUTPUT"
+      - name: Restore system packages
+        id: apt_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs/*.deb
+          key: apt-v1-x86_64-${{ steps.apt_month.outputs.month }}
+          restore-keys: apt-v1-x86_64-
       - name: Install system packages
         run: |
+          mkdir -p ~/apt-debs/partial
+          options="-o Dir::Cache::archives=$HOME/apt-debs -o Acquire::Retries=3"
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          sudo apt-get install $options -y --no-install-recommends \
             clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
+      - name: Save system packages
+        if: github.event_name == 'push' && steps.apt_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs/*.deb
+          key: apt-v1-x86_64-${{ steps.apt_month.outputs.month }}
       - name: Install minimum Rust
         run: rustup toolchain install 1.92.0 --profile minimal
       - name: Restore Cargo cache
@@ -112,10 +229,8 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: |
-            cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
-            cargo-v1-msrv-
+          key: cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+          restore-keys: cargo-v2-msrv-
       - name: Check minimum Rust
         run: DOCS_RS=1 cargo +1.92.0 check --locked --all-targets
       - name: Drop Koett's own build output from the cache
@@ -131,10 +246,11 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-msrv-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          key: cargo-v2-msrv-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   windows:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
+    needs: decide
     runs-on: windows-2025
     timeout-minutes: 60
     env:
@@ -187,10 +303,8 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: |
-            cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
-            cargo-v1-windows-2025-
+          key: cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+          restore-keys: cargo-v2-windows-2025-
       - name: Restore speech model
         id: model_cache
         if: github.event_name != 'workflow_dispatch'
@@ -272,10 +386,11 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          key: cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   linux:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.decide.outputs.skip != 'true' }}
+    needs: decide
     strategy:
       fail-fast: false
       matrix:
@@ -300,13 +415,34 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The Azure mirror sometimes crawls: 16.5 MB once took 7 minutes. A monthly key picks
+      # up new versions, and anything missing from the cache still downloads.
+      - name: Pick system package cache
+        id: apt_month
+        run: echo "month=$(date -u +%Y%m)" >> "$GITHUB_OUTPUT"
+      - name: Restore system packages
+        id: apt_cache
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs/*.deb
+          key: apt-v1-${{ matrix.architecture }}-${{ steps.apt_month.outputs.month }}
+          restore-keys: apt-v1-${{ matrix.architecture }}-
       - name: Install system packages
         run: |
+          mkdir -p ~/apt-debs/partial
+          options="-o Dir::Cache::archives=$HOME/apt-debs -o Acquire::Retries=3"
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          sudo apt-get install $options -y --no-install-recommends \
             clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
             libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
+      - name: Save system packages
+        if: github.event_name == 'push' && steps.apt_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs/*.deb
+          key: apt-v1-${{ matrix.architecture }}-${{ steps.apt_month.outputs.month }}
       - name: Install Rust
         run: |
           rustup toolchain install 1.98.0 --profile minimal --component clippy,rustfmt
@@ -341,10 +477,9 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: |
-            cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-
-            cargo-v1-${{ matrix.runner }}-
+          key: cargo-v2-linux-${{ matrix.architecture }}-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
+          # By architecture: a runner name would also match ubuntu-22.04-arm's caches.
+          restore-keys: cargo-v2-linux-${{ matrix.architecture }}-
       - name: Restore speech model
         id: model_cache
         if: github.event_name != 'workflow_dispatch'
@@ -423,4 +558,4 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             CrossPlatform/target
-          key: cargo-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/Cargo.lock') }}-${{ github.sha }}
+          key: cargo-v2-linux-${{ matrix.architecture }}-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
