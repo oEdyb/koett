@@ -28,7 +28,8 @@ Executable SHA256: `1e09ba334a4290f617e0236e41d79270a791386aec19a54cd3beb0098690
 
 The guest browser accessibility tree was warmed before these privacy checks.
 A stale restore-pages bubble was dismissed; an earlier cold-tree pin supplied
-only a window title, so browser-tree readiness remains a separate issue.
+only a window title. [PR #132’s document fallback](macos-browser-pin-document-verification.md)
+subsequently passed cold-start URL acceptance; richer web fields still need the page tree.
 Other browsers, translated private-mode markers, Chrome channels besides stable,
 physical input and mixed-display hardware are untested. Use explicit image-only
 pins for those private windows. No Automation permission, installed-app change,
