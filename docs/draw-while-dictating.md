@@ -454,7 +454,7 @@ and a late capture result cannot restore it. Undo can be repeated until empty.
 It is disabled after recording ends; cancelled/new recordings cannot inherit it.
 
 `koett drawing-status` reports active/count/captured_count/can_undo without image
-or context content. `koett undo-drawing` performs the same action, returning
+or context content. `koett undo` or `koett undo-drawing` performs the same action, returning
 `drawing_removed` or a `no_drawing` error with exit status 1. An expired queued
 request makes no change. No global Ctrl+Z binding is added: ordinary editor undo
 stays with the editor. Existing focus-mode Ctrl+Z edits only current uncaptured

@@ -88,6 +88,16 @@ pub(super) fn startup_token() -> Option<String> {
         .map(|id| id.to_string())
 }
 
+/// The Mac's `history` and `dictionary` commands. These are bare requests, so a
+/// Wayland compositor may refuse to raise a window that is already open.
+fn window_request(command: &[u8]) -> Option<&'static str> {
+    match command {
+        b"history" => Some("@show"),
+        b"dictionary" => Some("@words"),
+        _ => None,
+    }
+}
+
 fn read_request(stream: &mut UnixStream) -> Option<Vec<u8>> {
     let mut bytes = Vec::new();
     Read::by_ref(stream)
@@ -148,12 +158,20 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
             }
-            if bytes == b"drawing-status" || bytes == b"undo-drawing" || bytes == b"draw-lock" {
+            if let Some(window) = window_request(&bytes) {
+                let _ = ui.send(super::window::Update::Status(window.into()));
+                let _ = stream.write_all(b"{\"ok\":true,\"status\":\"window_requested\"}");
+                continue;
+            }
+            if matches!(
+                bytes.as_slice(),
+                b"drawing-status" | b"undo-drawing" | b"undo" | b"draw-lock"
+            ) {
                 let (tx, rx) = std::sync::mpsc::channel();
                 let expires = std::time::Instant::now() + std::time::Duration::from_secs(2);
                 let _ = ui.send(super::window::Update::DrawingCommand(
                     match bytes.as_slice() {
-                        b"undo-drawing" => super::window::DrawingRequest::Undo,
+                        b"undo-drawing" | b"undo" => super::window::DrawingRequest::Undo,
                         b"draw-lock" => super::window::DrawingRequest::ToggleLock,
                         _ => super::window::DrawingRequest::Status,
                     },
@@ -389,6 +407,14 @@ pub fn request(command: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn history_and_dictionary_open_their_windows_and_nothing_else_does() {
+        assert_eq!(window_request(b"history"), Some("@show"));
+        assert_eq!(window_request(b"dictionary"), Some("@words"));
+        assert_eq!(window_request(b"undo"), None);
+        assert_eq!(window_request(b"history "), None);
+    }
 
     #[test]
     fn recording_commands_keep_legacy_wire_bytes_with_activation_environment() {
