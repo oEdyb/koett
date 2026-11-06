@@ -3,14 +3,16 @@
 This optional GNOME Shell 46/51 extension supplies a fresh focused-window identity
 to Koett's existing guarded paste path and per-app image chord selection.
 The identity query never activates another window, changes focus or reads
-the clipboard. The recording pill is described below; drawing/input surfaces,
-pointer context and capture integration remain open.
+the clipboard. The recording pill and drawing are described below.
 
 The identity endpoint returns bounded metadata on the Shell session bus.
 It compares the caller's Unix PID with the current owner of
 `com.olledyberg.Koett`, checks that owner again after resolving credentials, and
 returns no target during lock, overview or a Shell modal. Own windows and dock/
 desktop windows are excluded. Its reply contains no title, text, image or screenshot.
+The drawing calls use the same owner check. `WindowAt` returns the window title and
+app under a pin, `Capture` returns one monitor as a PNG held in memory, and `Input`
+sets whether Koett's own drawing surfaces take the pointer.
 The Rust caller has a 250 ms deadline and a bounded worker queue; failed/busy/late
 queries never reuse cached focus. Window IDs are scoped to the unique Shell bus
 owner and mapped to tokens that are never recycled during the app process.
@@ -26,8 +28,8 @@ on GNOME Wayland and enable **Koett** in Extensions, or run:
 gnome-extensions enable koett@olledyberg.com
 ```
 
-Shell 46 supplies focus identity; the pill requires newer Mutter window APIs and
-is disabled when those APIs are missing. Shell 51 supplies both. Other Shell
+Shell 46 supplies focus identity; the pill and drawing require newer Mutter window
+APIs and are disabled when those APIs are missing. Shell 51 supplies all of them. Other Shell
 versions need their own verification.
 No installer enables the extension automatically. Without it, Koett retains
 Copy/History/manual paste and does not guess the original target. Disabling the
