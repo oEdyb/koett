@@ -1,7 +1,9 @@
+Latest CI-race and empty-result cleanup correction: [parallel acceptance](parallel-and-empty/README.md).
+
 # Windows review acceptance
 
 Review base: PR #159 at `935e21f`. The supply-chain correction is local commit
-`c6c770d`. Current local unsigned debug GUI SHA-256:
+`c6c770d`. Pre-CI integration GUI SHA-256:
 `ab0a275ccbd5b77e723704c606b70b84b960397036826b20f09d82307099166f`.
 `final-build-receipt.json` records every Rust source and executable hash. Prior
 GUI `27e7976` covers Quit, injected ASR recovery and preview management; `69253adf`

@@ -2116,6 +2116,7 @@ impl WindowsApp {
             return;
         }
         if text.trim().is_empty() {
+            self.discard_drawing();
             self.status = AppStatus::Ready;
             self.capture_pending = false;
             self.update_tray();
@@ -3013,7 +3014,18 @@ mod tests {
         use super::*;
         let mut app = review_app();
         app.status = AppStatus::Transcribing;
+        app.draw_locked = true;
+        app.draw_lock_pending = true;
+        // Use a private, otherwise unused chord rather than capturing Escape
+        // from another application while this regression runs.
+        unsafe { RegisterHotKey(None, 3, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, 0x7a) }.unwrap();
         app.deliver("fixture", "", None, &[]);
+        assert!(
+            unsafe { UnregisterHotKey(None, 3) }.is_err(),
+            "empty completion must release its cancel hotkey"
+        );
+        assert!(!app.draw_locked);
+        assert!(!app.draw_lock_pending);
         assert_eq!(app.status, AppStatus::Ready);
         assert!(!app.dictation_in_flight());
         assert_eq!(app.last_transcript, "Previous transcript");

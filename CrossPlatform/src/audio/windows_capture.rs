@@ -418,6 +418,7 @@ mod tests {
     use super::*;
     #[test]
     fn standalone_capture_keeps_audio_when_collector_exit_times_out() {
+        let _test_recording = preview::TEST_RECORDING.lock().unwrap();
         let captured = vec![0.25; 16_000];
         let (release, wait) = mpsc::channel();
         let worker = thread::spawn(move || {
