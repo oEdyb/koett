@@ -241,6 +241,15 @@ throwing away the whole dictation is the costliest wrong guess. Ctrl+Z also reac
 focused app, since typing must keep working and sampled keys can't be consumed, so
 right-click is the undo that touches nothing else.
 
+## 2026-11-05: Linux cues are synthesized and can be turned off
+
+Linux plays a high tick when capture starts and a low tone when it stops, at the same
+moments as the Mac, and stays silent on cancel. The Mac uses macOS system sounds, which
+Koett can not ship, so the Linux cues are generated in code with no audio files. Unlike
+the Mac there is a Settings switch, on by default, because Olle films with Koett and a
+sound in a take should be his choice. In a lab where the microphone hears the speaker
+directly, the transcript was identical with the cues on and off.
+
 ## 2026-11-05: recordings stop at a limit you choose, 60 minutes by default
 
 Olle asked why there was a 10-minute limit; there was no reason beyond bounding memory.

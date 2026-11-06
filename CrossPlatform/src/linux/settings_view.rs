@@ -439,6 +439,9 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     pause_media.set_use_underline(true);
     pause_media.set_active(settings.pause_media);
     recording.append(&pause_media);
+    let recording_sounds = gtk::CheckButton::with_label("Play start and stop sounds");
+    recording_sounds.set_active(settings.recording_sounds);
+    recording.append(&recording_sounds);
     let drawing = group(&draw_page, "Drawing");
     let image_rules = gtk::TextView::new();
     image_rules.set_monospace(true);
@@ -667,6 +670,7 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
                 }
             };
             updated.pause_media = pause_media.is_active();
+            updated.recording_sounds = recording_sounds.is_active();
             updated.draw_while_dictating = draw.is_active();
             updated.draw_may_take_keyboard = may_take.is_active();
             updated.pin_selected_text = pin_selection.is_active();
