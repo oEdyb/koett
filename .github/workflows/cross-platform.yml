@@ -8,6 +8,8 @@ on:
       - "CrossPlatform/**"
       - "Sources/Koett/Resources/History/**"
       - "Sources/Koett/Resources/AssistantRenderer/**"
+      - "Package.swift"
+      - "Package.resolved"
       - ".github/workflows/cross-platform.yml"
   push:
     branches:
@@ -16,6 +18,8 @@ on:
       - "CrossPlatform/**"
       - "Sources/Koett/Resources/History/**"
       - "Sources/Koett/Resources/AssistantRenderer/**"
+      - "Package.swift"
+      - "Package.resolved"
       - ".github/workflows/cross-platform.yml"
 
 permissions:
