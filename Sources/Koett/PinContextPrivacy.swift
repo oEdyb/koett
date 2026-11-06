@@ -6,8 +6,12 @@ enum PinContextPrivacy {
         "com.google.Chrome.canary", "org.chromium.Chromium",
     ]
 
+    static func isChromiumBrowser(_ bundleID: String?) -> Bool {
+        bundleID.map(chromiumBrowsers.contains) ?? false
+    }
+
     static func omitsPageDetails(bundleID: String?, windowTitle: String?) -> Bool {
-        guard let bundleID, chromiumBrowsers.contains(bundleID) else { return false }
+        guard isChromiumBrowser(bundleID) else { return false }
         guard let windowTitle, !windowTitle.isEmpty else { return true }
         // Chromium's accessible-window formatter appends this after the browser
         // name for an Incognito profile; page text is not a privacy signal.

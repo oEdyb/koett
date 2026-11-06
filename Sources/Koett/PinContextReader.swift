@@ -30,14 +30,14 @@ enum PinContextReader {
         let application = NSRunningApplication(processIdentifier: pid)
         var context = PinContext(app: application?.localizedName)
         let deadline = ProcessInfo.processInfo.systemUptime + readSeconds
-        var hit = describe(app: app, at: point, deadline: deadline, into: &context)
+        var hit = describe(app: app, bundleID: application?.bundleIdentifier, at: point, deadline: deadline, into: &context)
         // Chromium and Electron build their web tree only once an assistive
         // app asks for it, and asynchronously; native apps reject the attribute.
         if hit.webArea == nil,
            AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue) == .success {
             for _ in 0..<treeBuildAttempts where hit.webArea == nil && !expired(deadline) {
                 usleep(treeBuildPause)
-                hit = describe(app: app, at: point, deadline: deadline, into: &context)
+                hit = describe(app: app, bundleID: application?.bundleIdentifier, at: point, deadline: deadline, into: &context)
             }
         }
         let windowTitle = hit.window.flatMap { string($0, kAXTitleAttribute) }
@@ -62,13 +62,14 @@ enum PinContextReader {
     /// and its ancestors. Returns the outermost web area: an iframe under the
     /// click is also a web area, but the pin should name the page in the tab.
     private static func describe(
-        app: AXUIElement, at point: CGPoint, deadline: TimeInterval, into context: inout PinContext
+        app: AXUIElement, bundleID: String?, at point: CGPoint, deadline: TimeInterval, into context: inout PinContext
     ) -> (webArea: AXUIElement?, window: AXUIElement?) {
         var hit: AXUIElement?
         guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &hit) == .success else {
             return (nil, nil)
         }
         var webArea: AXUIElement?
+        var child: AXUIElement?
         var element = hit
         for _ in 0..<parentDepth where !expired(deadline) {
             guard let current = element else { break }
@@ -84,11 +85,18 @@ enum PinContextReader {
                 context.url = url(current) ?? context.url
                 context.title = string(current, kAXTitleAttribute) ?? context.title
             case "AXWindow":
+                // Chromium exposes its document URL on the direct window child
+                // before the renderer web area is ready. Nested groups do not qualify.
+                if context.url == nil, PinContextPrivacy.isChromiumBrowser(bundleID),
+                   let child, string(child, kAXRoleAttribute) == "AXGroup" {
+                    context.url = url(child)
+                }
                 if context.title == nil { context.title = string(current, kAXTitleAttribute) }
                 return (webArea, current)
             default:
                 break
             }
+            child = current
             element = self.element(attribute(current, kAXParentAttribute))
         }
         return (webArea, nil)
