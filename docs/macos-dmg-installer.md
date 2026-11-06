@@ -112,11 +112,24 @@ from source115d6907. This isolates packaging changes without another product bui
 or broader acceptance repeat. The real installed host Koett and frozen ZIP were
 not changed. No release, tag, GitHub draft/asset or live feed was created or edited.
 
-**Pending:** an Apple-only submission of the new outer DMG requires clarification
-of the task's simultaneous “notarized” and “no outside repo submission” constraints.
-The local candidate is intentionally `distributable=false`; the input app's ticket
-is not misrepresented as a DMG ticket. No new DMG notarization is claimed yet.
-First-launch permission denials, a pristine TCC database, Intel, managed/non-admin
+**PASS:** after explicit Apple-only authorization, the exact DMG was accepted by
+Apple (`50f1ed70-a67a-47d3-937c-e7c6d19c976d`), stapled and validated. Strict image
+codesign, `hdiutil verify`, stapler and Gatekeeper (`Notarized Developer ID`) pass.
+Final SHA256: `c4dd4ba5c3dbe33e115c2166ef0f2044e36bfadc8dd9b274487ace1f01909834`.
+Private artifact: `/Users/olle/dev/koett-release-artifacts/v0.3.1/dmg-installer/Koett-0.3.1-macOS-arm64.dmg`.
+
+The final DMG received a download quarantine marker inside the guest. Image
+Gatekeeper/signature/ticket checks passed there, then another actual Finder drag
+installed the exact payload. The normal “downloaded from the Internet” Open
+confirmation said Apple checked it for malicious software. Open was clicked in
+the guest; the installed app reached `phase=ready`. Its app signature/ticket and
+Gatekeeper assessment passed, UID501/mode0755 remained correct. The previous guest
+app/data/preferences were restored and the guest stopped. The final check's source,
+artifact hash, exact driver and Open-confirmation screenshot are retained.
+
+This notarized **fixture** proves the packaging path, not a current-main release
+freeze or release approval. Rebuild the real release app from the agreed final
+source before making its public DMG. First-launch permission denials, a pristine TCC database, Intel, managed/non-admin
 install and a live Sparkle upgrade were not retested by this packaging change.
 
 Exact driver, receipts, hashes and inspected Finder screenshot:

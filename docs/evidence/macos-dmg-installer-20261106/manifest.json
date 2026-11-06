@@ -1,7 +1,14 @@
 {
+  "final-guest-receipt.json": "27181891fc3bfae553ce230e85f6d2329ec1c1fbf4c4a230936c51785c61c772",
   "finder.png": "155304585bf67cf3ae8a051c4051f3435324f3dc778d8ec67a90cfabece9bbb8",
+  "gatekeeper-open-confirmation.png": "2213e376b24db667101746988ec1d11d1c66a53da02c9a73ac2b61984bf56a2e",
   "targeted-tests.log": "854c09ce4739b9d0f90118790ee727c0b1a011dd372ab0bf3f02a6edd452deb2",
   "guest-install.py": "b4d1ac58a20f7b28b07f22f5abb0c287117af2f17ff194c24b1fb0def20ccbcf",
+  "notarized-dmg-receipt.json": "a2e3a4298c58dc07dfaec9da9e0878ef6081de3b7e3721b5e4761708476f13b2",
+  "guest-final.py": "9c49c949a591f2ee80f4223f2695abd0687fe4ddce8e7743432f8c74202d993c",
+  "guest-open-confirmation.applescript": "5bbd6ab9a75847310226e1bc3ec395483be10a6a51a45f8d4f77dc0e539465aa",
+  "packager-provenance.json": "9cc1a56992faa47e6a211eb5ffd6d3fef8f96f3c061c3f2cc5258f3d1ac698f4",
+  "notary-submission.json": "2dc575f262e7513de78a23da5634036a96f760a407c5f3eeaea8bb89ef0e4364",
   "candidate-receipt.json": "4a5c3f88f4cd174f240785bf4f4271a32f679a2c923345366da453123bd71db7",
   "guest-install-receipt.json": "1cae0ff0d18d4a6174b08a0aa7c22c728aa78dd0155dbbe60a9e81f6bd05de92"
 }

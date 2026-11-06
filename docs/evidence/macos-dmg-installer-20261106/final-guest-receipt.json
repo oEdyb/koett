@@ -1,0 +1,42 @@
+{
+  "dmgSHA256": "c4dd4ba5c3dbe33e115c2166ef0f2044e36bfadc8dd9b274487ace1f01909834",
+  "quarantined": true,
+  "gatekeeper": "/Users/admin/dmg-audit/Koett-0.3.1-macOS-arm64.dmg: accepted\nsource=Notarized Developer ID\n",
+  "installedBy": "actual Finder mouse drag",
+  "uid": 501,
+  "mode": "0o755",
+  "status": {
+    "model": "parakeet",
+    "updates": {
+      "preparing": false,
+      "installing": false,
+      "build": "5101",
+      "pending": false,
+      "enabled": false
+    },
+    "phase": "ready",
+    "ok": true,
+    "pasteAccessGranted": true,
+    "drawLocked": false
+  },
+  "info": {
+    "CFBundleDisplayName": "Koett",
+    "CFBundleExecutable": "koett",
+    "CFBundleIdentifier": "com.olledyberg.Koett",
+    "CFBundleName": "Koett",
+    "CFBundlePackageType": "APPL",
+    "CFBundleShortVersionString": "0.3.1",
+    "CFBundleVersion": "5101",
+    "KoettSourceCommit": "7ef87560115fcf10ab5fb616973dbe2ccc49cdb3",
+    "LSMinimumSystemVersion": "15.0",
+    "LSUIElement": true,
+    "NSAppleEventsUsageDescription": "Koett reads the current browser tab URL only when you start media transcription.",
+    "NSMicrophoneUsageDescription": "Koett uses the microphone for dictation, input level previews, and permission checks.",
+    "NSScreenCaptureUsageDescription": "Koett captures the screen when you draw or pin.",
+    "SUAutomaticallyUpdate": true,
+    "SUEnableAutomaticChecks": true,
+    "SUPublicEDKey": "FYJa1mXv6UJgVIWclOoAWO/78u2d8Wlfncx/q36v1Pw=",
+    "SUVerifyUpdateBeforeExtraction": true
+  },
+  "binarySHA256": "2b1c023887699ccfb52659a0ebf024fa325ab622d8537bc8c4461c1509c84f97"
+}
