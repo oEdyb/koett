@@ -231,19 +231,33 @@ plutil -lint Packaging/Info.plist
 plutil -lint Packaging/Koett.entitlements
 ```
 
-CI runs on non-draft PRs, for each push to them, and on main. Drafts run nothing, so
-work in a draft and mark it ready when it's about to merge. Pull requests and main use
-build caches. Releases, which use the manual run, build without them.
+CI is manual only. Nothing runs on a PR, a push or main, so nothing has tested a branch
+until someone runs it. Run it once per batch of PRs, not per PR, and once before a release:
 
-Batch related fixes into one PR. Every push to a ready PR costs a full run, so push all of
-it, then mark it ready. A main run is skipped when the merge is exactly the tree the PR's
-green run tested and main's caches exist; it still runs if main moved, so update the
-branch before marking ready when something has merged. Docs and most of
-`CrossPlatform/evidence/` trigger nothing. A draft's push still lists a skipped run, which
-costs no minutes: GitHub has no way to filter drafts before a run is created.
+1. Update the branch onto current main. A run tests the branch, not the merge result.
+2. `gh workflow run cross-platform.yml --ref BRANCH`
+3. Confirm it really ran, on this commit, with every job passing:
+   `gh run list --workflow cross-platform.yml --branch BRANCH --limit 1` for the id, then
+   `gh run view ID --json headSha,conclusion,jobs`. `headSha` must be the branch head, and
+   every job `success`. `skipped` is not a pass, except `cache-trim` on a branch. GitHub
+   shows nothing on the PR and doesn't block merging, so this check is the only gate.
+4. Merge. If main moved since step 1, go back to step 1.
 
-Keep tests and CI fast. Push to CI only when the PR is ready to merge, after
-impacted local checks.
+Batch related fixes into one branch. An outside PR's branch must be pushed here before it
+can be run, since a run can't target a fork.
+
+Runs on a branch restore main's caches but can't save any, and only a run on `main` saves
+them. After merging a change to `Cargo.lock`, `Cargo.toml`, `rust-toolchain.toml`,
+`.cargo/config.toml`, the native build scripts, `src/model.rs` or `src/paths.rs`, run
+`gh workflow run cross-platform.yml --ref main` once to seed them. Its other job is
+`cache-trim`, which deletes what those replaced. GitHub also drops a cache unused for 7 days, so
+if `gh cache list` is missing `cargo-v2-*` after a quiet spell, seed before the batch run: a
+missing cache only costs a slower run.
+
+Release builds use `-f clean=true`, which restores and saves no caches.
+
+Keep tests and CI fast. Run CI only when a batch is ready to merge, after impacted
+local checks.
 Continue independent work while builds run; hand back run URLs when waiting is
 necessary. Never start benchmark cohorts. If a required number is missing, take
 one small targeted measurement.
