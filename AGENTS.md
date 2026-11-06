@@ -231,10 +231,9 @@ plutil -lint Packaging/Info.plist
 plutil -lint Packaging/Koett.entitlements
 ```
 
-CI runs when a PR is marked ready and on main, not on draft PRs or other pushes.
-To run it on a PR already marked ready, run `gh pr ready --undo` and then
-`gh pr ready`. Pull requests and main use build caches. Releases, which use the
-manual run, build without them.
+CI runs on non-draft PRs, for each push to them, and on main. Drafts run nothing, so
+work in a draft and mark it ready when it's about to merge. Pull requests and main use
+build caches. Releases, which use the manual run, build without them.
 
 Keep tests and CI fast. Push to CI only when the PR is ready to merge, after
 impacted local checks.
