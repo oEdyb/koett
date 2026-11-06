@@ -77,7 +77,7 @@ the same Developer ID identity before using the existing item's access list:
 ```sh
 swiftc scripts/create-macos-update-key.swift -o /PRIVATE/koett-update-key
 codesign --force --options runtime --identifier com.olledyberg.Koett.UpdateSigningKey \
-  --sign 'Developer ID Application: Olle Dyberg (LF8KF3G42Q)' /PRIVATE/koett-update-key
+  --sign 'Developer ID Application: Dyberg & Co AB (LF8KF3G42Q)' /PRIVATE/koett-update-key
 /PRIVATE/koett-update-key --sign /PRIVATE/Koett.zip
 ```
 
