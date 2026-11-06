@@ -13,6 +13,10 @@ on:
         description: Build installers and run packaging checks; omit unchanged Rust suites and inference probes
         type: boolean
         default: false
+      windows_only:
+        description: Recheck only Windows; use after an unchanged Linux batch already passed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -25,7 +29,7 @@ jobs:
   # Replaced caches would otherwise sit there for a week, counting against the 10 GB limit.
   cache-trim:
     needs: [msrv, windows, linux]
-    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && !inputs.clean }}
+    if: ${{ !inputs.windows_only && !cancelled() && github.ref == 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     permissions:
@@ -60,7 +64,7 @@ jobs:
 
   dependency-review:
     # Compares the branch with main, so there's nothing to compare on main itself.
-    if: ${{ github.ref != 'refs/heads/main' && !inputs.clean }}
+    if: ${{ !inputs.windows_only && github.ref != 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
@@ -72,6 +76,7 @@ jobs:
           retry-on-snapshot-warnings-timeout: 120
 
   supply-chain:
+    if: ${{ !inputs.windows_only }}
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     defaults:
@@ -113,6 +118,7 @@ jobs:
         run: cargo audit
 
   msrv:
+    if: ${{ !inputs.windows_only }}
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
@@ -349,6 +355,7 @@ jobs:
           key: cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   linux:
+    if: ${{ !inputs.windows_only }}
     strategy:
       fail-fast: false
       matrix:
