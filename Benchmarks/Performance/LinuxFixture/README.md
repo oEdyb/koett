@@ -1,5 +1,7 @@
 # Private Linux workflow fixture
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](../../../docs/evidence-archive.md) for private reproduction.
+
 These are the executed audit scripts, not an app installer or a host-desktop test.
 They require a private `agent-lab` KWin session, nested niri, Electron 43,
 PipeWire/PulseAudio tools, wl-clipboard, a grabbed audit keyboard and copied public

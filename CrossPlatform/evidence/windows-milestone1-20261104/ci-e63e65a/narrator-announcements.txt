@@ -1,7 +1,0 @@
-Transcript selected.
-T. Coet Export E63.txt.
-Coet History Window, Export, Button.
-Coet Settings Window, System Tray Overflow Window.
-Pane, Narrator, Button, 1 of 3.
-Coet Window, Context, Menu.
-Coet Settings Window, Save, Button.

@@ -1,5 +1,7 @@
 # Windows reliable dictation — M2
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 This work starts from main after PR #52 merged as
 fcaffcc9893c1d9bbf5d1e2ed5af3cc1b4f115b9. M1's four review fixes and ordinary
 Paste/changed-target regression passed on the real guest; see its final receipt.
@@ -9,12 +11,12 @@ M2 software gates passed in the private Windows guest; physical hardware limits 
 
 The 1fa2169 artifact passed real Windows WAV-fed hold, pause/resume/cancel,
 exact-once recognized text in Notepad/Edge/Windows Terminal, foreground-switch
-recovery and read-only-history fallback. [Runtime evidence](../CrossPlatform/evidence/windows-milestone2/ci-1fa2169/README.md)
+recovery and read-only-history fallback. [Runtime evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone2/ci-1fa2169/README.md)
 records exact text, paste events, history counts and HWND/PID.
 
 The 03a9041 artifact passed the elevated-target and combined-failure retests,
 plus storage fallback exhaustion with an honest Not saved label and Copy/Paste.
-[Final recovery retest](../CrossPlatform/evidence/windows-milestone2/ci-03a9041/README.md)
+[Final recovery retest](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone2/ci-03a9041/README.md)
 records the results and readiness audit. M2 remains draft because software fault
 gates (including ASR failure/retention and busy storage) remain unverified; these
 are not hardware blockers. M3 starts after those gates close.
@@ -110,4 +112,4 @@ local guest stays off while other builds consume the host's headroom.
 
 ## Software gate completion
 
-[Final software receipts](../CrossPlatform/evidence/windows-milestone2/ci-72ca2ae/README.md) close ASR retention, busy storage, hotkey conflict, desktop silence/short/no samples, destroyed target and clipboard contention. Earlier draft/readiness paragraphs above are historical checkpoints. PR #78 is ready for review; hardware limitations remain as listed. No big benchmarks were run. M3 continues on a branch based on #78.
+[Final software receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone2/ci-72ca2ae/README.md) close ASR retention, busy storage, hotkey conflict, desktop silence/short/no samples, destroyed target and clipboard contention. Earlier draft/readiness paragraphs above are historical checkpoints. PR #78 is ready for review; hardware limitations remain as listed. No big benchmarks were run. M3 continues on a branch based on #78.

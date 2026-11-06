@@ -1,5 +1,7 @@
 # Linux parity inventory — current implementation
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Scope: native Linux feature parity and compact controls on `feat/linux-ui-history`.
 This is **not** a public Linux release or complete platform acceptance. A verified
 current-PC package is installed and running in the background; live preferences
@@ -271,7 +273,7 @@ Experimental Nemotron English 0.6B / 560 ms is selectable and persistent. It use
 one warm CPU online recognizer, fresh per-recording state and bounded capture
 submission; Parakeet v2 stays warm for ASR recovery and offline Ask/media. Failed
 ASR retains a collision-safe private WAV and exposes Failed recordings. See
-[implementation, source/license boundaries, exact checks and remaining acceptance](../CrossPlatform/evidence/parity-nemotron-20261030/README.md).
+[implementation, source/license boundaries, exact checks and remaining acceptance](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/parity-nemotron-20261030/README.md).
 
 Implemented/proven: verified official archive/per-file manifest, actual native
 inference, repeated CPAL captures, once-only history, no success WAV, long/short/
@@ -380,7 +382,7 @@ live rebinding and Ask/media dispatch; native Settings reflects assigned keys li
 Independent review fixes also preserve legacy custom bindings, held releases during
 editing, and truthful X11 registration errors. Bounded grabbed-key forwarding and
 capture ownership allow native swaps without accidental recording. See
-[parent evidence](../CrossPlatform/evidence/parity-shortcuts-parent-20261030/README.md)
+[parent evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/parity-shortcuts-parent-20261030/README.md)
 and the focused X11 evidence. The final full integration still owns protocol fault
 coverage. The retained GTK crash was subsequently reproduced without Koett and
 verified against the upstream patch; see the GTK integration section. Media
@@ -388,7 +390,7 @@ compatibility, packaging and final appearance acceptance remain open. No install
 
 ### Stateful menus increment — 2026-10-30
 
-GTK/GIO and ksni now expose native checked mode, microphone, formatting and login preferences, desired model versus active identity, grouped recovery, About/version and shared JSON controller actions. Model choices open existing Models UI without silent downloads. See [focused receipt](../CrossPlatform/evidence/parity-stateful-menus-20261030/REPORT.md) for exact commands, native evidence and open limits. Private pointer/keyboard, persistence/save failure, private CPAL next capture, busy rejection and real tray D-Bus actions were exercised. This is not visual approval or whole-port parity.
+GTK/GIO and ksni now expose native checked mode, microphone, formatting and login preferences, desired model versus active identity, grouped recovery, About/version and shared JSON controller actions. Model choices open existing Models UI without silent downloads. See [focused receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/parity-stateful-menus-20261030/REPORT.md) for exact commands, native evidence and open limits. Private pointer/keyboard, persistence/save failure, private CPAL next capture, busy rejection and real tray D-Bus actions were exercised. This is not visual approval or whole-port parity.
 
 The linked build and newest formatting tests were initially blocked by a missing
 native library cache. Verified ASR-only ABI0 artifacts have been recovered; final

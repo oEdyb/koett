@@ -1,5 +1,7 @@
 # KWin paste target identity
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Linux now checks the original window on KWin as well as niri/X11. It reads
 KWin's active window, UUID, PID and exact resourceClass through the existing
 sender-authenticated, read-only scripting adapter. It never selects, raises or

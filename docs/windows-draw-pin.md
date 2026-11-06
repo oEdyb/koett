@@ -1,5 +1,7 @@
 # Windows M4 — draw and pin
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 M4's software gates passed in the isolated Windows 11 guest. PR #119 is based
 on main 6ce37b8 (guest-tested port base d7c8ec4); Windows is not a released platform. Distribution, physical
 hardware and the remaining parity milestones are separate gates.
@@ -71,31 +73,31 @@ arithmetic do not establish long-session or physical-device support.
 ## Verification
 
 Current receipts, screenshots and foreground HWND/PID are under
-[windows-milestone4](../CrossPlatform/evidence/windows-milestone4/):
+[windows-milestone4](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4):
 
-- [5b7b252 final](../CrossPlatform/evidence/windows-milestone4/local-5b7b252/README.md):
+- [5b7b252 final](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-5b7b252/README.md):
   six final timing/paste-guard tests, all 15 gesture fixtures and video-time parser;
   actual CPU WAV pin capture with Reduced Motion, physical pill Stop while Shift
   is held, one image/text delivery into the original Edge window, automatic
   four-format restoration, and identical static Transcribing crops 400 ms apart.
-- [9bb4c97](../CrossPlatform/evidence/windows-milestone4/local-9bb4c97/README.md),
+- [9bb4c97](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-9bb4c97/README.md),
   whose tested Rust source matches rebased commit ec90537 (receipt records 5707ac9): 20 native tests; default/named
   opening retries, enumeration/preview faults and normal preview; native UIA
   choices and physical Escape; InPrivate omission, tray recovery/refusal,
   newer-copy protection, cancel/repeat, native recording-limit Save,
   100/150/200%, light/dark and Narrator keyboard navigation.
-- [25a8f3b](../CrossPlatform/evidence/windows-milestone4/local-25a8f3b/README.md):
+- [25a8f3b](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-25a8f3b/README.md):
   virtual display detach/Extend, finished-frame preservation and unfinished-ink
   discard; own-window omission and explicit native editor/terminal/YouTube
   unavailable fields. It also records the private/tray failures fixed later.
-- [8b0e469](../CrossPlatform/evidence/windows-milestone4/local-8b0e469/README.md):
+- [8b0e469](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-8b0e469/README.md):
   portrait / negative-coordinate 168/96-DPI ink, lock/undo, native Edge rich paste
   (no synthetic receiver insertion), raw History, silence/image-only behavior,
   pause/cancel/other-key guards and the image-stage newer-copy race.
-- Earlier [foundation](../CrossPlatform/evidence/windows-milestone4/ci-03a7d0a/README.md),
-  [dadf83b](../CrossPlatform/evidence/windows-milestone4/local-dadf83b/README.md),
-  [bee18d5](../CrossPlatform/evidence/windows-milestone4/local-bee18d5/README.md) and
-  [5eb985a](../CrossPlatform/evidence/windows-milestone4/local-5eb985a/README.md)
+- Earlier [foundation](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/ci-03a7d0a/README.md),
+  [dadf83b](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-dadf83b/README.md),
+  [bee18d5](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-bee18d5/README.md) and
+  [5eb985a](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone4/local-5eb985a/README.md)
   receipts retain the initial capture, exclusion and recovery checks.
 
 In total, 42 distinct targeted tests ran on real Windows across the final two

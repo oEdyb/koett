@@ -1,5 +1,7 @@
 # Mac update guest verification — 2026-11-06
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Tested runtime source: **7b7e590ff76b4995602645d56ab2c82c113f3ae9**.
 Later documentation/evidence commits do not change this tested product code.
 
@@ -26,7 +28,7 @@ Two separately Developer-ID-signed local app fixtures, versions **0.3.1/4010** a
 **0.3.1/4011**, used the same release executable/source with distinct signed bundle
 metadata. Their final signed executable hashes differ because their app signatures
 differ. Fixture hashes, signed ZIP hash, public signature, exact driver/collector
-sources and receipts are in [the evidence directory](evidence/macos-updates-20261106/manifest.json).
+sources and receipts are in [the evidence directory](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-updates-20261106/manifest.json).
 Local ZIPs/apps remain outside git under the artifact root in that manifest.
 They were not notarized or published release assets.
 
@@ -102,6 +104,6 @@ The fixed test app also passed stapling, stapler validation and Gatekeeper
 This is a private 0.3.1/5101 test app from runtime source `7ef8756`, not a released
 ZIP or a final 0.3.1 freeze. The installer packaging helper is corrected; no feed
 was enabled. The build/sign/submit driver and original Apple logs are in
-[evidence](evidence/macos-sparkle-signing-20261106/fixed-notary-log.json).
+[evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-sparkle-signing-20261106/fixed-notary-log.json).
 A shell regression test covers nested signing order, Downloader entitlements,
 timestamps and the ad-hoc development fallback. No Swift code changed in this fix.

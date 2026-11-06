@@ -1,5 +1,7 @@
 # Video transcripts for agents
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 ```sh
 koett-transcribe "https://www.instagram.com/p/DWfipnmjYjo/"
 koett-transcribe "VIDEO_URL" --text
@@ -60,7 +62,7 @@ wrapper defaults. Output is the existing one-element engine JSON array. Errors
 go to stderr with a nonzero exit; the input path cannot be the output path.
 The engine does not load app settings or write dictation History.
 
-[Real Windows offline proof](../CrossPlatform/evidence/windows-milestone5/local-c2a8b99/README.md)
+[Real Windows offline proof](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/windows-milestone5/local-c2a8b99/README.md)
 uses a disconnected virtual NIC and checks app-data hashes and foreground identity.
 The URL/general-media wrapper, Windows installation and native media UI remain
 M5 work; this command alone is not the complete Windows media feature.

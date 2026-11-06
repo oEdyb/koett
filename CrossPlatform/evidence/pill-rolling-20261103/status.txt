@@ -1,6 +1,0 @@
-dark 20min exit=0
-light 20min exit=0
-light realtime exit=0
-dark realtime exit=0
-light states exit=0
-dark states exit=0

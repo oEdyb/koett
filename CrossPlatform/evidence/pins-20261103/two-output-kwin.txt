@@ -1,6 +1,0 @@
-A: no key, click each output
-0
-B: key held, click each output
-0
-C: key up again, click each output
-0

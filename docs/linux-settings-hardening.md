@@ -1,5 +1,7 @@
 # Linux Settings follow-up — 2026-11-04
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 ## Crash diagnosis
 
 The Settings reopen failure matches GTK 4.24.1's AT-SPI application-root

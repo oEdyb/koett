@@ -1,5 +1,7 @@
 # Linux UI and history verification — 2026-10-26
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Local candidate from `8e8cc356f8828fb806edb9aad179cbe6ddd7750a` on
 `feat/linux-ui-history`. No public release, push or PR merge was performed.
 macOS execution checks remain deferred at Olle's explicit request.

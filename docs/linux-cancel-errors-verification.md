@@ -1,5 +1,7 @@
 # Linux Escape and pill errors
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 2026-11-04. Independent row-2 change, rebased on main `2257ab8`; no dependency on
 the Linux transcription CLI PR. No installation or user desktop input.
 
@@ -57,7 +59,7 @@ on the pill and expired after five seconds; Escape held when recording began
 was ignored; Ctrl+Escape was ignored, including releasing Ctrl first; a fresh
 Escape cancelled live capture and returned to Ready. No last transcript or
 failed audio file was created. The error also appeared with the main window hidden.
-[Screenshots](../CrossPlatform/evidence/cancel-errors-20261104/) of the background
+[Screenshots](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/cancel-errors-20261104) of the background
 error and cancelled state were inspected. These checks do not prove every physical keyboard/compositor,
 sub-16-ms taps, denied-permission behavior on a clean login, or GNOME's existing
 lack of a layer-shell pill backend. That desktop still uses window feedback.

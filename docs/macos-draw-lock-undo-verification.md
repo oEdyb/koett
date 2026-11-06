@@ -1,5 +1,7 @@
 # Draw Lock undo key consumption
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The passive sketch monitor previously undid ink but returned the Z event to the
 focused application. Drawing undo now runs in the consuming drawing event tap.
 Cmd-Z and Ctrl-Z consume keyDown, repeats and the matching keyUp; repeats do not
@@ -10,7 +12,7 @@ Guest runtime source `278a3010c01dba41b26878223a8c92ebeba8a8e0`, disposable macO
 admin profile, local Developer-ID-signed Koett build. An owned native editor logs
 only its own synthetic key events and Undo action. Its Swift source, exact driver,
 source/binary hashes and receipt are in
-[evidence](evidence/macos-draw-undo-consumption-20261106/undo-receipt.json).
+[evidence](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-draw-undo-consumption-20261106/undo-receipt.json).
 
 - Before recording, both Cmd-Z/Ctrl-Z reach the editor; Cmd-Z invokes its Undo.
 - Actual recording → Draw Lock → two mouse strokes.

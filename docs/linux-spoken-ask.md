@@ -1,5 +1,7 @@
 # Linux spoken Ask increment
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Spoken Ask is optional and defaults off. Katie is the default; the five voice IDs,
 endpoint, API version and Sonic model match `CartesiaSpeechOutput.swift`.
 This increment does not complete the Linux port or establish appearance approval.

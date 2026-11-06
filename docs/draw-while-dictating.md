@@ -1,5 +1,7 @@
 # Draw while dictating
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Olle asked on 2026-11-02 for Scrawl's sketch-and-talk behaviour in Koett. Scrawl
 (Kit Langton, MIT, github.com/kitlangton/scrawl, v0.3.14 inspected on Olle's Mac)
 is the behaviour reference only; no Scrawl code, assets, icons or name are used.
@@ -290,8 +292,8 @@ image count is not a count of attachments. No updated-T3 claim is made.
 Nested niri did not deliver wtype key events to the browser, and kitty's private
 paste action produced no terminal input, so automatic-key and kitty end-to-end
 verification remain open. Exact plain bytes were verified via native wl-paste.
-[Receipt](evidence/linux-sketch-clipboard/fallback-owner.json) and
-[consumer script](evidence/linux-sketch-clipboard/fallback-owner.py) record scope.
+[Receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/linux-sketch-clipboard/fallback-owner.json) and
+[consumer script](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/linux-sketch-clipboard/fallback-owner.py) record scope.
 No host input, Swift, portal configuration or installation was changed.
 
 Portal API: [AvailableDeviceTypes](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.RemoteDesktop.html).
@@ -325,8 +327,8 @@ The HTML carries actual transcript body text; its fixed alt is â€œKoett sketchâ€
 never the dictation. Retain HTML even after T3's fix because Chrome's native
 rich editor needs it to insert both from one paste.
 
-[Combined-offer receipt](evidence/linux-sketch-clipboard/combined-offer.json) and
-[private target script](evidence/linux-sketch-clipboard/combined-offer.py).
+[Combined-offer receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/linux-sketch-clipboard/combined-offer.json) and
+[private target script](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/linux-sketch-clipboard/combined-offer.py).
 The fixture came from private dictation/drawing with copied models; host focus,
 clipboard, model folders and installed application were untouched.
 
@@ -357,7 +359,7 @@ the exact bullets while PNG remained readable. Unit coverage checks all three
 MIME types, plain-text behavior and replacement of the in-memory sketch.
 T3 Code 0.1.2's actual composer attached the image on each Ctrl+V after removing
 the previous attachment; no message was sent. It chooses the image rather than
-inserting the offered text. [Target receipts](evidence/linux-sketch-clipboard/targets.json)
+inserting the offered text. [Target receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/linux-sketch-clipboard/targets.json)
 cover the production Copy helper and real clipboard consumers; they do not claim
 a fresh microphone/drawing end-to-end run.
 
@@ -449,7 +451,7 @@ with multiple representation types. Pasteboard items are not cached or reused;
 only the image bytes and text are retained for the next copy.
 
 Mac clipboard and draw-hold regression receipts live in
-[`docs/evidence/mac-sketch-clipboard`](evidence/mac-sketch-clipboard).
+[`docs/evidence/mac-sketch-clipboard`](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/mac-sketch-clipboard).
 The final full suite ran 396 tests with 9 intentional skips and zero failures.
 The production overlay is tested with an empty screen provider, so no panels or
 screen captures are created by the hold-transition regression.

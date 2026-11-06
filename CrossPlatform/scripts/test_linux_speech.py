@@ -116,7 +116,7 @@ async def main():
                 async def captures():
                     if not NATIVE:
                         return
-                    evidence = Path(os.environ.get('KOETT_SPEECH_EVIDENCE', str(ROOT / 'evidence/parity-speech-20261030')))
+                    evidence = Path(os.environ.get('KOETT_SPEECH_EVIDENCE', str(ROOT / 'target/evidence/parity-speech-20261030')))
                     evidence.mkdir(parents=True, exist_ok=True)
                     for state in ['error' if ERROR else 'playing', 'cancelled']:
                         for _ in range(1200):

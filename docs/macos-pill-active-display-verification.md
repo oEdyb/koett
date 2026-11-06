@@ -1,5 +1,7 @@
 # Active-display default for the Mac pill
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 An undragged pill now receives `NSScreen.main` as its preferred display, restoring
 the original active-display default. A valid remembered drag always overrides it.
 A missing/corrupt saved display falls back to that active screen without erasing
@@ -20,7 +22,7 @@ Guest runtime `f3d4dd5341b9d016de51a4e94d61df9b569b6fa9`, macOS 15 disposable ad
   while its stored display ID remains intact.
 - Guest preferences are restored; source/executable hashes match staging.
 
-[Exact driver, screen probe and receipts](evidence/macos-pill-active-display-20261106/pill-receipt.json).
+[Exact driver, screen probe and receipts](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-pill-active-display-20261106/pill-receipt.json).
 The guest has one display. Multi-display preference, negative coordinates and
 reconnection are covered by geometry tests, not physical multi-monitor hardware.
 No host screen, microphone, input, installed app or frozen ZIP was used or changed.

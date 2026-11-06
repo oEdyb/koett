@@ -1,5 +1,7 @@
 # Linux image chords and permissions
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 2026-11-04. Independent row-4 change based on main. Not installed or merged.
 
 ## Behavior and defaults
@@ -50,7 +52,7 @@ uses the same explicit checks; this historical run did not test that addition.
   silent microphone: Permissions window and live JSON worked; opening Audio from
   it worked; image rule save/reopen worked; the text chord stayed Ctrl+V; invalid
   image chords left the saved rule intact. CLI setting/removal was checked too.
-- [Screenshots](../CrossPlatform/evidence/paste-permissions-20261104/) were
+- [Screenshots](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/CrossPlatform/evidence/paste-permissions-20261104) were
   inspected for the permissions window and image-rule editor. The final UI run
   used a private fake `grim` returning a fixture PNG to check the explicit capture
   button, asynchronous result and last_capture_check JSON. Its available label is

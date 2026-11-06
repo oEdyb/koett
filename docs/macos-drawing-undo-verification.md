@@ -1,5 +1,7 @@
 # Mac drawing undo verification
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Result: **PASS for the existing recording-scoped menu and CLI actions** on
 macOS 15.7.7 / 24G720, 2026-11-05. No new undo implementation was needed.
 The earlier Scrawl comparison incorrectly described this as missing.
@@ -37,4 +39,4 @@ Multi-display and physical input verification remain release-audit follow-ups.
 Sources: [overlay](../Sources/Koett/SketchOverlay.swift),
 [menu](../Sources/Koett/SketchDictation.swift),
 [control action](../Sources/Koett/ControlCommands.swift),
-[guest audit receipt](evidence/release-v0.3.0-mac/guest-paste.json).
+[guest audit receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/release-v0.3.0-mac/guest-paste.json).

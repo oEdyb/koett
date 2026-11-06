@@ -1,5 +1,7 @@
 # Mac parity acceptance
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 As of 2026-11-04. Source implementation and live acceptance are separate.
 The canonical cross-platform table remains [feature-parity.md](feature-parity.md).
 Public notarized v0.1.1 remains separate from these source changes; no release
@@ -35,16 +37,16 @@ publication, default-model switch or cross-platform rewrite is included.
 - Full suite on the final code: `swift test`, 414 tests, 10 skipped, no failures.
   Skips are not passing live acceptance. Release build and packaging checks pass.
 - Eight initial clipboard tests, including delayed reads, repeated format reads,
-  failed injection and newer-copy races. [Chrome acceptance](evidence/macos-parity-20261104/clipboard.md):
+  failed injection and newer-copy races. [Chrome acceptance](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-parity-20261104/clipboard.md):
   two real pastes each inserted one image and exact text in an isolated rich editor.
-- [Model probe](evidence/macos-parity-20261104/models.json): separate test models,
+- [Model probe](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-parity-20261104/models.json): separate test models,
   generated English/Swedish audio. English words matched for v3/110M; v3 spelled
   Olle as Ole in Swedish. This is not a human-speech accuracy benchmark.
 - Isolated microphone capture lifecycle, local FFmpeg conversion, paused ordered
   audio, pending/captured undo, socket ownership/limits and command-error tests.
 - Forty pill states/morph frames rendered and inspected in light/dark; existing
   300×48 layout, timers and transitions remain unchanged. New microphone window
-  captures are alongside the [pill contact sheet](evidence/macos-parity-20261104/pill-contact.png).
+  captures are alongside the [pill contact sheet](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-parity-20261104/pill-contact.png).
 
 ## Rows still open
 

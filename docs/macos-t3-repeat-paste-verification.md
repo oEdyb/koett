@@ -1,5 +1,7 @@
 # Mac repeat drawing paste in T3
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 The native T3 Router 0.1.25 composer passed three real Command-V pastes in a
 private macOS 15.7.7 guest. The copied app bundle passed strict signature
 verification. Its app.asar SHA256 matched the installed Mac bundle:
@@ -30,22 +32,22 @@ The earlier image-only report is not reproduced by this combination.
 cannot be inferred as that historical incident's cause. No contemporaneous
 receiver event/version receipt was retained for that incident.
 
-[Raw receipt](evidence/macos-t3-repeat-20261106/acceptance.json),
-[clipboard metadata](evidence/macos-t3-repeat-20261106/clipboard-before.json),
-[screenshot](evidence/macos-t3-repeat-20261106/composer.png), and
-[SHA256 manifest](evidence/macos-t3-repeat-20261106/sha256.json).
+[Raw receipt](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/acceptance.json),
+[clipboard metadata](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/clipboard-before.json),
+[screenshot](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/composer.png), and
+[SHA256 manifest](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/sha256.json).
 
 ## Reproduce in a disposable guest
 
-Use the included [guest driver](evidence/macos-t3-repeat-20261106/guest-repeat-test.py),
+Use the included [guest driver](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/guest-repeat-test.py),
 CDP collectors, clipboard snapshot source and CGEvent helper source. It refuses
 to run outside the admin test account. Compile/authorize the event helper only
 in that guest; its expected path is /Users/admin/guest-gesture-v5. Place the
 Python/Swift collectors under /Users/admin/pin-privacy-fixture and mount an
 output share named receipts. Open a fresh guest T3 Router 0.1.25 with
 --remote-debugging-port=9229 --remote-debugging-address=127.0.0.1, dismiss its
-setup, and start without a project. The paired [PNG](evidence/macos-t3-repeat-20261106/fixture.png) and
-[text](evidence/macos-t3-repeat-20261106/fixture.txt) preserve the exact public
+setup, and start without a project. The paired [PNG](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/fixture.png) and
+[text](https://github.com/oEdyb/koett/blob/c1e9d812d68fb0c8f035d0041a6d1da29f96c041/docs/evidence/macos-t3-repeat-20261106/fixture.txt) preserve the exact public
 fixture. For a receiver-only replay, publish them with production
 SketchClipboard.write before running the driver; its size/text assertions
 deliberately bind this receipt, not arbitrary user clipboard data.

@@ -1,5 +1,7 @@
 # Koett desktop UI
 
+> Historical evidence and commands use the [0.3.1 source snapshot](https://github.com/oEdyb/koett/tree/c1e9d812d68fb0c8f035d0041a6d1da29f96c041). See [the evidence archive](evidence-archive.md) for private reproduction.
+
 Approved scope: Linux port and UI first, searchable history on Linux and macOS.
 Olle explicitly found the previous interface unintuitive. This document governs
 the implementation; visual polish must support observable tasks.
@@ -272,7 +274,7 @@ only with a new live test, and record why in `docs/decisions.md`.
    20:00**, hover, paused, drawing, transcribing, Done, Not pasted and error.
 2. Render the morph at t = 0, 0.25, 0.5, 0.75 and 1, and look at the frames
    stacked. A frame where two glyphs or texts fight is a bug.
-3. Look at every PNG before claiming done; put them in `docs/evidence/` and in
+3. Look at every PNG before claiming done; keep them in a private cache outside the tracked tree and in
    the PR body.
 4. Unit tests guard the rules: every state is 48 px, its buttons fit inside
    without overlapping the clock, the strip reaches both edges at every point
