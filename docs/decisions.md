@@ -258,3 +258,13 @@ becomes 60. The pill says "1 minute left" once, and the stop still saves and pas
 whole recording stays in memory in case decoding fails. An 11-minute lab run grew by 192 KB/s
 at 48 kHz, so that is about 690 MB at 60 minutes and 1.4 GB at 120, only while recording. Live decoding drops audio as it goes, so
 its memory doesn't grow with length.
+
+## 2026-11-06: GNOME drawing switches input in the compositor
+
+GNOME has no layer-shell, so Koett's extension turns a transparent GTK window into a dock over
+each monitor. GTK's input region failed there in the lab: presses went to the old surface, even
+with extra frames. The extension now switches whether Mutter can hit the window, and hides and
+shows its actor in one tick so pointer focus follows. Mutter resets that switch with each commit,
+so the extension sets it back. The cost is a dependency on Mutter internals that a future Shell
+may change, and it only runs on Shell versions with the extension installed.
+

@@ -23,6 +23,7 @@ pub(super) mod capture;
 mod frames;
 mod gesture;
 mod gnome_capture;
+pub(super) use kwin_context::Window as GnomeWindow;
 pub mod keys;
 pub(super) mod kwin_context;
 mod niri_pick;
@@ -287,7 +288,7 @@ struct Session {
     reported_unreadable: usize,
     notices: Vec<String>,
     redraw_required: bool,
-    layer: Rc<super::recording_overlay::LayerShell>,
+    shell: Shell,
 }
 
 impl Session {
@@ -354,8 +355,14 @@ impl Session {
     }
 
     fn set_input(&self, input: PointerInput) {
+        // GNOME's extension switches this in the compositor, at once and with no
+        // frame needed; GTK's region lagged behind there.
+        let gnome = matches!(self.shell, Shell::Gnome);
+        if gnome {
+            super::gnome_pill::take_pointer(input != PointerInput::Nowhere);
+        }
         for (index, surface) in self.surfaces.iter().enumerate() {
-            if let Some(native) = surface.window.surface() {
+            if let Some(native) = surface.window.surface().filter(|_| !gnome) {
                 let (_, _, width, height) = surface.target.monitor;
                 let region = match input {
                     PointerInput::Nowhere => gtk::cairo::Region::create(),
@@ -613,7 +620,7 @@ impl Session {
             if self.may_take_keyboard {
                 self.keyboards = None;
                 for surface in &self.surfaces {
-                    if let Err(error) = self.layer.set_keyboard(&surface.window, 1) {
+                    if let Err(error) = self.shell.set_keyboard(&surface.window, 1) {
                         eprintln!("Sketch keyboard focus failed: {error}");
                     }
                 }
@@ -1068,13 +1075,60 @@ fn other_modifiers(key: DrawKey) -> gdk::ModifierType {
 
 type SessionCell = Rc<RefCell<Option<Session>>>;
 
+/// What puts a transparent window over a whole monitor.
+#[derive(Clone)]
+enum Shell {
+    Layer(Rc<super::recording_overlay::LayerShell>),
+    /// A window the Koett GNOME extension makes a dock above everything.
+    Gnome,
+}
+
+impl Shell {
+    fn cover(
+        &self,
+        window: &gtk::Window,
+        monitor: &gdk::Monitor,
+        exclusive_keyboard: bool,
+    ) -> Result<(), String> {
+        match self {
+            Self::Layer(layer) => layer
+                .cover(window, monitor, exclusive_keyboard)
+                .map_err(|error| error.to_string()),
+            Self::Gnome => {
+                // GNOME closes it when the extension turns off, as in a screen lock.
+                // The dictation goes on without it.
+                window.connect_close_request(|window| {
+                    window.set_visible(false);
+                    glib::Propagation::Stop
+                });
+                super::gnome_pill::take_pointer(false);
+                super::gnome_pill::cover(window, monitor).map_err(|error| error.to_string())
+            }
+        }
+    }
+
+    fn set_keyboard(&self, window: &gtk::Window, mode: i32) -> Result<(), String> {
+        match self {
+            Self::Layer(layer) => layer
+                .set_keyboard(window, mode)
+                .map_err(|error| error.to_string()),
+            Self::Gnome => Ok(()),
+        }
+    }
+
+    /// A GNOME dock can't hold exclusive keyboard focus.
+    fn can_take_keyboard(&self) -> bool {
+        matches!(self, Self::Layer(_))
+    }
+}
+
 pub struct DrawingNotice {
     pub text: String,
     pub redraw_required: bool,
 }
 
 pub struct SketchOverlay {
-    layer: Rc<super::recording_overlay::LayerShell>,
+    shell: Shell,
     session: SessionCell,
     styled: std::cell::Cell<bool>,
     /// Last recording id the overlay decided on, so settings load once.
@@ -1096,13 +1150,18 @@ fn unavailable_hint(access: keys::Access, focus: bool) -> &'static str {
 }
 
 impl SketchOverlay {
-    /// `None` without layer-shell (GNOME, X11): dictation is unaffected.
+    /// `None` without layer-shell or the GNOME extension (X11): dictation is unaffected.
     pub fn new() -> Option<Self> {
-        let layer = super::recording_overlay::LayerShell::load()
-            .inspect_err(|error| eprintln!("Draw while dictating unavailable: {error}"))
-            .ok()?;
+        let shell = if super::gnome_pill::available() {
+            Shell::Gnome
+        } else {
+            let layer = super::recording_overlay::LayerShell::load()
+                .inspect_err(|error| eprintln!("Draw while dictating unavailable: {error}"))
+                .ok()?;
+            Shell::Layer(Rc::new(layer))
+        };
         Some(Self {
-            layer: Rc::new(layer),
+            shell,
             session: Rc::new(RefCell::new(None)),
             styled: std::cell::Cell::new(false),
             decided: std::cell::Cell::new(0),
@@ -1131,7 +1190,8 @@ impl SketchOverlay {
                     drop(current);
                     let access = keys::Keyboards::open();
                     let failure = access.as_ref().err().copied();
-                    let may_take = settings.draw_may_take_keyboard;
+                    let may_take =
+                        settings.draw_may_take_keyboard && self.shell.can_take_keyboard();
                     let input = draw_input(access, may_take);
                     if let Some(failure) = failure {
                         self.hint(unavailable_hint(failure, may_take));
@@ -1185,7 +1245,7 @@ impl SketchOverlay {
                 // Close keyboard devices as soon as recording ends.
                 session.keyboards = None;
                 for surface in &session.surfaces {
-                    if let Err(error) = self.layer.set_keyboard(&surface.window, 0) {
+                    if let Err(error) = self.shell.set_keyboard(&surface.window, 0) {
                         eprintln!("Sketch keyboard release failed: {error}");
                     }
                 }
@@ -1294,7 +1354,7 @@ impl SketchOverlay {
                 .title("Koett sketch")
                 .decorated(false)
                 .build();
-            if let Err(error) = self.layer.cover(&window, monitor, modes[index]) {
+            if let Err(error) = self.shell.cover(&window, monitor, modes[index]) {
                 eprintln!("Sketch overlay unavailable: {error}");
                 window.destroy();
                 continue;
@@ -1405,11 +1465,13 @@ impl SketchOverlay {
                 window.add_controller(self.keys());
                 // A missed key release cannot leave clicks blocked: `watch_focus`.
             }
-            window.connect_realize(|window| {
-                if let Some(native) = window.surface() {
-                    native.set_input_region(Some(&gtk::cairo::Region::create()));
-                }
-            });
+            if !matches!(self.shell, Shell::Gnome) {
+                window.connect_realize(|window| {
+                    if let Some(native) = window.surface() {
+                        native.set_input_region(Some(&gtk::cairo::Region::create()));
+                    }
+                });
+            }
             surfaces.push(Surface {
                 window,
                 area,
@@ -1474,14 +1536,14 @@ impl SketchOverlay {
             last_pin: None,
             inactive_since: None,
             keyboards,
-            may_take_keyboard: settings.draw_may_take_keyboard,
+            may_take_keyboard: settings.draw_may_take_keyboard && self.shell.can_take_keyboard(),
             gate: keys::DrawGate::default(),
             keyboards_lost: false,
             rescanned: None,
             reported_unreadable: 0,
             notices: Vec::new(),
             redraw_required: false,
-            layer: self.layer.clone(),
+            shell: self.shell.clone(),
         });
         // 16 ms: device mode polls the draw key on this tick.
         glib::timeout_add_local(Duration::from_millis(16), {

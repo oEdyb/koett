@@ -13,6 +13,8 @@ const XML = `<node><interface name="com.olledyberg.Koett.Gnome1">
 <method name="Pill"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Capture"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 <method name="Focus"><arg type="s" direction="out"/></method>
+<method name="WindowAt"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
+<method name="Input"><arg type="s" direction="in"/><arg type="s" direction="out"/></method>
 </interface></node>`;
 
 function busCall(method, parameters, signature) {
@@ -78,6 +80,59 @@ export default class Koett extends Extension {
             }
         } catch (error) {
             result.error = String(error.message).slice(0, 160);
+        }
+        invocation.return_value(new GLib.Variant('(s)', [JSON.stringify(result)]));
+    }
+
+    // Whether Koett's own drawing surfaces take the pointer.
+    async InputAsync([raw], invocation) {
+        let ok = false;
+        try {
+            const owner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const pid = name => busCall('GetConnectionUnixProcessID', new GLib.Variant('(s)', [name]), '(u)');
+            const [caller, app] = await Promise.all([pid(invocation.get_sender()), pid(owner)]);
+            const {take} = JSON.parse(raw);
+            if (this._enabled && caller === app && typeof take === 'boolean')
+                ok = this._pills?.takePointer(take, app) ?? false;
+        } catch { }
+        invocation.return_value(new GLib.Variant('(s)', [JSON.stringify({ok})]));
+    }
+
+    // The topmost window at a point, for a pin. Only for Koett, and never during a
+    // lock, the overview or a modal dialog.
+    async WindowAtAsync([raw], invocation) {
+        let result = null;
+        try {
+            const sender = invocation.get_sender();
+            const owner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const pid = name => busCall('GetConnectionUnixProcessID',
+                new GLib.Variant('(s)', [name]), '(u)');
+            const [callerPid, appPid] = await Promise.all([pid(sender), pid(owner)]);
+            const currentOwner = await busCall('GetNameOwner', new GLib.Variant('(s)', [APP]), '(s)');
+            const [x, y] = JSON.parse(raw);
+            if (this._enabled && owner === currentOwner && callerPid === appPid &&
+                Number.isSafeInteger(x) && Number.isSafeInteger(y) &&
+                !Main.sessionMode.isLocked && !Main.screenShield?.locked &&
+                !Main.overview.visible && Main.modalCount === 0) {
+                for (const actor of global.get_window_actors().reverse()) {
+                    const window = actor.meta_window;
+                    if (window.get_pid() === appPid || !window.showing_on_its_workspace() ||
+                        window.minimized) continue;
+                    const type = window.get_window_type();
+                    if (type === Meta.WindowType.DOCK) continue;
+                    const frame = window.get_frame_rect();
+                    if (x < frame.x || y < frame.y || x >= frame.x + frame.width ||
+                        y >= frame.y + frame.height) continue;
+                    if (type === Meta.WindowType.DESKTOP) break;
+                    const app = window.get_gtk_application_id() || window.get_wm_class() || '';
+                    const buffer = window.get_buffer_rect();
+                    if (app) result = {title: window.get_title() || '', app, x: buffer.x, y: buffer.y,
+                        width: buffer.width, height: buffer.height};
+                    break;
+                }
+            }
+        } catch {
+            // No answer means a pin without window details.
         }
         invocation.return_value(new GLib.Variant('(s)', [JSON.stringify(result)]));
     }

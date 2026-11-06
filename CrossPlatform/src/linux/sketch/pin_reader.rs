@@ -181,8 +181,16 @@ fn read_screen(
     let mut context = None;
     let mut found = Found::default();
     let mut chromium = false;
+    let gnome = super::super::gnome_focus::desktop();
+    let gnome_window = gnome
+        .then(|| super::super::gnome_pill::window_at(point))
+        .flatten();
     runtime.block_on(async {
-        let geometry = super::kwin_context::at_point(point).await;
+        let geometry = if gnome {
+            gnome_window
+        } else {
+            super::kwin_context::at_point(point).await
+        };
         let read = async {
             let bus = accessibility_bus().await.ok()?;
             if let Some(window) = geometry {
