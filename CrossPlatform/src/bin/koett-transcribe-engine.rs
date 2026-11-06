@@ -73,6 +73,16 @@ fn run() -> Result<(), String> {
         .map_err(|error| format!("could not write result: {error}"))
 }
 
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -146,16 +156,6 @@ mod tests {
             ],
         ] {
             assert!(Arguments::parse(&args(&values)).is_err());
-        }
-    }
-}
-
-fn main() -> ExitCode {
-    match run() {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("{error}");
-            ExitCode::FAILURE
         }
     }
 }
