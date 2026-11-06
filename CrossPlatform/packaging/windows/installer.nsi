@@ -13,9 +13,9 @@ InstallDir "$LOCALAPPDATA\Programs\Koett"
 SetCompressor /SOLID zlib
 ManifestDPIAware true
 !define MUI_ABORTWARNING
-!define MUI_ICON "${__FILEDIR__}/Koett.ico"
-!define MUI_UNICON "${__FILEDIR__}/Koett.ico"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}/setup-sidebar.bmp"
+!define MUI_ICON "${__FILEDIR__}\Koett.ico"
+!define MUI_UNICON "${__FILEDIR__}\Koett.ico"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}\setup-sidebar.bmp"
 !define MUI_WELCOMEPAGE_TITLE "Install Koett"
 !define MUI_WELCOMEPAGE_TEXT "Close Koett before installing. Your settings and transcripts are kept."
 !insertmacro MUI_PAGE_WELCOME
@@ -58,7 +58,7 @@ FunctionEnd
 Section
  InitPluginsDir
  SetOutPath "$PLUGINSDIR\payload"
- File /r "${PAYLOAD}/*"
+ File /r "${PAYLOAD}\*"
  nsExec::ExecToStack /TIMEOUT=120000 '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\payload\manage-preview.ps1" -Action Install -Root "$INSTDIR" -Payload "$PLUGINSDIR\payload" -ShortcutName Koett'
  Pop $0
  Pop $1
@@ -68,8 +68,8 @@ Section
  Abort
  install_ok:
  SetOutPath "$INSTDIR"
- File /oname=manage-install.ps1 "${PAYLOAD}/manage-preview.ps1"
- File /oname=Koett.ico "${__FILEDIR__}/Koett.ico"
+ File /oname=manage-install.ps1 "${PAYLOAD}\manage-preview.ps1"
+ File /oname=Koett.ico "${__FILEDIR__}\Koett.ico"
  WriteUninstaller "$INSTDIR\Uninstall.exe"
  CreateShortcut "$SMPROGRAMS\Koett.lnk" "$INSTDIR\versions\${VERSIONKEY}\Koett.exe" "" "$INSTDIR\Koett.ico"
  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Koett" "DisplayName" "Koett"
