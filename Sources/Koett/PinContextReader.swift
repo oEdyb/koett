@@ -27,7 +27,8 @@ enum PinContextReader {
         guard AXIsProcessTrusted(), let pid = windowOwner(at: point, excluding: ownPID) else { return nil }
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, messagingTimeout)
-        var context = PinContext(app: NSRunningApplication(processIdentifier: pid)?.localizedName)
+        let application = NSRunningApplication(processIdentifier: pid)
+        var context = PinContext(app: application?.localizedName)
         let deadline = ProcessInfo.processInfo.systemUptime + readSeconds
         var hit = describe(app: app, at: point, deadline: deadline, into: &context)
         // Chromium and Electron build their web tree only once an assistive
@@ -39,13 +40,18 @@ enum PinContextReader {
                 hit = describe(app: app, at: point, deadline: deadline, into: &context)
             }
         }
+        let windowTitle = hit.window.flatMap { string($0, kAXTitleAttribute) }
+        if PinContextPrivacy.omitsPageDetails(bundleID: application?.bundleIdentifier, windowTitle: windowTitle) {
+            return PinContext(app: context.app)
+        }
         if includeSelection, let window = hit.window {
             context.selection = selectedText(app: app, window: window, deadline: deadline)
         }
         if let webArea = hit.webArea, context.url.flatMap(PinContext.youTubeVideoID) != nil {
             context.videoSeconds = youTubeSeconds(in: webArea, deadline: deadline)
         }
-        return context
+        return PinContextPrivacy.filtered(context, bundleID: application?.bundleIdentifier,
+                                          windowTitle: hit.window.flatMap { string($0, kAXTitleAttribute) })
     }
 
     private static func expired(_ deadline: TimeInterval) -> Bool {
