@@ -117,7 +117,7 @@ not changed. No release, tag, GitHub draft/asset or live feed was created or edi
 Apple (`50f1ed70-a67a-47d3-937c-e7c6d19c976d`), stapled and validated. Strict image
 codesign, `hdiutil verify`, stapler and Gatekeeper (`Notarized Developer ID`) pass.
 Final SHA256: `c4dd4ba5c3dbe33e115c2166ef0f2044e36bfadc8dd9b274487ace1f01909834`.
-Private artifact: `/Users/olle/dev/koett-release-artifacts/v0.3.1/dmg-installer/Koett-0.3.1-macOS-arm64.dmg`.
+Artifact filename: `Koett-0.3.1-macOS-arm64.dmg` (retained locally, not published).
 
 The final DMG received a download quarantine marker inside the guest. Image
 Gatekeeper/signature/ticket checks passed there, then another actual Finder drag
