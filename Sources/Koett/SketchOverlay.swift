@@ -137,10 +137,6 @@ final class SketchOverlay {
     // MARK: Input
 
     func handleKeyEvent(_ event: NSEvent) {
-        if isLocked, event.type == .keyDown, !event.isARepeat, event.keyCode == 6,
-           [NSEvent.ModifierFlags.control, .command].contains(event.modifierFlags.intersection(ShortcutBinding.relevantModifiers)) {
-            undoStroke()
-        }
         drawGate.noteKey(type: event.type, keyCode: event.keyCode)
         followKey(flags: event.modifierFlags)
     }
