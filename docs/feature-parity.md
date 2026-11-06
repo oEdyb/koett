@@ -1,6 +1,8 @@
 # Feature parity
 
-Baseline source audit: 2026-11-04, origin/main at 3d7674e. Windows entries now
+Baseline source audit: 2026-11-04, origin/main at 3d7674e. Linux rows were corrected on
+2026-11-05 after a second audit traced about 30 of them to code; the other Linux rows were
+not re-traced. Windows entries now
 also include accepted M1–M3 guest evidence and M4's targeted Windows 11 checks.
 **Yes means implemented; it does not imply every hardware/app combination was
 runtime-tested.** Current Windows evidence and limits are in
@@ -17,7 +19,7 @@ from implementation; later parity/distribution gates are still open.
 | Selected microphone | Yes | Yes | Native ID selector; emulated endpoint persistence/default/unavailable checks passed | Verify Windows endpoint selection/save/reopen and unavailable-device behavior |
 | Level preview in Settings | Native Microphone window; releases on close/record | Yes | Guest virtual preview start/stop plus bounded opening/enumeration/preview faults passed; physical signal open | Verify Windows close/record release and actual input levels |
 | Recording sounds / actual RMS | Tink and Basso system sounds; always on | Original synthesized cues at the same moments, with a Settings switch (on by default); real RMS | Basic RMS pill; sounds unverified | Match Mac cues and waveform; no invented activity |
-| Pill rolling strip, timer, sketch bands | Yes | Layer-shell + optional GNOME Shell pill; X11 fallback | Native D2D/Composition 300×48 pill; M1/M4 guest states, physical Stop and Reduce Motion checked | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
+| Pill rolling strip, timer, sketch bands | Yes | Layer-shell, draggable. Optional GNOME Shell pill, not draggable, and likely [lost after a screen lock](linux-gnome-pill-verification.md#screen-lock) until restart. X11 has no pill | Native D2D/Composition 300×48 pill; M1/M4 guest states, physical Stop and Reduce Motion checked | Mac 300×48 reference, shared state/fixtures, Windows D2D/Composition |
 | Pill hover Cancel, Pause, History | Yes; all models drop paused audio, preserving captured-audio clock | Yes | Guest pointer/UIA actions and pause/cancel verified; actions exposed without hover | Wire Windows engine commands; Mac Nemotron pause via segmented capture/restart with preserved audio clock |
 | Pill Done, Not pasted, Copy/Paste | Yes | Yes | Persistent rescue, tray/pill recovery and drawing bundle repeat guest-verified | Port persistent rescue states; never time out unsaved text |
 | Silence trimming / no silence warnings | Yes; Nemotron skips trim | Empty dictation finishes quietly; silent drawings retain image delivery | Guest silent WAV preserves clipboard/history; silent drawings retain image delivery | Linux [silence checks](linux-empty-dictation-verification.md); real microphone/model matrix remains open; add Nemotron trim only if streaming semantics allow |
@@ -69,6 +71,7 @@ Evidence: `Sources/Koett/Dictionary/`, `S1MiniCleaner.swift`, `Replacements.swif
 | YouTube timestamp link | Yes, Chrome AX player slider | AT-SPI player range on matched page; [checks/limits](linux-pin-context-verification.md) | Actual Edge watch URL with Video time unavailable fallback; real-clock parser fixtures passed | Linux AT-SPI player range when matched to URL, else browser bridge; Windows UIA range + URL match, else bridge |
 | Password avoidance / bounded opt-in selection | Yes | Yes, provider-dependent | Guest password omission passed; capped opt-in selection, stale-window checks and no synthetic Copy | Reject password/protected UI and stale cross-window context; no synthetic Copy |
 | Private/incognito URL exclusion | English Chrome/Chromium Incognito AX-window marker omits page fields ([checks](macos-private-pin-verification.md)); other browsers/languages use explicit image-only pins | Not established | Guest Edge InPrivate clears page fields; unknown privacy remains explicit, broader providers untested | Explicit browser private-mode signal where available; absence must not imply privacy detection |
+| Include Page Details in Pins switch | Yes, on by default; off gives image-only pins | No; only Include Selected Text in Pins | No | Add the Linux switch |
 | First paste image then bullets | Yes, per-app chords | Per-app niri/KWin/optional GNOME image chord; portal/clipboard backend limits | Guest read-based staging into original Edge; unsupported image targets expose recovery | Windows staged clipboard with foreground checks each step, persistent rescue if either stage fails |
 | Repeat paste PNG + HTML + text bundle | PNG + embedded-image HTML + exact text; real target consumption under verification | Multi-format owner now on main (#49); real target matrix still needed | Guest PNG/DIBV5/HTML/Unicode, native rich Edge paste and automatic restore passed; no history duplication | Mac verify/repair same bundle for Done/last/Paste; Windows publish PNG+DIBV5+HTML+Unicode together |
 | Preserve newer clipboard copy | Image-to-text and bundle ownership guards; isolated race tests pass | Owner markers/race detection, bounded transfers | Guest image-stage and text-stage races passed; owner/sequence/marker guards preserve newer copies | Port ownership contract on Windows; race fixture plus real clipboard-reader checks |

@@ -78,3 +78,12 @@ scope. Its exact private runtime and Pulse server guards reject host execution.
 It launches a real fullscreen editor, checks the production pill, injects input
 only through the private Mutter RemoteDesktop session, and quits its apps.
 Stop only that named lab after collecting evidence.
+
+## Screen lock
+
+Not run on a real lock. The extension's `metadata.json` sets no `session-modes`, and GNOME
+Shell disables such extensions while the screen is locked. Disabling the extension closes
+the pill, and the native run above confirmed Koett needs a restart to get it back. So a
+screen lock very likely loses the pill until Koett restarts, while recording itself
+continues. Checking this needs the private GNOME session rebuilt, because its start steps
+were not saved.

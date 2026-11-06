@@ -141,6 +141,39 @@ as errors, release build and git diff --check passed. The Windows MSVC cross-che
 was attempted but blocked by missing lib.exe/native build tools on Linux.
 Independent review and real microphone/long-session acceptance remain pending.
 
+## How long a unit the old budget covered
+
+This measured the fixed 250 ms budget, which the scaling below replaced. Measured 2026-11-05 on the Ryzen 5 9600X with `ctc_dictionary_length_bench`: the v2
+sidecar's own decode, four threads, three dictionary terms, five runs per length, audio
+looped from `test_wavs/0.wav`.
+
+| Audio | Median | Worst | Within 250 ms |
+|---|---|---|---|
+| 1 s | 68 ms | 69 ms | Yes |
+| 2 s | 98 ms | 101 ms | Yes |
+| 3 s | 140 ms | 145 ms | Yes |
+| 4 s | 178 ms | 188 ms | Yes |
+| 5 s | 210 ms | 215 ms | Yes |
+| 6 s | 243 ms | 251 ms | No |
+| 8 s | 310 ms | 315 ms | No |
+| 10 s | 410 ms | 832 ms | No |
+| 15 s | 653 ms | 812 ms | No |
+| 20 s | 902 ms | 931 ms | No |
+
+Dictation up to 20 s decodes as one unit, so above about 6 s of audio on this CPU the
+sidecar's result arrives too late and the raw text is kept. Slower CPUs fall back sooner.
+For scale, 71% of the 879 dictations in Olle's history have more than 15 words, about 6 s
+of normal speech. A dictation over 20 s is split by speech pauses, so its shorter segments
+may still fit; this table does not measure that. In short, 110M dictionary bias mostly
+helps short dictations today, and the earlier recall figures came from short clips.
+
+Also confirmed by reading `ctc_bias.rs`: after a timeout the worker keeps decoding on four
+threads, and `menu-status` says the worker is ready even if every request is falling back.
+
+```sh
+cargo run --release --locked --example ctc_dictionary_length_bench -- V2_MODEL WAV
+```
+
 ## Scaling the budget with audio length
 
 Measured 2026-11-05 with `ctc_dictionary_budget_bench`, Ryzen 5 9600X, two-thread primary
