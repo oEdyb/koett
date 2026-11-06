@@ -31,7 +31,7 @@ policy change or a public-release recommendation.
 ## Runtime hardening
 
 Settings → Dictation options exposes the existing original recording cues,
-Include page details in pins, and opt-in selected text. Windows reuses the existing
+Include page details in pins, and selected text (on by default, matching Mac/Linux). Windows reuses the existing
 CPAL cue implementation; Linux source and playback behavior are unchanged. Cues
 follow capture start/stop, and cancellation remains silent.
 Output-device work stays off the GUI/audio-capture callback.
@@ -85,3 +85,7 @@ benchmark cohort, account purchase or public release is part of this work.
 [The acceptance receipt](../CrossPlatform/evidence/windows-milestone6/gui-1520556/README.md)
 distinguishes exact executables, unchanged-component rechecks, guest execution,
 host compile checks and all open gates. A draft PR is not a completed M6 release gate.
+
+[Review acceptance](../CrossPlatform/evidence/windows-milestone6/review-935e21f/README.md)
+records the subsequent dictation, capture-retention, private-browser and clipboard
+corrections, exact executables and targeted guest checks.

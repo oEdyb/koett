@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "result": {
+    "start": {
+      "stdout": "{\"acknowledged\":true,\"action\":\"start\",\"ok\":true,\"outputs\":[],\"warnings\":[]}\n",
+      "stderr": "",
+      "action": "start",
+      "exit": 0
+    },
+    "passed": true,
+    "rect": [
+      91,
+      91,
+      1316,
+      791
+    ],
+    "focus": {
+      "hwnd": 66490,
+      "process": "powershell",
+      "pid": 5132
+    },
+    "target": 66490,
+    "point": [
+      291,
+      271
+    ],
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 8744,
+      "sha256": "69253ADF55DE073F681B36E0463EFB7480289DAAB731FDBE00A4754532F7B9F2"
+    },
+    "fixture_pid": 5132
+  },
+  "id": "1793945781117794548"
+}

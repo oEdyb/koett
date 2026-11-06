@@ -191,7 +191,10 @@ pub(super) fn dispatch(
             10 => app.handle_menu(MENU_OPEN_HISTORY),
             11 => app.handle_menu(MENU_WORDS),
             12 => app.handle_menu(MENU_MEDIA),
-            13 if !media_view::needs_copy() && history::recovery::pending_count() == 0 => {
+            13 if !app.dictation_in_flight()
+                && !media_view::needs_copy()
+                && history::recovery::pending_count() == 0 =>
+            {
                 app.request_quit()
             }
             14 => recovery::open(),

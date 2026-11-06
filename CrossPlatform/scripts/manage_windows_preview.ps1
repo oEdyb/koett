@@ -63,6 +63,14 @@ function Activate([string]$Current,[string]$Previous){
   throw
  }finally{if(Test-Path $temp){Remove-Item -LiteralPath $temp}}
 }
+function Prune-Versions([string]$Current,[string]$Previous){
+ foreach($item in @(Get-ChildItem -LiteralPath (Join-Path $Root 'versions') -Directory)){
+  if($item.Name-notmatch'^[a-f0-9]{16}$'-or('versions/'+$item.Name)-in@($Current,$Previous)){continue}
+  try{$null=Verify-Payload $item.FullName;Remove-Item -LiteralPath $item.FullName -Recurse -Force}catch{'An older preview was preserved because its files changed or are busy'}
+ }
+}
+$cleanupWarnings=@()
+
 try {
  $Root=[IO.Path]::GetFullPath($Root).TrimEnd('\')
  $ancestor=$Root;while($ancestor){if((Test-Path -LiteralPath $ancestor)-and((Get-Item -LiteralPath $ancestor -Force).Attributes-band[IO.FileAttributes]::ReparsePoint)){throw 'Preview install path contains a reparse point'};$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
@@ -88,6 +96,7 @@ try {
    }else{$null=Verify-Payload $version;if((Hash (Join-Path $version 'preview-release.json'))-cne(Hash (Join-Path $Payload 'preview-release.json'))){throw 'Installed version identifier collision'}}
    $previous=if($state-and$state.current-ne$relative){$state.current}elseif($state){$state.previous}else{$null}
    Activate $relative $previous
+   $cleanupWarnings=@(Prune-Versions $relative $previous)
   }
   Rollback {
    if(-not$state.previous){throw 'There is no previous preview version'}
@@ -106,7 +115,7 @@ try {
    foreach($path in @((Join-Path $Root 'versions'),$Root)){if(@(Get-ChildItem -LiteralPath $path -Force).Count-eq0){Remove-Item -LiteralPath $path}}
   }
  }
- @{ok=$true;action=$Action.ToLowerInvariant();root=$Root;data_preserved=$true;signature='unsigned-preview';outputs=@();warnings=@('Unsigned preview; media tools and optional formatter are not bundled')}|ConvertTo-Json -Depth 6 -Compress
+ @{ok=$true;action=$Action.ToLowerInvariant();root=$Root;data_preserved=$true;signature='unsigned-preview';outputs=@();warnings=(@('Unsigned preview; media tools and optional formatter are not bundled')+$cleanupWarnings)}|ConvertTo-Json -Depth 6 -Compress
 }catch{
  @{ok=$false;code='preview_management_failed';error=$_.Exception.Message;fix='Close Koett, verify the extracted payload, and retry; application data is preserved';outputs=@();warnings=@()}|ConvertTo-Json -Compress;exit 1
 }

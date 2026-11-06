@@ -30,9 +30,9 @@ rollback preserve it with the selected version's path. Other startup entries
 are left alone. The previous installed version remains available for rollback.
 
 ```powershell
-.\manage-preview.ps1 -Action Status
-.\manage-preview.ps1 -Action Rollback
-.\manage-preview.ps1 -Action Uninstall
+powershell -NoProfile -ExecutionPolicy Bypass -File .\manage-preview.ps1 -Action Status
+powershell -NoProfile -ExecutionPolicy Bypass -File .\manage-preview.ps1 -Action Rollback
+powershell -NoProfile -ExecutionPolicy Bypass -File .\manage-preview.ps1 -Action Uninstall
 ```
 
 Uninstall removes verified preview files and its own shortcut/startup entry.

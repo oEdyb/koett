@@ -73,6 +73,22 @@ pub(super) fn join<T>(worker: thread::JoinHandle<T>) -> Result<T, String> {
         .map_err(|_| "The microphone worker stopped unexpectedly".into())
 }
 
+pub(super) fn finish_samples(
+    worker: thread::JoinHandle<Vec<f32>>,
+    retained: Option<Arc<Mutex<Vec<f32>>>>,
+) -> Result<(Vec<f32>, Option<String>), String> {
+    let result = join(worker);
+    if let Some(retained) = retained {
+        let samples =
+            std::mem::take(&mut *retained.lock().unwrap_or_else(|error| error.into_inner()));
+        let warning = result
+            .err()
+            .map(|error| format!("{error}; captured audio retained"));
+        return Ok((samples, warning));
+    }
+    result.map(|samples| (samples, None))
+}
+
 pub fn helper_requested() -> bool {
     std::env::args().nth(1).as_deref() == Some(HELPER)
 }
@@ -214,9 +230,11 @@ fn start_proxy(
     let (send, receive) = mpsc::channel();
     let lease = Arc::clone(&process._lease);
     let finite = mode == "fixture";
+    let retained_samples = Arc::new(Mutex::new(Vec::new()));
+    let retained = Arc::clone(&retained_samples);
     let collector = thread::spawn(move || {
         let _lease = lease;
-        let mut samples = Vec::new();
+        let mut captured = 0usize;
         loop {
             let chunk = read_chunk(&mut output);
             let chunk = match chunk {
@@ -239,7 +257,7 @@ fn start_proxy(
                     break;
                 }
             };
-            if recording_limit_exceeded(samples.len(), chunk.len(), rate) {
+            if recording_limit_exceeded(captured, chunk.len(), rate) {
                 if let Ok(mut stored) = worker_error.lock() {
                     *stored = Some("Recording reached its maximum duration".into());
                 }
@@ -248,18 +266,23 @@ fn start_proxy(
             let mut accepted = Vec::with_capacity(chunk.len());
             measure_input(&chunk, 1, &worker_levels, |sample| accepted.push(sample));
             if !accepted.is_empty() {
-                samples.extend_from_slice(&accepted);
+                captured = captured.saturating_add(accepted.len());
+                retained
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .extend_from_slice(&accepted);
                 if send.send(accepted).is_err() {
                     break;
                 }
             }
         }
         worker_levels.update(0.0, 0.0);
-        samples
+        Vec::new()
     });
     Ok((
         MicrophoneRecorder {
             process: Some(process),
+            retained_samples: Some(retained_samples),
             _capture_priority: priority,
             stream: None,
             collector: Some(collector),
@@ -393,6 +416,43 @@ pub fn helper() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn standalone_capture_keeps_audio_when_collector_exit_times_out() {
+        let captured = vec![0.25; 16_000];
+        let (release, wait) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let _ = wait.recv();
+            Vec::new()
+        });
+        let recorder = MicrophoneRecorder {
+            process: None,
+            retained_samples: Some(Arc::new(Mutex::new(captured.clone()))),
+            _capture_priority: preview::RecordingPriority::acquire().unwrap(),
+            stream: None,
+            collector: Some(worker),
+            stop_collector: Arc::new(AtomicBool::new(false)),
+            sample_rate: 16_000,
+            overflowed: Arc::new(AtomicBool::new(false)),
+            stream_error: Arc::new(Mutex::new(None)),
+            levels: AudioLevels::new(),
+        };
+        let recording = recorder.finish().unwrap();
+        release.send(()).unwrap();
+        assert_eq!(recording.samples, captured);
+    }
+    #[test]
+    fn slow_collector_exit_keeps_all_captured_samples() {
+        let samples = Arc::new(Mutex::new(vec![0.25, -0.5, 0.75]));
+        let (release, wait) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            let _ = wait.recv();
+            Vec::new()
+        });
+        let (audio, warning) = finish_samples(worker, Some(samples)).unwrap();
+        release.send(()).unwrap();
+        assert_eq!(audio, vec![0.25, -0.5, 0.75]);
+        assert!(warning.unwrap().contains("captured audio retained"));
+    }
     #[test]
     fn recording_limit_accepts_an_hour_and_rejects_past_the_shared_maximum() {
         assert!(!recording_limit_exceeded(60 * 60 * 16_000, 320, 16_000));

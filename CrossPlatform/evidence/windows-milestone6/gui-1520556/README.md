@@ -1,3 +1,5 @@
+Latest review corrections and newer exact executables: [review acceptance](../review-935e21f/README.md).
+
 # Windows M6 preview acceptance
 
 Prior integration GUI SHA-256:
