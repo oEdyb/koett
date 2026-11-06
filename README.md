@@ -26,6 +26,8 @@ On Linux, if the microphone will not start, set **Microphone** to **System defau
 
 Pull requests don't run CI automatically. A maintainer runs it on outside PRs before merging.
 
+From **0.3.1**, Mac installs and private Linux tar installs include signed automatic updates. **0.3.0 has no update feed**: install 0.3.1 manually first. Debian, RPM, Arch and Windows installations do not auto-update; use the package manager or run the newer installer. See [update ownership](docs/native-installers.md#update-ownership-and-existing-private-installs).
+
 ## Draw and pin while dictating
 
 - **Mac:** menu bar → Draw on Screen → **Draw & Pin While Dictating**. Allow Screen Recording when asked; Accessibility is also needed for paste and pin context.
