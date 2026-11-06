@@ -381,7 +381,7 @@ pub fn run() -> Result<(), String> {
     if std::env::args().nth(1).as_deref() == Some("media-help") {
         println!(
             "{}",
-            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
+            serde_json::json!({"ok":true,"commands":["media HTTP(S)_URL","transcribe-url HTTP(S)_URL","transcribe-file ABSOLUTE_PATH","media-current","media-status","media-copy","cancel-media","media-transcripts"],"current":"Reads only the focused accessible document; otherwise opens manual URL entry","result":"Separate media cache; status never prints transcript text"})
         );
         return Ok(());
     }
@@ -502,6 +502,27 @@ pub fn run() -> Result<(), String> {
             return Err("Usage: koett media HTTP(S)_URL".into());
         }
         crate::media_transcription::validate_url(&source)?;
+        command = format!("media {source}");
+    }
+    // The Mac control names, for scripts that work on both.
+    if command == "transcribe-url" || command == "transcribe-file" {
+        let usage = format!(
+            "Usage: koett {command} {}",
+            if command == "transcribe-url" {
+                "HTTP(S)_URL"
+            } else {
+                "ABSOLUTE_PATH"
+            }
+        );
+        let source = std::env::args().nth(2).ok_or(usage.clone())?;
+        if std::env::args().count() != 3 {
+            return Err(usage);
+        }
+        if command == "transcribe-url" {
+            crate::media_transcription::validate_url(&source)?;
+        } else {
+            crate::media_transcription::validate_file(&source)?;
+        }
         command = format!("media {source}");
     }
     if matches!(command.as_str(), "show" | "--background")

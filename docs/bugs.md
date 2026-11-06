@@ -219,6 +219,13 @@ the frame and the old pill stays on screen. The earlier lab passed because it ne
 compared the pill to the pointer. Labs now assert one recording dot within 3 px of the
 pointer in a screenshot at each step, on niri and on two KWin outputs.
 
+## 2026-11-05: a mistyped koett command looked like a successful one
+
+Found while adding `transcribe-file`. Any CLI error outside a hard-coded list opened a
+desktop dialog saying Koett could not start and exited 0, so a script saw success. The
+media commands now print a JSON error and exit 1. `start`, `stop` and `toggle` keep the
+dialog on purpose, since a desktop keybinding has nowhere else to show it.
+
 ## 2026-11-05: auto-paste stopped after 4096 windows until a restart
 
 Found in the audit of the Linux parity PRs. The KWin and GNOME focus checks remembered

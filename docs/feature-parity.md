@@ -89,7 +89,7 @@ Evidence: `Sources/Koett/Sketch*.swift`, `DrawKey.swift`, `PinContext*.swift`; `
 | Schema / legacy import / raw text | Yes | Yes, same canonical schema | Shared store | Windows migration/duplicate-ID/failed-save tests on real filesystem |
 | Unified Settings | Menus + focused native popovers/windows | Yes | Native Settings/Words/Model pages and draw/paste/recording-limit controls guest-verified | Windows grouped native pages; preserve Mac's approved interactions |
 | Focused browser media transcription | Yes | Yes plus focused document / typed URL | No; module Linux-gated | Share fetch/ASR/store; native Windows URL dialog + UIA browser URL |
-| File/document media entry | Native file picker + typed URL + focused browser + CLI | Yes | No product UI | Add Mac file/URL entry and Windows parity, no browser-cookie import |
+| File/document media entry | Native file picker + typed URL + focused browser + CLI | Native file picker + typed URL + focused browser + CLI (`transcribe-file`, `transcribe-url`, `media`) | No product UI | Add Mac file/URL entry and Windows parity, no browser-cookie import |
 | Pause media during dictation | Opt-in accessible Pause controls; unsupported players untouched, manual resume | MPRIS yes | No | Windows GSMTC explicit pause; Mac browser/player-specific explicit Pause commands or opt-in integration |
 | Open media transcripts | Yes | Yes | No action | Windows open folder/history action, shared filename/collision rules |
 | Vimeo anonymous fetch | Known 401 | Not reverified | No workflow | Track upstream extractor/auth restriction; user-supplied local file is alternative, never quietly import browser cookies |
