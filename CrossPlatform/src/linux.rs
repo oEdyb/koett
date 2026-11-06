@@ -313,6 +313,7 @@ mod sketch;
 mod sounds;
 mod theme;
 mod window;
+mod x11_surface;
 
 pub fn run() -> Result<(), String> {
     if let Some(command) = std::env::args().nth(1).filter(|c| c.starts_with("menu-")) {
@@ -918,19 +919,28 @@ fn run_x11(
             }
         }
         app.poll(
-            |model, text, raw, _words, target| {
+            |model, text, raw, words, target| {
                 let loaded = Settings::load();
                 let paste_shortcut = loaded.as_ref().unwrap_or(&settings).paste_shortcut;
-                let (final_text, warning) = completed_text(text, loaded, &settings);
+                let (spoken, warning) = completed_text(text, loaded, &settings);
                 if let Some(warning) = warning {
                     update_tray_status(tray, &format!("@notice:{warning}"));
                 }
-                if nothing_to_deliver(&final_text, false) {
+                let sketches = sketch::take_keyframes(Duration::from_secs(8));
+                let (final_text, sheet) = sketch_delivery(&spoken, words, &sketches);
+                if nothing_to_deliver(&final_text, sheet.is_some()) {
                     update_tray_status(tray, "@silence");
                     return Ok(());
                 }
+                feedback::remember_sketch(&final_text, sheet.as_deref());
                 cache_completed(tray, &final_text);
-                let delivered = output.deliver(&final_text, target, paste_shortcut);
+                let delivered = match &sheet {
+                    Some(png) => output
+                        .deliver_image(png, target)
+                        .map_err(|error| format!("Contact sheet not pasted: {error}")),
+                    None => Ok(()),
+                }
+                .and_then(|()| output.deliver(&final_text, target, paste_shortcut));
                 report_delivery(tray, &delivered);
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
@@ -2451,6 +2461,16 @@ impl X11Output {
         }
         let focus = self.connection.get_input_focus().ok()?.reply().ok()?.focus;
         recovery::x11_window(focus)
+    }
+
+    /// Pastes the contact sheet with Ctrl+V; the text follows once the app has
+    /// had time to read it.
+    fn deliver_image(&mut self, png: &[u8], target: Option<u32>) -> Result<(), String> {
+        x11_surface::set_clipboard_png(png.to_vec())?;
+        require_x11_target(target, self.focused_window())?;
+        self.paste(PasteShortcut::default())?;
+        std::thread::sleep(Duration::from_millis(500));
+        Ok(())
     }
 
     fn deliver(

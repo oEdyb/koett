@@ -268,3 +268,11 @@ shows its actor in one tick so pointer focus follows. Mutter resets that switch 
 so the extension sets it back. The cost is a dependency on Mutter internals that a future Shell
 may change, and it only runs on Shell versions with the extension installed.
 
+## 2026-11-06: X11 overlays are override-redirect
+
+The pill and drawing surfaces on X11 bypass the window manager. Marking them as notifications
+didn't hold: GTK rewrites the no-focus hint when it shows a window, and KWin then gave the overlay
+focus. Override-redirect windows are never focused or decorated. The cost is that a window manager
+can raise something above them, so the overlay raises itself at each draw key press, and the pill
+can't be dragged. They're shown without `present()`, which asks for focus.
+

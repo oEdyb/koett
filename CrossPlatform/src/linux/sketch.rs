@@ -355,6 +355,11 @@ impl Session {
     }
 
     fn set_input(&self, input: PointerInput) {
+        if matches!(self.shell, Shell::X11) && input != PointerInput::Nowhere {
+            for surface in &self.surfaces {
+                super::x11_surface::raise(&surface.window);
+            }
+        }
         // GNOME's extension switches this in the compositor, at once and with no
         // frame needed; GTK's region lagged behind there.
         let gnome = matches!(self.shell, Shell::Gnome);
@@ -1081,6 +1086,7 @@ enum Shell {
     Layer(Rc<super::recording_overlay::LayerShell>),
     /// A window the Koett GNOME extension makes a dock above everything.
     Gnome,
+    X11,
 }
 
 impl Shell {
@@ -1104,6 +1110,7 @@ impl Shell {
                 super::gnome_pill::take_pointer(false);
                 super::gnome_pill::cover(window, monitor).map_err(|error| error.to_string())
             }
+            Self::X11 => super::x11_surface::cover(window, monitor),
         }
     }
 
@@ -1112,7 +1119,16 @@ impl Shell {
             Self::Layer(layer) => layer
                 .set_keyboard(window, mode)
                 .map_err(|error| error.to_string()),
-            Self::Gnome => Ok(()),
+            Self::Gnome | Self::X11 => Ok(()),
+        }
+    }
+
+    /// Presenting asks for focus, which an X server with no window manager grants.
+    fn show(&self, window: &gtk::Window) {
+        if matches!(self, Self::X11) {
+            window.set_visible(true);
+        } else {
+            window.present();
         }
     }
 
@@ -1150,9 +1166,11 @@ fn unavailable_hint(access: keys::Access, focus: bool) -> &'static str {
 }
 
 impl SketchOverlay {
-    /// `None` without layer-shell or the GNOME extension (X11): dictation is unaffected.
+    /// `None` without layer-shell, the GNOME extension or X11: dictation is unaffected.
     pub fn new() -> Option<Self> {
-        let shell = if super::gnome_pill::available() {
+        let shell = if super::x11_surface::active() {
+            Shell::X11
+        } else if super::gnome_pill::available() {
             Shell::Gnome
         } else {
             let layer = super::recording_overlay::LayerShell::load()
@@ -1228,7 +1246,7 @@ impl SketchOverlay {
                     session.display_generation += 1;
                     session.set_input(PointerInput::Nowhere);
                     for surface in &session.surfaces {
-                        surface.window.present();
+                        session.shell.show(&surface.window);
                     }
                 }
                 session.clock.observe(paused, Instant::now());
@@ -1466,11 +1484,17 @@ impl SketchOverlay {
                 // A missed key release cannot leave clicks blocked: `watch_focus`.
             }
             if !matches!(self.shell, Shell::Gnome) {
-                window.connect_realize(|window| {
+                let pass_through = |window: &gtk::Window| {
                     if let Some(native) = window.surface() {
                         native.set_input_region(Some(&gtk::cairo::Region::create()));
                     }
-                });
+                };
+                // X11 has already realized the window to mark it.
+                if window.is_realized() {
+                    pass_through(&window);
+                } else {
+                    window.connect_realize(pass_through);
+                }
             }
             surfaces.push(Surface {
                 window,
@@ -1502,7 +1526,7 @@ impl SketchOverlay {
         }
         frames::set_open(recording, true);
         for surface in &surfaces {
-            surface.window.present();
+            self.shell.show(&surface.window);
         }
         *self.session.borrow_mut() = Some(Session {
             recording,
