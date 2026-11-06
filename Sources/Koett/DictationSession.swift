@@ -24,8 +24,17 @@ extension KoettController {
         }
     }
 
+    func showUpdateReservationNoticeIfNeeded() {
+        if appUpdater?.gate.takeReservationNotice() == true {
+            recordingOverlay.showError("Installing update · Try again shortly")
+        }
+    }
+
     func startRecordingIfReady() {
-        guard canStartSession else { return }
+        guard canStartSession else {
+            showUpdateReservationNoticeIfNeeded()
+            return
+        }
         if AssistantAvailability.isEnabled { assistantSpeech.stop() }
         do {
             try startRecording()

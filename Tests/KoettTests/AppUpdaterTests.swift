@@ -3,28 +3,35 @@ import AppKit
 import XCTest
 
 final class UpdateConfigurationTests: XCTestCase {
+    func configuration(_ info: [String: Any]) -> UpdateConfiguration? {
+        UpdateConfiguration(info: info.merging(["SURequireSignedFeed": true, "SUVerifyUpdateBeforeExtraction": true,
+            "SUSignedFeedFailureExpirationInterval": 0]) { $1 })
+    }
+    func testMissingSignedFeedSafetyKeepsUpdatesInert() {
+        XCTAssertNil(UpdateConfiguration(info: ["SUFeedURL": "https://example.test/feed", "SUPublicEDKey": Data(repeating: 1, count: 32).base64EncodedString()]))
+    }
     let key = Data(repeating: 1, count: 32).base64EncodedString()
     func testNoFeedOrMissingKeyKeepsUpdatesInert() {
-        XCTAssertNil(UpdateConfiguration(info: [:]))
-        XCTAssertNil(UpdateConfiguration(info: ["SUPublicEDKey": key]))
-        XCTAssertNil(UpdateConfiguration(info: ["SUFeedURL": "https://example.test/appcast.xml"]))
-        XCTAssertNil(UpdateConfiguration(info: ["SUFeedURL": "https://example.test/appcast.xml", "SUPublicEDKey": "invalid"]))
+        XCTAssertNil(configuration([:]))
+        XCTAssertNil(configuration(["SUPublicEDKey": key]))
+        XCTAssertNil(configuration(["SUFeedURL": "https://example.test/appcast.xml"]))
+        XCTAssertNil(configuration(["SUFeedURL": "https://example.test/appcast.xml", "SUPublicEDKey": "invalid"]))
     }
     func testGitHubHTTPSFeedAndArchivesAreAccepted() throws {
-        let config = try XCTUnwrap(UpdateConfiguration(info: ["SUFeedURL": "https://github.com/oEdyb/koett/releases/download/macos-updates/appcast.xml", "SUPublicEDKey": key]))
+        let config = try XCTUnwrap(configuration(["SUFeedURL": "https://github.com/oEdyb/koett/releases/download/macos-updates/appcast.xml", "SUPublicEDKey": key]))
         XCTAssertTrue(config.acceptsArchive(URL(string: "https://github.com/oEdyb/koett/releases/download/v1/Koett.zip")!))
         XCTAssertFalse(config.acceptsArchive(URL(string: "http://example.test/Koett.zip")!))
     }
     func testLocalHTTPRequiresExplicitTestBundleAndLiteralLoopback() throws {
         let info: [String: Any] = ["SUFeedURL": "http://127.0.0.1:18766/appcast.xml", "SUPublicEDKey": key]
-        XCTAssertNil(UpdateConfiguration(info: info))
-        let config = try XCTUnwrap(UpdateConfiguration(info: info.merging(["KoettLocalUpdateTesting": true]) { $1 }))
+        XCTAssertNil(configuration(info))
+        let config = try XCTUnwrap(configuration(info.merging(["KoettLocalUpdateTesting": true]) { $1 }))
         XCTAssertTrue(config.acceptsArchive(URL(string: "http://127.0.0.1:18766/Koett.zip")!))
         XCTAssertFalse(config.acceptsArchive(URL(string: "http://example.test/Koett.zip")!))
     }
     func testCredentialsFragmentsAndOtherSchemesAreRejected() {
         for url in ["file:///tmp/appcast.xml", "https://user:password@example.test/feed", "https://example.test/feed#fragment", "ftp://example.test/feed"] {
-            XCTAssertNil(UpdateConfiguration(info: ["SUFeedURL": url, "SUPublicEDKey": key, "KoettLocalUpdateTesting": true]))
+            XCTAssertNil(configuration(["SUFeedURL": url, "SUPublicEDKey": key, "KoettLocalUpdateTesting": true]))
         }
     }
 }

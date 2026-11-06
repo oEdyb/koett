@@ -7,6 +7,7 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
     let gate: UpdateInstallGate
     private let bundle: Bundle
     private let backups: UpdateBackupStore
+    private let rollbackPolicy: UpdateRollbackPolicy
     private let isIdle: () -> Bool
     private let changed: () -> Void
     private var updaterController: SPUStandardUpdaterController?
@@ -18,11 +19,12 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
     var status: UpdateStatus {
         .init(enabled: configuration != nil, preparing: preparing, pending: gate.isPending,
               installing: gate.isInstalling, error: lastError, rollbackPath: rollbackURL?.path,
-              build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
+              skippedBuild: rollbackPolicy.skippedBuild, build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
     }
 
-    init(bundle: Bundle = .main, isIdle: @escaping () -> Bool, changed: @escaping () -> Void) {
+    init(bundle: Bundle = .main, isIdle: @escaping () -> Bool, changed: @escaping () -> Void, defaults: UserDefaults = .standard) {
         self.bundle = bundle
+        rollbackPolicy = UpdateRollbackPolicy(defaults: defaults, currentBuild: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0")
         configuration = UpdateConfiguration(info: bundle.infoDictionary ?? [:])
         self.isIdle = isIdle
         self.changed = changed
@@ -43,7 +45,9 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
         if updaterController == nil && !preparing && lastError == nil && isIdle() { prepare() }
     }
 
-    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool { canCheck }
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        menuItem.action == #selector(allowSkippedUpdate) ? (isIdle() && !gate.isInstalling && skippedBuild != nil) : canCheck
+    }
 
     @objc func checkForUpdates() {
         guard canCheck else { return }
@@ -52,9 +56,19 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
         else { manualCheckPending = true; prepare() }
     }
 
+    var skippedBuild: String? { rollbackPolicy.skippedBuild }
+
+    @objc func allowSkippedUpdate() {
+        guard isIdle(), !gate.isInstalling else { return }
+        rollbackPolicy.allowSkipped()
+        lastError = nil
+        changed()
+    }
+
     private func prepare() {
         guard configuration != nil, bundle.bundleURL.pathExtension == "app" else { return }
         preparing = true
+        rollbackPolicy.observeLaunch()
         let backups = backups
         Task { [weak self] in
             do {
@@ -81,24 +95,30 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
     func updaterShouldPromptForPermissionToCheck(forUpdates updater: SPUUpdater) -> Bool { false }
 
     func updater(_ updater: SPUUpdater, shouldProceedWithUpdate item: SUAppcastItem, updateCheck: SPUUpdateCheck) throws {
+        guard rollbackPolicy.permits(item.versionString) else {
+            throw NSError(domain: "Koett.Updates", code: 3, userInfo: [NSLocalizedDescriptionKey: "This update was skipped after rollback. A newer build is required."])
+        }
         guard let url = item.fileURL, configuration?.acceptsArchive(url) == true,
               item.installationType == "application", rollbackURL != nil else {
             throw NSError(domain: "Koett.Updates", code: 2,
                 userInfo: [NSLocalizedDescriptionKey: "This update cannot be installed safely."])
         }
+        try rollbackPolicy.prepareInstall(item.versionString)
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock handler: @escaping () -> Void) -> Bool {
-        gate.deferInstallation(handler)
+        rollbackPolicy.willInstall(item.versionString)
+        gate.deferInstallation { [rollbackPolicy] in rollbackPolicy.willInstall(item.versionString); handler() }
         changed()
         return true
     }
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock handler: @escaping () -> Void) -> Bool {
-        if gate.reserveIfIdle() { changed(); return false }
-        gate.deferInstallation(handler)
+        rollbackPolicy.willInstall(item.versionString)
+        if gate.reserveIfIdle() { rollbackPolicy.willInstall(item.versionString); changed(); return false }
+        gate.deferInstallation { [rollbackPolicy] in rollbackPolicy.willInstall(item.versionString); handler() }
         changed()
         return true
     }
@@ -118,5 +138,6 @@ struct UpdateStatus: Codable, Sendable {
     let installing: Bool
     let error: String?
     let rollbackPath: String?
+    let skippedBuild: String?
     let build: String?
 }
