@@ -266,6 +266,7 @@ struct Session {
     results: CaptureResults,
     gesture: gesture::PinGesture,
     include_selection: bool,
+    include_details: bool,
     pick: Arc<niri_pick::PickGate>,
     /// What the input regions were last asked to be.
     input: PointerInput,
@@ -502,25 +503,28 @@ impl Session {
             return;
         }
         self.lift();
-        let (sender, receiver) = std::sync::mpsc::channel();
-        self.pick.begin();
-        self.last_pin = Some((mark.surface, mark.point));
-        self.sync_input();
-        let (include_selection, point, pick) =
-            (self.include_selection, mark.point, self.pick.clone());
-        let monitor = self.surfaces[mark.surface].target.monitor;
-        let screen_point = (
-            point.0 + f64::from(monitor.0),
-            point.1 + f64::from(monitor.1),
-        );
-        std::thread::spawn(move || {
-            let _ = sender.send(pin_reader::read(
-                include_selection,
-                point,
-                screen_point,
-                &pick,
-            ));
+        let context = self.include_details.then(|| {
+            let (sender, receiver) = std::sync::mpsc::channel();
+            self.pick.begin();
+            self.last_pin = Some((mark.surface, mark.point));
+            let (include_selection, point, pick) =
+                (self.include_selection, mark.point, self.pick.clone());
+            let monitor = self.surfaces[mark.surface].target.monitor;
+            let screen_point = (
+                point.0 + f64::from(monitor.0),
+                point.1 + f64::from(monitor.1),
+            );
+            std::thread::spawn(move || {
+                let _ = sender.send(pin_reader::read(
+                    include_selection,
+                    point,
+                    screen_point,
+                    &pick,
+                ));
+            });
+            receiver
         });
+        self.sync_input();
         self.next_id += 1;
         self.groups.push(Group {
             id: self.next_id,
@@ -534,7 +538,7 @@ impl Session {
             closed: true,
             phase: Phase::Drawing,
             pin: Some(mark.point),
-            context: Some(receiver),
+            context,
             png: None,
         });
         self.surfaces[mark.surface].area.queue_draw();
@@ -1463,6 +1467,7 @@ impl SketchOverlay {
             results: Arc::new(Mutex::new(Vec::new())),
             gesture: gesture::PinGesture::default(),
             include_selection: settings.pin_selected_text,
+            include_details: settings.pin_page_details,
             pick: Arc::new(niri_pick::PickGate::default()),
             input: PointerInput::Nowhere,
             committing: None,
