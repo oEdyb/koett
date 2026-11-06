@@ -13,6 +13,8 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
     private var updaterController: SPUStandardUpdaterController?
     private var preparing = false
     private var manualCheckPending = false
+    private var pendingInstallBuild: String?
+    private var installIntentSaved = false
     private(set) var lastError: String?
     private(set) var rollbackURL: URL?
 
@@ -110,28 +112,45 @@ final class AppUpdater: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
             throw NSError(domain: "Koett.Updates", code: 2,
                 userInfo: [NSLocalizedDescriptionKey: "This update cannot be installed safely."])
         }
-        try rollbackPolicy.prepareInstall(item.versionString)
+    }
+
+    func prepareForTermination() -> Bool {
+        guard let build = pendingInstallBuild, !installIntentSaved else { return true }
+        do {
+            try rollbackPolicy.prepareInstall(build)
+            installIntentSaved = true
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
     }
 
     func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
                  immediateInstallationBlock handler: @escaping () -> Void) -> Bool {
-        rollbackPolicy.willInstall(item.versionString)
-        gate.deferInstallation { [rollbackPolicy] in rollbackPolicy.willInstall(item.versionString); handler() }
+        pendingInstallBuild = item.versionString
+        installIntentSaved = false
+        guard prepareForTermination() else { changed(); return true }
+        gate.deferInstallation(handler)
         changed()
         return true
     }
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock handler: @escaping () -> Void) -> Bool {
-        rollbackPolicy.willInstall(item.versionString)
-        if gate.reserveIfIdle() { rollbackPolicy.willInstall(item.versionString); changed(); return false }
-        gate.deferInstallation { [rollbackPolicy] in rollbackPolicy.willInstall(item.versionString); handler() }
+        pendingInstallBuild = item.versionString
+        installIntentSaved = false
+        guard prepareForTermination() else { changed(); return true }
+        if gate.reserveIfIdle() { changed(); return false }
+        gate.deferInstallation(handler)
         changed()
         return true
     }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
         gate.reset()
+        pendingInstallBuild = nil
+        installIntentSaved = false
         let failure = error as NSError
         lastError = failure.domain == SUSparkleErrorDomain && failure.code == 1001 ? nil : error.localizedDescription
         changed()

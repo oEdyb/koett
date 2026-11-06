@@ -99,12 +99,15 @@ No production signature may be made for any lab archive or feed.
 
 ## Roll back and stay on the old build
 
-Quit Koett while idle. In Finder, Go to Folder →
+After the installer finishes, quit Koett while idle. Never replace an app while
+its installer is running. In Finder, Go to Folder →
 `~/Library/Application Support/Koett/Update Backups`. Keep the current application
 elsewhere, copy the desired verified older app to Applications as Koett.app, and
 launch it. User data stays in place.
 
-Before allowing an update, Koett durably records its target build. A lower build
+Before handing a verified update to installation, Koett durably records its target
+build. Merely finding or dismissing an offered update does not mark rollback intent.
+A failed intent write blocks installation and normal Quit until it can be saved. A lower build
 on the next launch identifies rollback or an unsuccessful installation. That build
 and earlier builds are excluded from automatic **and manual** checks, even if the
 bad update remains in a correctly signed feed. The exclusion survives restarts.
