@@ -123,7 +123,9 @@ the notice does not block the install itself.
 
 ## Evidence
 
-See [guest verification](macos-updates-verification.md). It covers a loopback
+See [trust and rollback verification](macos-update-trust-verification.md) for the
+current signing keys, signed-feed enforcement and persistent rollback. The earlier
+[guest verification](macos-updates-verification.md) covers a loopback
 feed, two locally Developer-ID-signed builds, rejected archive and application
 signatures, actual recording/transcription deferral and a retained rollback copy.
 It does not certify a published feed, notarized future asset, live-host update,

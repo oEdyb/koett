@@ -1,0 +1,19 @@
+{
+  "apps": [
+    {
+      "name": "A",
+      "build": "7100",
+      "source": "bfe09f3ea630af9e4f9ec6e37caefbc73fa3ca36",
+      "binarySHA256": "09cdaccd4bcca393bafcacaf765c572718f7a2fb71b9ad8b8c0bc31bf8b52b77"
+    },
+    {
+      "name": "B",
+      "build": "7101",
+      "source": "bfe09f3ea630af9e4f9ec6e37caefbc73fa3ca36",
+      "binarySHA256": "8719edc97c9bf24f623d7e9acf1c53d9156d044f9d0ef40ebe2507733b98f13a"
+    }
+  ],
+  "labPublicKey": "pNMcLAFW6ZWWFQWeBxOwaABnfKr4oGy5c0KIUgdCJa0=",
+  "productionPublicKey": "/SY2ckG+UXlqU0Y0Upiv2p8NuQGIBd8GZlNY2Seu/QE=",
+  "archiveSHA256": "e6bfa2e8ee9260e4dbc7c05d427689d42a191a0123a24691722839526db8b7c6"
+}
