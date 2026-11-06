@@ -8,7 +8,8 @@ until a release is explicitly approved. Checksums accompany every installer.
 Open the signed, notarized DMG and drag Koett to Applications. Open Koett from
 Applications, then grant Microphone and Accessibility; drawing also needs Screen
 Recording. Upgrade by replacing the app while it is closed. Sparkle continues to
-manage updates to that app. Remove the app to uninstall; personal data remains.
+manage updates to that app from 0.3.1. Version 0.3.0 has no feed, so install
+0.3.1 manually first. Remove the app to uninstall; personal data remains.
 
 ## Linux
 
@@ -35,7 +36,9 @@ manager. Installing a local package does not add an external software repository
 so it does not by itself arrange automatic package-manager updates.
 
 The archive installer remains available for private installations; its signed
-updater continues to own only that installation's version tree. To switch from a
+updater owns only that installation's version tree. Signed automatic updates are
+enabled from 0.3.1; existing 0.3.0 archive installs have no feed and need one
+manual upgrade first. To switch from a
 private archive installation, quit Koett, turn off its Start at login entry and
 remove the old application files using the [archive uninstall instructions](../CrossPlatform/README.md#update-or-uninstall) before
 installing the native package. Keep your settings/models/History. A private
@@ -56,7 +59,8 @@ hardware evidence; CI packaging alone is not desktop acceptance.
 
 Open **Koett-Windows-x86_64-Setup.exe** and follow Setup. Installation is per user,
 requires no administrator access and creates a Start menu entry. Close Koett
-before running the newer installer to upgrade. Remove it through Settings → Apps
+before running the newer installer to upgrade. Windows does not auto-update.
+Remove it through Settings → Apps
 → Installed apps. Settings, models and transcripts are retained.
 
 The Windows installer is unsigned until a signing certificate is configured.
