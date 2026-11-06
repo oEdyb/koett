@@ -46,10 +46,19 @@ fn xid(window: &gtk::Window) -> Result<u32, String> {
     }
 }
 
+/// GDK's scale on X11, which is one value for the whole display. Rectangles from GTK
+/// are logical and the X server works in physical pixels.
+static SCALE: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(1);
+
+fn scale() -> i32 {
+    SCALE.load(std::sync::atomic::Ordering::Relaxed).max(1)
+}
+
 /// Physical pixels of a monitor, which is what X11 positions in.
 fn physical(monitor: &gdk::Monitor) -> (i32, i32, i32, i32) {
     let area = monitor.geometry();
     let scale = monitor.scale_factor();
+    SCALE.store(scale, std::sync::atomic::Ordering::Relaxed);
     (
         area.x() * scale,
         area.y() * scale,
@@ -182,9 +191,17 @@ pub fn follow_pointer(window: &gtk::Window, finished: impl FnOnce(Option<(i32, i
     });
 }
 
+/// x, y, width, height and scale of a monitor, in physical pixels.
+type PillMonitor = (i32, i32, i32, i32, i32);
+
+thread_local! {
+    /// The monitor the pill sits on: a monitor change only replaces this.
+    static PILL_MONITOR: std::cell::Cell<Option<PillMonitor>> =
+        const { std::cell::Cell::new(None) };
+}
+
 /// Keeps the pill centred at the bottom of a monitor, whatever its height.
 pub fn pill(window: &gtk::Window, monitor: Option<&gdk::Monitor>) -> Result<(), String> {
-    let xid = float(window)?;
     let display = gtk::prelude::WidgetExt::display(window);
     let monitors = display.monitors();
     let chosen = monitor
@@ -192,27 +209,31 @@ pub fn pill(window: &gtk::Window, monitor: Option<&gdk::Monitor>) -> Result<(), 
         .or_else(|| monitors.item(0).and_downcast::<gdk::Monitor>())
         .ok_or("no monitor for the recording pill")?;
     let (x, y, width, height) = physical(&chosen);
-    let scale = chosen.scale_factor();
+    let first = PILL_MONITOR
+        .with(|place| place.replace(Some((x, y, width, height, chosen.scale_factor()))))
+        .is_none();
+    if !first {
+        return Ok(());
+    }
+    let xid = float(window)?;
     let place = move |surface_width: i32, surface_height: i32| {
-        let (w, h) = (surface_width * scale, surface_height * scale);
-        if let Some((saved_x, saved_y)) = PILL_ORIGIN.with(std::cell::Cell::get) {
-            if let Err(error) = move_window(xid, saved_x * scale, saved_y * scale, None) {
-                eprintln!("Recording pill placement failed: {error}");
-            }
+        let Some((x, y, width, height, scale)) = PILL_MONITOR.with(std::cell::Cell::get) else {
             return;
-        }
-        if let Err(error) = move_window(xid, x + (width - w) / 2, y + height - h - 24 * scale, None)
-        {
+        };
+        let (w, h) = (surface_width * scale, surface_height * scale);
+        let (left, top) = PILL_ORIGIN.with(std::cell::Cell::get).map_or(
+            (x + (width - w) / 2, y + height - h - 24 * scale),
+            |(left, top)| (left * scale, top * scale),
+        );
+        if let Err(error) = move_window(xid, left, top, None) {
             eprintln!("Recording pill placement failed: {error}");
         }
     };
-    window.connect_map({
-        move |window| {
-            place(
-                window.default_width().max(window.width()),
-                window.height().max(1),
-            )
-        }
+    window.connect_map(move |window| {
+        place(
+            window.default_width().max(window.width()),
+            window.height().max(1),
+        );
     });
     if let Some(surface) = window.surface() {
         surface.connect_layout(move |_, surface_width, surface_height| {
@@ -224,7 +245,7 @@ pub fn pill(window: &gtk::Window, monitor: Option<&gdk::Monitor>) -> Result<(), 
 
 /// One monitor from the root window as a PNG, ink included.
 pub fn capture(rect: (i32, i32, i32, i32)) -> Result<Vec<u8>, String> {
-    let (x, y, width, height) = rect;
+    let (x, y, width, height) = physical_rect(rect, scale());
     let (connection, screen) = connect()?;
     let root = connection.setup().roots[screen].root;
     let reply = connection
@@ -245,6 +266,10 @@ pub fn capture(rect: (i32, i32, i32, i32)) -> Result<Vec<u8>, String> {
         return Err("X11 screen capture has an unexpected format".into());
     }
     png(&reply.data, width, height)
+}
+
+fn physical_rect((x, y, width, height): (i32, i32, i32, i32), scale: i32) -> (i32, i32, i32, i32) {
+    (x * scale, y * scale, width * scale, height * scale)
 }
 
 fn png(bgrx: &[u8], width: usize, height: usize) -> Result<Vec<u8>, String> {
@@ -289,12 +314,37 @@ fn property_text(connection: &RustConnection, window: u32, property: u32) -> Opt
     (reply.format == 8).then_some(reply.value)
 }
 
+/// The names `image_paste_shortcuts` can use for a window: its WM_CLASS class, then
+/// its instance.
+pub fn window_classes(window: u32) -> Vec<String> {
+    let Ok((connection, _)) = connect() else {
+        return Vec::new();
+    };
+    let Some(class) = property_text(&connection, window, AtomEnum::WM_CLASS.into()) else {
+        return Vec::new();
+    };
+    class_names(&class)
+}
+
+fn class_names(class: &[u8]) -> Vec<String> {
+    class
+        .split(|byte| *byte == 0)
+        .filter(|part| !part.is_empty())
+        .rev()
+        .map(|part| String::from_utf8_lossy(part).into_owned())
+        .collect()
+}
+
 /// The topmost other client window at a desktop point, for a pin.
 pub fn window_at(point: (f64, f64)) -> Option<super::sketch::GnomeWindow> {
     if !point.0.is_finite() || !point.1.is_finite() {
         return None;
     }
-    let (px, py) = (point.0.round() as i32, point.1.round() as i32);
+    let scale = scale();
+    let (px, py) = (
+        (point.0 * f64::from(scale)).round() as i32,
+        (point.1 * f64::from(scale)).round() as i32,
+    );
     let (connection, screen) = connect().ok()?;
     let root = connection.setup().roots[screen].root;
     let stacking = atom(&connection, "_NET_CLIENT_LIST_STACKING").ok()?;
@@ -344,10 +394,10 @@ pub fn window_at(point: (f64, f64)) -> Option<super::sketch::GnomeWindow> {
         return Some(super::sketch::GnomeWindow {
             title: String::from_utf8_lossy(&title).into_owned(),
             app: String::from_utf8_lossy(app).into_owned(),
-            x: f64::from(x),
-            y: f64::from(y),
-            width: f64::from(geometry.width),
-            height: f64::from(geometry.height),
+            x: f64::from(x) / f64::from(scale),
+            y: f64::from(y) / f64::from(scale),
+            width: f64::from(geometry.width) / f64::from(scale),
+            height: f64::from(geometry.height) / f64::from(scale),
         });
     }
     None
@@ -356,6 +406,23 @@ pub fn window_at(point: (f64, f64)) -> Option<super::sketch::GnomeWindow> {
 #[cfg(test)]
 mod tests {
     use gtk4::prelude::*;
+
+    #[test]
+    fn logical_rectangles_become_physical_at_scale_two() {
+        assert_eq!(
+            super::physical_rect((640, 0, 640, 400), 2),
+            (1280, 0, 1280, 800)
+        );
+    }
+
+    #[test]
+    fn a_window_class_is_tried_before_its_instance() {
+        assert_eq!(
+            super::class_names(b"kitty-one\0kitty\0"),
+            ["kitty", "kitty-one"]
+        );
+        assert!(super::class_names(b"").is_empty());
+    }
 
     #[test]
     fn a_capture_becomes_a_png_with_red_and_blue_swapped_back() {

@@ -282,6 +282,7 @@ fn run(
     let mut capture_started = None::<std::time::Instant>;
     let mut recording_limit = Duration::from_secs(60 * 60);
     let mut limit_warned = false;
+    let mut capture_levels = None::<AudioLevels>;
     let mut recorder = None;
     let mut background: Option<BackgroundSession> = None;
     #[cfg(target_os = "linux")]
@@ -466,14 +467,27 @@ fn run(
         let command = if capture_start {
             EngineCommand::Start
         } else if status == AppStatus::Recording {
-            match commands.recv_timeout(until_next_limit_step(
+            let wait = limit_wait(
+                capture_started,
+                capture_levels.as_ref(),
                 recording_limit,
-                capture_started
-                    .map(|started| started.elapsed())
-                    .unwrap_or_default(),
                 limit_warned,
-            )) {
+            );
+            match commands.recv_timeout(wait) {
                 Ok(command) => command,
+                // Pausing doesn't wake this wait, so look again before acting: paused
+                // time doesn't count toward the limit.
+                Err(RecvTimeoutError::Timeout)
+                    if !limit_wait(
+                        capture_started,
+                        capture_levels.as_ref(),
+                        recording_limit,
+                        limit_warned,
+                    )
+                    .is_zero() =>
+                {
+                    continue;
+                }
                 Err(RecvTimeoutError::Timeout) if !limit_warned => {
                     limit_warned = true;
                     let _ = updates.send(EngineUpdate::Notice(LIMIT_WARNING.to_string()));
@@ -876,6 +890,7 @@ fn run(
                             Duration::from_secs(u64::from(current.recording_limit_minutes) * 60);
                         limit_warned = false;
                         let levels = started.levels();
+                        capture_levels = Some(levels.clone());
                         recorder = Some(started);
                         background = Some(session);
                         status = status
@@ -1310,6 +1325,7 @@ fn recover_from_error(updates: &Sender<EngineUpdate>, status: &mut AppStatus, er
 
 pub const LIMIT_WARNING: &str = "1 minute left";
 const LIMIT_WARNING_BEFORE: Duration = Duration::from_secs(60);
+const PAUSE_POLL: Duration = Duration::from_millis(250);
 
 fn limit_notice(limit: Duration) -> String {
     format!("Stopped at the {}-minute limit", limit.as_secs() / 60)
@@ -1317,6 +1333,24 @@ fn limit_notice(limit: Duration) -> String {
 
 pub fn is_limit_notice(text: &str) -> bool {
     text.starts_with("Stopped at the ") && text.ends_with("-minute limit")
+}
+
+/// How long the recording loop may wait; zero means the next limit step is due.
+/// Paused recordings keep polling and never come due.
+fn limit_wait(
+    started: Option<std::time::Instant>,
+    levels: Option<&AudioLevels>,
+    limit: Duration,
+    warned: bool,
+) -> Duration {
+    if levels.is_some_and(AudioLevels::paused) {
+        return PAUSE_POLL;
+    }
+    let recorded = started
+        .map(|started| started.elapsed())
+        .unwrap_or_default()
+        .saturating_sub(levels.map_or(Duration::ZERO, AudioLevels::paused_time));
+    until_next_limit_step(limit, recorded, warned)
 }
 
 /// How long to wait for a command before the warning, then before the stop.
@@ -1392,6 +1426,22 @@ mod tests {
                     && super::is_limit_notice(&message)
         ));
         assert!(!super::is_limit_notice(super::LIMIT_WARNING));
+    }
+
+    #[test]
+    fn paused_time_does_not_count_toward_the_limit() {
+        let levels = crate::audio::AudioLevels::new();
+        let limit = Duration::from_secs(60 * 60);
+        let started = Some(std::time::Instant::now() - Duration::from_secs(59 * 60 + 1));
+        assert!(super::limit_wait(started, Some(&levels), limit, false).is_zero());
+        levels.set_paused(true);
+        assert_eq!(
+            super::limit_wait(started, Some(&levels), limit, false),
+            super::PAUSE_POLL
+        );
+        std::thread::sleep(Duration::from_millis(30));
+        levels.set_paused(false);
+        assert!(levels.paused_time() >= Duration::from_millis(30));
     }
 
     #[test]

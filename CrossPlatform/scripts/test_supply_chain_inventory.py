@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -19,6 +20,16 @@ SPEC.loader.exec_module(inventory)
 
 
 class SupplyChainInventoryTests(unittest.TestCase):
+    def test_every_resolved_swift_package_has_a_policy_component(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        policy = json.loads((root / 'CrossPlatform/supply-chain/inventory-policy.json').read_text())
+        pins = json.loads((root / 'Package.resolved').read_text())['pins']
+        recorded = {(item['name'].casefold(), item['version']) for item in policy['manual_components']
+                    if item['group'] == 'swift-package'}
+        for pin in pins:
+            self.assertIn((pin['identity'].casefold(), pin['state']['version']), recorded,
+                          'Add each SwiftPM dependency to the inventory policy before merging')
+
     def test_vendored_license_does_not_inherit_the_project_license(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

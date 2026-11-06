@@ -1,0 +1,156 @@
+[
+  {
+    "check": "idle-no-active-key-tap",
+    "taps": [
+      {
+        "enabled": true,
+        "mask": 33558538,
+        "options": 0,
+        "pid": 1149,
+        "point": 1
+      }
+    ]
+  },
+  {
+    "check": "idle-key-delivered-before-controller-resumed",
+    "recipientEvents": [
+      {
+        "flags": 0,
+        "key": 0,
+        "time": 1156.9437036666668,
+        "type": 10
+      },
+      {
+        "flags": 0,
+        "key": 0,
+        "time": 1156.993201875,
+        "type": 11
+      }
+    ]
+  },
+  {
+    "check": "drawing-recording-key-tap",
+    "taps": [
+      {
+        "enabled": true,
+        "mask": 3072,
+        "options": 0,
+        "pid": 1149,
+        "point": 1
+      },
+      {
+        "enabled": true,
+        "mask": 33558538,
+        "options": 0,
+        "pid": 1149,
+        "point": 1
+      }
+    ]
+  },
+  {
+    "check": "drawing-chords-consumed",
+    "status": {
+      "drawLocked": false,
+      "paused": false,
+      "pasteAccessGranted": true,
+      "phase": "recording",
+      "ok": true,
+      "model": "parakeet",
+      "updates": {
+        "build": "5200",
+        "installing": false,
+        "enabled": false,
+        "preparing": false,
+        "pending": false
+      },
+      "drawStrokeCount": 0
+    }
+  },
+  {
+    "check": "stop-removes-key-tap",
+    "status": {
+      "phase": "transcribing",
+      "ok": true,
+      "drawStrokeCount": 0,
+      "drawLocked": false,
+      "pasteAccessGranted": true,
+      "updates": {
+        "preparing": false,
+        "installing": false,
+        "pending": false,
+        "enabled": false,
+        "build": "5200"
+      },
+      "model": "parakeet"
+    },
+    "taps": [
+      {
+        "enabled": true,
+        "mask": 33558538,
+        "options": 0,
+        "pid": 1149,
+        "point": 1
+      }
+    ]
+  },
+  {
+    "check": "drawing-disabled-recording-no-key-tap",
+    "status": {
+      "paused": false,
+      "phase": "recording",
+      "ok": true,
+      "drawStrokeCount": 0,
+      "drawLocked": false,
+      "updates": {
+        "enabled": false,
+        "pending": false,
+        "build": "5200",
+        "preparing": false,
+        "installing": false
+      },
+      "model": "parakeet",
+      "pasteAccessGranted": true
+    },
+    "taps": [
+      {
+        "enabled": true,
+        "mask": 33558538,
+        "options": 0,
+        "pid": 1213,
+        "point": 1
+      }
+    ]
+  },
+  {
+    "check": "cancel-no-key-tap",
+    "status": {
+      "pasteAccessGranted": true,
+      "model": "parakeet",
+      "ok": true,
+      "phase": "ready",
+      "drawLocked": false,
+      "drawStrokeCount": 0,
+      "updates": {
+        "enabled": false,
+        "preparing": false,
+        "installing": false,
+        "build": "5200",
+        "pending": false
+      }
+    },
+    "taps": [
+      {
+        "enabled": true,
+        "mask": 33558538,
+        "options": 0,
+        "pid": 1213,
+        "point": 1
+      }
+    ]
+  },
+  {
+    "check": "binding",
+    "source": "09bfbe2e8fec940e35ed54239532c7271fc641c5",
+    "binarySHA256": "92417abb73f857c045d0bab04b911cdb5233c8a2fe75c66e18554a03fcafb2ad"
+  }
+]

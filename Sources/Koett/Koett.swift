@@ -82,9 +82,15 @@ final class KoettController: NSObject {
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()
     var drawLockKeyDown = false
+    var drawLockUndoKey = DrawLockUndoKey()
     var state = State.loading {
         didSet {
             if state != oldValue {
+                if state != .recording {
+                    drawLockKeyDown = false
+                    drawLockUndoKey = DrawLockUndoKey()
+                }
+                refreshDrawingKeyTap()
                 rebuildMenu()
                 refreshMicrophoneMonitorTarget()
                 if state == .ready {
@@ -120,6 +126,9 @@ final class KoettController: NSObject {
     var nemotronRecorder: NemotronLiveRecorder?
     private var modifierEventTap: CFMachPort?
     private var modifierEventSource: CFRunLoopSource?
+    var drawingEventTap: CFMachPort?
+    var drawingEventSource: CFRunLoopSource?
+    var modifierTapAvailable: Bool { modifierEventTap != nil }
     private var keyMonitor: Any?
     var statusItem: NSStatusItem?
     var isPreparing = false
@@ -425,16 +434,6 @@ final class KoettController: NSObject {
                 let keyCode = UInt16(
                     event.getIntegerValueField(.keyboardEventKeycode)
                 )
-                if type == .keyDown || type == .keyUp {
-                    // This tap's source runs on the main run loop. Consume only
-                    // the recording-scoped lock chord before it reaches an editor.
-                    let consumed = MainActor.assumeIsolated {
-                        controller.consumeDrawLockKey(type: eventType, keyCode: keyCode,
-                            modifierFlags: UInt(event.flags.rawValue),
-                            isRepeat: event.getIntegerValueField(.keyboardEventAutorepeat) != 0)
-                    }
-                    return consumed ? nil : Unmanaged.passUnretained(event)
-                }
                 let modifierKeyIsDown = CGEventSource.keyState(
                     .combinedSessionState,
                     key: CGKeyCode(keyCode)
@@ -540,7 +539,7 @@ final class KoettController: NSObject {
         rebuildMenu()
     }
 
-    static let shortcutEventMask: CGEventMask = [CGEventType.flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown, .keyUp]
+    static let shortcutEventMask: CGEventMask = [CGEventType.flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown]
         .reduce(0) { $0 | (CGEventMask(1) << $1.rawValue) }
 
     func noteModifierInterruption() {

@@ -55,6 +55,21 @@
       "notice_state": "missing"
     },
     {
+      "bom_ref": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
+      "type": "library",
+      "group": "swift-package",
+      "name": "Sparkle",
+      "version": "2.10.1",
+      "license": {
+        "expression": "MIT AND BSD-2-Clause AND Zlib"
+      },
+      "source_url": "https://github.com/sparkle-project/Sparkle/tree/ab7d71291238df6e0492143b120c9b696a35f603",
+      "license_paths": [
+        "Packaging/Notices/Sparkle-LICENSE.txt"
+      ],
+      "notice_state": "bundled"
+    },
+    {
       "bom_ref": "pkg:github/FluidInference/text-processing-rs@v0.3.0",
       "type": "library",
       "group": "native-library",

@@ -85,6 +85,12 @@ extension KoettController {
     }
 
     func consumeDrawLockKey(type: NSEvent.EventType, keyCode: UInt16, modifierFlags: UInt, isRepeat: Bool) -> Bool {
+        if let action = drawLockUndoKey.action(type: type, keyCode: keyCode, modifierFlags: modifierFlags,
+                                              isRepeat: isRepeat, locked: state == .recording && sketchOverlay.isLocked) {
+            noteModifierInterruption()
+            if action == .undo { sketchOverlay.undoStroke() }
+            return true
+        }
         guard keyCode == 2 else { return false }
         if type == .keyUp, drawLockKeyDown {
             drawLockKeyDown = false
@@ -188,6 +194,7 @@ extension KoettController {
         sketchFrames.begin(session)
         guard drawWhileDictating, let startedAt = recordingOverlay.recordingStartedAt else {
             sketchOverlay.discard()
+            refreshDrawingKeyTap()
             return
         }
         let overlay = recordingOverlay
@@ -204,10 +211,15 @@ extension KoettController {
                 overlay.raiseAboveDrawing()
             }
         ), startedAt: startedAt)
+        if !refreshDrawingKeyTap() {
+            sketchOverlay.finish()
+            recordingOverlay.recordFailure("Drawing shortcuts unavailable · Dictation continues")
+        }
     }
 
     func discardSketches(_ session: UInt64) {
         sketchOverlay.discard()
+        refreshDrawingKeyTap()
         sketchFrames.discard(session)
     }
 

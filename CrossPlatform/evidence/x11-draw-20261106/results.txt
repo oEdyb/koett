@@ -35,3 +35,17 @@ PASS pill follows the pointer live {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 
 PASS pill stays {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
 PASS position saved {"connector":"XWAYLAND0","x":1939,"y":4362}
 PASS next recording opens there {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
+
+# Rootful Xwayland at GDK_SCALE=2 with a per-app image rule
+PASS surface covers the screen in physical pixels {'WINDOW': '12582920', 'X': '0', 'Y': '0', 'WIDTH': '1280', 'HEIGHT': '800', 'SCREEN': '0'}
+PASS pill centred at scale 2 {'WINDOW': '12582916', 'X': '340', 'Y': '656', 'WIDTH': '600', 'HEIGHT': '96', 'SCREEN': '0'}
+PASS two marks {'active': True, 'can_undo': True, 'captured_count': 2, 'count': 2, 'display_change_pending': False, 'display_count': 1, 'display_generation': 0, 'displays
+PASS the pin names the window under it - #1 (0:01) marked
+PASS contact sheet read
+  im=Image.open(out/'clip.png').convert('RGB');n=sum(1 for c in im.getdata() if c[0]>230 and 30<c[1]<90 and 20<c[2]<80);print('STEP sheet',im.size,'ink pixels',n,flush=Tr
+STEP sheet (1600, 507) ink pixels 9072
+PASS the stroke in the right half is in the sheet 9072
+STEP keys '37 0\n50 4\n55 5\n37 0\n55 4\n'
+PASS image pasted with the rule for this app, Ctrl+Shift+V 37 0
+PASS text pasted with plain Ctrl+V 37 0
+ALL PASS

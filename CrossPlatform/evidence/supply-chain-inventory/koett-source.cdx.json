@@ -13339,6 +13339,35 @@
       "version": "0.7"
     },
     {
+      "bom-ref": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/sparkle-project/Sparkle/tree/ab7d71291238df6e0492143b120c9b696a35f603"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT AND BSD-2-Clause AND Zlib"
+        }
+      ],
+      "name": "Sparkle",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "swift-package"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
+      "type": "library",
+      "version": "2.10.1"
+    },
+    {
       "bom-ref": "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
       "externalReferences": [
         {
@@ -14604,6 +14633,7 @@
         "pkg:github/mborgerding/kissfft@febd4caeed32e33ad8b2e0bb5ea77542c40f18ec",
         "pkg:github/microsoft/onnxruntime@v1.27.1",
         "pkg:github/pkufool/simple-sentencepiece@v0.7",
+        "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
         "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
         "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
         "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
@@ -16169,6 +16199,10 @@
     {
       "dependsOn": [],
       "ref": "pkg:github/pkufool/simple-sentencepiece@v0.7"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603"
     },
     {
       "dependsOn": [],

@@ -36,8 +36,14 @@ For Linux, follow the [preview install instructions](CrossPlatform/README.md#ins
 
 Drawing pastes a numbered image sheet followed by speech-linked text. The target must accept image paste. Images stay in memory, so copy or paste them before quitting or completing another dictation. Captured screen content is included in the image you paste.
 
-On Mac, Chrome's English Incognito window marker suppresses page details in pins. For other private windows or languages, turn off **Include Page Details in Pins**. The screenshot still includes the content you capture.
+On Mac, Chrome's English Incognito window marker suppresses page details in pins. On Linux, pins keep only the app name in private windows of the Chrome and Firefox browser families that Koett recognizes. Other browsers aren't detected, including Vivaldi, whose private windows look the same as normal ones. Their private windows still put the title, URL and selection in the pasted text. For those, turn off **Include Page Details in Pins**. The screenshot still includes the content you capture.
 
 Linux drawing has private-lab verification on KDE Plasma 6 Wayland, niri and GNOME Shell 51 with the Koett extension. Sway and Hyprland use supported capture paths but have less verification. X11 has a lab-checked overlay that needs a compositor. Multi-monitor drawing is not hardware-verified. Dictation remains available without drawing. See [Linux requirements and limits](CrossPlatform/README.md#drawing-setup).
 
 Linux ARM64 archives pass native CI; ARM64 desktop use is untested. GNOME Wayland automatic paste needs the explicitly enabled [GNOME integration](CrossPlatform/integrations/gnome/README.md), a desktop shortcut and portal permission.
+
+## Third-party software
+
+Mac automatic updates use [Sparkle 2.10.1](https://github.com/sparkle-project/Sparkle),
+under MIT with bundled BSD-2-Clause and Zlib notices. Its [complete licence](Packaging/Notices/Sparkle-LICENSE.txt)
+also ships inside Koett.app. See [third-party notices](CrossPlatform/THIRD_PARTY_NOTICES.md).

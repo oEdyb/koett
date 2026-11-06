@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, I24, Sample, SampleFormat, SizedSample, U24};
@@ -72,11 +72,38 @@ impl AudioRecording {
     }
 }
 
+#[derive(Default)]
+struct PauseClock {
+    since: Option<Instant>,
+    total: Duration,
+}
+
+impl PauseClock {
+    fn set(&mut self, paused: bool, now: Instant) {
+        match (paused, self.since) {
+            (true, None) => self.since = Some(now),
+            (false, Some(since)) => {
+                self.total += now.saturating_duration_since(since);
+                self.since = None;
+            }
+            _ => {}
+        }
+    }
+
+    fn total(&self, now: Instant) -> Duration {
+        self.total
+            + self
+                .since
+                .map_or(Duration::ZERO, |since| now.saturating_duration_since(since))
+    }
+}
+
 #[derive(Clone)]
 pub struct AudioLevels {
     rms: Arc<AtomicU32>,
     peak: Arc<AtomicU32>,
     paused: Arc<AtomicBool>,
+    pause_clock: Arc<Mutex<PauseClock>>,
     #[cfg(target_os = "windows")]
     captured_frames: Arc<AtomicU64>,
     #[cfg(target_os = "windows")]
@@ -89,6 +116,7 @@ impl AudioLevels {
             rms: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             peak: Arc::new(AtomicU32::new(0.0_f32.to_bits())),
             paused: Arc::new(AtomicBool::new(false)),
+            pause_clock: Arc::default(),
             #[cfg(target_os = "windows")]
             captured_frames: Arc::new(AtomicU64::new(0)),
             #[cfg(target_os = "windows")]
@@ -111,6 +139,10 @@ impl AudioLevels {
     /// transcribed or metered. The stream stays open so resuming is instant.
     pub fn set_paused(&self, paused: bool) {
         self.paused.store(paused, Ordering::Release);
+        self.pause_clock
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .set(paused, Instant::now());
         if paused {
             self.update(0.0, 0.0);
         }
@@ -118,6 +150,14 @@ impl AudioLevels {
 
     pub fn paused(&self) -> bool {
         self.paused.load(Ordering::Acquire)
+    }
+
+    /// Time spent paused in this recording, which the recording limit doesn't count.
+    pub fn paused_time(&self) -> Duration {
+        self.pause_clock
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .total(Instant::now())
     }
 
     pub fn current(&self) -> (f32, f32) {
@@ -980,6 +1020,21 @@ mod tests {
     use ringbuf::traits::{Producer, Split};
 
     use super::{AudioRecording, collect_samples, is_recoverable_stream_error};
+
+    #[test]
+    fn pause_clock_adds_up_pauses_and_ignores_repeats() {
+        let start = std::time::Instant::now();
+        let at = |seconds| start + std::time::Duration::from_secs(seconds);
+        let mut clock = super::PauseClock::default();
+        clock.set(true, at(10));
+        clock.set(true, at(12));
+        assert_eq!(clock.total(at(15)), std::time::Duration::from_secs(5));
+        clock.set(false, at(20));
+        clock.set(false, at(25));
+        assert_eq!(clock.total(at(30)), std::time::Duration::from_secs(10));
+        clock.set(true, at(40));
+        assert_eq!(clock.total(at(41)), std::time::Duration::from_secs(11));
+    }
 
     #[cfg(target_os = "windows")]
     #[test]
