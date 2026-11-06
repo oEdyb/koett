@@ -1,0 +1,134 @@
+{
+  "version": "0.1.25",
+  "asarSHA256": "48555eeb32fe16d24155c7be3f7e5ae259bbc86868ce75c2fbb7edc836443877",
+  "results": [
+    {
+      "pastes": [
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        }
+      ],
+      "editor": "#1 (0:00) marked\n\n  Google Chrome",
+      "markers": [
+        "-"
+      ],
+      "attachments": 1
+    },
+    {
+      "pastes": [
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        },
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        }
+      ],
+      "editor": "#1 (0:00) marked\n\n  Google Chrome\n\n#1 (0:00) marked\n\n  Google Chrome",
+      "markers": [
+        "-",
+        "-"
+      ],
+      "attachments": 1
+    },
+    {
+      "pastes": [
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        },
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        },
+        {
+          "types": [
+            "text/plain",
+            "text/html",
+            "Files"
+          ],
+          "plain": "- #1 (0:00) marked\n  Google Chrome",
+          "htmlCharacters": 568853,
+          "htmlText": "- #1 (0:00) marked\n  Google Chrome",
+          "files": [
+            {
+              "type": "image/png",
+              "bytes": 426561
+            }
+          ]
+        }
+      ],
+      "editor": "#1 (0:00) marked\n\n  Google Chrome\n\n#1 (0:00) marked\n\n  Google Chrome\n\n#1 (0:00) marked\n\n  Google Chrome",
+      "markers": [
+        "-",
+        "-",
+        "-"
+      ],
+      "attachments": 1
+    }
+  ],
+  "clipboardUnchanged": true,
+  "scope": "real native Cmd-V into unmodified T3 Router composer; no provider/account/send; production clipboard from prior Koett guest pin receipt, not a new T3 automatic-delivery run"
+}
