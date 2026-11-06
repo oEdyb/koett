@@ -24,7 +24,11 @@
   their primary state. Do not replace this with a second
   `CGEventSource.keyState` check: that check returned `false` during real Right
   Option down events on this Mac.
-- Tink and Basso sounds mark recording start and stop.
+- Recording sounds are off by default. Sound Settings persists an explicit toggle
+  and a shared 0–100% volume (50% initially). The slider is disabled while muted
+  or capturing; releasing it previews the start cue. Start is a soft 440 Hz tone;
+  stop uses Basso. No historical Mac sound preference existed, so untouched
+  upgrades also become silent. Optional playback failures never block dictation.
 - After the stop sound, the same pill keeps the frozen, dimmed strip with a
   spinner until the text is pasted or an error replaces it. A too-short
   recording shows nothing. Every pill state is one 300×48 row; nothing ever

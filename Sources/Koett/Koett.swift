@@ -54,6 +54,8 @@ final class KoettController: NSObject {
     let nemotronAdapter: NemotronStreamingAdapter?
     private(set) var startSound: AVAudioPlayer?
     private(set) var stopSound: AVAudioPlayer?
+    private(set) var recordingSoundError: String?
+    var soundSettings: SoundSettingsWindow?
     var loginPreference = LoginPreference()
     var recordingMode: RecordingMode
     var dictationShortcut: ShortcutBinding
@@ -99,6 +101,7 @@ final class KoettController: NSObject {
                     if controlRequested { startLocalControl() }
                 }
                 microphonePreview?.refresh()
+                soundSettings?.refresh()
                 refreshEscapeMonitor()
                 refreshCaptureWatch()
                 appUpdater?.stateDidChange()
@@ -240,8 +243,7 @@ final class KoettController: NSObject {
 
         // Prepare recording sounds after permission onboarding, rather than
         // opening the playback device during controller construction.
-        startSound = try Self.soundPlayer(named: "Tink")
-        stopSound = try Self.soundPlayer(named: "Basso")
+        prepareRecordingSounds()
 
         let modelName = speechEngine == .nemotron ? SpeechEngine.parakeet.displayName : speechEngine.displayName
         setSetupStatus(.checkingModel(modelName))
@@ -999,14 +1001,25 @@ final class KoettController: NSObject {
         }
     }
 
-    private static func soundPlayer(named name: String) throws -> AVAudioPlayer {
-        let url = URL(fileURLWithPath: "/System/Library/Sounds/\(name).aiff")
-        let player = try AVAudioPlayer(contentsOf: url)
-        player.volume = 1
-        guard player.prepareToPlay() else {
-            throw failure("The \(name) sound could not prepare.")
+    func prepareRecordingSounds() {
+        guard RecordingSoundPreferences(defaults: microphoneDefaults).enabled else {
+            startSound?.stop()
+            stopSound?.stop()
+            return
         }
-        return player
+        do {
+            if startSound == nil { startSound = try AVAudioPlayer(data: RecordingStartCue.waveData()) }
+            if stopSound == nil {
+                stopSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: "/System/Library/Sounds/Basso.aiff"))
+            }
+            guard startSound?.prepareToPlay() == true, stopSound?.prepareToPlay() == true else {
+                throw Self.failure("Recording sounds could not prepare.")
+            }
+            recordingSoundError = nil
+        } catch {
+            recordingSoundError = "Sound unavailable"
+            fputs("Recording sounds unavailable: \(error.localizedDescription)\n", stderr)
+        }
     }
 
     static func failure(_ message: String, code: Int = 1) -> NSError {
