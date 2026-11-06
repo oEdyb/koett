@@ -3,7 +3,8 @@
 This optional GNOME Shell 46/51 extension supplies a fresh focused-window identity
 to Koett's existing guarded paste path and per-app image chord selection.
 The identity query never activates another window, changes focus or reads
-the clipboard. The recording pill and drawing are described below.
+the clipboard. The recording pill and drawing are described below. It also adds a
+Koett menu to the top bar when no tray provider is running.
 
 The identity endpoint returns bounded metadata on the Shell session bus.
 It compares the caller's Unix PID with the current owner of

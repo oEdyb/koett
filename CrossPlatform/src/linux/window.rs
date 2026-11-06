@@ -248,6 +248,19 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    // For the GNOME extension's top bar menu, which reads these over the bus.
+    let toggle_recording = gtk::gio::SimpleAction::new("toggle-recording", None);
+    toggle_recording.connect_activate({
+        let actions = actions.clone();
+        move |_, _| {
+            let _ = actions.send(TrayAction::Toggle);
+        }
+    });
+    application.add_action(&toggle_recording);
+    let recording_state =
+        gtk::gio::SimpleAction::new_stateful("recording", None, &false.to_variant());
+    recording_state.set_enabled(false);
+    application.add_action(&recording_state);
     #[cfg(feature = "ask")]
     for (name, command) in [
         #[cfg(feature = "ask")]
@@ -754,6 +767,7 @@ fn build_window(
                             recovery_until = None;
                         }
                         let recording = message.starts_with("Recording");
+                        recording_state.set_state(&recording.to_variant());
                         // X11 delivers synchronously: the outcome may already be in.
                         if state.starts_with("Transcribing")
                             && !message.starts_with("Transcribing")
