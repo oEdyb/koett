@@ -76,7 +76,7 @@ final class KoettController: NSObject {
     var speechDetector: VadManager?
     var speechDetectorLoad: Task<Void, Never>?
     lazy var formattingPopover = FormattingPopoverController(controller: self)
-    lazy var escapeMonitor = EscapeKeyMonitor { [weak self] in self?.cancelDictation() }
+    lazy var escapeMonitor = EscapeKeyMonitor { [weak self] in self?.handleDictationEscape() }
     private var dictationModifierState = ModifierShortcutState()
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()

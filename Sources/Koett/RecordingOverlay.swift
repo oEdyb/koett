@@ -185,6 +185,10 @@ final class RecordingOverlayController: NSObject {
             userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
     }
 
+    func raiseAboveDrawing() {
+        if isPresented { panel.orderFrontRegardless() }
+    }
+
     /// Hides the pill. The finished timeline stays for the transcribing and done states.
     func stop() {
         if isTrackingRecording, let startedAt {

@@ -58,6 +58,8 @@ struct SketchBoard {
     let startedAt: TimeInterval
     private(set) var groups: [Group] = []
     private(set) var held = false
+    private(set) var locked = false
+    private var lockPointerDown = false
     private(set) var stroking: UInt64?
     private(set) var finishing = false
     private var nextID: UInt64 = 0
@@ -83,7 +85,7 @@ struct SketchBoard {
     }
 
     mutating func press() {
-        guard !finishing else { return }
+        guard !finishing, !locked else { return }
         held = true
         holdOrigin = nil
         holdInk = 0
@@ -92,10 +94,21 @@ struct SketchBoard {
         pressing = nil
     }
 
+    mutating func toggleLock(now: TimeInterval) -> [SketchUpdate] {
+        guard !finishing else { return [] }
+        if locked { return release(now: now) }
+        let updates = release(now: now)
+        press()
+        locked = true
+        return updates
+    }
+
     /// Ends the hold: its sketches close and become ready for capture. A click
     /// still pressed when the key lifts counts as released now.
     mutating func release(now: TimeInterval) -> [SketchUpdate] {
         var updates = finishPress(now: now)
+        locked = false
+        lockPointerDown = false
         held = false
         holdOrigin = nil
         updates += lift(now: now)
@@ -113,6 +126,7 @@ struct SketchBoard {
     /// A pointer sample while the key is held. `audio` is the captured-audio clock.
     mutating func point(screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float) -> [SketchUpdate] {
         guard held, !finishing else { return [] }
+        guard !locked || lockPointerDown else { return [] }
         if let press = pressing {
             guard press.screen == screen,
                   hypot(point.x - press.point.x, point.y - press.point.y) >= Self.pinSlop else { return [] }
@@ -163,6 +177,11 @@ struct SketchBoard {
         screen: Int, _ point: CGPoint, now: TimeInterval, audio: Float, clickCount: Int
     ) -> [SketchUpdate] {
         guard held, !finishing else { return [] }
+        if locked {
+            lockPointerDown = true
+            holdOrigin = (screen, point, now, audio)
+            return []
+        }
         guard holdInk < Self.pinJitterInk || (pinnedInHold && isAimingInk) else {
             pressing = nil
             return []
@@ -184,7 +203,12 @@ struct SketchBoard {
 
     /// The button came up: a short, still press becomes a pin.
     mutating func mouseUp(now: TimeInterval) -> [SketchUpdate] {
-        finishPress(now: now)
+        if locked {
+            lockPointerDown = false
+            holdOrigin = nil
+            return lift(now: now)
+        }
+        return finishPress(now: now)
     }
 
     private mutating func finishPress(now: TimeInterval) -> [SketchUpdate] {
@@ -228,6 +252,20 @@ struct SketchBoard {
         pressing = nil
         holdInk = 0
         return (last.id, [.removed(index: UInt32(groups.count + 1))])
+    }
+
+    mutating func undoStroke(now: TimeInterval) -> [SketchUpdate] {
+        guard locked, !finishing,
+              let index = groups.lastIndex(where: { !$0.closed && !$0.strokes.isEmpty }) else { return [] }
+        _ = lift(now: now)
+        holdOrigin = nil
+        lockPointerDown = false
+        groups[index].strokes.removeLast()
+        if groups[index].strokes.isEmpty {
+            groups.remove(at: index)
+            return events() + [.removed(index: UInt32(groups.count + 1))]
+        }
+        return events()
     }
 
     /// Closed sketches that should be captured now; they move to `.capturing`.

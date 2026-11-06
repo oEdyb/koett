@@ -14,6 +14,9 @@ extension KoettController {
     static let sketchCaptureWait: Duration = .seconds(8)
 
     var effectiveDrawKey: DrawKey { DrawKey.effective(drawKey, dictation: dictationShortcut) }
+    var drawLockShortcut: ShortcutBinding? {
+        DrawLock.shortcut(dictation: dictationShortcut, media: mediaShortcut, mode: recordingMode)
+    }
 
     func drawMenuItem() -> NSMenuItem {
         let menu = NSMenu(title: "Draw on Screen")
@@ -24,6 +27,10 @@ extension KoettController {
         )
         toggle.isEnabled = state == .ready
         menu.addItem(toggle)
+        let lock = menuItem(title: drawLockMenuTitle, action: #selector(toggleDrawLock), selected: sketchOverlay.isLocked)
+        lock.tag = Self.drawLockTag
+        lock.isEnabled = state == .recording && sketchOverlay.isActive
+        menu.addItem(lock)
         let undo = menuItem(title: "Undo Last Drawing", action: #selector(undoLastDrawing), selected: false)
         undo.tag = Self.sketchUndoTag
         undo.isEnabled = state == .recording && sketchOverlay.canUndo
@@ -66,7 +73,26 @@ extension KoettController {
         sketchOverlay.undoLast()
     }
 
+    private var drawLockMenuTitle: String {
+        let title = sketchOverlay.isLocked ? "Finish Draw Lock" : "Draw Lock"
+        return drawLockShortcut.map { "\(title) (\($0.displayName))" } ?? title
+    }
+
+    @objc func toggleDrawLock() {
+        guard state == .recording, drawWhileDictating else { return }
+        sketchOverlay.toggleLock()
+    }
+
+    func handleDictationEscape() {
+        if state == .recording, sketchOverlay.isLocked {
+            sketchOverlay.toggleLock()
+        } else {
+            cancelDictation()
+        }
+    }
+
     static let sketchUndoTag = 0x5344
+    static let drawLockTag = 0x534C
     static let sketchPasteChordTag = 0x5343
 
     /// Names the app the sheet would paste into now and its chord. The status
@@ -90,6 +116,11 @@ extension KoettController {
     func refreshSketchPasteChordItem(in menu: NSMenu) {
         let draw = menu.items.first { $0.submenu?.title == "Draw on Screen" }?.submenu
         draw?.item(withTag: Self.sketchUndoTag)?.isEnabled = state == .recording && sketchOverlay.canUndo
+        if let lock = draw?.item(withTag: Self.drawLockTag) {
+            lock.title = drawLockMenuTitle
+            lock.state = sketchOverlay.isLocked ? .on : .off
+            lock.isEnabled = state == .recording && sketchOverlay.isActive
+        }
         if let item = draw?.item(withTag: Self.sketchPasteChordTag) {
             refreshSketchPasteChordItem(item)
         }
@@ -149,7 +180,12 @@ extension KoettController {
             audioClock: { [weak recorder] in recorder?.currentTime ?? 0 },
             includeSelection: pinSelectedText,
             onUpdate: { update in overlay.applySketch(update, session: session) },
-            includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true
+            includeContext: microphoneDefaults.object(forKey: "pinContext") as? Bool ?? true,
+            lockShortcut: drawLockShortcut,
+            onLockChange: { locked in
+                overlay.showRecordingNotice(locked ? "Draw lock" : "Draw lock off")
+                overlay.raiseAboveDrawing()
+            }
         ), startedAt: startedAt)
     }
 
