@@ -302,3 +302,14 @@ main run saved another 5.5 GB; restore prefixes by architecture, because `ubuntu
 matched arm's caches; and cached .deb files, because slow apt steps were a crawling Azure mirror,
 not dpkg: usually 18 to 45 s, sometimes 7 minutes. Dependency review compares a branch with main
 by ref, as it no longer has a PR event.
+
+## 2026-11-06: recording sounds are off by default, with a volume
+
+This answers the question left open by #88. Olle, testing a build: "I don't think you normally need
+a sound when you have such like a obvious pill", and of the start cue, "it's really high-pitched."
+The start went from 2093 Hz to a soft rise from 494 to 659 Hz; the numbers are measured but only his
+ear can judge it. `recording_sounds_volume` is a percentage, 1 to 100, default 50, squared into a
+gain so the slider feels even; 100 is the old cue level at most. A saved `recording_sounds: true`
+with no volume beside it counts as off, because it predates this choice and no release shipped it.
+Windows shares the settings and tones but its popup menu can't hold a slider, so it offers 25, 50,
+75 and 100.

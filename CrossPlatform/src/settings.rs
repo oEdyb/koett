@@ -66,6 +66,20 @@ fn recording_limit_or_default<'de, D: serde::Deserializer<'de>>(
         .unwrap_or(DEFAULT_RECORDING_LIMIT_MINUTES))
 }
 
+pub const DEFAULT_RECORDING_SOUNDS_VOLUME: u32 = 50;
+
+/// A percentage from 1 to 100; anything else becomes the default, as above.
+fn sounds_volume_or_default<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<u32, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(value
+        .as_u64()
+        .and_then(|volume| u32::try_from(volume).ok())
+        .filter(|volume| (1..=100).contains(volume))
+        .unwrap_or(DEFAULT_RECORDING_SOUNDS_VOLUME))
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -81,8 +95,10 @@ pub struct Settings {
     pub replacements: Vec<crate::replacements::Replacement>,
     pub dictionary: Vec<crate::dictionary::DictionaryEntry>,
     pub pause_media: bool,
-    /// Start and stop cues while dictating (Linux; the Mac always plays them).
+    /// Start and stop cues while dictating. Off by default: the pill already shows it.
     pub recording_sounds: bool,
+    #[serde(deserialize_with = "sounds_volume_or_default")]
+    pub recording_sounds_volume: u32,
     pub paste_shortcut: PasteShortcut,
     pub image_paste_shortcuts: std::collections::BTreeMap<String, PasteShortcut>,
     /// Off by default: drawing takes keyboard focus while recording.
@@ -120,7 +136,8 @@ impl Default for Settings {
             replacements: Vec::new(),
             dictionary: Vec::new(),
             pause_media: false,
-            recording_sounds: true,
+            recording_sounds: false,
+            recording_sounds_volume: DEFAULT_RECORDING_SOUNDS_VOLUME,
             paste_shortcut: PasteShortcut::default(),
             image_paste_shortcuts: Default::default(),
             draw_while_dictating: false,
@@ -166,6 +183,11 @@ impl Settings {
                     .map_err(|error| format!("could not read {}: {error}", path.display()))?;
                 let mut settings: Self = serde_json::from_value(value.clone())
                     .map_err(|error| format!("could not read {}: {error}", path.display()))?;
+                // Sounds were on by default until the volume arrived, so a saved `true`
+                // from before then was never a choice. No release shipped with them.
+                if value.get("recording_sounds_volume").is_none() {
+                    settings.recording_sounds = false;
+                }
                 for action in ["ask_shortcut", "media_shortcut"] {
                     if value.get(action).is_some() {
                         continue;
@@ -304,6 +326,9 @@ impl Settings {
         if self.recording_sounds != opened.recording_sounds {
             merged.recording_sounds = self.recording_sounds;
         }
+        if self.recording_sounds_volume != opened.recording_sounds_volume {
+            merged.recording_sounds_volume = self.recording_sounds_volume;
+        }
         if self.paste_shortcut != opened.paste_shortcut {
             merged.paste_shortcut = self.paste_shortcut;
         }
@@ -419,6 +444,67 @@ mod tests {
         assert!(!off.pin_page_details);
         let merged = off.clone().merge_editor(&old, old.clone());
         assert!(!merged.pin_page_details);
+    }
+
+    #[test]
+    fn recording_sounds_are_off_unless_chosen_with_the_volume_setting() {
+        let path = temporary_file("recording-sounds");
+        for (saved, on, volume) in [
+            ("{}", false, 50),
+            (r#"{"recording_sounds":true}"#, false, 50),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":25}"#,
+                true,
+                25,
+            ),
+            (
+                r#"{"recording_sounds":false,"recording_sounds_volume":100}"#,
+                false,
+                100,
+            ),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":1}"#,
+                true,
+                1,
+            ),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":0}"#,
+                true,
+                50,
+            ),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":101}"#,
+                true,
+                50,
+            ),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":-5}"#,
+                true,
+                50,
+            ),
+            (
+                r#"{"recording_sounds":true,"recording_sounds_volume":"loud"}"#,
+                true,
+                50,
+            ),
+        ] {
+            fs::write(&path, saved).unwrap();
+            let settings = Settings::load_from(&path).unwrap();
+            assert_eq!(settings.recording_sounds, on, "{saved}");
+            assert_eq!(settings.recording_sounds_volume, volume, "{saved}");
+        }
+        let chosen = Settings {
+            recording_sounds: true,
+            recording_sounds_volume: 75,
+            ..Settings::default()
+        };
+        fs::write(&path, serde_json::to_vec(&chosen).unwrap()).unwrap();
+        let reread = Settings::load_from(&path).unwrap();
+        assert!(reread.recording_sounds, "turning them on survives a save");
+        assert_eq!(reread.recording_sounds_volume, 75);
+        let opened = Settings::default();
+        let merged = chosen.merge_editor(&opened, opened.clone());
+        assert_eq!(merged.recording_sounds_volume, 75);
     }
 
     #[test]
