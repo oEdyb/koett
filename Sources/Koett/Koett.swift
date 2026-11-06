@@ -82,9 +82,14 @@ final class KoettController: NSObject {
     private var mediaModifierState = ModifierShortcutState()
     private var assistantModifierState = ModifierShortcutState()
     var drawLockKeyDown = false
+    var drawLockUndoKey = DrawLockUndoKey()
     var state = State.loading {
         didSet {
             if state != oldValue {
+                if state != .recording {
+                    drawLockKeyDown = false
+                    drawLockUndoKey = DrawLockUndoKey()
+                }
                 rebuildMenu()
                 refreshMicrophoneMonitorTarget()
                 if state == .ready {

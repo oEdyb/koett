@@ -22,7 +22,7 @@ Commands:
 - `status`: readiness and selected model, without transcript content.
 - `start`, `stop`, `pause`, `resume`, `cancel`: current dictation controls.
 - `undo`: remove the last drawing/pin during recording.
-- `draw-lock`: toggle multi-stroke drawing during recording; requires drawing enabled. Status includes `drawLocked`.
+- `draw-lock`: toggle multi-stroke drawing during recording; requires drawing enabled. Status includes `drawLocked` and the content-free `drawStrokeCount`.
 - `history`, `dictionary`: open the existing native window.
 - `check-updates`: the same foreground check as the menu; requires an enabled feed and an idle app/updater.
 - `copy-last`, `paste-last`: use the same recovery actions as the menu.

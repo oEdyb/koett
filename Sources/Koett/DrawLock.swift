@@ -16,3 +16,20 @@ enum DrawLock {
         }
     }
 }
+
+struct DrawLockUndoKey {
+    enum Action: Equatable { case undo, consume }
+    private var down = false
+
+    mutating func action(type: NSEvent.EventType, keyCode: UInt16, modifierFlags: UInt,
+                         isRepeat: Bool, locked: Bool) -> Action? {
+        guard keyCode == 6 else { return nil }
+        if type == .keyUp, down { down = false; return .consume }
+        guard type == .keyDown else { return nil }
+        if down { return .consume }
+        let modifiers = NSEvent.ModifierFlags(rawValue: modifierFlags).intersection(ShortcutBinding.relevantModifiers)
+        guard locked, [.control, .command].contains(modifiers) else { return nil }
+        down = true
+        return isRepeat ? .consume : .undo
+    }
+}
