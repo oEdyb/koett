@@ -18,6 +18,13 @@ pub struct Target {
 }
 
 pub fn capture(target: &Target) -> Result<Vec<u8>, String> {
+    if super::super::x11_surface::active() {
+        // Rootless X servers refuse this; the portal below can still answer on those.
+        match super::super::x11_surface::capture(target.monitor) {
+            Ok(png) => return Ok(png),
+            Err(error) => eprintln!("X11 capture failed, trying the portal: {error}"),
+        }
+    }
     if super::super::gnome_focus::desktop() {
         return super::gnome_capture::capture(target.monitor);
     }

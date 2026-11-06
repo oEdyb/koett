@@ -210,10 +210,14 @@ fn shows_pencil(pill: &Pill) -> bool {
 enum PillLayer {
     Layer(Rc<LayerShell>),
     Gnome,
+    X11,
 }
 
 impl PillLayer {
     fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        if super::x11_surface::active() {
+            return Ok(Self::X11);
+        }
         if super::gnome_pill::available() {
             return Ok(Self::Gnome);
         }
@@ -224,6 +228,7 @@ impl PillLayer {
         match self {
             Self::Layer(layer) => Ok(layer.configure(window)?),
             Self::Gnome => super::gnome_pill::configure(window, None),
+            Self::X11 => Ok(super::x11_surface::pill(window, None)?),
         }
     }
 
@@ -235,6 +240,7 @@ impl PillLayer {
         match self {
             Self::Layer(layer) => Ok(layer.choose_monitor(window, monitor)?),
             Self::Gnome => super::gnome_pill::configure(window, monitor),
+            Self::X11 => Ok(super::x11_surface::pill(window, monitor)?),
         }
     }
 }

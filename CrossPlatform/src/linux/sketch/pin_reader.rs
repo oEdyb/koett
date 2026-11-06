@@ -181,13 +181,18 @@ fn read_screen(
     let mut context = None;
     let mut found = Found::default();
     let mut chromium = false;
-    let gnome = super::super::gnome_focus::desktop();
-    let gnome_window = gnome
-        .then(|| super::super::gnome_pill::window_at(point))
-        .flatten();
+    let x11 = super::super::x11_surface::active();
+    let gnome = !x11 && super::super::gnome_focus::desktop();
+    let desktop_window = if x11 {
+        super::super::x11_surface::window_at(point)
+    } else if gnome {
+        super::super::gnome_pill::window_at(point)
+    } else {
+        None
+    };
     runtime.block_on(async {
-        let geometry = if gnome {
-            gnome_window
+        let geometry = if gnome || x11 {
+            desktop_window
         } else {
             super::kwin_context::at_point(point).await
         };
