@@ -351,7 +351,7 @@ fn run(
                                 *reply = Some(result);
                             }
                             Err(error) => {
-                                let _ = updates.send(EngineUpdate::Notice(error));
+                                media_failed(&updates, error, &fetch.cancelled);
                                 media_operation = None;
                                 status = AppStatus::Ready;
                                 send_status(&updates, &status);
@@ -359,7 +359,7 @@ fn run(
                         }
                     }
                     Ok(Err(error)) => {
-                        let _ = updates.send(EngineUpdate::Notice(error));
+                        media_failed(&updates, error, &fetch.cancelled);
                         media_operation = None;
                         status = AppStatus::Ready;
                         send_status(&updates, &status);
@@ -393,7 +393,7 @@ fn run(
                         let _ = updates.send(EngineUpdate::Notice(format!("@media-result:{text}")));
                     }
                     Err(error) => {
-                        let _ = updates.send(EngineUpdate::Notice(error));
+                        media_failed(&updates, error, &fetch.cancelled);
                     }
                 }
                 media_operation = None;
@@ -1236,6 +1236,20 @@ impl DictionarySync {
         }
     }
 }
+
+/// A failed media job says so on the pill. Cancelling it was the user's own doing.
+#[cfg(target_os = "linux")]
+fn media_failed(updates: &Sender<EngineUpdate>, error: String, cancelled: &AtomicBool) {
+    let notice = if cancelled.load(Ordering::Acquire) {
+        error
+    } else {
+        format!("{MEDIA_ERROR}{error}")
+    };
+    let _ = updates.send(EngineUpdate::Notice(notice));
+}
+
+#[cfg(target_os = "linux")]
+pub const MEDIA_ERROR: &str = "@media-error:";
 
 #[cfg(target_os = "linux")]
 fn media_notice(updates: &Sender<EngineUpdate>, result: Result<(), String>) {
