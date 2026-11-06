@@ -24,6 +24,8 @@ On Linux, if the microphone will not start, set **Microphone** to **System defau
 
 [Source setup](CrossPlatform/README.md#build) · [CLI](docs/transcribe-cli.md) · [Issues](https://github.com/oEdyb/koett/issues) · [Contributing](CONTRIBUTING.md) · [Apache 2.0](LICENSE)
 
+Pull requests don't run CI automatically. A maintainer runs it on outside PRs before merging.
+
 ## Draw and pin while dictating
 
 - **Mac:** menu bar → Draw on Screen → **Draw & Pin While Dictating**. Allow Screen Recording when asked; Accessibility is also needed for paste and pin context.
