@@ -30,3 +30,8 @@ PASS bullets pasted into the app zz- #1 (0:01) marked
 PASS the pin names the window zz- #1 (0:01) marked
 PASS the contact sheet was offered
 ALL PASS
+STEP pill start {'X': 490, 'Y': 728, 'WIDTH': 300, 'HEIGHT': 48}
+PASS pill follows the pointer live {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
+PASS pill stays {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
+PASS position saved {"connector":"XWAYLAND0","x":1939,"y":4362}
+PASS next recording opens there {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}

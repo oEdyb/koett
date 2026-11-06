@@ -7,11 +7,26 @@ fn query(
     method: &str,
     value: Option<String>,
 ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    query_timed(method, value, Duration::from_millis(250))
+}
+
+fn query_for(
+    method: &str,
+    wait: Duration,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    query_timed(method, None, wait)
+}
+
+fn query_timed(
+    method: &str,
+    value: Option<String>,
+    wait: Duration,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
     runtime.block_on(async {
-        tokio::time::timeout(Duration::from_millis(250), async {
+        tokio::time::timeout(wait, async {
             let connection = zbus::Connection::session().await?;
             let bus = zbus::fdo::DBusProxy::new(&connection).await?;
             let owner = bus.get_name_owner("org.gnome.Shell".try_into()?).await?;
@@ -44,6 +59,7 @@ pub fn available() -> bool {
 pub fn configure(
     window: &gtk::Window,
     monitor: Option<&gtk::gdk::Monitor>,
+    origin: Option<(i32, i32)>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let title = window
         .title()
@@ -57,7 +73,14 @@ pub fn configure(
         .or(fallback.as_ref())
         .ok_or("No monitor for GNOME recording pill")?
         .geometry();
-    let reply = query("Pill", Some(serde_json::json!({"title":title,"monitor":[rect.x(),rect.y(),rect.width(),rect.height()]}).to_string()))?;
+    let reply = query(
+        "Pill",
+        Some(
+            serde_json::json!({"title":title,"origin":origin.map(|(x, y)| [x, y]),
+                "monitor":[rect.x(),rect.y(),rect.width(),rect.height()]})
+            .to_string(),
+        ),
+    )?;
     if reply["ok"] != true {
         return Err("GNOME recording pill registration failed".into());
     }
@@ -124,4 +147,33 @@ pub fn take_pointer(take: bool) {
     if let Ok(sender) = sender.lock() {
         let _ = sender.send(take);
     }
+}
+
+/// Has the extension move the pill with the pointer until the button comes up, then
+/// reports the place on the GTK thread. `None` if nothing moved.
+pub fn follow_pointer(finished: impl FnOnce(Option<(i32, i32)>) + 'static) {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let origin = query_for("DragPill", Duration::from_secs(120))
+            .ok()
+            .and_then(|reply| {
+                Some((
+                    i32::try_from(reply["x"].as_i64()?).ok()?,
+                    i32::try_from(reply["y"].as_i64()?).ok()?,
+                ))
+            });
+        let _ = sender.send(origin);
+    });
+    let finished = std::cell::Cell::new(Some(finished));
+    gtk::glib::timeout_add_local(Duration::from_millis(50), move || {
+        match receiver.try_recv() {
+            Err(std::sync::mpsc::TryRecvError::Empty) => gtk::glib::ControlFlow::Continue,
+            reply => {
+                if let Some(finished) = finished.take() {
+                    finished(reply.ok().flatten());
+                }
+                gtk::glib::ControlFlow::Break
+            }
+        }
+    });
 }

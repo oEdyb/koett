@@ -71,6 +71,14 @@ real pixels, an invalid monitor, the overview, a stalled Shell that timed out at
 extension turned off and on.
 Evidence: `CrossPlatform/evidence/gnome-capture-20261104/`.
 
+## Dragging
+
+A dock can't use Mutter's own move, so a press outside the pill's buttons calls `DragPill`, and
+the extension moves the pill with the pointer until the button comes up. Koett then saves the
+place in the file other desktops use. On 2026-11-06 `pill-drag.py` passed on Shell 51.1: the pill
+follows the pointer, stays put, is saved and returns after a restart, a press without moving
+does nothing, Cancel still works, focus stays on the app and the press never reaches it.
+
 ## Drawing
 
 GNOME has no layer-shell, so each monitor gets a transparent GTK window that the extension
