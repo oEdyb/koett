@@ -13,4 +13,4 @@ Run historical commands from that exported tree, with copied test models and an 
 
 Keep new screenshots, logs and receipts in a private cache or CI artifacts. Do not commit the evidence directories again. Current deterministic inventories live in `CrossPlatform/supply-chain/generated/`; distributable licence notices remain under `CrossPlatform/packaging/`. A synthetic PNG in `CrossPlatform/tests/fixtures/` supplies the capture decoder test without a desktop screenshot.
 
-This cleanup removes 2,176 historical lab files and moves three maintained inventory files. It replaces 62 relative evidence links with pinned archive links; no existing linked target was missing at the archived commit. Forty-seven documents identify historical paths and commands explicitly.
+This cleanup removes 2,176 historical lab files and moves three maintained inventory files. It replaces 62 relative evidence links with pinned archive links; no existing linked target was missing at the archived commit. Forty-six documents identify historical paths and commands explicitly.
