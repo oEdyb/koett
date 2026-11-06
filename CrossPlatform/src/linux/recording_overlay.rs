@@ -1173,7 +1173,12 @@ impl RecordingOverlay {
         });
 
         let text = match phase {
-            Phase::Recording => clock(elapsed_ms),
+            // Counts what's recorded, as the limit does, so a pause holds the clock.
+            Phase::Recording => clock(elapsed_ms.saturating_sub(levels.map_or(0, |levels| {
+                u64::try_from(levels.paused_time().as_millis())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(time_scale())
+            }))),
             Phase::Transcribing if strip || actions => progress_label(progress.0, progress.1),
             Phase::Transcribing => state.to_string(),
             Phase::Recovery => "Not pasted · saved".into(),
