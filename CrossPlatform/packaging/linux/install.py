@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -18,13 +19,31 @@ def sha(path):
         return value.hexdigest()
 
 
+def flush_file(path):
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def flush_tree(root):
+    for folder, _, files in os.walk(root, topdown=False):
+        for name in files:
+            if not os.path.islink(os.path.join(folder, name)):
+                flush_file(os.path.join(folder, name))
+        flush_file(folder)
+
+
 def atomic_text(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, delete=False) as stream:
         stream.write(content)
         temporary = Path(stream.name)
     temporary.chmod(0o644)
+    flush_file(temporary)
     temporary.replace(path)
+    flush_file(path.parent)
 
 
 def desktop_exec(path):
@@ -59,7 +78,11 @@ def main():
         staging = Path(tempfile.mkdtemp(prefix='.install-', dir=versions))
         try:
             shutil.copytree(source, staging, dirs_exist_ok=True)
+            # An updater restarts right after this, so the bytes must reach the disk
+            # before any name can point at them.
+            flush_tree(staging)
             staging.rename(version)
+            flush_file(versions)
         finally:
             if staging.exists():
                 shutil.rmtree(staging)
@@ -68,6 +91,12 @@ def main():
             if sha(version / name) != expected:
                 raise ValueError(f'Existing version integrity failure: {name}')
     binary = prefix / 'bin/koett'
+    desktop = (source / 'com.olledyberg.Koett.desktop').read_text()
+    desktop = '\n'.join('Exec=' + desktop_exec(binary) if line.startswith('Exec=') else line for line in desktop.splitlines()) + '\n'
+    atomic_text(prefix / 'share/applications/com.olledyberg.Koett.desktop', desktop)
+    icon = prefix / 'share/icons/hicolor/scalable/apps/com.olledyberg.Koett.svg'
+    atomic_text(icon, (source / icon.name).read_text())
+    # The launcher moves last: any failure above leaves the old version in charge.
     binary.parent.mkdir(parents=True, exist_ok=True)
     if binary.exists() and not binary.is_symlink():
         backup = binary.with_name('koett.previous-' + sha(binary)[:16])
@@ -78,11 +107,7 @@ def main():
         link = Path(temporary) / 'koett'
         link.symlink_to(target)
         link.replace(binary)
-    desktop = (source / 'com.olledyberg.Koett.desktop').read_text()
-    desktop = '\n'.join('Exec=' + desktop_exec(binary) if line.startswith('Exec=') else line for line in desktop.splitlines()) + '\n'
-    atomic_text(prefix / 'share/applications/com.olledyberg.Koett.desktop', desktop)
-    icon = prefix / 'share/icons/hicolor/scalable/apps/com.olledyberg.Koett.svg'
-    atomic_text(icon, (source / icon.name).read_text())
+    flush_file(binary.parent)
     print(json.dumps({'launcher': str(binary), 'version': str(version), 'scope': receipt.get('flavor', 'current-PC private candidate')}))
 
 

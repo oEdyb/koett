@@ -23,9 +23,16 @@ instead of Sparkle.
 - Before installing, the unpacked package must report the signed build number. Then the
   same `install.py` a person runs integrity-checks it and swaps `bin/koett` atomically.
   Koett restarts, reopening its window if it was open.
+- A watcher from the old version then waits up to three minutes for the new one to have its
+  window ticking and its model ready, and to stay up five more seconds. If it crashes or
+  hangs, the watcher stops it, moves the launcher back, marks that build skipped and restarts
+  the old version, which says why once. Any failure before the restart also leaves the old
+  version in charge: the desktop and icon files are written before the launcher moves, and
+  the way back is saved before anything else.
 - The version it replaced stays. `koett rollback-update` swaps back and restarts, and that
   build isn't offered again; a newer one is. `koett update-status` reports state, build,
-  pending version, last error and the version to roll back to.
+  pending version, last error and the version to roll back to. Both work with no app
+  running, from the state file, so a release that won't start can still be undone.
 - It keeps the running version and the one before, and removes older ones it has run or
   installed. Versions from before its first update stay.
 - Only an install under `prefix/lib/koett/versions/<id>` that this user can write updates. A
@@ -48,9 +55,11 @@ instead of Sparkle.
    Never set `KOETT_UPDATE_LOOPBACK_TESTING` in a release: it permits plain HTTP to this
    machine, and exists only for the lab.
 3. Publish the archive and its feed on the GitHub release, as the release's assets:
-   `koett_update_sign sign KEY ARCHIVE VERSION BUILD ARCHIVE_URL [ARCH] > appcast-linux-ARCH.json`
+   `koett_update_sign sign KEY ARCHIVE VERSION BUILD ARCHIVE_URL VALID_DAYS [ARCH] > appcast-linux-ARCH.json`
    where `ARCHIVE_URL` is the https link to that exact archive. Sign last, after the archive
    is final. `latest/download` follows GitHub's latest non-draft, non-prerelease release.
+4. Sign the feed again before it expires, with no new build needed. Use 90 days. An expired
+   feed stops updates, with the reason in `update-status`; installed apps keep working.
 
 The first release with a feed is installed by hand; everyone on it updates from then on.
 Feed names follow the Mac's `appcast.xml`, one per architecture since each is its own package.
@@ -58,13 +67,19 @@ A Linux feed can't be read as a Mac one, nor the reverse.
 
 ## Limits
 
-Downgrades aren't offered: the build number must rise. A signed feed can be replayed by a
-network attacker only as far as an older build the client already refuses, or held back to
-keep clients on the current one; HTTPS and the 24-hour check don't prove freshness.
+Anyone who controls the feed or the network can serve any signed feed that hasn't expired.
+Koett only takes a build newer than its own, but within that window that can be an older
+release than the latest: at build 100 with 105 out, it can be handed a signed 101, and
+then be held there. The signed `expires` limits this to the feed's lifetime, 90 days as above,
+after which the old feed is refused. A minimum build wouldn't help, since a replayed feed
+carries its own old minimum. A feed that's withheld can't be told from no new release until
+the last one seen would have expired, and Koett doesn't remember that, so it just stays put.
 `install.py` runs from the signed archive with your user's rights, so the signing key is the
 whole trust boundary. There's no delta download: each update is the full archive.
 
 Koett is gone for the seconds a restart and model load take, so a shortcut pressed in that
-gap starts nothing. Each install step has a time limit, so a hung installer can't leave
+gap starts nothing. A logout or power loss during the watcher's wait can leave the new
+version unproven; `koett rollback-update` undoes it. A restart that fails because the session
+ended marks that build skipped too, until a newer one arrives. Each install step has a time limit, so a hung installer can't leave
 dictation blocked. A manual check blocks nothing, but a rollback asked for during a download
 answers `busy`.
