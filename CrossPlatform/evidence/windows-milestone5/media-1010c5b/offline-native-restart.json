@@ -1,0 +1,62 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "browser_processes": [
+      {
+        "Id": 1576,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 2056,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 3936,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 4728,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 5348,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 7684,
+        "ProcessName": "msedgewebview2"
+      },
+      {
+        "Id": 8228,
+        "ProcessName": "msedgewebview2"
+      }
+    ],
+    "focus": {
+      "hwnd": 197114,
+      "process": "ApplicationFrameHost",
+      "pid": 1788
+    },
+    "cleared_keys": [
+      "GROQ_API_KEY",
+      "OPENAI_API_KEY",
+      "CARTESIA_API_KEY"
+    ],
+    "config_hash": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+    "ready": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "warnings": []
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 7256,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    }
+  },
+  "id": "1793935301479538374"
+}

@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "result": {
+    "source": "",
+    "step": {
+      "step": "private-source-omitted",
+      "rect": [
+        685,
+        320,
+        1875,
+        1195
+      ],
+      "screenshot_file": "private-after-result-step.png",
+      "focus": {
+        "hwnd": 459700,
+        "process": "Koett",
+        "pid": 5408
+      }
+    },
+    "focus": {
+      "hwnd": 459700,
+      "process": "Koett",
+      "pid": 5408
+    },
+    "passed": true,
+    "new_records": 0,
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\KoettM5Media\\Koett.exe",
+      "pid": 5408,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    },
+    "status": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "warnings": []
+    },
+    "before": {
+      "title": "Koett controlled media check - [InPrivate] - Microsoft\u200b Edge",
+      "files": [
+        "Media-1793919382407876700-2580.md",
+        "Media-1793919386707432900-2580.md",
+        "Media-1793920496313074400-5384.md",
+        "Media-1793920554360796500-5384.md",
+        "Media-1793922951152690400-2180.md",
+        "Media-1793923026434109700-2180.md",
+        "Media-1793923145817921300-2180.md",
+        "Media-1793925738421009000-4468.md",
+        "Media-1793930441206552300-5408.md"
+      ],
+      "focus": {
+        "hwnd": 524352,
+        "process": "msedge",
+        "pid": 8348
+      },
+      "markers": [
+        "InPrivate browsing"
+      ]
+    },
+    "message": "Browser source unavailable \u00b7 enter a URL or choose a file"
+  },
+  "id": "1793934154763870343"
+}

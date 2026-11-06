@@ -15,9 +15,9 @@ use crate::transcription::{
 
 #[derive(Clone)]
 pub enum EngineCommand {
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     Media(String),
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     CancelMedia,
     #[cfg(target_os = "linux")]
     Ask,
@@ -265,7 +265,11 @@ fn run(
     send_status(&updates, &status);
 
     #[cfg(target_os = "linux")]
-    let media = match crate::linux::media::MediaController::new() {
+    use crate::linux::media::MediaController;
+    #[cfg(target_os = "windows")]
+    use crate::windows::media_control::MediaController;
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    let media = match MediaController::new() {
         Ok(media) => Some(media),
         Err(error) => {
             let _ = updates.send(EngineUpdate::Notice(format!(
@@ -285,7 +289,7 @@ fn run(
     let mut capture_levels = None::<AudioLevels>;
     let mut recorder = None;
     let mut background: Option<BackgroundSession> = None;
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     let mut media_operation: Option<MediaOperation> = None;
     #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut ask_image: Option<Vec<u8>> = None;
@@ -338,7 +342,7 @@ fn run(
                 let _ = updates.send(EngineUpdate::Ask(value));
             }
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
         if let Some((fetch, download, reply)) = &mut media_operation {
             if reply.is_none() {
                 match fetch.reply.try_recv() {
@@ -374,7 +378,7 @@ fn run(
                             match crate::media_transcription::save(
                                 &audio.title,
                                 &audio.source,
-                                &model,
+                                transcription.media_model(),
                                 &text,
                             ) {
                                 Ok(path)
@@ -383,6 +387,14 @@ fn run(
                                 {
                                     let _ = updates.send(EngineUpdate::Notice(
                                         "Media saved in transcript recovery".into(),
+                                    ));
+                                }
+                                #[cfg(target_os = "windows")]
+                                Ok(path)
+                                    if crate::paths::history_database().as_ref() == Ok(&path) =>
+                                {
+                                    let _ = updates.send(EngineUpdate::Notice(
+                                        "Media saved in History · Media file unavailable".into(),
                                     ));
                                 }
                                 Ok(_) => {}
@@ -651,13 +663,17 @@ fn run(
             | EngineCommand::CancelAsk
             | EngineCommand::AskStart
             | EngineCommand::AskStop => continue,
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
             EngineCommand::Media(source) => {
-                #[cfg(feature = "ask")]
+                #[cfg(all(target_os = "linux", feature = "ask"))]
                 {
                     answer = None;
                 }
                 if status != AppStatus::Ready || preparation.is_some() {
+                    #[cfg(target_os = "windows")]
+                    let _ = updates.send(EngineUpdate::Notice(
+                        "@media-rejected:Koett is busy; try again when ready".into(),
+                    ));
                     continue;
                 }
                 let progress_updates = updates.clone();
@@ -671,10 +687,12 @@ fn run(
                     }
                     Err(error) => {
                         let _ = updates.send(EngineUpdate::Notice(error));
+                        #[cfg(target_os = "windows")]
+                        send_status(&updates, &status);
                     }
                 }
             }
-            #[cfg(target_os = "linux")]
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
             EngineCommand::CancelMedia => {
                 if let Some((fetch, _, _)) = &media_operation {
                     fetch.cancelled.store(true, Ordering::Release);
@@ -814,7 +832,7 @@ fn run(
                     Ok(_) => {}
                     Err(_) => {}
                 }
-                #[cfg(target_os = "linux")]
+                #[cfg(any(target_os = "linux", target_os = "windows"))]
                 if input_resolution.is_ok()
                     && current.pause_media
                     && let Some(media) = &media
@@ -870,7 +888,7 @@ fn run(
                                     .send(EngineUpdate::Ask(serde_json::json!({"error": error})));
                             }
                         }
-                        #[cfg(target_os = "linux")]
+                        #[cfg(any(target_os = "linux", target_os = "windows"))]
                         if let Some(media) = &media {
                             media_notice(&updates, media.resume());
                         }
@@ -898,7 +916,7 @@ fn run(
                     .take()
                     .ok_or_else(|| "the microphone recorder is missing".to_string())
                     .and_then(MicrophoneRecorder::finish_with_warning);
-                #[cfg(target_os = "linux")]
+                #[cfg(any(target_os = "linux", target_os = "windows"))]
                 if let Some(media) = &media {
                     media_notice(&updates, media.resume());
                 }
@@ -1030,7 +1048,7 @@ fn run(
                         serde_json::json!({"phase": "Cancelled", "speech_notice": ""}),
                     ));
                 }
-                #[cfg(target_os = "linux")]
+                #[cfg(any(target_os = "linux", target_os = "windows"))]
                 if let Some(media) = &media {
                     media_notice(&updates, media.resume());
                 }
@@ -1054,11 +1072,11 @@ fn run(
     drop(cleaner);
     drop(background.take());
     drop(recorder.take());
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     if let Some(media) = &media {
         media_notice(&updates, media.resume());
     }
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     drop(media_operation);
     transcription.stop();
 }
@@ -1253,7 +1271,7 @@ impl DictionarySync {
 }
 
 /// A failed media job says so on the pill. Cancelling it was the user's own doing.
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn media_failed(updates: &Sender<EngineUpdate>, error: String, cancelled: &AtomicBool) {
     let notice = if cancelled.load(Ordering::Acquire) {
         error
@@ -1263,10 +1281,10 @@ fn media_failed(updates: &Sender<EngineUpdate>, error: String, cancelled: &Atomi
     let _ = updates.send(EngineUpdate::Notice(notice));
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub const MEDIA_ERROR: &str = "@media-error:";
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 fn media_notice(updates: &Sender<EngineUpdate>, result: Result<(), String>) {
     if let Err(error) = result {
         let _ = updates.send(EngineUpdate::Notice(format!("Media control: {error}")));
@@ -1363,7 +1381,7 @@ fn model_name(directory: &Path) -> String {
         .to_string()
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 type MediaOperation = (
     crate::media_transcription::Fetch,
     Option<crate::media_transcription::Download>,

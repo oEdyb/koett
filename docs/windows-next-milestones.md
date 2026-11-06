@@ -65,4 +65,24 @@ is not a three-platform release or complete parity claim.
 
 These are requirements carried from the reported Linux lessons, not Windows
 passes. Physical device/display/sleep limitations remain separate from guest
-or fixture evidence. M4 is now in progress on windows-draw-pin, based on the M3 merge; see [M4 acceptance](windows-draw-pin.md).
+or fixture evidence. M4 merged in #119; see [M4 acceptance](windows-draw-pin.md).
+
+
+## M5 — media and automation
+
+#128 merged as `3a367e19036c3b2a81f09ac750b43a6e1a2b5128` after all six
+checks passed on `47990ce`. It provides the offline Windows WAV adapter.
+The follow-up adds the native media window, bounded URL/file conversion,
+focused public Edge source selection, opt-in GSMTC pause/resume and app commands.
+See [the Windows contract](windows-media.md) and [M5 acceptance](../CrossPlatform/evidence/windows-milestone5/media-1010c5b/README.md).
+Ask was shelved by main; this milestone does not restore it.
+
+## M6 — distribution and remaining parity
+
+A signed multi-architecture release is not established by M1–M5 guest tests.
+Remaining gates include clean profile install/upgrade/rollback/uninstall,
+complete redistributable tool/runtime notices, signing and SmartScreen evidence,
+physical x64 and Qualcomm ARM64 microphone/display/sleep checks, and every open
+Windows row in [feature parity](feature-parity.md). Chrome and Firefox are not
+tested. Signing spend/identity and physical hardware remain external requirements;
+software gaps must remain explicit rather than be relabeled hardware limits.

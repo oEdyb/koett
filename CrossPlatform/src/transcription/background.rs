@@ -26,6 +26,7 @@ impl Drop for BackgroundSession {
 
 pub struct TranscriptionWorker {
     commands: Sender<WorkerCommand>,
+    media_model: String,
     worker: Option<JoinHandle<()>>,
     active: std::sync::Mutex<Option<Arc<AtomicBool>>>,
 }
@@ -60,6 +61,11 @@ impl TranscriptionWorker {
         transcriber: ParakeetTranscriber,
         nemotron: Option<super::NemotronTranscriber>,
     ) -> Result<Self, String> {
+        let media_model = transcriber
+            .model_directory
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "local-model".into());
         let (commands, receiver) = mpsc::channel();
         let worker = thread::Builder::new()
             .name("koett-transcription".to_string())
@@ -67,6 +73,7 @@ impl TranscriptionWorker {
             .map_err(|error| format!("could not start transcription: {error}"))?;
         Ok(Self {
             commands,
+            media_model,
             worker: Some(worker),
             active: std::sync::Mutex::new(None),
         })
@@ -162,6 +169,10 @@ impl TranscriptionWorker {
             Ok(path) => format!("{error}. Recording saved: {}", path.display()),
             Err(retention) => format!("{error}. Audio recovery failed: {retention}"),
         })
+    }
+
+    pub fn media_model(&self) -> &str {
+        &self.media_model
     }
 
     pub fn media_request(

@@ -4,7 +4,8 @@ Dictate while drawing on your screen: hold Shift and move to sketch, or
 Shift+click to pin. Koett pastes a numbered image sheet followed by your words.
 Drawing is optional and off by default. Local voice-to-text also has configurable
 shortcuts, models and microphones, with native GTK controls.
-Windows remains a source-build preview. [Mac download](https://github.com/oEdyb/koett/releases/latest).
+Windows remains a source-build preview. Native media and console commands are
+documented in [Windows media](../docs/windows-media.md). [Mac download](https://github.com/oEdyb/koett/releases/latest).
 
 The published Linux v0.2.0-linux.1 and Mac v0.1.1 downloads do not include drawing.
 The drawing controls below are available in the current source build.

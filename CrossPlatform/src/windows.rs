@@ -1,3 +1,4 @@
+pub mod automation;
 mod capture;
 mod clipboard;
 mod contact_sheet;
@@ -7,6 +8,9 @@ mod drawing;
 mod drawing_render;
 mod foreground;
 pub(crate) mod formatting_job;
+pub mod media_cli;
+pub(crate) mod media_control;
+mod media_view;
 mod meter;
 mod native_theme;
 mod paste_chord;
@@ -81,10 +85,13 @@ use crate::shortcut::{Key, Modifiers, Shortcut};
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 const HOTKEY_ID: i32 = 1;
+const MEDIA_HOTKEY_ID: i32 = 5;
 const POLL_TIMER_ID: usize = 1;
 const WM_CHANGE_MODEL: u32 = 0x8054;
 const WM_CHANGE_FORMATTING: u32 = 0x8055;
 const WM_CANCEL_SETUP: u32 = 0x8056;
+static WM_OPEN_MEDIA: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| unsafe { RegisterWindowMessageW(w!("Koett.OpenMedia.v1")) });
 const TRAY_MESSAGE: u32 = 0x8001;
 const NIN_KEYSELECT: u32 = NIN_SELECT | NINF_KEY;
 const MENU_CHANGE_SHORTCUT: usize = 1;
@@ -100,6 +107,8 @@ const MENU_WORDS: usize = 10;
 const MENU_DRAW: usize = 11;
 const MENU_UNDO_DRAW: usize = 12;
 const MENU_PASTE_LAST: usize = 13;
+const MENU_MEDIA: usize = 14;
+const MENU_CHANGE_MEDIA_SHORTCUT: usize = 15;
 const TRAY_GUID: GUID = GUID::from_u128(0xc65ddae4_119c_486e_8bed_e30a24f2fb1f);
 
 // All Koett windows run on the thread that owns this RefCell. Win32 can re-enter
@@ -129,10 +138,13 @@ struct WindowsApp {
     pill_state: pill_state::State,
     clock: Instant,
     last_transcript: String,
+    pill_media: bool,
     last_pill_redraw: Cell<Option<Instant>>,
     last_pill_key: Cell<Option<pill_state::PaintKey>>,
     shortcut_window: HWND,
     registered_shortcut: Option<Shortcut>,
+    registered_media_shortcut: Option<Shortcut>,
+    changing_media_shortcut: bool,
     shortcut_latch: ShortcutLatch,
     levels: Option<AudioLevels>,
     recording_started: Option<Instant>,
@@ -212,6 +224,7 @@ pub fn run() -> Result<(), String> {
     let desktop_lab = arguments.as_slice() == [std::ffi::OsString::from("--desktop-lab")];
     let engine = match arguments.as_slice() {
         [] => Some(runtime::start(settings.clone())),
+        [flag] if flag == "media" => Some(runtime::start(settings.clone())),
         [flag] if flag == "--microphone-open-timeout-lab" => Some(runtime::start(settings.clone())),
         [_] if desktop_lab => None,
         [flag, path] if flag == "--dictation-lab-wav" => {
@@ -242,10 +255,13 @@ pub fn run() -> Result<(), String> {
         pill_state: pill_state::State::default(),
         clock: Instant::now(),
         last_transcript: restored_last,
+        pill_media: false,
         last_pill_redraw: Cell::new(None),
         last_pill_key: Cell::new(None),
         shortcut_window: HWND::default(),
         registered_shortcut: None,
+        registered_media_shortcut: None,
+        changing_media_shortcut: false,
         shortcut_latch: ShortcutLatch::default(),
         levels: None,
         recording_started: None,
@@ -305,6 +321,19 @@ fn single_instance() -> Result<Option<HANDLE>, String> {
     if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
         unsafe {
             let _ = CloseHandle(handle);
+            if std::env::args().nth(1).as_deref() == Some("media")
+                && let Ok(owner) = windows::Win32::UI::WindowsAndMessaging::FindWindowW(
+                    w!("KoettOwnerWindow"),
+                    None,
+                )
+            {
+                let _ = windows::Win32::UI::WindowsAndMessaging::PostMessageW(
+                    Some(owner),
+                    *WM_OPEN_MEDIA,
+                    Default::default(),
+                    Default::default(),
+                );
+            }
         }
         return Ok(None);
     }
@@ -425,6 +454,22 @@ unsafe fn run_message_loop(
     {
         app.registered_shortcut = Some(shortcut);
     }
+    if let Ok(media_shortcut) = Shortcut::from_str(&app.settings.media_shortcut) {
+        let (modifiers, key) = windows_shortcut(media_shortcut);
+        if unsafe { RegisterHotKey(Some(hwnd), MEDIA_HOTKEY_ID, modifiers | MOD_NOREPEAT, key) }
+            .is_ok()
+        {
+            app.registered_media_shortcut = Some(media_shortcut);
+        } else {
+            app.pill_state.set(
+                pill_state::Phase::Error {
+                    message: "Media shortcut unavailable · use tray".into(),
+                    rescue: false,
+                },
+                0,
+            );
+        }
+    }
     app.update_tray();
     if unsafe { SetTimer(Some(hwnd), POLL_TIMER_ID, 33, None) } == 0 {
         return Err("could not start the Koett event timer".to_string());
@@ -446,6 +491,11 @@ unsafe fn run_message_loop(
         ));
     }
 
+    if std::env::args().nth(1).as_deref() == Some("media")
+        && let Some(engine) = &app_cell.borrow().engine
+    {
+        media_view::open(engine.commands.clone());
+    }
     let mut message = MSG::default();
     loop {
         let result = unsafe { GetMessageW(&mut message, None, 0, 0) }.0;
@@ -476,6 +526,19 @@ unsafe extern "system" fn window_proc(
     wparam: windows::Win32::Foundation::WPARAM,
     lparam: windows::Win32::Foundation::LPARAM,
 ) -> windows::Win32::Foundation::LRESULT {
+    if let Some(result) = automation::dispatch(hwnd, message, wparam, lparam) {
+        return result;
+    }
+    if *WM_OPEN_MEDIA != 0 && message == *WM_OPEN_MEDIA {
+        let pointer = APP.load(Ordering::Acquire);
+        if let Some(cell) = unsafe { pointer.as_ref() }
+            && let Ok(app) = cell.try_borrow()
+            && let Some(engine) = &app.engine
+        {
+            media_view::open(engine.commands.clone());
+        }
+        return Default::default();
+    }
     if message == windows::Win32::UI::WindowsAndMessaging::WM_RENDERFORMAT {
         clipboard::render(wparam.0 as u32);
         return Default::default();
@@ -612,6 +675,40 @@ unsafe extern "system" fn window_proc(
                 }
                 return Default::default();
             }
+            WM_HOTKEY
+                if (wparam.0 == HOTKEY_ID as usize || wparam.0 == MEDIA_HOTKEY_ID as usize)
+                    && app_cell.try_borrow().is_ok_and(|app| {
+                        unsafe { IsWindowVisible(app.shortcut_window) }.as_bool()
+                    }) =>
+            {
+                if let Ok(mut app) = app_cell.try_borrow_mut() {
+                    let shortcut = if wparam.0 == HOTKEY_ID as usize {
+                        app.registered_shortcut
+                    } else {
+                        app.registered_media_shortcut
+                    };
+                    if let Some(shortcut) = shortcut {
+                        if app.changing_media_shortcut {
+                            app.change_media_shortcut(shortcut);
+                        } else {
+                            app.change_shortcut(shortcut);
+                        }
+                    }
+                }
+                return Default::default();
+            }
+            WM_HOTKEY if wparam.0 == MEDIA_HOTKEY_ID as usize => {
+                if let Ok(app) = app_cell.try_borrow()
+                    && let Some(engine) = &app.engine
+                {
+                    if app.status == AppStatus::Ready && !media_view::active() {
+                        media_view::focused(engine.commands.clone());
+                    } else {
+                        media_view::open(engine.commands.clone());
+                    }
+                }
+                return Default::default();
+            }
             WM_HOTKEY if (2..=4).contains(&wparam.0) => {
                 if let Ok(mut app) = app_cell.try_borrow_mut() {
                     match wparam.0 {
@@ -654,6 +751,24 @@ unsafe extern "system" fn window_proc(
                     app.poll_updates();
                     app.poll_drawing();
                     app.poll_staged();
+                    media_view::available(app.status == AppStatus::Ready);
+                    if media_view::take_copied()
+                        && app.pill_media
+                        && !media_view::active()
+                        && matches!(app.pill_state.phase, pill_state::Phase::Done(_))
+                        && !app.pill_state.copied
+                    {
+                        let now = app.clock.elapsed().as_millis() as u64;
+                        app.pill_state.copy(now);
+                        app.update_overlay();
+                    }
+                    if media_view::take_discarded() && app.pill_media && !media_view::active() {
+                        app.pill_state.set(
+                            pill_state::Phase::Hidden,
+                            app.clock.elapsed().as_millis() as u64,
+                        );
+                        app.update_overlay();
+                    }
                     if let Some(input) = app.draw_input.as_mut() {
                         let mut point = POINT::default();
                         let _ = unsafe { GetCursorPos(&mut point) };
@@ -739,6 +854,21 @@ unsafe extern "system" fn window_proc(
                 ) && let Ok(mut app) = app_cell.try_borrow_mut()
                 {
                     app.show_menu(anchor);
+                }
+                return Default::default();
+            }
+            windows::Win32::UI::WindowsAndMessaging::WM_QUERYENDSESSION => {
+                let busy = app_cell.try_borrow().is_ok_and(|app| {
+                    app.engine.is_some()
+                        && matches!(app.status, AppStatus::Recording | AppStatus::Transcribing)
+                });
+                return windows::Win32::Foundation::LRESULT(isize::from(
+                    !busy && !media_view::needs_copy(),
+                ));
+            }
+            WM_CLOSE => {
+                if let Ok(app) = app_cell.try_borrow() {
+                    app.request_quit();
                 }
                 return Default::default();
             }
@@ -853,11 +983,21 @@ unsafe extern "system" fn shortcut_proc(
 ) -> windows::Win32::Foundation::LRESULT {
     let app_cell = APP.load(Ordering::Acquire);
     match message {
+        WM_KEYDOWN if wparam.0 == 0x1b => {
+            unsafe {
+                let _ = ShowWindow(hwnd, SW_HIDE);
+            }
+            return Default::default();
+        }
         WM_KEYDOWN | WM_SYSKEYDOWN if !app_cell.is_null() => {
             if let Some(shortcut) = shortcut_from_virtual_key(wparam.0 as u32)
                 && let Ok(mut app) = unsafe { &*app_cell }.try_borrow_mut()
             {
-                app.change_shortcut(shortcut);
+                if app.changing_media_shortcut {
+                    app.change_media_shortcut(shortcut);
+                } else {
+                    app.change_shortcut(shortcut);
+                }
             }
             return Default::default();
         }
@@ -1107,6 +1247,9 @@ impl WindowsApp {
             }
             return;
         }
+        if media_view::active() {
+            return;
+        }
         if self.pending_result.is_some() || self.staged.is_some() {
             return;
         }
@@ -1173,6 +1316,7 @@ impl WindowsApp {
                     }
                 }
                 EngineUpdate::Notice(message) => {
+                    media_view::notice(&message);
                     desktop::processing::notice(&message);
                     if message == crate::runtime::LIMIT_WARNING {
                         let now = self.clock.elapsed().as_millis() as u64;
@@ -1185,6 +1329,8 @@ impl WindowsApp {
                     eprintln!("Koett: {message}");
                 }
                 EngineUpdate::Status(status) => {
+                    let media_outcome = media_view::finish(&status);
+
                     let status = if status == AppStatus::Ready
                         && (self.staged.is_some() || self.pending_result.is_some())
                     {
@@ -1213,10 +1359,25 @@ impl WindowsApp {
                     let now = self.clock.elapsed().as_millis() as u64;
                     match &status {
                         AppStatus::Recording => {
+                            self.pill_media = false;
                             self.pill_state.set(pill_state::Phase::Recording, now)
                         }
                         AppStatus::Transcribing => {
-                            self.pill_state.set(pill_state::Phase::Transcribing, now)
+                            if media_view::active() {
+                                self.pill_media = true;
+                                unsafe {
+                                    let _ = UnregisterHotKey(Some(self.hwnd), 3);
+                                    if RegisterHotKey(Some(self.hwnd), 3, MOD_NOREPEAT, 0x1b)
+                                        .is_err()
+                                    {
+                                        media_view::notice(
+                                            "Escape unavailable; use Cancel in the pill or media window",
+                                        );
+                                    }
+                                }
+                            }
+                            self.pill_state.set(pill_state::Phase::Transcribing, now);
+                            self.pill_state.media_result = self.pill_media;
                         }
                         AppStatus::Error(message) => self.pill_state.set(
                             pill_state::Phase::Error {
@@ -1226,6 +1387,27 @@ impl WindowsApp {
                             now,
                         ),
                         _ => {}
+                    }
+                    if let Some(outcome) = media_outcome {
+                        self.pill_media = true;
+                        let (phase, sticky) = match outcome {
+                            Ok(completed) => (
+                                pill_state::Phase::Done(
+                                    completed.warning.unwrap_or(completed.text),
+                                ),
+                                !completed.saved,
+                            ),
+                            Err(message) => (
+                                pill_state::Phase::Error {
+                                    message,
+                                    rescue: false,
+                                },
+                                false,
+                            ),
+                        };
+                        self.pill_state.set(phase, now);
+                        self.pill_state.sticky_result = sticky;
+                        self.pill_state.media_result = true;
                     }
                     if status == AppStatus::Ready {
                         desktop::processing::model_finished();
@@ -1320,6 +1502,19 @@ impl WindowsApp {
         {
             self.pill_state.set(pill_state::Phase::Hidden, now);
         }
+        if matches!(self.pill_state.phase, pill_state::Phase::Hidden)
+            && self.status == AppStatus::Ready
+            && !self.capture_pending
+            && media_view::needs_copy()
+        {
+            self.pill_media = true;
+            self.pill_state.set(
+                pill_state::Phase::Done("Media not saved · Copy to keep".into()),
+                now,
+            );
+            self.pill_state.media_result = true;
+            self.pill_state.sticky_result = true;
+        }
         let mut point = POINT::default();
         let mut bounds = RECT::default();
         unsafe {
@@ -1391,15 +1586,7 @@ impl WindowsApp {
                 if self.pill_state.hovered || accessible =>
             {
                 if (40..100).contains(&x) {
-                    self.discard_drawing();
-                    if let Some(engine) = &self.engine {
-                        engine.cancel_dictation();
-                        let _ = engine.commands.send(EngineCommand::Cancel);
-                    }
-                    self.pill_state.set(pill_state::Phase::Hidden, now);
-                    if self.desktop_lab {
-                        self.status = AppStatus::Ready;
-                    }
+                    self.cancel_current();
                 } else if (100..175).contains(&x) && self.status == AppStatus::Recording {
                     if let Some(levels) = &self.levels {
                         self.pill_state.paused = !levels.paused();
@@ -1407,19 +1594,27 @@ impl WindowsApp {
                     } else if self.desktop_lab {
                         self.pill_state.paused = !self.pill_state.paused;
                     }
-                } else if (175..238).contains(&x) {
+                } else if (175..238).contains(&x) && !self.pill_media {
                     let _ = open_history();
                 }
             }
             pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
                 if x >= 245 {
-                    if self.copy_last().is_ok() {
-                        self.pill_state
-                            .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
+                    if (if self.pill_media {
+                        media_view::copy(self.hwnd)
+                    } else {
+                        self.copy_last()
+                    })
+                    .is_ok()
+                    {
+                        if !self.pill_media {
+                            self.pill_state
+                                .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
+                        }
                         self.pill_state.copy(now);
                     }
                 } else if x >= 190
-                    && (self.last_bundle.is_some()
+                    && (self.last_bundle.is_some() && !self.pill_media
                         || matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }))
                 {
                     self.repeat_paste();
@@ -1433,14 +1628,89 @@ impl WindowsApp {
         self.update_overlay();
     }
 
-    fn show_shortcut_window(&self) {
+    fn show_shortcut_window(&mut self) {
+        self.changing_media_shortcut = false;
         unsafe {
+            let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                self.shortcut_window,
+                w!("Change dictation shortcut"),
+            );
             let _ = ShowWindow(self.shortcut_window, SW_SHOWNORMAL);
             let _ = SetForegroundWindow(self.shortcut_window);
         }
     }
 
+    fn change_media_shortcut(&mut self, shortcut: Shortcut) {
+        if self.registered_shortcut == Some(shortcut)
+            || Shortcut::from_str(&self.settings.draw_lock_shortcut).ok() == Some(shortcut)
+        {
+            show_fatal_error(
+                "That shortcut is used for dictation or drawing. Choose another media shortcut.",
+            );
+            return;
+        }
+
+        if self.registered_media_shortcut == Some(shortcut) {
+            unsafe {
+                let _ = ShowWindow(self.shortcut_window, SW_HIDE);
+            }
+            return;
+        }
+        let old = self.registered_media_shortcut;
+        unsafe {
+            let _ = UnregisterHotKey(Some(self.hwnd), MEDIA_HOTKEY_ID);
+        }
+        let (modifiers, key) = windows_shortcut(shortcut);
+        let registered = unsafe {
+            RegisterHotKey(
+                Some(self.hwnd),
+                MEDIA_HOTKEY_ID,
+                modifiers | MOD_NOREPEAT,
+                key,
+            )
+        }
+        .is_ok();
+        let result = if registered {
+            Settings::update(|settings| settings.media_shortcut = shortcut.to_string())
+        } else {
+            Err("That shortcut is already in use".into())
+        };
+        match result {
+            Ok(()) => {
+                self.registered_media_shortcut = Some(shortcut);
+                self.settings.media_shortcut = shortcut.to_string();
+                unsafe {
+                    let _ = ShowWindow(self.shortcut_window, SW_HIDE);
+                }
+            }
+            Err(error) => {
+                unsafe {
+                    let _ = UnregisterHotKey(Some(self.hwnd), MEDIA_HOTKEY_ID);
+                }
+                self.registered_media_shortcut = old.filter(|old| {
+                    let (modifiers, key) = windows_shortcut(*old);
+                    unsafe {
+                        RegisterHotKey(
+                            Some(self.hwnd),
+                            MEDIA_HOTKEY_ID,
+                            modifiers | MOD_NOREPEAT,
+                            key,
+                        )
+                    }
+                    .is_ok()
+                });
+                show_fatal_error(&format!(
+                    "{error}. Choose another media shortcut; the previous shortcut is retained when available."
+                ));
+            }
+        }
+    }
     fn change_shortcut(&mut self, shortcut: Shortcut) {
+        if self.registered_media_shortcut == Some(shortcut) {
+            show_fatal_error("That shortcut is used for media. Choose another dictation shortcut.");
+            return;
+        }
+
         if self.registered_shortcut == Some(shortcut) {
             unsafe {
                 let _ = ShowWindow(self.shortcut_window, SW_HIDE);
@@ -1550,6 +1820,7 @@ impl WindowsApp {
         Ok(offer)
     }
     fn repeat_paste(&mut self) {
+        self.pill_media = false;
         if !self.can_repeat_paste() {
             return;
         }
@@ -1593,6 +1864,26 @@ impl WindowsApp {
                 pill_state::Phase::NotPasted { saved },
                 self.clock.elapsed().as_millis() as u64,
             );
+        }
+    }
+    fn cancel_current(&mut self) {
+        if media_view::active() {
+            if let Some(engine) = &self.engine {
+                let _ = engine.commands.send(EngineCommand::CancelMedia);
+            }
+        } else {
+            self.discard_drawing();
+            if let Some(engine) = &self.engine {
+                engine.cancel_dictation();
+                let _ = engine.commands.send(EngineCommand::Cancel);
+            }
+            self.pill_state.set(
+                pill_state::Phase::Hidden,
+                self.clock.elapsed().as_millis() as u64,
+            );
+            if self.desktop_lab {
+                self.status = AppStatus::Ready;
+            }
         }
     }
     fn discard_drawing(&mut self) {
@@ -1713,7 +2004,7 @@ impl WindowsApp {
                 pill_state::delivery_result(staged.text, result.is_ok(), saved, false),
                 self.clock.elapsed().as_millis() as u64,
             );
-            self.pill_state.media_result = self.last_bundle.is_some();
+            self.pill_state.repeat_paste = self.last_bundle.is_some();
             if let Err(error) = result {
                 eprintln!("Koett: {error}");
             }
@@ -1856,7 +2147,7 @@ impl WindowsApp {
         let phase = pill_state::delivery_result(text.to_string(), !failed, saved, history_failed);
         self.pill_state
             .set(phase, self.clock.elapsed().as_millis() as u64);
-        self.pill_state.media_result = self.last_bundle.is_some();
+        self.pill_state.repeat_paste = self.last_bundle.is_some();
         self.update_overlay();
     }
 
@@ -2025,6 +2316,7 @@ impl WindowsApp {
                 MENU_START_AT_LOGIN,
                 w!("Start at login"),
             );
+            let _ = AppendMenuW(menu, MF_STRING, MENU_MEDIA, w!("Transcribe media…"));
             let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
             let _ = AppendMenuW(menu, MF_STRING, MENU_QUIT, w!("Quit Koett"));
 
@@ -2069,9 +2361,44 @@ impl WindowsApp {
         }
     }
 
+    fn request_quit(&self) {
+        if media_view::needs_copy()
+            && unsafe {
+                MessageBoxW(
+                    Some(self.hwnd),
+                    w!("The media transcript is not saved. Quit without copying it?"),
+                    w!("Koett"),
+                    windows::Win32::UI::WindowsAndMessaging::MB_YESNO
+                        | windows::Win32::UI::WindowsAndMessaging::MB_ICONWARNING
+                        | windows::Win32::UI::WindowsAndMessaging::MB_DEFBUTTON2,
+                )
+            } != windows::Win32::UI::WindowsAndMessaging::IDYES
+        {
+            return;
+        }
+        unsafe {
+            PostQuitMessage(0);
+        }
+    }
     fn handle_menu(&mut self, command: usize) {
         match command {
             MENU_CHANGE_SHORTCUT => self.show_shortcut_window(),
+            MENU_CHANGE_MEDIA_SHORTCUT => {
+                self.changing_media_shortcut = true;
+                unsafe {
+                    let _ = windows::Win32::UI::WindowsAndMessaging::SetWindowTextW(
+                        self.shortcut_window,
+                        w!("Change media shortcut"),
+                    );
+                    let _ = ShowWindow(self.shortcut_window, SW_SHOWNORMAL);
+                    let _ = SetForegroundWindow(self.shortcut_window);
+                }
+            }
+            MENU_MEDIA => {
+                if let Some(engine) = &self.engine {
+                    media_view::open(engine.commands.clone());
+                }
+            }
             MENU_SETTINGS => desktop::open(true, self.hwnd),
             MENU_WORDS => desktop::open_words(self.hwnd),
             MENU_DRAW => {
@@ -2094,6 +2421,7 @@ impl WindowsApp {
                 }
             }
             MENU_COPY_LAST => {
+                self.pill_media = false;
                 if let Err(e) = self.copy_last() {
                     show_fatal_error(&e);
                 }
@@ -2107,15 +2435,7 @@ impl WindowsApp {
                 }
             }
             MENU_CANCEL => {
-                self.discard_drawing();
-                if let Some(engine) = &self.engine {
-                    engine.cancel_dictation();
-                    let _ = engine.commands.send(EngineCommand::Cancel);
-                }
-                self.pill_state.set(
-                    pill_state::Phase::Hidden,
-                    self.clock.elapsed().as_millis() as u64,
-                );
+                self.cancel_current();
                 self.update_overlay();
             }
             MENU_OPEN_HISTORY => {
@@ -2141,7 +2461,7 @@ impl WindowsApp {
                     show_fatal_error(&error);
                 }
             }
-            MENU_QUIT => unsafe { PostQuitMessage(0) },
+            MENU_QUIT => self.request_quit(),
             _ => {}
         }
     }
@@ -2265,6 +2585,7 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
                 .unwrap_or_default();
             let bands = events
                 .iter()
+                .filter(|_| !app.pill_media)
                 .filter_map(|event| {
                     app.meter
                         .band(event.start_ms, event.end_ms)
@@ -2275,7 +2596,11 @@ unsafe fn paint_overlay(hwnd: HWND, app: &WindowsApp) {
                 hwnd,
                 bounds,
                 pill::TimelinePaint {
-                    bars: &app.meter.positions(),
+                    bars: &if app.pill_media {
+                        Vec::new()
+                    } else {
+                        app.meter.positions()
+                    },
                     bands: &bands,
                 },
                 elapsed,
