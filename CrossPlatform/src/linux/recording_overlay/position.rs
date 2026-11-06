@@ -162,6 +162,68 @@ pub(super) fn apply(window: &gtk::Window, layer: &LayerShell) {
     }
 }
 
+/// The saved place in desktop coordinates, for desktops that move the pill themselves.
+pub(super) fn saved_origin(window: &gtk::Window) -> Option<(i32, i32)> {
+    let position = load()?;
+    let outputs = monitors(window);
+    let monitor = outputs
+        .iter()
+        .find(|m| m.connector().as_deref() == position.connector.as_deref())?;
+    let rect = Rect::from(monitor.geometry());
+    let (x, y) = pixels(&position, rect, size_on(window, rect));
+    Some((rect.x + x, rect.y + y))
+}
+
+/// Remembers where a desktop's own drag ended.
+fn save_origin(window: &gtk::Window, (x, y): (i32, i32)) {
+    let outputs = monitors(window);
+    let rects: Vec<Rect> = outputs.iter().map(|m| Rect::from(m.geometry())).collect();
+    let center = (f64::from(x) + 150.0, f64::from(y) + 24.0);
+    let Some(index) = monitor_under(&rects, center).or((!rects.is_empty()).then_some(0)) else {
+        return;
+    };
+    let rect = rects[index];
+    let size = size_on(window, rect);
+    save(&position_for(
+        outputs[index]
+            .connector()
+            .map(|connector| connector.to_string()),
+        rect,
+        size,
+        clamped(rect, size, (f64::from(x - rect.x), f64::from(y - rect.y))),
+    ));
+}
+
+/// GNOME and X11: a press outside the buttons starts a drag that the desktop side
+/// follows until the button comes up, then the place is saved.
+pub(super) fn attach_follow(window: &gtk::Window, body: &gtk::Box, gnome: bool) {
+    let press = gtk::GestureClick::new();
+    press.set_button(gtk::gdk::BUTTON_PRIMARY);
+    press.connect_pressed({
+        let window = window.clone();
+        let body = body.clone();
+        move |_, _, x, y| {
+            if button_at(body.upcast_ref(), x, y) {
+                return;
+            }
+            let finished = {
+                let window = window.clone();
+                move |origin: Option<(i32, i32)>| {
+                    if let Some(origin) = origin {
+                        save_origin(&window, origin);
+                    }
+                }
+            };
+            if gnome {
+                super::super::gnome_pill::follow_pointer(finished);
+            } else {
+                super::super::x11_surface::follow_pointer(&window, finished);
+            }
+        }
+    });
+    window.add_controller(press);
+}
+
 fn button_at(widget: &gtk::Widget, x: f64, y: f64) -> bool {
     let mut picked = widget.pick(x, y, gtk::PickFlags::DEFAULT);
     while let Some(child) = picked {

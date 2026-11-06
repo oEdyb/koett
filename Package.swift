@@ -15,6 +15,7 @@ let package = Package(
         .executable(name: "koett", targets: ["Koett"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
         .package(
             url: "https://github.com/FluidInference/FluidAudio.git",
             exact: "0.15.6"
@@ -51,13 +52,15 @@ let package = Package(
             name: "Koett",
             dependencies: [
                 "CSQLite",
+                .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ],
             resources: [
                 .copy("Resources/AssistantRenderer"),
                 .copy("Resources/History"),
                 .copy("Resources/Dictionary"),
-            ]
+            ],
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
         ),
         .testTarget(
             name: "KoettTests",

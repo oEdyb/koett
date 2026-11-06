@@ -54,6 +54,9 @@ pub(super) fn show(
     content.append(&scroll);
     let copy = gtk::Button::with_label("Copy");
     content.append(&copy);
+    // What was showing when the user started a new job. It stays hidden, so a
+    // failure can't sit next to an older transcript.
+    let replaced = std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
     let latest = latest_completed.clone();
     copy.set_sensitive(latest.borrow().is_some());
     copy.connect_clicked(move |button| {
@@ -70,15 +73,20 @@ pub(super) fn show(
         let start = start.clone();
         let copy = copy.clone();
         let choose = choose.clone();
+        let replaced = replaced.clone();
         move || {
-            copy.set_sensitive(latest.borrow().is_some());
-            if latest.borrow().is_none() {
+            let current = latest
+                .borrow()
+                .clone()
+                .filter(|text| replaced.borrow().as_ref() != Some(text));
+            copy.set_sensitive(current.is_some());
+            if current.is_none() {
                 result.buffer().set_text("");
             }
             if dialog.upgrade().is_none() {
                 return gtk::glib::ControlFlow::Break;
             }
-            if let Some(text) = latest.borrow().as_ref()
+            if let Some(text) = current.as_ref()
                 && result
                     .buffer()
                     .text(
@@ -115,7 +123,10 @@ pub(super) fn show(
         let actions = actions.clone();
         let entry = entry.clone();
         let start = start.clone();
+        let replaced = replaced.clone();
+        let latest = latest_completed.clone();
         move || {
+            *replaced.borrow_mut() = latest.borrow().clone();
             let _ = actions.send(TrayAction::Media(entry.text().to_string()));
             start.set_sensitive(false);
         }
@@ -130,7 +141,11 @@ pub(super) fn show(
         let actions = actions.clone();
         let dialog = dialog.clone();
         let phase = phase.clone();
+        let replaced = replaced.clone();
+        let latest = latest_completed.clone();
         move |button| {
+            let replaced = replaced.clone();
+            let latest = latest.clone();
             let picker = gtk::FileChooserNative::new(
                 Some("Transcribe Media File"),
                 Some(&dialog),
@@ -151,6 +166,7 @@ pub(super) fn show(
                     let path = path.to_string_lossy().into_owned();
                     match crate::media_transcription::validate_file(&path) {
                         Ok(()) => {
+                            *replaced.borrow_mut() = latest.borrow().clone();
                             let _ = actions.send(TrayAction::Media(path));
                             button.set_sensitive(false);
                         }

@@ -482,6 +482,9 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     row(&draw_options, "Draw key", &draw_key);
     let draw_lock = std::rc::Rc::new(std::cell::RefCell::new(settings.draw_lock_shortcut.clone()));
     draw_lock_row(&draw_options, draw_lock.clone());
+    let pin_details = gtk::CheckButton::with_label("Include Page Details in Pins");
+    pin_details.set_active(settings.pin_page_details);
+    draw_options.append(&pin_details);
     let pin_selection = gtk::CheckButton::with_label("Include Selected Text in Pins");
     pin_selection.set_active(settings.pin_selected_text);
     draw_options.append(&pin_selection);
@@ -679,6 +682,7 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
             updated.draw_while_dictating = draw.is_active();
             updated.draw_may_take_keyboard = may_take.is_active();
             updated.pin_selected_text = pin_selection.is_active();
+            updated.pin_page_details = pin_details.is_active();
             updated.draw_lock_shortcut = draw_lock.borrow().clone();
             if !updated.draw_lock_shortcut.is_empty() && updated.effective_draw_lock().is_none() {
                 error.set_text("Draw lock key conflicts with another Koett shortcut.");

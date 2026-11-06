@@ -259,6 +259,19 @@ fn build_window(
         }
     });
     application.add_action(&show_history);
+    // For the GNOME extension's top bar menu, which reads these over the bus.
+    let toggle_recording = gtk::gio::SimpleAction::new("toggle-recording", None);
+    toggle_recording.connect_activate({
+        let actions = actions.clone();
+        move |_, _| {
+            let _ = actions.send(TrayAction::Toggle);
+        }
+    });
+    application.add_action(&toggle_recording);
+    let recording_state =
+        gtk::gio::SimpleAction::new_stateful("recording", None, &false.to_variant());
+    recording_state.set_enabled(false);
+    application.add_action(&recording_state);
     #[cfg(feature = "ask")]
     for (name, command) in [
         #[cfg(feature = "ask")]
@@ -683,6 +696,16 @@ fn build_window(
                             super::settings_view::show(&parent, &panels, saved, None, None);
                         });
                     }
+                    Update::Status(message) if message == "@words" => {
+                        window.present();
+                        super::settings_view::show(
+                            &window,
+                            &panels,
+                            settings_saved.clone(),
+                            None,
+                            Some("words"),
+                        );
+                    }
                     Update::Status(message) if message == "@refresh" => history.refresh(),
                     Update::Status(message) if message == "@silence" => {
                         // No delivery outcome will arrive for an empty result.
@@ -698,6 +721,21 @@ fn build_window(
                         let error = message.trim_start_matches("@error:");
                         pill_message = Some((
                             super::recording_overlay::error_row(error).to_string(),
+                            Instant::now() + PILL_MESSAGE_DURATION,
+                        ));
+                        notice = Some(error.to_string());
+                        notice_until = Some(Instant::now() + Duration::from_secs(8));
+                    }
+                    Update::Status(message)
+                        if message.strip_prefix("@notice:").is_some_and(|notice| {
+                            notice.starts_with(crate::runtime::MEDIA_ERROR)
+                        }) =>
+                    {
+                        let error = message
+                            .trim_start_matches("@notice:")
+                            .trim_start_matches(crate::runtime::MEDIA_ERROR);
+                        pill_message = Some((
+                            super::recording_overlay::error_row("media").to_string(),
                             Instant::now() + PILL_MESSAGE_DURATION,
                         ));
                         notice = Some(error.to_string());
@@ -745,6 +783,7 @@ fn build_window(
                             recovery_until = None;
                         }
                         let recording = message.starts_with("Recording");
+                        recording_state.set_state(&recording.to_variant());
                         // X11 delivers synchronously: the outcome may already be in.
                         if state.starts_with("Transcribing")
                             && !message.starts_with("Transcribing")

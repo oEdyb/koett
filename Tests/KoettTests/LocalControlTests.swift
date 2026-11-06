@@ -86,6 +86,7 @@ final class LocalControlTests: XCTestCase {
                 history: TranscriptStore(fileURL: root.appendingPathComponent("history.md")),
                 recovery: FailedTranscriptStore(directoryURL: root.appendingPathComponent("recovery"))))
         XCTAssertEqual(controller.handleControl(["status"]).phase, "loading")
+        XCTAssertEqual(controller.handleControl(["check-updates"]).error?.code, "updates_disabled")
         XCTAssertEqual(controller.handleControl(["start"]).error?.code, "busy")
         XCTAssertEqual(controller.handleControl(["pause"]).error?.code, "not_recording")
         XCTAssertEqual(controller.handleControl(["wat"]).error?.code, "unknown_command")
@@ -94,5 +95,17 @@ final class LocalControlTests: XCTestCase {
         XCTAssertEqual(controller.handleControl(["transcribe-url", "file:///tmp/a.wav"]).error?.code, "invalid_url")
         XCTAssertEqual(controller.handleControl(["transcribe-file", "relative.wav"]).error?.code, "invalid_path")
         XCTAssertNil(controller.controlServer, "Test controllers must never open the production endpoint")
+        XCTAssertTrue(controller.isIdleForUpdates)
+        controller.configureUpdates()
+        let updater = try XCTUnwrap(controller.appUpdater)
+        XCTAssertEqual(controller.handleControl(["status"]).updates?.enabled, false)
+        updater.gate.deferInstallation {}
+        XCTAssertFalse(controller.canStartSession, "Reserve the idle app before handing it to the installer")
+        XCTAssertFalse(controller.beginRelaunch(to: .parakeetV3))
+        updater.gate.reset()
+        for phase in [KoettController.State.recording, .transcribing, .media, .assistantRecording, .assistantWorking] {
+            controller.state = phase
+            XCTAssertFalse(controller.isIdleForUpdates)
+        }
     }
 }

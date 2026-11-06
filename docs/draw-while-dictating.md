@@ -121,8 +121,18 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 | KDE Plasma 6 (Wayland) | layer-shell | Screenshot portal (one-time "Allow apps to take screenshots") | Verified end to end in private KWin 6.8.1 lab |
 | niri | layer-shell | `grim -o OUTPUT` (wlr-screencopy) | Same code paths; not run on Olle's visible desktop (needs authorization) |
 | Sway, Hyprland, other wlroots | layer-shell | grim, else portal | Unverified |
-| GNOME Wayland | no layer-shell | — | Unavailable; dictation unaffected |
-| X11 | no layer-shell | — | Unavailable; dictation unaffected |
+| GNOME Wayland | Koett GNOME extension | Extension (`Capture`) | Lab-checked on Shell 51.1; [details](linux-gnome-pill-verification.md#drawing) |
+| X11 | override-redirect windows; needs a compositor | Root window, else the portal | Lab-checked in parts; see below |
+
+X11 uses override-redirect windows, so no window manager decorates, moves or focuses them, and
+GDK's input region is an X shape that applies at once. Pins read the window under the pointer
+from `_NET_CLIENT_LIST_STACKING`. Keys come from keyboards as on Wayland, and the focus opt-in
+doesn't apply. Without a compositor drawing stays off, because a transparent window would show
+black. Two labs each covered part of this. KWin with rootless Xwayland checked placement, focus,
+typing, clicks passing through and ink on screen, but rootless X refuses root captures. A rootful
+Xwayland with no window manager checked capture, the contact sheet on the clipboard, pasted
+bullets and pin context, with a stand-in compositor selection and stacking list. Neither was a
+real X session with a real window manager. Evidence: `CrossPlatform/evidence/x11-draw-20261106/`.
 
 - The ink (and the recording pill when the ink is near it) is part of the
   captured image.
@@ -454,7 +464,7 @@ and a late capture result cannot restore it. Undo can be repeated until empty.
 It is disabled after recording ends; cancelled/new recordings cannot inherit it.
 
 `koett drawing-status` reports active/count/captured_count/can_undo without image
-or context content. `koett undo-drawing` performs the same action, returning
+or context content. `koett undo` or `koett undo-drawing` performs the same action, returning
 `drawing_removed` or a `no_drawing` error with exit status 1. An expired queued
 request makes no change. No global Ctrl+Z binding is added: ordinary editor undo
 stays with the editor. Existing focus-mode Ctrl+Z edits only current uncaptured

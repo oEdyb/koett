@@ -96,12 +96,12 @@ Automatic paste requires a supported focus check. GNOME Wayland needs the
 explicitly enabled [Koett Shell extension](integrations/gnome/README.md).
 The Linux archive includes its files; copy them as described there, log out/in,
 and enable the extension. GNOME 46 supplies focus checks; GNOME 51 also supplies
-the recording pill. Other Shell versions need verification. If GlobalShortcuts
+the recording pill and drawing. Other Shell versions need verification. If GlobalShortcuts
 is unavailable, add a custom GNOME keyboard shortcut running `koett toggle`.
 Allow both **Remote Interaction** and **Clipboard Access** in the Remote Desktop
-prompt. Drawing remains unavailable on GNOME. Without the extension or portal
+prompt. Without the extension or portal
 permission, use History/Copy and paste manually. X11 uses native global shortcuts
-and XTest.
+and XTest. X11 also has the recording pill.
 
 Settings → Dictation → Paste shortcut selects Ctrl+V or Ctrl+Shift+V for all output
 
@@ -117,7 +117,7 @@ sources are outside the supported scope. A separate result has preview and Copy.
 
 Requires a Wayland desktop with layer-shell: KDE Plasma 6, niri, Sway or
 Hyprland. KDE Plasma 6 has end-to-end drawing verification; the other desktops
-have less verification. GNOME Wayland and X11 cannot show the drawing overlay.
+have less verification. GNOME Wayland needs the Koett extension, and X11 needs a compositor.
 Use `grim` for capture on niri/wlroots, or a working Screenshot portal on KDE;
 allow screenshot access when asked. Multi-monitor drawing is not hardware-verified.
 

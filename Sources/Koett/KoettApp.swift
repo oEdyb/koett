@@ -195,6 +195,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        controller.configureUpdates()
         controller.installMenu()
         controller.startLocalControl()
         print("Checking microphone and Accessibility access...")

@@ -1,0 +1,37 @@
+# KWin with rootless Xwayland. It refuses root captures and doesn't deliver XTEST keys to GTK, so capture-dependent checks fail here and ran on the rootful server below.
+PASS target window up
+PASS one pill ['6291460']
+PASS pill centred at the bottom {'X': 490, 'Y': 728, 'WIDTH': 300, 'HEIGHT': 48}
+PASS one drawing surface ['6291464']
+PASS it covers the monitor {'X': 0, 'Y': 0, 'WIDTH': 1280, 'HEIGHT': 800}
+PASS focus stays on the app ('4194308', '4194308')
+PASS typing reaches the app hi
+PASS a click reaches the app {'clicks': 1, 'text': 'hi'}
+PASS Shift stroke makes one drawing {'active': True, 'can_undo': True, 'captured_count': 0, 'count': 1, 'display_change_pending': False, 'display_coun
+PASS ink on screen 304
+PASS its press did not reach the app {'clicks': 1, 'text': 'hi'}
+PASS focus unchanged 4194308
+FAIL Shift click pins {'active': True, 'can_undo': True, 'captured_count': 0, 'count': 1, 'display_change_pending': False, 'display_count': 1, 'displa
+PASS pin press did not reach the app {'clicks': 1, 'text': 'hi'}
+PASS a click right after drawing reaches the app {'clicks': 2, 'text': 'hi'}
+PASS surface gone after stop []
+FAIL two bullets Well, I don't wish to see it anymore, observed Phoebe, turning away her eyes. It is certainly very like the old portrait
+FAIL the pin names the window Well, I don't wish to see it anymore, observed Phoebe, turning away her eyes. It is certainly very like the old portrait
+FAIL text pasted into the app hi
+SOME FAILED
+
+# Rootful Xwayland with no window manager, a stand-in compositor selection and a stand-in stacking list
+PASS stroke made {'active': True, 'can_undo': True, 'captured_count': 0, 'count': 1, 'display_change_pending': False, 'display_count': 1, 'display_generation': 0, 'displays': [{'bounds': [0, 0, 1280, 800], 'connector': 'XWAYLAND0', 'desktop': [0, 0,
+PASS ink in a root screenshot 303
+PASS Shift click pins {'active': True, 'can_undo': True, 'captured_count': 2, 'count': 2, 'display_change_pending': False, 'display_count': 1, 'display_generation': 0, 'displays': [{'bounds': [0, 0, 1280, 800], 'connector': 'XWAYLAND0', 'desktop': [0
+PASS the drawing is in the text - #1 (0:01) marked
+STEP pasted "zz- #1 (0:01) marked\n- #2 (0:04) “Well, I don't wish to see it anymore, observed Phoebe, turning away her eyes. It is certainly very like the old portrait”\n  Python3 · “Shift gesture target”"
+PASS bullets pasted into the app zz- #1 (0:01) marked
+PASS the pin names the window zz- #1 (0:01) marked
+PASS the contact sheet was offered
+ALL PASS
+STEP pill start {'X': 490, 'Y': 728, 'WIDTH': 300, 'HEIGHT': 48}
+PASS pill follows the pointer live {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
+PASS pill stays {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}
+PASS position saved {"connector":"XWAYLAND0","x":1939,"y":4362}
+PASS next recording opens there {'X': 190, 'Y': 328, 'WIDTH': 300, 'HEIGHT': 48}

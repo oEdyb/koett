@@ -1,0 +1,33 @@
+{
+  "testedSource": "7b7e590ff76b4995602645d56ab2c82c113f3ae9",
+  "host": "Apple Silicon macOS; builds and signing only",
+  "guest": "koett-limit-11min; disposable admin account; no host input/audio/clipboard sharing",
+  "fixtureVersions": [
+    "0.3.1/4010",
+    "0.3.1/4011",
+    "invalid app 4012",
+    "no-feed 4013"
+  ],
+  "team": "LF8KF3G42Q",
+  "archiveSHA256": "25a82cba4462ecccd71bfb9af085cd243519aec15a18ee667e58d8b5f7d50b89",
+  "damagedArchiveSHA256": "9e1b39af35536e1bd539e9702428b1267ca97f775286c522d91611110040189a",
+  "fileSHA256": {
+    "fixture-provenance.json": "ca4ccee493b6a9a649cc0f024e915bce40225ee5125d6236c0c3d06280724c55",
+    "archive-signature-verification.txt": "7a0c8842215595209db2d73e565d2a9bb6a8e2d21c4cbfdd5c9f27e571b9444b",
+    "manual-check-ui.json": "d7212ea2356f4fa7c9e86364ca98c2a69534a70721d1687a17094974f4ce92fb",
+    "guest-acceptance.py": "3fae4b87d9c0899af14fd36a1b62e0e9c08d3cc8c70bd38214bb723584598354",
+    "local-feed.py": "b5580451cca6b206a4cc529ec334f276845964b968e4888068db755a121d6e01",
+    "inert-final.txt": "4369cc6421282b4637c2fe0bd2d49cf10204ebe4e66a2d428e0380eaf87f45a7",
+    "final-receipts.json": "bb0a6e74cba33a8ac1f9337b9e42e0019a3c394baf424f6b14387b5f5c644767",
+    "verify-fixture-signatures.swift": "a06bc230f5b59b775b51084a2e14995269dd2a0aad917559debb51d64639eb8f",
+    "stage-fixtures.py": "d0c74b7684af9a4ed2388c886c64cc7db15b6ec3d204bbea92bf27953dcb6870",
+    "stage-additional.py": "205b3e3d62118a675d8a7f26477f0caceacefe290755c47de6fb16b0126e1ad3",
+    "public-key.txt": "646b3ed2047fe075549695e7096bf7859d1ef912554af507c399460fc419796e"
+  },
+  "privateKeyExported": false,
+  "artifactRoot": "/Users/olle/dev/koett-release-artifacts/v0.3.1/auto-updates",
+  "signingHelperBinarySHA256": "df7ca7f2f9bb3a0f3d1b48ee3527a5b5a7a998636ca3bf72f7bba96eafde74c8",
+  "signingHelperSourceSHA256": "252d47b9dbcd83118185bece55aea7ad519a3c108bb39a98ad40410f3fba5feb",
+  "executableUUID": "F949DA85-D0D2-3905-9129-03C59336B5DB",
+  "sourceTree": "4393fd5acf89b0cd90f2ca2a781cd9b33ef4fec1"
+}

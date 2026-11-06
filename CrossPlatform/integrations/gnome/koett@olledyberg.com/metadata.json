@@ -1,11 +1,11 @@
 {
   "uuid": "koett@olledyberg.com",
   "name": "Koett",
-  "description": "Recording feedback and original-window checks for Koett on GNOME Wayland.",
+  "description": "Recording feedback, drawing and original-window checks for Koett on GNOME Wayland.",
   "shell-version": [
     "46",
     "51"
   ],
-  "version": 3,
+  "version": 5,
   "url": "https://github.com/oEdyb/koett"
 }

@@ -102,7 +102,10 @@ final class RecordingOverlayController: NSObject {
     private var morphStartedAt: TimeInterval = 0
     private var visibleGeneration = 0
     /// True from `show` until the pill is hidden or starts fading out.
-    private(set) var isPresented = false
+    private(set) var isPresented = false {
+        didSet { if isPresented != oldValue { onPresentationChange?() } }
+    }
+    var onPresentationChange: (() -> Void)?
     private var pauseChanged: ((Bool) -> Void)?
     private var resultText: String?
     private var resultPNG: Data?

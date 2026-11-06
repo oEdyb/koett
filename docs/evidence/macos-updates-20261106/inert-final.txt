@@ -1,0 +1,6 @@
+ProductName:		macOS
+ProductVersion:		15.7.7
+BuildVersion:		24G720
+7b7e590ff76b4995602645d56ab2c82c113f3ae9
+9fde4ba447f2354462726817480758ef6cd5fa59f6a23da0d46c1331ad292983  /Applications/Koett.app/Contents/MacOS/koett
+{"drawLocked":false,"ok":true,"phase":"ready","model":"parakeet","pasteAccessGranted":true,"updates":{"build":"4013","pending":false,"enabled":false,"preparing":false,"installing":false}}

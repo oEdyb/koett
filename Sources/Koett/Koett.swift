@@ -68,6 +68,7 @@ final class KoettController: NSObject {
     var pinSelectedText: Bool
     let sketchFrames = SketchFrames()
     let sketchOverlay = SketchOverlay()
+    var appUpdater: AppUpdater?
     lazy var permissionsWindow = makePermissionsWindow()
     var s1MiniStyle: S1MiniStyle
     var s1MiniStructure: S1MiniStructure
@@ -94,6 +95,7 @@ final class KoettController: NSObject {
                 microphonePreview?.refresh()
                 refreshEscapeMonitor()
                 refreshCaptureWatch()
+                appUpdater?.stateDidChange()
             }
         }
     }
@@ -913,12 +915,27 @@ final class KoettController: NSObject {
         relaunch(with: newEngine)
     }
 
-    var canStartSession: Bool { state == .ready && !isRelaunching }
+    var canStartSession: Bool { state == .ready && !isRelaunching && appUpdater?.gate.isInstalling != true }
+
+    var isIdleForUpdates: Bool {
+        state == .ready && !isRelaunching && activeDictationID == nil
+            && !recordingOverlay.isPresented && !transcriptPersistence.hasVolatileTranscripts
+    }
+
+    func configureUpdates() {
+        appUpdater = AppUpdater(isIdle: { [weak self] in self?.isIdleForUpdates == true },
+                                changed: { [weak self] in self?.rebuildMenu() })
+        recordingOverlay.onPresentationChange = { [weak self] in self?.appUpdater?.stateDidChange() }
+        appUpdater?.stateDidChange()
+    }
+
+    @objc func checkForUpdates() { appUpdater?.checkForUpdates() }
 
     func beginRelaunch(to newEngine: SpeechEngine) -> Bool {
         guard newEngine != speechEngine,
               !isPreparing,
               !isRelaunching,
+              appUpdater?.gate.isInstalling != true,
               prepareTermination() == .terminateNow else { return false }
 
         isRelaunching = true

@@ -210,10 +210,14 @@ fn shows_pencil(pill: &Pill) -> bool {
 enum PillLayer {
     Layer(Rc<LayerShell>),
     Gnome,
+    X11,
 }
 
 impl PillLayer {
     fn load() -> Result<Self, Box<dyn std::error::Error>> {
+        if super::x11_surface::active() {
+            return Ok(Self::X11);
+        }
         if super::gnome_pill::available() {
             return Ok(Self::Gnome);
         }
@@ -223,7 +227,10 @@ impl PillLayer {
     fn configure(&self, window: &gtk::Window) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Self::Layer(layer) => Ok(layer.configure(window)?),
-            Self::Gnome => super::gnome_pill::configure(window, None),
+            Self::Gnome => {
+                super::gnome_pill::configure(window, None, position::saved_origin(window))
+            }
+            Self::X11 => Ok(super::x11_surface::pill(window, None)?),
         }
     }
 
@@ -234,11 +241,15 @@ impl PillLayer {
     ) -> Result<(), Box<dyn std::error::Error>> {
         match self {
             Self::Layer(layer) => Ok(layer.choose_monitor(window, monitor)?),
-            Self::Gnome => super::gnome_pill::configure(window, monitor),
+            Self::Gnome => {
+                super::gnome_pill::configure(window, monitor, position::saved_origin(window))
+            }
+            Self::X11 => Ok(super::x11_surface::pill(window, monitor)?),
         }
     }
 }
 
+const GNOME_RETRY: std::time::Duration = std::time::Duration::from_secs(2);
 const WIDTH: i32 = 300;
 /// Every state is exactly this tall; nothing ever grows.
 const ROW: i32 = 48;
@@ -270,7 +281,9 @@ pub(super) fn error_row(status: &str) -> &'static str {
         .strip_prefix("Error: ")
         .unwrap_or(status)
         .to_lowercase();
-    if error.contains("microphone") || error.contains("input device") {
+    if error.contains("media") || error.contains("browser document") {
+        "Media failed"
+    } else if error.contains("microphone") || error.contains("input device") {
         "Microphone couldn't start"
     } else if error.contains("download") {
         "Model download failed"
@@ -453,6 +466,8 @@ pub struct RecordingOverlay {
     tick: Rc<RefCell<Option<gtk::TickCallbackId>>>,
     layer_shell: PillLayer,
     closed: Rc<std::cell::Cell<bool>>,
+    gnome_monitor: RefCell<Option<gtk::gdk::Monitor>>,
+    gnome_retry: std::cell::Cell<Option<Instant>>,
     layout: RefCell<super::monitor_layout::MonitorLayout>,
 }
 
@@ -766,9 +781,16 @@ impl RecordingOverlay {
             return None;
         }
         let closed = Rc::new(std::cell::Cell::new(false));
+        // GNOME turns the extension off during a screen lock, and turning it off
+        // closes the pill. Keep the window so it can come back without a restart.
+        let gnome = matches!(layer_shell, PillLayer::Gnome);
         window.connect_close_request({
             let closed = closed.clone();
-            move |_| {
+            move |window| {
+                if gnome && !closed.get() {
+                    window.set_visible(false);
+                    return gtk::glib::Propagation::Stop;
+                }
                 closed.set(true);
                 gtk::glib::Propagation::Proceed
             }
@@ -929,9 +951,13 @@ impl RecordingOverlay {
         let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
         shell.append(&layout);
         window.set_child(Some(&shell));
-        if let PillLayer::Layer(layer) = &layer_shell {
-            position::apply(&window, layer);
-            position::attach(&window, &shell, &layout, layer.clone());
+        match &layer_shell {
+            PillLayer::Layer(layer) => {
+                position::apply(&window, layer);
+                position::attach(&window, &shell, &layout, layer.clone());
+            }
+            PillLayer::Gnome => position::attach_follow(&window, &layout, true),
+            PillLayer::X11 => position::attach_follow(&window, &layout, false),
         }
         Some(Self {
             window,
@@ -951,6 +977,8 @@ impl RecordingOverlay {
             tick,
             layer_shell,
             closed,
+            gnome_monitor: RefCell::new(None),
+            gnome_retry: std::cell::Cell::new(None),
             layout: RefCell::new(super::monitor_layout::MonitorLayout::new()),
         })
     }
@@ -966,6 +994,38 @@ impl RecordingOverlay {
     }
 
     /// Keeps Done and recovery up while the pointer rests on the pill.
+    /// On GNOME, a pill about to appear must be registered first: the extension
+    /// may have been turned off and on since, which forgets it, and an unregistered
+    /// window would map as an ordinary one. While the extension is off the pill stays
+    /// hidden and asks again every 2 s.
+    fn registered_to_show(&self, wanted: bool) -> bool {
+        if !wanted || self.window.is_visible() || !matches!(self.layer_shell, PillLayer::Gnome) {
+            return true;
+        }
+        let now = Instant::now();
+        if self
+            .gnome_retry
+            .get()
+            .is_some_and(|at| now.saturating_duration_since(at) < GNOME_RETRY)
+        {
+            return false;
+        }
+        let monitor = self.gnome_monitor.borrow().clone();
+        match self
+            .layer_shell
+            .choose_monitor(&self.window, monitor.as_ref())
+        {
+            Ok(()) => {
+                self.gnome_retry.set(None);
+                true
+            }
+            Err(_) => {
+                self.gnome_retry.set(Some(now));
+                false
+            }
+        }
+    }
+
     pub fn hovered(&self) -> bool {
         !self.closed.get() && self.state.borrow().hovered
     }
@@ -1007,12 +1067,14 @@ impl RecordingOverlay {
                 .and_then(|surface| surface.display().monitor_at_surface(&surface))
                 .filter(|monitor| layout.monitors.contains(monitor));
             self.window.set_visible(false);
-            if let Err(error) = self.layer_shell.choose_monitor(
-                &self.window,
-                previous.as_ref().or_else(|| layout.monitors.first()),
-            ) {
+            let chosen = previous.or_else(|| layout.monitors.first().cloned());
+            if let Err(error) = self
+                .layer_shell
+                .choose_monitor(&self.window, chosen.as_ref())
+            {
                 eprintln!("Recording overlay monitor change failed: {error}");
             }
+            self.gnome_monitor.replace(chosen);
             *self.layout.borrow_mut() = layout;
         }
         let recording = started.is_some();
@@ -1191,7 +1253,10 @@ impl RecordingOverlay {
             Phase::Recording | Phase::Transcribing | Phase::Done | Phase::Recovery | Phase::Media
         );
         self.window.set_can_target(target);
-        let visible = phase != Phase::Hidden;
+        let visible = phase != Phase::Hidden && self.registered_to_show(phase != Phase::Hidden);
+        if visible && !self.window.is_visible() && matches!(self.layer_shell, PillLayer::X11) {
+            super::x11_surface::set_pill_origin(position::saved_origin(&self.window));
+        }
         // Mapping a keyboard-none layer surface never requests activation.
         self.window.set_visible(visible);
         if let Some(surface) = self.window.surface() {
@@ -1245,6 +1310,14 @@ mod tests {
             "Model download failed"
         );
         assert_eq!(super::error_row("Error: anything"), "Dictation failed");
+        for media in [
+            "Error: Media tool failed: unsupported, blocked or login-required source",
+            "Error: Media downloader returned an invalid local file",
+            "Error: invalid or oversized media audio",
+            "Focus one browser document, or enter its URL",
+        ] {
+            assert_eq!(super::error_row(media), "Media failed");
+        }
         assert_eq!(super::error_row("clipboard unavailable"), "Copy failed");
         assert_eq!(super::error_row("paste chord failed"), "Paste failed");
         assert_eq!(super::error_row("could not write history"), "Save failed");

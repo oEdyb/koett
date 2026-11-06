@@ -40,6 +40,10 @@ extension KoettController {
     func menuNeedsUpdate(_ menu: NSMenu) {
         if menu === statusItem?.menu {
             refreshSketchPasteChordItem(in: menu)
+            if let item = menu.items.first(where: { $0.action == #selector(checkForUpdates) }) {
+                item.isEnabled = appUpdater?.canCheck == true
+                item.toolTip = appUpdater?.lastError ?? (appUpdater?.configuration == nil ? "Updates are not enabled in this build." : nil)
+            }
             if let item = menu.items.first(where: { $0.action == #selector(toggleStartAtLogin) }) {
                 refreshLoginMenuItem(item)
             }

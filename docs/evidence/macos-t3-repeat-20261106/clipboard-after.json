@@ -1,0 +1,28 @@
+{
+  "changeCount": 33,
+  "itemCount": 1,
+  "items": [
+    [
+      {
+        "bytes": 34,
+        "sha256": "f06dfe82c2acb8e1044920a84986c68d88bf44c8198916356e1389623dbe987a",
+        "type": "public.utf8-plain-text"
+      },
+      {
+        "bytes": 426561,
+        "sha256": "02cedd892a449f468001b67a529a0f3318b34b2e6143b81bcce141d59559ef8a",
+        "type": "public.png"
+      },
+      {
+        "bytes": 568853,
+        "sha256": "730a90b3c2744b2c7c7c01b709bb20add6826b78a8209b45b64c4b4854238cb5",
+        "type": "public.html"
+      },
+      {
+        "bytes": 6243270,
+        "sha256": "7f484c32cbef1fc45a8db2bf513abaadc17ba84acd4f69766d7f9cd977b61a33",
+        "type": "public.tiff"
+      }
+    ]
+  ]
+}

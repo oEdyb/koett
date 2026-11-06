@@ -20,6 +20,8 @@ Change your setup from the menu bar. On Mac, Recording Limit offers 10, 30, 60 (
 
 On Mac, drag the pill's background to move it to any display. Its position is remembered across recordings and restarts. Buttons still click normally; if the display is disconnected, the pill returns on-screen.
 
+Mac source builds include **Check for Updates…**. [Automatic updates](docs/macos-updates.md) stay disabled until a signed release includes its update feed.
+
 For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in Settings. If the microphone will not start, set **Microphone** to **System default microphone**; in this version, a named device cannot be shared with apps such as Discord.
 
 [Source setup](CrossPlatform/README.md#build) · [CLI](docs/transcribe-cli.md) · [Issues](https://github.com/oEdyb/koett/issues) · [Contributing](CONTRIBUTING.md) · [Apache 2.0](LICENSE)
@@ -36,6 +38,6 @@ Drawing pastes a numbered image sheet followed by speech-linked text. The target
 
 On Mac, Chrome's English Incognito window marker suppresses page details in pins. For other private windows or languages, turn off **Include Page Details in Pins**. The screenshot still includes the content you capture.
 
-Linux drawing has private-lab verification on KDE Plasma 6 Wayland and niri. Sway and Hyprland use supported capture paths but have less verification; GNOME Wayland and X11 have no drawing overlay. Multi-monitor drawing is not hardware-verified. Dictation remains available without drawing. See [Linux requirements and limits](CrossPlatform/README.md#drawing-setup).
+Linux drawing has private-lab verification on KDE Plasma 6 Wayland, niri and GNOME Shell 51 with the Koett extension. Sway and Hyprland use supported capture paths but have less verification. X11 has a lab-checked overlay that needs a compositor. Multi-monitor drawing is not hardware-verified. Dictation remains available without drawing. See [Linux requirements and limits](CrossPlatform/README.md#drawing-setup).
 
 Linux ARM64 archives pass native CI; ARM64 desktop use is untested. GNOME Wayland automatic paste needs the explicitly enabled [GNOME integration](CrossPlatform/integrations/gnome/README.md), a desktop shortcut and portal permission.

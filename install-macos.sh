@@ -87,6 +87,8 @@ else
     echo "Signing Koett with a stable identity."
 fi
 
+"$project_dir/scripts/embed-sparkle.sh" "$stage_app" "$signing_identity"
+
 codesign --force --options runtime \
     --entitlements "$project_dir/Packaging/Koett.entitlements" \
     --sign "$signing_identity" "$stage_app"
