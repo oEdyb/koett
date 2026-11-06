@@ -9,6 +9,14 @@ on:
         description: Release build, using and saving no caches
         type: boolean
         default: false
+      packaging_only:
+        description: Build installers and run packaging checks; omit unchanged Rust suites and inference probes
+        type: boolean
+        default: false
+      windows_only:
+        description: Recheck only Windows; use after an unchanged Linux batch already passed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +29,7 @@ jobs:
   # Replaced caches would otherwise sit there for a week, counting against the 10 GB limit.
   cache-trim:
     needs: [msrv, windows, linux]
-    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && !inputs.clean }}
+    if: ${{ !inputs.windows_only && !cancelled() && github.ref == 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     permissions:
@@ -56,7 +64,7 @@ jobs:
 
   dependency-review:
     # Compares the branch with main, so there's nothing to compare on main itself.
-    if: ${{ github.ref != 'refs/heads/main' && !inputs.clean }}
+    if: ${{ !inputs.windows_only && github.ref != 'refs/heads/main' && !inputs.clean }}
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
@@ -68,6 +76,7 @@ jobs:
           retry-on-snapshot-warnings-timeout: 120
 
   supply-chain:
+    if: ${{ !inputs.windows_only }}
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     defaults:
@@ -109,6 +118,7 @@ jobs:
         run: cargo audit
 
   msrv:
+    if: ${{ !inputs.windows_only }}
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
@@ -246,11 +256,13 @@ jobs:
         run: >-
           python -c "import json; from pathlib import Path; import sys; sys.path.insert(0, 'scripts'); from shared_context_patch import PATCHED_SHA256; receipt=json.loads(Path('native-build/build-receipt.json').read_text()); assert receipt['target']=='x86_64-pc-windows-msvc'; assert receipt['shared_context_sha256']==PATCHED_SHA256; assert ('patch='+PATCHED_SHA256+'\n') in Path('native-build/lib/koett-context.txt').read_text()"
       - name: Test
+        if: ${{ !inputs.packaging_only }}
         run: cargo test --locked
       - name: Lint
+        if: ${{ !inputs.packaging_only }}
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
-        run: cargo build --release --locked --bin koett
+        run: cargo build --release --locked --bin koett --bin koett-engine
       - name: Build native transcription CLI
         run: cargo build --release --locked --bin koett-transcribe-engine
       - name: Check clean-Windows DLL dependencies
@@ -261,12 +273,14 @@ jobs:
         shell: pwsh
         run: ./scripts/test_windows_self_test.ps1
       - name: Runtime self-test
+        if: ${{ !inputs.packaging_only }}
         shell: pwsh
         run: |
           cargo build --release --locked --bin koett-engine
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./scripts/run_windows_self_test.ps1
       - name: Runtime long-input probe
+        if: ${{ !inputs.packaging_only }}
         timeout-minutes: 5
         run: cargo run --release --locked --bin koett-engine -- --long-self-test 420
       - name: Save speech model
@@ -286,6 +300,26 @@ jobs:
           if ($errors.Count) { $errors | Format-List; exit 1 }
       - name: Package
         run: python scripts/package_windows.py
+      - name: Install pinned NSIS compiler
+        shell: pwsh
+        run: |
+          choco upgrade nsis.install --version=3.12.0 --allow-downgrade --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & 'C:\Program Files (x86)\NSIS\makensis.exe' /VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test Windows installer packaging
+        run: python -m unittest discover -s scripts -p 'test_package_windows_installer.py'
+      - name: Build native Windows installer
+        shell: pwsh
+        run: |
+          python scripts/package_windows_installer.py --payload dist/Koett-Windows-x86_64 --output dist/Koett-Windows-x86_64-Setup.exe --compiler 'C:\Program Files (x86)\NSIS\makensis.exe'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Write Windows installer checksum and build receipt
+        run: >-
+          python scripts/write_build_receipt.py
+          --artifact dist/Koett-Windows-x86_64-Setup.exe
+          --target x86_64-pc-windows-msvc
+          --output-directory dist
       - name: Verify Windows archive notices
         run: python scripts/check_windows_archive.py --archive dist/Koett-Windows-x86_64.zip
       - name: Write checksum and build receipt
@@ -301,6 +335,9 @@ jobs:
             CrossPlatform/dist/Koett-Windows-x86_64.zip
             CrossPlatform/dist/Koett-Windows-x86_64.zip.sha256
             CrossPlatform/dist/Koett-Windows-x86_64.zip.build-receipt.json
+            CrossPlatform/dist/Koett-Windows-x86_64-Setup.exe
+            CrossPlatform/dist/Koett-Windows-x86_64-Setup.exe.sha256
+            CrossPlatform/dist/Koett-Windows-x86_64-Setup.exe.build-receipt.json
           if-no-files-found: error
       - name: Drop Koett's own build output from the cache
         if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'
@@ -318,6 +355,7 @@ jobs:
           key: cargo-v2-windows-2025-${{ hashFiles('CrossPlatform/Cargo.lock', 'CrossPlatform/Cargo.toml', 'CrossPlatform/rust-toolchain.toml', 'CrossPlatform/.cargo/config.toml') }}
 
   linux:
+    if: ${{ !inputs.windows_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -363,7 +401,7 @@ jobs:
           sudo apt-get install $options -y --no-install-recommends \
             clang cmake libasound2-dev libfontconfig1-dev libudev-dev \
             libwayland-dev libx11-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config
+            libxkbcommon-dev libgtk-4-dev ninja-build pkg-config rpm libarchive-tools zstd
       - name: Save system packages
         if: github.ref == 'refs/heads/main' && !inputs.clean && steps.apt_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -415,14 +453,17 @@ jobs:
           path: ~/.local/share/koett/models
           key: model-v1-${{ matrix.runner }}-${{ hashFiles('CrossPlatform/src/model.rs', 'CrossPlatform/src/paths.rs') }}
       - name: Test
+        if: ${{ !inputs.packaging_only }}
         run: cargo test --locked
       - name: Lint
+        if: ${{ !inputs.packaging_only }}
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build
         run: cargo build --release --locked --bin koett
       - name: Test runtime self-test retry policy
         run: python3 -m unittest discover -s scripts -p test_runtime_self_test.py
       - name: Runtime self-test
+        if: ${{ !inputs.packaging_only }}
         id: asr_self_test
         run: python3 scripts/run_runtime_self_test.py cargo run --release --locked --bin koett-engine -- --self-test
       - name: Save speech model
@@ -454,6 +495,20 @@ jobs:
         run: |
           strip target/release/koett
           python3 scripts/package_linux.py --flavor system-runtime --output dist
+      - name: Build native distro packages
+        run: |
+          archive=$(find dist -maxdepth 1 -name 'Koett-Linux-*.tar.gz' -print -quit)
+          checksum=$(sha256sum "$archive" | cut -d ' ' -f1)
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
+          for format in deb rpm arch; do
+            nice -n 10 python3 scripts/package_linux_native.py \
+              --archive "$archive" --archive-sha256 "$checksum" --source-revision "$GITHUB_SHA" \
+              --format "$format" --architecture "${{ matrix.architecture == 'arm64' && 'aarch64' || 'x86_64' }}" \
+              --version "$version" --output dist
+          done
+          for artifact in dist/koett-*.deb dist/koett-*.rpm dist/koett-*.pkg.tar.zst; do
+            python3 scripts/write_build_receipt.py --artifact "$artifact" --target "${{ matrix.target }}" --output-directory dist
+          done
       - name: Verify extracted release candidate
         run: |
           python3 scripts/test_package_linux_archive.py --archive dist/Koett-Linux-*.tar.gz
@@ -471,6 +526,13 @@ jobs:
             CrossPlatform/dist/Koett-Linux-*.tar.gz
             CrossPlatform/dist/Koett-Linux-*.tar.gz.sha256
             CrossPlatform/dist/Koett-Linux-*.tar.gz.build-receipt.json
+            CrossPlatform/dist/koett-*.deb
+            CrossPlatform/dist/koett-*.deb.sha256
+            CrossPlatform/dist/koett-*.rpm
+            CrossPlatform/dist/koett-*.rpm.sha256
+            CrossPlatform/dist/koett-*.pkg.tar.zst
+            CrossPlatform/dist/koett-*.pkg.tar.zst.sha256
+            CrossPlatform/dist/koett-*.build-receipt.json
           if-no-files-found: error
       - name: Drop Koett's own build output from the cache
         if: github.ref == 'refs/heads/main' && !inputs.clean && steps.cargo_cache.outputs.cache-hit != 'true'

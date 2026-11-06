@@ -1,0 +1,428 @@
+{
+  "ok": true,
+  "result": {
+    "step": {
+      "step": "installed-apps-koett",
+      "rect": [
+        69,
+        56,
+        968,
+        992
+      ],
+      "screenshot_file": "installer-apps-search-result-step.png",
+      "focus": {
+        "hwnd": 197538,
+        "process": "ApplicationFrameHost",
+        "pid": 2536
+      }
+    },
+    "items": [
+      {
+        "name": "Settings",
+        "id": "TitleBar",
+        "type": "ControlType.Window"
+      },
+      {
+        "name": "System",
+        "id": "SystemMenuBar",
+        "type": "ControlType.MenuBar"
+      },
+      {
+        "name": "System",
+        "id": "",
+        "type": "ControlType.MenuItem"
+      },
+      {
+        "name": "Minimize Settings",
+        "id": "Minimize",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Maximize Settings",
+        "id": "Maximize",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Close Settings",
+        "id": "Close",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Settings",
+        "id": "",
+        "type": "ControlType.Window"
+      },
+      {
+        "name": "Settings",
+        "id": "SettingsLabel",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Expand search box",
+        "id": "CommandSearchBoxFlyoutButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "",
+        "id": "PermanentNavigationView",
+        "type": "ControlType.Custom"
+      },
+      {
+        "name": "Back",
+        "id": "NavigationViewBackButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Open Navigation",
+        "id": "TogglePaneButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "",
+        "id": "PaneTitleTextBlock",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "",
+        "id": "PermanentNavigationViewBreadcrumbBar",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Apps",
+        "id": "",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Apps",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Installed apps",
+        "id": "",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Installed apps",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "",
+        "id": "",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "",
+        "id": "ItemsControlScrollViewer",
+        "type": "ControlType.Pane"
+      },
+      {
+        "name": "Search",
+        "id": "SystemSettings_StorageSense_AppSizesListFilter_DisplayStringValue",
+        "type": "ControlType.Edit"
+      },
+      {
+        "name": "View apps by",
+        "id": "SystemSettings_StorageSense_AppLayoutOption_ListView",
+        "type": "ControlType.List"
+      },
+      {
+        "name": "List view.",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "Grid view.",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "Tile view.",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "Filter by:",
+        "id": "Label",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Drive filter options. Currently filtered by: ",
+        "id": "SystemSettings.StorageSenseHandlers.CAppSizesDriveSelection_ComboBox",
+        "type": "ControlType.ComboBox"
+      },
+      {
+        "name": "All drives",
+        "id": "ContentPresenter",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "All drives",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Sort by:",
+        "id": "Label",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Sort options. Currently sorted by: ",
+        "id": "SystemSettings.StorageSenseHandlers.CAppSizesSort_ComboBox",
+        "type": "ControlType.ComboBox"
+      },
+      {
+        "name": "Name (A to Z)",
+        "id": "ContentPresenter",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "Name (A to Z)",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "1 app found",
+        "id": "SystemSettings_StorageSense_TotalAppsVisible_AppSizesListTotalAppsVisibleText",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "",
+        "id": "",
+        "type": "ControlType.List"
+      },
+      {
+        "name": "Koett, 0.3.0, Dyberg & Co AB, \u200e11/\u200e6/\u200e2026",
+        "id": "",
+        "type": "ControlType.ListItem"
+      },
+      {
+        "name": "Koett, 0.3.0, Dyberg & Co AB, \u200e11/\u200e6/\u200e2026",
+        "id": "Koett_ListItem",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "",
+        "id": "",
+        "type": "ControlType.Image"
+      },
+      {
+        "name": "Koett",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "0.3.0",
+        "id": "Koett_SubtitleTextBlock",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Dyberg & Co AB",
+        "id": "Koett_SubtitleTextBlock",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "\u200e11/\u200e6/\u200e2026",
+        "id": "Koett_SubtitleTextBlock",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "More options",
+        "id": "AppOptionsButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Related settings",
+        "id": "",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Related settings",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "System components",
+        "id": "SystemSettings_InstalledApps_SystemComponentsSettingLink_ButtonEntityItem",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "System components",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Manage system components that are preinstalled on Windows",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "System components",
+        "id": "EntityItemButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "AI components",
+        "id": "SystemSettings_StorageSense_WorkloadComponentsPageLink_ButtonEntityItem",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "AI components",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "View and uninstall AI components that are installed on Windows",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "AI components",
+        "id": "EntityItemButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Related support",
+        "id": "",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Related support",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Help from the web",
+        "id": "",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Help from the web",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Show more settings",
+        "id": "EntityItemButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Repairing apps that aren't working properly",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Repairing apps that aren't working properly",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Uninstalling third-party antivirus software",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Uninstalling third-party antivirus software",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Checking installed apps on your device",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Checking installed apps on your device",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Freeing up storage space effectively",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Freeing up storage space effectively",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Get help",
+        "id": "BonusBarEntityContactSupportGroup",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Get help",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Get help",
+        "id": "BonusBarContactSupportLink",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Give feedback",
+        "id": "BonusBarEntityGiveFeedbackGroup",
+        "type": "ControlType.Group"
+      },
+      {
+        "name": "Give feedback",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Give feedback",
+        "id": "BonusBarWindowsInsiderLink",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Vertical",
+        "id": "VerticalScrollBar",
+        "type": "ControlType.ScrollBar"
+      },
+      {
+        "name": "",
+        "id": "",
+        "type": "ControlType.Pane"
+      },
+      {
+        "name": "Settings",
+        "id": "TitleBar",
+        "type": "ControlType.TitleBar"
+      },
+      {
+        "name": "System Menu Bar",
+        "id": "SystemMenuBar",
+        "type": "ControlType.MenuBar"
+      },
+      {
+        "name": "System",
+        "id": "Item 1",
+        "type": "ControlType.MenuItem"
+      },
+      {
+        "name": "Minimize",
+        "id": "Minimize",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Maximize",
+        "id": "Maximize",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "Close",
+        "id": "Close",
+        "type": "ControlType.Button"
+      }
+    ],
+    "focus": {
+      "hwnd": 197538,
+      "process": "ApplicationFrameHost",
+      "pid": 2536
+    }
+  },
+  "id": "1793967271766719841"
+}

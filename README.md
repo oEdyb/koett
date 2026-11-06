@@ -6,23 +6,21 @@ Voice-to-text runs locally. Drawing is optional and off by default; normal dicta
 
 Choose your microphone, set your shortcut, and use hold or toggle recording. Dictation stays local. No account or telemetry.
 
-**Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models; drawing requires a supported Wayland desktop. **Windows:** source builds in testing; no drawing download.
+**Mac:** English · Apple silicon · macOS 15+. **Linux:** native GTK preview, with English and multilingual models; drawing requires a supported Wayland desktop. **Windows:** native preview; installer signing is not yet configured.
 
-**Download status:** the published Mac v0.1.1 and Linux v0.2.0-linux.1 downloads do not include drawing. The drawing controls below describe the current source build.
+**Download status:** v0.3.0 includes drawing in Mac ZIP and Linux archive downloads. Native installers below are built by manual CI until a release publishes them.
 
 ## Get started
 
-1. [Download for Mac](https://github.com/oEdyb/koett/releases/latest), unzip, and move Koett to Applications.
-2. Open it, allow Microphone and Accessibility, and let the model download.
-3. Press either Option key, speak, then press it again. Koett pastes and saves your text.
+- **Mac:** download the signed, notarized **DMG**, open it and drag Koett to Applications. Open Koett and allow Microphone and Accessibility.
+- **Linux:** download your distribution's **.deb**, **.rpm** or **Arch package**, install it with the package manager, then open Koett from Applications. See [native install and upgrade](docs/native-installers.md#linux).
+- **Windows:** run **Koett-Windows-x86_64-Setup.exe**, then open Koett from Start. The installer is currently unsigned; [SmartScreen and uninstall details](docs/native-installers.md#windows).
 
-Change your setup from the menu bar. On Mac, Recording Limit offers 10, 30, 60 (default), or 120 minutes of recorded audio. A one-minute warning appears before Koett stops, pastes and saves normally.
+[Downloads](https://github.com/oEdyb/koett/releases) · For the currently published v0.3.0, unzip the Mac ZIP and drag Koett to Applications; Linux archive users follow the [archive install steps](CrossPlatform/README.md#archive-install).
 
-On Mac, drag the pill's background to move it to any display. Its position is remembered across recordings and restarts. Buttons still click normally; if the display is disconnected, the pill returns on-screen.
+Press the dictation shortcut, speak, then press it again. Mac uses either Option key; Linux and Windows use Ctrl+Shift+Space. Koett pastes and saves your text. Models, microphones and shortcuts are in Settings (menu bar on Mac).
 
-Mac source builds include **Check for Updates…**. [Automatic updates](docs/macos-updates.md) stay disabled until a signed release includes its update feed.
-
-For Linux, follow the [preview install instructions](CrossPlatform/README.md#install). Models, microphone levels, shortcuts and formatting are in Settings. If the microphone will not start, set **Microphone** to **System default microphone**; in this version, a named device cannot be shared with apps such as Discord.
+On Linux, if the microphone will not start, set **Microphone** to **System default microphone**; a named device cannot be shared with apps such as Discord in this version.
 
 [Source setup](CrossPlatform/README.md#build) · [CLI](docs/transcribe-cli.md) · [Issues](https://github.com/oEdyb/koett/issues) · [Contributing](CONTRIBUTING.md) · [Apache 2.0](LICENSE)
 

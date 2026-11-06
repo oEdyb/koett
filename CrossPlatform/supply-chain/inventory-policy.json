@@ -491,6 +491,22 @@
         }
       ],
       "notice_state": "missing"
+    },
+    {
+      "bom_ref": "pkg:github/NSIS-Dev/nsis@v312",
+      "type": "application",
+      "group": "installer-runtime",
+      "name": "NSIS installer runtime",
+      "version": "3.12",
+      "license": {
+        "expression": "Zlib"
+      },
+      "source_url": "https://github.com/NSIS-Dev/nsis/tree/v312",
+      "notice_state": "bundled",
+      "status": "windows-zlib-installer-stub-and-plugins",
+      "license_paths": [
+        "CrossPlatform/packaging/windows/NSIS-COPYING.txt"
+      ]
     }
   ]
 }

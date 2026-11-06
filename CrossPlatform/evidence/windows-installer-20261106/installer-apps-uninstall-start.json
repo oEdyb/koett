@@ -1,0 +1,53 @@
+{
+  "ok": true,
+  "result": {
+    "step": {
+      "step": "apps-uninstall-confirmation",
+      "rect": [
+        69,
+        56,
+        968,
+        992
+      ],
+      "screenshot_file": "installer-apps-uninstall-start-result-step.png",
+      "focus": {
+        "hwnd": 197538,
+        "process": "ApplicationFrameHost",
+        "pid": 2536
+      }
+    },
+    "items": [
+      {
+        "name": "This app and its related info will be uninstalled.",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Uninstall",
+        "id": "SystemSettings_StorageSense_AppSizesList_UninstallButton_ConfirmButton",
+        "type": "ControlType.Button"
+      },
+      {
+        "name": "View and uninstall AI components that are installed on Windows",
+        "id": "",
+        "type": "ControlType.Text"
+      },
+      {
+        "name": "Uninstalling third-party antivirus software",
+        "id": "",
+        "type": "ControlType.Hyperlink"
+      },
+      {
+        "name": "Uninstalling third-party antivirus software",
+        "id": "",
+        "type": "ControlType.Text"
+      }
+    ],
+    "focus": {
+      "hwnd": 197538,
+      "process": "ApplicationFrameHost",
+      "pid": 2536
+    }
+  },
+  "id": "1793967327770684523"
+}

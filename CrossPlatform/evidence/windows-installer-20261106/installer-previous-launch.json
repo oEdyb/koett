@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "result": {
+    "step": {
+      "step": "installer-launched-native-settings",
+      "rect": [
+        470,
+        0,
+        1450,
+        996
+      ],
+      "screenshot_file": "installer-previous-launch-result-step.png",
+      "focus": {
+        "hwnd": 328746,
+        "process": "Koett",
+        "pid": 2252
+      }
+    },
+    "state": {
+      "media_active": false,
+      "ok": true,
+      "outputs": [],
+      "paused": false,
+      "recovery_busy": false,
+      "status": "ready",
+      "unsaved_media": false,
+      "unsaved_transcripts": 0,
+      "warnings": []
+    },
+    "artifact": {
+      "path": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\4ef16c986902ab2b\\Koett.exe",
+      "pid": 2252,
+      "sha256": "1010C5B3D2ED21D7CDF7E3621B10436E60FD0382D051CC7D8BA3584DE98459B2"
+    },
+    "focus": {
+      "hwnd": 328746,
+      "process": "Koett",
+      "pid": 2252
+    },
+    "passed": true
+  },
+  "id": "1793965153914553798"
+}

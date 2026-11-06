@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "result": {
+    "passed": true,
+    "data_before": {
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\config\\settings.json": "2E95162308D31C1A0BE6460393C020FCFBEDE6E161E6BEC1CD0ECD2CF5B6D3FF",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\History.sqlite3": "F8543591547D9126660504C57C4B34C5E9DC2BB42220377D33722C36C6D247BC",
+      "C:\\Users\\KoettLab\\AppData\\Roaming\\DybergCo\\Koett\\data\\Last Transcript.txt": "5ACAF54C9480E7679F886D890C6626791A5CDF01B3FB32A6757A435455A00B6B"
+    },
+    "exit": 0,
+    "focus": {
+      "hwnd": 65772,
+      "process": "explorer",
+      "pid": 5072
+    },
+    "registration": {
+      "DisplayName": "Koett",
+      "DisplayVersion": "0.3.0",
+      "UninstallString": "\"C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\Uninstall.exe\"",
+      "InstallLocation": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett"
+    },
+    "target": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\6df7abfae616146e\\Koett.exe",
+    "shortcut": "C:\\Users\\KoettLab\\AppData\\Local\\Programs\\Koett\\versions\\6df7abfae616146e\\Koett.exe",
+    "sha256": "E2A22B96A42ADA15F94C88178E166F6DADFD9A8F10435439EF2C1F7C899D3E4A"
+  },
+  "id": "1793964017477087741"
+}
