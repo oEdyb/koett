@@ -1051,6 +1051,10 @@ mod tests {
                 super::super::feedback::sketch_html(TEXT, &fixture).as_bytes()
             );
         }
+        assert!(
+            super::super::recovery::bundle_on_clipboard(TEXT),
+            "Koett's own bundle reads back as image and text"
+        );
         let mut newer = Command::new("wl-copy")
             .args(["--type", "text/plain"])
             .stdin(Stdio::piped())
@@ -1065,6 +1069,10 @@ mod tests {
         assert!(newer.wait().unwrap().success());
         assert!(replace(Payload::bundle(&fixture, TEXT)).is_err());
         assert_eq!(read("text/plain"), b"newer copy wins");
+        assert!(
+            !super::super::recovery::bundle_on_clipboard(TEXT),
+            "a newer copy means the drawing is not on the clipboard"
+        );
         stop();
         assert_eq!(read("text/plain"), b"newer copy wins");
         start(Payload::bundle(&fixture, TEXT)).unwrap();
@@ -1101,6 +1109,12 @@ mod tests {
         *BEFORE_CLAIM.lock().unwrap() = Some(Box::new(foreign_copy));
         let error = replace(Payload::bundle(&fixture, TEXT)).unwrap_err();
         assert!(error.contains("raced"), "race was not detected: {error}");
+        stop();
+        start(Payload::text(TEXT)).unwrap();
+        assert!(
+            !super::super::recovery::bundle_on_clipboard(TEXT),
+            "the same text without the image is not the drawing"
+        );
         stop();
     }
 }

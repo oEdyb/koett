@@ -1258,6 +1258,13 @@ impl WindowsApp {
         if self.capture_pending && intent != RecordingIntent::Stop {
             return;
         }
+        // The paste goes where the user is when they stop, not where they started; the
+        // focus checks at paste time then guard stop to paste.
+        if self.status == AppStatus::Recording
+            && matches!(intent, RecordingIntent::Stop | RecordingIntent::Toggle)
+        {
+            self.paste_target = foreground_paste_target();
+        }
         if intent == RecordingIntent::Stop {
             if let Some(engine) = &self.engine {
                 let _ = engine.commands.send(EngineCommand::Stop);
@@ -2035,9 +2042,9 @@ impl WindowsApp {
             );
         }
         if let Some(saved) = staged.saved {
+            let copied = result.is_err() && self.ensure_on_clipboard(&staged.text);
             self.pill_state.set(
-                // An image bundle keeps its rescue: copying the text would replace it.
-                pill_state::delivery_result(staged.text, result.is_ok(), false, saved, false),
+                pill_state::delivery_result(staged.text, result.is_ok(), copied, saved, false),
                 self.clock.elapsed().as_millis() as u64,
             );
             self.pill_state.repeat_paste = self.last_bundle.is_some();
@@ -2164,6 +2171,17 @@ impl WindowsApp {
             .err();
         self.record_delivery(model, text, raw, delivery_error);
     }
+    /// A result that didn't paste, put on the clipboard and read back: the drawing's
+    /// image and text when there is one, otherwise the text.
+    fn ensure_on_clipboard(&mut self, text: &str) -> bool {
+        match self.last_bundle.clone() {
+            Some(bundle) => {
+                self.clipboard_restore = None;
+                clipboard::ensure_bundle(self.hwnd, &bundle)
+            }
+            None => clipboard::ensure_text(self.hwnd, text),
+        }
+    }
     fn record_delivery(
         &mut self,
         model: &str,
@@ -2198,7 +2216,7 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let copied = failed && clipboard::ensure_text(self.hwnd, text);
+        let copied = failed && self.ensure_on_clipboard(text);
         let phase =
             pill_state::delivery_result(text.to_string(), !failed, copied, saved, history_failed);
         self.pill_state

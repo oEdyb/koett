@@ -1741,16 +1741,27 @@ async fn run_wayland(
                     None => output::deliver(&text, target, settings.paste_shortcut),
                 }
             };
-            let mut delivered = image_delivery.and(text_delivery);
-            if let Some(png) = &sheet {
-                settle_sketch_text(output.as_ref(), before_text).await;
-                delivered =
-                    delivered.and(restore_sketch_clipboard(output.as_ref(), png, &text).await);
-            }
-            let delivered = report_outcome(
-                tray,
-                settle_delivery_async(delivered, sheet.is_none().then(|| text.clone())).await,
-            );
+            let delivered = image_delivery.and(text_delivery);
+            let outcome = match &sheet {
+                Some(png) => {
+                    // Nothing was pasted after a refusal, so there's no read to wait for.
+                    if delivered.is_ok() {
+                        settle_sketch_text(output.as_ref(), before_text).await;
+                    }
+                    let offered = restore_sketch_clipboard(output.as_ref(), png, &text).await;
+                    let held = text.clone();
+                    let on_clipboard = delivered.is_err()
+                        && offered.is_ok()
+                        && tokio::task::spawn_blocking(move || {
+                            recovery::bundle_on_clipboard(&held)
+                        })
+                        .await
+                        .unwrap_or(false);
+                    settle_bundle(delivered, offered, on_clipboard)
+                }
+                None => settle_delivery_async(delivered, Some(text.clone())).await,
+            };
+            let delivered = report_outcome(tray, outcome);
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
                 &text,
@@ -1839,6 +1850,25 @@ mod queued_capture_tests {
             );
         }
         seen
+    }
+
+    #[test]
+    fn the_paste_goes_to_the_window_focused_at_stop_not_at_start() {
+        let _guard = runtime_test_guard();
+        let (engine, _received, _updates) = EngineHandle::controlled();
+        let mut app = LinuxEngine::new(engine);
+        app.status = AppStatus::Ready;
+        app.command(EngineCommand::Toggle, || Some(117));
+        assert_eq!(app.paste_target, Some(117));
+        app.status = AppStatus::Recording;
+        app.command(EngineCommand::Toggle, || Some(111));
+        assert_eq!(app.paste_target, Some(111), "stop re-captures");
+        app.command(EngineCommand::Stop, || Some(5));
+        assert_eq!(
+            app.paste_target,
+            Some(111),
+            "a second stop before the engine answers keeps the first"
+        );
     }
 
     #[test]
@@ -2325,7 +2355,13 @@ impl LinuxEngine {
         if matches!(self.status, AppStatus::Error(_)) && matches!(command, EngineCommand::Stop) {
             return;
         }
-        if self.status == AppStatus::Ready {
+        // The paste goes where the user is when they stop, not where they started; the
+        // guard then covers stop to paste. Start still captures, for a recording that
+        // ends without a stop command.
+        let stopping = self.status == AppStatus::Recording
+            && !self.stop_sent
+            && matches!(command, EngineCommand::Toggle | EngineCommand::Stop);
+        if self.status == AppStatus::Ready || stopping {
             self.paste_target = focus();
         }
         if matches!(
@@ -3160,8 +3196,8 @@ enum Outcome {
     Failed(String),
 }
 
-/// A text-only result that didn't paste is still fine if it's on the clipboard. Results
-/// with an image keep the old rescue, since copying the text would replace the image.
+/// A text-only result that didn't paste is still fine if it's on the clipboard. Drawing
+/// results go through `settle_bundle`, since copying the text would replace the image.
 fn settle_delivery(
     delivered: Result<(), String>,
     text: Option<&str>,
@@ -3170,6 +3206,21 @@ fn settle_delivery(
     match (delivered, text) {
         (Ok(()), _) => Outcome::Pasted,
         (Err(_), Some(text)) if ensure_copied(text) => Outcome::Copied,
+        (Err(error), _) => Outcome::Failed(error),
+    }
+}
+
+/// A drawing result that didn't paste counts as copied only when Koett's offer of the
+/// image and text was confirmed as the clipboard owner and both read back.
+fn settle_bundle(
+    delivered: Result<(), String>,
+    offered: Result<(), String>,
+    on_clipboard: bool,
+) -> Outcome {
+    match (delivered, offered) {
+        (Ok(()), Ok(())) => Outcome::Pasted,
+        (Ok(()), Err(error)) => Outcome::Failed(error),
+        (Err(_), Ok(())) if on_clipboard => Outcome::Copied,
         (Err(error), _) => Outcome::Failed(error),
     }
 }
@@ -3284,6 +3335,26 @@ mod delivery_tests {
             Ok(TrayUpdate::DeliveryFailed)
         ));
     }
+    #[test]
+    fn a_drawing_that_did_not_paste_is_copied_only_when_the_offer_is_verified() {
+        let refused = || Err::<(), String>("focus changed".into());
+        assert_eq!(settle_bundle(Ok(()), Ok(()), false), Outcome::Pasted);
+        assert_eq!(settle_bundle(refused(), Ok(()), true), Outcome::Copied);
+        assert_eq!(
+            settle_bundle(refused(), Ok(()), false),
+            Outcome::Failed("focus changed".into()),
+            "offer not read back: the rescue stays"
+        );
+        assert_eq!(
+            settle_bundle(refused(), Err("ownership changed".into()), true),
+            Outcome::Failed("focus changed".into())
+        );
+        assert_eq!(
+            settle_bundle(Ok(()), Err("ownership changed".into()), true),
+            Outcome::Failed("ownership changed".into())
+        );
+    }
+
     #[test]
     fn a_paste_that_failed_but_copied_says_so_once_and_shows_no_error() {
         let (sender, receiver) = mpsc::channel();
