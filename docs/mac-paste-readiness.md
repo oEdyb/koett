@@ -32,7 +32,7 @@ Koett's synthetic Command/Control is not treated as a physical held key.
   raw text/ASR recovery boundaries and ephemeral successful audio.
 - Rejections keep Not pasted + Copy/Paste recovery. The menu's latest result
   records the actual reason. The pill's approved 300×48 layout/timing is unchanged.
-- Manual Paste Last uses the same bounded readiness and original-target guard.
+- Manual Paste Last uses the same bounded readiness and Stop-target guard.
 
 ## Inspect exact future reasons
 
@@ -70,3 +70,13 @@ recovery reason, private rotating metadata logs and newer clipboard ownership
 during the drawing wait. No real transcript or user-facing injected keystroke
 is used. These fixtures reproduce the one-shot rejection class; they do not
 identify which historical dictations encountered it.
+
+## Target at Stop
+
+Automatic dictation captures the focused application and window at Stop, before
+transcription begins. Switching applications while recording is allowed. A later
+application or window change during transcription still refuses automatic paste.
+Koett itself, missing targets and denied paste permissions remain refused.
+Text and sketch refusals verify their clipboard content before showing the short
+`Copied to clipboard` confirmation. Failed clipboard verification keeps Copy.
+Manual Paste Last continues to capture its target when the command is invoked.

@@ -57,7 +57,6 @@ extension KoettController {
         defer {
             if state == .ready { microphonePreview?.refresh() }
         }
-        automaticPasteTarget = PasteTarget.capture()
         switch speechEngine {
         case .parakeet, .parakeetV3, .parakeet110m:
             try startParakeetRecording()
@@ -216,7 +215,8 @@ extension KoettController {
         }
     }
 
-    func stopRecording(releaseEventTimestamp: TimeInterval) {
+    func stopRecording(releaseEventTimestamp: TimeInterval, captureTarget: @MainActor () -> PasteTarget? = PasteTarget.capture) {
+        automaticPasteTarget = captureTarget()
         mediaPauseTask?.cancel()
         recordingOverlay.stop()
         sketchOverlay.finish()

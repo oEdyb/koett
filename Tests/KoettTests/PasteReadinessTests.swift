@@ -216,5 +216,13 @@ final class SketchReadinessTests: XCTestCase {
         XCTAssertEqual(board.data(forType: .png), png)
         XCTAssertEqual(board.string(forType: .string), "Test fixture")
         XCTAssertNotNil(board.string(forType: .html))
+        let overlay = RecordingOverlayController()
+        defer { overlay.stop() }
+        overlay.showTranscribing()
+        XCTAssertTrue(overlay.showNotPasted(text: "Test fixture", png: png,
+            reason: PasteBlockReason.focusChanged.message, pasteboard: board))
+        XCTAssertEqual(overlay.pillView.content, .copied)
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertFalse(overlay.isPresented, "Sketch focus refusal uses the short verified clipboard confirmation")
     }
 }
