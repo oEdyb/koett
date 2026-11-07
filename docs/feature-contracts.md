@@ -39,6 +39,11 @@
   Verified recovery shows `Copied to clipboard` with the same Done timing and
   hover hold. Failed clipboard verification keeps `Copy failed` with **Paste**
   and **Copy** until acted on. Newer clipboard copies are never overwritten.
+  Linux and Windows differ in three ways. Only a text-only result can become
+  `Copied to clipboard`; one with a drawing keeps `Not pasted · saved` with
+  **Paste** and **Copy**, as does a failed clipboard or history. They copy the
+  text again if it isn't there, so a copy made in that instant could be
+  replaced. And the sticky row says `Not pasted · saved`, not `Copy failed`.
   Errors that hold text or audio to rescue also stay until clicked; other
   errors leave after five seconds. Reduce Motion skips the morph and fade.
 - A nonactivating bottom-center 300×48 pill shows a fixed-width strip of the

@@ -212,6 +212,36 @@ pub(super) fn render_all(owner: HWND) {
     drop(open);
 }
 
+/// The clipboard's text, read back. Asking for our own delayed offer renders it.
+pub(super) fn text(owner: HWND) -> Option<String> {
+    unsafe { OpenClipboard(Some(owner)) }.ok()?;
+    let _open = Open;
+    unsafe {
+        let handle = HGLOBAL(GetClipboardData(CF_UNICODETEXT.0.into()).ok()?.0);
+        let size = GlobalSize(handle);
+        let p = GlobalLock(handle).cast::<u16>();
+        if p.is_null() {
+            return None;
+        }
+        let units = std::slice::from_raw_parts(p, size / 2);
+        let end = units
+            .iter()
+            .position(|&unit| unit == 0)
+            .unwrap_or(units.len());
+        let text = String::from_utf16(&units[..end]).ok();
+        let _ = GlobalUnlock(handle);
+        text
+    }
+}
+
+/// Whether `text` is on the clipboard, copying it if it isn't. Checked by reading it
+/// back, so a copy that silently went nowhere doesn't count.
+pub(super) fn ensure_text(owner: HWND, text: &str) -> bool {
+    let normalize = |text: &str| text.replace("\r\n", "\n");
+    let holds = || self::text(owner).is_some_and(|held| normalize(&held) == normalize(text));
+    holds() || (copy_text(owner, text).is_ok() && holds())
+}
+
 pub(super) fn copy_text(owner: HWND, text: &str) -> Result<(), String> {
     text_offer(owner, text).map(|_| ())
 }

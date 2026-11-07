@@ -323,3 +323,16 @@ public key. Native packages share that binary, and their layout keeps the update
 second build with its own flag, so what's tested is what ships. The build number is a plain rising
 integer in the workflow, 4 for 0.3.1, matching the Mac. The signing key stays on the machine that
 signs and never reaches CI, so a stolen CI token can't sign an update.
+
+## 2026-11-07: a paste that didn't happen but copied fades on its own
+
+Olle: "it doesn't have to stay up even after you already pasted it." On Linux and Windows, a
+text-only result that wasn't pasted now checks the clipboard by reading it back, copying again if
+needed. If the text is there, the pill says `Copied to clipboard` once and fades like Done. The sticky
+`Not pasted` with Paste and Copy is only for a clipboard that failed too, a history that failed, or a
+result with a drawing, where copying the text would replace the image. On KDE, GNOME and other
+desktops without a focus check, every dictation used to end in the sticky pill; now it ends with the
+text on the clipboard and the pill gone, and Paste last transcript stays in the tray. A script asking
+`koett paste-last` still hears that nothing was pasted. The Mac got the same in #178,
+which also keeps drawings and never overwrites a newer copy; Linux and Windows copy the text again
+if it's missing.

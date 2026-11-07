@@ -2043,7 +2043,8 @@ impl WindowsApp {
         }
         if let Some(saved) = staged.saved {
             self.pill_state.set(
-                pill_state::delivery_result(staged.text, result.is_ok(), saved, false),
+                // An image bundle keeps its rescue: copying the text would replace it.
+                pill_state::delivery_result(staged.text, result.is_ok(), false, saved, false),
                 self.clock.elapsed().as_millis() as u64,
             );
             self.pill_state.repeat_paste = self.last_bundle.is_some();
@@ -2204,7 +2205,9 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let phase = pill_state::delivery_result(text.to_string(), !failed, saved, history_failed);
+        let copied = failed && clipboard::ensure_text(self.hwnd, text);
+        let phase =
+            pill_state::delivery_result(text.to_string(), !failed, copied, saved, history_failed);
         self.pill_state
             .set(phase, self.clock.elapsed().as_millis() as u64);
         self.pill_state.repeat_paste = self.last_bundle.is_some();

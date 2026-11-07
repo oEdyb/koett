@@ -27,6 +27,7 @@ pub enum Update {
     Completed(String),
     DeliveryStarted,
     Delivered,
+    Copied,
     DeliveryFailed,
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
@@ -402,7 +403,9 @@ fn build_window(
         actions.clone(),
     );
     // Done: shown briefly after a successful paste, held while hovered, then
-    // faded. Not pasted: no timeout; it stays until Copy or the next dictation.
+    // faded. Copied to clipboard, when a paste didn't happen, shows the same way.
+    // Not pasted only appears when even the clipboard failed, and stays until
+    // Copy or the next dictation.
     let mut done_until = None::<Instant>;
     let mut done_fading = None::<Instant>;
     // Set after Copy: the pill closes on time even while hovered.
@@ -577,13 +580,30 @@ fn build_window(
                     Update::Levels(levels) => audio_levels = Some(levels),
                     Update::Shortcut(label) => shortcut.set_text(&label),
                     Update::DeliveryStarted => {
+                        if let Some(overlay) = &overlay {
+                            overlay.set_copied(false);
+                        }
                         delivery_pending = true;
                         settling_until = None;
                         done_until = None;
                         recovery_until = None;
                         closing = false;
                     }
+                    // Not pasted but on the clipboard: Done's timing, saying so instead.
+                    Update::Copied => {
+                        delivery_pending = false;
+                        settling_until = None;
+                        recovery_until = None;
+                        if let Some(overlay) = &overlay {
+                            overlay.set_copied(true);
+                        }
+                        done_until = Some(Instant::now() + DONE_DURATION);
+                        done_fading = None;
+                    }
                     Update::Delivered => {
+                        if let Some(overlay) = &overlay {
+                            overlay.set_copied(false);
+                        }
                         delivery_pending = false;
                         settling_until = None;
                         if let Some(limit_notice) = stopped_at_limit.take() {
