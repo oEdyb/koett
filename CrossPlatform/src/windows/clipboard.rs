@@ -234,6 +234,15 @@ pub(super) fn text(owner: HWND) -> Option<String> {
     }
 }
 
+/// Puts a drawing result's image and text on the clipboard and checks it: Koett must
+/// still own the offer it just made, and its text must read back. A text-only copy
+/// would replace the image, so this never falls back to one.
+pub(super) fn ensure_bundle(owner: HWND, bundle: &Bundle) -> bool {
+    let normalize = |text: &str| text.replace("\r\n", "\n");
+    bundle.copy(owner).and_then(Offer::verify).is_ok()
+        && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
+}
+
 /// Whether `text` is on the clipboard, copying it if it isn't. Checked by reading it
 /// back, so a copy that silently went nowhere doesn't count.
 pub(super) fn ensure_text(owner: HWND, text: &str) -> bool {

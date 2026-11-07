@@ -273,3 +273,19 @@ morphs the whole pill into `Copied to clipboard` and fades it like Done, even un
 a failed copy says `Copy failed · saved` in the row and keeps the buttons. The first fix showed
 `Copy failed` instead: the failed delivery's five-second error row outranks Done, so Copy now
 clears it. Windows already had a `Copied` phase from #179 and now uses it for Copy too.
+
+## 2026-11-07: Koett refused to paste where Olle stopped
+
+Olle: "i stopped it, it dodnt paste, but when i clicked ctrl v right after it poasted". He started
+dictating in Chrome, drew mark #1 two seconds in, moved to T3 Code and stopped. Koett had captured
+the paste target when recording started, so the focus guard compared T3 Code (111) with Chrome (117)
+and refused. The drawing made the result an image, and images kept the old sticky rescue, even though
+the drawing and text were on the clipboard: his own Ctrl+V pasted them.
+
+Olle chose both rules: the paste goes to the window focused at stop, and the guard covers only stop
+to paste, so focus that moves while transcribing still refuses. A drawing that can't paste now says
+`Copied to clipboard` and fades like text, but only when Koett's offer was confirmed as the clipboard
+owner and its image and exact text read back; otherwise the rescue stays. Both platforms re-capture
+in the one function every stop passes through, so the tray, CLI, shortcut and hold release agree.
+A recording that ends without a stop command, such as the time limit, still uses the start target.
+Linux X11 drawings keep the sticky rescue, since that path never offered the drawing back.

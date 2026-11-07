@@ -48,17 +48,29 @@ pub fn copy_text(text: &str) -> Result<(), String> {
 /// The clipboard's text, or None if it can't be read within two seconds. An owner that
 /// never answers would otherwise hold the result back.
 fn clipboard_text() -> Option<String> {
-    let (program, args): (&str, &[&str]) = if wayland() {
-        (
+    if wayland() {
+        read_clipboard(
             "wl-paste",
             &["--no-newline", "--type", "text/plain;charset=utf-8"],
         )
     } else {
-        (
+        read_clipboard(
             "xclip",
             &["-selection", "clipboard", "-o", "-t", "UTF8_STRING"],
         )
-    };
+    }
+}
+
+/// The types the clipboard's current owner offers.
+fn clipboard_types() -> Option<String> {
+    if wayland() {
+        read_clipboard("wl-paste", &["--list-types"])
+    } else {
+        read_clipboard("xclip", &["-selection", "clipboard", "-o", "-t", "TARGETS"])
+    }
+}
+
+fn read_clipboard(program: &str, args: &[&str]) -> Option<String> {
     let mut child = Command::new(program)
         .args(args)
         .stdin(Stdio::null())
@@ -92,6 +104,14 @@ fn clipboard_text() -> Option<String> {
 pub fn ensure_copied(text: &str) -> bool {
     let holds = || clipboard_text().is_some_and(|held| held.trim_end() == text.trim_end());
     holds() || (copy_text(text).is_ok() && holds())
+}
+
+/// Whether a drawing result that didn't paste is on the clipboard: the image and its
+/// exact text, read back from whoever owns the clipboard now. Never copies anything,
+/// since a text-only copy would replace the image.
+pub fn bundle_on_clipboard(text: &str) -> bool {
+    clipboard_types().is_some_and(|types| types.lines().any(|t| t.trim() == "image/png"))
+        && clipboard_text().is_some_and(|held| held.trim_end() == text.trim_end())
 }
 
 pub fn operation(command: &str) -> Result<serde_json::Value, String> {
