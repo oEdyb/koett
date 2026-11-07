@@ -336,3 +336,13 @@ text on the clipboard and the pill gone, and Paste last transcript stays in the 
 `koett paste-last` still hears that nothing was pasted. The Mac got the same in #178,
 which also keeps drawings and never overwrites a newer copy; Linux and Windows copy the text again
 if it's missing.
+
+## 2026-11-07: the pill's hover shows only ✕, and Pause is gone
+
+Olle didn't like Cancel, Pause and History covering the waveform on hover: "there must be some
+more intuitive and better UI way to do it." Grilled answers, all yes: the waveform never hides,
+the timer turns into ✕ (also while transcribing), one click cancels with no confirm and the pill
+says Cancelled and fades, History lives in the tray and window only, and Pause goes from every
+visible place: "no one will ever press pause, bro." Linux and Windows match the Mac (#183). The
+`pause`/`resume` commands went too. Windows app-CLI codes keep their numbers so an older running
+Koett never reads a newer command as something else. The audio pause internals stay with no way in.

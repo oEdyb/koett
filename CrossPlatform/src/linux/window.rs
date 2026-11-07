@@ -15,10 +15,7 @@ pub enum DrawingRequest {
 
 pub enum Update {
     DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
-    RecordingControl(
-        super::menu_preferences::RecordingControl,
-        Sender<serde_json::Value>,
-    ),
+    RecordingStatus(Sender<serde_json::Value>),
     MediaCommand(bool, Sender<serde_json::Value>),
     PrepareAsk(Sender<()>),
     Status(String),
@@ -492,11 +489,8 @@ fn build_window(
                     }
                 }
                 match update {
-                    Update::RecordingControl(command, reply) => {
-                        let _ = reply.send(super::menu_preferences::recording_control(
-                            command,
-                            audio_levels.as_ref(),
-                        ));
+                    Update::RecordingStatus(reply) => {
+                        let _ = reply.send(super::menu_preferences::recording_status());
                     }
                     Update::DrawingCommand(request, reply, expires) => {
                         let value = if Instant::now() >= expires {
@@ -781,7 +775,17 @@ fn build_window(
                                 Some((phase.to_string(), Instant::now() + PILL_MESSAGE_DURATION));
                         }
                         if phase == "Dictation cancelled" {
+                            // Says Cancelled once and fades on Done's timing, even
+                            // under the pointer that just pressed ✕.
                             settling_until = None;
+                            recovery_until = None;
+                            pill_message = None;
+                            if let Some(overlay) = &overlay {
+                                overlay.set_cancelled();
+                            }
+                            done_until = Some(Instant::now() + DONE_DURATION);
+                            done_fading = None;
+                            closing = true;
                         }
                         if matches!(
                             phase,

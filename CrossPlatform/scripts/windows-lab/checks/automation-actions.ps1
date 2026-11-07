@@ -23,11 +23,8 @@ $r=Get-PillRect;$dpi=$r.dpi/96
 Start-Sleep -Milliseconds 300
 $steps+=Get-LabStep 'recording-hover-controls'
 $overlay=[LabDriver]::ByClass('KoettOverlayWindow')
-$null=Invoke-LabButton $overlay 'Pause'
-$steps+=Get-LabStep 'pause-button-invoked'
-$null=Invoke-LabButton $overlay 'Resume'
 $null=Invoke-LabButton $overlay 'Cancel'
-$steps+=Get-LabStep 'cancel-button-hides'
+$steps+=Get-LabStep 'cancel-says-cancelled'
 [LabDriver]::SetCursorPos(20,20)|Out-Null
 Set-LabPhase 3
 [LabDriver]::SetCursorPos(($r.left+270*$dpi),($r.top+24*$dpi))|Out-Null

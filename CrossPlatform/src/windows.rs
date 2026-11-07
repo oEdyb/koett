@@ -105,7 +105,6 @@ const MENU_START_AT_LOGIN: usize = 3;
 const MENU_QUIT: usize = 4;
 const MENU_SETTINGS: usize = 5;
 const MENU_COPY_LAST: usize = 6;
-const MENU_PAUSE: usize = 7;
 const MENU_CANCEL: usize = 8;
 const MENU_RECORD: usize = 9;
 const MENU_WORDS: usize = 10;
@@ -918,9 +917,7 @@ unsafe extern "system" fn overlay_proc(
             && let Ok(mut app) = unsafe { &*cell }.try_borrow_mut()
         {
             let x = match wparam.0 & 0xffff {
-                101 => 50,
-                102 => 120,
-                103 => 200,
+                101 => 270,
                 104 => 260,
                 105 => 210,
                 106 => 20,
@@ -1164,11 +1161,6 @@ impl WindowsApp {
                 self.pill_state
                     .set(Phase::Done(self.last_transcript.clone()), now);
                 self.pill_state.media_result = true;
-                self.update_overlay();
-                return;
-            }
-            10 => {
-                self.pill_state.paused = !self.pill_state.paused;
                 self.update_overlay();
                 return;
             }
@@ -1617,26 +1609,17 @@ impl WindowsApp {
 
     fn pill_click(&mut self, x: i32, accessible: bool) {
         let now = self.clock.elapsed().as_millis() as u64;
-        if (0..40).contains(&x) && self.status == AppStatus::Recording {
+        // Screen readers keep a Stop action on the dot; a click there only drags.
+        if accessible && (0..40).contains(&x) && self.status == AppStatus::Recording {
             self.recording_intent(RecordingIntent::Stop);
             return;
         }
         match &self.pill_state.phase {
+            // ✕ sits where the clock was; the rest of the pill is not a button.
             pill_state::Phase::Recording | pill_state::Phase::Transcribing
-                if self.pill_state.hovered || accessible =>
+                if (self.pill_state.hovered || accessible) && (252..292).contains(&x) =>
             {
-                if (40..100).contains(&x) {
-                    self.cancel_current();
-                } else if (100..175).contains(&x) && self.status == AppStatus::Recording {
-                    if let Some(levels) = &self.levels {
-                        self.pill_state.paused = !levels.paused();
-                        levels.set_paused(self.pill_state.paused);
-                    } else if self.desktop_lab {
-                        self.pill_state.paused = !self.pill_state.paused;
-                    }
-                } else if (175..238).contains(&x) && !self.pill_media {
-                    let _ = open_history();
-                }
+                self.cancel_current();
             }
             pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
                 if x >= 245 {
@@ -1923,8 +1906,16 @@ impl WindowsApp {
                 engine.cancel_dictation();
                 let _ = engine.commands.send(EngineCommand::Cancel);
             }
+            let cancelled = matches!(
+                self.pill_state.phase,
+                pill_state::Phase::Recording | pill_state::Phase::Transcribing
+            );
             self.pill_state.set(
-                pill_state::Phase::Hidden,
+                if cancelled {
+                    pill_state::Phase::Cancelled
+                } else {
+                    pill_state::Phase::Hidden
+                },
                 self.clock.elapsed().as_millis() as u64,
             );
             if self.desktop_lab {
@@ -2346,20 +2337,6 @@ impl WindowsApp {
             );
             let _ = AppendMenuW(
                 menu,
-                if self.status == AppStatus::Recording {
-                    MF_STRING
-                } else {
-                    MF_STRING | MF_DISABLED
-                },
-                MENU_PAUSE,
-                if self.pill_state.paused {
-                    w!("Resume")
-                } else {
-                    w!("Pause")
-                },
-            );
-            let _ = AppendMenuW(
-                menu,
                 if matches!(self.status, AppStatus::Recording | AppStatus::Transcribing) {
                     MF_STRING
                 } else {
@@ -2530,12 +2507,6 @@ impl WindowsApp {
             }
             MENU_PASTE_LAST => self.repeat_paste(),
             MENU_RECORD => self.toggle(),
-            MENU_PAUSE => {
-                if let Some(levels) = &self.levels {
-                    self.pill_state.paused = !levels.paused();
-                    levels.set_paused(self.pill_state.paused);
-                }
-            }
             MENU_CANCEL => {
                 self.cancel_current();
                 self.update_overlay();

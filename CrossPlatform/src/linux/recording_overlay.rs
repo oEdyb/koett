@@ -326,9 +326,8 @@ pub(super) fn phase(
     }
 }
 
-/// Recording and transcribing show actions on hover, in place of the strip
-/// inside the same 48 px row (as on Mac). Finished states have their own
-/// buttons on the right.
+/// Recording and transcribing turn the clock into ✕ on hover; the strip stays.
+/// Finished states have their own buttons on the right.
 pub(super) fn shows_actions(phase: Phase, hovered: bool) -> bool {
     matches!(phase, Phase::Recording | Phase::Transcribing) && hovered
 }
@@ -421,11 +420,9 @@ struct Pill {
     timeline: timeline::Timeline,
     started: Option<Instant>,
     duration_ms: u64,
-    actions: bool,
     dark: bool,
     progress: (u32, u32),
     spin: f64,
-    paused: bool,
     hovered: bool,
     levels: Option<crate::audio::AudioLevels>,
     last_draw: Option<Instant>,
@@ -452,20 +449,21 @@ impl Pill {
 
 /// Said once, then the pill fades like Done.
 pub(super) const COPIED: &str = "Copied to clipboard";
+pub(super) const CANCELLED: &str = "Cancelled";
+/// ✕ takes the clock's place at the right of the row.
+const CANCEL_W: i32 = 28;
+const CANCEL_X: f64 = (WIDTH - 14 - CANCEL_W) as f64;
 
 pub struct RecordingOverlay {
     window: gtk::Window,
     drawing: gtk::DrawingArea,
     primary: gtk::Label,
-    row: gtk::Box,
     cancel: gtk::Button,
-    pause: gtk::Button,
     copy: gtk::Button,
     paste: gtk::Button,
-    history: gtk::Button,
     latest: Rc<RefCell<Option<String>>>,
-    /// Done after a paste that didn't happen, with the text on the clipboard.
-    copied: std::cell::Cell<bool>,
+    /// Done says this instead of the text: Copied to clipboard, or Cancelled.
+    note: std::cell::Cell<Option<&'static str>>,
     /// Copy was pressed and failed; said in the row until the pill changes.
     copy_failed: std::cell::Cell<bool>,
     acted: Rc<std::cell::Cell<Option<Acted>>>,
@@ -570,14 +568,6 @@ fn paint_body(
     context.set_line_cap(gtk::cairo::LineCap::Round);
     context.set_line_join(gtk::cairo::LineJoin::Round);
     match phase {
-        Phase::Recording if pill.paused => {
-            context.set_line_width(2.5);
-            for x in [20.5, 26.5] {
-                context.move_to(x, cy - 5.0);
-                context.line_to(x, cy + 5.0);
-            }
-            context.stroke()?;
-        }
         Phase::Recording if drawing => {
             context.set_line_width(1.8);
             context.move_to(18.0, cy + 6.0);
@@ -629,9 +619,8 @@ fn paint_body(
         Phase::Hidden => {}
     }
 
-    let strip = matches!(phase, Phase::Recording | Phase::Transcribing)
-        && !pill.timeline.is_empty()
-        && !pill.actions;
+    let strip =
+        matches!(phase, Phase::Recording | Phase::Transcribing) && !pill.timeline.is_empty();
     if !strip {
         return Ok(());
     }
@@ -817,11 +806,9 @@ impl RecordingOverlay {
             timeline: timeline::Timeline::default(),
             started: None,
             duration_ms: 0,
-            actions: false,
             dark: true,
             progress: (0, 0),
             spin: 0.0,
-            paused: false,
             hovered: false,
             levels: None,
             last_draw: None,
@@ -851,9 +838,12 @@ impl RecordingOverlay {
         main.set_size_request(WIDTH, ROW);
         main.put(&primary, 0.0, 0.0);
 
-        let cancel = pill_button("Cancel");
-        cancel.set_tooltip_text(Some("Discard this dictation"));
-        let pause = pill_button("Pause");
+        let cancel = pill_button("✕");
+        cancel.set_tooltip_text(Some("Cancel this dictation"));
+        super::menu::set_accessible_label(cancel.upcast_ref(), "Cancel");
+        cancel.set_size_request(CANCEL_W, 28);
+        cancel.set_visible(false);
+        main.put(&cancel, CANCEL_X, 10.0);
         // Right-hand result buttons, as on Mac: Copy at the right edge, Paste
         // (Not pasted only) to its left.
         let copy = pill_button("Copy");
@@ -862,19 +852,6 @@ impl RecordingOverlay {
         let paste = pill_button("Paste");
         paste.set_size_request(PASTE_W, 28);
         main.put(&paste, PASTE_X, 10.0);
-        let history = pill_button("History");
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        row.set_size_request(-1, 28);
-        for widget in [
-            cancel.upcast_ref::<gtk::Widget>(),
-            pause.upcast_ref(),
-            history.upcast_ref(),
-        ] {
-            row.append(widget);
-        }
-        row.set_visible(false);
-        // Hover actions replace the strip inside the same 48 px row.
-        main.put(&row, 40.0, 10.0);
 
         let overlay = gtk::Overlay::new();
         overlay.set_child(Some(&drawing));
@@ -884,20 +861,6 @@ impl RecordingOverlay {
             let actions = actions.clone();
             move |_| {
                 let _ = actions.send(super::TrayAction::Cancel);
-            }
-        });
-        pause.connect_clicked({
-            let state = state.clone();
-            move |_| {
-                if let Some(levels) = &state.borrow().levels {
-                    levels.set_paused(!levels.paused());
-                }
-            }
-        });
-        history.connect_clicked({
-            let actions = actions.clone();
-            move |_| {
-                let _ = actions.send(super::TrayAction::OpenTranscripts);
             }
         });
         let acted = Rc::new(std::cell::Cell::new(None));
@@ -965,14 +928,11 @@ impl RecordingOverlay {
             window,
             drawing,
             primary,
-            row,
             cancel,
-            pause,
             copy,
             paste,
-            history,
             latest,
-            copied: std::cell::Cell::new(false),
+            note: std::cell::Cell::new(None),
             copy_failed: std::cell::Cell::new(false),
             acted,
             body: layout,
@@ -1050,7 +1010,12 @@ impl RecordingOverlay {
 
     /// The next Done says the text was copied instead of showing it.
     pub fn set_copied(&self, copied: bool) {
-        self.copied.set(copied);
+        self.note.set(copied.then_some(COPIED));
+    }
+
+    /// The next Done says Cancelled: the ✕ was pressed or a cancel arrived.
+    pub fn set_cancelled(&self) {
+        self.note.set(Some(CANCELLED));
     }
 
     /// Copy failed on this pill: the row says so until the pill changes.
@@ -1145,7 +1110,6 @@ impl RecordingOverlay {
         pill.phase = phase;
         pill.dark = dark;
         pill.levels = levels.cloned();
-        pill.paused = recording && levels.is_some_and(crate::audio::AudioLevels::paused);
         for update in crate::sketch::drain() {
             match update {
                 crate::sketch::SketchUpdate::Upsert(event) => {
@@ -1170,10 +1134,8 @@ impl RecordingOverlay {
         };
         let actions = shows_actions(phase, pill.hovered);
         let height = ROW;
-        pill.actions = actions;
-        let strip = !pill.timeline.is_empty()
-            && matches!(phase, Phase::Recording | Phase::Transcribing)
-            && !actions;
+        let strip =
+            !pill.timeline.is_empty() && matches!(phase, Phase::Recording | Phase::Transcribing);
         let redraw = !reduced
             || !recording
             || pill
@@ -1183,7 +1145,6 @@ impl RecordingOverlay {
             pill.last_draw = Some(Instant::now());
         }
         let progress = pill.progress;
-        let paused = pill.paused;
         drop(pill);
 
         self.window.remove_css_class(if dark {
@@ -1198,20 +1159,17 @@ impl RecordingOverlay {
         });
 
         let text = match phase {
-            // Counts what's recorded, as the limit does, so a pause holds the clock.
-            Phase::Recording => clock(elapsed_ms.saturating_sub(levels.map_or(0, |levels| {
-                u64::try_from(levels.paused_time().as_millis())
-                    .unwrap_or(u64::MAX)
-                    .saturating_mul(time_scale())
-            }))),
+            Phase::Recording => clock(elapsed_ms),
             Phase::Transcribing if strip || actions => progress_label(progress.0, progress.1),
             Phase::Transcribing => state.to_string(),
             Phase::Recovery if self.copy_failed.get() => "Copy failed · saved".into(),
             Phase::Recovery => "Not pasted · saved".into(),
             Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
-            Phase::Done if self.copied.get() => COPIED.into(),
-            Phase::Done if self.copy_failed.get() => "Copy failed".into(),
-            Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
+            Phase::Done => match self.note.get() {
+                Some(note) => note.into(),
+                None if self.copy_failed.get() => "Copy failed".into(),
+                None => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
+            },
             Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
         };
@@ -1228,7 +1186,7 @@ impl RecordingOverlay {
             // their right-hand buttons (Mac `resultRect`).
             let (x, width) = match phase {
                 Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
-                Phase::Done if self.copied.get() => (44.0, WIDTH - 44 - 16),
+                Phase::Done if self.note.get().is_some() => (44.0, WIDTH - 44 - 16),
                 Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
                 Phase::Message => (44.0, WIDTH - 44 - 16),
                 _ => (40.0, 246),
@@ -1247,20 +1205,15 @@ impl RecordingOverlay {
             self.fade(false);
         }
 
-        self.row.set_visible(actions);
-        self.cancel
-            .set_visible(matches!(phase, Phase::Recording | Phase::Transcribing));
-        self.pause.set_visible(phase == Phase::Recording);
-        self.pause
-            .set_label(if paused { "Resume" } else { "Pause" });
-        // Copied has nothing left to do, so it's one line with no button.
+        // Hovering swaps the clock for ✕; the strip keeps drawing beside it.
+        self.primary.set_visible(!actions);
+        self.cancel.set_visible(actions);
+        // Copied and Cancelled have nothing left to do: one line, no button.
         self.copy.set_visible(
             matches!(phase, Phase::Done | Phase::Recovery | Phase::Media)
-                && !(phase == Phase::Done && self.copied.get()),
+                && !(phase == Phase::Done && self.note.get().is_some()),
         );
         self.paste.set_visible(phase == Phase::Recovery);
-        self.history
-            .set_visible(matches!(phase, Phase::Recording | Phase::Transcribing));
 
         self.warning
             .set_visible((warning.is_some() || message.is_some()) && recording);

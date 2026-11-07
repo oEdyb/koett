@@ -145,15 +145,9 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 }
                 continue;
             }
-            let recording_control = match bytes.as_slice() {
-                b"status" => Some(super::menu_preferences::RecordingControl::Status),
-                b"pause" => Some(super::menu_preferences::RecordingControl::Pause),
-                b"resume" => Some(super::menu_preferences::RecordingControl::Resume),
-                _ => None,
-            };
-            if let Some(command) = recording_control {
+            if bytes.as_slice() == b"status" {
                 let (tx, rx) = std::sync::mpsc::channel();
-                let _ = ui.send(super::window::Update::RecordingControl(command, tx));
+                let _ = ui.send(super::window::Update::RecordingStatus(tx));
                 let value = rx.recv_timeout(std::time::Duration::from_secs(2)).unwrap_or_else(|_| serde_json::json!({"ok":false,"error":{"code":"ui_unavailable","message":"No response from Koett; retry"}}));
                 let _ = stream.write_all(value.to_string().as_bytes());
                 continue;
