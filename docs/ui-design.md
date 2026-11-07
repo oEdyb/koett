@@ -214,8 +214,10 @@ Private files, bounded queries and durable failed-save fallbacks remain required
 ## Pill and overlay UI rules
 
 These rules come from the Mac pill that passed its live test on 2026-11-02
-(`e0ca1b9`, PRs #9, #11, #19, #21). Both platforms follow them. Change a rule
-only with a new live test, and record why in `docs/decisions.md`.
+(`e0ca1b9`, PRs #9, #11, #19, #21). The contract below includes the approved Cancel-only hover revision.
+Platform implementation and verification gaps remain explicit in
+[feature parity](feature-parity.md). Record a rule change and its evidence
+in `docs/decisions.md`.
 
 ### Shape
 
@@ -231,8 +233,8 @@ only with a new live test, and record why in `docs/decisions.md`.
   out over the left six columns. Nothing is ever re-binned, so 0:05 and 20:00
   look the same, and memory stays at 66 columns.
 - **Fixed slots in the row:** glyph centered at x = 23; strip from x = 44 to
-  236; clock right-aligned in 238–284. Hover buttons start at x = 40 and must
-  end before the clock (x < 238).
+  236; clock right-aligned in 238–284. While hovered, the Cancel X replaces only
+  this clock slot. The strip, glyph, panel size and position stay unchanged.
 - **Light and dark follow the system.** Use the shared palette
   (`PillPalette` / Linux `DARK`/`LIGHT`); coral is the only accent.
 
@@ -240,14 +242,23 @@ only with a new live test, and record why in `docs/decisions.md`.
 
 | State | Row content | Leaves |
 | --- | --- | --- |
-| Recording | coral dot (pen while drawing, two bars while paused), strip, `m:ss` | on stop |
-| Hover while recording or transcribing | Cancel, Pause/Resume, History replace the strip; the clock stays | when the pointer leaves |
-| Transcribing | spinner, frozen dimmed strip, `NN%` only when the engine reports real progress | on result or error |
+| Recording | coral dot (pen while drawing), strip, `m:ss` | on stop or Cancel |
+| Hover while recording or transcribing | the strip stays visible; one Cancel X replaces the timer/progress slot when cancellation is available | when the pointer leaves |
+| Transcribing | spinner, frozen dimmed strip, `NN%` only when the engine reports real progress | on result, error or Cancel |
+| Cancelled | same-size in-place confirmation; no retained recording or delivered text | 1.75 s, including while hovered |
 | Done | 5-bar coral mark, one-line preview, **Copy** on the right | 1.75 s, held while hovered |
 | Not pasted | warning glyph, `Not pasted · saved`, **Paste** and **Copy** on the right | only when acted on or clicked |
 | Error with text or audio to rescue | warning glyph, message | only when clicked or replaced |
 | Other errors | warning glyph, message | 5 s |
 | Media result | same row as Done | 10 s, held while hovered |
+
+Recording Pause/Resume and History are not pill-hover actions. Recording has no
+paused state or pause/resume control surface in this contract. The independent
+**Pause Supported Media While Recording** setting controls other media playback
+and remains available.
+Cancel is offered only while it can still stop the operation. Remove its icon
+and action before delivery claims the result; a pill must not advertise Cancel
+after paste has begun.
 
 ### Motion and timing
 
@@ -259,6 +270,9 @@ only with a new live test, and record why in `docs/decisions.md`.
   Hovering holds it; once the pointer leaves, it fades after 0.8 s. Copy shows
   "Copied" and fades after 1 s. Nothing else extends it. The old 10 s timeout
   was rejected as "lingers a long time after I'm finished".
+- **Cancellation confirms and leaves.** Cancelled morphs in place and fades after
+  1.75 s even if the pointer remains over the pill. Cancellation does not paste,
+  add History or retain the cancelled audio.
 - **Things that need rescuing never time out.** Not pasted, and errors that hold
   text or audio, stay until they are used or clicked.
 - **Reduce Motion:** keep sampling the meter at 30 Hz, redraw the strip once a
@@ -269,9 +283,9 @@ only with a new live test, and record why in `docs/decisions.md`.
 ### How a pill change is verified
 
 1. Render every state off-screen in dark and light with
-   `KOETT_PILL_SNAPSHOT_DIR=/tmp/pill swift test --filter PillSnapshotTests` (Mac),
+   `KOETT_PILL_SNAPSHOT_DIR="$HOME/.cache/koett-pill" swift test --filter PillSnapshotTests` (Mac),
    so the user's screen is never driven. Include recording at **0:05, 1:00, 5:00 and
-   20:00**, hover, paused, drawing, transcribing, Done, Not pasted and error.
+   20:00**, hover, drawing, transcribing, Cancelled, Done, Not pasted and error.
 2. Render the morph at t = 0, 0.25, 0.5, 0.75 and 1, and look at the frames
    stacked. A frame where two glyphs or texts fight is a bug.
 3. Look at every PNG before claiming done; keep them in a private cache outside the tracked tree and in
@@ -279,7 +293,8 @@ only with a new live test, and record why in `docs/decisions.md`.
 4. Unit tests guard the rules: every state is 48 px, its buttons fit inside
    without overlapping the clock, the strip reaches both edges at every point
    over 20 minutes, a peak moves only by elapsed time, Done leaves after about
-   2 s and is held by hover, and Not pasted and rescue errors stay.
+   2 s and is held by hover, Cancelled leaves despite hover, and Not pasted
+   and rescue errors stay.
 5. Install and let the user try it. Only a live try counts as passing.
 
 ### Rejected, and why
