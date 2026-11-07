@@ -188,7 +188,7 @@ final class MicrophoneAvailabilityTests: XCTestCase {
         defer { _ = try? live.stop() }
         fixture.controller.recordingDeadline = RecordingDeadline(limit: .ten)
         fixture.controller.state = .recording
-        fixture.controller.recordingOverlay.pillView.content = .recording(paused: false)
+        fixture.controller.recordingOverlay.pillView.content = .recording
         XCTAssertLessThan(live.currentTime, 1)
         XCTAssertEqual(backup.currentTime, 540)
         fixture.controller.checkActiveCapture()

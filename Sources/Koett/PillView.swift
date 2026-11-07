@@ -1,11 +1,12 @@
 import AppKit
 
 enum PillContent: Equatable {
-    case recording(paused: Bool)
+    case recording
     case transcribing(fraction: Double?)
     case done(preview: String)
     case notPasted
     case copied
+    case cancelled
     case media(preview: String)
     case status(String)
     case error(String)
@@ -35,11 +36,7 @@ final class PillView: NSView {
     }
     var elapsed: TimeInterval = 0
     var spin: CGFloat = 0
-    var modelName = ""
     var hasRecordingControls = false {
-        didSet { refreshControls() }
-    }
-    var canPause = false {
         didSet { refreshControls() }
     }
     /// The state being morphed away from, drawn underneath at `1 - morph`.
@@ -58,11 +55,9 @@ final class PillView: NSView {
     /// A click on the pill body (not a button) of a result or error.
     var onDismiss: (() -> Void)?
 
-    let cancelButton = PillButton(title: "Cancel")
-    let pauseButton = PillButton(title: "Pause")
+    let cancelButton = PillButton(title: "Cancel", style: .cancel)
     let pasteButton = PillButton(title: "Paste")
     let copyButton = PillButton(title: "Copy")
-    let historyButton = PillButton(title: "History")
     let statusElement = NSView()
     private var trackingArea: NSTrackingArea?
     var onDrag: ((NSPoint) -> Void)?
@@ -70,7 +65,7 @@ final class PillView: NSView {
     private var dragStart: NSPoint?
     private var dragOrigin: NSPoint?
     private var dragged = false
-    private var buttons: [PillButton] { [cancelButton, pauseButton, historyButton, pasteButton, copyButton] }
+    private var buttons: [PillButton] { [cancelButton, pasteButton, copyButton] }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -90,7 +85,7 @@ final class PillView: NSView {
     override var isOpaque: Bool { false }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    /// True while hover buttons replace the strip.
+    /// True while the cancel icon occupies the timer slot.
     var showsActions: Bool {
         switch content {
         case .recording, .transcribing: hasRecordingControls && hovered
@@ -102,6 +97,7 @@ final class PillView: NSView {
         switch content {
         case .recording, .transcribing: hasRecordingControls
         case .done, .copied, .notPasted, .media, .error: true
+        case .cancelled: true
         case .status, .progress: false
         }
     }
@@ -189,26 +185,18 @@ final class PillView: NSView {
     private func refreshControls() {
         let actions = showsActions
         let recording = if case .recording = content { true } else { false }
-        let paused = content == .recording(paused: true)
         let transcribing = if case .transcribing = content { true } else { false }
         let resultRow = switch content {
         case .done, .media: true
         default: false
         }
         cancelButton.isHidden = !(actions && (recording || transcribing))
-        pauseButton.isHidden = !(actions && recording && canPause)
-        pauseButton.title = paused ? "Resume" : "Pause"
-        historyButton.isHidden = !actions
         pasteButton.isHidden = content != .notPasted
         copyButton.isHidden = !(resultRow || content == .notPasted)
         copyButton.opacity = morphFrom == nil ? 1 : morph
 
         let y = (Self.rowHeight - PillButton.height) / 2
-        var left = Self.stripX - 4
-        for button in [cancelButton, pauseButton, historyButton] where !button.isHidden {
-            button.frame = NSRect(x: left, y: y, width: button.fittingWidth, height: PillButton.height)
-            left = button.frame.maxX + 4
-        }
+        cancelButton.frame = NSRect(x: bounds.width - 42, y: y, width: PillButton.height, height: PillButton.height)
         var right = bounds.width - 11
         for button in [copyButton, pasteButton] where !button.isHidden {
             let width = button.fittingWidth
@@ -249,11 +237,12 @@ final class PillView: NSView {
             element.setAccessibilityValueDescription("\(Int((clamped * 100).rounded())) percent")
         }
         switch content {
-        case .recording(let paused): staticText(recordingNotice ?? (paused ? "Paused" : "Recording"))
+        case .recording: staticText(recordingNotice ?? "Recording")
         case .transcribing(let fraction?): progress("Transcribing", fraction)
         case .transcribing(nil): staticText("Transcribing…")
         case .done(let preview), .media(let preview): staticText(preview)
         case .copied: staticText("Copied to clipboard")
+        case .cancelled: staticText("Cancelled")
         case .notPasted: staticText("Copy failed · Text saved")
         case .status(let text), .error(let text): staticText(text)
         case .progress(let text, let fraction): progress(text, fraction)
@@ -298,7 +287,7 @@ final class PillView: NSView {
         case .transcribing: !timeline.isEmpty
         default: false
         }
-        if stripContent && !(showsActions && content == self.content) {
+        if stripContent {
             drawStrip(content, cy: cy, palette: palette)
         }
         drawRowText(content, palette: palette, hasStrip: stripContent)
@@ -312,13 +301,6 @@ final class PillView: NSView {
         path.lineCapStyle = .round
         path.lineJoinStyle = .round
         switch content {
-        case .recording(paused: true):
-            path.lineWidth = 2.5
-            for x: CGFloat in [20.5, 26.5] {
-                path.move(to: NSPoint(x: x, y: cy - 5))
-                path.line(to: NSPoint(x: x, y: cy + 5))
-            }
-            path.stroke()
         case .recording where drawing:
             path.lineWidth = 1.8
             path.move(to: NSPoint(x: 18, y: cy - 6))
@@ -328,7 +310,7 @@ final class PillView: NSView {
             path.line(to: NSPoint(x: 21.5, y: cy - 4.5))
             path.close()
             path.stroke()
-        case .recording, .status, .progress:
+        case .recording, .cancelled, .status, .progress:
             NSBezierPath(ovalIn: NSRect(x: 19, y: cy - 4, width: 8, height: 8)).fill()
         case .transcribing:
             let ring = NSBezierPath(ovalIn: NSRect(x: 17, y: cy - 6, width: 12, height: 12))
@@ -418,16 +400,20 @@ final class PillView: NSView {
         let resultRect = NSRect(x: 44, y: 0, width: max(0, textRight - 44), height: height)
         switch content {
         case .recording:
-            if let recordingNotice, !showsActions {
+            if let recordingNotice {
                 drawText(recordingNotice, in: NSRect(x: 44, y: 0, width: 180, height: height), alignment: .left, color: palette.text)
             }
-            drawText(RecordingOverlayFormat.elapsedTime(elapsed), in: clockRect, alignment: .right, monospaced: true, color: palette.text)
-        case .transcribing(let fraction?) where hasStrip:
+            if !showsActions {
+                drawText(RecordingOverlayFormat.elapsedTime(elapsed), in: clockRect, alignment: .right, monospaced: true, color: palette.text)
+            }
+        case .transcribing(let fraction?) where hasStrip && !showsActions:
             drawText("\(Int((fraction * 100).rounded()))%", in: clockRect, alignment: .right, monospaced: true, color: palette.text.withAlphaComponent(0.62))
         case .transcribing where !hasStrip:
             drawText("Transcribing…", in: textRect, alignment: .left, color: palette.text)
         case .transcribing:
             break
+        case .cancelled:
+            drawText("Cancelled", in: textRect, alignment: .left, color: palette.text)
         case .copied:
             drawText("Copied to clipboard", in: textRect, alignment: .left, color: palette.text)
         case .notPasted:

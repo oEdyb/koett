@@ -6,7 +6,6 @@ struct ControlReply: Codable, Sendable {
     let ok: Bool
     let phase: String
     let model: String?
-    var paused: Bool? = nil
     var error: Failure? = nil
     var paste: PasteDiagnostic? = nil
     var pasteLogError: String? = nil
