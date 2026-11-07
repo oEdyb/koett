@@ -216,7 +216,6 @@ final class KoettController: NSObject {
         recordingOverlay.onLatestOutcomeChange = { [weak self] in
             self?.rebuildMenu()
         }
-        recordingOverlay.onOpenHistory = { [weak self] in self?.openTranscripts() }
         let booster = vocabularyBooster
         dictionaryStore.onChange = { entries in
             Task { await booster.update(entries) }

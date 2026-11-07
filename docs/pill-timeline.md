@@ -105,8 +105,12 @@ Mac-specific choices:
   Motion; only the redraw drops to 1 Hz.
 - Done and media results are one 300×48 row with Copy on the right, as before
   the timeline.
-- Every state is one 300×48 row (Linux table above uses 300×88 for results;
-  the Mac no longer does). Hover buttons replace the strip inside the row.
+- Every state is one 300×48 row. Recording and transcribing hover keeps the
+  waveform unchanged and replaces the right-side timer or percentage with one
+  icon-only Cancel button. Clicking the waveform is inert except for dragging.
+  Pause is absent from recording controls and commands. History stays in the
+  menu and window. Cancel discards the audio and shows `Cancelled` for 1.75 s
+  before fading, even while hovered.
   Done morphs in place from the transcribing pill (0.24 s, ease-out), stays
   1.75 s unless hovered, then fades out. Failed paste with verified clipboard
   recovery shows `Copied to clipboard` on the same timing, without extra buttons.
@@ -123,8 +127,6 @@ Mac-specific choices:
   fraction counts dispatched chunks of the silence-trimmed audio, so it can run
   up to one worker batch ahead of finished decoding. Shorter dictations and
   Nemotron show the spinner only.
-- Pause is available for Parakeet only. Nemotron streams live audio to its
-  adapter, so the button is hidden there rather than transcribing paused audio.
 - `PillPanel` returns false for `canBecomeKey` and `canBecomeMain`.
 - `swift test` renders every state in both appearances when
   `KOETT_PILL_SNAPSHOT_DIR` is set (`PillSnapshotTests`). The 2026-11-02

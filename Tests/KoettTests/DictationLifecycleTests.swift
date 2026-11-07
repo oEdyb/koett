@@ -85,9 +85,33 @@ final class DictationLifecycleTests: XCTestCase {
         XCTAssertEqual(controller.state, .ready)
         XCTAssertEqual(controller.lastTranscript, lastTranscript)
         XCTAssertNil(controller.recordingOverlay.latestOutcome)
+        XCTAssertEqual(controller.recordingOverlay.pillView.content, .cancelled)
         XCTAssertFalse(controller.recordingOverlay.isShowingTranscribing)
         controller.cancelDictation()
         XCTAssertEqual(controller.state, .ready)
+    }
+
+    func testOneCancelIconClickDiscardsRecordingAndTranscribingWithoutDelivery() async throws {
+        for afterStop in [false, true] {
+            let (controller, url, failed) = try startParakeetDictation()
+            defer { controller.recordingOverlay.stop(); try? FileManager.default.removeItem(at: failed) }
+            let lastTranscript = controller.lastTranscript
+            controller.recordingOverlay.start(recorder: try XCTUnwrap(controller.recorder),
+                onCancel: { controller.cancelDictation() })
+            if afterStop { controller.stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime) }
+            controller.recordingOverlay.pillView.setHovered(true)
+            XCTAssertFalse(controller.recordingOverlay.pillView.cancelButton.isHidden)
+            XCTAssertTrue(controller.recordingOverlay.pillView.cancelButton.accessibilityPerformPress())
+            XCTAssertNil(controller.activeDictationID)
+            XCTAssertEqual(controller.recordingOverlay.pillView.content, .cancelled)
+            for _ in 0..<300 where controller.state != .ready { try await Task.sleep(for: .milliseconds(10)) }
+            XCTAssertEqual(controller.state, .ready)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+            XCTAssertFalse(FailedRecordingStore(directoryURL: failed).hasRecordings)
+            XCTAssertEqual(controller.lastTranscript, lastTranscript)
+            XCTAssertNil(controller.pasteDiagnostics.latest)
+            XCTAssertNil(controller.recordingOverlay.latestOutcome)
+        }
     }
 
     func testCancelAfterStopDiscardsTheTranscriptionAndItsAudio() async throws {
@@ -101,6 +125,7 @@ final class DictationLifecycleTests: XCTestCase {
         controller.cancelDictation()
         XCTAssertFalse(controller.escapeMonitor.isActive)
         XCTAssertFalse(controller.recordingOverlay.isShowingTranscribing)
+        XCTAssertEqual(controller.recordingOverlay.pillView.content, .cancelled)
         for _ in 0..<300 where controller.state != .ready { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(controller.state, .ready)
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
@@ -134,7 +159,11 @@ final class DictationLifecycleTests: XCTestCase {
         controller.cancelDictation(first)
         XCTAssertEqual(controller.activeDictationID, second, "a stale Cancel does not touch the next dictation")
         XCTAssertTrue(controller.escapeMonitor.isActive)
+        controller.recordingOverlay.pillView.hasRecordingControls = true
+        controller.recordingOverlay.pillView.cancelButton.action = { XCTFail("Delivery has already begun") }
         XCTAssertTrue(controller.claimDelivery(second))
+        XCTAssertFalse(controller.recordingOverlay.pillView.hasRecordingControls)
+        XCTAssertNil(controller.recordingOverlay.pillView.cancelButton.action)
         XCTAssertFalse(controller.escapeMonitor.isActive, "Esc stops applying once delivery starts")
         controller.cancelDictation()
         XCTAssertFalse(controller.claimDelivery(second))

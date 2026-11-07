@@ -57,16 +57,15 @@ final class RecordingLimitTests: XCTestCase {
 
     @MainActor func testNoticeKeepsRecordingStateClockAndControls() {
         let overlay = RecordingOverlayController()
-        overlay.pillView.content = .recording(paused: false)
+        overlay.pillView.content = .recording
         overlay.pillView.hasRecordingControls = true
-        overlay.pillView.canPause = true
         overlay.pillView.elapsed = 3540
         overlay.showRecordingNotice("1 min left")
-        XCTAssertEqual(overlay.pillView.content, .recording(paused: false))
+        XCTAssertEqual(overlay.pillView.content, .recording)
         XCTAssertEqual(overlay.pillView.elapsed, 3540)
         XCTAssertEqual(overlay.pillView.recordingNotice, "1 min left")
         XCTAssertEqual(overlay.pillView.statusElement.accessibilityValue() as? String, "1 min left")
-        XCTAssertTrue(overlay.pillView.canPause)
+        XCTAssertTrue(overlay.pillView.hasRecordingControls)
         XCTAssertEqual(overlay.pillView.bounds.size, NSSize(width: 300, height: 48))
         if let path = ProcessInfo.processInfo.environment["KOETT_LIMIT_ARTIFACTS"],
            let bitmap = overlay.pillView.bitmapImageRepForCachingDisplay(in: overlay.pillView.bounds) {

@@ -66,7 +66,6 @@ final class RecordingOverlayTests: XCTestCase {
         XCTAssertEqual(controller.pillView.preferredHeight, 48)
         XCTAssertTrue(controller.pillView.acceptsMouse)
         XCTAssertFalse(controller.pillView.copyButton.isHidden)
-        XCTAssertTrue(controller.pillView.historyButton.isHidden)
         XCTAssertLessThan(controller.pillView.copyButton.frame.maxY, 48, "Copy sits on the right of the row")
 
         controller.showTranscribing()
@@ -131,11 +130,10 @@ final class RecordingOverlayTests: XCTestCase {
     func testEveryStateIsOneRowAndItsButtonsFitInside() {
         let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
         view.hasRecordingControls = true
-        view.canPause = true
         view.timeline.push(elapsedMs: 1_000, level: 0.5)
         view.setHovered(true)
         let states: [PillContent] = [
-            .recording(paused: false), .recording(paused: true), .transcribing(fraction: 0.4),
+            .recording, .cancelled, .transcribing(fraction: 0.4),
             .done(preview: "Hello"), .copied, .notPasted, .media(preview: "Clip"),
             .status("Loading"), .error("Failed"), .progress(text: "Downloading", fraction: 0.5),
         ]
@@ -152,7 +150,8 @@ final class RecordingOverlayTests: XCTestCase {
                 }
             }
             if case .recording = state {
-                XCTAssertLessThan(shown.map(\.frame.maxX).max() ?? 0, 238, "hover buttons leave the clock visible")
+                XCTAssertEqual(shown.map(\.title), ["Cancel"])
+                XCTAssertGreaterThanOrEqual(view.cancelButton.frame.minX, 238, "Cancel takes the clock slot")
             }
         }
         XCTAssertEqual(RecordingOverlayController.easeOut(0), 0)
@@ -173,33 +172,44 @@ final class RecordingOverlayTests: XCTestCase {
         controller.stop()
     }
 
-    func testHistoryKeepsTheRecordingPillAndClosesTheDonePill() throws {
-        let controller = RecordingOverlayController()
-        var opened = 0
-        controller.onOpenHistory = { opened += 1 }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("koett-pill-\(UUID()).wav")
-        defer { try? FileManager.default.removeItem(at: url) }
-        let recorder = try MicrophoneRecorder(
-            url: url,
-            device: MicrophoneDevice(id: 1, uid: "fake", name: "Fake"),
-            input: SilentCapture()
-        )
-        controller.start(recorder: recorder, controls: RecordingControls(modelName: "Parakeet v2", canPause: true, cancel: {}))
-        controller.pillView.historyButton.action?()
-        XCTAssertEqual(opened, 1)
-        XCTAssertTrue(controller.isTrackingRecording)
-        XCTAssertNotNil(controller.sketchElapsedMs)
-        XCTAssertTrue(controller.publishSketch(SketchEvent(index: 1, startMs: 0, endMs: 10, live: true)))
-        controller.pillView.pauseButton.action?()
-        XCTAssertTrue(recorder.isPaused)
-        XCTAssertEqual(controller.pillView.content, .recording(paused: true))
-        controller.stop()
-        recorder.stop()
-        controller.showTranscribing()
-        controller.showDone(text: "Hi")
-        controller.pillView.historyButton.action?()
-        XCTAssertEqual(opened, 2)
-        XCTAssertNil(controller.sketchElapsedMs)
+    func testCancelIconIsTheOnlyHoverActionAndWaveformClicksAreInert() throws {
+        let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
+        view.content = .recording
+        view.hasRecordingControls = true
+        view.timeline.push(elapsedMs: 1_000, level: 0.5)
+        view.elapsed = 42
+        var cancels = 0
+        var dismissals = 0
+        view.cancelButton.action = { cancels += 1 }
+        view.onDismiss = { dismissals += 1 }
+        let event = try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseUp, location: NSPoint(x: 100, y: 24),
+            modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 0))
+        view.mouseUp(with: event)
+        XCTAssertEqual(cancels, 0)
+        XCTAssertEqual(dismissals, 0)
+        view.setHovered(true)
+        XCTAssertEqual(view.subviews.compactMap { $0 as? PillButton }.filter { !$0.isHidden }.map(\.title), ["Cancel"])
+        XCTAssertEqual(view.cancelButton.style, .cancel)
+        XCTAssertEqual(view.cancelButton.accessibilityLabel(), "Cancel")
+        XCTAssertTrue(view.cancelButton.accessibilityPerformPress())
+        XCTAssertEqual(cancels, 1)
+        XCTAssertEqual(view.elapsed, 42)
+        XCTAssertFalse(view.timeline.isEmpty)
+    }
+
+    func testCancelledMorphsInPlaceAndFadesEvenWhileHovered() async throws {
+        let overlay = RecordingOverlayController()
+        defer { overlay.stop() }
+        overlay.pillView.content = .recording
+        overlay.pillView.hasRecordingControls = true
+        overlay.pillView.setHovered(true)
+        overlay.showCancelled()
+        XCTAssertEqual(overlay.pillView.content, .cancelled)
+        XCTAssertEqual(overlay.pillView.preferredHeight, 48)
+        XCTAssertEqual(overlay.pillView.statusElement.accessibilityValue() as? String, "Cancelled")
+        XCTAssertTrue(overlay.pillView.cancelButton.isHidden)
+        try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
+        XCTAssertFalse(overlay.isPresented)
     }
 
     func testSketchesNeedAnActiveDictation() {
@@ -210,21 +220,16 @@ final class RecordingOverlayTests: XCTestCase {
 
     func testHoverRowShowsOnlyForDictationControls() {
         let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
-        view.content = .recording(paused: false)
+        view.content = .recording
         view.setHovered(true)
         XCTAssertFalse(view.showsActions, "Ask recordings have no hover row")
         XCTAssertFalse(view.acceptsMouse)
         view.hasRecordingControls = true
-        view.canPause = true
         XCTAssertTrue(view.showsActions)
         XCTAssertTrue(view.acceptsMouse)
         view.frame.size.height = view.preferredHeight
         XCTAssertFalse(view.cancelButton.isHidden)
-        XCTAssertFalse(view.pauseButton.isHidden)
         XCTAssertTrue(view.copyButton.isHidden)
-        XCTAssertEqual(view.pauseButton.title, "Pause")
-        view.content = .recording(paused: true)
-        XCTAssertEqual(view.pauseButton.title, "Resume")
         XCTAssertEqual(view.cancelButton.accessibilityRole(), .button)
         view.setHovered(false)
         XCTAssertFalse(view.showsActions)
@@ -233,7 +238,6 @@ final class RecordingOverlayTests: XCTestCase {
         view.setHovered(true)
         view.frame.size.height = view.preferredHeight
         XCTAssertFalse(view.cancelButton.isHidden)
-        XCTAssertTrue(view.pauseButton.isHidden)
         view.hasRecordingControls = false
         XCTAssertFalse(view.acceptsMouse)
         view.content = .status("Finding media…")
@@ -242,7 +246,7 @@ final class RecordingOverlayTests: XCTestCase {
 
     func testRecordingAccessibilitySnapshotDoesNotFollowWaveformUpdates() {
         let view = PillView(frame: NSRect(x: 0, y: 0, width: 300, height: 48))
-        view.content = .recording(paused: false)
+        view.content = .recording
         let expected = """
         element=true
         role=AXStaticText
@@ -254,8 +258,8 @@ final class RecordingOverlayTests: XCTestCase {
         view.timeline.push(elapsedMs: 200, level: 1)
         view.elapsed = 1
         XCTAssertEqual(accessibilitySnapshot(view.statusElement), expected)
-        view.content = .recording(paused: true)
-        XCTAssertEqual(view.statusElement.accessibilityValue() as? String, "Paused")
+        view.content = .cancelled
+        XCTAssertEqual(view.statusElement.accessibilityValue() as? String, "Cancelled")
     }
 
     func testStatusProgressAndResultAccessibilitySnapshots() {

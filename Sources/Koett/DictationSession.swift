@@ -68,12 +68,8 @@ extension KoettController {
         state = .recording
         if let recorder {
             let session = beginDictationSession()
-            recordingOverlay.start(recorder: recorder, controls: RecordingControls(
-                modelName: speechEngine.displayName,
-                canPause: true,
-                cancel: { [weak self] in self?.cancelDictation(session) },
-                pauseChanged: { [weak self] in self?.nemotronRecorder?.isPaused = $0 }
-            ), sketchSession: session)
+            recordingOverlay.start(recorder: recorder,
+                onCancel: { [weak self] in self?.cancelDictation(session) }, sketchSession: session)
             startSketching(session: session, recorder: recorder)
         }
         pauseSupportedMedia()
@@ -173,6 +169,7 @@ extension KoettController {
         default:
             return
         }
+        recordingOverlay.showCancelled()
     }
 
     /// The last point where Cancel applies. Returns false when the session was
@@ -183,6 +180,7 @@ extension KoettController {
             return false
         }
         activeDictationID = nil
+        recordingOverlay.endCancellation()
         return true
     }
 

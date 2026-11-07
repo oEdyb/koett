@@ -4,6 +4,8 @@ import AppKit
 /// and never takes keyboard focus, so the app under the pill stays active.
 @MainActor
 final class PillButton: NSView {
+    enum Style { case text, cancel }
+    let style: Style
     var title: String {
         didSet {
             setAccessibilityLabel(title)
@@ -24,7 +26,8 @@ final class PillButton: NSView {
     static let height: CGFloat = 26
     private static let font = NSFont.systemFont(ofSize: 11.5, weight: .semibold)
 
-    init(title: String) {
+    init(title: String, style: Style = .text) {
+        self.style = style
         self.title = title
         super.init(frame: .zero)
         setAccessibilityElement(true)
@@ -40,14 +43,27 @@ final class PillButton: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     var fittingWidth: CGFloat {
-        ceil(NSAttributedString(string: title, attributes: [.font: Self.font]).size().width) + 16
+        if style == .cancel { return Self.height }
+        return ceil(NSAttributedString(string: title, attributes: [.font: Self.font]).size().width) + 16
     }
 
     override func draw(_ dirtyRect: NSRect) {
         NSGraphicsContext.current?.cgContext.setAlpha(opacity)
         let shape = NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2)
         (hovered ? palette.buttonHover : palette.button).setFill()
-        shape.fill()
+        if style == .text || hovered { shape.fill() }
+        if style == .cancel {
+            palette.text.setStroke()
+            let cross = NSBezierPath()
+            cross.lineWidth = 1.5
+            cross.lineCapStyle = .round
+            for direction: CGFloat in [-1, 1] {
+                cross.move(to: NSPoint(x: bounds.midX - 4, y: bounds.midY - 4 * direction))
+                cross.line(to: NSPoint(x: bounds.midX + 4, y: bounds.midY + 4 * direction))
+            }
+            cross.stroke()
+            return
+        }
         let text = NSAttributedString(string: title, attributes: [
             .font: Self.font,
             .foregroundColor: palette.text,
