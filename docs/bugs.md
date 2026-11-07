@@ -245,3 +245,22 @@ Koett cleared the clipboard, pressed paste and saved a blank history row. On X11
 focus guard compared raw focus values, so None and PointerRoot matched themselves and
 Ctrl+V went to whatever was under the pointer. Both reproduced on the old build in a
 private lab with real speech. Regression tests are in `linux.rs`.
+
+## 2026-11-07: Koett said it pasted when nothing was pasted
+
+Olle, in T3 Code on niri: clicking a thread in the sidebar left the caret blinking in the composer,
+yet the dictation never appeared, until he clicked the composer and dictated again. His log shows
+both deliveries the same way: focus check passed on the same window, Ctrl+V posted, outcome ok.
+Koett counted sending the keys as pasting. So he got neither the text nor `Copied to clipboard`.
+
+The drop itself didn't reproduce. In a private lab with a nested niri, Electron 43 took Koett's
+Ctrl+V after a direct click, after a sidebar click that moves focus by script, and with script focus
+and no click at all. So the virtual keyboard's timing and keymap aren't a general cause. What T3 Code
+does with a paste after a thread switch is still open.
+
+Every real Wayland paste reads the clipboard from its owner, so Koett now serves the text itself
+and only reports a paste when a read starts after the key, within 1.5 s; the portal path counts its
+transfers the same way. Reads before the key, such as CopyQ's, don't count. With no read, the pill
+says `Copied to clipboard`. The log now records `target_read` or `no_clipboard_read`, so the next
+failure in T3 Code shows whether it ever asked for the text. A target that reads and then discards
+the text is still reported as pasted. X11 has no such check yet.
