@@ -1647,9 +1647,9 @@ impl WindowsApp {
                     })
                     .is_ok()
                     {
+                        // The whole pill says it, rather than the button growing past its edge.
                         if !self.pill_media {
-                            self.pill_state
-                                .set(pill_state::Phase::Done(self.last_transcript.clone()), now);
+                            self.pill_state.set(pill_state::Phase::Copied, now);
                         }
                         self.pill_state.copy(now);
                     }

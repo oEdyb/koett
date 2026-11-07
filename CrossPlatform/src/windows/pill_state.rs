@@ -110,6 +110,8 @@ impl State {
                         1750
                     },
             )),
+            // Pressed Copy: leaves on Done's timing even under the pointer that pressed it.
+            Phase::Copied if self.copied => Some(self.changed + 1750),
             Phase::Copied if self.hovered => None,
             Phase::Copied => Some(
                 self.left_hover
@@ -286,6 +288,17 @@ mod delivery_tests {
             }
         }
     }
+    #[test]
+    fn pressing_copy_fades_the_copied_pill_even_while_hovered() {
+        let mut s = State::default();
+        s.set(Phase::NotPasted { saved: true }, 0);
+        s.hover(true, 10);
+        s.set(Phase::Copied, 20);
+        s.copy(20);
+        assert_eq!(s.opacity(1769, true), 1.0);
+        assert_eq!(s.opacity(1770, true), 0.0);
+    }
+
     #[test]
     fn a_failed_paste_that_copied_fades_unless_history_also_failed() {
         assert_eq!(

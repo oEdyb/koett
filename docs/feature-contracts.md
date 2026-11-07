@@ -52,15 +52,16 @@
   the first frame and slides left continuously; it never grows or re-bins, so
   20 minutes looks like 5 seconds. It stays above apps without taking keyboard focus and
   follows the system light or dark appearance.
-- Hovering a dictation pill swaps the strip for Cancel, Pause/Resume
-  (all models) and History inside the same row; the clock stays. Cancel
-  stays on the transcribing pill. Esc also cancels; its monitor exists only
-  while a dictation records or transcribes and never consumes Esc. Each
-  dictation has its own session ID, so a stale Cancel never touches the next
-  one. Cancel applies until the moment of delivery: the session is checked
-  right before pasting or saving, and a cancelled one pastes, saves and keeps
-  nothing, including its audio. Pause drops microphone buffers before the file, so paused time is not
-  transcribed. Ask recordings get no hover row.
+- Hovering a dictation pill keeps its waveform fixed and replaces the timer
+  with one right-side cancel icon. History stays in the menu and window.
+  Recording Pause and Resume have no UI, shortcut, or script command.
+  The same cancel icon remains available while transcribing. Esc also cancels;
+  its monitor exists only while a dictation records or transcribes and never
+  consumes Esc. Each dictation has its own session ID, so a stale Cancel never
+  touches the next one. Cancel applies until delivery begins. It deletes the
+  audio without pasting or saving text, then morphs to `Cancelled` and fades
+  after 1.75 seconds, even while hovered. Clicking the waveform only supports
+  dragging; only the cancel icon cancels. Ask recordings have no hover action.
 - The Microphone submenu selects a persistent Core Audio device UID for dictation
   and Ask. System Default resolves the current macOS input at recording start.
   An unavailable explicit selection is replaced by an available built-in input,
@@ -277,7 +278,7 @@
 ### Recording feedback accessibility
 
 - The recording pill has one stable `AXStaticText` element with the label
-  `Koett status` and value `Recording` or `Paused`. Its 30 Hz timeline redraw
+  `Koett status` and value `Recording`. Its 30 Hz timeline redraw
   never changes the accessibility value. Each action-row button is its own
   `AXButton`.
 - Status, done and not-pasted states are static text. Download progress and

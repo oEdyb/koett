@@ -15,7 +15,7 @@ extension KoettController {
         let command = arguments.first ?? "status"
         func result(_ failure: ControlReply.Failure? = nil) -> ControlReply {
             .init(ok: failure == nil, phase: String(describing: state), model: speechEngine.rawValue,
-                  paused: recorder?.isPaused, error: failure, paste: pasteDiagnostics.latest, pasteLogError: pasteDiagnostics.writeError, pasteAccessGranted: pasteAccessGranted,
+                  error: failure, paste: pasteDiagnostics.latest, pasteLogError: pasteDiagnostics.writeError, pasteAccessGranted: pasteAccessGranted,
                   drawLocked: sketchOverlay.isLocked, drawStrokeCount: sketchOverlay.strokeCount, updates: appUpdater?.status)
         }
         func fail(_ code: String, _ message: String) -> ControlReply {
@@ -36,12 +36,10 @@ extension KoettController {
             updater.checkForUpdates()
             return result()
         }
-        if ["stop", "pause", "resume", "undo", "draw-lock"].contains(command) {
+        if ["stop", "undo", "draw-lock"].contains(command) {
             guard state == .recording else { return fail("not_recording", "Start dictation before this command.") }
             switch command {
             case "stop": stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime)
-            case "pause": recordingOverlay.setPaused(true)
-            case "resume": recordingOverlay.setPaused(false)
             case "draw-lock":
                 guard sketchOverlay.isActive else { return fail("drawing_disabled", "Enable Draw & Pin While Dictating before recording.") }
                 toggleDrawLock()
@@ -58,7 +56,7 @@ extension KoettController {
         }
         let idleCommands = ["start", "history", "dictionary", "copy-last", "paste-last", "retry-save", "transcribe-file", "transcribe-url"]
         guard idleCommands.contains(command) else {
-            return fail("unknown_command", "Use status, start, stop, pause, resume, cancel, undo, draw-lock, history, dictionary, check-updates, allow-skipped-update, copy-last, paste-last, retry-save, transcribe-file PATH, or transcribe-url URL.")
+            return fail("unknown_command", "Use status, start, stop, cancel, undo, draw-lock, history, dictionary, check-updates, allow-skipped-update, copy-last, paste-last, retry-save, transcribe-file PATH, or transcribe-url URL.")
         }
         guard canStartSession else {
             if command == "start" { showUpdateReservationNoticeIfNeeded() }

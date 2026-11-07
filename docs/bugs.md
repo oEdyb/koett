@@ -264,3 +264,12 @@ transfers the same way. Reads before the key, such as CopyQ's, don't count. With
 says `Copied to clipboard`. The log now records `target_read` or `no_clipboard_read`, so the next
 failure in T3 Code shows whether it ever asked for the text. A target that reads and then discards
 the text is still reported as pasted. X11 has no such check yet.
+
+## 2026-11-07: pressing Copy pushed its label out of the pill
+
+Olle: "the copy goes like outside the pill window". On Linux, Copy on a sticky `Not pasted` pill
+relabelled its button `Copied`, and the wider button grew past the pill's right edge. Copy now
+morphs the whole pill into `Copied to clipboard` and fades it like Done, even under the pointer;
+a failed copy says `Copy failed · saved` in the row and keeps the buttons. The first fix showed
+`Copy failed` instead: the failed delivery's five-second error row outranks Done, so Copy now
+clears it. Windows already had a `Copied` phase from #179 and now uses it for Copy too.

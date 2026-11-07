@@ -88,7 +88,8 @@ final class LocalControlTests: XCTestCase {
         XCTAssertEqual(controller.handleControl(["status"]).phase, "loading")
         XCTAssertEqual(controller.handleControl(["check-updates"]).error?.code, "updates_disabled")
         XCTAssertEqual(controller.handleControl(["start"]).error?.code, "busy")
-        XCTAssertEqual(controller.handleControl(["pause"]).error?.code, "not_recording")
+        XCTAssertEqual(controller.handleControl(["pause"]).error?.code, "unknown_command")
+        XCTAssertEqual(controller.handleControl(["resume"]).error?.code, "unknown_command")
         XCTAssertEqual(controller.handleControl(["wat"]).error?.code, "unknown_command")
         controller.state = .ready
         XCTAssertEqual(controller.handleControl(["copy-last"]).error?.code, "no_transcript")

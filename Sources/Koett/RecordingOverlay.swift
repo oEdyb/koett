@@ -58,14 +58,6 @@ enum RecordingOverlayOutcome: Equatable {
     }
 }
 
-/// Actions the hover row offers while a dictation records.
-struct RecordingControls {
-    let modelName: String
-    let canPause: Bool
-    let cancel: () -> Void
-    var pauseChanged: (Bool) -> Void = { _ in }
-}
-
 /// A panel that shows above every app but never becomes key or main.
 final class PillPanel: NSPanel {
     override var canBecomeKey: Bool { false }
@@ -106,14 +98,12 @@ final class RecordingOverlayController: NSObject {
         didSet { if isPresented != oldValue { onPresentationChange?() } }
     }
     var onPresentationChange: (() -> Void)?
-    private var pauseChanged: ((Bool) -> Void)?
     private var resultText: String?
     private var resultPNG: Data?
     private(set) var latestOutcome: RecordingOverlayOutcome?
     var isTrackingRecording: Bool { recorder?.isRecording == true }
     private(set) var isShowingTranscribing = false
     var onLatestOutcomeChange: (() -> Void)?
-    var onOpenHistory: (() -> Void)?
     var onPasteAgain: (() -> Void)?
 
     init(defaults: UserDefaults = .standard) {
@@ -141,11 +131,6 @@ final class RecordingOverlayController: NSObject {
                                                displays: PillDisplay.current))
             hoverChanged()
         }
-        pillView.pauseButton.action = { [weak self] in self?.togglePause() }
-        pillView.historyButton.action = { [weak self] in
-            guard let self else { return }
-            onOpenHistory?()
-        }
         pillView.copyButton.action = { [weak self] in self?.copyResult(to: .general) }
         pillView.pasteButton.action = { [weak self] in
             self?.hide()
@@ -162,22 +147,32 @@ final class RecordingOverlayController: NSObject {
     /// The pill clock's origin (`systemUptime`) for the current dictation.
     var recordingStartedAt: TimeInterval? { startedAt }
 
-    func start(recorder: MicrophoneRecorder, controls: RecordingControls? = nil, sketchSession: UInt64? = nil) {
+    func start(recorder: MicrophoneRecorder, onCancel: (() -> Void)? = nil, sketchSession: UInt64? = nil) {
         stop()
         self.recorder = recorder
         self.sketchSession = sketchSession
-        pauseChanged = controls?.pauseChanged
         startedAt = ProcessInfo.processInfo.systemUptime
         pillView.recordingNotice = nil
         recordingNoticeUntil = nil
         pillView.timeline.reset()
         pillView.elapsed = 0
-        pillView.hasRecordingControls = controls != nil
-        pillView.canPause = controls?.canPause ?? false
-        pillView.modelName = controls?.modelName ?? ""
-        pillView.cancelButton.action = controls.map { controls in { controls.cancel() } }
-        show(.recording(paused: false))
+        pillView.hasRecordingControls = onCancel != nil
+        pillView.cancelButton.action = onCancel
+        show(.recording)
         startTimer()
+    }
+
+    func endCancellation() {
+        pillView.cancelButton.action = nil
+        pillView.hasRecordingControls = false
+    }
+
+    func showCancelled() {
+        sketchSession = nil
+        let from = pillView.content
+        show(.cancelled)
+        startMorph(from: from)
+        dismiss(after: Self.doneDisplayDuration, holdWhileHovered: false)
     }
 
     func showRecordingNotice(_ text: String) {
@@ -397,7 +392,11 @@ final class RecordingOverlayController: NSObject {
     }
 
     private func startMorph(from: PillContent) {
-        guard case .transcribing = from, !reduceMotion else { return }
+        guard !reduceMotion else { return }
+        switch from {
+        case .recording, .transcribing: break
+        default: return
+        }
         pillView.morphFrom = from
         pillView.morph = 0
         morphStartedAt = ProcessInfo.processInfo.systemUptime
@@ -424,18 +423,6 @@ final class RecordingOverlayController: NSObject {
     static func easeOut(_ t: Double) -> Double {
         let t = min(1, max(0, t))
         return 1 - pow(1 - t, 3)
-    }
-
-    private func togglePause() {
-        guard let recorder, recorder.isRecording, pillView.canPause else { return }
-        setPaused(!recorder.isPaused)
-    }
-
-    func setPaused(_ paused: Bool) {
-        guard let recorder, recorder.isRecording, pillView.canPause else { return }
-        recorder.isPaused = paused
-        pauseChanged?(paused)
-        pillView.content = .recording(paused: paused)
     }
 
     func copyResult(to pasteboard: NSPasteboard = .general) {

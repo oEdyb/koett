@@ -29,13 +29,16 @@ final class PillSnapshotTests: XCTestCase {
 
         let morphFrames: [CGFloat] = [0, 0.25, 0.5, 0.75, 1]
         let plain: [(String, PillContent, PillTimeline, Bool, TimeInterval)] = [
-            ("recording-0m05", .recording(paused: false), speech(seconds: 5), false, 5),
-            ("recording-1m00", .recording(paused: false), speech(seconds: 60), false, 60),
-            ("recording-5m00", .recording(paused: false), speech(seconds: 300), false, 300),
-            ("recording-20m00", .recording(paused: false), speech(seconds: 1_200), false, 1_200),
-            ("recording-hover", .recording(paused: false), short, true, 11),
-            ("drawing", .recording(paused: false), sketched, false, 11),
-            ("paused-hover", .recording(paused: true), short, true, 11),
+            ("recording-0m05", .recording, speech(seconds: 5), false, 5),
+            ("recording-1m00", .recording, speech(seconds: 60), false, 60),
+            ("recording-5m00", .recording, speech(seconds: 300), false, 300),
+            ("recording-20m00", .recording, speech(seconds: 1_200), false, 1_200),
+            ("recording-hover", .recording, short, true, 11),
+            ("drawing", .recording, sketched, false, 11),
+            ("normal", .recording, short, false, 42),
+            ("hover-recording", .recording, short, true, 42),
+            ("hover-transcribing", .transcribing(fraction: 0.55), short, true, 42),
+            ("cancelled", .cancelled, PillTimeline(), false, 42),
             ("transcribing", .transcribing(fraction: nil), short, false, 11),
             ("transcribing-progress", .transcribing(fraction: 0.55), short, false, 11),
             ("done", done, PillTimeline(), false, 11),
@@ -55,8 +58,6 @@ final class PillSnapshotTests: XCTestCase {
                 let view = PillView(frame: NSRect(x: 0, y: 0, width: PillView.width, height: PillView.rowHeight))
                 view.appearance = NSAppearance(named: appearance)
                 view.hasRecordingControls = true
-                view.canPause = true
-                view.modelName = "Parakeet v2"
                 view.timeline = timeline
                 view.elapsed = elapsed
                 view.spin = 1

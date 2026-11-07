@@ -8,7 +8,7 @@ listener, permission prompt, transcript content or API key is exposed.
 
 Run `/Applications/Koett.app/Contents/MacOS/koett --control COMMAND [ARG]`.
 Omitting COMMAND requests status. Each invocation returns one JSON object:
-`ok`, `phase`, `model`, optional `paused`, optional `error: {code, message}`.
+`ok`, `phase`, `model`, optional `error: {code, message}`.
 Status also includes `pasteAccessGranted` and, after an attempt, a text-free
 `paste` diagnostic with an ISO-8601 timestamp; `pasteLogError` reports log I/O
 failure. See [paste readiness](mac-paste-readiness.md).
@@ -20,7 +20,7 @@ ordinary dictation unless a caller needs status.
 Commands:
 
 - `status`: readiness and selected model, without transcript content.
-- `start`, `stop`, `pause`, `resume`, `cancel`: current dictation controls.
+- `start`, `stop`, `cancel`: current dictation controls.
 - `undo`: remove the last drawing/pin during recording.
 - `draw-lock`: toggle multi-stroke drawing during recording; requires drawing enabled. Status includes `drawLocked` and the content-free `drawStrokeCount`.
 - `history`, `dictionary`: open the existing native window.
@@ -45,7 +45,7 @@ Examples:
 
 ```sh
 /Applications/Koett.app/Contents/MacOS/koett --control status
-/Applications/Koett.app/Contents/MacOS/koett --control pause
+/Applications/Koett.app/Contents/MacOS/koett --control cancel
 /Applications/Koett.app/Contents/MacOS/koett --control transcribe-file '/path/to/video.mp4'
 ```
 
