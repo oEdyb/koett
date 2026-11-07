@@ -215,7 +215,8 @@ Private files, bounded queries and durable failed-save fallbacks remain required
 
 These rules come from the Mac pill that passed its live test on 2026-11-02
 (`e0ca1b9`, PRs #9, #11, #19, #21). The contract below includes the approved Cancel-only hover revision.
-Platform implementation and verification gaps remain explicit in
+Mac implements this revision in source. Linux and Windows still have the
+legacy hover controls; their remaining gaps are explicit in
 [feature parity](feature-parity.md). Record a rule change and its evidence
 in `docs/decisions.md`.
 
