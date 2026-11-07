@@ -108,8 +108,11 @@ Mac-specific choices:
 - Every state is one 300×48 row (Linux table above uses 300×88 for results;
   the Mac no longer does). Hover buttons replace the strip inside the row.
   Done morphs in place from the transcribing pill (0.24 s, ease-out), stays
-  1.75 s unless hovered, then fades out. Not pasted (`Paste`, `Copy`) and
-  rescue errors stay until acted on.
+  1.75 s unless hovered, then fades out. Failed paste with verified clipboard
+  recovery shows `Copied to clipboard` on the same timing, without extra buttons.
+  Failed clipboard verification keeps `Copy failed` (`Paste`, `Copy`) until acted
+  on; successful Copy changes it to the fading confirmation. Rescue errors stay
+  until acted on.
 - `SketchEvent` mirrors the Rust struct (`index`, `startMs`, `endMs`, `live`)
   and upserts by index. Mac draw mode sends `SketchUpdate`s through
   `recordingOverlay.applySketch(_:session:)`, which accepts changes for the

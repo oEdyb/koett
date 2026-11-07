@@ -333,4 +333,6 @@ needed. If the text is there, the pill says `Copied to clipboard` once and fades
 result with a drawing, where copying the text would replace the image. On KDE, GNOME and other
 desktops without a focus check, every dictation used to end in the sticky pill; now it ends with the
 text on the clipboard and the pill gone, and Paste last transcript stays in the tray. A script asking
-`koett paste-last` still hears that nothing was pasted. The Mac is unchanged.
+`koett paste-last` still hears that nothing was pasted. The Mac got the same in #178,
+which also keeps drawings and never overwrites a newer copy; Linux and Windows copy the text again
+if it's missing.

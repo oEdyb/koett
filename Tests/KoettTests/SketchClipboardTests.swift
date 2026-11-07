@@ -149,7 +149,7 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(board.data(forType: .png), image)
         XCTAssertEqual(board.string(forType: .string), "Done with ink")
         overlay.showTranscribing()
-        XCTAssertTrue(overlay.showNotPasted(text: "Recover ink", png: image))
+        XCTAssertTrue(overlay.showNotPasted(text: "Recover ink", png: image, pasteboard: board))
         overlay.copyResult(to: board)
         XCTAssertEqual(board.data(forType: .png), image)
         XCTAssertEqual(board.string(forType: .string), "Recover ink")

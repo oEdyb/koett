@@ -255,17 +255,22 @@ final class RecordingOverlayController: NSObject {
         dismiss(after: Self.doneDisplayDuration)
     }
 
-    /// Replaces the transcribing pill when the text was saved but not pasted.
-    /// Returns false when another message already replaced it.
+    /// Confirms verified clipboard recovery, or keeps Copy available on failure.
     @discardableResult
-    func showNotPasted(text: String, png: Data? = nil, reason: String? = nil) -> Bool {
+    func showNotPasted(
+        text: String, png: Data? = nil, reason: String? = nil,
+        pasteboard: NSPasteboard = .general
+    ) -> Bool {
         guard isShowingTranscribing else { return false }
         resultText = text
         resultPNG = png
         let from = pillView.content
-        show(.notPasted)
+        let clipboard = SketchClipboard(text: text, png: png)
+        let copied = clipboard.matches(pasteboard)
+        show(copied ? .copied : .notPasted)
         startMorph(from: from)
         recordFailure(reason.map { "Not pasted · \($0) · Text saved" } ?? "Not pasted · text saved")
+        if copied { dismiss(after: Self.doneDisplayDuration) }
         return true
     }
 
@@ -436,9 +441,14 @@ final class RecordingOverlayController: NSObject {
     func copyResult(to pasteboard: NSPasteboard = .general) {
         guard let resultText else { return }
         if SketchClipboard(text: resultText, png: resultPNG).write(to: pasteboard) {
-            pillView.copyTitle = "Copied"
-            dismissOnExit = false
-            dismiss(after: 1, holdWhileHovered: false)
+            if pillView.content == .notPasted {
+                show(.copied)
+                dismiss(after: Self.doneDisplayDuration)
+            } else {
+                pillView.copyTitle = "Copied"
+                dismissOnExit = false
+                dismiss(after: 1, holdWhileHovered: false)
+            }
         } else {
             pillView.copyTitle = "Copy failed"
         }

@@ -39,6 +39,7 @@ final class PillSnapshotTests: XCTestCase {
             ("transcribing", .transcribing(fraction: nil), short, false, 11),
             ("transcribing-progress", .transcribing(fraction: 0.55), short, false, 11),
             ("done", done, PillTimeline(), false, 11),
+            ("copied-after-paste-failure", .copied, PillTimeline(), false, 11),
             ("not-pasted", .notPasted, PillTimeline(), false, 11),
             ("media", .media(preview: "Today we are looking at what local models can do"), PillTimeline(), false, 11),
             ("status", .status("Transcribing locally…"), PillTimeline(), false, 11),
