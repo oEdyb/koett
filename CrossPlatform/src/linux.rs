@@ -2926,9 +2926,22 @@ impl WaylandOutput {
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
         trace.prepare_paste(target)?;
         trace.post()?;
+        // Counted from just before the key: a clipboard manager reading the new text
+        // earlier isn't a paste, and only a read after the key shows one happened.
+        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
-        result
+        result?;
+        let deadline = Instant::now() + output::TEXT_READ_WAIT;
+        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
+            && Instant::now() < deadline
+        {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        trace.read_checked(
+            true,
+            self.served.load(std::sync::atomic::Ordering::Acquire) != before,
+        )
     }
 
     async fn send_keysym(&self, keysym: i32, state: KeyState) -> Result<(), String> {

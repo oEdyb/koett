@@ -6,6 +6,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub static WINDOW_ACTIVE: AtomicBool = AtomicBool::new(false);
 /// Longest wait for the target to read a pasted contact sheet.
 pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(1500);
+/// Longest wait for the target to start reading pasted text. Without that read,
+/// nothing was pasted, whatever the key events did.
+pub const TEXT_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(1500);
 /// Settle time after the image read, before the clipboard changes to text.
 pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
 /// Keep the previous bounded fallback when the target never requests PNG.
@@ -142,6 +145,28 @@ pub fn focused_window() -> Option<u32> {
 
 pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Result<(), String> {
     let mut trace = DeliveryStep::new("text", "fallback", text.len());
+    // Koett serves the text itself, so it can see whether the target reads it.
+    let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
+    let read = match super::clipboard_owner::start(payload) {
+        Ok(()) => Some(read),
+        Err(error) => {
+            eprintln!("Clipboard owner unavailable, copying without paste evidence: {error}");
+            copy_with_wl_copy(text)?;
+            None
+        }
+    };
+    trace.prepare_paste(target)?;
+    let mut posted = None;
+    trace.send_fallback_tracked(shortcut, || {
+        if let Some(read) = &read {
+            read.arm();
+        }
+        posted = Some(std::time::Instant::now());
+    })?;
+    confirm_text_read(&mut trace, read.as_ref(), posted)
+}
+
+fn copy_with_wl_copy(text: &str) -> Result<(), String> {
     let mut copy = Command::new("wl-copy")
         .args(["--type", "text/plain;charset=utf-8"])
         .stdin(Stdio::piped())
@@ -155,8 +180,21 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
     if !copy.wait().map_err(|e| e.to_string())?.success() {
         return Err("Copy failed; recover from History".into());
     }
-    trace.prepare_paste(target)?;
-    trace.send_fallback(shortcut)
+    Ok(())
+}
+
+/// Sent keys aren't a paste: Electron can take Ctrl+V and paste nothing. Only a read of
+/// the clipboard after the key counts, so anything else reports a copy instead.
+fn confirm_text_read(
+    trace: &mut DeliveryStep,
+    read: Option<&super::clipboard_owner::ImageRead>,
+    posted: Option<std::time::Instant>,
+) -> Result<(), String> {
+    let read_started = match (read, posted) {
+        (Some(read), Some(posted)) => read.wait_started(posted, TEXT_READ_WAIT),
+        _ => false,
+    };
+    trace.read_checked(read.is_some(), read_started)
 }
 
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
@@ -199,9 +237,15 @@ pub fn deliver_sketch_text(
     shortcut: PasteShortcut,
 ) -> Result<(), String> {
     let mut trace = DeliveryStep::new("text", "fallback", text.len());
-    super::clipboard_owner::replace(super::clipboard_owner::Payload::text(text))?;
+    let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
+    super::clipboard_owner::replace(payload)?;
     trace.prepare_paste(target)?;
-    trace.send_fallback(shortcut)
+    let mut posted = None;
+    trace.send_fallback_tracked(shortcut, || {
+        read.arm();
+        posted = Some(std::time::Instant::now());
+    })?;
+    confirm_text_read(&mut trace, Some(&read), posted)
 }
 
 pub(super) fn paste_keysyms(shortcut: PasteShortcut) -> &'static [u32] {
@@ -491,9 +535,6 @@ impl DeliveryStep {
         self.log("paste_post");
         Ok(())
     }
-    fn send_fallback(&mut self, shortcut: PasteShortcut) -> Result<(), String> {
-        self.send_fallback_tracked(shortcut, || {})
-    }
     fn send_fallback_tracked(
         &mut self,
         shortcut: PasteShortcut,
@@ -542,6 +583,24 @@ impl DeliveryStep {
                     "Not pasted · saved. Could not run virtual keyboard: {error}"
                 ))
             }
+        }
+    }
+    /// Records whether the target read the clipboard after the key, and turns a
+    /// paste without that evidence into an error.
+    pub fn read_checked(&mut self, tracked: bool, read: bool) -> Result<(), String> {
+        self.reason = match (tracked, read) {
+            (_, true) => "target_read",
+            (true, false) => "no_clipboard_read",
+            (false, false) => "paste_unconfirmed",
+        };
+        if !read {
+            self.outcome = "unconfirmed";
+        }
+        self.log("read_check");
+        if read {
+            Ok(())
+        } else {
+            Err("The app didn't take the paste".into())
         }
     }
     pub fn finish(&mut self, ok: bool) {

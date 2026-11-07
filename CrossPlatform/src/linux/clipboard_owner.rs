@@ -51,6 +51,19 @@ impl ImageRead {
     pub fn started(&self) -> bool {
         self.signal.started.load(Ordering::Acquire)
     }
+    /// Whether anyone started reading after `arm`, within `limit` of `posted`. A paste
+    /// has to read the clipboard, so this is the evidence that one happened.
+    pub fn wait_started(&self, posted: Instant, limit: Duration) -> bool {
+        loop {
+            if self.started() {
+                return true;
+            }
+            if posted.elapsed() >= limit {
+                return false;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
     /// A reader already in flight gets longer to finish than an unknown target.
     /// Completion means the whole pipe was written and closed, not PNG decoding.
     pub fn wait(&self, posted: Instant, fallback: Duration, transfer: Duration) -> bool {
@@ -84,6 +97,24 @@ impl Payload {
             done,
         };
         let mut payload = Self::image(png);
+        payload.1 = Some(signal.clone());
+        (
+            payload,
+            ImageRead {
+                signal,
+                done: receiver,
+            },
+        )
+    }
+    /// Text that reports the first read after `arm`, as `tracked_image` does.
+    pub fn tracked_text(text: &str) -> (Self, ImageRead) {
+        let (done, receiver) = mpsc::sync_channel(1);
+        let signal = ReadSignal {
+            armed: Arc::new(AtomicBool::new(false)),
+            started: Arc::new(AtomicBool::new(false)),
+            done,
+        };
+        let mut payload = Self::text(text);
         payload.1 = Some(signal.clone());
         (
             payload,
@@ -705,6 +736,19 @@ mod tests {
     use super::*;
     use std::process::{Command, Stdio};
     const TEXT: &str = "- #1 <literal> & “Unicode”\nsecond line";
+    #[test]
+    fn a_text_read_counts_only_after_the_key_and_is_bounded() {
+        let (payload, read) = Payload::tracked_text("hello");
+        // A clipboard manager reading the new selection before the key isn't a paste.
+        assert!(payload.1.as_ref().unwrap().begin().is_none());
+        let start = Instant::now();
+        assert!(!read.wait_started(start, Duration::from_millis(30)));
+        assert!(start.elapsed() < Duration::from_millis(500));
+        read.arm();
+        payload.1.as_ref().unwrap().begin().unwrap();
+        assert!(read.wait_started(Instant::now(), Duration::ZERO));
+    }
+
     #[test]
     fn image_completion_ignores_pre_paste_reads_and_other_offers() {
         let (payload, read) = Payload::tracked_image(&[1, 2, 3]);
