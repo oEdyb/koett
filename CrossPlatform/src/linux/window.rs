@@ -864,19 +864,28 @@ fn build_window(
                 pill_message = None;
             }
             let pill_hovered = overlay.as_ref().is_some_and(|overlay| overlay.hovered());
-            // Mac: Copy shows "Copied" and closes after 1 s even while hovered;
+            // Copy morphs the pill into Copied to clipboard, which fades on Done's timing
+            // even while hovered, since the pointer is still on the button it pressed.
             // Paste (Not pasted) closes at once and pastes from the tray action.
             match overlay.as_ref().and_then(|overlay| overlay.take_acted()) {
                 Some(super::recording_overlay::Acted::Copied) => {
-                    let close = Some(Instant::now() + AFTER_COPY);
-                    if recovery_until.is_some() {
-                        recovery_until = close;
-                    }
-                    if done_until.is_some() {
-                        done_until = close;
+                    if recovery_until.is_some() || done_until.is_some() {
+                        if let Some(overlay) = &overlay {
+                            overlay.set_copied(true);
+                        }
+                        recovery_until = None;
+                        done_until = Some(Instant::now() + DONE_DURATION);
                         done_fading = None;
+                        closing = true;
+                        // The failed delivery's error row outranks Done and would come
+                        // back for the rest of its five seconds; Copy just fixed it.
+                        pill_message = None;
                     }
-                    closing = true;
+                }
+                Some(super::recording_overlay::Acted::CopyFailed) => {
+                    if let Some(overlay) = &overlay {
+                        overlay.set_copy_failed();
+                    }
                 }
                 Some(super::recording_overlay::Acted::Pasted) => {
                     recovery_until = None;
@@ -1026,8 +1035,6 @@ const SETTLE: Duration = Duration::from_millis(1_000);
 const FADE: Duration = Duration::from_millis(260);
 /// After the pointer leaves a held pill.
 const HOVER_GRACE: Duration = Duration::from_millis(800);
-/// Not-pasted recovery closes this soon after Copy succeeds.
-const AFTER_COPY: Duration = Duration::from_millis(1_000);
 /// Not pasted has no timeout; this only keeps the Instant arithmetic finite.
 const UNTIL_ACTED: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
