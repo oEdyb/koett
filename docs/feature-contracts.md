@@ -35,8 +35,10 @@
   grows taller. A successful paste morphs the pill in place (0.24 s crossfade)
   into the coral mark, a one-line transcript preview and **Copy** on the
   right. It stays 1.75 s, or for as long as it is hovered, then fades out over
-  0.25 s. A delivery failure after a save shows `Not pasted · saved` with
-  **Paste** and **Copy** and stays until one is used or the pill is clicked.
+  0.25 s. A paste failure verifies the clipboard's transcript (and drawing, if any).
+  Verified recovery shows `Copied to clipboard` with the same Done timing and
+  hover hold. Failed clipboard verification keeps `Copy failed` with **Paste**
+  and **Copy** until acted on. Newer clipboard copies are never overwritten.
   Errors that hold text or audio to rescue also stay until clicked; other
   errors leave after five seconds. Reduce Motion skips the morph and fade.
 - A nonactivating bottom-center 300×48 pill shows a fixed-width strip of the

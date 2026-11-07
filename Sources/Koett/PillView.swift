@@ -5,6 +5,7 @@ enum PillContent: Equatable {
     case transcribing(fraction: Double?)
     case done(preview: String)
     case notPasted
+    case copied
     case media(preview: String)
     case status(String)
     case error(String)
@@ -100,7 +101,7 @@ final class PillView: NSView {
     var acceptsMouse: Bool {
         switch content {
         case .recording, .transcribing: hasRecordingControls
-        case .done, .notPasted, .media, .error: true
+        case .done, .copied, .notPasted, .media, .error: true
         case .status, .progress: false
         }
     }
@@ -164,7 +165,7 @@ final class PillView: NSView {
             return
         }
         switch content {
-        case .done, .notPasted, .media, .error: onDismiss?()
+        case .done, .copied, .notPasted, .media, .error: onDismiss?()
         default: break
         }
     }
@@ -252,7 +253,8 @@ final class PillView: NSView {
         case .transcribing(let fraction?): progress("Transcribing", fraction)
         case .transcribing(nil): staticText("Transcribing…")
         case .done(let preview), .media(let preview): staticText(preview)
-        case .notPasted: staticText("Not pasted · text saved")
+        case .copied: staticText("Copied to clipboard")
+        case .notPasted: staticText("Copy failed · Text saved")
         case .status(let text), .error(let text): staticText(text)
         case .progress(let text, let fraction): progress(text, fraction)
         }
@@ -350,7 +352,7 @@ final class PillView: NSView {
             path.line(to: NSPoint(x: 23, y: cy - 1.5))
             path.stroke()
             NSBezierPath(ovalIn: NSRect(x: 22, y: cy - 4.8, width: 2, height: 2)).fill()
-        case .done, .media:
+        case .done, .copied, .media:
             for (index, height) in [7.0, 13.0, 19.0, 13.0, 7.0].enumerated() {
                 NSBezierPath(
                     roundedRect: NSRect(x: 14 + CGFloat(index) * 4.5, y: cy - height / 2, width: 2.5, height: height),
@@ -426,8 +428,10 @@ final class PillView: NSView {
             drawText("Transcribing…", in: textRect, alignment: .left, color: palette.text)
         case .transcribing:
             break
+        case .copied:
+            drawText("Copied to clipboard", in: textRect, alignment: .left, color: palette.text)
         case .notPasted:
-            drawText("Not pasted · saved", in: resultRect, alignment: .left, color: palette.text)
+            drawText("Copy failed", in: resultRect, alignment: .left, color: palette.text)
         case .done(let preview), .media(let preview):
             drawText(preview, in: resultRect, alignment: .left, color: palette.text)
         case .status(let text), .error(let text):
