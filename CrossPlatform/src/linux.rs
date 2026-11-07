@@ -596,6 +596,12 @@ pub fn run() -> Result<(), String> {
     {
         eprintln!("Launch at login: {error}");
     }
+    if !matches!(command.as_str(), "show" | "--background")
+        && control::tray_action(&command).is_none()
+    {
+        println!("{}", unknown_command());
+        std::process::exit(1);
+    }
     if control::send(&command).is_ok() {
         if command.starts_with("ask") {
             println!("{{\"ok\":true,\"accepted\":true}}");
@@ -3596,6 +3602,11 @@ mod menu_tests {
         tray.update_status("Ready".into());
         assert_eq!(tray.status, "Ready");
     }
+}
+
+/// The Mac's reply for a command it doesn't know, listing this platform's commands.
+fn unknown_command() -> serde_json::Value {
+    serde_json::json!({"ok":false,"error":{"code":"unknown_command","message":"Use status, start, stop, toggle, cancel, undo, draw-lock, history, dictionary, settings, check-updates, update-status, rollback-update, copy-last, paste-last, retry-unsaved, transcribe-file PATH, or transcribe-url URL."}})
 }
 
 #[cfg(test)]

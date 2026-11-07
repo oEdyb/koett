@@ -421,6 +421,8 @@ struct Pill {
     started: Option<Instant>,
     duration_ms: u64,
     dark: bool,
+    /// Done is saying Cancelled: the recording dot, as on Mac, not the result bars.
+    cancelled: bool,
     progress: (u32, u32),
     spin: f64,
     hovered: bool,
@@ -579,6 +581,10 @@ fn paint_body(
             context.stroke()?;
         }
         Phase::Recording => {
+            context.arc(23.0, cy, 4.0, 0.0, std::f64::consts::TAU);
+            context.fill()?;
+        }
+        Phase::Done if pill.cancelled => {
             context.arc(23.0, cy, 4.0, 0.0, std::f64::consts::TAU);
             context.fill()?;
         }
@@ -807,6 +813,7 @@ impl RecordingOverlay {
             started: None,
             duration_ms: 0,
             dark: true,
+            cancelled: false,
             progress: (0, 0),
             spin: 0.0,
             hovered: false,
@@ -842,6 +849,7 @@ impl RecordingOverlay {
         cancel.set_tooltip_text(Some("Cancel this dictation"));
         super::menu::set_accessible_label(cancel.upcast_ref(), "Cancel");
         cancel.set_size_request(CANCEL_W, 28);
+        cancel.add_css_class("koett-pill-cancel");
         cancel.set_visible(false);
         main.put(&cancel, CANCEL_X, 10.0);
         // Right-hand result buttons, as on Mac: Copy at the right edge, Paste
@@ -1073,6 +1081,7 @@ impl RecordingOverlay {
         let (dark, _) = super::theme::appearance(&self.window.settings(), self.window.upcast_ref());
         let reduced = !self.drawing.settings().is_gtk_enable_animations();
         let mut pill = self.state.borrow_mut();
+        pill.cancelled = self.note.get() == Some(CANCELLED);
         if pill.phase != phase && matches!(phase, Phase::Done | Phase::Recovery | Phase::Media) {
             self.copy.set_label("Copy");
             self.acted.set(None);

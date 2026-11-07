@@ -51,7 +51,7 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
         .map(|(_, code)| *code)
         .ok_or_else(|| {
             failure(
-                "unknown_action",
+                "unknown_command",
                 "Run koett-engine app help --json",
                 format!("Unknown app action: {action}"),
             )

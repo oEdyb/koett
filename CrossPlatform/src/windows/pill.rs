@@ -8,7 +8,7 @@ use windows::Win32::Graphics::Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM;
 use windows::Win32::Graphics::Dxgi::{Common::DXGI_ALPHA_MODE_PREMULTIPLIED, IDXGIDevice};
 use windows::core::Interface;
 use windows::core::w;
-use windows_numerics::Matrix3x2;
+use windows_numerics::{Matrix3x2, Vector2};
 
 pub(super) struct TimelinePaint<'a> {
     pub bars: &'a [(f32, f32)],
@@ -202,10 +202,7 @@ impl Renderer {
                         DWRITE_MEASURING_MODE_NATURAL,
                     );
                 };
-                if matches!(
-                    state.phase,
-                    Phase::Done(_) | Phase::Copied | Phase::Cancelled
-                ) {
+                if matches!(state.phase, Phase::Done(_) | Phase::Copied) {
                     for (i, h) in [6.0, 12.0, 18.0, 12.0, 6.0].iter().enumerate() {
                         let x = 16.0 + i as f32 * 3.0;
                         target.FillRoundedRectangle(
@@ -317,7 +314,34 @@ impl Renderer {
                     }
                     // Hover turns the clock into ✕ in the same place; the strip stays.
                     if state.hovered {
-                        draw("✕", 238.0, 284.0, true);
+                        // Mac's cancel button: a plain cross, filled only under the pointer.
+                        if state.on_cancel {
+                            white.SetOpacity(if light { 0.13 } else { 0.20 });
+                            target.FillEllipse(
+                                &D2D1_ELLIPSE {
+                                    point: Vector2 { X: 272.0, Y: 24.0 },
+                                    radiusX: 13.0,
+                                    radiusY: 13.0,
+                                },
+                                &white,
+                            );
+                        }
+                        white.SetOpacity(0.90);
+                        for (from, to) in [
+                            ((268.0, 20.0), (276.0, 28.0)),
+                            ((268.0, 28.0), (276.0, 20.0)),
+                        ] {
+                            target.DrawLine(
+                                Vector2 {
+                                    X: from.0,
+                                    Y: from.1,
+                                },
+                                Vector2 { X: to.0, Y: to.1 },
+                                &white,
+                                1.5,
+                                None,
+                            );
+                        }
                     } else if !matches!(state.phase, Phase::Transcribing) {
                         draw(
                             &format!("{}:{:02}", elapsed / 60, elapsed % 60),

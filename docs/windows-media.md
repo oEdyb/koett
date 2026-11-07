@@ -114,7 +114,7 @@ standard UI Automation controls; these commands open the corresponding pages.
 
 Success returns `ok: true`, `outputs: []` and `warnings: []`. Failures exit nonzero
 and return `ok: false`, `code`, `error` and a concrete `fix`. Stable codes are
-`invalid_arguments`, `unknown_action`, `not_running`, `command_unavailable`,
+`invalid_arguments`, `unknown_command`, `not_running`, `command_unavailable`,
 `acknowledgement_timeout`, `action_unavailable` and `media_failed`.
 
 Ask remains shelved on main. This work adds no provider keys, cloud requests,

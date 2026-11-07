@@ -77,6 +77,10 @@ window.koett-pill { background: transparent; }
 .koett-pill-light .koett-pill-text { color: #1C1917; }
 .koett-pill-light button.koett-pill-button { background: alpha(#1C1917, 0.07); color: #1C1917; }
 .koett-pill-light button.koett-pill-button:hover { background: alpha(#1C1917, 0.13); }
+/* ✕ is plain until the pointer is on it, as the Mac's cancel button. */
+.koett-pill button.koett-pill-button.koett-pill-cancel { background: transparent; padding: 0; }
+.koett-pill-dark button.koett-pill-button.koett-pill-cancel:hover { background: alpha(white, 0.20); }
+.koett-pill-light button.koett-pill-button.koett-pill-cancel:hover { background: alpha(#1C1917, 0.13); }
 
 .koett-window .error { color: @koett_error; }
 

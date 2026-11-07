@@ -21,6 +21,7 @@ pub enum Phase {
 pub struct PaintKey {
     revision: u64,
     hovered: bool,
+    on_cancel: bool,
     copied: bool,
     drawing: bool,
     media_result: bool,
@@ -31,6 +32,8 @@ pub struct PaintKey {
 pub struct State {
     pub phase: Phase,
     pub hovered: bool,
+    /// The pointer is on ✕ itself, which fills only then, as on Mac.
+    pub on_cancel: bool,
     pub copied: bool,
     pub drawing: bool,
     pub media_result: bool,
@@ -46,6 +49,7 @@ impl Default for State {
         Self {
             phase: Phase::Hidden,
             hovered: false,
+            on_cancel: false,
             copied: false,
             drawing: false,
             media_result: false,
@@ -136,6 +140,7 @@ impl State {
         PaintKey {
             revision: self.revision,
             hovered: self.hovered,
+            on_cancel: self.on_cancel,
             copied: self.copied,
             drawing: self.drawing,
             media_result: self.media_result,
@@ -176,8 +181,11 @@ mod tests {
         let hovered = s.paint_key();
         s.hover(true, 20);
         assert!(s.paint_key() == hovered);
+        s.on_cancel = true;
+        assert!(s.paint_key() != hovered, "pointer onto ✕ repaints its fill");
+        let on_cancel = s.paint_key();
         s.drawing = true;
-        assert!(s.paint_key() != hovered);
+        assert!(s.paint_key() != on_cancel);
         let drawing = s.paint_key();
         s.copy(30);
         assert!(s.paint_key() != drawing);
