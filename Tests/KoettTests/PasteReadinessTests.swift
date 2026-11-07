@@ -132,10 +132,12 @@ final class PasteReadinessTests: XCTestCase {
     }
 
     func testFailurePillKeepsTheReasonInItsPersistentMenuOutcome() {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
         let overlay = RecordingOverlayController()
         defer { overlay.stop() }
         overlay.showTranscribing()
-        XCTAssertTrue(overlay.showNotPasted(text: "Test fixture", reason: PasteBlockReason.modifiersHeld.message))
+        XCTAssertTrue(overlay.showNotPasted(text: "Test fixture", reason: PasteBlockReason.modifiersHeld.message, pasteboard: board))
         XCTAssertTrue(overlay.latestOutcome?.message.contains("Modifier keys still held") == true)
     }
 

@@ -12,6 +12,18 @@ struct SketchClipboard: Sendable {
     }
 
     @MainActor
+    func matches(_ pasteboard: NSPasteboard) -> Bool {
+        let generation = pasteboard.changeCount
+        guard let items = pasteboard.pasteboardItems, items.count == 1,
+              items[0].string(forType: .string) == text else { return false }
+        if let png {
+            guard items[0].data(forType: .png) == png,
+                  items[0].string(forType: .html) == Self.html(text: text, png: png) else { return false }
+        }
+        return pasteboard.changeCount == generation
+    }
+
+    @MainActor
     @discardableResult
     func write(to pasteboard: NSPasteboard = .general) -> Bool {
         let item = NSPasteboardItem()
@@ -24,6 +36,6 @@ struct SketchClipboard: Sendable {
             }
         }
         pasteboard.clearContents()
-        return pasteboard.writeObjects([item])
+        return pasteboard.writeObjects([item]) && matches(pasteboard)
     }
 }

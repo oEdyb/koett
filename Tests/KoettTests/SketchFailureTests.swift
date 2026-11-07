@@ -54,10 +54,12 @@ final class SketchFailureTests: XCTestCase {
     }
 
     func testDrawingWarningCannotReplaceAPasteFailure() {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
         let overlay = RecordingOverlayController()
         defer { overlay.stop() }
         overlay.showTranscribing()
-        XCTAssertTrue(overlay.showNotPasted(text: "Synthetic text", reason: "Focus changed"))
+        XCTAssertTrue(overlay.showNotPasted(text: "Synthetic text", reason: "Focus changed", pasteboard: board))
         overlay.showDone(text: "Synthetic text", drawingFailed: true)
         XCTAssertEqual(overlay.latestOutcome, .failure("Not pasted · Focus changed · Text saved"))
     }

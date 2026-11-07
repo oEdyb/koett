@@ -576,7 +576,7 @@ extension KoettController {
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
-    /// Text that was saved but not pasted gets the Not pasted pill with Paste again.
+    /// Recover failed paste delivery to a verified clipboard before dismissing.
     private func showDeliveryFailure(_ error: Error, text: String?) {
         if let text, recordingOverlay.showNotPasted(text: text, png: lastTranscript == text ? lastTranscriptImage : nil,
             reason: pasteCoordinator.lastFailure?.message) { return }

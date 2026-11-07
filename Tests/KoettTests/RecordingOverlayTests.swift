@@ -53,6 +53,8 @@ final class RecordingOverlayTests: XCTestCase {
     }
 
     func testDoneAndNotPastedOnlyReplaceTheTranscribingPill() {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
         let controller = RecordingOverlayController()
         controller.showDone(text: "ignored")
         XCTAssertNotEqual(controller.pillView.content, .done(preview: "ignored"))
@@ -69,11 +71,11 @@ final class RecordingOverlayTests: XCTestCase {
 
         controller.showTranscribing()
         controller.showError("Save failed")
-        XCTAssertFalse(controller.showNotPasted(text: "Hello"))
+        XCTAssertFalse(controller.showNotPasted(text: "Hello", pasteboard: board))
         XCTAssertEqual(controller.latestOutcome, .failure("Save failed"))
 
         controller.showTranscribing()
-        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        XCTAssertTrue(controller.showNotPasted(text: "Hello", pasteboard: board))
         XCTAssertEqual(controller.pillView.content, .notPasted)
         XCTAssertEqual(controller.latestOutcome, .failure("Not pasted · text saved"))
         controller.stop()
@@ -103,12 +105,14 @@ final class RecordingOverlayTests: XCTestCase {
     }
 
     func testNotPastedAndRescueErrorsStayUntilClicked() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
         let controller = RecordingOverlayController()
         controller.showTranscribing()
-        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        XCTAssertTrue(controller.showNotPasted(text: "Hello", pasteboard: board))
         controller.showError("Text in memory", keepUntilClicked: false)
         controller.showTranscribing()
-        XCTAssertTrue(controller.showNotPasted(text: "Hello"))
+        XCTAssertTrue(controller.showNotPasted(text: "Hello", pasteboard: board))
         try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
         XCTAssertTrue(controller.isPresented, "Not pasted waits for the user")
         XCTAssertFalse(controller.pillView.pasteButton.isHidden)
@@ -132,7 +136,7 @@ final class RecordingOverlayTests: XCTestCase {
         view.setHovered(true)
         let states: [PillContent] = [
             .recording(paused: false), .recording(paused: true), .transcribing(fraction: 0.4),
-            .done(preview: "Hello"), .notPasted, .media(preview: "Clip"),
+            .done(preview: "Hello"), .copied, .notPasted, .media(preview: "Clip"),
             .status("Loading"), .error("Failed"), .progress(text: "Downloading", fraction: 0.5),
         ]
         for state in states {
