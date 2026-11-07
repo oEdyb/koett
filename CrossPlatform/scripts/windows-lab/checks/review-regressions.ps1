@@ -31,17 +31,11 @@ Set-LabPhase 1
 $overlay=[LabDriver]::ByClass('KoettOverlayWindow')
 $root=[Windows.Automation.AutomationElement]::FromHandle($overlay)
 $names=@($root.FindAll([Windows.Automation.TreeScope]::Children,[Windows.Automation.Condition]::TrueCondition)|ForEach-Object {$_.Current.Name})
-$unhovered=@('Cancel','Pause','History'|Where-Object {$_-notin$names}).Count-eq0
-$pauseWorks=$false;$historyWorks=$false;$cancelWorks=$false
+$unhovered=('Cancel'-in$names)-and('Pause'-notin$names)-and('History'-notin$names)
+$cancelWorks=$false
 if($unhovered){
- $null=Invoke-LabButton $overlay 'Pause'
- $pauseWorks=([Windows.Automation.AutomationElement]::FromHandle($overlay).Current.Name-match'Paused')
- $null=Invoke-LabButton $overlay 'Resume'
- $null=Invoke-LabButton $overlay 'History'
- for($i=0;$i-lt40-and[LabDriver]::ByTitle('Koett History')-eq[IntPtr]::Zero;$i++){Start-Sleep -Milliseconds 100}
- $historyWorks=([LabDriver]::ByTitle('Koett History')-ne[IntPtr]::Zero)
  $null=Invoke-LabButton $overlay 'Cancel'
- $cancelWorks=-not[LabDriver]::IsWindowVisible($overlay)
+ $cancelWorks=([Windows.Automation.AutomationElement]::FromHandle($overlay).Current.Name-match'Cancelled')
 }
 $steps=@((Get-LabStep 'unhovered-actions'))
 Activate-LabEditor $a
@@ -92,4 +86,4 @@ if($next-ne[IntPtr]::Zero){
 }
 $pagination=($counts.Count-eq3-and$counts[0]-eq50-and$counts[1]-eq100-and$counts[2]-eq110)
 $steps+=Get-LabWindowStep 'history-pagination' $history
-@{passed=($unhovered-and$pauseWorks-and$historyWorks-and$cancelWorks-and$raceRefused-and$selfRefused-and$pagination);artifact=Get-LabArtifact;unhovered_names=$names;unhovered_actions=$unhovered;pause=$pauseWorks;history=$historyWorks;cancel=$cancelWorks;modifier_race_refused=$raceRefused;switched=$switched;original_text=$textA;second_text=$textB;self_paste_refused=$selfRefused;own_focus=$ownBefore;history_search_text=$selfText;history_counts=$counts;pagination=$pagination;steps=$steps}
+@{passed=($unhovered-and$cancelWorks-and$raceRefused-and$selfRefused-and$pagination);artifact=Get-LabArtifact;unhovered_names=$names;unhovered_actions=$unhovered;cancel=$cancelWorks;modifier_race_refused=$raceRefused;switched=$switched;original_text=$textA;second_text=$textB;self_paste_refused=$selfRefused;own_focus=$ownBefore;history_search_text=$selfText;history_counts=$counts;pagination=$pagination;steps=$steps}

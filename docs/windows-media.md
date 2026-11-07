@@ -83,8 +83,6 @@ The lower-level `koett-transcribe-engine.exe --offline --model-version compact
 .\koett-engine.exe app status
 .\koett-engine.exe app start
 .\koett-engine.exe app stop
-.\koett-engine.exe app pause
-.\koett-engine.exe app resume
 .\koett-engine.exe app cancel
 .\koett-engine.exe app copy-last
 .\koett-engine.exe app paste-last

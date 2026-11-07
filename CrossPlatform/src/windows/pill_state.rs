@@ -6,6 +6,8 @@ pub enum Phase {
     Done(String),
     /// Not pasted, but on the clipboard: one line, then it fades like Done.
     Copied,
+    /// ✕, Esc or the tray cancelled the dictation: one line, then it fades even under the pointer.
+    Cancelled,
     NotPasted {
         saved: bool,
     },
@@ -19,7 +21,6 @@ pub enum Phase {
 pub struct PaintKey {
     revision: u64,
     hovered: bool,
-    paused: bool,
     copied: bool,
     drawing: bool,
     media_result: bool,
@@ -30,7 +31,6 @@ pub struct PaintKey {
 pub struct State {
     pub phase: Phase,
     pub hovered: bool,
-    pub paused: bool,
     pub copied: bool,
     pub drawing: bool,
     pub media_result: bool,
@@ -46,7 +46,6 @@ impl Default for State {
         Self {
             phase: Phase::Hidden,
             hovered: false,
-            paused: false,
             copied: false,
             drawing: false,
             media_result: false,
@@ -71,9 +70,6 @@ impl State {
         self.sticky_result = false;
         self.notice = None;
         self.left_hover = None;
-        if self.phase == Phase::Recording {
-            self.paused = false;
-        }
     }
     /// A short line in place of the strip while recording.
     pub fn show_notice(&mut self, text: &str, now: u64) {
@@ -112,6 +108,7 @@ impl State {
             )),
             // Pressed Copy: leaves on Done's timing even under the pointer that pressed it.
             Phase::Copied if self.copied => Some(self.changed + 1750),
+            Phase::Cancelled => Some(self.changed + 1750),
             Phase::Copied if self.hovered => None,
             Phase::Copied => Some(
                 self.left_hover
@@ -139,7 +136,6 @@ impl State {
         PaintKey {
             revision: self.revision,
             hovered: self.hovered,
-            paused: self.paused,
             copied: self.copied,
             drawing: self.drawing,
             media_result: self.media_result,
@@ -180,11 +176,8 @@ mod tests {
         let hovered = s.paint_key();
         s.hover(true, 20);
         assert!(s.paint_key() == hovered);
-        s.paused = true;
-        assert!(s.paint_key() != hovered);
-        let paused = s.paint_key();
         s.drawing = true;
-        assert!(s.paint_key() != paused);
+        assert!(s.paint_key() != hovered);
         let drawing = s.paint_key();
         s.copy(30);
         assert!(s.paint_key() != drawing);
@@ -295,6 +288,16 @@ mod delivery_tests {
         s.hover(true, 10);
         s.set(Phase::Copied, 20);
         s.copy(20);
+        assert_eq!(s.opacity(1769, true), 1.0);
+        assert_eq!(s.opacity(1770, true), 0.0);
+    }
+
+    #[test]
+    fn cancelling_says_cancelled_then_fades_even_while_hovered() {
+        let mut s = State::default();
+        s.set(Phase::Recording, 0);
+        s.hover(true, 10);
+        s.set(Phase::Cancelled, 20);
         assert_eq!(s.opacity(1769, true), 1.0);
         assert_eq!(s.opacity(1770, true), 0.0);
     }

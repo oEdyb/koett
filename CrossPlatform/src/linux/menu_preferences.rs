@@ -42,51 +42,18 @@ pub(super) fn phase_name(status: &crate::state::AppStatus) -> &'static str {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum RecordingControl {
-    Status,
-    Pause,
-    Resume,
-}
-
-/// `status`, `pause` and `resume`, answered by the UI thread, which owns the
-/// recording's level state. Pausing here is the same as the pill's Pause button.
-pub(super) fn recording_control(
-    command: RecordingControl,
-    levels: Option<&crate::audio::AudioLevels>,
-) -> serde_json::Value {
+/// `status`, answered by the UI thread: the phase and the model in use.
+pub(super) fn recording_status() -> serde_json::Value {
     let phase = PHASE.read().map_or("starting", |phase| *phase);
     let model = ACTIVE
         .read()
         .map(|active| active.clone())
         .unwrap_or_default();
-    control_reply(command, phase, &model, levels)
+    status_reply(phase, &model)
 }
 
-fn control_reply(
-    command: RecordingControl,
-    phase: &str,
-    model: &str,
-    levels: Option<&crate::audio::AudioLevels>,
-) -> serde_json::Value {
-    let levels = levels.filter(|_| phase == "recording");
-    let change = match command {
-        RecordingControl::Status => None,
-        RecordingControl::Pause => Some(true),
-        RecordingControl::Resume => Some(false),
-    };
-    if let Some(paused) = change {
-        let Some(levels) = levels else {
-            return serde_json::json!({"ok":false,"phase":phase,"error":{"code":"not_recording","message":"Start dictation before this command"}});
-        };
-        levels.set_paused(paused);
-    }
-    serde_json::json!({
-        "ok": true,
-        "phase": phase,
-        "model": model,
-        "paused": levels.map(crate::audio::AudioLevels::paused),
-    })
+fn status_reply(phase: &str, model: &str) -> serde_json::Value {
+    serde_json::json!({"ok": true, "phase": phase, "model": model})
 }
 
 pub(super) fn operation(command: &str, busy: bool) -> serde_json::Value {
@@ -383,8 +350,7 @@ mod tests {
 
 #[cfg(test)]
 mod control_tests {
-    use super::{RecordingControl as Control, control_reply, phase_name};
-    use crate::audio::AudioLevels;
+    use super::{phase_name, status_reply};
     use crate::state::AppStatus;
 
     #[test]
@@ -397,45 +363,11 @@ mod control_tests {
     }
 
     #[test]
-    fn pause_and_resume_change_the_recording_and_report_it() {
-        let levels = AudioLevels::new();
-        let status = control_reply(Control::Status, "recording", "v2", Some(&levels));
+    fn status_reports_the_phase_and_model_with_no_pause_state() {
+        let status = status_reply("recording", "v2");
         assert_eq!(status["ok"], true);
         assert_eq!(status["phase"], "recording");
         assert_eq!(status["model"], "v2");
-        assert_eq!(status["paused"], false);
-        let paused = control_reply(Control::Pause, "recording", "v2", Some(&levels));
-        assert_eq!(paused["paused"], true);
-        assert!(levels.paused());
-        assert_eq!(
-            control_reply(Control::Status, "recording", "v2", Some(&levels))["paused"],
-            true
-        );
-        let resumed = control_reply(Control::Resume, "recording", "v2", Some(&levels));
-        assert_eq!(resumed["paused"], false);
-        assert!(!levels.paused());
-    }
-
-    #[test]
-    fn pause_outside_recording_fails_and_old_levels_stay_untouched() {
-        let levels = AudioLevels::new();
-        for phase in ["ready", "transcribing", "starting", "error"] {
-            for command in [Control::Pause, Control::Resume] {
-                let reply = control_reply(command, phase, "v2", Some(&levels));
-                assert_eq!(reply["ok"], false);
-                assert_eq!(reply["error"]["code"], "not_recording");
-            }
-            assert!(!levels.paused());
-            let status = control_reply(Control::Status, phase, "v2", Some(&levels));
-            assert_eq!(status["ok"], true);
-            assert!(
-                status["paused"].is_null(),
-                "no recording, so no pause state"
-            );
-        }
-        assert_eq!(
-            control_reply(Control::Pause, "recording", "v2", None)["ok"],
-            false
-        );
+        assert!(status.get("paused").is_none(), "Pause is gone everywhere");
     }
 }

@@ -52,24 +52,12 @@ struct Action {
     x: i32,
     width: i32,
 }
-const ACTIONS: [Action; 6] = [
+const ACTIONS: [Action; 4] = [
     Action {
         id: 101,
         label: "Cancel",
-        x: 40,
-        width: 60,
-    },
-    Action {
-        id: 102,
-        label: "Pause",
-        x: 102,
-        width: 72,
-    },
-    Action {
-        id: 103,
-        label: "History",
-        x: 176,
-        width: 60,
+        x: 258,
+        width: 28,
     },
     Action {
         id: 105,
@@ -93,7 +81,6 @@ const ACTIONS: [Action; 6] = [
 #[derive(Clone, Default, PartialEq)]
 struct Snapshot {
     mask: u8,
-    paused: bool,
     copied: bool,
     name: String,
 }
@@ -104,8 +91,6 @@ impl Snapshot {
         for (index, action) in ACTIONS.iter().enumerate() {
             let show = match action.id {
                 101 => active,
-                103 => active && !state.media_result,
-                102 => active && matches!(state.phase, Phase::Recording),
                 106 => matches!(state.phase, Phase::Recording),
                 104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted { .. }),
                 105 => {
@@ -120,15 +105,14 @@ impl Snapshot {
         }
         Self {
             mask,
-            paused: state.paused,
             copied: state.copied,
             name: match &state.phase {
                 Phase::Hidden => "Koett".into(),
-                Phase::Recording if state.paused => "Koett Paused".into(),
                 Phase::Recording => "Koett Recording".into(),
                 Phase::Transcribing => "Koett Transcribing".into(),
                 Phase::Done(_) if state.copied => "Koett Copied".into(),
                 Phase::Copied => "Koett Not pasted. Copied to clipboard".into(),
+                Phase::Cancelled => "Koett Cancelled".into(),
                 Phase::Done(preview) => format!(
                     "Koett Done. {}",
                     preview.chars().take(80).collect::<String>()
@@ -148,7 +132,6 @@ impl Snapshot {
     }
     fn label(&self, index: usize) -> &'static str {
         match ACTIONS[index].id {
-            102 if self.paused => "Resume",
             104 if self.copied => "Copied",
             _ => ACTIONS[index].label,
         }
@@ -266,13 +249,13 @@ mod tests {
         let mut state = State::default();
         state.set(Phase::Done("Media words".into()), 0);
         state.media_result = true;
-        assert_eq!(Snapshot::new(&state).mask, 0b10000);
+        assert_eq!(Snapshot::new(&state).mask, 0b0100);
         state.set(Phase::Transcribing, 1);
         state.media_result = true;
-        assert_eq!(Snapshot::new(&state).mask, 0b00001);
+        assert_eq!(Snapshot::new(&state).mask, 0b0001);
         state.set(Phase::Done("Drawing words".into()), 2);
         state.repeat_paste = true;
-        assert_eq!(Snapshot::new(&state).mask, 0b11000);
+        assert_eq!(Snapshot::new(&state).mask, 0b0110);
     }
     #[test]
     fn actions_follow_visible_pill_states_and_labels() {
@@ -280,23 +263,24 @@ mod tests {
         assert_eq!(Snapshot::new(&state).mask, 0);
         state.set(Phase::Recording, 0);
         assert!(!state.hovered);
-        assert_eq!(Snapshot::new(&state).mask, 0b100111);
+        assert_eq!(Snapshot::new(&state).mask, 0b1001, "Cancel and Stop only");
         state.hover(true, 1);
-        assert_eq!(Snapshot::new(&state).mask, 0b100111);
+        assert_eq!(Snapshot::new(&state).mask, 0b1001);
         state.hover(false, 2);
-        assert_eq!(Snapshot::new(&state).mask, 0b100111);
-        state.paused = true;
-        assert_eq!(Snapshot::new(&state).label(1), "Resume");
+        assert_eq!(Snapshot::new(&state).mask, 0b1001);
         state.set(Phase::Transcribing, 2);
-        assert_eq!(Snapshot::new(&state).mask, 0b00101);
+        assert_eq!(Snapshot::new(&state).mask, 0b0001);
+        state.set(Phase::Cancelled, 3);
+        assert_eq!(Snapshot::new(&state).mask, 0);
+        assert_eq!(Snapshot::new(&state).name, "Koett Cancelled");
         state.set(Phase::Done("test".into()), 3);
-        assert_eq!(Snapshot::new(&state).mask, 0b10000);
+        assert_eq!(Snapshot::new(&state).mask, 0b0100);
         state.copy(4);
-        assert_eq!(Snapshot::new(&state).label(4), "Copied");
+        assert_eq!(Snapshot::new(&state).label(2), "Copied");
         state.set(Phase::NotPasted { saved: true }, 5);
-        assert_eq!(Snapshot::new(&state).mask, 0b11000);
+        assert_eq!(Snapshot::new(&state).mask, 0b0110);
         state.set(Phase::NotPasted { saved: false }, 6);
-        assert_eq!(Snapshot::new(&state).mask, 0b11000);
+        assert_eq!(Snapshot::new(&state).mask, 0b0110);
         assert!(Snapshot::new(&state).name.contains("Not saved"));
     }
 }

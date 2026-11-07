@@ -16,13 +16,9 @@ $holdText=Read-Editor $editor;$holdClip=[Windows.Forms.Clipboard]::GetText();$st
 $holdPassed=($holdStart-match'Recording'-and$holdText.TrimEnd([char[]]"`r`n")-ceq$holdClip-and$holdClip-match'Phoebe')
 $editor.SetFocus();[Windows.Forms.SendKeys]::SendWait('^a{BACKSPACE}');Start-Sleep -Milliseconds 200
 Send-DictationCommand 9;Start-Sleep -Milliseconds 500
-$overlay=[LabDriver]::ByClass('KoettOverlayWindow');$null=Invoke-LabButton $overlay 'Pause';$paused=Get-DictationPhase;$steps+=Get-LabStep 'real-paused'
-Start-Sleep -Seconds 1;$null=Invoke-LabButton $overlay 'Resume';$resumed=Get-DictationPhase
-Start-Sleep -Seconds 7;Send-DictationCommand 9;Start-Sleep -Seconds 1
-$pauseText=Read-Editor $editor;$pauseClip=[Windows.Forms.Clipboard]::GetText();$steps+=Get-LabStep 'resumed-result'
-$pausePassed=($paused-match'Paused'-and$resumed-match'Recording'-and$pauseText.TrimEnd([char[]]"`r`n")-ceq$pauseClip-and$pauseClip.Length-gt0)
+$overlay=[LabDriver]::ByClass('KoettOverlayWindow')
 $editor.SetFocus();[Windows.Forms.SendKeys]::SendWait('^a{BACKSPACE}');Start-Sleep -Milliseconds 200
-Send-DictationCommand 9;Start-Sleep -Milliseconds 700;$null=Invoke-LabButton $overlay 'Cancel';Start-Sleep -Seconds 2
+Send-DictationCommand 9;Start-Sleep -Milliseconds 700;$null=Invoke-LabButton $overlay 'Cancel';Start-Sleep -Seconds 3
 $cancelText=Read-Editor $editor;$cancelPhase=Get-DictationPhase;$steps+=Get-LabStep 'real-cancelled'
 $db=$env:APPDATA+'\DybergCo\Koett\data\History.sqlite3';$null=Invoke-WebRequest -UseBasicParsing -Method Post http://10.0.2.2:18768/history -InFile $db
-@{passed=($holdPassed-and$pausePassed-and$cancelText.Trim().Length-eq0-and-not[LabDriver]::IsWindowVisible($overlay));artifact=Get-LabArtifact;hold=$holdPassed;hold_start=$holdStart;hold_text=$holdText;pause_resume=$pausePassed;paused=$paused;resumed=$resumed;pause_text=$pauseText;cancel_text=$cancelText;cancel_phase=$cancelPhase;steps=$steps}
+@{passed=($holdPassed-and$cancelText.Trim().Length-eq0-and-not[LabDriver]::IsWindowVisible($overlay));artifact=Get-LabArtifact;hold=$holdPassed;hold_start=$holdStart;hold_text=$holdText;cancel_text=$cancelText;cancel_phase=$cancelPhase;steps=$steps}

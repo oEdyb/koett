@@ -4,24 +4,24 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 static MESSAGE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| unsafe { RegisterWindowMessageW(w!("Koett.Automation.v1")) });
-const ACTIONS: [&str; 17] = [
-    "status",
-    "start",
-    "stop",
-    "toggle",
-    "pause",
-    "resume",
-    "cancel",
-    "copy-last",
-    "paste-last",
-    "settings",
-    "history",
-    "dictionary",
-    "media",
-    "quit",
-    "recovery",
-    "retry-save",
-    "copy-unsaved",
+/// Each action's message code. Codes never change meaning: an older running Koett may
+/// answer a newer command line. 4 and 5 were Pause and Resume, removed.
+const ACTIONS: [(&str, usize); 15] = [
+    ("status", 0),
+    ("start", 1),
+    ("stop", 2),
+    ("toggle", 3),
+    ("cancel", 6),
+    ("copy-last", 7),
+    ("paste-last", 8),
+    ("settings", 9),
+    ("history", 10),
+    ("dictionary", 11),
+    ("media", 12),
+    ("quit", 13),
+    ("recovery", 14),
+    ("retry-save", 15),
+    ("copy-unsaved", 16),
 ];
 pub(super) fn failure(code: &str, fix: &str, message: String) -> String {
     println!(
@@ -34,7 +34,7 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
     if arguments == ["help"] || arguments == ["--help"] || arguments == ["help", "--json"] {
         println!(
             "{}",
-            serde_json::json!({"ok":true,"commands":ACTIONS,"usage":"koett-engine app <action>","outputs":[],"warnings":[]})
+            serde_json::json!({"ok":true,"commands":ACTIONS.map(|(name, _)| name),"usage":"koett-engine app <action>","outputs":[],"warnings":[]})
         );
         return Ok(());
     }
@@ -47,7 +47,8 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
     };
     let index = ACTIONS
         .iter()
-        .position(|value| *value == action)
+        .find(|(name, _)| *name == action.as_str())
+        .map(|(_, code)| *code)
         .ok_or_else(|| {
             failure(
                 "unknown_action",
@@ -107,7 +108,7 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
         };
         println!(
             "{}",
-            serde_json::json!({"ok":true,"status":status,"paused":response&0x100!=0,"media_active":response&0x200!=0,"unsaved_media":response&0x400!=0,"recovery_busy":response&0x800!=0,"unsaved_transcripts":response>>16,"outputs":[],"warnings":[]})
+            serde_json::json!({"ok":true,"status":status,"media_active":response&0x200!=0,"unsaved_media":response&0x400!=0,"recovery_busy":response&0x800!=0,"unsaved_transcripts":response>>16,"outputs":[],"warnings":[]})
         );
     } else {
         println!(
@@ -140,11 +141,6 @@ pub(super) fn dispatch(
                 };
                 return Some(
                     state
-                        | if app.levels.as_ref().is_some_and(AudioLevels::paused) {
-                            0x100
-                        } else {
-                            0
-                        }
                         | if media_view::active() { 0x200 } else { 0 }
                         | if media_view::needs_copy() { 0x400 } else { 0 }
                         | if recovery::busy() { 0x800 } else { 0 }
@@ -167,10 +163,6 @@ pub(super) fn dispatch(
                 ) =>
             {
                 app.toggle()
-            }
-            4 | 5 if app.status == AppStatus::Recording => {
-                app.levels.as_ref()?.set_paused(wparam.0 == 4);
-                app.pill_state.paused = wparam.0 == 4;
             }
             6 => {
                 app.cancel_current();

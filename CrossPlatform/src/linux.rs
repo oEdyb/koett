@@ -370,8 +370,6 @@ pub fn run() -> Result<(), String> {
                 | "undo"
                 | "draw-lock"
                 | "status"
-                | "pause"
-                | "resume"
                 | "history"
                 | "dictionary"
                 | "check-updates"
@@ -391,8 +389,6 @@ pub fn run() -> Result<(), String> {
                 if matches!(
                     command.as_str(),
                     "status"
-                        | "pause"
-                        | "resume"
                         | "undo"
                         | "history"
                         | "dictionary"
@@ -417,8 +413,6 @@ pub fn run() -> Result<(), String> {
                 | "undo"
                 | "draw-lock"
                 | "status"
-                | "pause"
-                | "resume"
                 | "check-updates"
                 | "rollback-update"
         ) && serde_json::from_str::<serde_json::Value>(&response).map_err(|e| e.to_string())?["ok"]

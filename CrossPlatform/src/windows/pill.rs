@@ -202,7 +202,10 @@ impl Renderer {
                         DWRITE_MEASURING_MODE_NATURAL,
                     );
                 };
-                if matches!(state.phase, Phase::Done(_) | Phase::Copied) {
+                if matches!(
+                    state.phase,
+                    Phase::Done(_) | Phase::Copied | Phase::Cancelled
+                ) {
                     for (i, h) in [6.0, 12.0, 18.0, 12.0, 6.0].iter().enumerate() {
                         let x = 16.0 + i as f32 * 3.0;
                         target.FillRoundedRectangle(
@@ -214,17 +217,6 @@ impl Renderer {
                             &coral,
                         );
                     }
-                } else if matches!(state.phase, Phase::Recording) && state.hovered {
-                    target.FillRoundedRectangle(
-                        &D2D1_ROUNDED_RECT {
-                            rect: rect(18.0, 18.0, 30.0, 30.0),
-                            radiusX: 3.0,
-                            radiusY: 3.0,
-                        },
-                        &coral,
-                    );
-                } else if state.paused {
-                    draw("Ⅱ", 18.0, 32.0, false);
                 } else if state.drawing {
                     draw("✎", 16.0, 33.0, false);
                 } else if matches!(state.phase, Phase::NotPasted { .. } | Phase::Error { .. }) {
@@ -256,8 +248,8 @@ impl Renderer {
                         &coral,
                     );
                 }
-                let notice = state.notice(now).filter(|_| active && !state.hovered);
-                if (active && !state.hovered && notice.is_none()) || (!active && morph < 1.0) {
+                let notice = state.notice(now).filter(|_| active);
+                if (active && notice.is_none()) || (!active && morph < 1.0) {
                     let wave = target.CreateSolidColorBrush(
                         &if light {
                             color(0.11, 0.098, 0.09)
@@ -320,23 +312,13 @@ impl Renderer {
                     }
                 }
                 if active {
-                    if state.hovered {
-                        draw("Cancel", 44.0, 99.0, false);
-                        if matches!(state.phase, Phase::Recording) {
-                            draw(
-                                if state.paused { "Resume" } else { "Pause" },
-                                105.0,
-                                172.0,
-                                false,
-                            );
-                        }
-                        if !state.media_result {
-                            draw("History", 178.0, 235.0, false);
-                        }
-                    } else if let Some(notice) = notice {
+                    if let Some(notice) = notice {
                         draw(notice, 44.0, 235.0, false);
                     }
-                    if !matches!(state.phase, Phase::Transcribing) {
+                    // Hover turns the clock into ✕ in the same place; the strip stays.
+                    if state.hovered {
+                        draw("✕", 238.0, 284.0, true);
+                    } else if !matches!(state.phase, Phase::Transcribing) {
                         draw(
                             &format!("{}:{:02}", elapsed / 60, elapsed % 60),
                             238.0,
@@ -380,6 +362,7 @@ impl Renderer {
                             draw("Copy", 245.0, 292.0, false);
                         }
                         Phase::Copied => draw("Copied to clipboard", 44.0, 284.0, false),
+                        Phase::Cancelled => draw("Cancelled", 44.0, 284.0, false),
                         Phase::Error { message, .. } => draw(message, 44.0, 284.0, false),
                         _ => {}
                     }
