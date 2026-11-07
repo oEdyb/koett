@@ -114,6 +114,22 @@ final class DictationLifecycleTests: XCTestCase {
         }
     }
 
+    func testPasteTargetIsCapturedAtStopBeforeTranscriptionBegins() throws {
+        let (controller, _, failed) = try startParakeetDictation()
+        defer { controller.cancelDictation(); controller.recordingOverlay.stop(); try? FileManager.default.removeItem(at: failed) }
+        XCTAssertNil(controller.automaticPasteTarget, "Recording does not bind the starting application")
+        var captures = 0
+        controller.stopRecording(releaseEventTimestamp: ProcessInfo.processInfo.systemUptime, captureTarget: {
+            captures += 1
+            XCTAssertEqual(controller.state, .recording)
+            XCTAssertNotNil(controller.recorder)
+            return nil
+        })
+        XCTAssertEqual(captures, 1)
+        XCTAssertEqual(controller.state, .transcribing)
+        XCTAssertNil(controller.automaticPasteTarget, "An absent Stop target never falls back to the starting app")
+    }
+
     func testCancelAfterStopDiscardsTheTranscriptionAndItsAudio() async throws {
         let (controller, url, failed) = try startParakeetDictation()
         defer { try? FileManager.default.removeItem(at: failed) }
