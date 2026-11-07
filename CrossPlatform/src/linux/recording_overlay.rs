@@ -448,6 +448,9 @@ impl Pill {
     }
 }
 
+/// Said once, then the pill fades like Done.
+pub(super) const COPIED: &str = "Copied to clipboard";
+
 pub struct RecordingOverlay {
     window: gtk::Window,
     drawing: gtk::DrawingArea,
@@ -459,6 +462,8 @@ pub struct RecordingOverlay {
     paste: gtk::Button,
     history: gtk::Button,
     latest: Rc<RefCell<Option<String>>>,
+    /// Done after a paste that didn't happen, with the text on the clipboard.
+    copied: std::cell::Cell<bool>,
     acted: Rc<std::cell::Cell<Option<Acted>>>,
     body: gtk::Box,
     warning: gtk::Label,
@@ -965,6 +970,7 @@ impl RecordingOverlay {
             paste,
             history,
             latest,
+            copied: std::cell::Cell::new(false),
             acted,
             body: layout,
             warning,
@@ -1037,6 +1043,11 @@ impl RecordingOverlay {
         } else {
             self.body.remove_css_class("koett-pill-fade");
         }
+    }
+
+    /// The next Done says the text was copied instead of showing it.
+    pub fn set_copied(&self, copied: bool) {
+        self.copied.set(copied);
     }
 
     /// Up on screen, including a result still waiting to be read.
@@ -1188,6 +1199,7 @@ impl RecordingOverlay {
             Phase::Transcribing => state.to_string(),
             Phase::Recovery => "Not pasted · saved".into(),
             Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
+            Phase::Done if self.copied.get() => COPIED.into(),
             Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
             Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
@@ -1205,6 +1217,7 @@ impl RecordingOverlay {
             // their right-hand buttons (Mac `resultRect`).
             let (x, width) = match phase {
                 Phase::Recovery => (44.0, PASTE_X as i32 - 10 - 44),
+                Phase::Done if self.copied.get() => (44.0, WIDTH - 44 - 16),
                 Phase::Done | Phase::Media => (44.0, COPY_X as i32 - 10 - 44),
                 Phase::Message => (44.0, WIDTH - 44 - 16),
                 _ => (40.0, 246),
@@ -1229,10 +1242,11 @@ impl RecordingOverlay {
         self.pause.set_visible(phase == Phase::Recording);
         self.pause
             .set_label(if paused { "Resume" } else { "Pause" });
-        self.copy.set_visible(matches!(
-            phase,
-            Phase::Done | Phase::Recovery | Phase::Media
-        ));
+        // Copied has nothing left to do, so it's one line with no button.
+        self.copy.set_visible(
+            matches!(phase, Phase::Done | Phase::Recovery | Phase::Media)
+                && !(phase == Phase::Done && self.copied.get()),
+        );
         self.paste.set_visible(phase == Phase::Recovery);
         self.history
             .set_visible(matches!(phase, Phase::Recording | Phase::Transcribing));

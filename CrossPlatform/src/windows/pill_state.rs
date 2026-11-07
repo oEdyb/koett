@@ -4,8 +4,15 @@ pub enum Phase {
     Recording,
     Transcribing,
     Done(String),
-    NotPasted { saved: bool },
-    Error { message: String, rescue: bool },
+    /// Not pasted, but on the clipboard: one line, then it fades like Done.
+    Copied,
+    NotPasted {
+        saved: bool,
+    },
+    Error {
+        message: String,
+        rescue: bool,
+    },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -103,6 +110,12 @@ impl State {
                         1750
                     },
             )),
+            Phase::Copied if self.hovered => None,
+            Phase::Copied => Some(
+                self.left_hover
+                    .map(|t| t + 800)
+                    .unwrap_or(self.changed + 1750),
+            ),
             Phase::Error { rescue: false, .. } => Some(self.changed + 5000),
             _ => None,
         };
@@ -136,7 +149,7 @@ impl State {
         self.hovered
             || matches!(
                 self.phase,
-                Phase::Done(_) | Phase::NotPasted { .. } | Phase::Error { .. }
+                Phase::Done(_) | Phase::Copied | Phase::NotPasted { .. } | Phase::Error { .. }
             )
     }
 }
@@ -238,8 +251,18 @@ mod tests {
     }
 }
 
-pub fn delivery_result(text: String, pasted: bool, saved: bool, history_warning: bool) -> Phase {
-    if !pasted {
+/// `copied`: a paste that didn't happen left the text on the clipboard, checked by
+/// reading it back. Only then does a failed paste go away by itself.
+pub fn delivery_result(
+    text: String,
+    pasted: bool,
+    copied: bool,
+    saved: bool,
+    history_warning: bool,
+) -> Phase {
+    if !pasted && copied && saved && !history_warning {
+        Phase::Copied
+    } else if !pasted {
         Phase::NotPasted { saved }
     } else if !saved || history_warning {
         Phase::Error {
@@ -258,23 +281,46 @@ mod delivery_tests {
         for saved in [false, true] {
             for warning in [false, true] {
                 assert!(
-                    matches!(delivery_result("text".into(), false, saved, warning), Phase::NotPasted { saved: actual } if actual == saved)
+                    matches!(delivery_result("text".into(), false, false, saved, warning), Phase::NotPasted { saved: actual } if actual == saved)
                 );
             }
         }
     }
     #[test]
+    fn a_failed_paste_that_copied_fades_unless_history_also_failed() {
+        assert_eq!(
+            delivery_result("text".into(), false, true, true, false),
+            Phase::Copied
+        );
+        assert_eq!(
+            delivery_result("text".into(), false, true, false, false),
+            Phase::NotPasted { saved: false }
+        );
+        assert_eq!(
+            delivery_result("text".into(), false, true, true, true),
+            Phase::NotPasted { saved: true }
+        );
+        let mut copied = State::default();
+        copied.set(Phase::Copied, 0);
+        assert_eq!(copied.opacity(1000, true), 1.0);
+        assert_eq!(copied.opacity(1750, true), 0.0, "Done's timing");
+        copied.set(Phase::Copied, 0);
+        copied.hover(true, 100);
+        assert_eq!(copied.opacity(60_000, true), 1.0, "hover keeps it");
+    }
+
+    #[test]
     fn successful_delivery_still_surfaces_storage_failure() {
         assert!(matches!(
-            delivery_result("text".into(), true, true, false),
+            delivery_result("text".into(), true, false, true, false),
             Phase::Done(_)
         ));
         assert!(matches!(
-            delivery_result("text".into(), true, true, true),
+            delivery_result("text".into(), true, false, true, true),
             Phase::Error { rescue: true, .. }
         ));
         assert!(matches!(
-            delivery_result("text".into(), true, false, true),
+            delivery_result("text".into(), true, false, false, true),
             Phase::Error { rescue: true, .. }
         ));
     }

@@ -37,6 +37,10 @@
   right. It stays 1.75 s, or for as long as it is hovered, then fades out over
   0.25 s. A delivery failure after a save shows `Not pasted · saved` with
   **Paste** and **Copy** and stays until one is used or the pill is clicked.
+  On Linux and Windows, a text-only result that wasn't pasted but is checked to
+  be on the clipboard shows `Copied to clipboard` instead, one line with no
+  button, on Done's timing. `Not pasted` remains for a clipboard that failed too,
+  for results with a drawing, and for a history that failed.
   Errors that hold text or audio to rescue also stay until clicked; other
   errors leave after five seconds. Reduce Motion skips the morph and fade.
 - A nonactivating bottom-center 300×48 pill shows a fixed-width strip of the

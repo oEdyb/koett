@@ -128,6 +128,7 @@ impl Snapshot {
                 Phase::Recording => "Koett Recording".into(),
                 Phase::Transcribing => "Koett Transcribing".into(),
                 Phase::Done(_) if state.copied => "Koett Copied".into(),
+                Phase::Copied => "Koett Not pasted. Copied to clipboard".into(),
                 Phase::Done(preview) => format!(
                     "Koett Done. {}",
                     preview.chars().take(80).collect::<String>()

@@ -113,6 +113,8 @@ enum TrayUpdate {
     Completed(String),
     DeliveryStarted,
     Delivered,
+    /// The paste didn't happen, but the text is on the clipboard.
+    Copied,
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
     Shortcut(String),
@@ -663,6 +665,9 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::DeliveryStarted => {
                         let _ = worker_ui.send(window::Update::DeliveryStarted);
                     }
+                    TrayUpdate::Copied => {
+                        let _ = worker_ui.send(window::Update::Copied);
+                    }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
                     }
@@ -860,13 +865,23 @@ fn run_x11(
                     let target = paste_request
                         .as_ref()
                         .map_or_else(|| output.focused_window(), |request| request.target);
-                    let pasted = recovery::last_text()
+                    let last = recovery::last_text();
+                    let pasted = last
+                        .clone()
                         .and_then(|text| output.deliver(&text, target, settings.paste_shortcut));
-                    report_delivery(tray, &pasted);
+                    let shown = report_outcome(
+                        tray,
+                        settle_delivery(
+                            pasted.clone(),
+                            last.as_deref().ok(),
+                            recovery::ensure_copied,
+                        ),
+                    );
+                    // A script asked for a paste, so it hears that it didn't happen.
                     if let Some(request) = paste_request {
-                        request.finish(pasted.clone());
+                        request.finish(pasted);
                     }
-                    if let Err(error) = pasted {
+                    if let Err(error) = shown {
                         update_tray_status(tray, &format!("@error:{error}"));
                     }
                 }
@@ -979,7 +994,14 @@ fn run_x11(
                     None => Ok(()),
                 }
                 .and_then(|()| output.deliver(&final_text, target, paste_shortcut));
-                report_delivery(tray, &delivered);
+                let delivered = report_outcome(
+                    tray,
+                    settle_delivery(
+                        delivered,
+                        sheet.is_none().then_some(final_text.as_str()),
+                        recovery::ensure_copied,
+                    ),
+                );
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
@@ -1574,15 +1596,24 @@ async fn run_wayland(
                             } else {
                                 Ok(())
                             };
-                            image_delivery.and(result).and(copied)
+                            image_delivery
+                                .and(result)
+                                .and(copied)
+                                .map_err(|error| (error, png.is_none().then_some(text)))
                         }
-                        Err(error) => Err(error),
+                        Err(error) => Err((error, None)),
                     };
-                    report_delivery(tray, &pasted);
+                    let (pasted, text) = match pasted {
+                        Ok(()) => (Ok(()), None),
+                        Err((error, text)) => (Err(error), text),
+                    };
+                    let shown =
+                        report_outcome(tray, settle_delivery_async(pasted.clone(), text).await);
+                    // A script asked for a paste, so it hears that it didn't happen.
                     if let Some(request) = paste_request {
-                        request.finish(pasted.clone());
+                        request.finish(pasted);
                     }
-                    if let Err(error) = pasted {
+                    if let Err(error) = shown {
                         update_tray_status(tray, &format!("@error:{error}"));
                     }
                 }
@@ -1716,7 +1747,10 @@ async fn run_wayland(
                 delivered =
                     delivered.and(restore_sketch_clipboard(output.as_ref(), png, &text).await);
             }
-            report_delivery(tray, &delivered);
+            let delivered = report_outcome(
+                tray,
+                settle_delivery_async(delivered, sheet.is_none().then(|| text.clone())).await,
+            );
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
                 &text,
@@ -3104,14 +3138,54 @@ fn require_x11_target(target: Option<u32>, focused: Option<u32>) -> Result<(), S
     )
 }
 
-fn report_delivery(tray: Option<&TrayUpdates>, delivered: &Result<(), String>) {
+/// What a dictation's delivery ended as, from the user's side.
+#[derive(Debug, PartialEq)]
+enum Outcome {
+    Pasted,
+    /// Not pasted, but on the clipboard: said once, then the pill goes.
+    Copied,
+    Failed(String),
+}
+
+/// A text-only result that didn't paste is still fine if it's on the clipboard. Results
+/// with an image keep the old rescue, since copying the text would replace the image.
+fn settle_delivery(
+    delivered: Result<(), String>,
+    text: Option<&str>,
+    ensure_copied: impl FnOnce(&str) -> bool,
+) -> Outcome {
+    match (delivered, text) {
+        (Ok(()), _) => Outcome::Pasted,
+        (Err(_), Some(text)) if ensure_copied(text) => Outcome::Copied,
+        (Err(error), _) => Outcome::Failed(error),
+    }
+}
+
+/// Tells the window, and returns the error still worth showing.
+fn report_outcome(tray: Option<&TrayUpdates>, outcome: Outcome) -> Result<(), String> {
     if let Some(tray) = tray {
-        let _ = tray.sender.send(if delivered.is_ok() {
-            TrayUpdate::Delivered
-        } else {
-            TrayUpdate::DeliveryFailed
+        let _ = tray.sender.send(match &outcome {
+            Outcome::Pasted => TrayUpdate::Delivered,
+            Outcome::Copied => TrayUpdate::Copied,
+            Outcome::Failed(_) => TrayUpdate::DeliveryFailed,
         });
     }
+    match outcome {
+        Outcome::Failed(error) => Err(error),
+        Outcome::Pasted | Outcome::Copied => Ok(()),
+    }
+}
+
+async fn settle_delivery_async(delivered: Result<(), String>, text: Option<String>) -> Outcome {
+    if delivered.is_ok() || text.is_none() {
+        return settle_delivery(delivered, None, |_| false);
+    }
+    let error = delivered.clone();
+    tokio::task::spawn_blocking(move || {
+        settle_delivery(delivered, text.as_deref(), recovery::ensure_copied)
+    })
+    .await
+    .unwrap_or_else(|_| settle_delivery(error, None, |_| false))
 }
 
 fn delivery_results(
@@ -3167,7 +3241,10 @@ mod delivery_tests {
             let tray = TrayUpdates { sender };
             let delivered = require_x11_target(target, focused);
             assert!(delivered.is_err());
-            report_delivery(Some(&tray), &delivered);
+            let _ = report_outcome(
+                Some(&tray),
+                settle_delivery(delivered.clone(), None, |_| false),
+            );
             assert!(matches!(
                 receiver.try_recv(),
                 Ok(TrayUpdate::DeliveryFailed)
@@ -3185,19 +3262,72 @@ mod delivery_tests {
             Ok(TrayUpdate::DeliveryStarted)
         ));
         assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Completed(_))));
-        report_delivery(Some(&tray), &Err("target changed".into()));
+        let _ = report_outcome(
+            Some(&tray),
+            settle_delivery(Err("target changed".into()).clone(), None, |_| false),
+        );
         assert!(matches!(
             receiver.try_recv(),
             Ok(TrayUpdate::DeliveryFailed)
         ));
     }
     #[test]
+    fn a_paste_that_failed_but_copied_says_so_once_and_shows_no_error() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        let outcome = settle_delivery(Err("target changed".into()), Some("hello"), |text| {
+            assert_eq!(text, "hello");
+            true
+        });
+        assert_eq!(outcome, Outcome::Copied);
+        assert_eq!(report_outcome(Some(&tray), outcome), Ok(()));
+        assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Copied)));
+        assert!(
+            receiver.try_recv().is_err(),
+            "nothing else, so the pill says it once"
+        );
+    }
+
+    #[test]
+    fn only_a_clipboard_that_failed_too_keeps_the_sticky_rescue() {
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        let outcome = settle_delivery(Err("target changed".into()), Some("hello"), |_| false);
+        assert_eq!(
+            report_outcome(Some(&tray), outcome),
+            Err("target changed".into())
+        );
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::DeliveryFailed)
+        ));
+    }
+
+    #[test]
+    fn an_image_result_keeps_the_rescue_and_a_paste_never_checks_the_clipboard() {
+        let image = settle_delivery(Err("not pasted".into()), None, |_| unreachable!());
+        assert_eq!(image, Outcome::Failed("not pasted".into()));
+        let pasted = settle_delivery(Ok(()), Some("hello"), |_| unreachable!());
+        assert_eq!(pasted, Outcome::Pasted);
+    }
+
+    #[test]
     fn delivery_recovery_is_typed_and_independent_of_storage() {
         let (sender, receiver) = mpsc::channel();
         let tray = TrayUpdates { sender };
-        report_delivery(Some(&tray), &Ok(()));
+        let _ = report_outcome(
+            Some(&tray),
+            settle_delivery(Ok(()).clone(), None, |_| false),
+        );
         assert!(matches!(receiver.try_recv(), Ok(TrayUpdate::Delivered)));
-        report_delivery(Some(&tray), &Err("guarded clipboard-only result".into()));
+        let _ = report_outcome(
+            Some(&tray),
+            settle_delivery(
+                Err("guarded clipboard-only result".into()).clone(),
+                None,
+                |_| false,
+            ),
+        );
         assert!(matches!(
             receiver.try_recv().unwrap(),
             TrayUpdate::DeliveryFailed

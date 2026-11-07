@@ -202,7 +202,7 @@ impl Renderer {
                         DWRITE_MEASURING_MODE_NATURAL,
                     );
                 };
-                if matches!(state.phase, Phase::Done(_)) {
+                if matches!(state.phase, Phase::Done(_) | Phase::Copied) {
                     for (i, h) in [6.0, 12.0, 18.0, 12.0, 6.0].iter().enumerate() {
                         let x = 16.0 + i as f32 * 3.0;
                         target.FillRoundedRectangle(
@@ -379,6 +379,7 @@ impl Renderer {
                             draw("Paste", 192.0, 237.0, false);
                             draw("Copy", 245.0, 292.0, false);
                         }
+                        Phase::Copied => draw("Copied to clipboard", 44.0, 284.0, false),
                         Phase::Error { message, .. } => draw(message, 44.0, 284.0, false),
                         _ => {}
                     }

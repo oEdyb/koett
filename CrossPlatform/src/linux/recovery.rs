@@ -18,6 +18,82 @@ fn paste_last_presses_paste_and_copy_last_does_not() {
     assert!(!presses_paste("copy-last"));
 }
 
+fn wayland() -> bool {
+    std::env::var_os("WAYLAND_DISPLAY").is_some()
+}
+
+pub fn copy_text(text: &str) -> Result<(), String> {
+    let (program, args): (&str, &[&str]) = if wayland() {
+        ("wl-copy", &["--type", "text/plain;charset=utf-8"])
+    } else {
+        ("xclip", &["-selection", "clipboard"])
+    };
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    child
+        .stdin
+        .take()
+        .ok_or("Clipboard input unavailable")?
+        .write_all(text.as_bytes())
+        .map_err(|e| e.to_string())?;
+    if !child.wait().map_err(|e| e.to_string())?.success() {
+        return Err("Clipboard write failed".into());
+    }
+    Ok(())
+}
+
+/// The clipboard's text, or None if it can't be read within two seconds. An owner that
+/// never answers would otherwise hold the result back.
+fn clipboard_text() -> Option<String> {
+    let (program, args): (&str, &[&str]) = if wayland() {
+        (
+            "wl-paste",
+            &["--no-newline", "--type", "text/plain;charset=utf-8"],
+        )
+    } else {
+        (
+            "xclip",
+            &["-selection", "clipboard", "-o", "-t", "UTF8_STRING"],
+        )
+    };
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .ok()?;
+    let mut stdout = child.stdout.take()?;
+    let reader = std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        std::io::Read::read_to_end(&mut stdout, &mut bytes).map(|_| bytes)
+    });
+    let started = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => break,
+            Ok(Some(_)) | Err(_) => return None,
+            Ok(None) if started.elapsed() > std::time::Duration::from_secs(2) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(10)),
+        }
+    }
+    String::from_utf8(reader.join().ok()?.ok()?).ok()
+}
+
+/// Whether `text` is on the clipboard, copying it if it isn't. Checked by reading it
+/// back, so a copy that silently went nowhere doesn't count.
+pub fn ensure_copied(text: &str) -> bool {
+    let holds = || clipboard_text().is_some_and(|held| held.trim_end() == text.trim_end());
+    holds() || (copy_text(text).is_ok() && holds())
+}
+
 pub fn operation(command: &str) -> Result<serde_json::Value, String> {
     match command {
         "recovery-status" => {
@@ -32,28 +108,7 @@ pub fn operation(command: &str) -> Result<serde_json::Value, String> {
             } else {
                 recovery::last().ok_or("Last Transcript is unavailable")?
             };
-            {
-                let (program, args): (&str, &[&str]) =
-                    if std::env::var_os("WAYLAND_DISPLAY").is_some() {
-                        ("wl-copy", &["--type", "text/plain;charset=utf-8"])
-                    } else {
-                        ("xclip", &["-selection", "clipboard"])
-                    };
-                let mut child = Command::new(program)
-                    .args(args)
-                    .stdin(Stdio::piped())
-                    .spawn()
-                    .map_err(|e| e.to_string())?;
-                child
-                    .stdin
-                    .take()
-                    .ok_or("Clipboard input unavailable")?
-                    .write_all(text.as_bytes())
-                    .map_err(|e| e.to_string())?;
-                if !child.wait().map_err(|e| e.to_string())?.success() {
-                    return Err("Clipboard write failed".into());
-                }
-            }
+            copy_text(&text)?;
         }
         "media-transcripts" | "failed-transcripts" | "failed-recordings" => {
             let path = match command {
