@@ -336,8 +336,10 @@ pub(super) fn shows_actions(phase: Phase, hovered: bool) -> bool {
 /// What the user did on a finished pill.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Acted {
-    /// Copy succeeded: close after 1 s, even while hovered.
+    /// Copy succeeded: the pill becomes Copied to clipboard and fades, even while hovered.
     Copied,
+    /// Copy failed: the row says so; its buttons keep their size and place.
+    CopyFailed,
     /// Paste (Not pasted): close now; the paste runs from the tray action.
     Pasted,
 }
@@ -464,6 +466,8 @@ pub struct RecordingOverlay {
     latest: Rc<RefCell<Option<String>>>,
     /// Done after a paste that didn't happen, with the text on the clipboard.
     copied: std::cell::Cell<bool>,
+    /// Copy was pressed and failed; said in the row until the pill changes.
+    copy_failed: std::cell::Cell<bool>,
     acted: Rc<std::cell::Cell<Option<Acted>>>,
     body: gtk::Box,
     warning: gtk::Label,
@@ -909,14 +913,12 @@ impl RecordingOverlay {
             let latest = latest.clone();
             let acted = acted.clone();
             move |button| {
+                // Never relabel the button: a longer label grows past the pill's edge.
                 if let Some(text) = latest.borrow().as_ref() {
                     match super::feedback::copy_transcript(&button.clipboard(), text) {
-                        Ok(()) => {
-                            button.set_label("Copied");
-                            acted.set(Some(Acted::Copied));
-                        }
+                        Ok(()) => acted.set(Some(Acted::Copied)),
                         Err(error) => {
-                            button.set_label("Copy failed");
+                            acted.set(Some(Acted::CopyFailed));
                             eprintln!("Copy transcript: {error}");
                         }
                     }
@@ -971,6 +973,7 @@ impl RecordingOverlay {
             history,
             latest,
             copied: std::cell::Cell::new(false),
+            copy_failed: std::cell::Cell::new(false),
             acted,
             body: layout,
             warning,
@@ -1050,6 +1053,11 @@ impl RecordingOverlay {
         self.copied.set(copied);
     }
 
+    /// Copy failed on this pill: the row says so until the pill changes.
+    pub fn set_copy_failed(&self) {
+        self.copy_failed.set(true);
+    }
+
     /// Up on screen, including a result still waiting to be read.
     pub fn is_shown(&self) -> bool {
         self.window.is_visible()
@@ -1103,6 +1111,7 @@ impl RecordingOverlay {
         if pill.phase != phase && matches!(phase, Phase::Done | Phase::Recovery | Phase::Media) {
             self.copy.set_label("Copy");
             self.acted.set(None);
+            self.copy_failed.set(false);
         }
         if started.is_some() && pill.started != started {
             pill.timeline.reset();
@@ -1197,9 +1206,11 @@ impl RecordingOverlay {
             }))),
             Phase::Transcribing if strip || actions => progress_label(progress.0, progress.1),
             Phase::Transcribing => state.to_string(),
+            Phase::Recovery if self.copy_failed.get() => "Copy failed · saved".into(),
             Phase::Recovery => "Not pasted · saved".into(),
             Phase::Media => result_preview(media_preview.unwrap_or("Media transcript")),
             Phase::Done if self.copied.get() => COPIED.into(),
+            Phase::Done if self.copy_failed.get() => "Copy failed".into(),
             Phase::Done => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
             Phase::Message => message.unwrap_or_default().to_string(),
             Phase::Hidden => String::new(),
