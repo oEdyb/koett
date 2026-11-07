@@ -1554,13 +1554,15 @@ impl WindowsApp {
             let _ =
                 windows::Win32::UI::WindowsAndMessaging::GetWindowRect(self.overlay, &mut bounds);
         }
-        self.pill_state.hover(
-            point.x >= bounds.left
-                && point.x < bounds.right
-                && point.y >= bounds.top
-                && point.y < bounds.bottom,
-            now,
-        );
+        let inside = point.x >= bounds.left
+            && point.x < bounds.right
+            && point.y >= bounds.top
+            && point.y < bounds.bottom;
+        let dpi =
+            unsafe { windows::Win32::UI::HiDpi::GetDpiForWindow(self.overlay) }.max(96) as i32;
+        self.pill_state.on_cancel =
+            inside && (252..292).contains(&((point.x - bounds.left) * 96 / dpi));
+        self.pill_state.hover(inside, now);
         self.update_overlay();
     }
 

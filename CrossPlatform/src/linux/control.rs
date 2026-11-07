@@ -306,32 +306,8 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 crate::sketch::publish(event);
                 continue;
             }
-            let action = match std::str::from_utf8(&bytes).unwrap_or("").trim() {
-                value if value.starts_with("media ") => {
-                    let source = &value[6..];
-                    if crate::media_transcription::validate_source(source).is_err() {
-                        continue;
-                    }
-                    TrayAction::Media(source.into())
-                }
-                #[cfg(feature = "ask")]
-                "ask" => TrayAction::Ask,
-                #[cfg(feature = "ask")]
-                "ask-start" => TrayAction::AskStart,
-                #[cfg(feature = "ask")]
-                "ask-stop" => TrayAction::AskStop,
-                #[cfg(feature = "ask")]
-                "ask-cancel" => TrayAction::CancelAsk,
-                "cancel-media" => TrayAction::CancelMedia,
-                "media-current" => TrayAction::OpenMedia,
-                "start" => TrayAction::Start,
-                "stop" => TrayAction::Stop,
-                "toggle" => TrayAction::Toggle,
-                "cancel" => TrayAction::Cancel,
-                "show" => TrayAction::OpenTranscripts,
-                "settings" => TrayAction::OpenSettings,
-                "quit" => TrayAction::Quit,
-                _ => continue,
+            let Some(action) = tray_action(std::str::from_utf8(&bytes).unwrap_or("")) else {
+                continue;
             };
             if sender.send(action).is_err() {
                 break;
@@ -339,6 +315,36 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
         }
     });
     Ok(())
+}
+
+/// The fire-and-forget commands the socket acts on. The command line checks the same
+/// table, so a command the app would ignore fails loudly instead of exiting 0.
+pub(super) fn tray_action(command: &str) -> Option<TrayAction> {
+    Some(match command.trim() {
+        value if value.starts_with("media ") => {
+            let source = &value[6..];
+            crate::media_transcription::validate_source(source).ok()?;
+            TrayAction::Media(source.into())
+        }
+        #[cfg(feature = "ask")]
+        "ask" => TrayAction::Ask,
+        #[cfg(feature = "ask")]
+        "ask-start" => TrayAction::AskStart,
+        #[cfg(feature = "ask")]
+        "ask-stop" => TrayAction::AskStop,
+        #[cfg(feature = "ask")]
+        "ask-cancel" => TrayAction::CancelAsk,
+        "cancel-media" => TrayAction::CancelMedia,
+        "media-current" => TrayAction::OpenMedia,
+        "start" => TrayAction::Start,
+        "stop" => TrayAction::Stop,
+        "toggle" => TrayAction::Toggle,
+        "cancel" => TrayAction::Cancel,
+        "show" => TrayAction::OpenTranscripts,
+        "settings" => TrayAction::OpenSettings,
+        "quit" => TrayAction::Quit,
+        _ => return None,
+    })
 }
 
 /// `INDEX START_MS END_MS|now live|done`
@@ -407,6 +413,18 @@ pub fn request(command: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_command_line_and_the_socket_share_one_command_table() {
+        for known in [
+            "start", "stop", "toggle", "cancel", "show", "settings", "quit",
+        ] {
+            assert!(super::tray_action(known).is_some(), "{known}");
+        }
+        for removed in ["pause", "resume", "", "media not-a-source"] {
+            assert!(super::tray_action(removed).is_none(), "{removed}");
+        }
+    }
 
     #[test]
     fn history_and_dictionary_open_their_windows_and_nothing_else_does() {
