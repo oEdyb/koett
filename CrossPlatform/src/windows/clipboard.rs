@@ -32,13 +32,20 @@ pub(super) struct Bundle {
 }
 
 impl Bundle {
-    pub fn image_first(&self, owner: HWND) -> Result<Offer, String> {
+    pub fn image_after(&self, offer: Offer) -> Result<Offer, String> {
         deferred(
-            owner,
+            offer.owner,
             vec![
                 (image_formats()?.0, self.png.clone()),
                 (CF_DIBV5.0.into(), self.dib.clone()),
             ],
+            Condition::Offer(offer),
+        )
+    }
+    pub fn text_first(&self, owner: HWND) -> Result<Offer, String> {
+        deferred(
+            owner,
+            vec![(CF_UNICODETEXT.0.into(), utf16(&self.text)?)],
             Condition::Any,
         )
     }
@@ -171,13 +178,6 @@ impl Offer {
             Condition::Offer(self),
         )
     }
-    pub fn replace_with_delayed_text(self, text: &str) -> Result<Offer, String> {
-        deferred(
-            self.owner,
-            vec![(CF_UNICODETEXT.0.into(), utf16(text)?)],
-            Condition::Offer(self),
-        )
-    }
     pub fn unchanged(self) -> bool {
         unsafe {
             GetClipboardOwner().ok() == Some(self.owner)
@@ -237,9 +237,12 @@ pub(super) fn text(owner: HWND) -> Option<String> {
 /// Puts a drawing result's image and text on the clipboard and checks it: Koett must
 /// still own the offer it just made, and its text must read back. A text-only copy
 /// would replace the image, so this never falls back to one.
-pub(super) fn ensure_bundle(owner: HWND, bundle: &Bundle) -> bool {
+pub(super) fn ensure_bundle(owner: HWND, bundle: &Bundle, expected: Option<Offer>) -> bool {
     let normalize = |text: &str| text.replace("\r\n", "\n");
-    bundle.copy(owner).and_then(Offer::verify).is_ok()
+    expected
+        .map_or_else(|| bundle.copy(owner), |offer| bundle.restore(offer))
+        .and_then(Offer::verify)
+        .is_ok()
         && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
 }
 
@@ -627,7 +630,7 @@ mod tests {
                 assert!(!unsafe { GetClipboardData(format) }.unwrap().is_invalid());
             }
         }
-        let text = offer.replace_with_delayed_text("staged ÅÄÖ").unwrap();
+        let text = bundle.text_first(owner).unwrap();
         assert!(unsafe { IsClipboardFormatAvailable(image_formats().unwrap().0) }.is_err());
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
         {
@@ -642,7 +645,22 @@ mod tests {
         }
         let (text, read, _) = rendered(text, std::process::id());
         assert!(read.is_some());
-        let combined = bundle.restore(text).unwrap();
+        let image = bundle.image_after(text).unwrap();
+        assert!(unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT.0.into()) }.is_err());
+        unsafe { OpenClipboard(Some(owner)) }.unwrap();
+        {
+            let _open = Open;
+            render(image_formats().unwrap().0);
+            assert!(
+                !unsafe { GetClipboardData(image_formats().unwrap().0) }
+                    .unwrap()
+                    .is_invalid()
+            );
+        }
+        let (image, image_read, requested) = rendered(image, std::process::id());
+        assert!(image_read.is_some() && requested);
+        let combined = bundle.restore(image).unwrap();
+        combined.verify().unwrap();
         for format in [
             image_formats().unwrap().0,
             image_formats().unwrap().1,
@@ -651,10 +669,12 @@ mod tests {
         ] {
             assert!(unsafe { IsClipboardFormatAvailable(format) }.is_ok());
         }
-        let text = combined.replace_with_delayed_text("second text").unwrap();
+        let text = bundle.text_first(owner).unwrap();
         let sequence = unsafe { GetClipboardSequenceNumber() };
         copy_text(owner, "new user copy").unwrap();
         assert!(bundle.restore(text).is_err());
+        assert!(bundle.image_after(text).is_err());
+        assert!(!ensure_bundle(owner, &bundle, Some(text)));
         assert!(bundle.copy_if_unchanged(owner, sequence).is_err());
         assert!(copy_text_if_unchanged(owner, "stale recovery copy", sequence).is_err());
         assert!(
