@@ -1034,12 +1034,8 @@ mod tests {
             assert_eq!(read("image/png"), fixture);
         }
         assert!(
-            super::super::output::deliver_sketch_text(
-                TEXT,
-                None,
-                crate::settings::PasteShortcut::CtrlV
-            )
-            .is_err()
+            super::super::output::deliver(TEXT, None, crate::settings::PasteShortcut::CtrlV)
+                .is_err()
         );
         assert_eq!(read("text/plain"), TEXT.as_bytes());
         replace(Payload::bundle(&fixture, TEXT)).unwrap();
