@@ -92,10 +92,13 @@ impl Snapshot {
             let show = match action.id {
                 101 => active,
                 106 => matches!(state.phase, Phase::Recording),
-                104 => matches!(state.phase, Phase::Done(_) | Phase::NotPasted { .. }),
+                104 => matches!(
+                    state.phase,
+                    Phase::Done(_) | Phase::Partial { .. } | Phase::NotPasted { .. }
+                ),
                 105 => {
-                    matches!(state.phase, Phase::NotPasted { .. })
-                        || state.repeat_paste && matches!(state.phase, Phase::Done(_))
+                    state.repeat_paste
+                        && matches!(state.phase, Phase::NotPasted { .. } | Phase::Done(_))
                 }
                 _ => false,
             };
@@ -113,6 +116,13 @@ impl Snapshot {
                 Phase::Done(_) if state.copied => "Koett Copied".into(),
                 Phase::Copied => "Koett Not pasted. Copied to clipboard".into(),
                 Phase::Cancelled => "Koett Cancelled".into(),
+                Phase::Partial {
+                    drawing_copied,
+                    saved,
+                } => format!(
+                    "Koett. {}. Copy to keep.",
+                    super::pill_state::partial_label(*drawing_copied, *saved)
+                ),
                 Phase::Done(preview) => format!(
                     "Koett Done. {}",
                     preview.chars().take(80).collect::<String>()
@@ -245,6 +255,28 @@ impl Drop for Buttons {
 mod tests {
     use super::*;
     #[test]
+    fn partial_delivery_offers_copy_without_paste() {
+        for drawing_copied in [false, true] {
+            for saved in [false, true] {
+                let mut state = State::default();
+                state.set(
+                    Phase::Partial {
+                        drawing_copied,
+                        saved,
+                    },
+                    0,
+                );
+                state.repeat_paste = true;
+                let snapshot = Snapshot::new(&state);
+                assert_eq!(snapshot.mask, 0b0100);
+                assert!(!snapshot.name.contains("Done"));
+                assert!(snapshot.name.contains("Copy to keep"));
+                state.copy(1);
+                assert_eq!(Snapshot::new(&state).mask, 0b0100);
+            }
+        }
+    }
+    #[test]
     fn media_copy_does_not_offer_a_previous_dictation_paste() {
         let mut state = State::default();
         state.set(Phase::Done("Media words".into()), 0);
@@ -278,8 +310,11 @@ mod tests {
         state.copy(4);
         assert_eq!(Snapshot::new(&state).label(2), "Copied");
         state.set(Phase::NotPasted { saved: true }, 5);
+        assert_eq!(Snapshot::new(&state).mask, 0b0100);
+        state.repeat_paste = true;
         assert_eq!(Snapshot::new(&state).mask, 0b0110);
         state.set(Phase::NotPasted { saved: false }, 6);
+        state.repeat_paste = true;
         assert_eq!(Snapshot::new(&state).mask, 0b0110);
         assert!(Snapshot::new(&state).name.contains("Not saved"));
     }

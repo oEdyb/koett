@@ -7,10 +7,28 @@ pub(super) fn text_ready(started: Instant, target_read: Option<Instant>, now: In
     }
 }
 
-pub(super) fn image_ready(started: Instant, target_read: Option<Instant>, now: Instant) -> bool {
+#[derive(Debug, PartialEq)]
+pub(super) enum TextStage {
+    Waiting,
+    Ready,
+    Unconfirmed,
+}
+
+pub(super) fn text_stage(
+    started: Instant,
+    target_read: Option<Instant>,
+    now: Instant,
+) -> TextStage {
     match target_read {
-        Some(at) => now.saturating_duration_since(at.max(started)) >= Duration::from_millis(300),
-        None => now.saturating_duration_since(started) >= Duration::from_millis(1500),
+        Some(at)
+            if now.saturating_duration_since(at.max(started)) >= Duration::from_millis(300) =>
+        {
+            TextStage::Ready
+        }
+        None if now.saturating_duration_since(started) >= Duration::from_millis(1500) => {
+            TextStage::Unconfirmed
+        }
+        _ => TextStage::Waiting,
     }
 }
 
@@ -18,34 +36,33 @@ pub(super) fn image_ready(started: Instant, target_read: Option<Instant>, now: I
 mod tests {
     use super::*;
     #[test]
-    fn drawing_waits_for_text_read_and_composer_settle() {
+    fn only_a_confirmed_read_can_advance_to_the_image() {
         let start = Instant::now();
         let late = start + Duration::from_millis(1490);
-        assert!(!image_ready(
-            start,
-            Some(late),
-            late + Duration::from_millis(299)
-        ));
-        assert!(image_ready(
-            start,
-            Some(late),
-            late + Duration::from_millis(300)
-        ));
-        assert!(!image_ready(
-            start,
-            None,
-            start + Duration::from_millis(1499)
-        ));
-        assert!(image_ready(
-            start,
-            None,
-            start + Duration::from_millis(1500)
-        ));
-        assert!(!image_ready(
-            late,
-            Some(start),
-            late + Duration::from_millis(299)
-        ));
+        assert_eq!(
+            text_stage(start, Some(late), late + Duration::from_millis(299)),
+            TextStage::Waiting
+        );
+        assert_eq!(
+            text_stage(start, Some(late), late + Duration::from_millis(300)),
+            TextStage::Ready
+        );
+        assert_eq!(
+            text_stage(start, None, start + Duration::from_millis(1499)),
+            TextStage::Waiting
+        );
+        assert_eq!(
+            text_stage(start, None, start + Duration::from_millis(1500)),
+            TextStage::Unconfirmed
+        );
+        assert_eq!(
+            text_stage(start, None, start + Duration::from_secs(10)),
+            TextStage::Unconfirmed
+        );
+        assert_eq!(
+            text_stage(late, Some(start), late + Duration::from_millis(299)),
+            TextStage::Waiting
+        );
     }
     #[test]
     fn target_read_keeps_the_processing_gap_and_unknown_reader_keeps_its_bound() {

@@ -138,7 +138,6 @@ pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>
                     .reader
                     .iter()
                     .find(|(pid, _)| *pid == target_pid)
-                    .or_else(|| state.reader.iter().find(|(pid, _)| *pid == 0))
                     .map(|(_, at)| *at);
                 (state.offer, read, read.is_some())
             })
@@ -553,7 +552,7 @@ mod tests {
         }
     }
     #[test]
-    fn rendered_receipts_ignore_known_observers_and_accept_anonymous_reads() {
+    fn rendered_receipts_require_the_target_process() {
         let offer = Offer {
             owner: HWND::default(),
             sequence: 0,
@@ -574,9 +573,15 @@ mod tests {
             slot.borrow_mut().as_mut().unwrap().reader.push((0, first));
         });
         let (_, read, requested) = rendered(offer, 7);
-        assert_eq!(read, Some(first));
+        assert_eq!(read, None);
+        assert!(!requested);
+        let target = first + Duration::from_millis(800);
+        DELAYED.with(|slot| {
+            slot.borrow_mut().as_mut().unwrap().reader.push((7, target));
+        });
+        let (_, read, requested) = rendered(offer, 7);
+        assert_eq!(read, Some(target));
         assert!(requested);
-        let target = first + Duration::from_millis(20);
         DELAYED.with(|slot| {
             slot.borrow_mut().as_mut().unwrap().reader.push((7, target));
         });
@@ -644,7 +649,7 @@ mod tests {
             );
         }
         let (text, read, _) = rendered(text, std::process::id());
-        assert!(read.is_some());
+        assert!(read.is_none());
         let image = bundle.image_after(text).unwrap();
         assert!(unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT.0.into()) }.is_err());
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
@@ -658,7 +663,7 @@ mod tests {
             );
         }
         let (image, image_read, requested) = rendered(image, std::process::id());
-        assert!(image_read.is_some() && requested);
+        assert!(image_read.is_none() && !requested);
         let combined = bundle.restore(image).unwrap();
         combined.verify().unwrap();
         for format in [

@@ -216,7 +216,10 @@ impl Renderer {
                     }
                 } else if state.drawing {
                     draw("✎", 16.0, 33.0, false);
-                } else if matches!(state.phase, Phase::NotPasted { .. } | Phase::Error { .. }) {
+                } else if matches!(
+                    state.phase,
+                    Phase::NotPasted { .. } | Phase::Partial { .. } | Phase::Error { .. }
+                ) {
                     draw("!", 19.0, 30.0, false);
                 } else if matches!(state.phase, Phase::Transcribing) {
                     let index = if reduced { 0 } else { (now / 100) % 8 };
@@ -382,8 +385,27 @@ impl Renderer {
                                 189.0,
                                 false,
                             );
-                            draw("Paste", 192.0, 237.0, false);
+                            if state.repeat_paste {
+                                draw("Paste", 192.0, 237.0, false);
+                            }
                             draw("Copy", 245.0, 292.0, false);
+                        }
+                        Phase::Partial {
+                            drawing_copied,
+                            saved,
+                        } => {
+                            draw(
+                                super::pill_state::partial_label(*drawing_copied, *saved),
+                                44.0 + shift,
+                                234.0,
+                                false,
+                            );
+                            draw(
+                                if state.copied { "Copied" } else { "Copy" },
+                                246.0,
+                                295.0,
+                                false,
+                            );
                         }
                         Phase::Copied => draw("Copied to clipboard", 44.0, 284.0, false),
                         Phase::Cancelled => draw("Cancelled", 44.0, 284.0, false),

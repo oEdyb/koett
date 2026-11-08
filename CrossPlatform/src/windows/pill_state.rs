@@ -8,6 +8,10 @@ pub enum Phase {
     Copied,
     /// ✕, Esc or the tray cancelled the dictation: one line, then it fades even under the pointer.
     Cancelled,
+    Partial {
+        drawing_copied: bool,
+        saved: bool,
+    },
     NotPasted {
         saved: bool,
     },
@@ -113,8 +117,9 @@ impl State {
             // Pressed Copy: leaves on Done's timing even under the pointer that pressed it.
             Phase::Copied if self.copied => Some(self.changed + 1750),
             Phase::Cancelled => Some(self.changed + 1750),
-            Phase::Copied if self.hovered => None,
-            Phase::Copied => Some(
+            Phase::Partial { .. } if self.copied => Some(self.changed + 1750),
+            Phase::Copied | Phase::Partial { .. } if self.hovered => None,
+            Phase::Copied | Phase::Partial { .. } => Some(
                 self.left_hover
                     .map(|t| t + 800)
                     .unwrap_or(self.changed + 1750),
@@ -152,13 +157,36 @@ impl State {
         self.hovered
             || matches!(
                 self.phase,
-                Phase::Done(_) | Phase::Copied | Phase::NotPasted { .. } | Phase::Error { .. }
+                Phase::Done(_)
+                    | Phase::Copied
+                    | Phase::Partial { .. }
+                    | Phase::NotPasted { .. }
+                    | Phase::Error { .. }
             )
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn partial_delivery_fades_and_hover_holds_it() {
+        let mut state = State::default();
+        state.set(
+            Phase::Partial {
+                drawing_copied: true,
+                saved: false,
+            },
+            0,
+        );
+        assert_eq!(state.opacity(1749, true), 1.0);
+        assert_eq!(state.opacity(1750, true), 0.0);
+        assert!(state.interactive());
+        state.hover(true, 1700);
+        assert_eq!(state.opacity(60_000, true), 1.0);
+        state.copy(60_000);
+        assert_eq!(state.opacity(61_749, true), 1.0);
+        assert_eq!(state.opacity(61_750, true), 0.0);
+    }
     #[test]
     fn a_recording_notice_shows_for_five_seconds_and_ends_with_the_recording() {
         let mut s = State::default();
@@ -347,5 +375,14 @@ mod delivery_tests {
             delivery_result("text".into(), true, false, false, true),
             Phase::Error { rescue: true, .. }
         ));
+    }
+}
+
+pub(super) fn partial_label(drawing_copied: bool, saved: bool) -> &'static str {
+    match (drawing_copied, saved) {
+        (true, true) => "Text pasted · drawing copied",
+        (false, true) => "Text pasted · drawing failed",
+        (true, false) => "Drawing copied · save warning",
+        (false, false) => "Drawing failed · save warning",
     }
 }

@@ -172,7 +172,7 @@ pub(super) fn dispatch(
                 app.copy_last().ok()?;
             }
             8 if app.can_repeat_paste()
-                && app.last_target == foreground_paste_target()
+                && app.last_target.target().ok() == foreground_paste_target()
                 && !app.last_transcript.is_empty()
                 && unsafe { GetForegroundWindow() }.0 as isize == lparam.0
                 && foreground_paste_target().is_some() =>
