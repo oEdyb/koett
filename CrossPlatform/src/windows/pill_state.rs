@@ -8,6 +8,10 @@ pub enum Phase {
     Copied,
     /// ✕, Esc or the tray cancelled the dictation: one line, then it fades even under the pointer.
     Cancelled,
+    Partial {
+        confirmed: bool,
+        saved: bool,
+    },
     NotPasted {
         saved: bool,
     },
@@ -113,6 +117,7 @@ impl State {
             // Pressed Copy: leaves on Done's timing even under the pointer that pressed it.
             Phase::Copied if self.copied => Some(self.changed + 1750),
             Phase::Cancelled => Some(self.changed + 1750),
+            Phase::Partial { .. } if self.copied => Some(self.changed + 1750),
             Phase::Copied if self.hovered => None,
             Phase::Copied => Some(
                 self.left_hover
@@ -152,13 +157,34 @@ impl State {
         self.hovered
             || matches!(
                 self.phase,
-                Phase::Done(_) | Phase::Copied | Phase::NotPasted { .. } | Phase::Error { .. }
+                Phase::Done(_)
+                    | Phase::Copied
+                    | Phase::Partial { .. }
+                    | Phase::NotPasted { .. }
+                    | Phase::Error { .. }
             )
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn partial_delivery_stays_until_copy_and_then_fades() {
+        let mut state = State::default();
+        state.set(
+            Phase::Partial {
+                confirmed: true,
+                saved: false,
+            },
+            0,
+        );
+        assert_eq!(state.opacity(60_000, true), 1.0);
+        assert!(state.interactive());
+        state.hover(true, 60_000);
+        state.copy(60_000);
+        assert_eq!(state.opacity(61_749, true), 1.0);
+        assert_eq!(state.opacity(61_750, true), 0.0);
+    }
     #[test]
     fn a_recording_notice_shows_for_five_seconds_and_ends_with_the_recording() {
         let mut s = State::default();
@@ -347,5 +373,14 @@ mod delivery_tests {
             delivery_result("text".into(), true, false, false, true),
             Phase::Error { rescue: true, .. }
         ));
+    }
+}
+
+pub(super) fn partial_label(confirmed: bool, saved: bool) -> &'static str {
+    match (confirmed, saved) {
+        (true, true) => "Text pasted · image unavailable",
+        (false, true) => "Paste unconfirmed",
+        (true, false) => "Text pasted · save warning",
+        (false, false) => "Unconfirmed · save warning",
     }
 }

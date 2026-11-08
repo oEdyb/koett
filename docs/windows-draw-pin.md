@@ -28,19 +28,23 @@ hardware and the remaining parity milestones are separate gates.
 
 ## Delivery and recovery
 
-Text is offered first with delayed Unicode rendering. After a qualifying target
-read plus 300 ms, the drawing is offered separately as delayed PNG/DIBV5.
-An unknown reader keeps the existing 1.5 second bound. Known unrelated readers
-are ignored. Anonymous OpenClipboard(NULL) reads use the same settle policy
-because Edge uses this form. Text stays separate from the image paste because
-Chromium composers can discard text from an image clipboard item and restore
-their saved draft after preparing the image.
+Text is offered first with delayed Unicode rendering. After a read attributed to
+the target process plus 300 ms, the drawing is offered separately as delayed
+PNG/DIBV5. Reads from other processes or OpenClipboard(NULL) do not confirm the
+target consumed the text. After 1.5 seconds without a target read, Koett keeps
+the recovery bundle and shows Paste unconfirmed, without sending the image.
+Some Chromium editors use anonymous reads and therefore take this safe path.
 
 After the image read plus 200 ms, PNG/DIBV5/HTML/Unicode are restored together
 only if owner, sequence and marker still match. A newer copy wins at both stages.
-Explicit Paste recovery uses the same text-first sequence without another
-ASR pass or History write. Copy publishes the combined clipboard bundle. A text-only target keeps its pasted transcript and
-shows that the image was unavailable.
+Explicit Paste recovery uses the same text-first sequence without another ASR
+pass or History write. Copy publishes the combined clipboard bundle.
+
+If text may already have been pasted, focus changes, image delivery fails and
+cancellation show a partial result with Copy. They disable Paste retry, including
+tray and shortcut recovery, so the transcript cannot be inserted twice. A
+confirmed text-only target shows Text pasted with the image unavailable. An
+unconfirmed read never claims Done. Storage failure remains visible.
 
 Each input stage checks the original HWND/PID, process eligibility, integrity,
 clipboard ownership and released modifiers. The final foreground query occurs
@@ -148,3 +152,16 @@ Native API references: [Raw Input](https://learn.microsoft.com/windows/win32/inp
 [capture exclusion](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity),
 [clipboard ownership](https://learn.microsoft.com/windows/win32/dataxchg/using-the-clipboard),
 [HTML byte offsets](https://learn.microsoft.com/windows/win32/dataxchg/html-clipboard-format).
+
+## Manual composer fixture
+
+`CrossPlatform/scripts/windows-lab/fixtures/drawing-order.html` is a manual-only
+lab fixture. Serve it to the Windows guest, open it in Edge and focus its editor
+before drawing a WAV-backed dictation. Its receipt textarea records each paste,
+then the editor restores its saved text after decoding the image. This models
+the reported composer reset; it is not an automated Windows T3 acceptance test.
+An optional lab collector can accept its JSON POST at `/m4-paste-event`.
+
+The target-process read gate must also be checked in a native target that opens
+the clipboard with its own window. The Chromium fixture's anonymous reads should
+stop at Paste unconfirmed and keep the bundle available through Copy.
