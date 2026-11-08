@@ -11,6 +11,10 @@ pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_mi
 pub const TEXT_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(1500);
 /// Settle time after the image read, before the clipboard changes to text.
 pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
+/// After the text of a drawing result is read, before its image key, so the target has
+/// put the text in its model. T3 Code otherwise resets its editor over it when the image
+/// attachment finishes.
+pub const TEXT_SETTLE: std::time::Duration = std::time::Duration::from_millis(300);
 /// Keep the previous bounded fallback when the target never requests PNG.
 const UNKNOWN_IMAGE_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 /// Let the receiver handle its image before the guarded text chord follows.
@@ -229,23 +233,6 @@ pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     };
     trace.log("image_wait_end");
     Ok(())
-}
-
-pub fn deliver_sketch_text(
-    text: &str,
-    target: Option<u32>,
-    shortcut: PasteShortcut,
-) -> Result<(), String> {
-    let mut trace = DeliveryStep::new("text", "fallback", text.len());
-    let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
-    super::clipboard_owner::replace(payload)?;
-    trace.prepare_paste(target)?;
-    let mut posted = None;
-    trace.send_fallback_tracked(shortcut, || {
-        read.arm();
-        posted = Some(std::time::Instant::now());
-    })?;
-    confirm_text_read(&mut trace, Some(&read), posted)
 }
 
 pub(super) fn paste_keysyms(shortcut: PasteShortcut) -> &'static [u32] {

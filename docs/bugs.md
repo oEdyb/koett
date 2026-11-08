@@ -289,3 +289,20 @@ owner and its image and exact text read back; otherwise the rescue stays. Both p
 in the one function every stop passes through, so the tray, CLI, shortcut and hold release agree.
 A recording that ends without a stop command, such as the time limit, still uses the start target.
 Linux X11 drawings keep the sticky rescue, since that path never offered the drawing back.
+
+## 2026-11-08: T3 Code kept the drawing but lost the spoken text
+
+Olle, dictating with a drawing into T3 Code: the image always landed, the text sometimes didn't.
+His log showed both pastes going through, and T3 Code reading the text 5 ms after its key, both times.
+Koett pasted the drawing first and the text about 190 ms later. T3 Code's composer resets its
+editor to its draft whenever they differ on a re-render, and attaching an image re-renders once its
+async preparation ends. T3 re-encodes images over 2000 px, so a big contact sheet takes longest;
+when that finished after the text was in the editor but before the text reached the draft, the
+text was wiped. His failing drawing was 927 KB, the one that worked 242 KB.
+
+A private lab ran T3 Code's own paste rules and image module in a stand-in composer under CPU load:
+image first lost the text 5 times in 6 with a 2560 px drawing, never with 1200 px. Text first
+landed both 6 times in 6 under the same load. Pasting both as one item can't work in T3 Code: a paste
+with an image file attaches the image and drops the text. So Linux now pastes the text, waits 300 ms
+after the target reads it, then pastes the drawing; GTK and kitty still get the text. Windows still
+pastes the drawing first and needs the same change.

@@ -75,17 +75,25 @@ fn main() {
     } else {
         let target = output::capture_target();
         assert!(target.is_some());
+        let shortcut = if std::env::args().any(|arg| arg == "--terminal") {
+            koett_engine::settings::PasteShortcut::CtrlShiftV
+        } else {
+            koett_engine::settings::PasteShortcut::CtrlV
+        };
+        // The order before 2026-11-08, to reproduce the lost text in a lab.
+        if std::env::args().any(|arg| arg == "--image-first") {
+            output::deliver_image(&png, target).unwrap();
+            output::deliver(text, target, shortcut).unwrap();
+            println!("Ready");
+            let mut byte = [0];
+            let _ = std::io::stdin().read(&mut byte);
+            clipboard_owner::stop();
+            return;
+        }
+        // The production order: text, a settle, then the drawing.
+        output::deliver(text, target, shortcut).unwrap();
+        std::thread::sleep(output::TEXT_SETTLE);
         output::deliver_image(&png, target).unwrap();
-        output::deliver_sketch_text(
-            text,
-            target,
-            if std::env::args().any(|arg| arg == "--terminal") {
-                koett_engine::settings::PasteShortcut::CtrlShiftV
-            } else {
-                koett_engine::settings::PasteShortcut::CtrlV
-            },
-        )
-        .unwrap();
         std::thread::sleep(Duration::from_millis(700));
         clipboard_owner::replace(clipboard_owner::Payload::bundle(&png, text)).unwrap();
     }

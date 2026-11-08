@@ -987,13 +987,18 @@ fn run_x11(
                 }
                 feedback::remember_sketch(&final_text, sheet.as_deref());
                 cache_completed(tray, &final_text);
-                let delivered = match &sheet {
-                    Some(png) => output
-                        .deliver_image(png, target)
-                        .map_err(|error| format!("Contact sheet not pasted: {error}")),
-                    None => Ok(()),
-                }
-                .and_then(|()| output.deliver(&final_text, target, paste_shortcut));
+                // Text first, as on Wayland: see `paste_result`.
+                let delivered = output
+                    .deliver(&final_text, target, paste_shortcut)
+                    .and_then(|()| match &sheet {
+                        Some(png) => {
+                            std::thread::sleep(output::TEXT_SETTLE);
+                            output
+                                .deliver_image(png, target)
+                                .map_err(|error| format!("Contact sheet not pasted: {error}"))
+                        }
+                        None => Ok(()),
+                    });
                 let delivered = report_outcome(
                     tray,
                     settle_delivery(
@@ -1564,40 +1569,20 @@ async fn run_wayland(
                                 .as_ref()
                                 .map_or(Some(output::PASTE_NOW), |request| request.target);
                             let png = feedback::sketch_for(&text);
-                            let image_delivery = if let Some(png) = &png {
-                                match &output {
-                                    Some(output) => output.deliver_image(png, now).await,
-                                    None => output::deliver_image(png, now),
-                                }
-                            } else {
-                                Ok(())
-                            };
-                            let before_text = output
-                                .as_ref()
-                                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-                            let result = if let Err(error) = &image_delivery {
-                                Err(error.clone())
-                            } else {
-                                match &output {
-                                    Some(output) => {
-                                        output.deliver(&text, now, settings.paste_shortcut).await
-                                    }
-                                    None if png.is_some() => output::deliver_sketch_text(
-                                        &text,
-                                        now,
-                                        settings.paste_shortcut,
-                                    ),
-                                    None => output::deliver(&text, now, settings.paste_shortcut),
-                                }
-                            };
+                            let result = paste_result(
+                                output.as_ref(),
+                                &text,
+                                png.as_deref(),
+                                now,
+                                settings.paste_shortcut,
+                            )
+                            .await;
                             let copied = if let Some(png) = &png {
-                                settle_sketch_text(output.as_ref(), before_text).await;
                                 restore_sketch_clipboard(output.as_ref(), png, &text).await
                             } else {
                                 Ok(())
                             };
-                            image_delivery
-                                .and(result)
+                            result
                                 .and(copied)
                                 .map_err(|error| (error, png.is_none().then_some(text)))
                         }
@@ -1718,36 +1703,16 @@ async fn run_wayland(
             };
             feedback::remember_sketch(&text, sheet.as_deref());
             cache_completed(tray, &text);
-            let image_delivery = if let Some(png) = &sheet {
-                match &output {
-                    Some(output) => output.deliver_image(png, target).await,
-                    None => output::deliver_image(png, target),
-                }
-                .map_err(|error| format!("Contact sheet not pasted: {error}"))
-            } else {
-                Ok(())
-            };
-            let before_text = output
-                .as_ref()
-                .map(|o| o.served.load(std::sync::atomic::Ordering::Acquire));
-            let text_delivery = if let Err(error) = &image_delivery {
-                Err(error.clone())
-            } else {
-                match &output {
-                    Some(output) => output.deliver(&text, target, settings.paste_shortcut).await,
-                    None if sheet.is_some() => {
-                        output::deliver_sketch_text(&text, target, settings.paste_shortcut)
-                    }
-                    None => output::deliver(&text, target, settings.paste_shortcut),
-                }
-            };
-            let delivered = image_delivery.and(text_delivery);
+            let delivered = paste_result(
+                output.as_ref(),
+                &text,
+                sheet.as_deref(),
+                target,
+                settings.paste_shortcut,
+            )
+            .await;
             let outcome = match &sheet {
                 Some(png) => {
-                    // Nothing was pasted after a refusal, so there's no read to wait for.
-                    if delivered.is_ok() {
-                        settle_sketch_text(output.as_ref(), before_text).await;
-                    }
                     let offered = restore_sketch_clipboard(output.as_ref(), png, &text).await;
                     let held = text.clone();
                     let on_clipboard = delivered.is_err()
@@ -2772,18 +2737,30 @@ async fn restore_sketch_clipboard(
     result
 }
 
-async fn settle_sketch_text(output: Option<&WaylandOutput>, before: Option<u64>) {
-    if let (Some(output), Some(before)) = (output, before) {
-        let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
-        while output.served.load(std::sync::atomic::Ordering::Acquire) == before
-            && Instant::now() < deadline
-        {
-            tokio::time::sleep(Duration::from_millis(20)).await;
-        }
-        tokio::time::sleep(output::AFTER_IMAGE_READ).await;
-    } else {
-        tokio::time::sleep(Duration::from_millis(700)).await;
+/// Pastes a result's text, then its drawing. Text goes first: T3 Code resets its editor
+/// from its draft when an image attachment finishes compressing, which wiped text pasted
+/// while that ran. The text is read and settled before the image key, and a text that
+/// didn't paste stops the image too.
+async fn paste_result(
+    output: Option<&WaylandOutput>,
+    text: &str,
+    png: Option<&[u8]>,
+    target: Option<u32>,
+    shortcut: PasteShortcut,
+) -> Result<(), String> {
+    match output {
+        Some(output) => output.deliver(text, target, shortcut).await,
+        None => output::deliver(text, target, shortcut),
+    }?;
+    let Some(png) = png else {
+        return Ok(());
+    };
+    tokio::time::sleep(output::TEXT_SETTLE).await;
+    match output {
+        Some(output) => output.deliver_image(png, target).await,
+        None => output::deliver_image(png, target),
     }
+    .map_err(|error| format!("Contact sheet not pasted: {error}"))
 }
 
 impl WaylandOutput {
