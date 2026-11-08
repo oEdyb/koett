@@ -115,6 +115,8 @@ enum TrayUpdate {
     Delivered,
     /// The paste didn't happen, but the text is on the clipboard.
     Copied,
+    /// The text pasted and the drawing didn't; true when the drawing is on the clipboard.
+    TextOnly(bool),
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
     Shortcut(String),
@@ -668,6 +670,9 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::Copied => {
                         let _ = worker_ui.send(window::Update::Copied);
                     }
+                    TrayUpdate::TextOnly(drawing_copied) => {
+                        let _ = worker_ui.send(window::Update::TextOnly(drawing_copied));
+                    }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
                     }
@@ -988,25 +993,23 @@ fn run_x11(
                 feedback::remember_sketch(&final_text, sheet.as_deref());
                 cache_completed(tray, &final_text);
                 // Text first, as on Wayland: see `paste_result`.
-                let delivered = output
-                    .deliver(&final_text, target, paste_shortcut)
-                    .and_then(|()| match &sheet {
-                        Some(png) => {
-                            std::thread::sleep(output::TEXT_SETTLE);
-                            output
-                                .deliver_image(png, target)
-                                .map_err(|error| format!("Contact sheet not pasted: {error}"))
-                        }
-                        None => Ok(()),
-                    });
-                let delivered = report_outcome(
-                    tray,
-                    settle_delivery(
+                let text_pasted = output.deliver(&final_text, target, paste_shortcut);
+                let outcome = match (&sheet, text_pasted) {
+                    (Some(png), Ok(())) => {
+                        std::thread::sleep(output::TEXT_SETTLE);
+                        let pasted = output
+                            .deliver_image(png, target)
+                            .map_or_else(Pasted::TextOnly, |()| Pasted::All);
+                        // X11 never offers the drawing back, so it isn't on the clipboard.
+                        settle_bundle(Ok(pasted), Err("no clipboard offer".into()), false)
+                    }
+                    (_, delivered) => settle_delivery(
                         delivered,
                         sheet.is_none().then_some(final_text.as_str()),
                         recovery::ensure_copied,
                     ),
-                );
+                };
+                let delivered = report_outcome(tray, outcome);
                 let saved = history::append_transcript_with_raw_resilient(
                     model,
                     &final_text,
@@ -1563,13 +1566,13 @@ async fn run_wayland(
                 }
                 TrayAction::Recovery(command) if recovery::presses_paste(&command) => {
                     delivery_started(tray);
-                    let pasted = match recovery::last_text() {
+                    let (outcome, pasted) = match recovery::last_text() {
                         Ok(text) => {
                             let now = paste_request
                                 .as_ref()
                                 .map_or(Some(output::PASTE_NOW), |request| request.target);
                             let png = feedback::sketch_for(&text);
-                            let result = paste_result(
+                            let pasted = paste_result(
                                 output.as_ref(),
                                 &text,
                                 png.as_deref(),
@@ -1577,23 +1580,21 @@ async fn run_wayland(
                                 settings.paste_shortcut,
                             )
                             .await;
-                            let copied = if let Some(png) = &png {
-                                restore_sketch_clipboard(output.as_ref(), png, &text).await
-                            } else {
-                                Ok(())
+                            let reply = match &pasted {
+                                Ok(Pasted::All) => Ok(()),
+                                Ok(Pasted::TextOnly(error)) => {
+                                    Err(format!("Text pasted; the drawing was not: {error}"))
+                                }
+                                Err(error) => Err(error.clone()),
                             };
-                            result
-                                .and(copied)
-                                .map_err(|error| (error, png.is_none().then_some(text)))
+                            (
+                                settle_result(output.as_ref(), &text, png.as_deref(), pasted).await,
+                                reply,
+                            )
                         }
-                        Err(error) => Err((error, None)),
+                        Err(error) => (Outcome::Failed(error.clone()), Err(error)),
                     };
-                    let (pasted, text) = match pasted {
-                        Ok(()) => (Ok(()), None),
-                        Err((error, text)) => (Err(error), text),
-                    };
-                    let shown =
-                        report_outcome(tray, settle_delivery_async(pasted.clone(), text).await);
+                    let shown = report_outcome(tray, outcome);
                     // A script asked for a paste, so it hears that it didn't happen.
                     if let Some(request) = paste_request {
                         request.finish(pasted);
@@ -1711,21 +1712,7 @@ async fn run_wayland(
                 settings.paste_shortcut,
             )
             .await;
-            let outcome = match &sheet {
-                Some(png) => {
-                    let offered = restore_sketch_clipboard(output.as_ref(), png, &text).await;
-                    let held = text.clone();
-                    let on_clipboard = delivered.is_err()
-                        && offered.is_ok()
-                        && tokio::task::spawn_blocking(move || {
-                            recovery::bundle_on_clipboard(&held)
-                        })
-                        .await
-                        .unwrap_or(false);
-                    settle_bundle(delivered, offered, on_clipboard)
-                }
-                None => settle_delivery_async(delivered, Some(text.clone())).await,
-            };
+            let outcome = settle_result(output.as_ref(), &text, sheet.as_deref(), delivered).await;
             let delivered = report_outcome(tray, outcome);
             let saved = history::append_transcript_with_raw_resilient(
                 &model,
@@ -2747,20 +2734,48 @@ async fn paste_result(
     png: Option<&[u8]>,
     target: Option<u32>,
     shortcut: PasteShortcut,
-) -> Result<(), String> {
+) -> Result<Pasted, String> {
     match output {
         Some(output) => output.deliver(text, target, shortcut).await,
         None => output::deliver(text, target, shortcut),
     }?;
     let Some(png) = png else {
-        return Ok(());
+        return Ok(Pasted::All);
     };
     tokio::time::sleep(output::TEXT_SETTLE).await;
-    match output {
+    Ok(match output {
         Some(output) => output.deliver_image(png, target).await,
         None => output::deliver_image(png, target),
     }
-    .map_err(|error| format!("Contact sheet not pasted: {error}"))
+    .map_or_else(Pasted::TextOnly, |()| Pasted::All))
+}
+
+/// How far a result's paste got. An error from `paste_result` means nothing landed.
+#[derive(Debug, PartialEq)]
+enum Pasted {
+    All,
+    /// The text landed and the drawing didn't; pasting again would repeat the text.
+    TextOnly(String),
+}
+
+/// Offers a drawing result back to the clipboard and settles what to tell the user.
+async fn settle_result(
+    output: Option<&WaylandOutput>,
+    text: &str,
+    png: Option<&[u8]>,
+    pasted: Result<Pasted, String>,
+) -> Outcome {
+    let Some(png) = png else {
+        return settle_delivery_async(pasted.map(|_| ()), Some(text.to_owned())).await;
+    };
+    let offered = restore_sketch_clipboard(output, png, text).await;
+    let held = text.to_owned();
+    let on_clipboard = pasted != Ok(Pasted::All)
+        && offered.is_ok()
+        && tokio::task::spawn_blocking(move || recovery::bundle_on_clipboard(&held))
+            .await
+            .unwrap_or(false);
+    settle_bundle(pasted, offered, on_clipboard)
 }
 
 impl WaylandOutput {
@@ -3170,6 +3185,10 @@ enum Outcome {
     Pasted,
     /// Not pasted, but on the clipboard: said once, then the pill goes.
     Copied,
+    /// The text landed and the drawing didn't; `drawing_copied` when it's on the clipboard.
+    TextOnly {
+        drawing_copied: bool,
+    },
     Failed(String),
 }
 
@@ -3189,14 +3208,21 @@ fn settle_delivery(
 
 /// A drawing result that didn't paste counts as copied only when Koett's offer of the
 /// image and text was confirmed as the clipboard owner and both read back.
+/// Once any text has landed the user is never offered Paste again, which would repeat it:
+/// a full paste stays Pasted even if putting the drawing back on the clipboard fails.
 fn settle_bundle(
-    delivered: Result<(), String>,
+    pasted: Result<Pasted, String>,
     offered: Result<(), String>,
     on_clipboard: bool,
 ) -> Outcome {
-    match (delivered, offered) {
-        (Ok(()), Ok(())) => Outcome::Pasted,
-        (Ok(()), Err(error)) => Outcome::Failed(error),
+    match (pasted, offered) {
+        (Ok(Pasted::All), _) => Outcome::Pasted,
+        (Ok(Pasted::TextOnly(error)), _) => {
+            eprintln!("Koett: text pasted, drawing not: {error}");
+            Outcome::TextOnly {
+                drawing_copied: on_clipboard,
+            }
+        }
         (Err(_), Ok(())) if on_clipboard => Outcome::Copied,
         (Err(error), _) => Outcome::Failed(error),
     }
@@ -3208,12 +3234,13 @@ fn report_outcome(tray: Option<&TrayUpdates>, outcome: Outcome) -> Result<(), St
         let _ = tray.sender.send(match &outcome {
             Outcome::Pasted => TrayUpdate::Delivered,
             Outcome::Copied => TrayUpdate::Copied,
+            Outcome::TextOnly { drawing_copied } => TrayUpdate::TextOnly(*drawing_copied),
             Outcome::Failed(_) => TrayUpdate::DeliveryFailed,
         });
     }
     match outcome {
         Outcome::Failed(error) => Err(error),
-        Outcome::Pasted | Outcome::Copied => Ok(()),
+        Outcome::Pasted | Outcome::Copied | Outcome::TextOnly { .. } => Ok(()),
     }
 }
 
@@ -3314,8 +3341,9 @@ mod delivery_tests {
     }
     #[test]
     fn a_drawing_that_did_not_paste_is_copied_only_when_the_offer_is_verified() {
-        let refused = || Err::<(), String>("focus changed".into());
-        assert_eq!(settle_bundle(Ok(()), Ok(()), false), Outcome::Pasted);
+        let refused = || Err::<Pasted, String>("focus changed".into());
+        let all = || Ok::<Pasted, String>(Pasted::All);
+        assert_eq!(settle_bundle(all(), Ok(()), false), Outcome::Pasted);
         assert_eq!(settle_bundle(refused(), Ok(()), true), Outcome::Copied);
         assert_eq!(
             settle_bundle(refused(), Ok(()), false),
@@ -3327,9 +3355,42 @@ mod delivery_tests {
             Outcome::Failed("focus changed".into())
         );
         assert_eq!(
-            settle_bundle(Ok(()), Err("ownership changed".into()), true),
-            Outcome::Failed("ownership changed".into())
+            settle_bundle(all(), Err("ownership changed".into()), false),
+            Outcome::Pasted,
+            "everything landed; offering Paste would paste it twice"
         );
+    }
+
+    #[test]
+    fn text_that_landed_is_never_offered_for_pasting_again() {
+        let text_only = || Ok::<Pasted, String>(Pasted::TextOnly("focus changed".into()));
+        assert_eq!(
+            settle_bundle(text_only(), Ok(()), true),
+            Outcome::TextOnly {
+                drawing_copied: true
+            }
+        );
+        for offered in [Ok(()), Err("ownership changed".into())] {
+            assert_eq!(
+                settle_bundle(text_only(), offered, false),
+                Outcome::TextOnly {
+                    drawing_copied: false
+                }
+            );
+        }
+        let (sender, receiver) = mpsc::channel();
+        let tray = TrayUpdates { sender };
+        let shown = report_outcome(
+            Some(&tray),
+            Outcome::TextOnly {
+                drawing_copied: true,
+            },
+        );
+        assert_eq!(shown, Ok(()), "no error row over the result");
+        assert!(matches!(
+            receiver.try_recv(),
+            Ok(TrayUpdate::TextOnly(true))
+        ));
     }
 
     #[test]
