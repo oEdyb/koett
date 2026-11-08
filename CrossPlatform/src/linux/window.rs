@@ -25,6 +25,8 @@ pub enum Update {
     DeliveryStarted,
     Delivered,
     Copied,
+    /// The text pasted and the drawing didn't; true when the drawing is on the clipboard.
+    TextOnly(bool),
     DeliveryFailed,
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
@@ -590,6 +592,17 @@ fn build_window(
                         recovery_until = None;
                         if let Some(overlay) = &overlay {
                             overlay.set_copied(true);
+                        }
+                        done_until = Some(Instant::now() + DONE_DURATION);
+                        done_fading = None;
+                    }
+                    // Never the rescue with Paste: pasting again would repeat the text.
+                    Update::TextOnly(drawing_copied) => {
+                        delivery_pending = false;
+                        settling_until = None;
+                        recovery_until = None;
+                        if let Some(overlay) = &overlay {
+                            overlay.set_text_only(drawing_copied);
                         }
                         done_until = Some(Instant::now() + DONE_DURATION);
                         done_fading = None;

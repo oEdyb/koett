@@ -452,6 +452,8 @@ impl Pill {
 /// Said once, then the pill fades like Done.
 pub(super) const COPIED: &str = "Copied to clipboard";
 pub(super) const CANCELLED: &str = "Cancelled";
+pub(super) const TEXT_DRAWING_COPIED: &str = "Text pasted · drawing copied";
+pub(super) const TEXT_DRAWING_FAILED: &str = "Text pasted · drawing failed";
 /// ✕ takes the clock's place at the right of the row.
 const CANCEL_W: i32 = 28;
 const CANCEL_X: f64 = (WIDTH - 14 - CANCEL_W) as f64;
@@ -1019,6 +1021,15 @@ impl RecordingOverlay {
     /// The next Done says the text was copied instead of showing it.
     pub fn set_copied(&self, copied: bool) {
         self.note.set(copied.then_some(COPIED));
+    }
+
+    /// The next Done says the text landed and the drawing didn't.
+    pub fn set_text_only(&self, drawing_copied: bool) {
+        self.note.set(Some(if drawing_copied {
+            TEXT_DRAWING_COPIED
+        } else {
+            TEXT_DRAWING_FAILED
+        }));
     }
 
     /// The next Done says Cancelled: the ✕ was pressed or a cancel arrived.

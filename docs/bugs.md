@@ -306,3 +306,15 @@ landed both 6 times in 6 under the same load. Pasting both as one item can't wor
 with an image file attaches the image and drops the text. So Linux now pastes the text, waits 300 ms
 after the target reads it, then pastes the drawing; GTK and kitty still get the text. Windows still
 pastes the drawing first and needs the same change.
+
+## 2026-11-08: a drawing that failed after its text offered to paste the text again
+
+Found in the review of the Windows port of text-first (#190). Once the text pastes first, a drawing
+that then fails has a partial result. Linux reported it like nothing had pasted: `Copied to clipboard`
+when the drawing read back, otherwise the sticky rescue, whose Paste pastes the text a second time.
+A full paste whose clipboard offer then failed also fell to the rescue. Now the pill says
+`Text pasted · drawing copied` or `Text pasted · drawing failed` and fades, with no Paste, and a full
+paste is Pasted whatever the offer does. On Wayland a text the target never reads already stopped
+before the drawing, so the drawing can't replace unread text; X11 still can't tell. A cancel can't
+land mid-paste on Linux, since the paste runs in the loop that handles it and the engine ignores a
+Cancel once it's Ready. Lab: nested niri, a real drawing through draw-lock, Electron targets.
