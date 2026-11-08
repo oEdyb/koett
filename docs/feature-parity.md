@@ -152,3 +152,5 @@ remaining limits](linux-gnome-pill-verification.md). GNOME drawing, capture and
 pointer context remain open; a recording pill does not supply those backends.
 
 Mac source closures, closest alternatives and remaining physical/provider gates: [Mac open rows](macos-parity-open-rows.md).
+
+Windows drawing delivery still offers the image after 1.5 seconds without a target-PID text read for UWP/ApplicationFrameHost compatibility; Linux requires the read before the image.

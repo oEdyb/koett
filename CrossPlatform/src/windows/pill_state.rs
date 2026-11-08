@@ -9,7 +9,7 @@ pub enum Phase {
     /// ✕, Esc or the tray cancelled the dictation: one line, then it fades even under the pointer.
     Cancelled,
     Partial {
-        confirmed: bool,
+        drawing_copied: bool,
         saved: bool,
     },
     NotPasted {
@@ -118,8 +118,8 @@ impl State {
             Phase::Copied if self.copied => Some(self.changed + 1750),
             Phase::Cancelled => Some(self.changed + 1750),
             Phase::Partial { .. } if self.copied => Some(self.changed + 1750),
-            Phase::Copied if self.hovered => None,
-            Phase::Copied => Some(
+            Phase::Copied | Phase::Partial { .. } if self.hovered => None,
+            Phase::Copied | Phase::Partial { .. } => Some(
                 self.left_hover
                     .map(|t| t + 800)
                     .unwrap_or(self.changed + 1750),
@@ -169,18 +169,20 @@ impl State {
 mod tests {
     use super::*;
     #[test]
-    fn partial_delivery_stays_until_copy_and_then_fades() {
+    fn partial_delivery_fades_and_hover_holds_it() {
         let mut state = State::default();
         state.set(
             Phase::Partial {
-                confirmed: true,
+                drawing_copied: true,
                 saved: false,
             },
             0,
         );
-        assert_eq!(state.opacity(60_000, true), 1.0);
+        assert_eq!(state.opacity(1749, true), 1.0);
+        assert_eq!(state.opacity(1750, true), 0.0);
         assert!(state.interactive());
-        state.hover(true, 60_000);
+        state.hover(true, 1700);
+        assert_eq!(state.opacity(60_000, true), 1.0);
         state.copy(60_000);
         assert_eq!(state.opacity(61_749, true), 1.0);
         assert_eq!(state.opacity(61_750, true), 0.0);
@@ -376,11 +378,11 @@ mod delivery_tests {
     }
 }
 
-pub(super) fn partial_label(confirmed: bool, saved: bool) -> &'static str {
-    match (confirmed, saved) {
-        (true, true) => "Text pasted · image unavailable",
-        (false, true) => "Paste unconfirmed",
-        (true, false) => "Text pasted · save warning",
-        (false, false) => "Unconfirmed · save warning",
+pub(super) fn partial_label(drawing_copied: bool, saved: bool) -> &'static str {
+    match (drawing_copied, saved) {
+        (true, true) => "Text pasted · drawing copied",
+        (false, true) => "Text pasted · drawing failed",
+        (true, false) => "Drawing copied · save warning",
+        (false, false) => "Drawing failed · save warning",
     }
 }

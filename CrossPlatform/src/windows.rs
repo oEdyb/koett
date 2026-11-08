@@ -212,6 +212,12 @@ struct ClipboardRestore {
     target_pid: u32,
     started: Instant,
     posted: bool,
+    text_confirmed: bool,
+}
+
+struct DrawingPasteError {
+    message: String,
+    offer: Option<clipboard::Offer>,
 }
 
 pub fn run() -> Result<(), String> {
@@ -1652,7 +1658,10 @@ impl WindowsApp {
             }
             pill_state::Phase::Partial { .. } => {
                 if x >= 245 && self.copy_last().is_ok() {
+                    self.pill_state.set(pill_state::Phase::Copied, now);
                     self.pill_state.copy(now);
+                } else if x < 245 {
+                    self.pill_state.set(pill_state::Phase::Hidden, now);
                 }
             }
             pill_state::Phase::Done(_) | pill_state::Phase::NotPasted { .. } => {
@@ -1670,10 +1679,7 @@ impl WindowsApp {
                         }
                         self.pill_state.copy(now);
                     }
-                } else if x >= 190
-                    && (self.pill_state.repeat_paste && !self.pill_media
-                        || matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }))
-                {
+                } else if x >= 190 && (self.pill_state.repeat_paste && !self.pill_media) {
                     self.repeat_paste();
                 } else if matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }) {
                     self.pill_state.set(pill_state::Phase::Hidden, now);
@@ -1848,6 +1854,7 @@ impl WindowsApp {
         !self.last_transcript.is_empty()
             && !matches!(self.last_target, RecoveryTarget::CopyOnly)
             && self.staged.is_none()
+            && self.clipboard_restore.as_ref().is_none_or(|r| !r.posted)
             && self.pending_result.is_none()
             && !self.capture_pending
             && matches!(self.status, AppStatus::Ready | AppStatus::Error(_))
@@ -1856,11 +1863,19 @@ impl WindowsApp {
         &mut self,
         bundle: &Rc<clipboard::Bundle>,
         target: PasteTarget,
-    ) -> Result<clipboard::Offer, String> {
+    ) -> Result<clipboard::Offer, DrawingPasteError> {
         if foreground_paste_target() != Some(target) {
-            return Err("Focus changed; text was not pasted".into());
+            return Err(DrawingPasteError {
+                message: "Focus changed; text was not pasted".into(),
+                offer: None,
+            });
         }
-        let offer = bundle.text_first(self.hwnd)?;
+        let offer = bundle
+            .text_first(self.hwnd)
+            .map_err(|message| DrawingPasteError {
+                message,
+                offer: None,
+            })?;
         if let Err(error) = paste_offered(target, offer, self.settings.paste_shortcut) {
             self.clipboard_restore = Some(ClipboardRestore {
                 bundle: Rc::clone(bundle),
@@ -1868,8 +1883,12 @@ impl WindowsApp {
                 target_pid: target.pid,
                 started: Instant::now(),
                 posted: false,
+                text_confirmed: false,
             });
-            return Err(error);
+            return Err(DrawingPasteError {
+                message: error,
+                offer: Some(offer),
+            });
         }
         Ok(offer)
     }
@@ -1888,7 +1907,9 @@ impl WindowsApp {
                 return Err("Focus changed; not pasted".into());
             }
             if let Some(bundle) = self.last_bundle.clone() {
-                let offer = self.post_drawing_text(&bundle, target)?;
+                let offer = self
+                    .post_drawing_text(&bundle, target)
+                    .map_err(|error| error.message)?;
                 self.staged = Some(StagedPaste {
                     offer,
                     target,
@@ -1993,7 +2014,7 @@ impl WindowsApp {
                 .take()
                 .expect("clipboard restoration exists");
             if restore.posted && read.is_none() {
-                self.mark_image_partial(&restore.bundle);
+                self.mark_image_partial(&restore.bundle, restore.text_confirmed, false);
             }
             return;
         }
@@ -2004,13 +2025,13 @@ impl WindowsApp {
             .clipboard_restore
             .take()
             .expect("clipboard restoration exists");
-        if restore.posted && read.is_none() {
-            self.mark_image_partial(&restore.bundle);
+        let copied = clipboard::ensure_bundle(self.hwnd, &restore.bundle, Some(offer));
+        if restore.posted && (read.is_none() || !restore.text_confirmed) {
+            self.mark_image_partial(&restore.bundle, restore.text_confirmed, copied);
         }
-        if let Err(error) = restore.bundle.restore(offer)
-            && offer.unchanged()
-        {
-            eprintln!("Koett: Clipboard recovery failed: {error}");
+        self.pill_state.repeat_paste = self.last_bundle.is_some() && self.can_repeat_paste();
+        if !copied && offer.unchanged() {
+            eprintln!("Koett: Clipboard recovery failed");
             self.notify_drawing(
                 "Image and text could not be kept on the clipboard. Use tray Copy.",
             );
@@ -2031,7 +2052,12 @@ impl WindowsApp {
             }
         }
     }
-    fn mark_image_partial(&mut self, bundle: &Rc<clipboard::Bundle>) {
+    fn mark_image_partial(
+        &mut self,
+        bundle: &Rc<clipboard::Bundle>,
+        confirmed: bool,
+        copied: bool,
+    ) {
         if !self
             .last_bundle
             .as_ref()
@@ -2040,12 +2066,29 @@ impl WindowsApp {
             return;
         }
         self.last_target = RecoveryTarget::CopyOnly;
-        if self.status == AppStatus::Ready {
-            let saved = !matches!(self.pill_state.phase, pill_state::Phase::Error { .. });
+        self.pill_state.repeat_paste = false;
+        if self.status == AppStatus::Ready
+            && !matches!(
+                self.pill_state.phase,
+                pill_state::Phase::Copied
+                    | pill_state::Phase::Hidden
+                    | pill_state::Phase::Cancelled
+            )
+        {
+            let saved = !matches!(
+                self.pill_state.phase,
+                pill_state::Phase::Error { .. } | pill_state::Phase::NotPasted { saved: false }
+            );
             self.pill_state.set(
-                pill_state::Phase::Partial {
-                    confirmed: true,
-                    saved,
+                if confirmed {
+                    pill_state::Phase::Partial {
+                        drawing_copied: copied,
+                        saved,
+                    }
+                } else if copied {
+                    pill_state::Phase::Copied
+                } else {
+                    pill_state::Phase::NotPasted { saved }
                 },
                 self.clock.elapsed().as_millis() as u64,
             );
@@ -2063,15 +2106,6 @@ impl WindowsApp {
             return;
         }
         let staged = self.staged.take().expect("staged paste exists");
-        if stage == paste_timing::TextStage::Unconfirmed {
-            self.finish_drawing_partial(
-                staged,
-                offer,
-                false,
-                "Target did not confirm reading the text; image was not pasted".into(),
-            );
-            return;
-        }
         let mut recovery_offer = offer;
         let result = if foreground_paste_target() != Some(staged.target) {
             Err("Focus changed; drawing was not pasted".into())
@@ -2094,18 +2128,19 @@ impl WindowsApp {
                             target_pid: staged.target.pid,
                             started: Instant::now(),
                             posted: result.is_ok(),
+                            text_confirmed: read_at.is_some(),
                         });
                     result
                 })
         };
         if let Err(error) = result {
-            self.finish_drawing_partial(staged, recovery_offer, true, error);
+            self.finish_drawing_partial(staged, recovery_offer, read_at.is_some(), error);
         } else if let Some(saved) = staged.saved {
             self.pill_state.set(
                 pill_state::delivery_result(staged.text, true, false, saved, false),
                 self.clock.elapsed().as_millis() as u64,
             );
-            self.pill_state.repeat_paste = true;
+            self.pill_state.repeat_paste = self.can_repeat_paste();
             self.update_overlay();
         } else {
             self.record_delivery(
@@ -2116,6 +2151,20 @@ impl WindowsApp {
                 Some(recovery_offer),
             );
         }
+        if read_at.is_none() && self.clipboard_restore.is_some() {
+            self.last_target = RecoveryTarget::CopyOnly;
+            self.pill_state.set(
+                pill_state::Phase::NotPasted {
+                    saved: !matches!(
+                        self.pill_state.phase,
+                        pill_state::Phase::Error { .. }
+                            | pill_state::Phase::NotPasted { saved: false }
+                    ),
+                },
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.update_overlay();
+        }
     }
     fn finish_drawing_partial(
         &mut self,
@@ -2124,10 +2173,10 @@ impl WindowsApp {
         confirmed: bool,
         error: String,
     ) {
-        let saved = if let Some(saved) = staged.saved {
-            let _ = self.ensure_on_clipboard(&staged.text, Some(offer));
+        let (saved, copied) = if let Some(saved) = staged.saved {
+            let copied = self.ensure_on_clipboard(&staged.text, Some(offer));
             eprintln!("Koett: {error}");
-            saved
+            (saved, copied)
         } else {
             self.record_delivery(
                 &staged.model,
@@ -2135,15 +2184,20 @@ impl WindowsApp {
                 staged.raw.as_deref(),
                 Some(error),
                 Some(offer),
-            );
-            !matches!(
-                self.pill_state.phase,
-                pill_state::Phase::NotPasted { saved: false }
             )
         };
         self.last_target = RecoveryTarget::CopyOnly;
         self.pill_state.set(
-            pill_state::Phase::Partial { confirmed, saved },
+            if confirmed {
+                pill_state::Phase::Partial {
+                    drawing_copied: copied,
+                    saved,
+                }
+            } else if copied {
+                pill_state::Phase::Copied
+            } else {
+                pill_state::Phase::NotPasted { saved }
+            },
             self.clock.elapsed().as_millis() as u64,
         );
         self.update_overlay();
@@ -2199,7 +2253,10 @@ impl WindowsApp {
                     self.last_transcript = summary.clone();
                     let result = self
                         .paste_target
-                        .ok_or_else(|| "No external paste target".to_string())
+                        .ok_or_else(|| DrawingPasteError {
+                            message: "No external paste target".into(),
+                            offer: None,
+                        })
                         .and_then(|target| {
                             self.post_drawing_text(&bundle, target)
                                 .map(|offer| (offer, target))
@@ -2216,13 +2273,15 @@ impl WindowsApp {
                                 saved: None,
                             });
                         }
-                        Err(error) => self.record_delivery(
-                            model,
-                            &summary,
-                            raw,
-                            Some(error),
-                            self.clipboard_restore.as_ref().map(|restore| restore.offer),
-                        ),
+                        Err(error) => {
+                            self.record_delivery(
+                                model,
+                                &summary,
+                                raw,
+                                Some(error.message),
+                                error.offer,
+                            );
+                        }
                     }
                 }
                 Err(error) => {
@@ -2273,7 +2332,7 @@ impl WindowsApp {
         raw: Option<&str>,
         delivery_error: Option<String>,
         expected_clipboard: Option<clipboard::Offer>,
-    ) {
+    ) -> (bool, bool) {
         self.status = AppStatus::Ready;
         let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
         self.last_transcript = text.to_string();
@@ -2306,8 +2365,11 @@ impl WindowsApp {
             pill_state::delivery_result(text.to_string(), !failed, copied, saved, history_failed);
         self.pill_state
             .set(phase, self.clock.elapsed().as_millis() as u64);
-        self.pill_state.repeat_paste = self.last_bundle.is_some();
+        self.pill_state.repeat_paste = self.can_repeat_paste()
+            && (self.last_bundle.is_some()
+                || matches!(self.pill_state.phase, pill_state::Phase::NotPasted { .. }));
         self.update_overlay();
+        (saved, copied)
     }
 
     fn add_tray(&mut self) -> Result<(), String> {
@@ -3110,21 +3172,110 @@ mod tests {
         let mut app = review_app();
         app.last_bundle = Some(Rc::clone(&bundle));
         app.status = AppStatus::Ready;
-        app.pill_state.set(pill_state::Phase::Copied, 0);
-        app.mark_image_partial(&bundle);
-        assert!(matches!(
-            app.pill_state.phase,
-            pill_state::Phase::Partial {
-                confirmed: true,
-                ..
-            }
-        ));
-        assert!(!app.can_repeat_paste());
+        for phase in [
+            pill_state::Phase::Copied,
+            pill_state::Phase::Hidden,
+            pill_state::Phase::Cancelled,
+        ] {
+            app.pill_state.set(phase.clone(), 0);
+            app.mark_image_partial(&bundle, true, true);
+            assert_eq!(app.pill_state.phase, phase);
+            assert!(!app.can_repeat_paste());
+        }
         app.status = AppStatus::Recording;
         app.pill_state.set(pill_state::Phase::Recording, 1);
-        app.mark_image_partial(&bundle);
+        app.mark_image_partial(&bundle, true, true);
         assert_eq!(app.pill_state.phase, pill_state::Phase::Recording);
         unsafe { CoUninitialize() };
+    }
+    #[test]
+    fn drawing_image_pending_blocks_retry_before_the_read_deadline() {
+        use super::*;
+        use windows::Win32::System::Com::*;
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).ok().unwrap() };
+        let owner = unsafe {
+            CreateWindowExW(
+                Default::default(),
+                w!("STATIC"),
+                w!("Paste retry test"),
+                WS_POPUP,
+                0,
+                0,
+                1,
+                1,
+                None,
+                None,
+                None,
+                None,
+            )
+        }
+        .unwrap();
+        let image = pixels::Pixels::new(1, 1, vec![0, 0, 255, 255]).unwrap();
+        let bundle = Rc::new(clipboard::Bundle::new(&image, "text once".into()).unwrap());
+        let offer = bundle.copy(owner).unwrap();
+        let mut app = review_app();
+        app.status = AppStatus::Ready;
+        app.last_transcript = "text once".into();
+        app.last_target = RecoveryTarget::Destination(PasteTarget {
+            hwnd: owner,
+            pid: std::process::id(),
+        });
+        app.last_bundle = Some(Rc::clone(&bundle));
+        app.pill_state
+            .set(pill_state::Phase::Done("text once".into()), 0);
+        assert!(app.can_repeat_paste());
+        app.clipboard_restore = Some(ClipboardRestore {
+            bundle,
+            offer,
+            target_pid: std::process::id(),
+            started: Instant::now(),
+            posted: true,
+            text_confirmed: true,
+        });
+        assert!(
+            app.clipboard_restore.as_ref().unwrap().started.elapsed() < Duration::from_millis(1500)
+        );
+        assert!(!app.can_repeat_paste());
+        app.repeat_paste();
+        assert!(app.staged.is_none());
+        assert!(offer.unchanged());
+        let failed = app
+            .post_drawing_text(
+                &app.last_bundle.clone().unwrap(),
+                PasteTarget {
+                    hwnd: HWND::default(),
+                    pid: 0,
+                },
+            )
+            .err()
+            .unwrap();
+        assert!(
+            failed.offer.is_none(),
+            "a previous restoration is not this attempt's offer"
+        );
+        assert!(app.clipboard_restore.as_ref().unwrap().offer.unchanged());
+        app.clipboard_restore.as_mut().unwrap().posted = false;
+        assert!(app.can_repeat_paste());
+        unsafe {
+            let _ = DestroyWindow(owner);
+            CoUninitialize();
+        };
+    }
+    #[test]
+    fn dismissing_partial_keeps_copy_only() {
+        use super::*;
+        let mut app = review_app();
+        app.last_target = RecoveryTarget::CopyOnly;
+        app.pill_state.set(
+            pill_state::Phase::Partial {
+                drawing_copied: false,
+                saved: true,
+            },
+            0,
+        );
+        app.pill_click(100, false);
+        assert_eq!(app.pill_state.phase, pill_state::Phase::Hidden);
+        assert!(!app.can_repeat_paste());
     }
     #[test]
     fn partial_delivery_cannot_repeat_after_copy_or_later_cancellation() {
@@ -3134,7 +3285,7 @@ mod tests {
         app.last_target = RecoveryTarget::CopyOnly;
         for phase in [
             pill_state::Phase::Partial {
-                confirmed: true,
+                drawing_copied: true,
                 saved: true,
             },
             pill_state::Phase::Copied,

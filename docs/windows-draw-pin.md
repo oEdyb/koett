@@ -31,9 +31,10 @@ hardware and the remaining parity milestones are separate gates.
 Text is offered first with delayed Unicode rendering. After a read attributed to
 the target process plus 300 ms, the drawing is offered separately as delayed
 PNG/DIBV5. Reads from other processes or OpenClipboard(NULL) do not confirm the
-target consumed the text. After 1.5 seconds without a target read, Koett keeps
-the recovery bundle and shows Paste unconfirmed, without sending the image.
-Some Chromium editors use anonymous reads and therefore take this safe path.
+target consumed the text. After 1.5 seconds without a target read, Windows still
+sends the image for UWP/ApplicationFrameHost reader-PID compatibility. That fallback does not claim
+confirmed text delivery. It shows Copied to clipboard only after verifying the
+recovery bundle, otherwise Not pasted.
 
 After the image read plus 200 ms, PNG/DIBV5/HTML/Unicode are restored together
 only if owner, sequence and marker still match. A newer copy wins at both stages.
@@ -43,14 +44,17 @@ pass or History write. Copy publishes the combined clipboard bundle.
 If text may already have been pasted, focus changes, image delivery fails and
 cancellation show a partial result with Copy. They disable Paste retry, including
 tray and shortcut recovery, so the transcript cannot be inserted twice. A
-confirmed text-only target shows Text pasted with the image unavailable. An
-unconfirmed read never claims Done. Storage failure remains visible.
+confirmed text-only target shows Text pasted · drawing copied or Text pasted ·
+drawing failed. Partial notices fade after 1.75 seconds, stay while hovered, and
+dismiss on a body click without enabling retry. Storage warnings retain the
+drawing outcome. An unconfirmed read never claims Done.
 
 Each input stage checks the original HWND/PID, process eligibility, integrity,
 clipboard ownership and released modifiers. The final foreground query occurs
 **after** clipboard validation, immediately before SendInput. A changed target
-or failed delivery produces persistent Not pasted with recovery. SendInput
-itself cannot prove consumption in arbitrary applications.
+or failed drawing image stage produces a Partial notice with Copy only when
+text was confirmed. Failures before confirmed text use clipboard recovery.
+SendInput itself cannot prove consumption in arbitrary applications.
 
 Recovery retains the last result's destination across later cancelled/silent
 attempts. Tray focus uses the actual Explorer taskbar ancestor chain, including
@@ -163,5 +167,6 @@ the reported composer reset; it is not an automated Windows T3 acceptance test.
 An optional lab collector can accept its JSON POST at `/m4-paste-event`.
 
 The target-process read gate must also be checked in a native target that opens
-the clipboard with its own window. The Chromium fixture's anonymous reads should
-stop at Paste unconfirmed and keep the bundle available through Copy.
+the clipboard with its own window. The Chromium fixture's anonymous reads take
+Windows' 1.5-second fallback. Check text precedes the image, the text survives
+the modeled reset, and the notice does not claim a target-confirmed paste.

@@ -385,12 +385,17 @@ impl Renderer {
                                 189.0,
                                 false,
                             );
-                            draw("Paste", 192.0, 237.0, false);
+                            if state.repeat_paste {
+                                draw("Paste", 192.0, 237.0, false);
+                            }
                             draw("Copy", 245.0, 292.0, false);
                         }
-                        Phase::Partial { confirmed, saved } => {
+                        Phase::Partial {
+                            drawing_copied,
+                            saved,
+                        } => {
                             draw(
-                                super::pill_state::partial_label(*confirmed, *saved),
+                                super::pill_state::partial_label(*drawing_copied, *saved),
                                 44.0 + shift,
                                 234.0,
                                 false,
