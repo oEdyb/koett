@@ -38,8 +38,8 @@ their saved draft after preparing the image.
 
 After the image read plus 200 ms, PNG/DIBV5/HTML/Unicode are restored together
 only if owner, sequence and marker still match. A newer copy wins at both stages.
-Explicit Copy/Paste recovery uses the same text-first sequence without another
-ASR pass or History write. A text-only target keeps its pasted transcript and
+Explicit Paste recovery uses the same text-first sequence without another
+ASR pass or History write. Copy publishes the combined clipboard bundle. A text-only target keeps its pasted transcript and
 shows that the image was unavailable.
 
 Each input stage checks the original HWND/PID, process eligibility, integrity,
