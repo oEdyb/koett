@@ -183,7 +183,6 @@ struct StagedPaste {
     text: String,
     raw: Option<String>,
     saved: Option<bool>,
-    text_shortcut: crate::settings::PasteShortcut,
 }
 
 struct ClipboardRestore {
@@ -1826,20 +1825,16 @@ impl WindowsApp {
             && !self.capture_pending
             && matches!(self.status, AppStatus::Ready | AppStatus::Error(_))
     }
-    fn post_image(
+    fn post_drawing_text(
         &mut self,
         bundle: &Rc<clipboard::Bundle>,
         target: PasteTarget,
     ) -> Result<clipboard::Offer, String> {
         if foreground_paste_target() != Some(target) {
-            return Err("Focus changed; drawing was not pasted".into());
+            return Err("Focus changed; text was not pasted".into());
         }
-        let offer = bundle.image_first(self.hwnd)?;
-        if let Err(error) = paste_offered(
-            target,
-            offer,
-            paste_chord::image(&self.settings, target.pid),
-        ) {
+        let offer = bundle.text_first(self.hwnd)?;
+        if let Err(error) = paste_offered(target, offer, self.settings.paste_shortcut) {
             self.clipboard_restore = Some(ClipboardRestore {
                 bundle: Rc::clone(bundle),
                 offer,
@@ -1869,7 +1864,7 @@ impl WindowsApp {
                     return Err("Focus changed; not pasted".into());
                 }
                 if let Some(bundle) = self.last_bundle.clone() {
-                    let offer = self.post_image(&bundle, target)?;
+                    let offer = self.post_drawing_text(&bundle, target)?;
                     self.staged = Some(StagedPaste {
                         offer,
                         target,
@@ -1878,7 +1873,6 @@ impl WindowsApp {
                         text: self.last_transcript.clone(),
                         raw: None,
                         saved: Some(saved),
-                        text_shortcut: self.settings.paste_shortcut,
                     });
                 } else {
                     let offer = clipboard::text_offer(self.hwnd, &self.last_transcript)?;
@@ -1950,7 +1944,8 @@ impl WindowsApp {
                 &staged.model,
                 &staged.text,
                 staged.raw.as_deref(),
-                Some("Drawing paste cancelled before text delivery".into()),
+                Some("Drawing paste cancelled before image delivery".into()),
+                Some(clipboard::rendered(staged.offer, staged.target.pid).0),
             );
         }
     }
@@ -1977,6 +1972,21 @@ impl WindowsApp {
             .clipboard_restore
             .take()
             .expect("clipboard restoration exists");
+        if restore.posted
+            && read.is_none()
+            && matches!(self.pill_state.phase, pill_state::Phase::Done(_))
+            && self
+                .last_bundle
+                .as_ref()
+                .is_some_and(|bundle| Rc::ptr_eq(bundle, &restore.bundle))
+        {
+            self.pill_state.set(
+                pill_state::Phase::Done("Text pasted · image unavailable · Copy to keep".into()),
+                self.clock.elapsed().as_millis() as u64,
+            );
+            self.pill_state.repeat_paste = false;
+            self.update_overlay();
+        }
         if let Err(error) = restore.bundle.restore(offer)
             && offer.unchanged()
         {
@@ -2006,43 +2016,41 @@ impl WindowsApp {
         let Some(staged) = self.staged.as_ref() else {
             return;
         };
-        let (offer, read_at, image_requested) =
-            clipboard::rendered(staged.offer, staged.target.pid);
-        let ready = paste_timing::text_ready(staged.started, read_at, Instant::now());
+        let (offer, read_at, _) = clipboard::rendered(staged.offer, staged.target.pid);
+        let ready = paste_timing::image_ready(staged.started, read_at, Instant::now());
         if !ready {
             return;
         }
         let staged = self.staged.take().expect("staged paste exists");
-        self.clipboard_restore = self.last_bundle.as_ref().map(|bundle| ClipboardRestore {
-            bundle: Rc::clone(bundle),
-            offer,
-            target_pid: staged.target.pid,
-            started: Instant::now(),
-            posted: false,
-        });
+        let mut recovery_offer = offer;
         let result = if foreground_paste_target() != Some(staged.target) {
-            Err("Focus changed; text was not pasted".into())
+            Err("Focus changed; drawing was not pasted".into())
         } else {
-            offer
-                .replace_with_delayed_text(&staged.text)
+            self.last_bundle
+                .as_ref()
+                .ok_or_else(|| "Drawing unavailable".to_string())
+                .and_then(|bundle| bundle.image_after(offer))
                 .and_then(|offer| {
-                    let result = paste_offered(staged.target, offer, staged.text_shortcut);
-                    if let Some(restore) = self.clipboard_restore.as_mut() {
-                        restore.offer = offer;
-                        restore.started = Instant::now();
-                        restore.posted = result.is_ok();
-                    }
+                    recovery_offer = offer;
+                    let result = paste_offered(
+                        staged.target,
+                        offer,
+                        paste_chord::image(&self.settings, staged.target.pid),
+                    );
+                    self.clipboard_restore =
+                        self.last_bundle.as_ref().map(|bundle| ClipboardRestore {
+                            bundle: Rc::clone(bundle),
+                            offer,
+                            target_pid: staged.target.pid,
+                            started: Instant::now(),
+                            posted: result.is_ok(),
+                        });
                     result
                 })
         };
-        let image_omitted = result.is_ok() && !image_requested;
-        if image_omitted {
-            eprintln!(
-                "Koett: Text pasted; the target did not request an image. Use Copy in an image-capable editor."
-            );
-        }
         if let Some(saved) = staged.saved {
-            let copied = result.is_err() && self.ensure_on_clipboard(&staged.text);
+            let copied =
+                result.is_err() && self.ensure_on_clipboard(&staged.text, Some(recovery_offer));
             self.pill_state.set(
                 pill_state::delivery_result(staged.text, result.is_ok(), copied, saved, false),
                 self.clock.elapsed().as_millis() as u64,
@@ -2058,15 +2066,8 @@ impl WindowsApp {
                 &staged.text,
                 staged.raw.as_deref(),
                 result.err(),
+                Some(recovery_offer),
             );
-        }
-        if image_omitted && matches!(self.pill_state.phase, pill_state::Phase::Done(_)) {
-            self.pill_state.set(
-                pill_state::Phase::Done("Text pasted · image unavailable · Copy to keep".into()),
-                self.clock.elapsed().as_millis() as u64,
-            );
-            self.pill_state.repeat_paste = false;
-            self.update_overlay();
         }
     }
 
@@ -2122,7 +2123,7 @@ impl WindowsApp {
                         .paste_target
                         .ok_or_else(|| "No external paste target".to_string())
                         .and_then(|target| {
-                            self.post_image(&bundle, target)
+                            self.post_drawing_text(&bundle, target)
                                 .map(|offer| (offer, target))
                         });
                     match result {
@@ -2135,15 +2136,20 @@ impl WindowsApp {
                                 text: summary,
                                 raw: raw.map(str::to_owned),
                                 saved: None,
-                                text_shortcut: self.settings.paste_shortcut,
                             });
                         }
-                        Err(error) => self.record_delivery(model, &summary, raw, Some(error)),
+                        Err(error) => self.record_delivery(
+                            model,
+                            &summary,
+                            raw,
+                            Some(error),
+                            self.clipboard_restore.as_ref().map(|restore| restore.offer),
+                        ),
                     }
                 }
                 Err(error) => {
                     self.last_bundle = None;
-                    self.record_delivery(model, text, raw, Some(error));
+                    self.record_delivery(model, text, raw, Some(error), None);
                 }
             }
             return;
@@ -2169,15 +2175,15 @@ impl WindowsApp {
                 paste_offered(target, offer, self.settings.paste_shortcut)
             })
             .err();
-        self.record_delivery(model, text, raw, delivery_error);
+        self.record_delivery(model, text, raw, delivery_error, None);
     }
     /// A result that didn't paste, put on the clipboard and read back: the drawing's
     /// image and text when there is one, otherwise the text.
-    fn ensure_on_clipboard(&mut self, text: &str) -> bool {
+    fn ensure_on_clipboard(&mut self, text: &str, expected: Option<clipboard::Offer>) -> bool {
         match self.last_bundle.clone() {
             Some(bundle) => {
                 self.clipboard_restore = None;
-                clipboard::ensure_bundle(self.hwnd, &bundle)
+                clipboard::ensure_bundle(self.hwnd, &bundle, expected)
             }
             None => clipboard::ensure_text(self.hwnd, text),
         }
@@ -2188,6 +2194,7 @@ impl WindowsApp {
         text: &str,
         raw: Option<&str>,
         delivery_error: Option<String>,
+        expected_clipboard: Option<clipboard::Offer>,
     ) {
         self.status = AppStatus::Ready;
         let _ = unsafe { UnregisterHotKey(Some(self.hwnd), 3) };
@@ -2216,7 +2223,7 @@ impl WindowsApp {
             };
             eprintln!("Koett: {error}");
         }
-        let copied = failed && self.ensure_on_clipboard(text);
+        let copied = failed && self.ensure_on_clipboard(text, expected_clipboard);
         let phase =
             pill_state::delivery_result(text.to_string(), !failed, copied, saved, history_failed);
         self.pill_state
