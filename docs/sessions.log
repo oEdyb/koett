@@ -7,3 +7,4 @@
 [2026-11-03 21:43] I checked the cleanup agent's filler finding against the local history. Parakeet v2 writes "um/uh" at 2.46% of words and 110M at 0.60%, though those ran on different days. I'm still waiting on the oth
 [2026-11-03 21:44] One to go, the model comparison. Vocabulary is back: non-word forms are safe, but a blanket `scroll → Scrawl` would be wrong in 8 of the 14 "scroll" hits. 
 [2026-11-11 19:48] The drawing-first fix is built on all three platforms and open as PR #195. The impacted Mac tests are running on the Mac. When they pass, I run the one manual CI on head `d74203d`, merge, and install 
+[2026-11-11 19:49] The Mac tests passed: 17 tests, 0 failures, including the new check that the text waits until the drawing has settled. The one manual CI run, 43081309331, is in progress on head `d74203d`. Main is sti
