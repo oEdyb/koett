@@ -391,11 +391,16 @@ impl Renderer {
                             draw("Copy", 245.0, 292.0, false);
                         }
                         Phase::Partial {
-                            drawing_copied,
+                            text_landed,
+                            other_copied,
                             saved,
                         } => {
                             draw(
-                                super::pill_state::partial_label(*drawing_copied, *saved),
+                                super::pill_state::partial_label(
+                                    *text_landed,
+                                    *other_copied,
+                                    *saved,
+                                ),
                                 44.0 + shift,
                                 234.0,
                                 false,

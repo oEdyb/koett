@@ -212,7 +212,8 @@ struct ClipboardRestore {
     target_pid: u32,
     started: Instant,
     posted: bool,
-    text_confirmed: bool,
+    /// The target read the drawing before the text was pasted.
+    image_confirmed: bool,
 }
 
 struct DrawingPasteError {
@@ -1859,31 +1860,37 @@ impl WindowsApp {
             && !self.capture_pending
             && matches!(self.status, AppStatus::Ready | AppStatus::Error(_))
     }
-    fn post_drawing_text(
+    /// Pastes the drawing; `poll_staged` pastes the text once the target has taken it. The
+    /// text is what the user waits for, so it lands last and one Enter sends both.
+    fn post_drawing(
         &mut self,
         bundle: &Rc<clipboard::Bundle>,
         target: PasteTarget,
     ) -> Result<clipboard::Offer, DrawingPasteError> {
         if foreground_paste_target() != Some(target) {
             return Err(DrawingPasteError {
-                message: "Focus changed; text was not pasted".into(),
+                message: "Focus changed; drawing was not pasted".into(),
                 offer: None,
             });
         }
         let offer = bundle
-            .text_first(self.hwnd)
+            .image_first(self.hwnd)
             .map_err(|message| DrawingPasteError {
                 message,
                 offer: None,
             })?;
-        if let Err(error) = paste_offered(target, offer, self.settings.paste_shortcut) {
+        if let Err(error) = paste_offered(
+            target,
+            offer,
+            paste_chord::image(&self.settings, target.pid),
+        ) {
             self.clipboard_restore = Some(ClipboardRestore {
                 bundle: Rc::clone(bundle),
                 offer,
                 target_pid: target.pid,
                 started: Instant::now(),
                 posted: false,
-                text_confirmed: false,
+                image_confirmed: false,
             });
             return Err(DrawingPasteError {
                 message: error,
@@ -1908,7 +1915,7 @@ impl WindowsApp {
             }
             if let Some(bundle) = self.last_bundle.clone() {
                 let offer = self
-                    .post_drawing_text(&bundle, target)
+                    .post_drawing(&bundle, target)
                     .map_err(|error| error.message)?;
                 self.staged = Some(StagedPaste {
                     offer,
@@ -1991,7 +1998,7 @@ impl WindowsApp {
                 staged,
                 offer,
                 read.is_some(),
-                "Drawing paste cancelled after text was offered".into(),
+                "Text paste cancelled after the drawing was offered".into(),
             );
         }
     }
@@ -2014,7 +2021,7 @@ impl WindowsApp {
                 .take()
                 .expect("clipboard restoration exists");
             if restore.posted && read.is_none() {
-                self.mark_image_partial(&restore.bundle, restore.text_confirmed, false);
+                self.mark_partial(&restore.bundle, false, restore.image_confirmed, false);
             }
             return;
         }
@@ -2025,17 +2032,16 @@ impl WindowsApp {
             .clipboard_restore
             .take()
             .expect("clipboard restoration exists");
-        let copied = if paste_timing::final_offer_keeps_drawing(
-            restore.posted,
-            read.is_some(),
-            restore.text_confirmed,
-        ) {
-            clipboard::ensure_bundle(self.hwnd, &restore.bundle, Some(offer))
-        } else {
-            clipboard::leave_text(self.hwnd, &restore.bundle, offer)
-        };
-        if restore.posted && (read.is_none() || !restore.text_confirmed) {
-            self.mark_image_partial(&restore.bundle, restore.text_confirmed, copied);
+        // The drawing stays on the clipboard with its text: a read only shows an app asked
+        // for the image, not that it kept it.
+        let copied = clipboard::ensure_bundle(self.hwnd, &restore.bundle, Some(offer));
+        if restore.posted && (read.is_none() || !restore.image_confirmed) {
+            self.mark_partial(
+                &restore.bundle,
+                read.is_some(),
+                restore.image_confirmed,
+                copied,
+            );
         }
         self.pill_state.repeat_paste = self.last_bundle.is_some() && self.can_repeat_paste();
         if !copied && offer.unchanged() {
@@ -2060,10 +2066,13 @@ impl WindowsApp {
             }
         }
     }
-    fn mark_image_partial(
+    /// A drawing result where one half or neither landed: names the half that did, and never
+    /// offers Paste, which would repeat it.
+    fn mark_partial(
         &mut self,
         bundle: &Rc<clipboard::Bundle>,
-        confirmed: bool,
+        text_landed: bool,
+        drawing_landed: bool,
         copied: bool,
     ) {
         if !self
@@ -2088,9 +2097,10 @@ impl WindowsApp {
                 pill_state::Phase::Error { .. } | pill_state::Phase::NotPasted { saved: false }
             );
             self.pill_state.set(
-                if confirmed {
+                if text_landed || drawing_landed {
                     pill_state::Phase::Partial {
-                        drawing_copied: copied,
+                        text_landed,
+                        other_copied: copied,
                         saved,
                     }
                 } else if copied {
@@ -2109,26 +2119,22 @@ impl WindowsApp {
             return;
         };
         let (offer, read_at, _) = clipboard::rendered(staged.offer, staged.target.pid);
-        let stage = paste_timing::text_stage(staged.started, read_at, Instant::now());
-        if stage == paste_timing::TextStage::Waiting {
+        let stage = paste_timing::drawing_stage(staged.started, read_at, Instant::now());
+        if stage == paste_timing::DrawingStage::Waiting {
             return;
         }
         let staged = self.staged.take().expect("staged paste exists");
         let mut recovery_offer = offer;
         let result = if foreground_paste_target() != Some(staged.target) {
-            Err("Focus changed; drawing was not pasted".into())
+            Err("Focus changed; text was not pasted".into())
         } else {
             self.last_bundle
                 .as_ref()
                 .ok_or_else(|| "Drawing unavailable".to_string())
-                .and_then(|bundle| bundle.image_after(offer))
+                .and_then(|bundle| bundle.text_after(offer))
                 .and_then(|offer| {
                     recovery_offer = offer;
-                    let result = paste_offered(
-                        staged.target,
-                        offer,
-                        paste_chord::image(&self.settings, staged.target.pid),
-                    );
+                    let result = paste_offered(staged.target, offer, self.settings.paste_shortcut);
                     self.clipboard_restore =
                         self.last_bundle.as_ref().map(|bundle| ClipboardRestore {
                             bundle: Rc::clone(bundle),
@@ -2136,7 +2142,7 @@ impl WindowsApp {
                             target_pid: staged.target.pid,
                             started: Instant::now(),
                             posted: result.is_ok(),
-                            text_confirmed: read_at.is_some(),
+                            image_confirmed: read_at.is_some(),
                         });
                     result
                 })
@@ -2158,20 +2164,6 @@ impl WindowsApp {
                 None,
                 Some(recovery_offer),
             );
-        }
-        if read_at.is_none() && self.clipboard_restore.is_some() {
-            self.last_target = RecoveryTarget::CopyOnly;
-            self.pill_state.set(
-                pill_state::Phase::NotPasted {
-                    saved: !matches!(
-                        self.pill_state.phase,
-                        pill_state::Phase::Error { .. }
-                            | pill_state::Phase::NotPasted { saved: false }
-                    ),
-                },
-                self.clock.elapsed().as_millis() as u64,
-            );
-            self.update_overlay();
         }
     }
     fn finish_drawing_partial(
@@ -2198,7 +2190,8 @@ impl WindowsApp {
         self.pill_state.set(
             if confirmed {
                 pill_state::Phase::Partial {
-                    drawing_copied: copied,
+                    text_landed: false,
+                    other_copied: copied,
                     saved,
                 }
             } else if copied {
@@ -2266,7 +2259,7 @@ impl WindowsApp {
                             offer: None,
                         })
                         .and_then(|target| {
-                            self.post_drawing_text(&bundle, target)
+                            self.post_drawing(&bundle, target)
                                 .map(|offer| (offer, target))
                         });
                     match result {
@@ -3186,13 +3179,13 @@ mod tests {
             pill_state::Phase::Cancelled,
         ] {
             app.pill_state.set(phase.clone(), 0);
-            app.mark_image_partial(&bundle, true, true);
+            app.mark_partial(&bundle, true, false, true);
             assert_eq!(app.pill_state.phase, phase);
             assert!(!app.can_repeat_paste());
         }
         app.status = AppStatus::Recording;
         app.pill_state.set(pill_state::Phase::Recording, 1);
-        app.mark_image_partial(&bundle, true, true);
+        app.mark_partial(&bundle, true, false, true);
         assert_eq!(app.pill_state.phase, pill_state::Phase::Recording);
         unsafe { CoUninitialize() };
     }
@@ -3238,7 +3231,7 @@ mod tests {
             target_pid: std::process::id(),
             started: Instant::now(),
             posted: true,
-            text_confirmed: true,
+            image_confirmed: true,
         });
         assert!(
             app.clipboard_restore.as_ref().unwrap().started.elapsed() < Duration::from_millis(1500)
@@ -3248,7 +3241,7 @@ mod tests {
         assert!(app.staged.is_none());
         assert!(offer.unchanged());
         let failed = app
-            .post_drawing_text(
+            .post_drawing(
                 &app.last_bundle.clone().unwrap(),
                 PasteTarget {
                     hwnd: HWND::default(),
@@ -3276,7 +3269,8 @@ mod tests {
         app.last_target = RecoveryTarget::CopyOnly;
         app.pill_state.set(
             pill_state::Phase::Partial {
-                drawing_copied: false,
+                text_landed: true,
+                other_copied: false,
                 saved: true,
             },
             0,
@@ -3293,7 +3287,8 @@ mod tests {
         app.last_target = RecoveryTarget::CopyOnly;
         for phase in [
             pill_state::Phase::Partial {
-                drawing_copied: true,
+                text_landed: false,
+                other_copied: true,
                 saved: true,
             },
             pill_state::Phase::Copied,

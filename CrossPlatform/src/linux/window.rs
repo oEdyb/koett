@@ -25,8 +25,11 @@ pub enum Update {
     DeliveryStarted,
     Delivered,
     Copied,
-    /// The text pasted and the drawing didn't; true when the drawing is on the clipboard.
-    TextOnly(bool),
+    /// One half of a drawing result pasted: the text when `text_landed`, else the drawing.
+    Partial {
+        text_landed: bool,
+        other_copied: bool,
+    },
     DeliveryFailed,
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
@@ -597,12 +600,15 @@ fn build_window(
                         done_fading = None;
                     }
                     // Never the rescue with Paste: pasting again would repeat the text.
-                    Update::TextOnly(drawing_copied) => {
+                    Update::Partial {
+                        text_landed,
+                        other_copied,
+                    } => {
                         delivery_pending = false;
                         settling_until = None;
                         recovery_until = None;
                         if let Some(overlay) = &overlay {
-                            overlay.set_text_only(drawing_copied);
+                            overlay.set_partial(text_landed, other_copied);
                         }
                         done_until = Some(Instant::now() + DONE_DURATION);
                         done_fading = None;

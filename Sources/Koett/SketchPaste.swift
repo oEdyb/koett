@@ -2,20 +2,23 @@ import AppKit
 import Synchronization
 
 /// Pastes the contact sheet before the text. The image is offered lazily, so
-/// Koett sees when the target actually reads it, then waits a short settle
-/// before the clipboard switches to text (Linux portal path: 1.5 s, 160 ms).
+/// Koett sees when the target actually reads it, then waits for the target to
+/// finish attaching it before the clipboard switches to text. The text lands
+/// last, so an Enter pressed as soon as it shows sends both in one message.
 @MainActor
 enum SketchPaste {
     static let readTimeout: Duration = .milliseconds(1_500)
     static let afterRead: Duration = .milliseconds(160)
+    /// T3 Code finishes preparing an image attachment within about 250 ms even under load;
+    /// a text pasted while that runs can be wiped by the editor reset that ends it.
+    static let drawingSettle: Duration = .seconds(1)
 
     /// Returns false when the image could not be put on the clipboard or pasted.
     static func paste(
         png: Data,
         pasteboard: NSPasteboard = .general,
         postPaste: () -> Bool,
-        didWrite: (Int) -> Void = { _ in },
-        didRead: (Bool) -> Void = { _ in }
+        didWrite: (Int) -> Void = { _ in }
     ) async -> Bool {
         let provider = SketchImageProvider(png: png)
         let item = NSPasteboardItem()
@@ -31,8 +34,8 @@ enum SketchPaste {
             if let readAt = provider.readAt, readAt >= posted { break }
             try? await Task.sleep(for: .milliseconds(10))
         }
-        didRead(provider.readAt.map { $0 >= posted } ?? false)
-        try? await Task.sleep(for: afterRead)
+        let read = provider.readAt.map { $0 >= posted } ?? false
+        try? await Task.sleep(for: read ? drawingSettle : afterRead)
         return true
     }
 
@@ -48,10 +51,9 @@ enum SketchPaste {
         persist: () -> TranscriptPersistence.Outcome
     ) async throws -> TimeInterval {
         var imageGeneration: Int?
-        var imageRead = false
         let imageReady = await prepareImage()
         let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: { imageReady && postImage() },
-                                      didWrite: { imageGeneration = $0 }, didRead: { imageRead = $0 })
+                                      didWrite: { imageGeneration = $0 })
         if imageGeneration == nil { clipboardFailure(.clipboardUnavailable) }
         let textReady = imagePosted ? await prepareText() : false
         let provider = SketchTextProvider(text: text)
@@ -97,16 +99,8 @@ enum SketchPaste {
             }
             try? await Task.sleep(for: afterRead)
         }
-        let textRead = textPostedAt.flatMap { posted in provider.readAt.map { $0 >= posted } } ?? false
-        let fullPaste = imageRead && textRead && (try? result.get()) != nil
         if pasteboard.changeCount == textGeneration {
-            // After a full paste only the text stays: T3 Code drops the text from any paste
-            // that carries an image, so the bundle would make the next Paste give the image
-            // alone. Copy and Paste recovery keep the drawing in memory.
-            let kept = fullPaste
-                ? Self.keepText(text, on: pasteboard)
-                : SketchClipboard(text: text, png: png).write(to: pasteboard)
-            guard kept else {
+            guard SketchClipboard(text: text, png: png).write(to: pasteboard) else {
                 clipboardFailure(.clipboardUnavailable)
                 throw NSError(domain: "Koett.Sketch", code: 3, userInfo: [
                     NSLocalizedDescriptionKey: "Image and text could not be kept on the clipboard. Use Copy to retry."
@@ -116,10 +110,6 @@ enum SketchPaste {
         return try result.get()
     }
 
-    private static func keepText(_ text: String, on pasteboard: NSPasteboard) -> Bool {
-        pasteboard.clearContents()
-        return pasteboard.setString(text, forType: .string)
-    }
 }
 
 /// Supplies the sheet when a target reads it and remembers when that happened.

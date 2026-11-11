@@ -32,21 +32,23 @@ pub(super) struct Bundle {
 }
 
 impl Bundle {
-    pub fn image_after(&self, offer: Offer) -> Result<Offer, String> {
+    /// The drawing alone, offered lazily so Koett sees when the target reads it.
+    pub fn image_first(&self, owner: HWND) -> Result<Offer, String> {
         deferred(
-            offer.owner,
+            owner,
             vec![
                 (image_formats()?.0, self.png.clone()),
                 (CF_DIBV5.0.into(), self.dib.clone()),
             ],
-            Condition::Offer(offer),
+            Condition::Any,
         )
     }
-    pub fn text_first(&self, owner: HWND) -> Result<Offer, String> {
+    /// The text, replacing Koett's own drawing offer only while that is still current.
+    pub fn text_after(&self, offer: Offer) -> Result<Offer, String> {
         deferred(
-            owner,
+            offer.owner,
             vec![(CF_UNICODETEXT.0.into(), utf16(&self.text)?)],
-            Condition::Any,
+            Condition::Offer(offer),
         )
     }
     pub fn new(image: &Pixels, text: String) -> Result<Self, String> {
@@ -240,18 +242,6 @@ pub(super) fn ensure_bundle(owner: HWND, bundle: &Bundle, expected: Option<Offer
     let normalize = |text: &str| text.replace("\r\n", "\n");
     expected
         .map_or_else(|| bundle.copy(owner), |offer| bundle.restore(offer))
-        .and_then(Offer::verify)
-        .is_ok()
-        && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
-}
-
-/// After a full paste: swaps Koett's own offer for the text alone, read back. T3 Code
-/// drops the text from any paste that carries an image, so a bundle would make the next
-/// Ctrl+V give the image without the text. Never replaces a newer clipboard owner.
-pub(super) fn leave_text(owner: HWND, bundle: &Bundle, offer: Offer) -> bool {
-    let normalize = |text: &str| text.replace("\r\n", "\n");
-    offer
-        .replace_with_text(&bundle.text)
         .and_then(Offer::verify)
         .is_ok()
         && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
@@ -647,7 +637,22 @@ mod tests {
                 assert!(!unsafe { GetClipboardData(format) }.unwrap().is_invalid());
             }
         }
-        let text = bundle.text_first(owner).unwrap();
+        // The drawing goes first, then the text replaces it while Koett's offer is current.
+        let image = bundle.image_first(owner).unwrap();
+        assert!(unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT.0.into()) }.is_err());
+        unsafe { OpenClipboard(Some(owner)) }.unwrap();
+        {
+            let _open = Open;
+            render(image_formats().unwrap().0);
+            assert!(
+                !unsafe { GetClipboardData(image_formats().unwrap().0) }
+                    .unwrap()
+                    .is_invalid()
+            );
+        }
+        let (image, image_read, requested) = rendered(image, std::process::id());
+        assert!(image_read.is_none() && !requested);
+        let text = bundle.text_after(image).unwrap();
         assert!(unsafe { IsClipboardFormatAvailable(image_formats().unwrap().0) }.is_err());
         unsafe { OpenClipboard(Some(owner)) }.unwrap();
         {
@@ -662,21 +667,7 @@ mod tests {
         }
         let (text, read, _) = rendered(text, std::process::id());
         assert!(read.is_none());
-        let image = bundle.image_after(text).unwrap();
-        assert!(unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT.0.into()) }.is_err());
-        unsafe { OpenClipboard(Some(owner)) }.unwrap();
-        {
-            let _open = Open;
-            render(image_formats().unwrap().0);
-            assert!(
-                !unsafe { GetClipboardData(image_formats().unwrap().0) }
-                    .unwrap()
-                    .is_invalid()
-            );
-        }
-        let (image, image_read, requested) = rendered(image, std::process::id());
-        assert!(image_read.is_none() && !requested);
-        let combined = bundle.restore(image).unwrap();
+        let combined = bundle.restore(text).unwrap();
         combined.verify().unwrap();
         for format in [
             image_formats().unwrap().0,
@@ -686,12 +677,12 @@ mod tests {
         ] {
             assert!(unsafe { IsClipboardFormatAvailable(format) }.is_ok());
         }
-        let text = bundle.text_first(owner).unwrap();
+        let image = bundle.image_first(owner).unwrap();
         let sequence = unsafe { GetClipboardSequenceNumber() };
         copy_text(owner, "new user copy").unwrap();
-        assert!(bundle.restore(text).is_err());
-        assert!(bundle.image_after(text).is_err());
-        assert!(!ensure_bundle(owner, &bundle, Some(text)));
+        assert!(bundle.restore(image).is_err());
+        assert!(bundle.text_after(image).is_err());
+        assert!(!ensure_bundle(owner, &bundle, Some(image)));
         assert!(bundle.copy_if_unchanged(owner, sequence).is_err());
         assert!(copy_text_if_unchanged(owner, "stale recovery copy", sequence).is_err());
         assert!(

@@ -12,7 +12,7 @@ final class SketchClipboardTests: XCTestCase {
         .init(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
     }
 
-    func testAutomaticPasteLeavesOnlyTheTextSoTheNextPasteGivesTheText() async throws {
+    func testAutomaticPasteLeavesOneItemWithExactImageAndTextForRepeatPaste() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }
         let image = try png()
@@ -35,14 +35,38 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(events, ["image", "text", "save"])
         XCTAssertEqual(board.pasteboardItems?.count, 1)
         for _ in 0..<3 {
-            XCTAssertNil(board.data(forType: .png), "An image beside the text makes some apps drop the text")
-            XCTAssertNil(board.string(forType: .html))
+            XCTAssertEqual(board.data(forType: .png), image)
             XCTAssertEqual(board.string(forType: .string), text)
+            XCTAssertNotNil(board.data(forType: .tiff))
+            XCTAssertEqual(board.string(forType: .html), SketchClipboard.html(text: text, png: image))
         }
+        XCTAssertNotNil(NSImage(pasteboard: board), "A native image consumer must still receive the sketch")
         let editor = NSTextView(frame: .zero)
         editor.isRichText = false
         XCTAssertTrue(editor.readSelection(from: board, type: .string))
         XCTAssertEqual(editor.string, text)
+    }
+
+    func testTheTextWaitsForTheDrawingToSettleSoOneEnterSendsBoth() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let image = try png()
+        var imageReadAt: ContinuousClock.Instant?
+        var textPostedAt: ContinuousClock.Instant?
+        _ = try await SketchPaste.deliver(png: image, text: "Settled text", pasteboard: board, postImage: {
+            _ = board.data(forType: .png)
+            imageReadAt = .now
+            return true
+        }, postText: {
+            textPostedAt = .now
+            _ = board.string(forType: .string)
+            return true
+        }, persist: { self.noStorage })
+        let read = try XCTUnwrap(imageReadAt), posted = try XCTUnwrap(textPostedAt)
+        XCTAssertGreaterThanOrEqual(posted - read, SketchPaste.drawingSettle,
+            "The text must land after the target has had time to attach the drawing")
+        XCTAssertEqual(board.data(forType: .png), image, "The drawing stays on the clipboard")
+        XCTAssertEqual(board.string(forType: .string), "Settled text")
     }
 
     func testRestorationWaitsForTheAsynchronousTextRead() async throws {
@@ -62,20 +86,8 @@ final class SketchClipboardTests: XCTestCase {
             return true
         }, persist: { self.noStorage })
         await consumer?.value
-        XCTAssertNil(board.data(forType: .png))
-        XCTAssertEqual(board.string(forType: .string), "Delayed text")
-    }
-
-    func testAnUnreadImageKeepsTheDrawingOnTheClipboard() async throws {
-        let board = NSPasteboard.withUniqueName()
-        defer { board.releaseGlobally() }
-        let image = try png()
-        _ = try await SketchPaste.deliver(png: image, text: "Image never read", pasteboard: board,
-            postImage: { true },
-            postText: { _ = board.string(forType: .string); return true },
-            persist: { self.noStorage })
         XCTAssertEqual(board.data(forType: .png), image)
-        XCTAssertEqual(board.string(forType: .string), "Image never read")
+        XCTAssertEqual(board.string(forType: .string), "Delayed text")
     }
 
     func testFailedImageOrTextPostStillOffersBothFormatsAndSavesOnce() async throws {
