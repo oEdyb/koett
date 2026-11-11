@@ -372,8 +372,11 @@
 ### Drawing clipboard recovery
 
 - Drawing auto-paste sends image then text, waits for the text read with the
-  bounded existing settle policy, then leaves one PNG/TIFF/plain-text item.
-  Do not replace a newer clipboard owner when restoring it.
+  bounded existing settle policy. After a full paste (image and text both read)
+  it leaves the text alone: T3 Code drops the text from any paste carrying an
+  image. After anything less it leaves one PNG/TIFF/plain-text item. Linux and
+  Windows paste the text first and follow the same rule. Do not replace a newer
+  clipboard owner when restoring either.
 - Done/Not pasted Copy and latest-transcript recovery keep the image and text
   together in memory. A plain next result clears the image even for equal text.
   Recovery Paste must not save a duplicate history entry. Images remain off disk;

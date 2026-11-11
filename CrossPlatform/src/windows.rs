@@ -2025,7 +2025,15 @@ impl WindowsApp {
             .clipboard_restore
             .take()
             .expect("clipboard restoration exists");
-        let copied = clipboard::ensure_bundle(self.hwnd, &restore.bundle, Some(offer));
+        let copied = if paste_timing::final_offer_keeps_drawing(
+            restore.posted,
+            read.is_some(),
+            restore.text_confirmed,
+        ) {
+            clipboard::ensure_bundle(self.hwnd, &restore.bundle, Some(offer))
+        } else {
+            clipboard::leave_text(self.hwnd, &restore.bundle, offer)
+        };
         if restore.posted && (read.is_none() || !restore.text_confirmed) {
             self.mark_image_partial(&restore.bundle, restore.text_confirmed, copied);
         }

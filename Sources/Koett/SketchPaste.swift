@@ -14,7 +14,8 @@ enum SketchPaste {
         png: Data,
         pasteboard: NSPasteboard = .general,
         postPaste: () -> Bool,
-        didWrite: (Int) -> Void = { _ in }
+        didWrite: (Int) -> Void = { _ in },
+        didRead: (Bool) -> Void = { _ in }
     ) async -> Bool {
         let provider = SketchImageProvider(png: png)
         let item = NSPasteboardItem()
@@ -30,6 +31,7 @@ enum SketchPaste {
             if let readAt = provider.readAt, readAt >= posted { break }
             try? await Task.sleep(for: .milliseconds(10))
         }
+        didRead(provider.readAt.map { $0 >= posted } ?? false)
         try? await Task.sleep(for: afterRead)
         return true
     }
@@ -46,9 +48,10 @@ enum SketchPaste {
         persist: () -> TranscriptPersistence.Outcome
     ) async throws -> TimeInterval {
         var imageGeneration: Int?
+        var imageRead = false
         let imageReady = await prepareImage()
         let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: { imageReady && postImage() },
-                                      didWrite: { imageGeneration = $0 })
+                                      didWrite: { imageGeneration = $0 }, didRead: { imageRead = $0 })
         if imageGeneration == nil { clipboardFailure(.clipboardUnavailable) }
         let textReady = imagePosted ? await prepareText() : false
         let provider = SketchTextProvider(text: text)
@@ -94,8 +97,16 @@ enum SketchPaste {
             }
             try? await Task.sleep(for: afterRead)
         }
+        let textRead = textPostedAt.flatMap { posted in provider.readAt.map { $0 >= posted } } ?? false
+        let fullPaste = imageRead && textRead && (try? result.get()) != nil
         if pasteboard.changeCount == textGeneration {
-            guard SketchClipboard(text: text, png: png).write(to: pasteboard) else {
+            // After a full paste only the text stays: T3 Code drops the text from any paste
+            // that carries an image, so the bundle would make the next Paste give the image
+            // alone. Copy and Paste recovery keep the drawing in memory.
+            let kept = fullPaste
+                ? Self.keepText(text, on: pasteboard)
+                : SketchClipboard(text: text, png: png).write(to: pasteboard)
+            guard kept else {
                 clipboardFailure(.clipboardUnavailable)
                 throw NSError(domain: "Koett.Sketch", code: 3, userInfo: [
                     NSLocalizedDescriptionKey: "Image and text could not be kept on the clipboard. Use Copy to retry."
@@ -105,6 +116,10 @@ enum SketchPaste {
         return try result.get()
     }
 
+    private static func keepText(_ text: String, on pasteboard: NSPasteboard) -> Bool {
+        pasteboard.clearContents()
+        return pasteboard.setString(text, forType: .string)
+    }
 }
 
 /// Supplies the sheet when a target reads it and remembers when that happened.

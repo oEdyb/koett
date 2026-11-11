@@ -318,3 +318,12 @@ paste is Pasted whatever the offer does. On Wayland a text the target never read
 before the drawing, so the drawing can't replace unread text; X11 still can't tell. A cancel can't
 land mid-paste on Linux, since the paste runs in the loop that handles it and the engine ignores a
 Cancel once it's Ready. Lab: nested niri, a real drawing through draw-lock, Electron targets.
+
+## 2026-11-11: after a drawing, Ctrl+V gave the drawing without the text
+
+After a drawing dictation into T3 Code fully pasted, Koett put the drawing and its text back on the
+clipboard as one item. T3 Code drops the text from any paste that carries an image, so pasting the
+text again gave only the image. After a full paste the clipboard now keeps the text alone, on Linux,
+Windows and the Mac; anything less still leaves the drawing with its text so it can be pasted by
+hand, and Copy and Paste recovery keep the drawing in memory either way. Lab: nested niri with a real
+drawing, where the old build left `image/png` beside the text and the new one leaves text only.
