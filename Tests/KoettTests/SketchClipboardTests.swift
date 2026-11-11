@@ -105,11 +105,28 @@ final class SketchClipboardTests: XCTestCase {
                     return self.noStorage
                 })
                 XCTFail("The failed paste must reach Not pasted recovery")
-            } catch {}
+            } catch {
+                XCTAssertEqual(error is SketchPartialPaste, !failImage,
+                    "A drawing that landed without its text is reported as partial")
+            }
             XCTAssertEqual(saves, 1)
             XCTAssertEqual(board.data(forType: .png), image)
             XCTAssertEqual(board.string(forType: .string), "Recover both")
         }
+    }
+
+    func testAnUnreadImageIsNotCountedAsLandedAndTheTextStillPastes() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let image = try png()
+        var textPosts = 0
+        let delivery = try await SketchPaste.deliver(png: image, text: "Text field", pasteboard: board,
+            postImage: { true },
+            postText: { textPosts += 1; _ = board.string(forType: .string); return true },
+            persist: { self.noStorage })
+        XCTAssertFalse(delivery.drawingLanded, "Nothing read the drawing, so it didn't land")
+        XCTAssertEqual(textPosts, 1)
+        XCTAssertEqual(board.data(forType: .png), image, "The drawing stays on the clipboard")
     }
 
     func testRestorationDoesNotOverwriteANewerClipboardOwner() async throws {

@@ -145,6 +145,16 @@ pub(super) fn rendered(offer: Offer, target_pid: u32) -> (Offer, Option<Instant>
             })
     })
 }
+/// When anyone first read this offer, the target or not. Chromium reads anonymously, so a
+/// target's read can show up only here.
+pub(super) fn first_read(offer: Offer) -> Option<Instant> {
+    DELAYED.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .filter(|state| state.offer.marker == offer.marker)
+            .and_then(|state| state.reader.iter().map(|(_, at)| *at).min())
+    })
+}
 pub(super) fn forget_delayed() {
     DELAYED.with(|slot| {
         if let Ok(mut slot) = slot.try_borrow_mut() {

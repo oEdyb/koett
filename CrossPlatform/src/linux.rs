@@ -1009,12 +1009,13 @@ fn run_x11(
                             std::thread::sleep(output::DRAWING_SETTLE);
                         }
                         let text = output.deliver(&final_text, target, paste_shortcut);
-                        // X11 never offers the drawing back, so it isn't on the clipboard.
-                        settle_bundle(
-                            combine(drawing, text),
-                            Err("no clipboard offer".into()),
-                            false,
-                        )
+                        let pasted = combine(drawing, text);
+                        // The drawing goes back on the clipboard with its text, as on Wayland.
+                        let offered = x11_surface::set_clipboard_result(final_text.clone());
+                        let on_clipboard = pasted != Ok(Pasted::All)
+                            && offered.is_ok()
+                            && recovery::bundle_on_clipboard(&final_text);
+                        settle_bundle(pasted, offered, on_clipboard)
                     }
                     None => settle_delivery(
                         output.deliver(&final_text, target, paste_shortcut),
@@ -2771,15 +2772,19 @@ async fn paste_result(
 ) -> Result<Pasted, String> {
     let drawing = match png {
         Some(png) => {
-            let drawing = match output {
-                Some(output) => output.deliver_image(png, target).await,
-                None => output::deliver_image(png, target),
-            }
-            .map_err(|error| format!("Contact sheet not pasted: {error}"));
-            if drawing.is_ok() {
+            let (drawing, read_started) = match output {
+                Some(output) => {
+                    let drawing = output.deliver_image(png, target).await;
+                    let read = drawing.is_ok();
+                    (drawing, read)
+                }
+                None => output::deliver_image_read(png, target),
+            };
+            // A read that started, even one too slow to finish, may still be attaching.
+            if read_started {
                 tokio::time::sleep(output::DRAWING_SETTLE).await;
             }
-            drawing
+            drawing.map_err(|error| format!("Contact sheet not pasted: {error}"))
         }
         None => Ok(()),
     };
@@ -2788,6 +2793,18 @@ async fn paste_result(
         None => output::deliver(text, target, shortcut),
     };
     combine(drawing, text)
+}
+
+/// Portal reads counted from just before a paste key. A clipboard manager such as CopyQ
+/// reads every new selection as soon as it appears; only a read after the key is a paste.
+struct ReadMark(u64);
+impl ReadMark {
+    fn now(served: &std::sync::atomic::AtomicU64) -> Self {
+        Self(served.load(std::sync::atomic::Ordering::Acquire))
+    }
+    fn read(&self, served: &std::sync::atomic::AtomicU64) -> bool {
+        served.load(std::sync::atomic::Ordering::Acquire) != self.0
+    }
 }
 
 /// How far a result's paste got. An error means nothing landed.
@@ -2942,7 +2959,6 @@ impl WaylandOutput {
             text: None,
             html: None,
         };
-        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
             .set_selection(
                 &self.session,
@@ -2953,14 +2969,13 @@ impl WaylandOutput {
         trace.prepare_paste(target)?;
         let chord = trace.image_chord(target)?;
         trace.post()?;
+        let mark = ReadMark::now(&self.served);
         self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
-        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
-            && Instant::now() < deadline
-        {
+        while !mark.read(&self.served) && Instant::now() < deadline {
             tokio::time::sleep(Duration::from_millis(20)).await;
         }
-        if self.served.load(std::sync::atomic::Ordering::Acquire) == before {
+        if !mark.read(&self.served) {
             return trace.image_unread();
         }
         tokio::time::sleep(output::AFTER_IMAGE_READ).await;
@@ -3010,22 +3025,15 @@ impl WaylandOutput {
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
         trace.prepare_paste(target)?;
         trace.post()?;
-        // Counted from just before the key: a clipboard manager reading the new text
-        // earlier isn't a paste, and only a read after the key shows one happened.
-        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
+        let mark = ReadMark::now(&self.served);
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result?;
         let deadline = Instant::now() + output::TEXT_READ_WAIT;
-        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
-            && Instant::now() < deadline
-        {
+        while !mark.read(&self.served) && Instant::now() < deadline {
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
-        trace.read_checked(
-            true,
-            self.served.load(std::sync::atomic::Ordering::Acquire) != before,
-        )
+        trace.read_checked(true, mark.read(&self.served))
     }
 
     async fn send_keysym(&self, keysym: i32, state: KeyState) -> Result<(), String> {
@@ -3431,6 +3439,17 @@ mod delivery_tests {
             Outcome::Pasted,
             "everything landed; offering Paste would paste it twice"
         );
+    }
+
+    #[test]
+    fn a_clipboard_manager_read_before_the_key_is_not_a_paste() {
+        let served = std::sync::atomic::AtomicU64::new(0);
+        // CopyQ reads each new selection as soon as Koett offers it, before any key.
+        served.fetch_add(2, std::sync::atomic::Ordering::Release);
+        let mark = ReadMark::now(&served);
+        assert!(!mark.read(&served), "reads before the key don't count");
+        served.fetch_add(1, std::sync::atomic::Ordering::Release);
+        assert!(mark.read(&served), "a read after the key is the paste");
     }
 
     #[test]

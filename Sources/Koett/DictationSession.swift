@@ -563,19 +563,30 @@ extension KoettController {
         let final = PreparedDictation(text: sketched.text, model: prepared.model, rawText: sketched.rawText)
         deliveredText = final.text
         let pastePostedAt: TimeInterval
+        var drawingLanded = true
         if let sheet = sketched.sheet {
-            pastePostedAt = try await deliverSketch(text: final.text, png: sheet, prepared: readyToPaste) {
+            let delivery = try await deliverSketch(text: final.text, png: sheet, prepared: readyToPaste) {
                 self.persistTranscript(final.text, model: final.model, rawText: final.rawText, keepAsLast: true, image: sheet)
             }
+            pastePostedAt = delivery.postedAt
+            drawingLanded = delivery.drawingLanded
         } else {
             pastePostedAt = try deliver(final, readyToPaste: readyToPaste)
         }
-        recordingOverlay.showDone(text: final.text, png: sketched.sheet, drawingFailed: sketched.drawingFailed)
+        if let sheet = sketched.sheet, !drawingLanded {
+            recordingOverlay.showPartial(textLanded: true, text: final.text, png: sheet)
+        } else {
+            recordingOverlay.showDone(text: final.text, png: sketched.sheet, drawingFailed: sketched.drawingFailed)
+        }
         return .pasted(text: final.text, textReadyAt: textReadyAt, pastePostedAt: pastePostedAt)
     }
 
     /// Recover failed paste delivery to a verified clipboard before dismissing.
     private func showDeliveryFailure(_ error: Error, text: String?) {
+        if error is SketchPartialPaste, let text, let png = lastTranscript == text ? lastTranscriptImage : nil {
+            recordingOverlay.showPartial(textLanded: false, text: text, png: png)
+            return
+        }
         if let text, recordingOverlay.showNotPasted(text: text, png: lastTranscript == text ? lastTranscriptImage : nil,
             reason: pasteCoordinator.lastFailure?.message) { return }
         recordingOverlay.showError(

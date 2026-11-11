@@ -269,6 +269,26 @@ final class RecordingOverlayController: NSObject {
         return true
     }
 
+    /// One half of a drawing result landed. Says which, and whether the other half is on
+    /// the clipboard, then fades; it never offers Paste, which would repeat the half that landed.
+    func showPartial(textLanded: Bool, text: String, png: Data, pasteboard: NSPasteboard = .general) {
+        guard isShowingTranscribing else { return }
+        resultText = text
+        resultPNG = png
+        let from = pillView.content
+        let copied = SketchClipboard(text: text, png: png).matches(pasteboard)
+        let message = switch (textLanded, copied) {
+        case (true, true): "Text pasted · drawing copied"
+        case (true, false): "Text pasted · drawing failed"
+        case (false, true): "Drawing pasted · text copied"
+        case (false, false): "Drawing pasted · text failed"
+        }
+        show(.partial(message))
+        startMorph(from: from)
+        recordFailure(message)
+        dismiss(after: Self.doneDisplayDuration)
+    }
+
     func showResult(_ text: String, message: String) {
         sketchSession = nil
         pillView.timeline.reset()

@@ -203,7 +203,19 @@ fn confirm_text_read(
 
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
 /// text chord (terminal agents read the image themselves on Ctrl+V).
-pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
+/// Also says whether the target started reading the drawing, even when the transfer then
+/// timed out: such a target may still be attaching it.
+pub fn deliver_image_read(png: &[u8], target: Option<u32>) -> (Result<(), String>, bool) {
+    let mut started = false;
+    let result = deliver_image_tracked(png, target, &mut started);
+    (result, started)
+}
+
+fn deliver_image_tracked(
+    png: &[u8],
+    target: Option<u32>,
+    started: &mut bool,
+) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
     let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
     super::clipboard_owner::start(payload)?;
@@ -217,6 +229,7 @@ pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     let posted = posted.ok_or("Image paste was not posted")?;
     trace.log("image_wait_begin");
     let complete = read.wait(posted, UNKNOWN_IMAGE_READ_WAIT, IMAGE_READ_TIMEOUT);
+    *started = read.started();
     if !complete && read.started() {
         trace.finish(false);
         trace.reason = "image_transfer_timeout";

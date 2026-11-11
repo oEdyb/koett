@@ -2119,7 +2119,12 @@ impl WindowsApp {
             return;
         };
         let (offer, read_at, _) = clipboard::rendered(staged.offer, staged.target.pid);
-        let stage = paste_timing::drawing_stage(staged.started, read_at, Instant::now());
+        let stage = paste_timing::drawing_stage(
+            staged.started,
+            read_at,
+            clipboard::first_read(staged.offer),
+            Instant::now(),
+        );
         if stage == paste_timing::DrawingStage::Waiting {
             return;
         }

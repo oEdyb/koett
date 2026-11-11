@@ -13,7 +13,8 @@ enum SketchPaste {
     /// a text pasted while that runs can be wiped by the editor reset that ends it.
     static let drawingSettle: Duration = .seconds(1)
 
-    /// Returns false when the image could not be put on the clipboard or pasted.
+    /// Returns true only when the target read the image after its key. A post nothing read
+    /// doesn't count: a text field or terminal never takes a drawing.
     static func paste(
         png: Data,
         pasteboard: NSPasteboard = .general,
@@ -36,7 +37,7 @@ enum SketchPaste {
         }
         let read = provider.readAt.map { $0 >= posted } ?? false
         try? await Task.sleep(for: read ? drawingSettle : afterRead)
-        return true
+        return read
     }
 
     static func deliver(
@@ -49,13 +50,14 @@ enum SketchPaste {
         prepareText: () async -> Bool = { true },
         clipboardFailure: (PasteBlockReason) -> Void = { _ in },
         persist: () -> TranscriptPersistence.Outcome
-    ) async throws -> TimeInterval {
+    ) async throws -> SketchDelivery {
         var imageGeneration: Int?
         let imageReady = await prepareImage()
-        let imagePosted = await paste(png: png, pasteboard: pasteboard, postPaste: { imageReady && postImage() },
-                                      didWrite: { imageGeneration = $0 })
+        let drawingLanded = await paste(png: png, pasteboard: pasteboard, postPaste: { imageReady && postImage() },
+                                        didWrite: { imageGeneration = $0 })
         if imageGeneration == nil { clipboardFailure(.clipboardUnavailable) }
-        let textReady = imagePosted ? await prepareText() : false
+        // The text is what the user waits for, so it still goes when the drawing didn't land.
+        let textReady = await prepareText()
         let provider = SketchTextProvider(text: text)
         var textGeneration: Int?
         var textPostedAt: ContinuousClock.Instant?
@@ -64,7 +66,7 @@ enum SketchPaste {
             result = .success(try DictationDelivery.deliver(
                 text,
                 writeToClipboard: { _ in
-                    guard pasteboard.changeCount == imageGeneration else {
+                    guard imageGeneration == nil || pasteboard.changeCount == imageGeneration else {
                         clipboardFailure(.clipboardChanged)
                         return false
                     }
@@ -80,7 +82,7 @@ enum SketchPaste {
                     return written
                 },
                 postPaste: {
-                    guard imagePosted && textReady else { return false }
+                    guard textReady else { return false }
                     textPostedAt = .now
                     let posted = postText()
                     if !posted { textPostedAt = nil }
@@ -107,9 +109,26 @@ enum SketchPaste {
                 ])
             }
         }
-        return try result.get()
+        do {
+            return SketchDelivery(postedAt: try result.get(), drawingLanded: drawingLanded)
+        } catch {
+            if drawingLanded { throw SketchPartialPaste(underlying: error) }
+            throw error
+        }
     }
 
+}
+
+struct SketchDelivery {
+    let postedAt: TimeInterval
+    /// The target read the drawing; false when it only took the text.
+    let drawingLanded: Bool
+}
+
+/// The drawing landed and its text didn't. Pasting again would repeat the drawing.
+struct SketchPartialPaste: LocalizedError {
+    let underlying: Error
+    var errorDescription: String? { underlying.localizedDescription }
 }
 
 /// Supplies the sheet when a target reads it and remembers when that happened.

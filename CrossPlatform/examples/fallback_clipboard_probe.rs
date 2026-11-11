@@ -81,7 +81,7 @@ fn main() {
             koett_engine::settings::PasteShortcut::CtrlV
         };
         // The production order: the drawing, a settle, then the text.
-        output::deliver_image(&png, target).unwrap();
+        output::deliver_image_read(&png, target).0.unwrap();
         std::thread::sleep(output::DRAWING_SETTLE);
         output::deliver(text, target, shortcut).unwrap();
         std::thread::sleep(Duration::from_millis(700));

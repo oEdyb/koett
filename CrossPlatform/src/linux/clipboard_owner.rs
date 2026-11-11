@@ -1029,7 +1029,11 @@ mod tests {
         );
         assert!(std::env::var_os("NIRI_SOCKET").is_some());
         let fixture = std::fs::read(std::env::var("KOETT_TEST_PNG").unwrap()).unwrap();
-        assert!(super::super::output::deliver_image(&fixture, None).is_err());
+        assert!(
+            super::super::output::deliver_image_read(&fixture, None)
+                .0
+                .is_err()
+        );
         for _ in 0..3 {
             assert_eq!(read("image/png"), fixture);
         }
