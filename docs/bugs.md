@@ -303,9 +303,9 @@ text was wiped. His failing drawing was 927 KB, the one that worked 242 KB.
 A private lab ran T3 Code's own paste rules and image module in a stand-in composer under CPU load:
 image first lost the text 5 times in 6 with a 2560 px drawing, never with 1200 px. Text first
 landed both 6 times in 6 under the same load. Pasting both as one item can't work in T3 Code: a paste
-with an image file attaches the image and drops the text. So Linux now pastes the text, waits 300 ms
-after the target reads it, then pastes the drawing; GTK and kitty still get the text. Windows still
-pastes the drawing first and needs the same change.
+with an image file attaches the image and drops the text. So Linux pasted the text, waited 300 ms
+after the target read it, then pasted the drawing. Superseded on 2026-11-11: text first split the
+message when Enter came right after the text; see below.
 
 ## 2026-11-08: a drawing that failed after its text offered to paste the text again
 
@@ -323,7 +323,24 @@ Cancel once it's Ready. Lab: nested niri, a real drawing through draw-lock, Elec
 
 After a drawing dictation into T3 Code fully pasted, Koett put the drawing and its text back on the
 clipboard as one item. T3 Code drops the text from any paste that carries an image, so pasting the
-text again gave only the image. After a full paste the clipboard now keeps the text alone, on Linux,
-Windows and the Mac; anything less still leaves the drawing with its text so it can be pasted by
-hand, and Copy and Paste recovery keep the drawing in memory either way. Lab: nested niri with a real
-drawing, where the old build left `image/png` beside the text and the new one leaves text only.
+text again gave only the image. #194 then kept the text alone after a full paste. Reverted the same
+day: the real problem was the message being sent between the text and the drawing; see below.
+
+## 2026-11-11: the drawing went into the next message, then was gone from the clipboard
+
+Olle: "now the image doesn't get pasted again ... it's not in my clipboard afterwards either." His log
+and T3 Code's own message records (timestamps and attachment counts only) showed T3 did insert the
+drawing every time, in the next message. With text first, Koett pasted the drawing about 0.4 s
+after the text, and the message was sent about 0.5 s after the text showed, 45 to 112 ms after the
+drawing's key, carrying the text and no image. Koett sends no Enter and T3 Code 0.1.8 has no
+auto-send, so this is an Enter pressed as soon as the text appeared. #194 then left only the text on
+the clipboard, so the drawing couldn't be pasted back.
+
+Now the drawing goes first, the text follows 1 s after the target reads the drawing, and the drawing
+stays on the clipboard with its text after every drawing paste, on the Mac, Linux and Windows. The
+second 1 s keeps the #189 wipe away: T3 Code finished attaching a 2560 px image in at most 231 ms
+under heavy CPU load in the lab. An unread drawing no longer counts as pasted on Linux, so a text
+field or terminal says `Text pasted · drawing copied`; a drawing that landed without its text says
+`Drawing pasted · text copied` or `text failed`, and neither offers Paste. Lab: nested niri, a real
+drawing, an Electron composer whose Enter sends a message. An Enter 0.42 s after the text sent the
+text without the image on the old build and both together on the new one.

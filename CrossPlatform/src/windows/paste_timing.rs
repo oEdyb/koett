@@ -8,83 +8,85 @@ pub(super) fn text_ready(started: Instant, target_read: Option<Instant>, now: In
 }
 
 #[derive(Debug, PartialEq)]
-pub(super) enum TextStage {
+pub(super) enum DrawingStage {
     Waiting,
     Ready,
     Unconfirmed,
 }
 
-pub(super) fn text_stage(
+/// When the text may follow the drawing: a second after the target read the drawing, so it
+/// has finished attaching it (T3 Code resets its editor when that ends, wiping text pasted
+/// meanwhile), or after 1.5 s with no target read. A read by anyone, such as Chromium's
+/// anonymous one, still gets its second before the text.
+pub(super) fn drawing_stage(
     started: Instant,
     target_read: Option<Instant>,
+    any_read: Option<Instant>,
     now: Instant,
-) -> TextStage {
+) -> DrawingStage {
+    let settled = |at: Instant| now.saturating_duration_since(at.max(started)) >= SETTLE;
     match target_read {
-        Some(at)
-            if now.saturating_duration_since(at.max(started)) >= Duration::from_millis(300) =>
-        {
-            TextStage::Ready
+        Some(at) if settled(at) => DrawingStage::Ready,
+        Some(_) => DrawingStage::Waiting,
+        None if now.saturating_duration_since(started) < Duration::from_millis(1500) => {
+            DrawingStage::Waiting
         }
-        None if now.saturating_duration_since(started) >= Duration::from_millis(1500) => {
-            TextStage::Unconfirmed
-        }
-        _ => TextStage::Waiting,
+        None if any_read.is_some_and(|at| !settled(at)) => DrawingStage::Waiting,
+        None => DrawingStage::Unconfirmed,
     }
 }
 
-/// After a full paste (the image read and the text confirmed) the clipboard keeps only the
-/// text; anything less keeps the drawing too, so it can still be pasted by hand.
-pub(super) fn final_offer_keeps_drawing(
-    posted: bool,
-    image_read: bool,
-    text_confirmed: bool,
-) -> bool {
-    !(posted && image_read && text_confirmed)
-}
+const SETTLE: Duration = Duration::from_millis(1000);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn after_a_full_paste_the_clipboard_keeps_only_the_text() {
-        assert!(!final_offer_keeps_drawing(true, true, true));
-        assert!(final_offer_keeps_drawing(true, false, true), "image unread");
-        assert!(
-            final_offer_keeps_drawing(true, true, false),
-            "text unconfirmed"
-        );
-        assert!(
-            final_offer_keeps_drawing(false, false, false),
-            "nothing pasted"
-        );
-    }
-    #[test]
-    fn only_a_confirmed_read_can_advance_to_the_image() {
+    fn the_text_follows_a_second_after_the_drawing_is_read() {
         let start = Instant::now();
         let late = start + Duration::from_millis(1490);
+        let ms = |n| Duration::from_millis(n);
         assert_eq!(
-            text_stage(start, Some(late), late + Duration::from_millis(299)),
-            TextStage::Waiting
+            drawing_stage(start, Some(late), Some(late), late + ms(999)),
+            DrawingStage::Waiting,
+            "the target may still be attaching the drawing"
         );
         assert_eq!(
-            text_stage(start, Some(late), late + Duration::from_millis(300)),
-            TextStage::Ready
+            drawing_stage(start, Some(late), Some(late), late + ms(1000)),
+            DrawingStage::Ready
         );
         assert_eq!(
-            text_stage(start, None, start + Duration::from_millis(1499)),
-            TextStage::Waiting
+            drawing_stage(start, None, None, start + ms(1499)),
+            DrawingStage::Waiting
         );
         assert_eq!(
-            text_stage(start, None, start + Duration::from_millis(1500)),
-            TextStage::Unconfirmed
+            drawing_stage(start, None, None, start + ms(1500)),
+            DrawingStage::Unconfirmed
         );
         assert_eq!(
-            text_stage(start, None, start + Duration::from_secs(10)),
-            TextStage::Unconfirmed
+            drawing_stage(late, Some(start), Some(start), late + ms(999)),
+            DrawingStage::Waiting
+        );
+    }
+
+    #[test]
+    fn a_read_that_started_late_still_gets_its_settle() {
+        let start = Instant::now();
+        let ms = |n| Duration::from_millis(n);
+        let slow = start + ms(1400);
+        assert_eq!(
+            drawing_stage(start, None, Some(slow), start + ms(1500)),
+            DrawingStage::Waiting,
+            "an anonymous read at 1.4 s may still be attaching at 1.5 s"
         );
         assert_eq!(
-            text_stage(late, Some(start), late + Duration::from_millis(299)),
-            TextStage::Waiting
+            drawing_stage(start, None, Some(slow), slow + ms(1000)),
+            DrawingStage::Unconfirmed
+        );
+        assert_eq!(
+            drawing_stage(start, None, Some(start + ms(5)), start + ms(1500)),
+            DrawingStage::Unconfirmed,
+            "a clipboard manager's read at the offer adds no wait"
         );
     }
     #[test]

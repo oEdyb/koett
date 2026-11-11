@@ -454,6 +454,8 @@ pub(super) const COPIED: &str = "Copied to clipboard";
 pub(super) const CANCELLED: &str = "Cancelled";
 pub(super) const TEXT_DRAWING_COPIED: &str = "Text pasted · drawing copied";
 pub(super) const TEXT_DRAWING_FAILED: &str = "Text pasted · drawing failed";
+pub(super) const DRAWING_TEXT_COPIED: &str = "Drawing pasted · text copied";
+pub(super) const DRAWING_TEXT_FAILED: &str = "Drawing pasted · text failed";
 /// ✕ takes the clock's place at the right of the row.
 const CANCEL_W: i32 = 28;
 const CANCEL_X: f64 = (WIDTH - 14 - CANCEL_W) as f64;
@@ -1023,12 +1025,14 @@ impl RecordingOverlay {
         self.note.set(copied.then_some(COPIED));
     }
 
-    /// The next Done says the text landed and the drawing didn't.
-    pub fn set_text_only(&self, drawing_copied: bool) {
-        self.note.set(Some(if drawing_copied {
-            TEXT_DRAWING_COPIED
-        } else {
-            TEXT_DRAWING_FAILED
+    /// The next Done says which half of a drawing result landed, and whether the other is
+    /// on the clipboard.
+    pub fn set_partial(&self, text_landed: bool, other_copied: bool) {
+        self.note.set(Some(match (text_landed, other_copied) {
+            (true, true) => TEXT_DRAWING_COPIED,
+            (true, false) => TEXT_DRAWING_FAILED,
+            (false, true) => DRAWING_TEXT_COPIED,
+            (false, false) => DRAWING_TEXT_FAILED,
         }));
     }
 

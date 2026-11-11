@@ -153,4 +153,4 @@ pointer context remain open; a recording pill does not supply those backends.
 
 Mac source closures, closest alternatives and remaining physical/provider gates: [Mac open rows](macos-parity-open-rows.md).
 
-Windows drawing delivery still offers the image after 1.5 seconds without a target-PID text read for UWP/ApplicationFrameHost compatibility; Linux requires the read before the image.
+Windows drawing delivery still offers the text after 1.5 seconds without a target-PID image read for UWP/ApplicationFrameHost compatibility; Linux pastes the text either way but never counts an unread drawing as pasted.

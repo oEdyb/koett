@@ -95,7 +95,11 @@ extension KoettController: NSMenuDelegate {
                 defer { self.state = .ready }
                 do {
                     if let png {
-                        _ = try await self.deliverSketch(text: text, png: png)
+                        let delivery = try await self.deliverSketch(text: text, png: png)
+                        if !delivery.drawingLanded {
+                            self.recordingOverlay.showPartial(textLanded: true, text: text, png: png)
+                            return
+                        }
                     } else {
                         let ready = await self.pasteCoordinator.prepare(stage: .manual)
                         try LastTranscriptDelivery.paste(text,
@@ -103,6 +107,8 @@ extension KoettController: NSMenuDelegate {
                             postPaste: { ready && self.pasteAtCursor() })
                     }
                     self.recordingOverlay.showDone(text: text, png: png)
+                } catch is SketchPartialPaste {
+                    if let png { self.recordingOverlay.showPartial(textLanded: false, text: text, png: png) }
                 } catch {
                     let reason = self.pasteCoordinator.lastFailure?.message
                     if !self.recordingOverlay.showNotPasted(text: text, png: png, reason: reason) {

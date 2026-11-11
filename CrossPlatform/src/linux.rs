@@ -115,8 +115,11 @@ enum TrayUpdate {
     Delivered,
     /// The paste didn't happen, but the text is on the clipboard.
     Copied,
-    /// The text pasted and the drawing didn't; true when the drawing is on the clipboard.
-    TextOnly(bool),
+    /// One half of a drawing result pasted; see `Outcome::Partial`.
+    Partial {
+        text_landed: bool,
+        other_copied: bool,
+    },
     DeliveryFailed,
     Levels(crate::audio::AudioLevels),
     Shortcut(String),
@@ -670,8 +673,14 @@ pub fn run() -> Result<(), String> {
                     TrayUpdate::Copied => {
                         let _ = worker_ui.send(window::Update::Copied);
                     }
-                    TrayUpdate::TextOnly(drawing_copied) => {
-                        let _ = worker_ui.send(window::Update::TextOnly(drawing_copied));
+                    TrayUpdate::Partial {
+                        text_landed,
+                        other_copied,
+                    } => {
+                        let _ = worker_ui.send(window::Update::Partial {
+                            text_landed,
+                            other_copied,
+                        });
                     }
                     TrayUpdate::Delivered => {
                         let _ = worker_ui.send(window::Update::Delivered);
@@ -992,20 +1001,25 @@ fn run_x11(
                 }
                 feedback::remember_sketch(&final_text, sheet.as_deref());
                 cache_completed(tray, &final_text);
-                // Text first, as on Wayland: see `paste_result`.
-                let text_pasted = output.deliver(&final_text, target, paste_shortcut);
-                let outcome = match (&sheet, text_pasted) {
-                    (Some(png), Ok(())) => {
-                        std::thread::sleep(output::TEXT_SETTLE);
-                        let pasted = output
-                            .deliver_image(png, target)
-                            .map_or_else(Pasted::TextOnly, |()| Pasted::All);
-                        // X11 never offers the drawing back, so it isn't on the clipboard.
-                        settle_bundle(Ok(pasted), Err("no clipboard offer".into()), false)
+                // Drawing first, as on Wayland: see `paste_result`.
+                let outcome = match &sheet {
+                    Some(png) => {
+                        let drawing = output.deliver_image(png, target);
+                        if drawing.is_ok() {
+                            std::thread::sleep(output::DRAWING_SETTLE);
+                        }
+                        let text = output.deliver(&final_text, target, paste_shortcut);
+                        let pasted = combine(drawing, text);
+                        // The drawing goes back on the clipboard with its text, as on Wayland.
+                        let offered = x11_surface::set_clipboard_result(final_text.clone());
+                        let on_clipboard = pasted != Ok(Pasted::All)
+                            && offered.is_ok()
+                            && recovery::bundle_on_clipboard(&final_text);
+                        settle_bundle(pasted, offered, on_clipboard)
                     }
-                    (_, delivered) => settle_delivery(
-                        delivered,
-                        sheet.is_none().then_some(final_text.as_str()),
+                    None => settle_delivery(
+                        output.deliver(&final_text, target, paste_shortcut),
+                        Some(final_text.as_str()),
                         recovery::ensure_copied,
                     ),
                 };
@@ -1584,6 +1598,9 @@ async fn run_wayland(
                                 Ok(Pasted::All) => Ok(()),
                                 Ok(Pasted::TextOnly(error)) => {
                                     Err(format!("Text pasted; the drawing was not: {error}"))
+                                }
+                                Ok(Pasted::DrawingOnly(error)) => {
+                                    Err(format!("Drawing pasted; the text was not: {error}"))
                                 }
                                 Err(error) => Err(error.clone()),
                             };
@@ -2742,10 +2759,10 @@ async fn restore_sketch_clipboard(
     result
 }
 
-/// Pastes a result's text, then its drawing. Text goes first: T3 Code resets its editor
-/// from its draft when an image attachment finishes compressing, which wiped text pasted
-/// while that ran. The text is read and settled before the image key, and a text that
-/// didn't paste stops the image too.
+/// Pastes a result's drawing, then its text. The text is what the user waits for, so it
+/// lands last: an Enter pressed as soon as it shows sends both in one message. The settle
+/// lets T3 Code finish attaching the image first, since its editor reset at the end of
+/// that would wipe a text pasted meanwhile.
 async fn paste_result(
     output: Option<&WaylandOutput>,
     text: &str,
@@ -2753,35 +2770,60 @@ async fn paste_result(
     target: Option<u32>,
     shortcut: PasteShortcut,
 ) -> Result<Pasted, String> {
-    match output {
+    let drawing = match png {
+        Some(png) => {
+            let (drawing, read_started) = match output {
+                Some(output) => {
+                    let drawing = output.deliver_image(png, target).await;
+                    let read = drawing.is_ok();
+                    (drawing, read)
+                }
+                None => output::deliver_image_read(png, target),
+            };
+            // A read that started, even one too slow to finish, may still be attaching.
+            if read_started {
+                tokio::time::sleep(output::DRAWING_SETTLE).await;
+            }
+            drawing.map_err(|error| format!("Contact sheet not pasted: {error}"))
+        }
+        None => Ok(()),
+    };
+    let text = match output {
         Some(output) => output.deliver(text, target, shortcut).await,
         None => output::deliver(text, target, shortcut),
-    }?;
-    let Some(png) = png else {
-        return Ok(Pasted::All);
     };
-    tokio::time::sleep(output::TEXT_SETTLE).await;
-    Ok(match output {
-        Some(output) => output.deliver_image(png, target).await,
-        None => output::deliver_image(png, target),
-    }
-    .map_or_else(Pasted::TextOnly, |()| Pasted::All))
+    combine(drawing, text)
 }
 
-/// How far a result's paste got. An error from `paste_result` means nothing landed.
+/// Portal reads counted from just before a paste key. A clipboard manager such as CopyQ
+/// reads every new selection as soon as it appears; only a read after the key is a paste.
+struct ReadMark(u64);
+impl ReadMark {
+    fn now(served: &std::sync::atomic::AtomicU64) -> Self {
+        Self(served.load(std::sync::atomic::Ordering::Acquire))
+    }
+    fn read(&self, served: &std::sync::atomic::AtomicU64) -> bool {
+        served.load(std::sync::atomic::Ordering::Acquire) != self.0
+    }
+}
+
+/// How far a result's paste got. An error means nothing landed.
 #[derive(Debug, PartialEq)]
 enum Pasted {
     All,
     /// The text landed and the drawing didn't; pasting again would repeat the text.
     TextOnly(String),
+    /// The drawing landed and the text didn't; pasting again would repeat the drawing.
+    DrawingOnly(String),
 }
 
-/// After a full paste the clipboard keeps only the text: T3 Code drops the text from any
-/// paste that carries an image, so a bundle there would make Ctrl+V give the image alone.
-/// Copy and Paste recovery still have the drawing in memory. Anything less than a full
-/// paste leaves the drawing too, so it can still be pasted by hand.
-fn final_offer_keeps_drawing(pasted: &Result<Pasted, String>) -> bool {
-    pasted != &Ok(Pasted::All)
+fn combine(drawing: Result<(), String>, text: Result<(), String>) -> Result<Pasted, String> {
+    match (drawing, text) {
+        (Ok(()), Ok(())) => Ok(Pasted::All),
+        (Err(error), Ok(())) => Ok(Pasted::TextOnly(error)),
+        (Ok(()), Err(error)) => Ok(Pasted::DrawingOnly(error)),
+        (Err(_), Err(error)) => Err(error),
+    }
 }
 
 /// Offers a drawing result back to the clipboard and settles what to tell the user.
@@ -2794,8 +2836,9 @@ async fn settle_result(
     let Some(png) = png else {
         return settle_delivery_async(pasted.map(|_| ()), Some(text.to_owned())).await;
     };
-    let keep = final_offer_keeps_drawing(&pasted).then_some(png);
-    let offered = restore_sketch_clipboard(output, keep, text).await;
+    // The drawing stays on the clipboard with its text: a read only shows an app asked for
+    // the image, not that it kept it.
+    let offered = restore_sketch_clipboard(output, Some(png), text).await;
     let held = text.to_owned();
     let on_clipboard = pasted != Ok(Pasted::All)
         && offered.is_ok()
@@ -2916,7 +2959,6 @@ impl WaylandOutput {
             text: None,
             html: None,
         };
-        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
         self.clipboard
             .set_selection(
                 &self.session,
@@ -2927,12 +2969,14 @@ impl WaylandOutput {
         trace.prepare_paste(target)?;
         let chord = trace.image_chord(target)?;
         trace.post()?;
+        let mark = ReadMark::now(&self.served);
         self.press(chord).await?;
         let deadline = Instant::now() + output::IMAGE_READ_TIMEOUT;
-        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
-            && Instant::now() < deadline
-        {
+        while !mark.read(&self.served) && Instant::now() < deadline {
             tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        if !mark.read(&self.served) {
+            return trace.image_unread();
         }
         tokio::time::sleep(output::AFTER_IMAGE_READ).await;
         trace.finish(true);
@@ -2981,22 +3025,15 @@ impl WaylandOutput {
             .map_err(|error| format!("could not copy the transcript: {error}"))?;
         trace.prepare_paste(target)?;
         trace.post()?;
-        // Counted from just before the key: a clipboard manager reading the new text
-        // earlier isn't a paste, and only a read after the key shows one happened.
-        let before = self.served.load(std::sync::atomic::Ordering::Acquire);
+        let mark = ReadMark::now(&self.served);
         let result = self.press(shortcut).await;
         trace.finish(result.is_ok());
         result?;
         let deadline = Instant::now() + output::TEXT_READ_WAIT;
-        while self.served.load(std::sync::atomic::Ordering::Acquire) == before
-            && Instant::now() < deadline
-        {
+        while !mark.read(&self.served) && Instant::now() < deadline {
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
-        trace.read_checked(
-            true,
-            self.served.load(std::sync::atomic::Ordering::Acquire) != before,
-        )
+        trace.read_checked(true, mark.read(&self.served))
     }
 
     async fn send_keysym(&self, keysym: i32, state: KeyState) -> Result<(), String> {
@@ -3212,9 +3249,11 @@ enum Outcome {
     Pasted,
     /// Not pasted, but on the clipboard: said once, then the pill goes.
     Copied,
-    /// The text landed and the drawing didn't; `drawing_copied` when it's on the clipboard.
-    TextOnly {
-        drawing_copied: bool,
+    /// One half landed: the text when `text_landed`, else the drawing. `other_copied` when
+    /// the half that didn't is on the clipboard.
+    Partial {
+        text_landed: bool,
+        other_copied: bool,
     },
     Failed(String),
 }
@@ -3246,8 +3285,16 @@ fn settle_bundle(
         (Ok(Pasted::All), _) => Outcome::Pasted,
         (Ok(Pasted::TextOnly(error)), _) => {
             eprintln!("Koett: text pasted, drawing not: {error}");
-            Outcome::TextOnly {
-                drawing_copied: on_clipboard,
+            Outcome::Partial {
+                text_landed: true,
+                other_copied: on_clipboard,
+            }
+        }
+        (Ok(Pasted::DrawingOnly(error)), _) => {
+            eprintln!("Koett: drawing pasted, text not: {error}");
+            Outcome::Partial {
+                text_landed: false,
+                other_copied: on_clipboard,
             }
         }
         (Err(_), Ok(())) if on_clipboard => Outcome::Copied,
@@ -3261,13 +3308,19 @@ fn report_outcome(tray: Option<&TrayUpdates>, outcome: Outcome) -> Result<(), St
         let _ = tray.sender.send(match &outcome {
             Outcome::Pasted => TrayUpdate::Delivered,
             Outcome::Copied => TrayUpdate::Copied,
-            Outcome::TextOnly { drawing_copied } => TrayUpdate::TextOnly(*drawing_copied),
+            Outcome::Partial {
+                text_landed,
+                other_copied,
+            } => TrayUpdate::Partial {
+                text_landed: *text_landed,
+                other_copied: *other_copied,
+            },
             Outcome::Failed(_) => TrayUpdate::DeliveryFailed,
         });
     }
     match outcome {
         Outcome::Failed(error) => Err(error),
-        Outcome::Pasted | Outcome::Copied | Outcome::TextOnly { .. } => Ok(()),
+        Outcome::Pasted | Outcome::Copied | Outcome::Partial { .. } => Ok(()),
     }
 }
 
@@ -3389,43 +3442,59 @@ mod delivery_tests {
     }
 
     #[test]
-    fn after_a_full_paste_the_clipboard_keeps_only_the_text() {
-        assert!(
-            !final_offer_keeps_drawing(&Ok(Pasted::All)),
-            "a bundle would make Ctrl+V in T3 Code give the image without the text"
-        );
-        assert!(final_offer_keeps_drawing(&Ok(Pasted::TextOnly(
-            "focus changed".into()
-        ))));
-        assert!(final_offer_keeps_drawing(&Err("not read".into())));
-        let text_only = ClipboardPayload {
-            image: false,
-            bytes: b"- #1 words".to_vec(),
-            text: None,
-            html: None,
-        };
-        assert_eq!(text_only.bytes_for("image/png"), None);
-        assert_eq!(text_only.bytes_for("text/html"), None);
+    fn a_clipboard_manager_read_before_the_key_is_not_a_paste() {
+        let served = std::sync::atomic::AtomicU64::new(0);
+        // CopyQ reads each new selection as soon as Koett offers it, before any key.
+        served.fetch_add(2, std::sync::atomic::Ordering::Release);
+        let mark = ReadMark::now(&served);
+        assert!(!mark.read(&served), "reads before the key don't count");
+        served.fetch_add(1, std::sync::atomic::Ordering::Release);
+        assert!(mark.read(&served), "a read after the key is the paste");
+    }
+
+    #[test]
+    fn each_half_of_a_drawing_result_is_reported_on_its_own() {
+        let failed = || Err::<(), String>("focus changed".into());
+        assert_eq!(combine(Ok(()), Ok(())), Ok(Pasted::All));
         assert_eq!(
-            text_only.bytes_for("text/plain;charset=utf-8"),
-            Some(b"- #1 words".as_slice())
+            combine(failed(), Ok(())),
+            Ok(Pasted::TextOnly("focus changed".into()))
+        );
+        assert_eq!(
+            combine(Ok(()), Err("not read".into())),
+            Ok(Pasted::DrawingOnly("not read".into())),
+            "the drawing landed first and must not be offered again"
+        );
+        assert_eq!(
+            combine(failed(), Err("not read".into())),
+            Err("not read".into())
         );
     }
 
     #[test]
-    fn text_that_landed_is_never_offered_for_pasting_again() {
+    fn a_half_that_landed_is_never_offered_for_pasting_again() {
         let text_only = || Ok::<Pasted, String>(Pasted::TextOnly("focus changed".into()));
+        let drawing_only = || Ok::<Pasted, String>(Pasted::DrawingOnly("not read".into()));
         assert_eq!(
             settle_bundle(text_only(), Ok(()), true),
-            Outcome::TextOnly {
-                drawing_copied: true
+            Outcome::Partial {
+                text_landed: true,
+                other_copied: true
+            }
+        );
+        assert_eq!(
+            settle_bundle(drawing_only(), Ok(()), true),
+            Outcome::Partial {
+                text_landed: false,
+                other_copied: true
             }
         );
         for offered in [Ok(()), Err("ownership changed".into())] {
             assert_eq!(
-                settle_bundle(text_only(), offered, false),
-                Outcome::TextOnly {
-                    drawing_copied: false
+                settle_bundle(drawing_only(), offered, false),
+                Outcome::Partial {
+                    text_landed: false,
+                    other_copied: false
                 }
             );
         }
@@ -3433,14 +3502,18 @@ mod delivery_tests {
         let tray = TrayUpdates { sender };
         let shown = report_outcome(
             Some(&tray),
-            Outcome::TextOnly {
-                drawing_copied: true,
+            Outcome::Partial {
+                text_landed: false,
+                other_copied: true,
             },
         );
         assert_eq!(shown, Ok(()), "no error row over the result");
         assert!(matches!(
             receiver.try_recv(),
-            Ok(TrayUpdate::TextOnly(true))
+            Ok(TrayUpdate::Partial {
+                text_landed: false,
+                other_copied: true
+            })
         ));
     }
 

@@ -11,10 +11,10 @@ pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_mi
 pub const TEXT_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(1500);
 /// Settle time after the image read, before the clipboard changes to text.
 pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
-/// After the text of a drawing result is read, before its image key, so the target has
-/// put the text in its model. T3 Code otherwise resets its editor over it when the image
-/// attachment finishes.
-pub const TEXT_SETTLE: std::time::Duration = std::time::Duration::from_millis(300);
+/// After the drawing of a result is read, before its text key. T3 Code finishes preparing
+/// an image attachment within about 250 ms even under load; a text pasted while that runs
+/// can be wiped by the editor reset that ends it.
+pub const DRAWING_SETTLE: std::time::Duration = std::time::Duration::from_millis(1000);
 /// Keep the previous bounded fallback when the target never requests PNG.
 const UNKNOWN_IMAGE_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 /// Let the receiver handle its image before the guarded text chord follows.
@@ -203,7 +203,19 @@ fn confirm_text_read(
 
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
 /// text chord (terminal agents read the image themselves on Ctrl+V).
-pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
+/// Also says whether the target started reading the drawing, even when the transfer then
+/// timed out: such a target may still be attaching it.
+pub fn deliver_image_read(png: &[u8], target: Option<u32>) -> (Result<(), String>, bool) {
+    let mut started = false;
+    let result = deliver_image_tracked(png, target, &mut started);
+    (result, started)
+}
+
+fn deliver_image_tracked(
+    png: &[u8],
+    target: Option<u32>,
+    started: &mut bool,
+) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
     let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
     super::clipboard_owner::start(payload)?;
@@ -217,20 +229,18 @@ pub fn deliver_image(png: &[u8], target: Option<u32>) -> Result<(), String> {
     let posted = posted.ok_or("Image paste was not posted")?;
     trace.log("image_wait_begin");
     let complete = read.wait(posted, UNKNOWN_IMAGE_READ_WAIT, IMAGE_READ_TIMEOUT);
+    *started = read.started();
     if !complete && read.started() {
         trace.finish(false);
         trace.reason = "image_transfer_timeout";
         trace.log("image_wait_end");
         return Err("Image transfer did not complete; use Paste or Copy".into());
     }
-    if complete {
-        std::thread::sleep(FAST_IMAGE_SETTLE.saturating_sub(posted.elapsed()));
+    if !complete {
+        return trace.image_unread();
     }
-    trace.reason = if complete {
-        "image_transfer_complete"
-    } else {
-        "image_read_fallback"
-    };
+    std::thread::sleep(FAST_IMAGE_SETTLE.saturating_sub(posted.elapsed()));
+    trace.reason = "image_transfer_complete";
     trace.log("image_wait_end");
     Ok(())
 }
@@ -574,6 +584,14 @@ impl DeliveryStep {
     }
     /// Records whether the target read the clipboard after the key, and turns a
     /// paste without that evidence into an error.
+    /// No read at all after the drawing's key: the target didn't take it (a terminal or a
+    /// plain text field), so the drawing doesn't count as pasted.
+    pub fn image_unread(&mut self) -> Result<(), String> {
+        self.outcome = "unconfirmed";
+        self.reason = "no_image_read";
+        self.log("image_wait_end");
+        Err("The app didn't take the drawing".into())
+    }
     pub fn read_checked(&mut self, tracked: bool, read: bool) -> Result<(), String> {
         self.reason = match (tracked, read) {
             (_, true) => "target_read",

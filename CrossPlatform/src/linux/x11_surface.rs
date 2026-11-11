@@ -305,6 +305,24 @@ pub fn set_clipboard_png(png: Vec<u8>) -> Result<(), String> {
         .map_err(|_| "the clipboard did not answer".to_string())?
 }
 
+/// Puts a result back on the clipboard through GTK: the drawing with its text when there is
+/// one, as the pill's Copy does.
+pub fn set_clipboard_result(text: String) -> Result<(), String> {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    gtk::glib::MainContext::default().invoke(move || {
+        let result = gdk::Display::default()
+            .ok_or_else(|| "no display".to_string())
+            .and_then(|display| {
+                super::feedback::copy_transcript(&display.clipboard(), &text)
+                    .map_err(|error| error.to_string())
+            });
+        let _ = sender.send(result);
+    });
+    receiver
+        .recv_timeout(std::time::Duration::from_secs(2))
+        .map_err(|_| "the clipboard did not answer".to_string())?
+}
+
 fn property_text(connection: &RustConnection, window: u32, property: u32) -> Option<Vec<u8>> {
     let reply = connection
         .get_property(false, window, property, AtomEnum::ANY, 0, 1024)

@@ -6,6 +6,8 @@ enum PillContent: Equatable {
     case done(preview: String)
     case notPasted
     case copied
+    /// One half of a drawing result landed; the text says which and whether the other is copied.
+    case partial(String)
     case cancelled
     case media(preview: String)
     case status(String)
@@ -96,7 +98,7 @@ final class PillView: NSView {
     var acceptsMouse: Bool {
         switch content {
         case .recording, .transcribing: hasRecordingControls
-        case .done, .copied, .notPasted, .media, .error: true
+        case .done, .copied, .partial, .notPasted, .media, .error: true
         case .cancelled: true
         case .status, .progress: false
         }
@@ -161,7 +163,7 @@ final class PillView: NSView {
             return
         }
         switch content {
-        case .done, .copied, .notPasted, .media, .error: onDismiss?()
+        case .done, .copied, .partial, .notPasted, .media, .error: onDismiss?()
         default: break
         }
     }
@@ -242,6 +244,7 @@ final class PillView: NSView {
         case .transcribing(nil): staticText("Transcribing…")
         case .done(let preview), .media(let preview): staticText(preview)
         case .copied: staticText("Copied to clipboard")
+        case .partial(let text): staticText(text)
         case .cancelled: staticText("Cancelled")
         case .notPasted: staticText("Copy failed · Text saved")
         case .status(let text), .error(let text): staticText(text)
@@ -334,7 +337,7 @@ final class PillView: NSView {
             path.line(to: NSPoint(x: 23, y: cy - 1.5))
             path.stroke()
             NSBezierPath(ovalIn: NSRect(x: 22, y: cy - 4.8, width: 2, height: 2)).fill()
-        case .done, .copied, .media:
+        case .done, .copied, .partial, .media:
             for (index, height) in [7.0, 13.0, 19.0, 13.0, 7.0].enumerated() {
                 NSBezierPath(
                     roundedRect: NSRect(x: 14 + CGFloat(index) * 4.5, y: cy - height / 2, width: 2.5, height: height),
@@ -416,6 +419,8 @@ final class PillView: NSView {
             drawText("Cancelled", in: textRect, alignment: .left, color: palette.text)
         case .copied:
             drawText("Copied to clipboard", in: textRect, alignment: .left, color: palette.text)
+        case .partial(let text):
+            drawText(text, in: textRect, alignment: .left, color: palette.text)
         case .notPasted:
             drawText("Copy failed", in: resultRect, alignment: .left, color: palette.text)
         case .done(let preview), .media(let preview):

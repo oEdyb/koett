@@ -117,11 +117,12 @@ impl Snapshot {
                 Phase::Copied => "Koett Not pasted. Copied to clipboard".into(),
                 Phase::Cancelled => "Koett Cancelled".into(),
                 Phase::Partial {
-                    drawing_copied,
+                    text_landed,
+                    other_copied,
                     saved,
                 } => format!(
                     "Koett. {}. Copy to keep.",
-                    super::pill_state::partial_label(*drawing_copied, *saved)
+                    super::pill_state::partial_label(*text_landed, *other_copied, *saved)
                 ),
                 Phase::Done(preview) => format!(
                     "Koett Done. {}",
@@ -256,12 +257,15 @@ mod tests {
     use super::*;
     #[test]
     fn partial_delivery_offers_copy_without_paste() {
-        for drawing_copied in [false, true] {
+        for (text_landed, other_copied) in
+            [(true, false), (true, true), (false, false), (false, true)]
+        {
             for saved in [false, true] {
                 let mut state = State::default();
                 state.set(
                     Phase::Partial {
-                        drawing_copied,
+                        text_landed,
+                        other_copied,
                         saved,
                     },
                     0,

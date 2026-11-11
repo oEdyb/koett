@@ -8,8 +8,11 @@ pub enum Phase {
     Copied,
     /// ✕, Esc or the tray cancelled the dictation: one line, then it fades even under the pointer.
     Cancelled,
+    /// One half of a drawing result landed: the text when `text_landed`, else the drawing.
+    /// `other_copied` when the half that didn't is on the clipboard.
     Partial {
-        drawing_copied: bool,
+        text_landed: bool,
+        other_copied: bool,
         saved: bool,
     },
     NotPasted {
@@ -173,7 +176,8 @@ mod tests {
         let mut state = State::default();
         state.set(
             Phase::Partial {
-                drawing_copied: true,
+                text_landed: true,
+                other_copied: true,
                 saved: false,
             },
             0,
@@ -378,11 +382,15 @@ mod delivery_tests {
     }
 }
 
-pub(super) fn partial_label(drawing_copied: bool, saved: bool) -> &'static str {
-    match (drawing_copied, saved) {
-        (true, true) => "Text pasted · drawing copied",
-        (false, true) => "Text pasted · drawing failed",
-        (true, false) => "Drawing copied · save warning",
-        (false, false) => "Drawing failed · save warning",
+pub(super) fn partial_label(text_landed: bool, other_copied: bool, saved: bool) -> &'static str {
+    match (text_landed, other_copied, saved) {
+        (true, true, true) => "Text pasted · drawing copied",
+        (true, false, true) => "Text pasted · drawing failed",
+        (true, true, false) => "Drawing copied · save warning",
+        (true, false, false) => "Drawing failed · save warning",
+        (false, true, true) => "Drawing pasted · text copied",
+        (false, false, true) => "Drawing pasted · text failed",
+        (false, true, false) => "Text copied · save warning",
+        (false, false, false) => "Text failed · save warning",
     }
 }

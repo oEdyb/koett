@@ -80,20 +80,10 @@ fn main() {
         } else {
             koett_engine::settings::PasteShortcut::CtrlV
         };
-        // The order before 2026-11-08, to reproduce the lost text in a lab.
-        if std::env::args().any(|arg| arg == "--image-first") {
-            output::deliver_image(&png, target).unwrap();
-            output::deliver(text, target, shortcut).unwrap();
-            println!("Ready");
-            let mut byte = [0];
-            let _ = std::io::stdin().read(&mut byte);
-            clipboard_owner::stop();
-            return;
-        }
-        // The production order: text, a settle, then the drawing.
+        // The production order: the drawing, a settle, then the text.
+        output::deliver_image_read(&png, target).0.unwrap();
+        std::thread::sleep(output::DRAWING_SETTLE);
         output::deliver(text, target, shortcut).unwrap();
-        std::thread::sleep(output::TEXT_SETTLE);
-        output::deliver_image(&png, target).unwrap();
         std::thread::sleep(Duration::from_millis(700));
         clipboard_owner::replace(clipboard_owner::Payload::bundle(&png, text)).unwrap();
     }

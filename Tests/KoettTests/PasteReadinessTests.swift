@@ -196,22 +196,23 @@ final class SketchReadinessTests: XCTestCase {
         XCTAssertEqual(board.string(forType: .string), "New test copy")
     }
 
-    func testRejectedImagePreflightPreservesTheBundleAndSavesOnce() async throws {
+    func testRejectedImagePreflightStillPastesTheTextAndKeepsTheBundle() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }
         let png = try XCTUnwrap(SketchSheet.png(XCTUnwrap(SketchSheet.canvas(width: 3, height: 3)?.makeImage())))
-        var posts = 0
+        var imagePosts = 0
+        var textPosts = 0
         var saves = 0
-        do {
-            _ = try await SketchPaste.deliver(png: png, text: "Test fixture", pasteboard: board,
-                postImage: { posts += 1; return true }, postText: { posts += 1; return true },
-                prepareImage: { false }, persist: {
-                    saves += 1
-                    return .init(historySaved: true, recoveryURL: nil, lastTranscriptSaved: true, warning: nil)
-                })
-            XCTFail("Failed readiness must enter recovery")
-        } catch {}
-        XCTAssertEqual(posts, 0)
+        let delivery = try await SketchPaste.deliver(png: png, text: "Test fixture", pasteboard: board,
+            postImage: { imagePosts += 1; return true },
+            postText: { textPosts += 1; _ = board.string(forType: .string); return true },
+            prepareImage: { false }, persist: {
+                saves += 1
+                return .init(historySaved: true, recoveryURL: nil, lastTranscriptSaved: true, warning: nil)
+            })
+        XCTAssertFalse(delivery.drawingLanded)
+        XCTAssertEqual(imagePosts, 0)
+        XCTAssertEqual(textPosts, 1, "The text is what the user waits for, so it still goes")
         XCTAssertEqual(saves, 1)
         XCTAssertEqual(board.data(forType: .png), png)
         XCTAssertEqual(board.string(forType: .string), "Test fixture")
@@ -219,10 +220,9 @@ final class SketchReadinessTests: XCTestCase {
         let overlay = RecordingOverlayController()
         defer { overlay.stop() }
         overlay.showTranscribing()
-        XCTAssertTrue(overlay.showNotPasted(text: "Test fixture", png: png,
-            reason: PasteBlockReason.focusChanged.message, pasteboard: board))
-        XCTAssertEqual(overlay.pillView.content, .copied)
+        overlay.showPartial(textLanded: true, text: "Test fixture", png: png, pasteboard: board)
+        XCTAssertEqual(overlay.pillView.content, .partial("Text pasted · drawing copied"))
         try await Task.sleep(for: .seconds(RecordingOverlayController.doneDisplayDuration + 0.4))
-        XCTAssertFalse(overlay.isPresented, "Sketch focus refusal uses the short verified clipboard confirmation")
+        XCTAssertFalse(overlay.isPresented, "A partial result fades like Copied")
     }
 }

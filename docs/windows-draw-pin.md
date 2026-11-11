@@ -28,24 +28,26 @@ hardware and the remaining parity milestones are separate gates.
 
 ## Delivery and recovery
 
-Text is offered first with delayed Unicode rendering. After a read attributed to
-the target process plus 300 ms, the drawing is offered separately as delayed
-PNG/DIBV5. Reads from other processes or OpenClipboard(NULL) do not confirm the
-target consumed the text. After 1.5 seconds without a target read, Windows still
-sends the image for UWP/ApplicationFrameHost reader-PID compatibility. That fallback does not claim
-confirmed text delivery. It shows Copied to clipboard only after verifying the
+The drawing is offered first as delayed PNG/DIBV5. After a read attributed to
+the target process plus 1 s, the text is offered separately with delayed Unicode
+rendering, so it lands last and one Enter sends both. Reads from other processes
+or OpenClipboard(NULL) do not confirm the target took the drawing. After 1.5
+seconds without a target read, Windows still sends the text for
+UWP/ApplicationFrameHost reader-PID compatibility. That fallback does not claim
+the drawing landed. It shows Copied to clipboard only after verifying the
 recovery bundle, otherwise Not pasted.
 
-After the image read plus 200 ms, PNG/DIBV5/HTML/Unicode are restored together
-only if owner, sequence and marker still match. A newer copy wins at both stages.
-Explicit Paste recovery uses the same text-first sequence without another ASR
-pass or History write. Copy publishes the combined clipboard bundle.
+After the text read plus 200 ms, PNG/DIBV5/HTML/Unicode are restored together
+only if owner, sequence and marker still match, after every drawing paste. A
+newer copy wins at both stages. Explicit Paste recovery uses the same
+drawing-first sequence without another ASR pass or History write. Copy publishes the combined clipboard bundle.
 
 If text may already have been pasted, focus changes, image delivery fails and
 cancellation show a partial result with Copy. They disable Paste retry, including
 tray and shortcut recovery, so the transcript cannot be inserted twice. A
 confirmed text-only target shows Text pasted · drawing copied or Text pasted ·
-drawing failed. Partial notices fade after 1.75 seconds, stay while hovered, and
+drawing failed; a drawing that landed without its text shows Drawing pasted ·
+text copied or Drawing pasted · text failed. Partial notices fade after 1.75 seconds, stay while hovered, and
 dismiss on a body click without enabling retry. Storage warnings retain the
 drawing outcome. An unconfirmed read never claims Done.
 
@@ -168,5 +170,5 @@ An optional lab collector can accept its JSON POST at `/m4-paste-event`.
 
 The target-process read gate must also be checked in a native target that opens
 the clipboard with its own window. The Chromium fixture's anonymous reads take
-Windows' 1.5-second fallback. Check text precedes the image, the text survives
+Windows' 1.5-second fallback. Check the image precedes the text, the text survives
 the modeled reset, and the notice does not claim a target-confirmed paste.
