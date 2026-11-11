@@ -1614,7 +1614,7 @@ async fn run_wayland(
                         && let Err(error) = if output.is_none() {
                             clipboard_owner::start(clipboard_owner::Payload::bundle(&png, &text))
                         } else {
-                            restore_sketch_clipboard(output.as_ref(), &png, &text).await
+                            restore_sketch_clipboard(output.as_ref(), Some(&png), &text).await
                         }
                     {
                         update_tray_status(tray, &format!("@error:{error}"));
@@ -2680,9 +2680,11 @@ fn repeated_sketch_offer_serves_png_and_text_without_confusing_the_bytes() {
     assert_eq!(plain.bytes_for("text/plain"), Some(b"plain".as_slice()));
 }
 
+/// Leaves the result on the clipboard: the drawing and its text, or with `png` None the
+/// text alone.
 async fn restore_sketch_clipboard(
     output: Option<&WaylandOutput>,
-    png: &[u8],
+    png: Option<&[u8]>,
     text: &str,
 ) -> Result<(), String> {
     let mut trace = output::DeliveryStep::new(
@@ -2692,33 +2694,49 @@ async fn restore_sketch_clipboard(
         } else {
             "fallback"
         },
-        png.len() + text.len(),
+        png.map_or(0, <[u8]>::len) + text.len(),
     );
     let result = if let Some(output) = output {
         *output
             .current
             .write()
-            .map_err(|_| "the clipboard lock failed")? = ClipboardPayload {
-            image: true,
-            bytes: png.to_vec(),
-            text: Some(text.as_bytes().to_vec()),
-            html: Some(feedback::sketch_html(text, png).into_bytes()),
+            .map_err(|_| "the clipboard lock failed")? = match png {
+            Some(png) => ClipboardPayload {
+                image: true,
+                bytes: png.to_vec(),
+                text: Some(text.as_bytes().to_vec()),
+                html: Some(feedback::sketch_html(text, png).into_bytes()),
+            },
+            None => ClipboardPayload {
+                image: false,
+                bytes: text.as_bytes().to_vec(),
+                text: None,
+                html: None,
+            },
+        };
+        let types: &[&str] = if png.is_some() {
+            &[
+                "image/png",
+                "text/html",
+                "text/plain;charset=utf-8",
+                "text/plain",
+            ]
+        } else {
+            &["text/plain;charset=utf-8", "text/plain"]
         };
         output
             .clipboard
             .set_selection(
                 &output.session,
-                SetSelectionOptions::default().set_mime_types(&[
-                    "image/png",
-                    "text/html",
-                    "text/plain;charset=utf-8",
-                    "text/plain",
-                ]),
+                SetSelectionOptions::default().set_mime_types(types),
             )
             .await
             .map_err(|error| format!("could not preserve the sketch clipboard: {error}"))
     } else {
-        clipboard_owner::replace(clipboard_owner::Payload::bundle(png, text))
+        clipboard_owner::replace(match png {
+            Some(png) => clipboard_owner::Payload::bundle(png, text),
+            None => clipboard_owner::Payload::text(text),
+        })
     };
     trace.finish(result.is_ok());
     result
@@ -2758,6 +2776,14 @@ enum Pasted {
     TextOnly(String),
 }
 
+/// After a full paste the clipboard keeps only the text: T3 Code drops the text from any
+/// paste that carries an image, so a bundle there would make Ctrl+V give the image alone.
+/// Copy and Paste recovery still have the drawing in memory. Anything less than a full
+/// paste leaves the drawing too, so it can still be pasted by hand.
+fn final_offer_keeps_drawing(pasted: &Result<Pasted, String>) -> bool {
+    pasted != &Ok(Pasted::All)
+}
+
 /// Offers a drawing result back to the clipboard and settles what to tell the user.
 async fn settle_result(
     output: Option<&WaylandOutput>,
@@ -2768,7 +2794,8 @@ async fn settle_result(
     let Some(png) = png else {
         return settle_delivery_async(pasted.map(|_| ()), Some(text.to_owned())).await;
     };
-    let offered = restore_sketch_clipboard(output, png, text).await;
+    let keep = final_offer_keeps_drawing(&pasted).then_some(png);
+    let offered = restore_sketch_clipboard(output, keep, text).await;
     let held = text.to_owned();
     let on_clipboard = pasted != Ok(Pasted::All)
         && offered.is_ok()
@@ -3358,6 +3385,30 @@ mod delivery_tests {
             settle_bundle(all(), Err("ownership changed".into()), false),
             Outcome::Pasted,
             "everything landed; offering Paste would paste it twice"
+        );
+    }
+
+    #[test]
+    fn after_a_full_paste_the_clipboard_keeps_only_the_text() {
+        assert!(
+            !final_offer_keeps_drawing(&Ok(Pasted::All)),
+            "a bundle would make Ctrl+V in T3 Code give the image without the text"
+        );
+        assert!(final_offer_keeps_drawing(&Ok(Pasted::TextOnly(
+            "focus changed".into()
+        ))));
+        assert!(final_offer_keeps_drawing(&Err("not read".into())));
+        let text_only = ClipboardPayload {
+            image: false,
+            bytes: b"- #1 words".to_vec(),
+            text: None,
+            html: None,
+        };
+        assert_eq!(text_only.bytes_for("image/png"), None);
+        assert_eq!(text_only.bytes_for("text/html"), None);
+        assert_eq!(
+            text_only.bytes_for("text/plain;charset=utf-8"),
+            Some(b"- #1 words".as_slice())
         );
     }
 

@@ -245,6 +245,18 @@ pub(super) fn ensure_bundle(owner: HWND, bundle: &Bundle, expected: Option<Offer
         && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
 }
 
+/// After a full paste: swaps Koett's own offer for the text alone, read back. T3 Code
+/// drops the text from any paste that carries an image, so a bundle would make the next
+/// Ctrl+V give the image without the text. Never replaces a newer clipboard owner.
+pub(super) fn leave_text(owner: HWND, bundle: &Bundle, offer: Offer) -> bool {
+    let normalize = |text: &str| text.replace("\r\n", "\n");
+    offer
+        .replace_with_text(&bundle.text)
+        .and_then(Offer::verify)
+        .is_ok()
+        && self::text(owner).is_some_and(|held| normalize(&held) == normalize(&bundle.text))
+}
+
 /// Whether `text` is on the clipboard, copying it if it isn't. Checked by reading it
 /// back, so a copy that silently went nowhere doesn't count.
 pub(super) fn ensure_text(owner: HWND, text: &str) -> bool {

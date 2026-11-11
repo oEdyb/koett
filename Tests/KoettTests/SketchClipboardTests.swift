@@ -12,7 +12,7 @@ final class SketchClipboardTests: XCTestCase {
         .init(historySaved: false, recoveryURL: nil, lastTranscriptSaved: false, warning: nil)
     }
 
-    func testAutomaticPasteLeavesOneItemWithExactImageAndTextForRepeatPaste() async throws {
+    func testAutomaticPasteLeavesOnlyTheTextSoTheNextPasteGivesTheText() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }
         let image = try png()
@@ -35,12 +35,10 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(events, ["image", "text", "save"])
         XCTAssertEqual(board.pasteboardItems?.count, 1)
         for _ in 0..<3 {
-            XCTAssertEqual(board.data(forType: .png), image)
+            XCTAssertNil(board.data(forType: .png), "An image beside the text makes some apps drop the text")
+            XCTAssertNil(board.string(forType: .html))
             XCTAssertEqual(board.string(forType: .string), text)
-            XCTAssertNotNil(board.data(forType: .tiff))
-            XCTAssertEqual(board.string(forType: .html), SketchClipboard.html(text: text, png: image))
         }
-        XCTAssertNotNil(NSImage(pasteboard: board), "A native image consumer must still receive the sketch")
         let editor = NSTextView(frame: .zero)
         editor.isRichText = false
         XCTAssertTrue(editor.readSelection(from: board, type: .string))
@@ -64,8 +62,20 @@ final class SketchClipboardTests: XCTestCase {
             return true
         }, persist: { self.noStorage })
         await consumer?.value
-        XCTAssertEqual(board.data(forType: .png), image)
+        XCTAssertNil(board.data(forType: .png))
         XCTAssertEqual(board.string(forType: .string), "Delayed text")
+    }
+
+    func testAnUnreadImageKeepsTheDrawingOnTheClipboard() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let image = try png()
+        _ = try await SketchPaste.deliver(png: image, text: "Image never read", pasteboard: board,
+            postImage: { true },
+            postText: { _ = board.string(forType: .string); return true },
+            persist: { self.noStorage })
+        XCTAssertEqual(board.data(forType: .png), image)
+        XCTAssertEqual(board.string(forType: .string), "Image never read")
     }
 
     func testFailedImageOrTextPostStillOffersBothFormatsAndSavesOnce() async throws {

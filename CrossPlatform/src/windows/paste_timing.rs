@@ -32,9 +32,32 @@ pub(super) fn text_stage(
     }
 }
 
+/// After a full paste (the image read and the text confirmed) the clipboard keeps only the
+/// text; anything less keeps the drawing too, so it can still be pasted by hand.
+pub(super) fn final_offer_keeps_drawing(
+    posted: bool,
+    image_read: bool,
+    text_confirmed: bool,
+) -> bool {
+    !(posted && image_read && text_confirmed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn after_a_full_paste_the_clipboard_keeps_only_the_text() {
+        assert!(!final_offer_keeps_drawing(true, true, true));
+        assert!(final_offer_keeps_drawing(true, false, true), "image unread");
+        assert!(
+            final_offer_keeps_drawing(true, true, false),
+            "text unconfirmed"
+        );
+        assert!(
+            final_offer_keeps_drawing(false, false, false),
+            "nothing pasted"
+        );
+    }
     #[test]
     fn only_a_confirmed_read_can_advance_to_the_image() {
         let start = Instant::now();
