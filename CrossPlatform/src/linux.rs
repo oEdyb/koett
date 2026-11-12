@@ -2784,6 +2784,14 @@ async fn paste_result(
             if read_started {
                 tokio::time::sleep(output::DRAWING_SETTLE).await;
             }
+            // A newer copy took the clipboard: it wins, so the text doesn't replace it either.
+            // The pill keeps the result for Paste and Copy.
+            if drawing
+                .as_ref()
+                .is_err_and(|error| error == output::CLIPBOARD_TAKEN)
+            {
+                return Err(output::CLIPBOARD_TAKEN.into());
+            }
             drawing.map_err(|error| format!("Contact sheet not pasted: {error}"))
         }
         None => Ok(()),

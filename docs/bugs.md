@@ -354,10 +354,13 @@ unknown: CopyQ with the same settings didn't do it in the lab, and the log has i
 deliveries. Koett also stopped its old offer before making the new one, leaving the clipboard empty
 for a moment, which is when a clipboard manager puts its last item back.
 
-Now a live offer switches in place with no empty moment, Koett tracks from the protocol's own events
-whether its offer is still the selection, and before each key it offers again once if another app
-took it. If it's taken again, the key isn't sent, so another app's copy is never pasted. Lab: nested
-niri, a real drawing, and a watcher that copies a stale item the moment the drawing is offered. The
-old build pasted the stale item 3 times in 3 and the drawing never; the new one pasted the drawing
-3 times in 3 and nothing stale. Windows already checks it still owns the clipboard right before the
-key. The Mac now does too, and sends no key after a newer copy, which keeps that copy.
+Now a live offer switches in place with no empty moment, and each offer tracks from the protocol's
+own events whether it's still the selection. Right before each key, if another app took the
+clipboard, Koett reads it back. The same bytes (a manager like wl-clip-persist re-serving every
+copy) still get the key, though the paste can't be confirmed. Different bytes are a newer copy and
+win, as on the Mac: no key for the drawing or its text, and the pill keeps Paste and Copy. Lab:
+nested niri, a real drawing, and a watcher that copies a stale item the moment the drawing is
+offered. The old build pasted the stale item 3 times in 3 and the drawing never. The new one
+pastes nothing and leaves the newer copy on the clipboard. Plain dictation still pastes once behind
+a manager that re-serves the same bytes. Windows already checks it still owns the clipboard right
+before the key; the Mac now does too.
