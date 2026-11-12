@@ -947,7 +947,7 @@ mod tests {
             logged.starts_with("application/x-copyq-owner,text/plain;charset=utf-8,badnamenext,")
         );
         assert_eq!(logged.split(',').count(), 4);
-        assert_eq!(logged.split(',').last().unwrap().len(), 64);
+        assert_eq!(logged.rsplit(',').next().unwrap().len(), 64);
     }
 
     #[test]
