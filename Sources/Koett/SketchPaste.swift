@@ -12,6 +12,8 @@ enum SketchPaste {
     /// T3 Code finishes preparing an image attachment within about 250 ms even under load;
     /// a text pasted while that runs can be wiped by the editor reset that ends it.
     static let drawingSettle: Duration = .seconds(1)
+    /// nspasteboard.org's marker for data that is about to be replaced.
+    static let transientType = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
 
     /// Returns true only when the target read the image after its key. A post nothing read
     /// doesn't count: a text field or terminal never takes a drawing.
@@ -24,6 +26,8 @@ enum SketchPaste {
         let provider = SketchImageProvider(png: png)
         let item = NSPasteboardItem()
         guard item.setDataProvider(provider, forTypes: [.png, .tiff]) else { return false }
+        // The offer lasts only until its paste: clipboard managers such as Maccy skip it.
+        item.setData(Data(), forType: transientType)
         pasteboard.clearContents()
         guard pasteboard.writeObjects([item]) else { return false }
         let generation = pasteboard.changeCount

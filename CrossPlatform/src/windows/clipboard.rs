@@ -41,6 +41,7 @@ impl Bundle {
                 (CF_DIBV5.0.into(), self.dib.clone()),
             ],
             Condition::Any,
+            true,
         )
     }
     /// The text, replacing Koett's own drawing offer only while that is still current.
@@ -49,6 +50,7 @@ impl Bundle {
             offer.owner,
             vec![(CF_UNICODETEXT.0.into(), utf16(&self.text)?)],
             Condition::Offer(offer),
+            false,
         )
     }
     pub fn new(image: &Pixels, text: String) -> Result<Self, String> {
@@ -388,10 +390,13 @@ enum Condition {
     Offer(Offer),
 }
 
+/// `transient` keeps clipboard managers and Windows clipboard history away from an offer that
+/// lasts only until its paste, through the formats Microsoft documents for that.
 fn deferred(
     owner: HWND,
     formats: Vec<(u32, Vec<u8>)>,
     expected: Condition,
+    transient: bool,
 ) -> Result<Offer, String> {
     let marker_format = unsafe { RegisterClipboardFormatW(w!("Koett.DrawingOffer")) };
     if marker_format == 0 {
@@ -406,6 +411,20 @@ fn deferred(
         return Err("Could not disable cloud clipboard upload".into());
     }
     let cloud_data = Memory::new(&0u32.to_le_bytes())?;
+    let hidden = if transient {
+        let exclude =
+            unsafe { RegisterClipboardFormatW(w!("ExcludeClipboardContentFromMonitorProcessing")) };
+        let history = unsafe { RegisterClipboardFormatW(w!("CanIncludeInClipboardHistory")) };
+        if exclude == 0 || history == 0 {
+            return Err("Could not hide the drawing from clipboard history".into());
+        }
+        vec![
+            (exclude, Memory::new(&0u32.to_le_bytes())?),
+            (history, Memory::new(&0u32.to_le_bytes())?),
+        ]
+    } else {
+        Vec::new()
+    };
     let mut open = None;
     for _ in 0..10 {
         if unsafe { OpenClipboard(Some(owner)) }.is_ok() {
@@ -426,6 +445,9 @@ fn deferred(
     unsafe { EmptyClipboard() }.map_err(|e| e.to_string())?;
     prepared.give(marker_format)?;
     cloud_data.give(cloud)?;
+    for (format, data) in hidden {
+        data.give(format)?;
+    }
     for (format, _) in &formats {
         unsafe {
             windows::Win32::Foundation::SetLastError(windows::Win32::Foundation::WIN32_ERROR(0));
@@ -659,6 +681,21 @@ mod tests {
                     .unwrap()
                     .is_invalid()
             );
+        }
+        unsafe { OpenClipboard(Some(owner)) }.unwrap();
+        {
+            let _open = Open;
+            // Clipboard managers and Win+V history skip the drawing's short-lived offer.
+            let exclude = unsafe {
+                RegisterClipboardFormatW(w!("ExcludeClipboardContentFromMonitorProcessing"))
+            };
+            assert!(unsafe { IsClipboardFormatAvailable(exclude) }.is_ok());
+            let history = unsafe { RegisterClipboardFormatW(w!("CanIncludeInClipboardHistory")) };
+            let handle = HGLOBAL(unsafe { GetClipboardData(history) }.unwrap().0);
+            let data = unsafe { GlobalLock(handle) }.cast::<u32>();
+            assert!(!data.is_null());
+            assert_eq!(unsafe { *data }, 0);
+            let _ = unsafe { GlobalUnlock(handle) };
         }
         let (image, image_read, requested) = rendered(image, std::process::id());
         assert!(image_read.is_none() && !requested);

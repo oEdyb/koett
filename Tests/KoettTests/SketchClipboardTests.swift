@@ -129,6 +129,24 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(board.data(forType: .png), image, "The drawing stays on the clipboard")
     }
 
+    func testOnlyTheDrawingOfferIsMarkedTransientForClipboardManagers() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        var marked: Bool?
+        _ = try await SketchPaste.deliver(png: png(), text: "Kept", pasteboard: board, postImage: {
+            marked = board.types?.contains(SketchPaste.transientType)
+            _ = board.data(forType: .png)
+            return true
+        }, postText: {
+            _ = board.string(forType: .string)
+            return true
+        }, persist: { self.noStorage })
+        XCTAssertEqual(marked, true)
+        XCTAssertFalse(board.types?.contains(SketchPaste.transientType) ?? true,
+                       "The drawing kept with its text stays in clipboard history")
+        XCTAssertNotNil(board.data(forType: .png))
+    }
+
     func testANewerCopyBeforeTheImageKeyIsNeverPasted() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }
