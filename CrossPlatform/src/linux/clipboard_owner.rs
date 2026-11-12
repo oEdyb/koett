@@ -459,7 +459,10 @@ impl Dispatch<device::ZwlrDataControlDeviceV1, ()> for State {
                     .marker
                     .as_ref()
                     .is_some_and(|marker| state.markers.contains(marker));
-                if !ours && state.ownership.active && state.ownership.owned {
+                // Koett's source hears it's cancelled before this, so check the last selection,
+                // or a claim still in flight.
+                let ownership = &state.ownership;
+                if !ours && ownership.active && (ownership.latest_ours || ownership.transitioning) {
                     // Data control doesn't say which client set it; its types usually do.
                     eprintln!(
                         "clipboard_owner event=taken_by mimes={}",
