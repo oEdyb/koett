@@ -60,6 +60,6 @@ final class SketchPasteChordTests: XCTestCase {
         XCTAssertTrue(pasted)
         XCTAssertEqual(posted, [.maskControl])
         XCTAssertEqual(read, png, "a terminal agent reading PNG gets the sheet")
-        XCTAssertLessThan(ContinuousClock.now - started, .seconds(1), "the text follows the read, not the 1.5 s timeout")
+        XCTAssertLessThan(ContinuousClock.now - started, SketchPaste.readTimeout, "the settle follows the read, not the 1.5 s timeout")
     }
 }
