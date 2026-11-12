@@ -1629,7 +1629,7 @@ async fn run_wayland(
                     if let Ok(text) = recovery::last_text()
                         && let Some(png) = feedback::sketch_for(&text)
                         && let Err(error) = if output.is_none() {
-                            clipboard_owner::start(clipboard_owner::Payload::bundle(&png, &text))
+                            clipboard_owner::offer(clipboard_owner::Payload::bundle(&png, &text))
                         } else {
                             restore_sketch_clipboard(output.as_ref(), Some(&png), &text).await
                         }
@@ -2783,6 +2783,14 @@ async fn paste_result(
             // A read that started, even one too slow to finish, may still be attaching.
             if read_started {
                 tokio::time::sleep(output::DRAWING_SETTLE).await;
+            }
+            // A newer copy took the clipboard: it wins, so the text doesn't replace it either.
+            // The pill keeps the result for Paste and Copy.
+            if drawing
+                .as_ref()
+                .is_err_and(|error| error == output::CLIPBOARD_TAKEN)
+            {
+                return Err(output::CLIPBOARD_TAKEN.into());
             }
             drawing.map_err(|error| format!("Contact sheet not pasted: {error}"))
         }

@@ -144,6 +144,43 @@ impl Payload {
         Self(data, None)
     }
 }
+/// Whether the clipboard's current owner serves exactly `bytes` as `mime`.
+/// A clipboard manager that takes every new selection serves the same bytes, so a paste
+/// from it inserts what Koett offered.
+pub(super) fn clipboard_holds(mime: &str, bytes: &[u8]) -> bool {
+    read_command("wl-paste", &["--no-newline", "--type", mime]).is_some_and(|held| held == bytes)
+}
+
+/// A clipboard reader's output, or None if it fails or takes over two seconds: an owner
+/// that never answers would otherwise hold the caller back.
+pub(super) fn read_command(program: &str, args: &[&str]) -> Option<Vec<u8>> {
+    let mut child = std::process::Command::new(program)
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .ok()?;
+    let mut stdout = child.stdout.take()?;
+    let reader = std::thread::spawn(move || {
+        let mut bytes = Vec::new();
+        std::io::Read::read_to_end(&mut stdout, &mut bytes).map(|_| bytes)
+    });
+    let started = std::time::Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => break,
+            Ok(Some(_)) | Err(_) => return None,
+            Ok(None) if started.elapsed() > std::time::Duration::from_secs(2) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(10)),
+        }
+    }
+    reader.join().ok()?.ok()
+}
 struct Request {
     payload: Payload,
     deadline: Instant,
@@ -152,6 +189,9 @@ struct Request {
 struct Owner {
     requests: mpsc::Sender<Request>,
     stop: Arc<AtomicBool>,
+    /// Whether this owner's offer is still the selection. Each owner has its own, so a
+    /// stalled old thread can't clear the live one's.
+    owned: Arc<AtomicBool>,
     worker: Option<thread::JoinHandle<()>>,
 }
 impl Drop for Owner {
@@ -174,16 +214,36 @@ static OWNER: Mutex<Option<Owner>> = Mutex::new(None);
 pub(super) fn stop() {
     OWNER.lock().unwrap_or_else(|e| e.into_inner()).take();
 }
+/// Whether Koett's current offer is still the selection. Cleared the moment another client
+/// sets one, from the event itself rather than the next loop turn.
+pub(super) fn owned() -> bool {
+    OWNER
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|owner| owner.owned.load(Ordering::Acquire))
+}
+/// Offers a payload without leaving the clipboard empty: a live owner switches its selection
+/// in place, the new source set before the old one goes. Stopping one owner and starting
+/// another leaves a moment with no clipboard, and CopyQ fills it with its last item, which
+/// then takes the paste.
+pub(super) fn offer(payload: Payload) -> Result<(), String> {
+    if owned() && replace(payload.clone()).is_ok() {
+        return Ok(());
+    }
+    start(payload)
+}
 pub(super) fn start(payload: Payload) -> Result<(), String> {
     let mut owner = OWNER.lock().map_err(|e| e.to_string())?;
     owner.take();
     let (tx, rx) = mpsc::channel();
     let stop = Arc::new(AtomicBool::new(false));
-    let flag = stop.clone();
+    let owned = Arc::new(AtomicBool::new(false));
+    let (flag, serving) = (stop.clone(), owned.clone());
     let worker = thread::Builder::new()
         .name("koett-clipboard".into())
         .spawn(move || {
-            if let Err(error) = serve(rx, flag) {
+            if let Err(error) = serve(rx, flag, serving) {
                 eprintln!("clipboard_owner event=stopped error={error}");
             }
         })
@@ -191,6 +251,7 @@ pub(super) fn start(payload: Payload) -> Result<(), String> {
     let next = Owner {
         requests: tx,
         stop,
+        owned,
         worker: Some(worker),
     };
     let result = request(&next, payload);
@@ -231,6 +292,8 @@ fn request(owner: &Owner, payload: Payload) -> Result<(), String> {
 struct Ownership {
     active: bool,
     owned: bool,
+    /// The owner's shared `owned` flag, cleared from the selection event itself.
+    shared: Arc<AtomicBool>,
     transitioning: bool,
     foreign_seen: bool,
     latest_ours: bool,
@@ -249,6 +312,7 @@ impl Ownership {
         }
         self.latest_ours = ours;
         if !ours {
+            self.shared.store(false, Ordering::Release);
             self.owned = false;
             if self.transitioning {
                 self.foreign_seen = true;
@@ -518,6 +582,7 @@ impl Dispatch<source::ZwlrDataControlSourceV1, Arc<SourceData>> for State {
                 // An old source is retained through the transition barrier. Its expected
                 // cancellation cannot hide a foreign Selection notification.
                 if state.current.as_ref() == Some(source) {
+                    state.ownership.shared.store(false, Ordering::Release);
                     state.ownership.owned = false;
                 }
                 eprintln!(
@@ -650,12 +715,17 @@ fn barrier(
     }
     Ok(())
 }
-fn serve(requests: mpsc::Receiver<Request>, stop: Arc<AtomicBool>) -> Result<(), String> {
+fn serve(
+    requests: mpsc::Receiver<Request>,
+    stop: Arc<AtomicBool>,
+    owned: Arc<AtomicBool>,
+) -> Result<(), String> {
     let deadline = Instant::now() + REQUEST_TIMEOUT;
     let connection = Connection::connect_to_env().map_err(|e| e.to_string())?;
     let mut queue: EventQueue<State> = connection.new_event_queue();
     let qh = queue.handle();
     let mut state = State::new();
+    state.ownership.shared = owned;
     let _registry = connection.display().get_registry(&qh, ());
     barrier(&connection, &mut queue, &mut state, deadline, &stop)?;
     let manager = state
@@ -718,6 +788,10 @@ fn serve(requests: mpsc::Receiver<Request>, stop: Arc<AtomicBool>) -> Result<(),
             device.set_selection(Some(&source));
             barrier(&connection, &mut queue, &mut state, request.deadline, &stop)?;
             let result = state.ownership.finish();
+            state
+                .ownership
+                .shared
+                .store(result.is_ok(), Ordering::Release);
             if let Some(old) = old {
                 old.destroy();
             }
@@ -988,6 +1062,7 @@ mod tests {
         let owner = Owner {
             requests: tx,
             stop: Arc::new(AtomicBool::new(false)),
+            owned: Arc::new(AtomicBool::new(true)),
             worker: Some(worker),
         };
         let start = Instant::now();
@@ -1055,19 +1130,22 @@ mod tests {
             super::super::recovery::bundle_on_clipboard(TEXT),
             "Koett's own bundle reads back as image and text"
         );
-        let mut newer = Command::new("wl-copy")
-            .args(["--type", "text/plain"])
-            .stdin(Stdio::piped())
-            .spawn()
-            .unwrap();
-        newer
-            .stdin
-            .take()
-            .unwrap()
-            .write_all(b"newer copy wins")
-            .unwrap();
-        assert!(newer.wait().unwrap().success());
+        foreign_copy();
         assert!(replace(Payload::bundle(&fixture, TEXT)).is_err());
+        assert_eq!(read("text/plain"), b"newer copy wins");
+        assert!(clipboard_holds("text/plain", b"newer copy wins"));
+        assert!(!clipboard_holds("text/plain", TEXT.as_bytes()));
+        assert!(
+            !owned(),
+            "a foreign copy clears ownership before any paste key"
+        );
+        offer(Payload::text(TEXT)).unwrap();
+        assert!(owned(), "offering again takes the clipboard back");
+        assert_eq!(read("text/plain"), TEXT.as_bytes());
+        offer(Payload::bundle(&fixture, TEXT)).unwrap();
+        assert!(owned(), "a live owner switches in place");
+        assert_eq!(read("image/png"), fixture);
+        foreign_copy();
         assert_eq!(read("text/plain"), b"newer copy wins");
         assert!(
             !super::super::recovery::bundle_on_clipboard(TEXT),

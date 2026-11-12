@@ -18,6 +18,9 @@ pub const DRAWING_SETTLE: std::time::Duration = std::time::Duration::from_millis
 /// Keep the previous bounded fallback when the target never requests PNG.
 const UNKNOWN_IMAGE_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
 /// Let the receiver handle its image before the guarded text chord follows.
+/// Another app replaced Koett's offer with different content just before the key.
+pub const CLIPBOARD_TAKEN: &str = "Another app copied something just before the paste";
+const TEXT_MIMES: &[&str] = &["text/plain;charset=utf-8", "text/plain"];
 const FAST_IMAGE_SETTLE: std::time::Duration = std::time::Duration::from_millis(120);
 
 // Only Koett's own, active exclusive layers authorize an underlying-window capture.
@@ -151,7 +154,7 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
     let mut trace = DeliveryStep::new("text", "fallback", text.len());
     // Koett serves the text itself, so it can see whether the target reads it.
     let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
-    let read = match super::clipboard_owner::start(payload) {
+    let read = match super::clipboard_owner::offer(payload) {
         Ok(()) => Some(read),
         Err(error) => {
             eprintln!("Clipboard owner unavailable, copying without paste evidence: {error}");
@@ -160,6 +163,10 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
         }
     };
     trace.prepare_paste(target)?;
+    let read = match read {
+        Some(read) if trace.keep_owned(TEXT_MIMES, text.as_bytes())? => Some(read),
+        _ => None,
+    };
     let mut posted = None;
     trace.send_fallback_tracked(shortcut, || {
         if let Some(read) = &read {
@@ -218,15 +225,24 @@ fn deliver_image_tracked(
 ) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
     let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
-    super::clipboard_owner::start(payload)?;
+    super::clipboard_owner::offer(payload)?;
     trace.prepare_paste(target)?;
     let chord = trace.image_chord(target)?;
+    let tracked = trace.keep_owned(&["image/png"], png)?;
     let mut posted = None;
     trace.send_fallback_tracked(chord, || {
         read.arm();
         posted = Some(std::time::Instant::now());
     })?;
     let posted = posted.ok_or("Image paste was not posted")?;
+    if !tracked {
+        // Another app serves the drawing, so its read can't be seen. The target may be
+        // attaching it, so the text still waits out the settle.
+        *started = true;
+        trace.outcome = "unconfirmed";
+        trace.log("image_wait_end");
+        return Err("The drawing's paste couldn't be confirmed".into());
+    }
     trace.log("image_wait_begin");
     let complete = read.wait(posted, UNKNOWN_IMAGE_READ_WAIT, IMAGE_READ_TIMEOUT);
     *started = read.started();
@@ -581,6 +597,27 @@ impl DeliveryStep {
                 ))
             }
         }
+    }
+    /// Right before the key: whether the paste would insert what Koett offered. Returns
+    /// whether Koett still serves it, so the target's read can be seen. When another app
+    /// took the clipboard, the key still goes if it serves the same bytes (a manager such
+    /// as wl-clip-persist), but a different copy is newer and wins: no key.
+    pub fn keep_owned(&mut self, mimes: &[&str], bytes: &[u8]) -> Result<bool, String> {
+        if super::clipboard_owner::owned() {
+            return Ok(true);
+        }
+        if mimes
+            .iter()
+            .any(|mime| super::clipboard_owner::clipboard_holds(mime, bytes))
+        {
+            self.reason = "clipboard_mirrored";
+            self.log("clipboard_mirrored");
+            return Ok(false);
+        }
+        self.outcome = "refused";
+        self.reason = "clipboard_taken";
+        self.log("clipboard_taken");
+        Err(CLIPBOARD_TAKEN.into())
     }
     /// Records whether the target read the clipboard after the key, and turns a
     /// paste without that evidence into an error.

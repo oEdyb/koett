@@ -71,32 +71,7 @@ fn clipboard_types() -> Option<String> {
 }
 
 fn read_clipboard(program: &str, args: &[&str]) -> Option<String> {
-    let mut child = Command::new(program)
-        .args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .ok()?;
-    let mut stdout = child.stdout.take()?;
-    let reader = std::thread::spawn(move || {
-        let mut bytes = Vec::new();
-        std::io::Read::read_to_end(&mut stdout, &mut bytes).map(|_| bytes)
-    });
-    let started = std::time::Instant::now();
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) if status.success() => break,
-            Ok(Some(_)) | Err(_) => return None,
-            Ok(None) if started.elapsed() > std::time::Duration::from_secs(2) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return None;
-            }
-            Ok(None) => std::thread::sleep(std::time::Duration::from_millis(10)),
-        }
-    }
-    String::from_utf8(reader.join().ok()?.ok()?).ok()
+    String::from_utf8(super::clipboard_owner::read_command(program, args)?).ok()
 }
 
 /// Whether `text` is on the clipboard, copying it if it isn't. Checked by reading it

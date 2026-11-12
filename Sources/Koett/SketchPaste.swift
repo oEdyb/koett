@@ -29,7 +29,8 @@ enum SketchPaste {
         let generation = pasteboard.changeCount
         didWrite(generation)
         let posted = ContinuousClock.now
-        guard postPaste() else { return false }
+        // A newer copy between the write and the key would be pasted in the drawing's place.
+        guard pasteboard.changeCount == generation, postPaste() else { return false }
         let deadline = posted + readTimeout
         while ContinuousClock.now < deadline, pasteboard.changeCount == generation {
             if let readAt = provider.readAt, readAt >= posted { break }
@@ -82,7 +83,7 @@ enum SketchPaste {
                     return written
                 },
                 postPaste: {
-                    guard textReady else { return false }
+                    guard textReady, pasteboard.changeCount == textGeneration else { return false }
                     textPostedAt = .now
                     let posted = postText()
                     if !posted { textPostedAt = nil }

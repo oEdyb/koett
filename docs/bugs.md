@@ -344,3 +344,23 @@ field or terminal says `Text pasted · drawing copied`; a drawing that landed wi
 `Drawing pasted · text copied` or `text failed`, and neither offers Paste. Lab: nested niri, a real
 drawing, an Electron composer whose Enter sends a message. An Enter 0.42 s after the text sent the
 text without the image on the old build and both together on the new one.
+
+## 2026-11-12: another app took the clipboard just before the drawing's key
+
+On Linux a drawing dictation pasted only its text, and Ctrl+V gave the drawing afterwards. The log
+showed Koett's drawing offer replaced by another client's selection 70 ms before Ctrl+V, so the
+target read that instead and the drawing never landed. Which client did it on that machine is
+unknown: CopyQ with the same settings didn't do it in the lab, and the log has it once in 56
+deliveries. Koett also stopped its old offer before making the new one, leaving the clipboard empty
+for a moment, which is when a clipboard manager puts its last item back.
+
+Now a live offer switches in place with no empty moment, and each offer tracks from the protocol's
+own events whether it's still the selection. Right before each key, if another app took the
+clipboard, Koett reads it back. The same bytes (a manager like wl-clip-persist re-serving every
+copy) still get the key, though the paste can't be confirmed. Different bytes are a newer copy and
+win, as on the Mac: no key for the drawing or its text, and the pill keeps Paste and Copy. Lab:
+nested niri, a real drawing, and a watcher that copies a stale item the moment the drawing is
+offered. The old build pasted the stale item 3 times in 3 and the drawing never. The new one
+pastes nothing and leaves the newer copy on the clipboard. Plain dictation still pastes once behind
+a manager that re-serves the same bytes. Windows already checks it still owns the clipboard right
+before the key; the Mac now does too.
