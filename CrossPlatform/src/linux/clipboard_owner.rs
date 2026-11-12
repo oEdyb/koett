@@ -171,8 +171,25 @@ impl Drop for Owner {
     }
 }
 static OWNER: Mutex<Option<Owner>> = Mutex::new(None);
+/// Whether Koett's current offer is still the selection. Cleared the moment another client
+/// sets one, from the event itself rather than the next loop turn.
+static OWNED: AtomicBool = AtomicBool::new(false);
 pub(super) fn stop() {
+    OWNED.store(false, Ordering::Release);
     OWNER.lock().unwrap_or_else(|e| e.into_inner()).take();
+}
+pub(super) fn owned() -> bool {
+    OWNED.load(Ordering::Acquire)
+}
+/// Offers a payload without leaving the clipboard empty: a live owner switches its selection
+/// in place, the new source set before the old one goes. Stopping one owner and starting
+/// another leaves a moment with no clipboard, and CopyQ fills it with its last item, which
+/// then takes the paste.
+pub(super) fn offer(payload: Payload) -> Result<(), String> {
+    if owned() && replace(payload.clone()).is_ok() {
+        return Ok(());
+    }
+    start(payload)
 }
 pub(super) fn start(payload: Payload) -> Result<(), String> {
     let mut owner = OWNER.lock().map_err(|e| e.to_string())?;
@@ -249,6 +266,7 @@ impl Ownership {
         }
         self.latest_ours = ours;
         if !ours {
+            OWNED.store(false, Ordering::Release);
             self.owned = false;
             if self.transitioning {
                 self.foreign_seen = true;
@@ -518,6 +536,7 @@ impl Dispatch<source::ZwlrDataControlSourceV1, Arc<SourceData>> for State {
                 // An old source is retained through the transition barrier. Its expected
                 // cancellation cannot hide a foreign Selection notification.
                 if state.current.as_ref() == Some(source) {
+                    OWNED.store(false, Ordering::Release);
                     state.ownership.owned = false;
                 }
                 eprintln!(
@@ -718,6 +737,7 @@ fn serve(requests: mpsc::Receiver<Request>, stop: Arc<AtomicBool>) -> Result<(),
             device.set_selection(Some(&source));
             barrier(&connection, &mut queue, &mut state, request.deadline, &stop)?;
             let result = state.ownership.finish();
+            OWNED.store(result.is_ok(), Ordering::Release);
             if let Some(old) = old {
                 old.destroy();
             }
@@ -1055,19 +1075,20 @@ mod tests {
             super::super::recovery::bundle_on_clipboard(TEXT),
             "Koett's own bundle reads back as image and text"
         );
-        let mut newer = Command::new("wl-copy")
-            .args(["--type", "text/plain"])
-            .stdin(Stdio::piped())
-            .spawn()
-            .unwrap();
-        newer
-            .stdin
-            .take()
-            .unwrap()
-            .write_all(b"newer copy wins")
-            .unwrap();
-        assert!(newer.wait().unwrap().success());
+        foreign_copy();
         assert!(replace(Payload::bundle(&fixture, TEXT)).is_err());
+        assert_eq!(read("text/plain"), b"newer copy wins");
+        assert!(
+            !owned(),
+            "a foreign copy clears ownership before any paste key"
+        );
+        offer(Payload::text(TEXT)).unwrap();
+        assert!(owned(), "offering again takes the clipboard back");
+        assert_eq!(read("text/plain"), TEXT.as_bytes());
+        offer(Payload::bundle(&fixture, TEXT)).unwrap();
+        assert!(owned(), "a live owner switches in place");
+        assert_eq!(read("image/png"), fixture);
+        foreign_copy();
         assert_eq!(read("text/plain"), b"newer copy wins");
         assert!(
             !super::super::recovery::bundle_on_clipboard(TEXT),

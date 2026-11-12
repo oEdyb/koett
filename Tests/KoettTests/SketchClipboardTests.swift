@@ -129,6 +129,22 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(board.data(forType: .png), image, "The drawing stays on the clipboard")
     }
 
+    func testANewerCopyBeforeTheImageKeyIsNeverPasted() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        var posts = 0
+        let landed = await SketchPaste.paste(png: try png(), pasteboard: board, postPaste: {
+            posts += 1
+            return true
+        }, didWrite: { _ in
+            board.clearContents()
+            board.setString("Copied elsewhere", forType: .string)
+        })
+        XCTAssertFalse(landed)
+        XCTAssertEqual(posts, 0, "The key would paste the other app's copy")
+        XCTAssertEqual(board.string(forType: .string), "Copied elsewhere")
+    }
+
     func testRestorationDoesNotOverwriteANewerClipboardOwner() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }

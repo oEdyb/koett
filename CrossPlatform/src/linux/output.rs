@@ -151,7 +151,7 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
     let mut trace = DeliveryStep::new("text", "fallback", text.len());
     // Koett serves the text itself, so it can see whether the target reads it.
     let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
-    let read = match super::clipboard_owner::start(payload) {
+    let read = match super::clipboard_owner::offer(payload.clone()) {
         Ok(()) => Some(read),
         Err(error) => {
             eprintln!("Clipboard owner unavailable, copying without paste evidence: {error}");
@@ -160,6 +160,9 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
         }
     };
     trace.prepare_paste(target)?;
+    if read.is_some() {
+        trace.keep_owned(&payload)?;
+    }
     let mut posted = None;
     trace.send_fallback_tracked(shortcut, || {
         if let Some(read) = &read {
@@ -218,9 +221,10 @@ fn deliver_image_tracked(
 ) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
     let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
-    super::clipboard_owner::start(payload)?;
+    super::clipboard_owner::offer(payload.clone())?;
     trace.prepare_paste(target)?;
     let chord = trace.image_chord(target)?;
+    trace.keep_owned(&payload)?;
     let mut posted = None;
     trace.send_fallback_tracked(chord, || {
         read.arm();
@@ -584,6 +588,23 @@ impl DeliveryStep {
     }
     /// Records whether the target read the clipboard after the key, and turns a
     /// paste without that evidence into an error.
+    /// Right before the key: Koett must still own the clipboard, or the paste would insert
+    /// whatever replaced it, such as CopyQ restoring its last item. Offers again once, then
+    /// refuses rather than paste someone else's clipboard.
+    pub fn keep_owned(&mut self, payload: &super::clipboard_owner::Payload) -> Result<(), String> {
+        if super::clipboard_owner::owned() {
+            return Ok(());
+        }
+        self.reason = "clipboard_taken";
+        self.log("reoffer");
+        if super::clipboard_owner::offer(payload.clone()).is_ok() && super::clipboard_owner::owned()
+        {
+            return Ok(());
+        }
+        self.outcome = "refused";
+        self.log("clipboard_taken");
+        Err("Another app took the clipboard before the paste".into())
+    }
     /// No read at all after the drawing's key: the target didn't take it (a terminal or a
     /// plain text field), so the drawing doesn't count as pasted.
     pub fn image_unread(&mut self) -> Result<(), String> {
