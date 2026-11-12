@@ -351,7 +351,8 @@ Koett never reads a newer command as something else. The audio pause internals s
 
 After a manager-like client took the clipboard just before a drawing's key (see bugs.md), the
 drawing's short-lived paste offer now carries the standard skip markers: `x-kde-passwordManagerHint`
-`secret` on Linux (honored by CopyQ, Klipper and cliphist), `org.nspasteboard.TransientType` on the
+`secret` on Linux (CopyQ and Klipper skip it; cliphist's `wl-paste --watch` still reads the image and
+cliphist drops it afterwards; persisters like wl-clip-persist ignore the hint), `org.nspasteboard.TransientType` on the
 Mac, and `ExcludeClipboardContentFromMonitorProcessing` with `CanIncludeInClipboardHistory` 0 on
 Windows. Only that offer: the text, the drawing kept on the clipboard with its text afterwards, and
 Copy stay in clipboard history as before, and Koett's own History doesn't use the clipboard. When
