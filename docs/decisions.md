@@ -346,3 +346,14 @@ says Cancelled and fades, History lives in the tray and window only, and Pause g
 visible place: "no one will ever press pause, bro." Linux and Windows match the Mac (#183). The
 `pause`/`resume` commands went too. Windows app-CLI codes keep their numbers so an older running
 Koett never reads a newer command as something else. The audio pause internals stay with no way in.
+
+## 2026-11-12: clipboard managers skip the drawing's paste offer
+
+After a manager-like client took the clipboard just before a drawing's key (see bugs.md), the
+drawing's short-lived paste offer now carries the standard skip markers: `x-kde-passwordManagerHint`
+`secret` on Linux (honored by CopyQ, Klipper and cliphist), `org.nspasteboard.TransientType` on the
+Mac, and `ExcludeClipboardContentFromMonitorProcessing` with `CanIncludeInClipboardHistory` 0 on
+Windows. Only that offer: the text, the drawing kept on the clipboard with its text afterwards, and
+Copy stay in clipboard history as before, and Koett's own History doesn't use the clipboard. When
+Koett loses the clipboard on Linux, the log names the new owner's types (no contents), since the
+data-control protocol doesn't say which client it was.

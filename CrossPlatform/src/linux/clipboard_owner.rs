@@ -85,6 +85,9 @@ impl ImageRead {
         }
     }
 }
+/// Tells clipboard managers to skip an offer: CopyQ, Klipper and cliphist don't store, show
+/// or act on it. The same hint `wl-copy --sensitive` and KeePassXC set.
+const SECRET_HINT: &str = "x-kde-passwordManagerHint";
 impl Payload {
     pub fn image(png: &[u8]) -> Self {
         Self(vec![("image/png", Arc::from(png))], None)
@@ -96,7 +99,9 @@ impl Payload {
             started: Arc::new(AtomicBool::new(false)),
             done,
         };
+        // The drawing's offer lasts only until its paste, so no clipboard manager needs it.
         let mut payload = Self::image(png);
+        payload.0.push((SECRET_HINT, Arc::from(&b"secret"[..])));
         payload.1 = Some(signal.clone());
         (
             payload,
@@ -341,12 +346,19 @@ struct SourceData {
 #[cfg(test)]
 static BEFORE_CLAIM: Mutex<Option<Box<dyn FnOnce() + Send>>> = Mutex::new(None);
 
+/// What a selection offer announced: Koett's marker if it has one, and its type names, which
+/// say who took the clipboard (CopyQ adds `application/x-copyq-*`, Chromium `chromium/x-*`).
+#[derive(Default)]
+struct Offer {
+    marker: Option<String>,
+    mimes: Vec<String>,
+}
 struct State {
     manager: Option<manager::ZwlrDataControlManagerV1>,
     seat: Option<wl_seat::WlSeat>,
     current: Option<source::ZwlrDataControlSourceV1>,
     ownership: Ownership,
-    offers: HashMap<wayland_client::backend::ObjectId, Option<String>>,
+    offers: HashMap<wayland_client::backend::ObjectId, Offer>,
     markers: HashSet<String>,
     sync_done: u64,
     next_sync: u64,
@@ -439,12 +451,21 @@ impl Dispatch<device::ZwlrDataControlDeviceV1, ()> for State {
                 state.offers.entry(id.id()).or_default();
             }
             device::Event::Selection { id } => {
-                let marker = id
+                let offer = id
                     .as_ref()
-                    .and_then(|offer| state.offers.remove(&offer.id()).flatten());
-                let ours = marker
+                    .and_then(|offer| state.offers.remove(&offer.id()))
+                    .unwrap_or_default();
+                let ours = offer
+                    .marker
                     .as_ref()
                     .is_some_and(|marker| state.markers.contains(marker));
+                if !ours && state.ownership.active && state.ownership.owned {
+                    // Data control doesn't say which client set it; its types usually do.
+                    eprintln!(
+                        "clipboard_owner event=taken_by mimes={}",
+                        taker_mimes(&offer.mimes)
+                    );
+                }
                 state.ownership.selection(ours);
                 if let Some(offer) = id {
                     offer.destroy();
@@ -472,12 +493,32 @@ impl Dispatch<offer::ZwlrDataControlOfferV1, ()> for State {
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
-        if let offer::Event::Offer { mime_type } = event
-            && state.markers.contains(&mime_type)
-        {
-            *state.offers.entry(offer.id()).or_default() = Some(mime_type);
+        if let offer::Event::Offer { mime_type } = event {
+            let entry = state.offers.entry(offer.id()).or_default();
+            if state.markers.contains(&mime_type) {
+                entry.marker = Some(mime_type);
+            } else if entry.mimes.len() < 24 {
+                entry.mimes.push(mime_type);
+            }
         }
     }
+}
+
+/// Type names only, never contents, kept to one short log field.
+fn taker_mimes(mimes: &[String]) -> String {
+    if mimes.is_empty() {
+        return "none".into();
+    }
+    mimes
+        .iter()
+        .map(|mime| {
+            mime.chars()
+                .filter(|c| c.is_ascii_graphic() && *c != ',')
+                .take(64)
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 #[derive(Default)]
@@ -604,7 +645,12 @@ impl Dispatch<source::ZwlrDataControlSourceV1, Arc<SourceData>> for State {
                     // Arc keeps this source's immutable data alive even after replacement.
                     // Ignore pre-paste clipboard-manager reads. This signal only advances
                     // an already authorized delivery; reads never trigger keyboard input.
-                    let completed = data.payload.1.as_ref().and_then(ReadSignal::begin);
+                    // A manager checking the hint isn't a paste.
+                    let completed = if mime_type == SECRET_HINT {
+                        None
+                    } else {
+                        data.payload.1.as_ref().and_then(ReadSignal::begin)
+                    };
                     let result = spawn_writer(
                         File::from(fd),
                         Arc::clone(bytes),
@@ -868,6 +914,39 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn only_the_drawing_offer_asks_clipboard_managers_to_skip_it() {
+        let (drawing, _) = Payload::tracked_image(&[1, 2, 3]);
+        let hint = |payload: &Payload| {
+            payload
+                .0
+                .iter()
+                .find(|(mime, _)| *mime == SECRET_HINT)
+                .map(|(_, bytes)| bytes.to_vec())
+        };
+        assert_eq!(hint(&drawing), Some(b"secret".to_vec()));
+        // Text and the kept drawing with its text stay in clipboard history, as before.
+        assert_eq!(hint(&Payload::tracked_text("hello").0), None);
+        assert_eq!(hint(&Payload::bundle(&[1], "hello")), None);
+    }
+
+    #[test]
+    fn a_taker_is_logged_by_its_type_names_only() {
+        assert_eq!(taker_mimes(&[]), "none");
+        let mimes = [
+            "application/x-copyq-owner".to_string(),
+            "text/plain;charset=utf-8".into(),
+            "bad name,\nnext".into(),
+            "x".repeat(100),
+        ];
+        let logged = taker_mimes(&mimes);
+        assert!(
+            logged.starts_with("application/x-copyq-owner,text/plain;charset=utf-8,badnamenext,")
+        );
+        assert_eq!(logged.split(',').count(), 4);
+        assert_eq!(logged.split(',').last().unwrap().len(), 64);
+    }
+
     #[test]
     fn bundle_keeps_each_representation_and_escapes_only_html() {
         let payload = Payload::bundle(&[137, 80, 78, 71], TEXT);
