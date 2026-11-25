@@ -175,10 +175,9 @@ impl WriterWorker {
                 break Ok(());
             }
         };
+        self.drain.close();
         let at = session_offset(self.session_zero, now());
-        for _ in 0..self.drain.pending_blocks() {
-            self.drain_one(at)?;
-        }
+        while self.drain_one(at)? {}
         self.recorder
             .finish(self.drain.dropped_frames())
             .map_err(|error| CaptureFault::io(at, error))?;

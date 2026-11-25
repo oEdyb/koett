@@ -576,7 +576,10 @@ fn low_disk_fault_preserves_partial_pcm_and_queued_blocks() {
     let (notice, received) = mpsc::channel();
     let (probing, probe_started) = mpsc::channel();
     let (queued, blocks_queued) = mpsc::channel();
+    let (closing, close_started) = mpsc::channel();
+    let (checked, push_checked) = mpsc::channel();
     let mut preflight = true;
+    let disk_tick = tick.clone();
     let (writer, mut ingress) = TrackWriter::start_with_clock(
         dir.config(zero),
         move |_| {
@@ -585,12 +588,20 @@ fn low_disk_fault_preserves_partial_pcm_and_queued_blocks() {
             }
             probing.send(()).unwrap();
             blocks_queued.recv_timeout(Duration::from_secs(2)).unwrap();
+            disk_tick.store(31, Ordering::Release);
             Ok(200 * MIB)
         },
         move |event| notice.send(event).unwrap(),
         {
             let tick = tick.clone();
-            move || zero + Duration::from_secs(tick.load(Ordering::Acquire))
+            move || {
+                let seconds = tick.load(Ordering::Acquire);
+                if seconds == 31 {
+                    closing.send(()).unwrap();
+                    push_checked.recv_timeout(Duration::from_secs(2)).unwrap();
+                }
+                zero + Duration::from_secs(seconds)
+            }
         },
     )
     .unwrap();
@@ -618,6 +629,10 @@ fn low_disk_fault_preserves_partial_pcm_and_queued_blocks() {
         assert!(ingress.push(&[0.5; BLOCK], zero + Duration::from_millis(n * 20)));
     }
     queued.send(()).unwrap();
+    close_started.recv_timeout(Duration::from_secs(2)).unwrap();
+    let late_push = ingress.push(&[0.75; BLOCK], zero + Duration::from_secs(31));
+    checked.send(()).unwrap();
+    assert!(!late_push, "ingress accepted a block after the disk fault");
 
     let fault = CaptureFault {
         at: Offset(480_000),
@@ -649,6 +664,7 @@ fn worker_panic_notifies_before_finish_and_closes_ingress() {
     let zero = Instant::now();
     let tick = Arc::new(AtomicU64::new(0));
     let (notice, received) = mpsc::channel();
+    let (checked, push_checked) = mpsc::channel();
     let mut preflight = true;
     let (writer, mut ingress) = TrackWriter::start_with_clock(
         dir.config(zero),
@@ -656,7 +672,10 @@ fn worker_panic_notifies_before_finish_and_closes_ingress() {
             assert!(std::mem::take(&mut preflight), "injected worker panic");
             Ok(2048 * MIB)
         },
-        move |event| notice.send(event).unwrap(),
+        move |event| {
+            notice.send(event).unwrap();
+            push_checked.recv_timeout(Duration::from_secs(2)).unwrap();
+        },
         {
             let tick = tick.clone();
             move || zero + Duration::from_secs(tick.load(Ordering::Acquire))
@@ -670,7 +689,9 @@ fn worker_panic_notifies_before_finish_and_closes_ingress() {
         panic!("writer panic did not send a fault");
     };
     assert_eq!(fault.reason, CaptureFaultReason::WorkerPanicked);
-    assert!(!ingress.push(&[0.25; BLOCK], zero + Duration::from_secs(30)));
+    let late_push = ingress.push(&[0.25; BLOCK], zero + Duration::from_secs(30));
+    checked.send(()).unwrap();
+    assert!(!late_push);
     assert_eq!(writer.finish(), Err(fault));
 }
 
