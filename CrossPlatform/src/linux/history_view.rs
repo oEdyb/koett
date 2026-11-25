@@ -260,7 +260,35 @@ impl HistoryView {
         let selected_row = Rc::new(RefCell::new(None::<Row>));
         let rows = Rc::new(RefCell::new(Vec::<Row>::new()));
         let meeting_view = Rc::new(RefCell::new(MeetingView::Idle));
+        // A narrow window puts a meeting's buttons below its heading and stacks them
+        // once one row no longer fits. A dictation keeps its one toolbar row.
+        let fit_toolbar: Rc<dyn Fn()> = Rc::new({
+            let root = root.downgrade();
+            let selected_row = selected_row.clone();
+            let toolbar = toolbar.clone();
+            let buttons = buttons.clone();
+            let reading = reading.clone();
+            move || {
+                let meeting = matches!(selected_row.borrow().as_ref(), Some(Row::Meeting(_)));
+                let narrow = meeting
+                    && root
+                        .upgrade()
+                        .is_some_and(|root| root.width() < TWO_PANE_WIDTH);
+                toolbar.set_orientation(if narrow {
+                    gtk::Orientation::Vertical
+                } else {
+                    gtk::Orientation::Horizontal
+                });
+                let room = reading.width() - READING_PADDING;
+                buttons.set_orientation(if narrow && row_width(&buttons) > room {
+                    gtk::Orientation::Vertical
+                } else {
+                    gtk::Orientation::Horizontal
+                });
+            }
+        });
         let show_actions: Rc<dyn Fn()> = Rc::new({
+            let fit_toolbar = fit_toolbar.clone();
             let selected_row = selected_row.clone();
             let selected = selected.clone();
             let meeting_view = meeting_view.clone();
@@ -306,6 +334,7 @@ impl HistoryView {
                     transcribe.set_label(label);
                     transcribe.set_sensitive(can_start);
                 }
+                fit_toolbar();
             }
         });
         let refresh: Rc<dyn Fn()> = Rc::new({
@@ -423,27 +452,13 @@ impl HistoryView {
             let detail = detail.clone();
             let back = back.clone();
             let separator = separator.clone();
-            let toolbar = toolbar.clone();
-            let buttons = buttons.clone();
-            let reading = reading.clone();
+            let fit_toolbar = fit_toolbar.clone();
             move || {
                 let Some(root) = root.upgrade() else {
                     return gtk::glib::ControlFlow::Break;
                 };
                 navigation.set_hexpand(root.width() < TWO_PANE_WIDTH);
-                let narrow = root.width() < TWO_PANE_WIDTH;
-                toolbar.set_orientation(if narrow {
-                    gtk::Orientation::Vertical
-                } else {
-                    gtk::Orientation::Horizontal
-                });
-                // A narrow window stacks the buttons once they no longer fit one row.
-                let room = reading.width() - READING_PADDING;
-                buttons.set_orientation(if narrow && row_width(&buttons) > room {
-                    gtk::Orientation::Vertical
-                } else {
-                    gtk::Orientation::Horizontal
-                });
+                fit_toolbar();
                 if root.width() >= TWO_PANE_WIDTH {
                     navigation.set_visible(true);
                     detail.set_visible(true);
