@@ -21,9 +21,7 @@ use super::{Backend, Channel, Offset, SAMPLE_RATE, Span};
 use timeline::{Point, SpeechWord};
 use windows::WindowBuilder;
 
-#[cfg(test)]
-pub(super) use markdown::sign_note;
-pub(super) use markdown::{Rendered, history_text, is_unedited_note_of, vault_note};
+pub(super) use markdown::{Rendered, history_text, vault_note};
 
 const BATCH_SIZE: usize = 8;
 const PARAKEET: &str = "parakeet-v3";

@@ -285,30 +285,6 @@ fn vault_note_keeps_a_mark_in_an_absolute_file_url() {
     )
     .unwrap();
     assert_eq!(name, "1970-01-01 0000 Koett meeting 550e8400.md");
-    assert!(is_unedited_note_of(&note, manifest.info.id));
-    let edited = format!("{note}\n## My notes\n\nFollow up on pricing.\n");
-    assert!(!is_unedited_note_of(&edited, manifest.info.id));
-    let retagged = note.replacen(
-        "tags: [meeting, koett]",
-        "tags: [meeting, koett, pricing]",
-        1,
-    );
-    assert!(!is_unedited_note_of(&retagged, manifest.info.id));
-    assert!(!is_unedited_note_of(&note, MeetingId::new()));
-    let signature = note.lines().nth(1).unwrap();
-    assert!(signature.starts_with("koett_sha256: "));
-    let moved = note.replacen(&format!("{signature}\n"), "", 1).replacen(
-        "status: complete\n",
-        &format!("status: complete\n{signature}\n"),
-        1,
-    );
-    assert!(!is_unedited_note_of(&moved, manifest.info.id));
-    let spaced = note.replacen(signature, &format!("{signature} "), 1);
-    assert!(!is_unedited_note_of(&spaced, manifest.info.id));
-    let echoed = format!("{note}{signature}\n");
-    assert!(!is_unedited_note_of(&echoed, manifest.info.id));
-    let crlf = note.replace('\n', "\r\n");
-    assert!(!is_unedited_note_of(&crlf, manifest.info.id));
     assert!(note.contains(
         "[00:01] ![Mark 1](<file:///tmp/Koett%20meetings/%231/assets/mark-0000016000-0001.png>)"
     ));

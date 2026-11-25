@@ -93,34 +93,31 @@ impl AtomicWriter {
         directory: &Path,
         name: &str,
         note: &str,
-        owns: impl FnOnce(&str) -> bool,
     ) -> Result<(), WriteError> {
-        clean_export_temps(directory, name).map_err(WriteError::BeforeRename)?;
-        self.install(
-            directory,
-            name,
-            note.as_bytes(),
-            0o644,
-            |source, destination| match rename_new(source, destination) {
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                    if !destination.symlink_metadata()?.is_file() {
-                        return Err(error);
-                    }
-                    let existing = fs::read_to_string(destination)?;
-                    if existing == note {
-                        fs::remove_file(source)
-                    } else if owns(&existing) {
-                        replace_unchanged(source, destination, &existing)
-                    } else {
-                        Err(io::Error::new(
-                            io::ErrorKind::AlreadyExists,
-                            format!("Existing note differs at {}", destination.display()),
-                        ))
-                    }
+        let stem = name.strip_suffix(".md").unwrap_or(name);
+        let mut last = None;
+        for candidate in std::iter::once(name.to_owned())
+            .chain((2..=NOTE_COPIES).map(|copy| format!("{stem} ({copy}).md")))
+        {
+            clean_export_temps(directory, &candidate).map_err(WriteError::BeforeRename)?;
+            match self.install(
+                directory,
+                &candidate,
+                note.as_bytes(),
+                0o644,
+                |source, target| place_note(source, target, note),
+            ) {
+                Err(WriteError::BeforeRename(error))
+                    if error.kind() == io::ErrorKind::AlreadyExists =>
+                {
+                    last = Some(error);
                 }
-                result => result,
-            },
-        )
+                result => return result,
+            }
+        }
+        Err(WriteError::BeforeRename(last.unwrap_or_else(|| {
+            io::Error::from(io::ErrorKind::AlreadyExists)
+        })))
     }
 
     fn install(
@@ -150,6 +147,21 @@ impl AtomicWriter {
             fault(name, WriteBoundary::AfterRename).map_err(WriteError::AfterRename)?;
         }
         sync_directory(directory).map_err(WriteError::AfterRename)
+    }
+}
+
+const NOTE_COPIES: u32 = 9;
+
+fn place_note(source: &Path, target: &Path, note: &str) -> io::Result<()> {
+    match rename_new(source, target) {
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+            if target.symlink_metadata()?.is_file() && fs::read_to_string(target)? == note {
+                fs::remove_file(source)
+            } else {
+                Err(error)
+            }
+        }
+        result => result,
     }
 }
 
@@ -220,14 +232,6 @@ pub(super) fn ensure_directory(path: &Path) -> io::Result<()> {
 }
 
 fn rename_new(source: &Path, destination: &Path) -> io::Result<()> {
-    rename_with(source, destination, libc::RENAME_NOREPLACE)
-}
-
-fn exchange(source: &Path, destination: &Path) -> io::Result<()> {
-    rename_with(source, destination, libc::RENAME_EXCHANGE)
-}
-
-fn rename_with(source: &Path, destination: &Path, flags: libc::c_uint) -> io::Result<()> {
     let source = CString::new(source.as_os_str().as_bytes())?;
     let destination = CString::new(destination.as_os_str().as_bytes())?;
     // Both pointers refer to live, nul-terminated paths. The kernel checks for conflicts atomically.
@@ -237,66 +241,12 @@ fn rename_with(source: &Path, destination: &Path, flags: libc::c_uint) -> io::Re
             source.as_ptr(),
             libc::AT_FDCWD,
             destination.as_ptr(),
-            flags,
+            libc::RENAME_NOREPLACE,
         )
     };
     if status == 0 {
         Ok(())
     } else {
         Err(io::Error::last_os_error())
-    }
-}
-
-fn replace_unchanged(source: &Path, destination: &Path, verified: &str) -> io::Result<()> {
-    exchange(source, destination)?;
-    if fs::read_to_string(source)? == verified {
-        return fs::remove_file(source);
-    }
-    if exchange(source, destination).is_err() {
-        let mut kept = destination.as_os_str().to_owned();
-        kept.push(".edited");
-        fs::rename(source, &kept)?;
-    } else {
-        fs::remove_file(source)?;
-    }
-    Err(io::Error::new(
-        io::ErrorKind::AlreadyExists,
-        format!("Note changed during export at {}", destination.display()),
-    ))
-}
-
-#[cfg(test)]
-mod replace_tests {
-    use super::*;
-
-    fn folder(name: &str) -> std::path::PathBuf {
-        let path = std::env::temp_dir().join(format!("koett-replace-{name}-{}", MeetingId::new()));
-        fs::create_dir(&path).unwrap();
-        path
-    }
-
-    #[test]
-    fn replaces_a_note_that_still_matches_what_was_verified() {
-        let dir = folder("same");
-        let (note, temp) = (dir.join("note.md"), dir.join(".note.md.tmp"));
-        fs::write(&note, "verified").unwrap();
-        fs::write(&temp, "new export").unwrap();
-        replace_unchanged(&temp, &note, "verified").unwrap();
-        assert_eq!(fs::read_to_string(&note).unwrap(), "new export");
-        assert!(!temp.exists());
-        fs::remove_dir_all(dir).unwrap();
-    }
-
-    #[test]
-    fn keeps_a_note_saved_after_verification() {
-        let dir = folder("raced");
-        let (note, temp) = (dir.join("note.md"), dir.join(".note.md.tmp"));
-        fs::write(&note, "edited after the check").unwrap();
-        fs::write(&temp, "new export").unwrap();
-        let error = replace_unchanged(&temp, &note, "verified").unwrap_err();
-        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
-        assert_eq!(fs::read_to_string(&note).unwrap(), "edited after the check");
-        assert!(!temp.exists());
-        fs::remove_dir_all(dir).unwrap();
     }
 }

@@ -10,7 +10,7 @@ use crate::dictionary::{self, DictionaryEntry};
 
 use super::super::bundle::records::{HistoryReceipt, Manifest, Publication};
 use super::super::bundle::sha256;
-use super::super::{MeetingId, Offset, SAMPLE_RATE};
+use super::super::{Offset, SAMPLE_RATE};
 use super::timeline::{Entry, Speaker};
 
 pub(in crate::meeting) struct Rendered {
@@ -134,26 +134,6 @@ fn frontmatter_field<'a>(frontmatter: &'a str, key: &str) -> Option<&'a str> {
     values.next().filter(|_| values.next().is_none())
 }
 
-const SIGNATURE: &str = "---\nkoett_sha256: ";
-
-pub(in crate::meeting) fn is_unedited_note_of(markdown: &str, id: MeetingId) -> bool {
-    let Some((hash, rest)) = markdown
-        .strip_prefix(SIGNATURE)
-        .and_then(|signed| signed.split_at_checked(64))
-    else {
-        return false;
-    };
-    let Some(rest) = rest.strip_prefix('\n') else {
-        return false;
-    };
-    let unsigned = format!("---\n{rest}");
-    let Ok((frontmatter, _)) = frontmatter_and_body(&unsigned) else {
-        return false;
-    };
-    frontmatter_field(frontmatter, "koett_id").and_then(MeetingId::parse) == Some(id)
-        && sha256(unsigned.as_bytes()) == hash
-}
-
 fn strip_comments(body: &str) -> String {
     let mut result = String::with_capacity(body.len());
     for line in body.lines() {
@@ -219,10 +199,5 @@ pub(in crate::meeting) fn vault_note(
             let _ = writeln!(note, "{line}");
         }
     }
-    Ok((format!("{title}.md"), sign_note(&note)))
-}
-
-pub(in crate::meeting) fn sign_note(note: &str) -> String {
-    let rest = note.strip_prefix("---\n").unwrap_or(note);
-    format!("{SIGNATURE}{}\n{rest}", sha256(note.as_bytes()))
+    Ok((format!("{title}.md"), note))
 }

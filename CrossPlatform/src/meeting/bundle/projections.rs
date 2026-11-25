@@ -1,7 +1,7 @@
 use std::path::absolute;
 
 use crate::history::{HistoryRecord, HistoryStore};
-use crate::meeting::transcript::{history_text, is_unedited_note_of, vault_note};
+use crate::meeting::transcript::{history_text, vault_note};
 
 use super::records::{ExportProjection, HistoryProjection};
 use super::*;
@@ -189,9 +189,7 @@ impl Bundle {
         )?;
         ensure_directory(directory).map_err(|err| err.to_string())?;
         self.writer
-            .write_export(directory, &name, &note, |existing| {
-                is_unedited_note_of(existing, self.manifest.info.id)
-            })
+            .write_export(directory, &name, &note)
             .map_err(|err| err.to_string())
     }
 }

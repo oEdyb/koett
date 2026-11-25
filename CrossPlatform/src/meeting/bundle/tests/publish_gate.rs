@@ -2,7 +2,7 @@ use std::os::unix::process::ExitStatusExt;
 use std::process::Command;
 
 use crate::history::HistoryStore;
-use crate::meeting::transcript::{history_text, sign_note};
+use crate::meeting::transcript::history_text;
 
 use super::*;
 
@@ -138,28 +138,31 @@ fn kill_at_every_publish_boundary_converges_to_one_history_row() {
 }
 
 #[test]
-fn conflicting_vault_note_is_preserved_while_history_indexes() {
+fn a_different_note_is_kept_and_the_export_takes_the_next_free_name() {
     let root = TestRoot::new();
     let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
     bundle.write_seal(&sample_seal()).unwrap();
     let export = root.0.join("export");
     fs::create_dir(&export).unwrap();
-    let note = export.join("2025-11-24 1605 Koett meeting 550e8400.md");
-    let foreign_id = "550e8400-9999-9999-9999-999999999999";
-    for existing in [
-        format!("Existing material.\nkoett_id: {ID}\n"),
-        format!("---\nkoett_id: {foreign_id}\n---\n\nDifferent meeting.\n"),
-    ] {
-        fs::write(&note, &existing).unwrap();
-        publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+    let note = export.join(NOTE);
+    let existing = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode, edited by hand.\n");
+    fs::write(&note, &existing).unwrap();
 
-        let DiskState::Complete { projections, .. } = bundle.read_state() else {
-            panic!("missing publication");
-        };
-        assert_eq!(projections.history, HistoryProjection::Indexed);
-        assert_eq!(projections.export, ExportProjection::Pending);
-        assert_eq!(fs::read_to_string(&note).unwrap(), existing);
-    }
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    let DiskState::Complete { projections, .. } = bundle.read_state() else {
+        panic!("missing publication");
+    };
+    assert_eq!(projections.history, HistoryProjection::Indexed);
+    assert_eq!(projections.export, ExportProjection::Exported);
+    assert_eq!(fs::read_to_string(&note).unwrap(), existing);
+    let copy = export.join(NOTE.replace(".md", " (2).md"));
+    assert!(
+        fs::read_to_string(copy)
+            .unwrap()
+            .contains("Recovery needle.")
+    );
+    assert_eq!(fs::read_dir(&export).unwrap().count(), 2);
 }
 
 #[test]
@@ -242,42 +245,19 @@ fn vault_export_writes_a_note_with_the_meeting_id_and_vault_permissions() {
 }
 
 #[test]
-fn vault_export_replaces_a_note_owned_by_the_same_meeting() {
+fn vault_export_stays_pending_when_every_name_holds_a_different_note() {
     let root = TestRoot::new();
     let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
     bundle.write_seal(&sample_seal()).unwrap();
     let export = root.0.join("export");
     fs::create_dir(&export).unwrap();
-    let note = export.join(NOTE);
-    let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
-    fs::write(&note, sign_note(&earlier)).unwrap();
-
-    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
-
-    let DiskState::Complete { projections, .. } = bundle.read_state() else {
-        panic!("missing publication");
-    };
-    assert_eq!(projections.export, ExportProjection::Exported);
-    assert!(
-        fs::read_to_string(note)
-            .unwrap()
-            .contains("Recovery needle.")
-    );
-    assert_eq!(fs::read_dir(export).unwrap().count(), 1);
-}
-
-#[test]
-fn vault_export_preserves_a_note_edited_after_export() {
-    let root = TestRoot::new();
-    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
-    bundle.write_seal(&sample_seal()).unwrap();
-    let export = root.0.join("export");
-    fs::create_dir(&export).unwrap();
-    let note = export.join(NOTE);
-    let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
-    let signed = sign_note(&earlier);
-    let edited = format!("{signed}\n## My notes\n\nFollow up on pricing.\n");
-    fs::write(&note, &edited).unwrap();
+    let stem = NOTE.strip_suffix(".md").unwrap();
+    let names: Vec<String> = std::iter::once(NOTE.to_owned())
+        .chain((2..=9).map(|copy| format!("{stem} ({copy}).md")))
+        .collect();
+    for name in &names {
+        fs::write(export.join(name), format!("Kept {name}\n")).unwrap();
+    }
 
     publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
 
@@ -285,5 +265,11 @@ fn vault_export_preserves_a_note_edited_after_export() {
         panic!("missing publication");
     };
     assert_eq!(projections.export, ExportProjection::Pending);
-    assert_eq!(fs::read_to_string(note).unwrap(), edited);
+    for name in &names {
+        assert_eq!(
+            fs::read_to_string(export.join(name)).unwrap(),
+            format!("Kept {name}\n")
+        );
+    }
+    assert_eq!(fs::read_dir(&export).unwrap().count(), names.len());
 }
