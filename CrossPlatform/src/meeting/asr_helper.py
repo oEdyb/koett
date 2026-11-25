@@ -11,6 +11,7 @@ SWEDISH = "kb-whisper-large"
 SOURCES = {TURBO: "large-v3-turbo", SWEDISH: "KBLab/kb-whisper-large"}
 SAMPLE_RATE = 16_000
 SHORT_SPEECH = 3 * SAMPLE_RATE
+OWN_LABEL_CONFIDENCE = 0.99
 LANGUAGE_CONTEXT = 10 * SAMPLE_RATE
 
 
@@ -87,7 +88,9 @@ def detect_language(engine, audio):
 
 
 def decode(window, audio, context, engines):
-    lang, probability = detect_language(engines[TURBO], context)
+    lang, probability = detect_language(engines[TURBO], audio)
+    if context is not audio and probability < OWN_LABEL_CONFIDENCE:
+        lang, probability = detect_language(engines[TURBO], context)
     backend = SWEDISH if lang == "sv" else TURBO
     segments, _ = engines[backend].transcribe(
         audio, language=lang, word_timestamps=True, beam_size=5,
