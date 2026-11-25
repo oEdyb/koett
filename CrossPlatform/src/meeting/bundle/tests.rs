@@ -662,3 +662,33 @@ fn mark_close_unlinks_an_already_committed_mark_after_cutoff() {
     assert!(writer.close(Offset(30)).is_empty());
     assert!(!after.exists());
 }
+
+#[test]
+fn lock_retry_waits_out_a_brief_scan_and_nothing_else() {
+    let mut calls = 0;
+    let result = retry_while_scanned(Duration::from_secs(5), || {
+        calls += 1;
+        if calls < 3 {
+            Err(std::fs::TryLockError::WouldBlock)
+        } else {
+            Ok(())
+        }
+    });
+    assert!(result.is_ok());
+    assert_eq!(calls, 3);
+
+    let started = Instant::now();
+    let result = retry_while_scanned(Duration::from_millis(20), || {
+        Err(std::fs::TryLockError::WouldBlock)
+    });
+    assert!(matches!(result, Err(std::fs::TryLockError::WouldBlock)));
+    assert!(started.elapsed() >= Duration::from_millis(20));
+
+    let mut calls = 0;
+    let result = retry_while_scanned(Duration::from_secs(5), || {
+        calls += 1;
+        Err(std::fs::TryLockError::Error(io::Error::other("denied")))
+    });
+    assert!(matches!(result, Err(std::fs::TryLockError::Error(_))));
+    assert_eq!(calls, 1);
+}

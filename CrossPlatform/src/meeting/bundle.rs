@@ -57,7 +57,7 @@ impl Bundle {
             .mode(0o600)
             .open(directory.join(LOCK))
             .and_then(|lock| {
-                lock.try_lock().map_err(lock_error)?;
+                lock_owner(&lock)?;
                 Ok(lock)
             })
             .map_err(|error| clean_failed_create(root, &directory, error))?;
@@ -86,7 +86,7 @@ impl Bundle {
     pub(crate) fn open(root: &Path, id: MeetingId) -> io::Result<Self> {
         let directory = root.join(id.to_string());
         let lock = File::open(directory.join(LOCK))?;
-        lock.try_lock().map_err(lock_error)?;
+        lock_owner(&lock)?;
         let manifest = read_manifest(&directory, id)?;
         Ok(Self {
             directory,
@@ -201,6 +201,27 @@ fn clean_failed_create(root: &Path, directory: &Path, error: io::Error) -> io::E
         ),
     }
 }
+
+fn lock_owner(lock: &File) -> io::Result<()> {
+    retry_while_scanned(SCAN_LOCK_GRACE, || lock.try_lock()).map_err(lock_error)
+}
+
+fn retry_while_scanned(
+    grace: std::time::Duration,
+    mut attempt: impl FnMut() -> Result<(), TryLockError>,
+) -> Result<(), TryLockError> {
+    let deadline = std::time::Instant::now() + grace;
+    loop {
+        match attempt() {
+            Err(TryLockError::WouldBlock) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+            result => return result,
+        }
+    }
+}
+
+const SCAN_LOCK_GRACE: std::time::Duration = std::time::Duration::from_millis(50);
 
 fn lock_error(error: TryLockError) -> io::Error {
     match error {
