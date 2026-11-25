@@ -73,6 +73,7 @@ ureq = { version = "=3.4.0", default-features = false, features = ["native-tls",
 [target.'cfg(target_os = "linux")'.dependencies]
 log = { version = "=0.4.34", features = ["max_level_warn", "release_max_level_warn"] }
 uuid = { version = "=1.29.0", features = ["v4"] }
+crc32fast = "=1.5.1"
 tokio-tungstenite = { optional = true, version = "=0.30.0", features = ["rustls-tls-native-roots"] }
 libc = "=0.2.189"
 wayland-client = "=0.31.15"

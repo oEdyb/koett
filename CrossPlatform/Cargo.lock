@@ -1280,6 +1280,7 @@ dependencies = [
  "base64 0.23.1",
  "bzip2 0.6.1",
  "cpal",
+ "crc32fast",
  "directories",
  "futures-util",
  "gdk4-wayland",
