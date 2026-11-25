@@ -18,7 +18,7 @@ pub(crate) struct MeetingController {
     root: Result<PathBuf, String>,
     active: Active,
     attempt: u64,
-    recoverable: Option<usize>,
+    recoverable: Option<Vec<catalog::Listed>>,
     boot: Option<JoinHandle<()>>,
     worker: Option<Worker>,
     commands: Sender<EngineCommand>,
@@ -58,12 +58,12 @@ impl MeetingController {
         let scan_root = root.clone();
         let post = commands.clone();
         let boot = thread::spawn(move || {
-            let count = scan_root.and_then(|root| {
+            let recoverable = scan_root.and_then(|root| {
                 let states = scan_all(&root).map_err(|error| error.to_string())?;
                 bundle::projections::replay_pending(&root, &states);
-                Ok(states.iter().filter(|state| state.is_recoverable()).count())
+                catalog::recoverable(&root).map_err(|error| error.to_string())
             });
-            emit(&post, Event::BootScanned(count));
+            emit(&post, Event::BootScanned(recoverable));
         });
         Self {
             root,
@@ -127,11 +127,11 @@ impl MeetingController {
                     let _ = boot.join();
                 }
                 match result {
-                    Ok(count) if self.recoverable.is_none() => {
-                        self.recoverable = Some(count);
+                    Ok(recoverable) if self.recoverable.is_none() => {
                         if let Some(view) = self.active.view() {
-                            self.notify(MeetingUpdate::View(view, count));
+                            self.notify(MeetingUpdate::View(view, recoverable.clone()));
                         }
+                        self.recoverable = Some(recoverable);
                     }
                     Err(issue) => self.notify(MeetingUpdate::Issue(issue)),
                     _ => {}
@@ -450,9 +450,10 @@ impl MeetingController {
                 }
                 Effect::NotifyView(view) => {
                     if view == MeetingView::Idle {
-                        self.refresh_count();
+                        self.refresh_recoverable();
                     }
-                    self.notify(MeetingUpdate::View(view, self.recoverable.unwrap_or(0)));
+                    let recoverable = self.recoverable.clone().unwrap_or_default();
+                    self.notify(MeetingUpdate::View(view, recoverable));
                     None
                 }
                 Effect::Notify(update) => {
@@ -470,12 +471,12 @@ impl MeetingController {
         reply
     }
 
-    fn refresh_count(&mut self) {
-        if let Ok(count) = self
-            .root()
-            .and_then(|root| recoverable_count(root).map_err(ReplyError::DiskUnreadable))
-        {
-            self.recoverable = Some(count);
+    fn refresh_recoverable(&mut self) {
+        if let Ok(recoverable) = self.root().and_then(|root| {
+            catalog::recoverable(root)
+                .map_err(|error| ReplyError::DiskUnreadable(error.to_string()))
+        }) {
+            self.recoverable = Some(recoverable);
         }
     }
 
@@ -500,12 +501,6 @@ fn track_mut<T>(tracks: &mut Tracks<T>, channel: Channel) -> &mut T {
         Channel::You => &mut tracks.you,
         Channel::Other => &mut tracks.other,
     }
-}
-
-fn recoverable_count(root: &Path) -> Result<usize, String> {
-    scan_all(root)
-        .map(|states| states.iter().filter(|state| state.is_recoverable()).count())
-        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]

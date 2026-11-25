@@ -84,8 +84,9 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
   stays clickable, so Stop and Cancel always work.
 - Toggling off, stopping the recording or pressing Esc captures the sketches. Esc
   does not cancel while locked, because losing a dictation to a reflex is worse than
-  a second key press; the next Esc cancels as usual. A lock ends itself if every
-  keyboard disappears, since nothing else could toggle it off.
+  a second key press; the next Esc cancels as usual. During a meeting Esc only ends
+  draw lock and never stops the meeting; outside a lock Koett reads no Esc for it. A
+  lock ends itself if every keyboard disappears, since nothing else could toggle it off.
 - While locked, right-click and Ctrl+Z remove the last stroke. Koett samples key
   state and doesn't consume keys, so the focused app also gets the Ctrl+Z; right-click
   reaches no app. The lock key is a physical key position and the app sees it too. A

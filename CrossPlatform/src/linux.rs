@@ -157,7 +157,7 @@ struct LinuxTray {
     meeting: MeetingView,
     /// The stop confirmation the menu shows, and when its key first showed.
     confirm: Option<meeting_confirm::Shown>,
-    recoverable_meetings: usize,
+    recoverable_meetings: Vec<crate::meeting::catalog::Listed>,
 }
 
 impl LinuxTray {
@@ -167,18 +167,22 @@ impl LinuxTray {
             status,
             meeting: MeetingView::Idle,
             confirm: None,
-            recoverable_meetings: 0,
+            recoverable_meetings: Vec::new(),
         }
     }
 
-    fn update_meeting(&mut self, view: &MeetingView, recoverable: usize) {
+    fn update_meeting(
+        &mut self,
+        view: &MeetingView,
+        recoverable: &[crate::meeting::catalog::Listed],
+    ) {
         self.confirm = meeting_confirm::Shown::follow(
             self.confirm,
             meeting_confirm::stop_key(view),
             Instant::now(),
         );
         self.meeting = view.clone();
-        self.recoverable_meetings = recoverable;
+        self.recoverable_meetings = recoverable.to_vec();
     }
 
     fn update_status(&mut self, status: String) {
@@ -187,13 +191,9 @@ impl LinuxTray {
         }
     }
 
-    /// Dictation's status, unless a live meeting holds the engine.
+    /// Dictation's status, unless a meeting holds the engine.
     fn headline(&self) -> String {
-        if meeting_menu::live(&self.meeting) {
-            "Recording meeting".into()
-        } else {
-            self.status.clone()
-        }
+        meeting_menu::headline(&self.meeting).map_or_else(|| self.status.clone(), Into::into)
     }
 }
 
@@ -284,31 +284,55 @@ impl ksni::Tray for LinuxTray {
         if asking {
             items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
         }
+        fn meeting_item(item: meeting_menu::MeetingItem) -> MenuItem<LinuxTray> {
+            match item {
+                meeting_menu::MeetingItem::Line {
+                    label,
+                    action: Some(action),
+                } => StandardItem {
+                    label,
+                    activate: Box::new(move |tray: &mut LinuxTray| {
+                        if let Some(action) = action.tray_action(tray.confirm, Instant::now()) {
+                            let _ = tray.action_sender.send(action);
+                        }
+                    }),
+                    ..Default::default()
+                }
+                .into(),
+                meeting_menu::MeetingItem::Line {
+                    label,
+                    action: None,
+                } => StandardItem {
+                    label,
+                    enabled: false,
+                    ..Default::default()
+                }
+                .into(),
+                meeting_menu::MeetingItem::Submenu {
+                    label,
+                    enabled,
+                    items,
+                } => SubMenu {
+                    label,
+                    enabled,
+                    submenu: items.into_iter().map(meeting_item).collect(),
+                    ..Default::default()
+                }
+                .into(),
+            }
+        }
         items.extend(
-            meeting_menu::items(&self.meeting, self.recoverable_meetings)
+            meeting_menu::items(&self.meeting, &self.recoverable_meetings)
                 .into_iter()
-                .map(|item| match item.action {
-                    Some(action) => StandardItem {
-                        label: item.label,
-                        activate: Box::new(move |tray: &mut LinuxTray| {
-                            if let Some(request) = action.request(tray.confirm, Instant::now()) {
-                                let call = MeetingCall::desktop(request);
-                                let _ = tray.action_sender.send(TrayAction::Meeting(call));
-                            }
-                        }),
-                        ..Default::default()
-                    }
-                    .into(),
-                    None => StandardItem {
-                        label: item.label,
-                        enabled: false,
-                        ..Default::default()
-                    }
-                    .into(),
-                }),
+                .map(meeting_item),
         );
+        let meeting_holds_engine = meeting_menu::holds_engine(&self.meeting);
         items.extend([
-            send("Transcribe media…", true, TrayAction::OpenMedia),
+            send(
+                "Transcribe media…",
+                !meeting_holds_engine,
+                TrayAction::OpenMedia,
+            ),
             send(
                 "Undo Last Drawing",
                 sketch::CAN_UNDO.load(std::sync::atomic::Ordering::Acquire),
@@ -357,6 +381,7 @@ impl ksni::Tray for LinuxTray {
             StandardItem {
                 label: "Quit Koett".to_string(),
                 icon_name: "application-exit-symbolic".to_string(),
+                enabled: !meeting_holds_engine,
                 activate: Box::new(|tray: &mut Self| {
                     let _ = tray.action_sender.send(TrayAction::Quit);
                 }),
@@ -393,6 +418,7 @@ mod media_view;
 pub(crate) mod meeting_audio;
 mod meeting_confirm;
 mod meeting_control;
+mod meeting_labels;
 mod meeting_menu;
 mod menu;
 mod menu_preferences;
@@ -414,11 +440,11 @@ mod x11_surface;
 fn route_meeting_update(
     update: MeetingUpdate,
     ui: &Sender<window::Update>,
-    tray_view: impl FnOnce(&MeetingView, usize),
+    tray_view: impl FnOnce(&MeetingView, &[crate::meeting::catalog::Listed]),
 ) {
     let message = match update {
         MeetingUpdate::View(view, recoverable) => {
-            tray_view(&view, recoverable);
+            tray_view(&view, &recoverable);
             window::Update::Meeting(view)
         }
         MeetingUpdate::Sketch(scope) => window::Update::MeetingSketch(scope),
@@ -1754,12 +1780,21 @@ async fn run_wayland(
                 Err(error) => eprintln!("Portal task failed: {error}"),
             }
         }
-        if escape.poll(app.status == AppStatus::Recording) {
-            if sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire) {
-                // Esc leaves draw lock and keeps the sketch; a second Esc cancels.
-                sketch::ESCAPE_UNLOCK.store(true, std::sync::atomic::Ordering::Release);
-            } else {
-                app.command(EngineCommand::Cancel, || None);
+        let listening = escape::listening(
+            app.status == AppStatus::Recording,
+            meeting_reserved(),
+            sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire),
+        );
+        if escape.poll(listening.is_some()) {
+            match listening {
+                // Esc leaves draw lock and keeps the sketch; a second Esc cancels dictation.
+                Some(escape::EscapeAction::EndDrawLock) => {
+                    sketch::ESCAPE_UNLOCK.store(true, std::sync::atomic::Ordering::Release);
+                }
+                Some(escape::EscapeAction::CancelDictation) => {
+                    app.command(EngineCommand::Cancel, || None);
+                }
+                None => {}
             }
         }
         for action in shutdown_action()
@@ -4066,15 +4101,15 @@ mod menu_tests {
         };
         let finish = |tray: &LinuxTray| find_menu_action(tray.menu(), "Finish meeting").unwrap();
 
-        tray.update_meeting(&confirm(1), 0);
+        tray.update_meeting(&confirm(1), &[]);
         let stale = finish(&tray);
         std::thread::sleep(meeting_confirm::ARM);
         let recording = MeetingView::Recording {
             info: info.clone(),
             health: crate::meeting::CaptureHealth::default(),
         };
-        tray.update_meeting(&recording, 0);
-        tray.update_meeting(&confirm(2), 0);
+        tray.update_meeting(&recording, &[]);
+        tray.update_meeting(&confirm(2), &[]);
         (stale.activate)(&mut tray);
         let fresh = finish(&tray);
         (fresh.activate)(&mut tray);

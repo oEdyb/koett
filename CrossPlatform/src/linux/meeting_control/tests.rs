@@ -384,13 +384,20 @@ fn meeting_updates_do_not_arm_the_dictation_sketch() {
             done: 0.0,
         },
     ];
+    let recoverable = vec![crate::meeting::catalog::Listed {
+        info: info(),
+        duration: None,
+        folder: std::path::PathBuf::from("/meetings/held"),
+        state: crate::meeting::catalog::Listing::NotTranscribed(RecoveryReason::HeldByUser),
+        recoverable: true,
+    }];
     for view in views {
         super::super::route_meeting_update(
-            MeetingUpdate::View(view.clone(), 2),
+            MeetingUpdate::View(view.clone(), recoverable.clone()),
             &ui,
-            |seen, count| {
+            |seen, listed| {
                 assert_eq!(seen, &view);
-                assert_eq!(count, 2);
+                assert_eq!(listed, recoverable.as_slice());
             },
         );
         assert!(matches!(updates.try_recv(), Ok(Update::Meeting(seen)) if seen == view));
