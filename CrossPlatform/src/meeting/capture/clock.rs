@@ -14,17 +14,17 @@ pub(super) fn session_offset(zero: Instant, at: Instant) -> Offset {
 
 pub(super) struct TrackClock {
     anchor: Offset,
-    minimums: VecDeque<(Offset, i64)>,
+    minimums: VecDeque<(u64, i64)>,
     lag: i64,
     correction: i64,
     written: u64,
 }
 
 impl TrackClock {
-    pub(super) fn new(anchor: Offset, stamp: Offset) -> Self {
+    pub(super) fn new(anchor: Offset) -> Self {
         Self {
             anchor,
-            minimums: VecDeque::from([(stamp, 0)]),
+            minimums: VecDeque::from([(0, 0)]),
             lag: 0,
             correction: 0,
             written: 0,
@@ -37,17 +37,19 @@ impl TrackClock {
         while self
             .minimums
             .front()
-            .is_some_and(|&(at, _)| stamp.0.saturating_sub(at.0) > WINDOW)
+            .is_some_and(|&(frames, _)| nominal_frames - frames > WINDOW)
         {
             self.minimums.pop_front();
         }
+        let lowering_floor = self.minimums.front().is_some_and(|&(_, old)| lag < old);
         while self.minimums.back().is_some_and(|&(_, old)| old >= lag) {
             self.minimums.pop_back();
         }
-        self.minimums.push_back((stamp, lag));
+        self.minimums.push_back((nominal_frames, lag));
         let (_, minimum) = self.minimums[0];
         if minimum.saturating_sub(self.correction) > MAX_FORWARD_STEERING_ERROR {
-            return Some(Offset(nominal.saturating_add_signed(minimum)));
+            // A burst can still be catching up when its first two seconds fill the window.
+            return (!lowering_floor).then(|| Offset(nominal.saturating_add_signed(minimum)));
         }
         self.lag = minimum;
         None

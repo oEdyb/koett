@@ -138,7 +138,7 @@ fn three_second_pause_has_one_three_second_gap() {
     assert_eq!(gaps.len(), 1);
     let (span, cause) = gaps[0];
     assert_eq!(cause, GapCause::ClockJump);
-    assert!(span.first.0.abs_diff(263 * BLOCK as u64) <= 800);
+    assert!(span.first.0.abs_diff((263 + 100) * BLOCK as u64) <= 800);
     assert!((span.end.0 - span.first.0).abs_diff(48_000) <= 800);
 }
 
@@ -215,15 +215,36 @@ fn one_second_pipe_backlog_bursts_do_not_shift_audio_or_create_gaps() {
         },
         625,
     );
+    assert_contiguous_pcm(&bytes, 625);
+}
+
+#[test]
+fn buffered_stall_longer_than_the_clock_window_does_not_shift_audio_or_create_gaps() {
+    const STALL_BLOCK: u64 = 263;
+    const RESUME_BLOCK: u64 = STALL_BLOCK + 2040 / 20;
+    let bytes = record_blocks(
+        |n| {
+            if n >= STALL_BLOCK {
+                n.max(RESUME_BLOCK) * 20
+            } else {
+                n * 20
+            }
+        },
+        500,
+    );
+    assert_contiguous_pcm(&bytes, 500);
+}
+
+fn assert_contiguous_pcm(bytes: &[u8], blocks: usize) {
     let mut frames = 0;
-    for chunk in read(&bytes, NO_CUTOFF) {
+    for chunk in read(bytes, NO_CUTOFF) {
         let TrackChunk::Pcm { first, samples } = chunk.unwrap() else {
             panic!("a backlog shifted the audio");
         };
         assert_eq!(first, Offset(frames as u64));
         frames += samples.len();
     }
-    assert_eq!(frames, 625 * BLOCK);
+    assert_eq!(frames, blocks * BLOCK);
 }
 
 #[test]

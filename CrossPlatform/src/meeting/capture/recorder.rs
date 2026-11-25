@@ -68,19 +68,19 @@ impl<W: Write> TrackRecorder<W> {
             None => {
                 self.end = Offset(at.0.saturating_sub(missing));
                 self.write_gap(at, GapCause::Overrun)?;
-                self.start_segment(at, at, stamp.epoch, true)?;
+                self.start_segment(at, stamp.epoch, true)?;
             }
             Some(segment) if segment.epoch != stamp.epoch => {
                 self.flush_segment()?;
                 let resume = at.max(Offset(self.end.0 + missing));
                 self.write_gap(resume, GapCause::SourceRestart)?;
-                self.start_segment(resume, at, stamp.epoch, true)?;
+                self.start_segment(resume, stamp.epoch, true)?;
             }
             Some(_) if lost > 0 => {
                 self.flush_segment()?;
                 let resume = Offset(self.end.0 + missing);
                 self.write_gap(resume, GapCause::Overrun)?;
-                self.start_segment(resume, at, stamp.epoch, false)?;
+                self.start_segment(resume, stamp.epoch, false)?;
             }
             Some(segment) => {
                 let nominal_frames = scale_frames(segment.input_frames, rate);
@@ -89,7 +89,7 @@ impl<W: Write> TrackRecorder<W> {
                     if resume.0.saturating_sub(self.end.0) >= GAP_THRESHOLD {
                         self.write_gap(resume, GapCause::ClockJump)?;
                     }
-                    self.start_segment(resume.max(self.end), at, stamp.epoch, false)?;
+                    self.start_segment(resume.max(self.end), stamp.epoch, false)?;
                 }
             }
         }
@@ -118,7 +118,6 @@ impl<W: Write> TrackRecorder<W> {
     fn start_segment(
         &mut self,
         anchor: Offset,
-        at: Offset,
         epoch: SourceEpoch,
         write_epoch: bool,
     ) -> io::Result<()> {
@@ -127,7 +126,7 @@ impl<W: Write> TrackRecorder<W> {
         }
         self.segment = Some(Segment {
             epoch,
-            clock: TrackClock::new(anchor, at),
+            clock: TrackClock::new(anchor),
             input_frames: 0,
         });
         Ok(())
