@@ -1,11 +1,12 @@
-//! Draw while dictating. While a dictation records, a transparent layer-shell
-//! overlay covers every monitor. Holding the draw key (Shift by default) and
-//! moving the pointer leaves red ink; otherwise clicks pass through. Strokes on
-//! one monitor close into a sketch shortly after the key is released; that
-//! monitor is then captured with the ink still visible, and the ink fades.
+//! Draw while dictating or in a meeting. While a dictation records or a meeting
+//! runs, a transparent layer-shell overlay covers every monitor. Holding the
+//! draw key (Shift by default) and moving the pointer leaves red ink; otherwise
+//! clicks pass through. Strokes on one monitor close into a sketch shortly
+//! after the key is released; that monitor is then captured with the ink still
+//! visible, and the ink fades.
 //! A click with the key held drops a numbered pin instead (`gesture`), which
-//! also reads one line of context (`pin_reader`). Delivery turns the captures
-//! into one numbered contact sheet.
+//! also reads one line of context (`pin_reader`). Delivery turns a dictation's
+//! captures into one numbered contact sheet; a meeting's become marks (`target`).
 //!
 //! A recording never blocks typing by default: Wayland gives no global key
 //! state, so the draw key is read from keyboard devices (see `keys`) and the
@@ -30,6 +31,7 @@ mod niri_pick;
 mod pick_geometry;
 mod pin_reader;
 pub mod sheet;
+mod target;
 mod video_time;
 mod wl_click;
 
@@ -38,6 +40,10 @@ pub(super) static CAN_UNDO: std::sync::atomic::AtomicBool =
 
 /// Draw lock is on: the pill shows the pencil and Esc ends the lock, not the dictation.
 pub(super) static DRAW_LOCKED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+/// A meeting stroke is being drawn: the pill shows the pencil, as the dictation
+/// timeline's live sketch does.
+pub(super) static MEETING_INK: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 /// Esc arrived while locked; the session ends the lock on its next tick. Only the
 /// Esc monitor decides, so one press can't both unlock and cancel.
@@ -71,6 +77,8 @@ pub use frames::{
 };
 #[cfg(test)]
 pub(crate) use frames::{TEST_LOCK as FRAMES_TEST_LOCK, push as push_frame};
+pub(super) use target::SketchTarget;
+use target::{Owner, Removal};
 
 /// Longest wait for presentation feedback before capturing anyway (for a
 /// compositor without wp_presentation, or a surface it never presents).
@@ -243,11 +251,10 @@ struct Surface {
 type CaptureResults = Arc<Mutex<Vec<(u64, Result<Vec<u8>, String>)>>>;
 
 struct Session {
-    recording: u64,
+    target: SketchTarget,
     layout: super::monitor_layout::MonitorLayout,
     layout_invalid: bool,
     display_generation: u64,
-    started: Instant,
     clock: AudioClock,
     key: DrawKey,
     surfaces: Vec<Surface>,
@@ -292,6 +299,15 @@ struct Session {
 }
 
 impl Session {
+    fn close(self) {
+        DRAW_LOCKED.store(false, std::sync::atomic::Ordering::Release);
+        MEETING_INK.store(false, std::sync::atomic::Ordering::Release);
+        for surface in self.surfaces {
+            surface.window.destroy();
+        }
+        self.target.set_open(false);
+    }
+
     /// Takes the pointer while the key is held. A running window pick overrides
     /// that: input stays on until the pick is proven, then opens around the pin.
     fn sync_input(&mut self) {
@@ -505,7 +521,7 @@ impl Session {
             .iter()
             .rposition(|group| !group.closed && group.pin.is_none())
         {
-            self.drop_group(index);
+            self.drop_group(index, Removal::Undone);
         }
         self.redraw();
     }
@@ -538,13 +554,16 @@ impl Session {
         });
         self.sync_input();
         self.next_id += 1;
+        if !self.target.begin(self.next_id, mark.at) {
+            return;
+        }
         self.groups.push(Group {
             id: self.next_id,
             surface: mark.surface,
             strokes: Vec::new(),
             start: mark.at,
             end: mark.at,
-            audio_start: self.clock.at(self.started, mark.at),
+            audio_start: self.target.audio_start(&self.clock, mark.at),
             painted: std::cell::Cell::new(None),
             lifted: Some(Instant::now()),
             closed: true,
@@ -675,25 +694,31 @@ impl Session {
                 if open.is_none() && self.groups.len() >= MAX_SKETCHES {
                     return;
                 }
-                let index = open.unwrap_or_else(|| {
-                    self.next_id += 1;
-                    self.groups.push(Group {
-                        id: self.next_id,
-                        surface,
-                        strokes: Vec::new(),
-                        start: now,
-                        end: now,
-                        audio_start: self.clock.at(self.started, now),
-                        painted: std::cell::Cell::new(None),
-                        lifted: None,
-                        closed: false,
-                        phase: Phase::Drawing,
-                        pin: None,
-                        context: None,
-                        png: None,
-                    });
-                    self.groups.len() - 1
-                });
+                let index = match open {
+                    Some(index) => index,
+                    None => {
+                        self.next_id += 1;
+                        if !self.target.begin(self.next_id, now) {
+                            return;
+                        }
+                        self.groups.push(Group {
+                            id: self.next_id,
+                            surface,
+                            strokes: Vec::new(),
+                            start: now,
+                            end: now,
+                            audio_start: self.target.audio_start(&self.clock, now),
+                            painted: std::cell::Cell::new(None),
+                            lifted: None,
+                            closed: false,
+                            phase: Phase::Drawing,
+                            pin: None,
+                            context: None,
+                            png: None,
+                        });
+                        self.groups.len() - 1
+                    }
+                };
                 self.groups[index].strokes.push(Vec::new());
                 self.stroking = Some(self.groups[index].id);
                 index
@@ -718,7 +743,7 @@ impl Session {
         {
             self.groups[index].strokes.pop();
             if self.groups[index].strokes.is_empty() {
-                self.drop_group(index);
+                self.drop_group(index, Removal::Undone);
             } else {
                 self.publish();
             }
@@ -735,39 +760,33 @@ impl Session {
         if self.held {
             self.gesture.hold();
         }
-        self.drop_group(self.groups.len() - 1);
+        self.drop_group(self.groups.len() - 1, Removal::Undone);
         self.redraw();
         true
     }
 
-    /// Removes a sketch; later numbers shift down, so the pill gets the
-    /// renumbered list and loses the now-unused highest number.
-    fn drop_group(&mut self, index: usize) {
-        let before = self.groups.len();
+    fn drop_group(&mut self, index: usize, removal: Removal) {
         let removed = self.groups.remove(index);
-        frames::remove(self.recording, removed.id);
-        self.publish();
-        crate::sketch::remove_for(self.started, u32::try_from(before).unwrap_or(u32::MAX));
+        self.target
+            .remove(removed.id, removal, &self.groups, self.stroking);
     }
 
-    /// Republishes every sketch to the recording pill's timeline. Numbers
-    /// follow start order, matching the pasted contact sheet and bullets.
-    /// Times are pill (wall-clock) times, which include pauses; speech
-    /// linking uses `audio_start` instead.
     fn publish(&self) {
-        let mut groups: Vec<&Group> = self.groups.iter().collect();
-        groups.sort_by_key(|group| group.id);
-        for (index, group) in groups.into_iter().enumerate() {
-            crate::sketch::publish_for(
-                self.started,
-                crate::sketch::SketchEvent {
-                    index: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                    start_ms: pill_ms(self.started, group.start),
-                    end_ms: pill_ms(self.started, group.end),
-                    live: self.stroking == Some(group.id),
-                },
-            );
+        self.target.publish(&self.groups, self.stroking);
+    }
+
+    /// The meeting closed at `cutoff`: sketches begun after it are not marks.
+    fn cut_off(&mut self, cutoff: crate::meeting::Offset) {
+        for index in (0..self.groups.len()).rev() {
+            if self
+                .target
+                .offset(self.groups[index].start)
+                .is_some_and(|offset| offset > cutoff)
+            {
+                self.drop_group(index, Removal::Undone);
+            }
         }
+        self.redraw();
     }
 
     /// Hands over captured images whose context, if any, has arrived.
@@ -790,15 +809,7 @@ impl Session {
             group.phase = Phase::Captured;
             group.context = None;
             if let Some(png) = group.png.take() {
-                frames::push(
-                    self.recording,
-                    Keyframe {
-                        order: group.id,
-                        start: group.audio_start.as_secs_f32(),
-                        png,
-                        context,
-                    },
-                );
+                self.target.deliver(group, png, context);
             }
         }
     }
@@ -818,7 +829,7 @@ impl Session {
         let mut removed = false;
         for index in (0..self.groups.len()).rev() {
             if !self.groups[index].phase.has_image() {
-                self.drop_group(index);
+                self.drop_group(index, Removal::Lost("display changed".into()));
                 removed = true;
             }
         }
@@ -870,7 +881,7 @@ impl Session {
                     eprintln!("Sketch capture failed: {error}");
                     self.notices
                         .push(format!("Drawing capture failed · {error}"));
-                    self.drop_group(index);
+                    self.drop_group(index, Removal::Lost(error));
                 }
             }
             self.redraw();
@@ -882,7 +893,7 @@ impl Session {
                 && group.pin.is_none()
                 && accidental(&group.strokes)
         }) {
-            self.drop_group(index);
+            self.drop_group(index, Removal::Undone);
             self.redraw();
         }
         self.finish_frames(now);
@@ -1147,8 +1158,8 @@ pub struct SketchOverlay {
     shell: Shell,
     session: SessionCell,
     styled: std::cell::Cell<bool>,
-    /// Last recording id the overlay decided on, so settings load once.
-    decided: std::cell::Cell<u64>,
+    /// Last dictation or meeting the overlay decided on, so settings load once.
+    decided: std::cell::Cell<Option<Owner>>,
     notice: RefCell<Option<DrawingNotice>>,
     hinted: std::cell::Cell<bool>,
 }
@@ -1182,29 +1193,34 @@ impl SketchOverlay {
             shell,
             session: Rc::new(RefCell::new(None)),
             styled: std::cell::Cell::new(false),
-            decided: std::cell::Cell::new(0),
+            decided: std::cell::Cell::new(None),
             notice: RefCell::new(None),
             hinted: std::cell::Cell::new(false),
         })
     }
 
-    /// Call on every UI poll with the active recording (its start and the id
-    /// from [`begin_recording`]). Opens the overlay once per dictation when
-    /// drawing is enabled; finishes it when the recording ends.
+    /// Call on every UI poll with the active dictation (its start and the id
+    /// from [`begin_recording`]) or the open meeting. Opens the overlay once
+    /// per dictation when drawing is enabled, and once per meeting; finishes it
+    /// when the target ends or changes.
     pub fn update(
         &self,
         application: &gtk::Application,
-        recording: Option<(Instant, u64)>,
+        target: Option<SketchTarget>,
         ask: bool,
         paused: bool,
     ) {
         let Ok(mut current) = self.session.try_borrow_mut() else {
             return;
         };
-        match (current.as_mut(), recording) {
-            (None, Some((started, id))) if !ask && self.decided.replace(id) != id => {
+        let owner = target.as_ref().map(SketchTarget::owner);
+        match (current.as_mut(), target) {
+            (None, Some(target))
+                if !(ask && target.skipped_while_asking())
+                    && self.decided.replace(owner) != owner =>
+            {
                 let settings = crate::settings::Settings::load().unwrap_or_default();
-                if settings.draw_while_dictating {
+                if target.wants_overlay(&settings) {
                     drop(current);
                     let access = keys::Keyboards::open();
                     let failure = access.as_ref().err().copied();
@@ -1219,10 +1235,10 @@ impl SketchOverlay {
                         DrawInput::Focus => None,
                         DrawInput::Off => return,
                     };
-                    self.open(application, started, id, &settings, keyboards);
+                    self.open(application, target, &settings, keyboards);
                 }
             }
-            (Some(session), Some(_)) => {
+            (Some(session), Some(_)) if Some(session.target.owner()) == owner => {
                 session.invalidate_layout();
                 if session.layout_invalid && !session.pick.busy() {
                     let layout = super::monitor_layout::MonitorLayout::new();
@@ -1249,6 +1265,7 @@ impl SketchOverlay {
                         session.shell.show(&surface.window);
                     }
                 }
+                let paused = session.target.paused(paused);
                 session.clock.observe(paused, Instant::now());
                 if !session.notices.is_empty() {
                     *self.notice.borrow_mut() = Some(DrawingNotice {
@@ -1257,7 +1274,7 @@ impl SketchOverlay {
                     });
                 }
             }
-            (Some(session), None) if !session.finishing => {
+            (Some(session), _) if !session.finishing => {
                 session.release();
                 session.finishing = true;
                 // Close keyboard devices as soon as recording ends.
@@ -1269,6 +1286,33 @@ impl SketchOverlay {
                 }
             }
             _ => {}
+        }
+    }
+
+    /// A meeting is closing at `cutoff`. Sketches begun after it are dropped
+    /// before the overlay finishes the rest.
+    pub fn cut_off(&self, meeting: crate::meeting::MeetingId, cutoff: crate::meeting::Offset) {
+        if let Ok(mut current) = self.session.try_borrow_mut()
+            && let Some(session) = current.as_mut()
+            && session.target.owner() == Owner::Meeting(meeting)
+        {
+            session.cut_off(cutoff);
+        }
+    }
+
+    /// The meeting's mark writer has closed, so nothing can take its marks:
+    /// the overlay ends now and its captures still out are dropped. A stalled
+    /// screenshot must never hold the overlay the next dictation needs.
+    pub fn retire_meeting(&self) {
+        let Ok(mut current) = self.session.try_borrow_mut() else {
+            return;
+        };
+        if current
+            .as_ref()
+            .is_some_and(|session| matches!(session.target.owner(), Owner::Meeting(_)))
+            && let Some(done) = current.take()
+        {
+            done.close();
         }
     }
 
@@ -1512,8 +1556,7 @@ impl SketchOverlay {
     fn open(
         &self,
         application: &gtk::Application,
-        started: Instant,
-        recording: u64,
+        target: SketchTarget,
         settings: &crate::settings::Settings,
         keyboards: Option<keys::Keyboards>,
     ) {
@@ -1524,16 +1567,16 @@ impl SketchOverlay {
         if surfaces.is_empty() {
             return;
         }
-        frames::set_open(recording, true);
+        target.set_open(true);
         for surface in &surfaces {
             self.shell.show(&surface.window);
         }
+        let reads_context = target.reads_pin_context();
         *self.session.borrow_mut() = Some(Session {
-            recording,
+            target,
             layout,
             layout_invalid: false,
             display_generation: 0,
-            started,
             clock: AudioClock::default(),
             key: settings.draw_key,
             surfaces,
@@ -1552,8 +1595,8 @@ impl SketchOverlay {
             finishing: false,
             results: Arc::new(Mutex::new(Vec::new())),
             gesture: gesture::PinGesture::default(),
-            include_selection: settings.pin_selected_text,
-            include_details: settings.pin_page_details,
+            include_selection: settings.pin_selected_text && reads_context,
+            include_details: settings.pin_page_details && reads_context,
             pick: Arc::new(niri_pick::PickGate::default()),
             input: PointerInput::Nowhere,
             committing: None,
@@ -1580,11 +1623,7 @@ impl SketchOverlay {
                     return glib::ControlFlow::Continue;
                 }
                 if let Some(done) = current.take() {
-                    DRAW_LOCKED.store(false, std::sync::atomic::Ordering::Release);
-                    for surface in done.surfaces {
-                        surface.window.destroy();
-                    }
-                    frames::set_open(done.recording, false);
+                    done.close();
                 }
                 glib::ControlFlow::Break
             }
