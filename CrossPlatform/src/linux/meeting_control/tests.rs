@@ -93,16 +93,21 @@ fn each_cli_command_maps_to_the_contract_request() {
         parse(&args(&["search", "meeting", "--limit", "1"])),
         Ok(Command::Search { query, limit: 1 }) if query == "meeting"
     ));
-    for input in [
-        &["asr-check"][..],
-        &["asr-check", "--fetch"],
-        &["recover", ID, "--backend", "gpu"],
-    ] {
-        assert_eq!(
-            offline(parse(&args(input)).unwrap(), Ok(false))["error"]["code"],
-            "helper_unavailable"
-        );
-    }
+    assert!(matches!(
+        parse(&args(&["asr-check"])),
+        Ok(Command::AsrCheck { fetch: false })
+    ));
+    assert!(matches!(
+        parse(&args(&["asr-check", "--fetch"])),
+        Ok(Command::AsrCheck { fetch: true })
+    ));
+    assert_eq!(
+        offline(
+            parse(&args(&["recover", ID, "--backend", "gpu"])).unwrap(),
+            Ok(false)
+        )["error"]["code"],
+        "daemon_unavailable"
+    );
     for input in [
         &["stop", "invalid"][..],
         &["resume", ID, "-1"],

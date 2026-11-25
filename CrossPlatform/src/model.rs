@@ -100,9 +100,17 @@ impl LocalModel {
 }
 
 pub fn validate_local_model(selection: LocalModel, directory: &Path) -> Result<(), String> {
+    validate_local_model_until_cancelled(selection, directory, &AtomicBool::new(false))
+}
+
+pub(crate) fn validate_local_model_until_cancelled(
+    selection: LocalModel,
+    directory: &Path,
+    cancelled: &AtomicBool,
+) -> Result<(), String> {
     let manifest = selection.manifest()?;
     manifest::validate_manifest(&manifest)?;
-    validate_model_files(directory, &manifest.files, &AtomicBool::new(false)).map(|_| ())
+    validate_model_files(directory, &manifest.files, cancelled).map(|_| ())
 }
 
 pub fn ensure_model(

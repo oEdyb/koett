@@ -141,11 +141,17 @@ impl Bundle {
         read_optional_json(&self.directory.join(SEAL))
     }
 
-    #[allow(dead_code)] // S6 stages GPU helper inputs here.
     pub(crate) fn create_job_directory(&self) -> io::Result<PathBuf> {
         let directory = self.directory.join("job");
         ensure_directory(&directory)?;
         Ok(directory)
+    }
+
+    pub(super) fn clear_job_directory(&self) -> io::Result<()> {
+        match fs::remove_dir_all(self.directory.join("job")) {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            result => result,
+        }
     }
 
     pub(crate) fn write_job(&self, job: &Job) -> Result<(), WriteError> {
