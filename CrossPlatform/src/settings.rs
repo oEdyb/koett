@@ -1,11 +1,15 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 
+use serde::{Deserialize, Serialize};
+
+use crate::paths;
+
 static EDIT_LOCK: Mutex<()> = Mutex::new(());
 /// Free in the default desktops and in Koett; apps rarely bind it.
 pub const DEFAULT_DRAW_LOCK: &str = "Ctrl+Alt+D";
-const ACTIVE_SHORTCUT_COUNT: usize = if cfg!(target_os = "linux") { 3 } else { 1 };
 
 pub struct SettingsEdit {
     pub settings: Settings,
@@ -20,9 +24,52 @@ impl SettingsEdit {
     }
 }
 
-use serde::{Deserialize, Serialize};
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ShortcutAction {
+    Dictation,
+    Ask,
+    Media,
+    Meeting,
+}
 
-use crate::paths;
+impl ShortcutAction {
+    pub(crate) const ALL: [Self; 4] = [Self::Dictation, Self::Ask, Self::Media, Self::Meeting];
+
+    pub(crate) fn is_available(self) -> bool {
+        match self {
+            Self::Dictation => true,
+            Self::Ask => cfg!(all(target_os = "linux", feature = "ask")),
+            Self::Media | Self::Meeting => cfg!(target_os = "linux"),
+        }
+    }
+
+    pub(crate) fn setting(self, settings: &Settings) -> &str {
+        match self {
+            Self::Dictation => &settings.shortcut,
+            Self::Ask => &settings.ask_shortcut,
+            Self::Media => &settings.media_shortcut,
+            Self::Meeting => &settings.meeting.shortcut,
+        }
+    }
+
+    pub(crate) fn setting_mut(self, settings: &mut Settings) -> &mut String {
+        match self {
+            Self::Dictation => &mut settings.shortcut,
+            Self::Ask => &mut settings.ask_shortcut,
+            Self::Media => &mut settings.media_shortcut,
+            Self::Meeting => &mut settings.meeting.shortcut,
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Dictation => "Dictation",
+            Self::Ask => "Ask",
+            Self::Media => "Media",
+            Self::Meeting => "Meeting",
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -80,6 +127,17 @@ fn sounds_volume_or_default<'de, D: serde::Deserializer<'de>>(
         .unwrap_or(DEFAULT_RECORDING_SOUNDS_VOLUME))
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(default)]
+pub struct MeetingSettings {
+    pub shortcut: String,
+    pub export_directory: Option<PathBuf>,
+    pub keep_audio: bool,
+    pub gpu_python: Option<PathBuf>,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, serde_json::Value>,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct Settings {
@@ -116,6 +174,9 @@ pub struct Settings {
     pub pin_page_details: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
+    pub meeting: MeetingSettings,
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, serde_json::Value>,
 }
 
 impl Default for Settings {
@@ -148,6 +209,8 @@ impl Default for Settings {
             pin_page_details: true,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
+            meeting: MeetingSettings::default(),
+            extra: BTreeMap::new(),
         }
     }
 }
@@ -244,18 +307,9 @@ impl Settings {
         fs::create_dir_all(parent)
             .map_err(|error| format!("could not create {}: {error}", parent.display()))?;
         let mut normalized = self.clone();
-        for value in [
-            Some(&mut normalized.shortcut),
-            cfg!(feature = "ask").then_some(&mut normalized.ask_shortcut),
-            Some(&mut normalized.media_shortcut),
-        ]
-        .into_iter()
-        .take(ACTIVE_SHORTCUT_COUNT)
-        .flatten()
-        {
-            if !value.is_empty() {
-                *value = value.parse::<crate::shortcut::Shortcut>()?.to_string();
-            }
+        for (action, value) in self.active_bindings() {
+            *action.setting_mut(&mut normalized) =
+                value.parse::<crate::shortcut::Shortcut>()?.to_string();
         }
         let data = serde_json::to_vec_pretty(&normalized)
             .map_err(|error| format!("could not encode settings: {error}"))?;
@@ -364,40 +418,35 @@ impl Settings {
             .draw_lock_shortcut
             .parse::<crate::shortcut::Shortcut>()
             .ok()?;
-        [
-            self.shortcut.as_str(),
-            if cfg!(feature = "ask") {
-                self.ask_shortcut.as_str()
-            } else {
-                ""
-            },
-            self.media_shortcut.as_str(),
-        ]
-        .into_iter()
-        .all(|other| other.parse::<crate::shortcut::Shortcut>().ok() != Some(lock))
-        .then_some(self.draw_lock_shortcut.as_str())
+        ShortcutAction::ALL
+            .into_iter()
+            .filter(|action| match action {
+                ShortcutAction::Ask => cfg!(feature = "ask"),
+                ShortcutAction::Meeting => cfg!(target_os = "linux"),
+                _ => true,
+            })
+            .all(|action| {
+                action
+                    .setting(self)
+                    .parse::<crate::shortcut::Shortcut>()
+                    .ok()
+                    != Some(lock)
+            })
+            .then_some(self.draw_lock_shortcut.as_str())
+    }
+
+    pub(crate) fn active_bindings(&self) -> impl Iterator<Item = (ShortcutAction, &str)> {
+        ShortcutAction::ALL
+            .into_iter()
+            .filter(|action| action.is_available())
+            .map(|action| (action, action.setting(self)))
+            .filter(|(_, chord)| !chord.is_empty())
     }
 
     pub fn validate_shortcuts(&self) -> Result<(), String> {
         let mut seen = Vec::new();
-        for (name, value) in [
-            ("Dictation", self.shortcut.as_str()),
-            (
-                "Ask",
-                if cfg!(feature = "ask") {
-                    self.ask_shortcut.as_str()
-                } else {
-                    ""
-                },
-            ),
-            ("Media", self.media_shortcut.as_str()),
-        ]
-        .into_iter()
-        .take(ACTIVE_SHORTCUT_COUNT)
-        {
-            if value.is_empty() {
-                continue;
-            }
+        for (action, value) in self.active_bindings() {
+            let name = action.name();
             let chord: crate::shortcut::Shortcut =
                 value.parse().map_err(|error| format!("{name}: {error}"))?;
             if let Some((other, _)) = seen.iter().find(|(_, previous)| previous == &chord) {
@@ -720,6 +769,81 @@ mod tests {
         let text = fs::read_to_string(&path).unwrap();
         assert!(text.contains("\n  \"shortcut\""));
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn saves_meeting_settings_without_losing_gestures_or_unknown_fields() {
+        let path = temporary_file("meeting-settings");
+        let previous = serde_json::json!({
+            "draw_while_dictating": true,
+            "draw_key": "alt",
+            "draw_lock_shortcut": "Super+D",
+            "draw_may_take_keyboard": true,
+            "pin_selected_text": false,
+            "pin_page_details": false,
+            "ask": {"enabled":false, "future_config":[1, null]},
+            "future": [false, {"setting": "value"}],
+            "meeting": {
+                "export_directory": "/tmp/exports",
+                "gpu_python": "/tmp/venv/bin/python",
+                "future": {"value": 5}
+            }
+        });
+        fs::write(&path, previous.to_string()).unwrap();
+        let mut settings = Settings::load_from(&path).unwrap();
+        assert!(settings.meeting.shortcut.is_empty());
+        assert!(!settings.meeting.keep_audio);
+        settings.meeting.keep_audio = true;
+        settings.save_to(&path).unwrap();
+        let saved: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        for (name, value) in previous.as_object().unwrap() {
+            if name == "meeting" {
+                for (field, value) in value.as_object().unwrap() {
+                    assert_eq!(&saved[name][field], value);
+                }
+            } else {
+                assert_eq!(&saved[name], value);
+            }
+        }
+        assert_eq!(saved["meeting"]["keep_audio"], true);
+        assert_eq!(Settings::load_from(&path).unwrap(), settings);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn missing_meeting_settings_are_defaulted_to_an_unbound_shortcut() {
+        let settings: Settings = serde_json::from_str("{}").unwrap();
+        assert_eq!(
+            serde_json::to_value(settings.meeting).unwrap(),
+            serde_json::json!({
+                "shortcut": "",
+                "export_directory": null,
+                "keep_audio": false,
+                "gpu_python": null,
+            })
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn configured_meeting_shortcut_joins_and_validates_active_bindings() {
+        use super::ShortcutAction;
+
+        let mut settings = Settings::default();
+        assert!(
+            !settings
+                .active_bindings()
+                .any(|(action, _)| action == ShortcutAction::Meeting)
+        );
+        settings.meeting.shortcut = "Super+Shift+M".into();
+        assert_eq!(
+            settings.active_bindings().last(),
+            Some((ShortcutAction::Meeting, "Super+Shift+M"))
+        );
+        assert!(settings.validate_shortcuts().is_ok());
+        settings.meeting.shortcut = "Shift+Ctrl+Space".into();
+        let error = settings.validate_shortcuts().unwrap_err();
+        assert!(error.contains("Meeting conflicts with Dictation"));
     }
 
     #[test]

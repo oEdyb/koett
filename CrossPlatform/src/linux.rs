@@ -27,7 +27,7 @@ use x11rb::rust_connection::RustConnection;
 use crate::history;
 use crate::model::ModelProgress;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
-use crate::settings::{PasteShortcut, Settings};
+use crate::settings::{PasteShortcut, Settings, ShortcutAction};
 use crate::shortcut::Shortcut;
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
@@ -766,6 +766,26 @@ fn single_instance() -> Result<File, String> {
     Ok(file)
 }
 
+struct X11Binding {
+    action: ShortcutAction,
+    key: HotKey,
+    registered: bool,
+    latch: ShortcutLatch,
+}
+
+fn x11_shortcut_values(settings: &Settings) -> impl Iterator<Item = (ShortcutAction, &str)> {
+    ShortcutAction::ALL
+        .into_iter()
+        .map(|action| (action, action.setting(settings)))
+        .filter(|(action, chord)| *action != ShortcutAction::Meeting || !chord.is_empty())
+}
+
+fn copy_shortcut_settings(to: &mut Settings, from: &Settings) {
+    for action in ShortcutAction::ALL {
+        *action.setting_mut(to) = action.setting(from).to_owned();
+    }
+}
+
 fn run_x11(
     mut settings: Settings,
     actions: Receiver<TrayAction>,
@@ -777,34 +797,40 @@ fn run_x11(
     let mut held_keys = std::collections::HashSet::new();
     let mut blocked_keys = std::collections::HashSet::new();
     let mut bindings = Vec::new();
-    for value in [
-        settings.shortcut.as_str(),
-        if cfg!(feature = "ask") {
-            settings.ask_shortcut.as_str()
-        } else {
-            ""
-        },
-        settings.media_shortcut.as_str(),
-    ] {
-        let key = if value.is_empty() {
-            None
-        } else {
-            Some(HotKey::from_str(value).map_err(|error| error.to_string())?)
-        };
-        let registered = key.is_some_and(|key| hotkeys.register(key).is_ok());
-        if key.is_some() && !registered {
+    for (action, value) in settings.active_bindings() {
+        let key = HotKey::from_str(value).map_err(|error| error.to_string())?;
+        let registered = hotkeys.register(key).is_ok();
+        if !registered {
             report_shortcut_failure(tray, "unavailable");
         }
-        bindings.push((key, registered, ShortcutLatch::default()));
+        bindings.push(X11Binding {
+            action,
+            key,
+            registered,
+            latch: ShortcutLatch::default(),
+        });
     }
-    let missing: Vec<_> = ["dictation", "ask", "media"]
-        .into_iter()
-        .zip(&bindings)
-        .filter(|(_, (key, registered, _))| key.is_some() && !registered)
-        .map(|(name, _)| name)
+    let missing: Vec<_> = bindings
+        .iter()
+        .filter(|binding| !binding.registered)
+        .map(|binding| match binding.action {
+            ShortcutAction::Dictation => "dictation",
+            action => portal_binding(action).0,
+        })
+        .collect();
+    let active: Vec<_> = x11_shortcut_values(&settings)
+        .map(|(action, _)| {
+            bindings
+                .iter()
+                .find(|binding| binding.action == action && binding.registered)
+                .map(|binding| binding.key.to_string())
+        })
+        .collect();
+    let desired: Vec<_> = x11_shortcut_values(&settings)
+        .map(|(_, chord)| chord)
         .collect();
     shortcut_status(
-        serde_json::json!({"ok":missing.is_empty(),"backend":"x11","active":bindings.iter().map(|(key, registered, _)| if *registered { key.map(|k| k.to_string()) } else { None }).collect::<Vec<_>>(),"desired":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut],"missing":missing,"error":if missing.is_empty() { serde_json::Value::Null } else { serde_json::json!({"code":"shortcut_registration_failed","message":"Some shortcuts are unavailable. Choose another key in Settings."}) }}),
+        serde_json::json!({"ok":missing.is_empty(),"backend":"x11","active":active,"desired":desired,"missing":missing,"error":if missing.is_empty() { serde_json::Value::Null } else { serde_json::json!({"code":"shortcut_registration_failed","message":"Some shortcuts are unavailable. Choose another key in Settings."}) }}),
     );
     let mut output = X11Output::new()?;
     let engine = runtime::start(settings.clone());
@@ -951,8 +977,8 @@ fn run_x11(
                 }
                 continue;
             }
-            for (index, (key, registered, latch)) in bindings.iter_mut().enumerate() {
-                if !*registered || !key.is_some_and(|key| key.id() == event.id) {
+            for binding in &mut bindings {
+                if !binding.registered || binding.key.id() != event.id {
                     continue;
                 }
                 if event.state == HotKeyState::Pressed
@@ -960,26 +986,27 @@ fn run_x11(
                     && let Ok(capture) = SHORTCUT_CAPTURE.lock()
                     && let Some(capture) = capture.as_ref()
                 {
-                    let chord = match index {
-                        0 => settings.shortcut.as_str(),
-                        1 => {
-                            if cfg!(feature = "ask") {
-                                settings.ask_shortcut.as_str()
-                            } else {
-                                ""
-                            }
-                        }
-                        _ => settings.media_shortcut.as_str(),
-                    };
+                    let chord = binding.action.setting(&settings);
                     let _ = capture.try_send(chord.to_string());
                 }
-                let intent =
-                    x11_shortcut_intent(latch, settings.recording_mode, event.state, editing);
+                let intent = x11_shortcut_intent(
+                    &mut binding.latch,
+                    settings.recording_mode,
+                    event.state,
+                    editing,
+                );
                 if let Some(intent) = intent {
-                    match index {
-                        0 => app.command(intent.into(), || output.focused_window()),
-                        1 => app.command(ask_shortcut_command(intent), || None),
-                        _ if event.state == HotKeyState::Pressed => app.open_media(tray),
+                    match binding.action {
+                        ShortcutAction::Dictation => {
+                            app.command(intent.into(), || output.focused_window())
+                        }
+                        ShortcutAction::Ask => app.command(ask_shortcut_command(intent), || None),
+                        ShortcutAction::Media if event.state == HotKeyState::Pressed => {
+                            app.open_media(tray)
+                        }
+                        ShortcutAction::Meeting if event.state == HotKeyState::Pressed => {
+                            meeting_shortcut_pressed()
+                        }
                         _ => {}
                     }
                 }
@@ -1067,101 +1094,91 @@ fn run_x11(
             }
             if let Ok(updated) = Settings::load()
                 && updated.validate_shortcuts().is_ok()
+                && !settings.active_bindings().eq(updated.active_bindings())
             {
-                let next_values = [
-                    updated.shortcut.as_str(),
-                    if cfg!(feature = "ask") {
-                        updated.ask_shortcut.as_str()
-                    } else {
-                        ""
-                    },
-                    updated.media_shortcut.as_str(),
-                ];
-                let old_values = [
-                    settings.shortcut.clone(),
-                    settings.ask_shortcut.clone(),
-                    settings.media_shortcut.clone(),
-                ];
-                if next_values
-                    .iter()
-                    .zip(&old_values)
-                    .enumerate()
-                    .any(|(index, (next, old))| {
-                        (index != 1 || cfg!(feature = "ask")) && *next != old
+                let desired: Vec<_> = updated
+                    .active_bindings()
+                    .filter_map(|(action, value)| {
+                        HotKey::from_str(value).ok().map(|key| (action, key))
                     })
-                {
-                    let desired: Vec<Option<HotKey>> = next_values
-                        .iter()
-                        .map(|value| {
-                            if value.is_empty() {
-                                None
-                            } else {
-                                HotKey::from_str(value).ok()
-                            }
-                        })
-                        .collect();
-                    let old: Vec<HotKey> = bindings
-                        .iter()
-                        .filter_map(|(key, registered, _)| if *registered { *key } else { None })
-                        .collect();
-                    let mut added = Vec::new();
-                    let mut failure = None;
-                    for key in desired.iter().flatten().filter(|key| !old.contains(key)) {
-                        match hotkeys.register(*key) {
-                            Ok(()) => added.push(*key),
-                            Err(error) => {
-                                failure = Some(error.to_string());
-                                break;
-                            }
+                    .collect();
+                let old: Vec<HotKey> = bindings
+                    .iter()
+                    .filter(|binding| binding.registered)
+                    .map(|binding| binding.key)
+                    .collect();
+                let mut added = Vec::new();
+                let mut failure = None;
+                for (_, key) in desired.iter().filter(|(_, key)| !old.contains(key)) {
+                    match hotkeys.register(*key) {
+                        Ok(()) => added.push(*key),
+                        Err(error) => {
+                            failure = Some(error.to_string());
+                            break;
                         }
                     }
-                    if let Some(error) = failure {
-                        for key in added {
-                            let _ = hotkeys.unregister(key);
+                }
+                if let Some(error) = failure {
+                    for key in added {
+                        let _ = hotkeys.unregister(key);
+                    }
+                    if let Err(error) = Settings::update(|current| {
+                        if x11_shortcut_values(current).eq(x11_shortcut_values(&updated)) {
+                            copy_shortcut_settings(current, &settings);
                         }
-                        if let Err(error) = Settings::update(|current| {
-                            if current.shortcut == updated.shortcut
-                                && current.ask_shortcut == updated.ask_shortcut
-                                && current.media_shortcut == updated.media_shortcut
-                            {
-                                current.shortcut = old_values[0].clone();
-                                current.ask_shortcut = old_values[1].clone();
-                                current.media_shortcut = old_values[2].clone();
-                            }
-                        }) {
-                            eprintln!("Shortcut rollback failed: {error}");
-                        }
-                        report_shortcut_failure(
-                            tray,
-                            &format!("rebind failed: {error}; previous bindings retained"),
-                        );
-                        shortcut_status(serde_json::json!({"ok":false,"backend":"x11",
+                    }) {
+                        eprintln!("Shortcut rollback failed: {error}");
+                    }
+                    report_shortcut_failure(
+                        tray,
+                        &format!("rebind failed: {error}; previous bindings retained"),
+                    );
+                    let old_values: Vec<_> = x11_shortcut_values(&settings)
+                        .map(|(_, chord)| chord)
+                        .collect();
+                    let next_values: Vec<_> = x11_shortcut_values(&updated)
+                        .map(|(action, chord)| if action.is_available() { chord } else { "" })
+                        .collect();
+                    shortcut_status(serde_json::json!({"ok":false,"backend":"x11",
                             "active":old_values,"desired":next_values,
                             "error":{"code":"shortcut_rebind_failed","message":format!("Rebind failed: {error}; previous bindings retained"),"fix":"Choose an available shortcut in Settings."}}));
-                    } else {
-                        blocked_keys.extend(held_keys.iter().copied());
-                        for (index, (_, _, latch)) in bindings.iter_mut().enumerate() {
-                            if let Some(intent) = latch.release() {
-                                match index {
-                                    0 => app.command(intent.into(), || output.focused_window()),
-                                    1 => app.command(ask_shortcut_command(intent), || None),
-                                    _ => (),
+                } else {
+                    blocked_keys.extend(held_keys.iter().copied());
+                    for binding in &mut bindings {
+                        if let Some(intent) = binding.latch.release() {
+                            match binding.action {
+                                ShortcutAction::Dictation => {
+                                    app.command(intent.into(), || output.focused_window())
                                 }
+                                ShortcutAction::Ask => {
+                                    app.command(ask_shortcut_command(intent), || None)
+                                }
+                                _ => (),
                             }
                         }
-                        for key in old.iter().filter(|key| !desired.contains(&Some(**key))) {
-                            let _ = hotkeys.unregister(*key);
-                        }
-                        for (index, key) in desired.into_iter().enumerate() {
-                            bindings[index] = (key, key.is_some(), ShortcutLatch::default());
-                        }
-                        settings.shortcut = updated.shortcut;
-                        settings.ask_shortcut = updated.ask_shortcut;
-                        settings.media_shortcut = updated.media_shortcut;
-                        shortcut_status(
-                            serde_json::json!({"ok":true,"backend":"x11","active":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut],"desired":[settings.shortcut,settings.ask_shortcut,settings.media_shortcut]}),
-                        );
                     }
+                    for key in old
+                        .iter()
+                        .filter(|key| !desired.iter().any(|(_, next)| next == *key))
+                    {
+                        let _ = hotkeys.unregister(*key);
+                    }
+                    bindings = desired
+                        .into_iter()
+                        .map(|(action, key)| X11Binding {
+                            action,
+                            key,
+                            registered: true,
+                            latch: ShortcutLatch::default(),
+                        })
+                        .collect();
+                    copy_shortcut_settings(&mut settings, &updated);
+                    let values: Vec<_> = x11_shortcut_values(&settings)
+                        .map(|(_, chord)| chord)
+                        .collect();
+                    shortcut_status(
+                        serde_json::json!({"ok":true,"backend":"x11","active":values,"desired":values}),
+                    );
                 }
             }
         }
@@ -1231,6 +1248,17 @@ fn ask_shortcut_command(intent: RecordingIntent) -> EngineCommand {
         RecordingIntent::Start => EngineCommand::AskStart,
         RecordingIntent::Stop => EngineCommand::AskStop,
         RecordingIntent::Toggle => EngineCommand::Ask,
+    }
+}
+
+fn meeting_shortcut_pressed() {}
+
+fn portal_binding(action: ShortcutAction) -> (&'static str, &'static str) {
+    match action {
+        ShortcutAction::Dictation => (SHORTCUT_ID, "Dictation"),
+        ShortcutAction::Ask => ("ask", "Ask"),
+        ShortcutAction::Media => ("media", "Transcribe media"),
+        ShortcutAction::Meeting => ("meeting", "Meeting"),
     }
 }
 
@@ -1324,18 +1352,14 @@ async fn shortcut_events(
         .map(|s| (s.id().to_string(), s.trigger_description().to_string()))
         .collect();
     let mut requested = Vec::new();
-    for (id, label, value) in [
-        (SHORTCUT_ID, "Dictation", &settings.shortcut),
-        #[cfg(feature = "ask")]
-        ("ask", "Ask", &settings.ask_shortcut),
-        ("media", "Transcribe media", &settings.media_shortcut),
-    ] {
-        if !value.is_empty() {
-            requested.push(
-                NewShortcut::new(id, label)
-                    .preferred_trigger(Shortcut::from_str(value)?.portal_trigger().as_str()),
-            );
-        }
+    let mut enabled = std::collections::HashSet::new();
+    for (action, value) in settings.active_bindings() {
+        let (id, label) = portal_binding(action);
+        enabled.insert(id.to_string());
+        requested.push(
+            NewShortcut::new(id, label)
+                .preferred_trigger(Shortcut::from_str(value)?.portal_trigger().as_str()),
+        );
     }
     if !requested.is_empty() {
         let bound = shortcuts
@@ -1355,16 +1379,6 @@ async fn shortcut_events(
                 .map(|s| (s.id().to_string(), s.trigger_description().to_string())),
         );
     }
-    let enabled: std::collections::HashSet<String> = [
-        (SHORTCUT_ID, &settings.shortcut),
-        #[cfg(feature = "ask")]
-        ("ask", &settings.ask_shortcut),
-        ("media", &settings.media_shortcut),
-    ]
-    .into_iter()
-    .filter(|(_, value)| !value.is_empty())
-    .map(|(id, _)| id.to_string())
-    .collect();
     let mut active = assigned_portal_bindings(&triggers, &enabled);
     let missing: Vec<_> = enabled.difference(&active).cloned().collect();
     if !missing.is_empty() {
@@ -1412,6 +1426,7 @@ async fn shortcut_events(
             event = presses.next() => {
                 let Some(event) = event else { break; };
                 if serde_json::to_value(event.session_handle()).ok().as_ref() != Some(&session_path) || !active.contains(event.shortcut_id()) { continue; }
+                if event.shortcut_id() == portal_binding(ShortcutAction::Meeting).0 { meeting_shortcut_pressed(); }
                 if event.shortcut_id() == "media" && !media_pressed { media_pressed = true; let _ = actions.send(TrayAction::OpenMedia); }
                 if event.shortcut_id() == "ask" {
                     let mode = Settings::load().unwrap_or_else(|_| settings.clone()).recording_mode;

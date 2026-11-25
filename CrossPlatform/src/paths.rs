@@ -74,6 +74,9 @@ pub fn last_transcript() -> Result<PathBuf, String> {
 pub fn media_transcripts_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_dir().join("Media Transcripts"))
 }
+pub fn meetings_directory() -> Result<PathBuf, String> {
+    Ok(project_directories()?.data_dir().join("Meetings"))
+}
 pub fn updates_directory() -> Result<PathBuf, String> {
     Ok(project_directories()?.data_local_dir().join("updates"))
 }
@@ -91,7 +94,7 @@ pub fn model_install_log() -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{history_file, settings_file};
+    use super::{history_file, meetings_directory, settings_file};
 
     #[test]
     fn settings_and_history_use_platform_directories() {
@@ -102,5 +105,14 @@ mod tests {
         assert_eq!(history.file_name().unwrap(), "Transcripts.md");
         assert!(settings.parent().is_some());
         assert!(history.parent().is_some());
+    }
+
+    #[test]
+    fn meetings_use_the_same_data_directory_as_history() {
+        let history = history_file().unwrap();
+        assert_eq!(
+            meetings_directory().unwrap(),
+            history.with_file_name("Meetings")
+        );
     }
 }
