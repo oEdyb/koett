@@ -140,14 +140,13 @@ impl SketchTarget {
                 let before = u32::try_from(remaining.len() + 1).unwrap_or(u32::MAX);
                 crate::sketch::remove_for(*started, before);
             }
-            Self::Meeting(scope) => match removal {
-                Removal::Undone => {
-                    scope.undo(removed);
-                }
-                Removal::Lost(issue) => {
-                    scope.miss(removed, issue);
-                }
-            },
+            Self::Meeting(scope) => {
+                match removal {
+                    Removal::Undone => scope.undo(removed),
+                    Removal::Lost(issue) => scope.miss(removed, issue),
+                };
+                self.publish(remaining, stroking);
+            }
         }
     }
 
@@ -163,6 +162,15 @@ impl SketchTarget {
 mod tests {
     use super::*;
     use crate::meeting::SAMPLE_RATE;
+    use std::sync::atomic::Ordering;
+
+    /// Serializes tests that move the shared pencil indicator.
+    static INK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn ink() -> std::sync::MutexGuard<'static, ()> {
+        INK.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
 
     struct Folder(std::path::PathBuf);
 
@@ -229,6 +237,7 @@ mod tests {
 
     #[test]
     fn undoing_a_meeting_sketch_removes_its_mark() {
+        let _ink = ink();
         let folder = Folder::new();
         let zero = Instant::now();
         let (scope, writer) = MeetingMarkScope::writing_to(&folder.0, zero);
@@ -253,6 +262,7 @@ mod tests {
 
     #[test]
     fn a_lost_meeting_sketch_is_reported_at_close() {
+        let _ink = ink();
         let folder = Folder::new();
         let zero = Instant::now();
         let (scope, writer) = MeetingMarkScope::writing_to(&folder.0, zero);
@@ -266,6 +276,28 @@ mod tests {
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].issue, "display changed");
         assert!(folder.marks().is_empty());
+    }
+
+    #[test]
+    fn undoing_the_live_meeting_sketch_turns_the_pencil_off() {
+        let _ink = ink();
+        let folder = Folder::new();
+        let zero = Instant::now();
+        let (scope, _writer) = MeetingMarkScope::writing_to(&folder.0, zero);
+        let target = SketchTarget::Meeting(scope);
+        let groups = [sketch(1, zero), sketch(2, zero + Duration::from_secs(1))];
+        for group in &groups {
+            assert!(target.begin(group.id, group.start));
+        }
+
+        target.publish(&groups, Some(1));
+        target.remove(2, Removal::Undone, &groups[..1], Some(1));
+        let other_undone = super::super::MEETING_INK.load(Ordering::Acquire);
+        target.remove(1, Removal::Undone, &[], None);
+        let live_undone = super::super::MEETING_INK.load(Ordering::Acquire);
+
+        assert!(other_undone);
+        assert!(!live_undone);
     }
 
     #[test]
