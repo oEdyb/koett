@@ -15,7 +15,7 @@ fn controller(
         root: Err("no fixture bundle".into()),
         active,
         attempt: 1,
-        recoverable: Some(0),
+        recoverable: Some(Vec::new()),
         boot: None,
         worker: None,
         commands,

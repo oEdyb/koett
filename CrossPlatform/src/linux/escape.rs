@@ -19,6 +19,24 @@ impl Gate {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum EscapeAction {
+    EndDrawLock,
+    CancelDictation,
+}
+
+/// What Esc does now. `None` leaves the keyboards closed, so an idle Koett and a
+/// meeting without draw lock read no keys; Esc never cancels a meeting.
+pub(super) fn listening(dictating: bool, meeting: bool, draw_locked: bool) -> Option<EscapeAction> {
+    if draw_locked && (dictating || meeting) {
+        Some(EscapeAction::EndDrawLock)
+    } else if dictating {
+        Some(EscapeAction::CancelDictation)
+    } else {
+        None
+    }
+}
+
 #[derive(Default)]
 pub(super) struct EscapeMonitor {
     active: bool,
@@ -82,6 +100,17 @@ mod tests {
         assert!(!gate.press(Modifiers::default()));
         assert!(gate.press(escape));
         assert!(!gate.press(escape));
+    }
+
+    #[test]
+    fn esc_ends_a_meeting_draw_lock_and_reads_no_keys_otherwise() {
+        use EscapeAction::{CancelDictation, EndDrawLock};
+        assert_eq!(listening(false, true, true), Some(EndDrawLock));
+        assert_eq!(listening(true, false, true), Some(EndDrawLock));
+        assert_eq!(listening(true, false, false), Some(CancelDictation));
+        assert_eq!(listening(false, true, false), None);
+        assert_eq!(listening(false, false, false), None);
+        assert_eq!(listening(false, false, true), None);
     }
 
     #[test]

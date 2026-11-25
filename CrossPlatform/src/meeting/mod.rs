@@ -1,5 +1,6 @@
 pub(crate) mod bundle;
 pub(crate) mod capture;
+pub(crate) mod catalog;
 mod controller;
 mod job;
 mod session;
@@ -233,7 +234,8 @@ pub(crate) enum MeetingView {
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum MeetingUpdate {
-    View(MeetingView, usize),
+    /// The view, then the meetings `recover` would run on, newest first.
+    View(MeetingView, Vec<catalog::Listed>),
     Sketch(SketchScope),
     HistoryChanged,
     Issue(String),
@@ -526,7 +528,7 @@ enum Event {
     Health(Attempt, CaptureHealth),
     SourceHealth(Attempt, Channel, SourceHealth),
     DiskHealth(Attempt, Channel, capture::disk::CaptureHealth),
-    BootScanned(Result<usize, String>),
+    BootScanned(Result<Vec<catalog::Listed>, String>),
     CaptureFault(Attempt, Offset, String),
     Closed(Attempt, Result<SealedBundle, (RecoverableBundle, String)>),
     Processed(
