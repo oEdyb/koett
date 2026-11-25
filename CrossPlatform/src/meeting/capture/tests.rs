@@ -104,7 +104,8 @@ fn record_blocks(stamp_ms: impl Fn(u64) -> u64, blocks: u64) -> Vec<u8> {
     let mut samples = Vec::new();
     for n in 0..blocks {
         let stamp = zero + Duration::from_millis(stamp_ms(n));
-        assert!(ingress.push(&[0.25; BLOCK], stamp));
+        let marker = f32::from(i16::try_from(n).unwrap()) / 32_768.0;
+        assert!(ingress.push(&[marker; BLOCK], stamp));
         pump(&mut drain, &mut recorder, &mut samples);
     }
     recorder.finish(ingress.dropped_frames()).unwrap();
@@ -142,7 +143,68 @@ fn three_second_pause_has_one_three_second_gap() {
 }
 
 #[test]
-fn one_second_pipe_backlog_bursts_do_not_create_gaps() {
+fn confirmed_twenty_millisecond_error_steers_two_samples_per_record() {
+    let bytes = record_blocks(|n| n * 20 + if n >= 263 { 20 } else { 0 }, 500);
+    let mut corrections = 0;
+    for chunk in read(&bytes, NO_CUTOFF) {
+        match chunk.unwrap() {
+            TrackChunk::Pcm { .. } => {}
+            TrackChunk::Silence(span) => {
+                assert_eq!(span.end.0 - span.first.0, 2);
+                corrections += 1;
+            }
+            TrackChunk::Gap { span, cause } => panic!("unexpected gap {span:?} ({cause:?})"),
+        }
+    }
+    assert!(corrections > 1);
+}
+
+#[test]
+fn a_quarter_second_hole_realigns_within_two_and_a_half_seconds() {
+    const CHECK_BLOCK: u64 = 263 + 125;
+    let stamp_ms = |n| n * 20 + if n >= 263 { 250 } else { 0 };
+    let bytes = record_blocks(stamp_ms, CHECK_BLOCK + 25);
+    let mut placement = None;
+    let mut silence = 0;
+    for chunk in read(&bytes, NO_CUTOFF) {
+        match chunk.unwrap() {
+            TrackChunk::Pcm { first, samples } => {
+                if let Some(index) = samples
+                    .iter()
+                    .position(|&sample| sample == CHECK_BLOCK as i16)
+                {
+                    placement = Some(first.0 + index as u64);
+                }
+            }
+            TrackChunk::Silence(span) => silence += span.end.0 - span.first.0,
+            TrackChunk::Gap { span, cause } => panic!("unexpected gap {span:?} ({cause:?})"),
+        }
+    }
+    let expected = stamp_ms(CHECK_BLOCK) * 16;
+    let actual = placement.expect("check block survives playback");
+    assert!(
+        actual.abs_diff(expected) <= 80,
+        "placed at {actual}, expected {expected}"
+    );
+    assert_eq!(silence, 4000);
+}
+
+#[test]
+fn confirmed_pauses_at_and_above_three_hundred_milliseconds_write_one_clock_gap() {
+    for pause in [300, 350] {
+        let bytes = record_blocks(|n| n * 20 + if n >= 263 { pause } else { 0 }, 500);
+        let gaps: Vec<_> = read(&bytes, NO_CUTOFF)
+            .filter_map(|chunk| match chunk.unwrap() {
+                TrackChunk::Gap { span, cause } => Some((span.end.0 - span.first.0, cause)),
+                TrackChunk::Pcm { .. } | TrackChunk::Silence(_) => None,
+            })
+            .collect();
+        assert_eq!(gaps, [(pause * 16, GapCause::ClockJump)]);
+    }
+}
+
+#[test]
+fn one_second_pipe_backlog_bursts_do_not_shift_audio_or_create_gaps() {
     let bytes = record_blocks(
         |n| {
             let arrival = n * 20;
@@ -153,21 +215,14 @@ fn one_second_pipe_backlog_bursts_do_not_create_gaps() {
         },
         625,
     );
-    let chunks = read(&bytes, NO_CUTOFF)
-        .collect::<io::Result<Vec<_>>>()
-        .unwrap();
-    assert!(
-        !chunks
-            .iter()
-            .any(|chunk| matches!(chunk, TrackChunk::Gap { .. }))
-    );
-    let frames = chunks
-        .iter()
-        .map(|chunk| match chunk {
-            TrackChunk::Pcm { samples, .. } => samples.len(),
-            _ => 0,
-        })
-        .sum::<usize>();
+    let mut frames = 0;
+    for chunk in read(&bytes, NO_CUTOFF) {
+        let TrackChunk::Pcm { first, samples } = chunk.unwrap() else {
+            panic!("a backlog shifted the audio");
+        };
+        assert_eq!(first, Offset(frames as u64));
+        frames += samples.len();
+    }
     assert_eq!(frames, 625 * BLOCK);
 }
 

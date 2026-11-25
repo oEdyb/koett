@@ -7,7 +7,7 @@ use super::super::{Offset, SAMPLE_RATE, Span};
 use super::clock::{TrackClock, session_offset};
 use super::ingress::Stamp;
 use super::journal::{GapCause, JournalWriter};
-use super::{PCM_FRAMES, SourceEpoch};
+use super::{GAP_THRESHOLD, PCM_FRAMES, SourceEpoch};
 
 struct Segment {
     epoch: SourceEpoch,
@@ -86,8 +86,10 @@ impl<W: Write> TrackRecorder<W> {
                 let nominal_frames = scale_frames(segment.input_frames, rate);
                 if let Some(resume) = segment.clock.observe(at, nominal_frames) {
                     self.flush_segment()?;
-                    self.write_gap(resume, GapCause::ClockJump)?;
-                    self.start_segment(self.end, at, stamp.epoch, false)?;
+                    if resume.0.saturating_sub(self.end.0) >= GAP_THRESHOLD {
+                        self.write_gap(resume, GapCause::ClockJump)?;
+                    }
+                    self.start_segment(resume.max(self.end), at, stamp.epoch, false)?;
                 }
             }
         }
