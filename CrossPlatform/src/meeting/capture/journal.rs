@@ -117,11 +117,20 @@ pub(crate) struct TrackReader<R = BufReader<File>> {
     pending: Option<TrackChunk>,
 }
 
+pub(in crate::meeting) fn has_record_bytes(path: &Path) -> io::Result<bool> {
+    match std::fs::metadata(path) {
+        Ok(metadata) => Ok(metadata.len() > HEADER.len() as u64),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
 impl TrackReader {
     pub(crate) fn open(path: &Path, cutoff: Offset) -> io::Result<Self> {
         Self::from_reader(BufReader::new(File::open(path)?), cutoff, u64::MAX)
     }
 
+    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn open_sealed(path: &Path, cutoff: Offset, seal: TrackSeal) -> io::Result<Self> {
         Self::from_reader(BufReader::new(File::open(path)?), cutoff, seal.valid_bytes)
     }

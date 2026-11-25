@@ -244,17 +244,16 @@ fn run(
     timeout: Duration,
     maximum: u64,
 ) -> Result<(), String> {
-    use std::os::unix::process::CommandExt;
     let log = File::create(output).map_err(|e| e.to_string())?;
-    let mut child = command
-        .process_group(0)
-        .stdin(Stdio::null())
-        .stdout(log)
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| format!("Media tool unavailable: {e}"))?;
+    let mut child = crate::linux::child::ChildGroup::spawn(
+        command
+            .stdin(Stdio::null())
+            .stdout(log)
+            .stderr(Stdio::null()),
+    )
+    .map_err(|e| format!("Media tool unavailable: {e}"))?;
     let started = Instant::now();
-    let result = loop {
+    loop {
         let entries = match fs::read_dir(directory) {
             Ok(entries) => entries,
             Err(error) => break Err(error.to_string()),
@@ -278,13 +277,7 @@ fn run(
             Ok(None) => thread::sleep(Duration::from_millis(50)),
             Err(e) => break Err(e.to_string()),
         }
-    };
-    let _ = Command::new("/usr/bin/kill")
-        .args(["-KILL", "--", &format!("-{}", child.id())])
-        .stderr(Stdio::null())
-        .status();
-    let _ = child.wait();
-    result
+    }
 }
 
 pub fn save(title: &str, source: &str, model: &str, text: &str) -> Result<PathBuf, String> {
