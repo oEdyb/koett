@@ -129,18 +129,20 @@ struct MeetingDecoder<'a, D> {
 impl<D: Decoder> Decoder for MeetingDecoder<'_, D> {
     fn decode(&mut self, windows: &[Window]) -> Result<Vec<DecodedWindow>, String> {
         check_cancelled(self.cancelled)?;
-        let Some(helper) = &mut self.helper else {
+        let Some(mut helper) = self.helper.take() else {
             return self.fallback.decode(windows);
         };
         let budget = self.batch_base + self.per_window * windows.len() as u32;
         let (mut decoded, failure) = helper.decode_prefix(windows, self.cancelled, budget);
         if let Some(error) = failure {
-            self.helper = None;
+            let error = helper.with_stderr(error);
             check_cancelled(self.cancelled)?;
-            eprintln!("Meeting ASR helper failed: {error}. Using Parakeet.");
+            eprintln!("Meeting ASR helper failed, using Parakeet. {error}");
             if decoded.len() < windows.len() {
                 decoded.extend(self.fallback.decode(&windows[decoded.len()..])?);
             }
+        } else {
+            self.helper = Some(helper);
         }
         Ok(decoded)
     }
@@ -168,7 +170,7 @@ pub(super) fn transcribe(
             Ok(helper) => Some(helper),
             Err(error) => {
                 check_cancelled(cancelled)?;
-                eprintln!("Meeting ASR helper unavailable: {error}. Using Parakeet.");
+                eprintln!("Meeting ASR helper unavailable, using Parakeet. {error}");
                 None
             }
         },

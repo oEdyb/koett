@@ -4,6 +4,7 @@ from pathlib import Path
 import site
 import subprocess
 import sys
+import traceback
 
 TURBO = "whisper-large-v3-turbo"
 SWEDISH = "kb-whisper-large"
@@ -142,6 +143,7 @@ def main():
                 context = language_audio(index, tracks, waveforms)
                 send(decode(window, audio, context, engines))
             except Exception as error:
+                traceback.print_exc()
                 send({"id": window["id"], "error": str(error)})
                 return
 
@@ -150,6 +152,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as error:
-        print(f"{type(error).__name__}: {error}", file=sys.stderr, flush=True)
+        traceback.print_exc()
         send({"error": str(error)})
         sys.exit(1)

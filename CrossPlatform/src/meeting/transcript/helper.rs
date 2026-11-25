@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::fs::{self, DirBuilder, File};
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::os::fd::OwnedFd;
 use std::os::unix::fs::DirBuilderExt;
 use std::os::unix::net::UnixStream;
@@ -24,6 +24,7 @@ const SWEDISH: &str = "kb-whisper-large";
 const READY_TIMEOUT: Duration = Duration::from_secs(180);
 const IO_INTERVAL: Duration = Duration::from_millis(25);
 const MAX_REPLY: usize = 1024 * 1024;
+const STDERR_TAIL_BYTES: u64 = 8 * 1024;
 
 struct Scratch(PathBuf);
 
@@ -35,7 +36,7 @@ impl Drop for Scratch {
 
 pub(super) struct Helper {
     stream: BufReader<UnixStream>,
-    _child: ChildGroup,
+    child: ChildGroup,
     directory: Scratch,
 }
 
@@ -154,10 +155,17 @@ impl Helper {
         drop(command);
         let mut helper = Self {
             stream: BufReader::new(parent),
-            _child: child,
+            child,
             directory,
         };
-        let response = helper.receive(Instant::now() + READY_TIMEOUT, cancelled)?;
+        match helper.read_ready(cancelled) {
+            Ok(ready) => Ok((helper, ready)),
+            Err(error) => Err(helper.with_stderr(error)),
+        }
+    }
+
+    fn read_ready(&mut self, cancelled: &AtomicBool) -> Result<Ready, String> {
+        let response = self.receive(Instant::now() + READY_TIMEOUT, cancelled)?;
         if let Some(error) = response.get("error").and_then(Value::as_str) {
             return Err(error.into());
         }
@@ -171,7 +179,18 @@ impl Helper {
         {
             return Err("Meeting ASR helper did not load both CUDA models".into());
         }
-        Ok((helper, ready))
+        Ok(ready)
+    }
+
+    pub(super) fn with_stderr(self, error: String) -> String {
+        let Self {
+            child, directory, ..
+        } = self;
+        drop(child);
+        match stderr_tail(&directory.0) {
+            Ok(tail) if !tail.trim().is_empty() => format!("{error}\n{}", tail.trim_end()),
+            _ => error,
+        }
     }
 
     pub(super) fn decode_prefix(
@@ -309,6 +328,15 @@ fn stage(directory: &Path) -> io::Result<(PathBuf, File)> {
     let script = directory.join("asr_helper.py");
     fs::write(&script, SCRIPT)?;
     Ok((script, File::create(directory.join("helper.log"))?))
+}
+
+fn stderr_tail(directory: &Path) -> io::Result<String> {
+    let mut log = File::open(directory.join("helper.log"))?;
+    let start = log.metadata()?.len().saturating_sub(STDERR_TAIL_BYTES);
+    log.seek(SeekFrom::Start(start))?;
+    let mut bytes = Vec::new();
+    log.take(STDERR_TAIL_BYTES).read_to_end(&mut bytes)?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 fn wire_id(id: WindowId) -> String {
