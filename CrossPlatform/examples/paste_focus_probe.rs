@@ -72,6 +72,7 @@ fn main() {
             } else {
                 settings::PasteShortcut::CtrlV
             },
+            None,
         );
         println!(
             "{}",
@@ -114,6 +115,7 @@ fn main() {
                     "Koett focus regression",
                     captured,
                     settings::PasteShortcut::CtrlV,
+                    None,
                 );
                 let _ = tx.send(result);
             });

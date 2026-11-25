@@ -364,3 +364,22 @@ offered. The old build pasted the stale item 3 times in 3 and the drawing never.
 pastes nothing and leaves the newer copy on the clipboard. Plain dictation still pastes once behind
 a manager that re-serves the same bytes. Windows already checks it still owns the clipboard right
 before the key; the Mac now does too.
+
+## 2026-11-24: drawing paste waited 1.2 s before the spoken text
+
+Olle reported an annoying delay between the drawing image and the spoken text on drawing
+dictations. His delivery log showed 1,190–1,246 ms between image `paste_post` and text
+`paste_post` on niri (`FAST_IMAGE_SETTLE` 120 ms + `DRAWING_SETTLE` 1,000 ms + a second
+`PasteGate` settle and virtual-keyboard setup ~70–125 ms); Wayland portal stacked 160 ms + 1,000 ms,
+and X11 stacked 500 ms + 1,000 ms.
+
+The 1,000 ms settle in #195 padded 4× over a 2560 px lab image (231 ms under CPU load), whereas
+Koett caps contact sheets at 1600 px on all three platforms—below T3 Code's 2000 px re-encode
+threshold. Measuring T3 Code's actual `imageCompression` + `arrayBuffer`/hash path on a 2 MB
+1600×900 PNG took at most 11.4 ms (39 ms with thumbnail decode) under 12-worker CPU load.
+
+On Linux, `DRAWING_SETTLE` is now 250 ms, and the redundant stacked sleeps are
+removed: on Linux Wayland fallback, the drawing stays untouched on the clipboard for 150 ms after
+its pipe closes, then text clipboard offer, `PasteGate` and virtual-keyboard setup overlap with the
+remaining budget up to 250 ms (re-checking ownership, focus and modifiers right before posting).
+X11 keeps one 350 ms wait. The Mac and Windows keep 1 s until the same change is measured there.
