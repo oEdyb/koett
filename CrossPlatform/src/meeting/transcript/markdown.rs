@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
@@ -182,22 +183,88 @@ pub(in crate::meeting) fn vault_note(
         "---\ntype: meeting\nkoett_id: {id}\ntitle: {title:?}\nsummary: {summary:?}\ndate: {day}\nstatus: complete\ntags: [meeting, koett]\n---\n\n"
     );
     for line in body.lines() {
-        if let Some((prefix, relative)) = line
-            .split_once("] ![Mark ")
-            .and_then(|(time, mark)| {
-                mark.split_once("](")
-                    .map(|(number, path)| ((time, number), path))
-            })
-            .and_then(|(prefix, relative)| relative.strip_suffix(')').map(|path| (prefix, path)))
-            && publication.assets.iter().any(|asset| asset == relative)
-        {
-            let (time, number) = prefix;
-            let path = url::Url::from_file_path(bundle_path.join(relative))
-                .map_err(|()| "Mark path is not an absolute file path")?;
-            let _ = writeln!(note, "{time}] ![Mark {number}](<{path}>)");
-        } else {
-            let _ = writeln!(note, "{line}");
-        }
+        let _ = writeln!(
+            note,
+            "{}",
+            absolute_mark_line(line, bundle_path, &publication.assets)?
+        );
     }
     Ok((format!("{title}.md"), note))
+}
+
+/// Points each mark the receipt lists at its file by absolute `file://` URL, so the
+/// text still shows the drawings outside the meeting folder. Every other line,
+/// link and byte stays as written.
+pub(crate) fn absolute_mark_links(
+    markdown: &str,
+    folder: &Path,
+    assets: &[String],
+) -> Result<String, String> {
+    let mut result = String::with_capacity(markdown.len());
+    for line in markdown.split_inclusive('\n') {
+        let (text, ending) = line
+            .strip_suffix('\n')
+            .map_or((line, ""), |text| (text, "\n"));
+        result.push_str(&absolute_mark_line(text, folder, assets)?);
+        result.push_str(ending);
+    }
+    Ok(result)
+}
+
+fn absolute_mark_line<'a>(
+    line: &'a str,
+    folder: &Path,
+    assets: &[String],
+) -> Result<Cow<'a, str>, String> {
+    let Some(((time, number), relative)) = line
+        .split_once("] ![Mark ")
+        .and_then(|(time, mark)| {
+            mark.split_once("](")
+                .map(|(number, path)| ((time, number), path))
+        })
+        .and_then(|(prefix, relative)| relative.strip_suffix(')').map(|path| (prefix, path)))
+        .filter(|(_, relative)| assets.iter().any(|asset| asset == relative))
+    else {
+        return Ok(Cow::Borrowed(line));
+    };
+    let url = url::Url::from_file_path(folder.join(relative))
+        .map_err(|()| "Mark path is not an absolute file path")?;
+    Ok(Cow::Owned(format!("{time}] ![Mark {number}](<{url}>)")))
+}
+
+#[cfg(test)]
+mod link_tests {
+    use super::absolute_mark_links;
+    use std::path::Path;
+
+    #[test]
+    fn listed_marks_become_absolute_file_urls_and_other_links_stay() {
+        let markdown = "---\ntype: meeting-transcript\n---\n\n# Meeting · 2026-11-25 14:05\n\n[00:38] **Other:** See [notes](assets/notes.md) and <https://example.com>. <!-- sv kb-whisper-large -->\n\n[00:41] ![Mark 1](assets/mark-0000656000-0001.png)\n\n[00:50] ![Mark 2](assets/mark-0000800000-0002.png)\n\n[01:02] ![Mark 3](https://example.com/mark.png)\n\n[01:05] ![Mark 1](assets/mark-0000656000-0001.png)";
+        let assets = ["assets/mark-0000656000-0001.png".to_string()];
+
+        let copied = absolute_mark_links(
+            markdown,
+            Path::new("/home/me/Koett Meetings/550e#1"),
+            &assets,
+        )
+        .unwrap();
+
+        let url = "<file:///home/me/Koett%20Meetings/550e%231/assets/mark-0000656000-0001.png>";
+        assert_eq!(
+            copied,
+            markdown
+                .replace(
+                    "[00:41] ![Mark 1](assets/mark-0000656000-0001.png)\n",
+                    &format!("[00:41] ![Mark 1]({url})\n")
+                )
+                .replace(
+                    "[01:05] ![Mark 1](assets/mark-0000656000-0001.png)",
+                    &format!("[01:05] ![Mark 1]({url})")
+                )
+        );
+        assert!(copied.contains("[notes](assets/notes.md)"));
+        assert!(copied.contains("![Mark 2](assets/mark-0000800000-0002.png)"));
+        assert!(copied.contains("![Mark 3](https://example.com/mark.png)"));
+        assert!(!copied.ends_with('\n'));
+    }
 }
