@@ -11,13 +11,18 @@ is the behaviour reference only; no Scrawl code, assets, icons or name are used.
 - Settings › Draw on screen: **Draw & Pin While Dictating**, off by default,
   **Draw key**: Shift (default), Ctrl or Alt, and **Include Selected Text in
   Pins**, on by default.
+- A meeting opens the same overlay from start to finish, whatever that setting
+  says. Each sketch or pin becomes `assets/mark-<offset>-<id>.png` in the
+  meeting folder, timed at its first ink or click; Undo removes the file. A
+  meeting pin is the image alone, and meeting marks never reach the pill
+  timeline or the dictation contact sheet.
 - A recording never blocks typing by default. Koett reads the draw key from the
   keyboard devices whenever they're readable, so the overlay never takes
   keyboard focus. About 60 times a second it samples which keys are held
   (`EVIOCGKEY`; Linux has no modifier-only query, so a sample briefly contains
   every held key), keeps only Shift/Ctrl/Alt/Super, a yes/no for "another key
   is down", the chosen draw-lock key and, while locked, Z, stores nothing and wipes the sample with volatile writes. It never reads key events or typed text, and
-  opens keyboards only while a dictation with drawing records. Keyboards are
+  opens keyboards only while a dictation with drawing records or a meeting runs. Keyboards are
   found through sysfs capabilities and rescanned every 2 s, so hot-plugged ones
   join and unplugged handles are dropped; unreadable ones are reported.
 - Only physical keyboards count. Virtual devices (uinput, including a tool that

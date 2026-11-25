@@ -154,14 +154,37 @@ struct TrayUpdates {
 struct LinuxTray {
     action_sender: Sender<TrayAction>,
     status: String,
+    meeting: MeetingView,
+    recoverable_meetings: usize,
 }
 
 impl LinuxTray {
-    fn update_meeting(&mut self, _view: &MeetingView, _recoverable: usize) {}
+    fn new(action_sender: Sender<TrayAction>, status: String) -> Self {
+        Self {
+            action_sender,
+            status,
+            meeting: MeetingView::Idle,
+            recoverable_meetings: 0,
+        }
+    }
+
+    fn update_meeting(&mut self, view: &MeetingView, recoverable: usize) {
+        self.meeting = view.clone();
+        self.recoverable_meetings = recoverable;
+    }
 
     fn update_status(&mut self, status: String) {
         if !menu::is_control_message(&status) {
             self.status = status;
+        }
+    }
+
+    /// Dictation's status, unless a live meeting holds the engine.
+    fn headline(&self) -> String {
+        if meeting_menu::live(&self.meeting) {
+            "Recording meeting".into()
+        } else {
+            self.status.clone()
         }
     }
 }
@@ -176,7 +199,7 @@ impl ksni::Tray for LinuxTray {
     }
 
     fn icon_name(&self) -> String {
-        if self.status.starts_with("Recording") {
+        if self.status.starts_with("Recording") || meeting_menu::live(&self.meeting) {
             "media-record-symbolic"
         } else if self.status.starts_with("Error") {
             "dialog-error-symbolic"
@@ -198,7 +221,7 @@ impl ksni::Tray for LinuxTray {
         ksni::ToolTip {
             icon_name: self.icon_name(),
             title: "Koett".to_string(),
-            description: self.status.clone(),
+            description: self.headline(),
             ..Default::default()
         }
     }
@@ -227,7 +250,7 @@ impl ksni::Tray for LinuxTray {
         let last = history::recovery::last_available();
         let mut items = vec![
             StandardItem {
-                label: self.status.clone(),
+                label: self.headline(),
                 enabled: false,
                 ..Default::default()
             }
@@ -253,6 +276,27 @@ impl ksni::Tray for LinuxTray {
         if asking {
             items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
         }
+        items.extend(
+            meeting_menu::items(&self.meeting, self.recoverable_meetings)
+                .into_iter()
+                .map(|item| match item.action {
+                    Some(action) => StandardItem {
+                        label: item.label,
+                        activate: Box::new(move |tray: &mut LinuxTray| {
+                            let call = MeetingCall::desktop(action.request());
+                            let _ = tray.action_sender.send(TrayAction::Meeting(call));
+                        }),
+                        ..Default::default()
+                    }
+                    .into(),
+                    None => StandardItem {
+                        label: item.label,
+                        enabled: false,
+                        ..Default::default()
+                    }
+                    .into(),
+                }),
+        );
         items.extend([
             send("Transcribe media…", true, TrayAction::OpenMedia),
             send(
@@ -338,6 +382,7 @@ pub(crate) mod media;
 mod media_view;
 pub(crate) mod meeting_audio;
 mod meeting_control;
+mod meeting_menu;
 mod menu;
 mod menu_preferences;
 mod models_view;
@@ -686,12 +731,9 @@ pub fn run() -> Result<(), String> {
     let worker_actions = actions.clone();
     std::thread::spawn(move || {
         let _instance = instance;
-        let tray = LinuxTray {
-            action_sender: worker_actions,
-            status: "Starting…".into(),
-        }
-        .spawn()
-        .ok();
+        let tray = LinuxTray::new(worker_actions, "Starting…".into())
+            .spawn()
+            .ok();
         let (sender, messages) = mpsc::channel();
         let tray_updates = TrayUpdates { sender };
         std::thread::spawn(move || {
@@ -3789,10 +3831,7 @@ mod menu_tests {
                 };
                 assert!(notice.starts_with("@notice:"));
                 let (action_sender, _) = mpsc::channel();
-                let mut tray = LinuxTray {
-                    action_sender,
-                    status: phase.into(),
-                };
+                let mut tray = LinuxTray::new(action_sender, phase.into());
                 tray.update_status(notice);
                 assert_eq!(tray.status, phase);
                 let ksni::MenuItem::Standard(primary) = tray.menu().remove(2) else {
@@ -3812,10 +3851,7 @@ mod menu_tests {
     fn tray_navigation_and_capture_dispatch_are_distinct() {
         let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
         tray.activate(0, 0);
         assert_eq!(receiver.recv().unwrap(), TrayAction::OpenTranscripts);
         #[cfg(not(feature = "ask"))]
@@ -3856,10 +3892,7 @@ mod menu_tests {
     fn tray_shows_check_for_updates_but_disabled_without_a_feed() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let tray = LinuxTray::new(action_sender, "Ready".into());
         let item = tray
             .menu()
             .into_iter()
@@ -3877,10 +3910,7 @@ mod menu_tests {
     fn tray_keeps_quick_actions_and_links_preferences_to_settings() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let tray = LinuxTray::new(action_sender, "Ready".into());
         fn labels(items: Vec<ksni::MenuItem<LinuxTray>>, into: &mut Vec<String>) {
             for item in items {
                 match item {
@@ -3922,6 +3952,37 @@ mod menu_tests {
         assert!(!found.iter().any(|label| label.starts_with("Model")));
     }
 
+    #[test]
+    fn tray_finishes_a_meeting_with_the_current_stop_token() {
+        let _guard = runtime_test_guard();
+        let (action_sender, receiver) = mpsc::channel();
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
+        let info = crate::meeting::SessionInfo {
+            id: crate::meeting::MeetingId::new(),
+            started_at_ms: 0,
+        };
+        let key = crate::meeting::StopKey {
+            id: info.id,
+            generation: 4,
+        };
+        let view = MeetingView::ConfirmStop {
+            info,
+            health: crate::meeting::CaptureHealth::default(),
+            key,
+        };
+        tray.update_meeting(&view, 0);
+
+        let finish = find_menu_action(tray.menu(), "Finish meeting").unwrap();
+        (finish.activate)(&mut tray);
+
+        assert_eq!(
+            receiver.try_recv().unwrap(),
+            TrayAction::Meeting(MeetingCall::desktop(MeetingRequest::Finish(key)))
+        );
+        assert_eq!(tray.icon_name(), "media-record-symbolic");
+        assert_eq!(tray.tool_tip().description, "Recording meeting");
+    }
+
     fn find_menu_action(
         items: Vec<ksni::MenuItem<LinuxTray>>,
         label: &str,
@@ -3937,10 +3998,7 @@ mod menu_tests {
     fn tray_recovery_and_folder_actions_dispatch_shared_operations() {
         let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
         for (label, command) in [
             ("Copy last transcript", "copy-last"),
             ("Paste last transcript", "paste-last"),
@@ -3967,10 +4025,7 @@ mod menu_tests {
     fn control_messages_preserve_tray_phase_and_busy_sensitivity() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Transcribing…".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Transcribing…".into());
         for message in [
             "@notice:copy unavailable",
             "@refresh",

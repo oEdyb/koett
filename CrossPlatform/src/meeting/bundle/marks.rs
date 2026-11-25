@@ -87,7 +87,7 @@ pub(crate) struct MarkWriter {
 }
 
 impl MarkWriter {
-    pub(super) fn start(directory: &Path) -> io::Result<Self> {
+    pub(in crate::meeting) fn start(directory: &Path) -> io::Result<Self> {
         let assets = directory.join("assets");
         private_directory(&assets)?;
         sync_directory(directory)?;
