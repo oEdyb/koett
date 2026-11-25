@@ -514,6 +514,10 @@ fn mark_close_waits_for_registered_capture_and_rejects_after_cutoff() {
             thread::sleep(Duration::from_millis(2));
         }
         assert!(!sink.submit(2, Offset(40), b"after cutoff".to_vec()));
+        assert!(!sink.submit(5, Offset(31), b"new after cutoff".to_vec()));
+        assert!(sink.begin(3, Offset(29)));
+        assert!(sink.submit(3, Offset(29), b"late begin".to_vec()));
+        assert!(sink.submit(4, Offset(30), b"late submit".to_vec()));
         assert!(sink.submit(1, Offset(30), b"at cutoff".to_vec()));
         assert!(close.join().unwrap().is_empty());
     });
@@ -523,7 +527,7 @@ fn mark_close_waits_for_registered_capture_and_rejects_after_cutoff() {
             .iter()
             .map(|mark| mark.id)
             .collect::<Vec<_>>(),
-        [1]
+        [3, 1, 4]
     );
 }
 

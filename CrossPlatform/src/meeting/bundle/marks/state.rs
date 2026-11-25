@@ -8,6 +8,16 @@ pub(super) enum Lifecycle {
     Closed,
 }
 
+impl Lifecycle {
+    fn accepts(&self, offset: Offset) -> bool {
+        match self {
+            Self::Open => true,
+            Self::Draining(cutoff) => offset <= *cutoff,
+            Self::Closed => false,
+        }
+    }
+}
+
 pub(super) struct State {
     pub(super) lifecycle: Lifecycle,
     groups: BTreeMap<u64, Option<Group>>,
@@ -106,16 +116,14 @@ impl State {
             return false;
         }
         match (self.groups.entry(id), input) {
-            (Entry::Vacant(entry), Input::Begin(offset))
-                if matches!(self.lifecycle, Lifecycle::Open) =>
-            {
+            (Entry::Vacant(entry), Input::Begin(offset)) if self.lifecycle.accepts(offset) => {
                 entry.insert(Some(Group {
                     offset,
                     phase: Phase::Capturing,
                 }));
             }
             (Entry::Vacant(entry), Input::Submit(offset, png))
-                if matches!(self.lifecycle, Lifecycle::Open) =>
+                if self.lifecycle.accepts(offset) =>
             {
                 entry.insert(Some(Group {
                     offset,
@@ -196,12 +204,7 @@ impl State {
     }
 
     pub(super) fn can_commit(&self, id: u64, offset: Offset) -> bool {
-        let within_cutoff = match self.lifecycle {
-            Lifecycle::Open => true,
-            Lifecycle::Draining(cutoff) => offset <= cutoff,
-            Lifecycle::Closed => false,
-        };
-        within_cutoff
+        self.lifecycle.accepts(offset)
             && self
                 .groups
                 .get(&id)
