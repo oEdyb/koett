@@ -1,0 +1,197 @@
+use std::collections::BTreeMap;
+use std::path::PathBuf;
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use super::{Backend, CloseGoal, MeetingId, Offset, SessionInfo, TrackSeal, Tracks};
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Manifest {
+    #[serde(flatten, with = "SessionInfoWire")]
+    pub(crate) info: SessionInfo,
+    pub(crate) mic: Option<String>,
+    #[serde(with = "BackendWire")]
+    pub(crate) backend_pref: Backend,
+    pub(crate) keep_audio: bool,
+    pub(crate) export_dir: Option<PathBuf>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "SessionInfo")]
+struct SessionInfoWire {
+    #[serde(with = "meeting_id")]
+    id: MeetingId,
+    started_at_ms: u64,
+}
+
+mod meeting_id {
+    use super::*;
+
+    pub(super) fn serialize<S: Serializer>(
+        id: &MeetingId,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(id)
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<MeetingId, D::Error> {
+        let value = String::deserialize(deserializer)?;
+        MeetingId::parse(&value).ok_or_else(|| serde::de::Error::custom("invalid meeting id"))
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub(super) struct ManifestFile {
+    pub(super) version: u32,
+    #[serde(flatten)]
+    pub(super) manifest: Manifest,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Backend", rename_all = "snake_case")]
+enum BackendWire {
+    Gpu,
+    Parakeet,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Offset")]
+struct OffsetWire(u64);
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Intent {
+    #[serde(with = "OffsetWire")]
+    pub(crate) cutoff: Offset,
+    #[serde(flatten, with = "intent_goal")]
+    pub(crate) goal: CloseGoal,
+}
+
+mod intent_goal {
+    use super::*;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(tag = "goal", rename_all = "snake_case")]
+    enum GoalWire<'a> {
+        Finish,
+        Hold,
+        Interrupted {
+            #[serde(default, skip_serializing_if = "str::is_empty")]
+            issue: std::borrow::Cow<'a, str>,
+        },
+    }
+
+    pub(super) fn serialize<S: Serializer>(
+        goal: &CloseGoal,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        let wire = match goal {
+            CloseGoal::Finish => GoalWire::Finish,
+            CloseGoal::Hold => GoalWire::Hold,
+            CloseGoal::Interrupted(issue) => GoalWire::Interrupted {
+                issue: issue.as_str().into(),
+            },
+        };
+        wire.serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<CloseGoal, D::Error> {
+        Ok(match GoalWire::deserialize(deserializer)? {
+            GoalWire::Finish => CloseGoal::Finish,
+            GoalWire::Hold => CloseGoal::Hold,
+            GoalWire::Interrupted { issue } => CloseGoal::Interrupted(issue.into_owned()),
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Seal {
+    #[serde(with = "OffsetWire")]
+    pub(crate) cutoff: Offset,
+    #[serde(flatten, with = "TracksWire")]
+    pub(crate) tracks: Tracks<TrackSeal>,
+    pub(crate) mark_issues: Vec<MarkIssue>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Tracks<TrackSeal>")]
+struct TracksWire {
+    #[serde(with = "TrackSealWire")]
+    you: TrackSeal,
+    #[serde(with = "TrackSealWire")]
+    other: TrackSeal,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "TrackSeal")]
+struct TrackSealWire {
+    valid_bytes: u64,
+    #[serde(with = "OffsetWire")]
+    captured_until: Offset,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct MarkIssue {
+    pub(crate) id: u64,
+    pub(crate) issue: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Job {
+    pub(crate) attempts: u64,
+    pub(crate) last_error: JobError,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "message", rename_all = "snake_case")]
+pub(crate) enum JobError {
+    Decode(String),
+    Publish(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct HistoryReceipt {
+    pub(crate) id: String,
+    pub(crate) created_at_ms: u64,
+    pub(crate) model: String,
+    pub(crate) text_sha256: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Publication {
+    pub(crate) history: HistoryReceipt,
+    pub(crate) assets: Vec<String>,
+    pub(crate) backends: BTreeMap<String, usize>,
+    pub(crate) fallback: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Receipt {
+    pub(crate) transcript_sha256: String,
+    #[serde(flatten)]
+    pub(crate) publication: Publication,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct Projections {
+    pub(crate) history: HistoryProjection,
+    pub(crate) export: ExportProjection,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum HistoryProjection {
+    Indexed,
+    Pending,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum ExportProjection {
+    Disabled,
+    Exported,
+    Pending,
+}
