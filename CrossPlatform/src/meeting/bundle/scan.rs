@@ -91,7 +91,7 @@ fn inspect(directory: &Path, id: MeetingId) -> io::Result<DiskState> {
         Err(error) if error.kind() == io::ErrorKind::NotFound => None,
         Err(error) => return Err(error),
     };
-    if let Some(lock) = &lock {
+    if let Some(lock) = lock {
         match lock.try_lock_shared() {
             Ok(()) => {}
             Err(TryLockError::WouldBlock) => {

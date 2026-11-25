@@ -199,6 +199,57 @@ fn another_handle_holding_the_lock_is_active() {
 }
 
 #[test]
+fn bundle_can_open_while_scan_reads_the_transcript() {
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    use std::process::Command;
+
+    let root = TestRoot::new();
+    let manifest = manifest();
+    let id = manifest.info.id;
+    let bundle = Bundle::create(&root.0, manifest).unwrap();
+    let markdown = "# Hej\n";
+    publish(&bundle, markdown, false).unwrap();
+    let transcript = bundle.directory().join(TRANSCRIPT);
+    drop(bundle);
+    fs::remove_file(&transcript).unwrap();
+    assert!(
+        Command::new("mkfifo")
+            .arg(&transcript)
+            .status()
+            .unwrap()
+            .success()
+    );
+
+    let scan_root = root.0.clone();
+    let scanner = thread::spawn(move || scan(&scan_root, id).unwrap());
+    let deadline = Instant::now() + Duration::from_secs(3);
+    let mut transcript = loop {
+        match OpenOptions::new()
+            .write(true)
+            .custom_flags(libc::O_NONBLOCK)
+            .open(&transcript)
+        {
+            Ok(file) => break file,
+            Err(error)
+                if error.raw_os_error() == Some(libc::ENXIO) && Instant::now() < deadline =>
+            {
+                thread::sleep(Duration::from_millis(2));
+            }
+            Err(error) => panic!("scan did not open the transcript: {error}"),
+        }
+    };
+    let opened = Bundle::open(&root.0, id);
+    transcript.write_all(markdown.as_bytes()).unwrap();
+    drop(transcript);
+    assert!(matches!(
+        scanner.join().unwrap(),
+        Some(DiskState::Complete { .. })
+    ));
+    opened.unwrap();
+}
+
+#[test]
 fn a_bundle_is_private_created_once_and_has_flat_v1_records() {
     let root = TestRoot::new();
     let manifest = manifest();
