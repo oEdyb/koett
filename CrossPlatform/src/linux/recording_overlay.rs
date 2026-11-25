@@ -1,9 +1,11 @@
 //! Optional GTK layer-shell feedback. The shim must precede libwayland in the
 //! dynamic loader's symbol scope; late dlopen alone is insufficient. See
 //! https://github.com/wmww/gtk4-layer-shell/blob/main/linking.md.
+mod meeting;
 mod position;
 use gtk4::{self as gtk, glib::translate::ToGlibPtr, prelude::*};
 use libloading::Library;
+pub(super) use meeting::MeetingPill;
 use std::os::unix::process::CommandExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -204,7 +206,10 @@ impl LayerShell {
 
 /// The pencil follows a live stroke, and stays for the whole of a draw lock.
 fn shows_pencil(pill: &Pill) -> bool {
-    pill.timeline.drawing() || super::sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire)
+    pill.timeline.drawing()
+        || super::sketch::DRAW_LOCKED.load(std::sync::atomic::Ordering::Acquire)
+        || (matches!(pill.phase, Phase::Meeting | Phase::MeetingConfirm)
+            && super::sketch::MEETING_INK.load(std::sync::atomic::Ordering::Acquire))
 }
 
 enum PillLayer {
@@ -273,6 +278,15 @@ pub(super) enum Phase {
     Recovery,
     Media,
     Message,
+    Meeting,
+    MeetingConfirm,
+}
+
+impl Phase {
+    /// Audio is being captured: the recording dot, or the pencil while drawing.
+    fn records(self) -> bool {
+        matches!(self, Self::Recording | Self::Meeting | Self::MeetingConfirm)
+    }
 }
 
 /// One short pill row for an engine error; the window keeps the full text.
@@ -464,6 +478,13 @@ pub struct RecordingOverlay {
     window: gtk::Window,
     drawing: gtk::DrawingArea,
     primary: gtk::Label,
+    meeting_title: gtk::Label,
+    meeting_lane: gtk::Box,
+    stop: gtk::Button,
+    confirm: Vec<gtk::Button>,
+    meeting: Rc<RefCell<Option<MeetingPill>>>,
+    /// When the meeting's confirm row appeared, to arm its ending choices.
+    confirm_shown: Rc<std::cell::Cell<Instant>>,
     cancel: gtk::Button,
     copy: gtk::Button,
     paste: gtk::Button,
@@ -508,7 +529,7 @@ fn paint(context: &gtk::cairo::Context, pill: &Pill, height: f64) -> Result<(), 
     }
     let palette = if pill.dark { &DARK } else { &LIGHT };
     let (ar, ag, ab) = palette.accent;
-    let drawing = pill.phase == Phase::Recording && shows_pencil(pill);
+    let drawing = pill.phase.records() && shows_pencil(pill);
     let radius = height / 2.0;
     rounded(
         context,
@@ -569,12 +590,12 @@ fn paint_body(
     palette: &Palette,
 ) -> Result<(), gtk::cairo::Error> {
     let (ar, ag, ab) = palette.accent;
-    let drawing = phase == Phase::Recording && shows_pencil(pill);
+    let drawing = phase.records() && shows_pencil(pill);
     context.set_source_rgb(ar, ag, ab);
     context.set_line_cap(gtk::cairo::LineCap::Round);
     context.set_line_join(gtk::cairo::LineJoin::Round);
     match phase {
-        Phase::Recording if drawing => {
+        _ if drawing => {
             context.set_line_width(1.8);
             context.move_to(18.0, cy + 6.0);
             context.line_to(19.0, cy + 2.0);
@@ -584,7 +605,7 @@ fn paint_body(
             context.close_path();
             context.stroke()?;
         }
-        Phase::Recording => {
+        Phase::Recording | Phase::Meeting | Phase::MeetingConfirm => {
             context.arc(23.0, cy, 4.0, 0.0, std::f64::consts::TAU);
             context.fill()?;
         }
@@ -864,6 +885,35 @@ impl RecordingOverlay {
         let paste = pill_button("Paste");
         paste.set_size_request(PASTE_W, 28);
         main.put(&paste, PASTE_X, 10.0);
+        // A meeting names itself at the strip's edge and keeps the clock where
+        // dictation has it. Stop and the confirm row share one lane that ends
+        // at the result buttons' right edge.
+        let meeting_title = gtk::Label::new(Some("Meeting"));
+        meeting_title.add_css_class("koett-pill-text");
+        meeting_title.set_xalign(0.0);
+        meeting_title.set_size_request(120, ROW);
+        meeting_title.set_can_target(false);
+        meeting_title.set_visible(false);
+        main.put(&meeting_title, STRIP_X, 0.0);
+        let meeting_controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        meeting_controls.set_halign(gtk::Align::End);
+        meeting_controls.set_valign(gtk::Align::Center);
+        meeting_controls.set_hexpand(true);
+        let stop = pill_button("Stop");
+        meeting_controls.append(&stop);
+        let confirm: Vec<gtk::Button> = meeting::Choice::ROW
+            .iter()
+            .map(|choice| {
+                let button = pill_button(choice.label());
+                meeting_controls.append(&button);
+                button
+            })
+            .collect();
+        let meeting_lane = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        meeting_lane.set_size_request(WIDTH - 11 - STRIP_X as i32, ROW);
+        meeting_lane.append(&meeting_controls);
+        meeting_lane.set_visible(false);
+        main.put(&meeting_lane, STRIP_X, 0.0);
 
         let overlay = gtk::Overlay::new();
         overlay.set_child(Some(&drawing));
@@ -875,6 +925,39 @@ impl RecordingOverlay {
                 let _ = actions.send(super::TrayAction::Cancel);
             }
         });
+        let meeting = Rc::new(RefCell::new(None::<MeetingPill>));
+        let confirm_shown = Rc::new(std::cell::Cell::new(Instant::now()));
+        let send_meeting = {
+            let actions = actions.clone();
+            move |request| {
+                let _ = actions.send(super::TrayAction::Meeting(
+                    crate::meeting::MeetingCall::desktop(request),
+                ));
+            }
+        };
+        stop.connect_clicked({
+            let meeting = meeting.clone();
+            let send = send_meeting.clone();
+            move |_| {
+                if let Some(request) = meeting.borrow().as_ref().and_then(MeetingPill::stop) {
+                    send(request);
+                }
+            }
+        });
+        for (button, choice) in confirm.iter().zip(meeting::Choice::ROW) {
+            button.connect_clicked({
+                let meeting = meeting.clone();
+                let shown = confirm_shown.clone();
+                let send = send_meeting.clone();
+                move |_| {
+                    if let Some(request) =
+                        choice.request(meeting.borrow().as_ref(), shown.get(), Instant::now())
+                    {
+                        send(request);
+                    }
+                }
+            });
+        }
         let acted = Rc::new(std::cell::Cell::new(None));
         paste.connect_clicked({
             let actions = actions.clone();
@@ -940,6 +1023,12 @@ impl RecordingOverlay {
             window,
             drawing,
             primary,
+            meeting_title,
+            meeting_lane,
+            stop,
+            confirm,
+            meeting,
+            confirm_shown,
             cancel,
             copy,
             paste,
@@ -1062,10 +1151,12 @@ impl RecordingOverlay {
         done: bool,
         media_preview: Option<&str>,
         message: Option<&str>,
+        meeting: Option<&MeetingPill>,
     ) {
         if self.closed.get() {
             return;
         }
+        self.meeting.replace(meeting.cloned());
         if self.layout.borrow().changed() {
             let layout = super::monitor_layout::MonitorLayout::new();
             let previous = self
@@ -1085,14 +1176,18 @@ impl RecordingOverlay {
             *self.layout.borrow_mut() = layout;
         }
         let recording = started.is_some();
-        let phase = phase(
-            state,
-            recording,
-            recovering,
-            done,
-            media_preview.is_some(),
-            message.is_some(),
-        );
+        let phase = match meeting {
+            Some(pill) if pill.confirming() => Phase::MeetingConfirm,
+            Some(_) => Phase::Meeting,
+            None => phase(
+                state,
+                recording,
+                recovering,
+                done,
+                media_preview.is_some(),
+                message.is_some(),
+            ),
+        };
         let (dark, _) = super::theme::appearance(&self.window.settings(), self.window.upcast_ref());
         let reduced = !self.drawing.settings().is_gtk_enable_animations();
         let mut pill = self.state.borrow_mut();
@@ -1131,6 +1226,9 @@ impl RecordingOverlay {
             pill.morph_started = None;
             self.body.remove_css_class("koett-pill-morph");
         }
+        if pill.phase != phase && phase == Phase::MeetingConfirm {
+            self.confirm_shown.set(Instant::now());
+        }
         pill.phase = phase;
         pill.dark = dark;
         pill.levels = levels.cloned();
@@ -1157,6 +1255,7 @@ impl RecordingOverlay {
             (0, 0)
         };
         let actions = shows_actions(phase, pill.hovered);
+        let stopping = phase == Phase::Meeting && pill.hovered;
         let height = ROW;
         let strip =
             !pill.timeline.is_empty() && matches!(phase, Phase::Recording | Phase::Transcribing);
@@ -1195,10 +1294,11 @@ impl RecordingOverlay {
                 None => result_preview(self.latest.borrow().as_deref().unwrap_or("Done")),
             },
             Phase::Message => message.unwrap_or_default().to_string(),
-            Phase::Hidden => String::new(),
+            Phase::Meeting => clock(meeting.map_or(0, MeetingPill::elapsed_now)),
+            Phase::Hidden | Phase::MeetingConfirm => String::new(),
         };
         self.primary.set_text(&text);
-        if strip || actions {
+        if strip || actions || phase == Phase::Meeting {
             self.primary.set_xalign(1.0);
             self.primary.set_size_request(48, ROW);
             if let Some(main) = self.primary.parent().and_downcast::<gtk::Fixed>() {
@@ -1221,7 +1321,7 @@ impl RecordingOverlay {
             }
         }
         self.primary.set_max_width_chars(match phase {
-            _ if strip || actions => 6,
+            _ if strip || actions || phase == Phase::Meeting => 6,
             Phase::Message => 36,
             _ => 22,
         });
@@ -1230,8 +1330,16 @@ impl RecordingOverlay {
         }
 
         // Hovering swaps the clock for ✕; the strip keeps drawing beside it.
-        self.primary.set_visible(!actions);
+        self.primary
+            .set_visible(!actions && !stopping && phase != Phase::MeetingConfirm);
         self.cancel.set_visible(actions);
+        self.meeting_title.set_visible(phase == Phase::Meeting);
+        self.meeting_lane
+            .set_visible(stopping || phase == Phase::MeetingConfirm);
+        self.stop.set_visible(stopping);
+        for button in &self.confirm {
+            button.set_visible(phase == Phase::MeetingConfirm);
+        }
         // Copied and Cancelled have nothing left to do: one line, no button.
         self.copy.set_visible(
             matches!(phase, Phase::Done | Phase::Recovery | Phase::Media)
@@ -1239,11 +1347,13 @@ impl RecordingOverlay {
         );
         self.paste.set_visible(phase == Phase::Recovery);
 
-        self.warning
-            .set_visible((warning.is_some() || message.is_some()) && recording);
+        let issue = meeting.and_then(MeetingPill::issue);
+        self.warning.set_visible(
+            issue.is_some() || ((warning.is_some() || message.is_some()) && recording),
+        );
         self.warning.set_text(
-            warning
-                .map(|warning| warning.text())
+            issue
+                .or(warning.map(|warning| warning.text()))
                 .or(message)
                 .unwrap_or_default(),
         );
@@ -1257,7 +1367,13 @@ impl RecordingOverlay {
         // or transcribing); the pill never takes keyboard focus.
         let target = matches!(
             phase,
-            Phase::Recording | Phase::Transcribing | Phase::Done | Phase::Recovery | Phase::Media
+            Phase::Recording
+                | Phase::Transcribing
+                | Phase::Done
+                | Phase::Recovery
+                | Phase::Media
+                | Phase::Meeting
+                | Phase::MeetingConfirm
         );
         self.window.set_can_target(target);
         let visible = phase != Phase::Hidden && self.registered_to_show(phase != Phase::Hidden);

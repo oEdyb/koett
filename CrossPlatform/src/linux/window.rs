@@ -37,10 +37,6 @@ pub enum Update {
     Levels(crate::audio::AudioLevels),
 }
 
-fn update_meeting(_view: crate::meeting::MeetingView) {}
-
-fn update_meeting_sketch(_scope: crate::meeting::SketchScope) {}
-
 pub fn run(actions: Sender<TrayAction>, updates: Receiver<Update>, visible: bool) {
     let application = gtk::Application::builder()
         .application_id(super::APP_ID)
@@ -439,6 +435,8 @@ fn build_window(
     let mut asking_until = None::<Instant>;
     let mut sketch_recording = 0_u64;
     let mut recording_started = None::<Instant>;
+    let mut meeting_marks = None::<crate::meeting::MeetingMarkScope>;
+    let mut meeting_pill = None::<super::recording_overlay::MeetingPill>;
     let mut media_result = false;
     let mut state = String::from("Starting…");
     let mut notice = None::<String>;
@@ -465,7 +463,7 @@ fn build_window(
             for update in updates.try_iter() {
                 if let Update::Status(message) = &update {
                     if message == "@undo-drawing" {
-                        if recording_started.is_some()
+                        if (recording_started.is_some() || meeting_marks.is_some())
                             && let Some(sketch) = &sketch
                         {
                             sketch.undo_last();
@@ -507,7 +505,7 @@ fn build_window(
                         let value = if Instant::now() >= expires {
                             serde_json::json!({"ok":false,"error":{"code":"drawing_request_expired","message":"Drawing request expired; inspect drawing-status before retrying"}})
                         } else if request == DrawingRequest::ToggleLock {
-                            if recording_started.is_some()
+                            if (recording_started.is_some() || meeting_marks.is_some())
                                 && sketch.as_ref().is_some_and(|sketch| sketch.toggle_lock())
                             {
                                 sketch
@@ -519,7 +517,7 @@ fn build_window(
                                 serde_json::json!({"ok":false,"error":{"code":"no_drawing_session","message":"Draw lock needs a recording with drawing on"}})
                             }
                         } else if request == DrawingRequest::Undo {
-                            if recording_started.is_some()
+                            if (recording_started.is_some() || meeting_marks.is_some())
                                 && sketch.as_ref().is_some_and(|sketch| sketch.undo_last())
                             {
                                 serde_json::json!({"ok":true,"status":"drawing_removed"})
@@ -643,8 +641,22 @@ fn build_window(
                             delivery_copy.set_label("Copy transcript");
                         }
                     }
-                    Update::Meeting(view) => update_meeting(view),
-                    Update::MeetingSketch(scope) => update_meeting_sketch(scope),
+                    Update::Meeting(view) => {
+                        meeting_pill = super::recording_overlay::MeetingPill::from_view(&view);
+                    }
+                    Update::MeetingSketch(crate::meeting::SketchScope::Open(scope)) => {
+                        meeting_marks = Some(scope);
+                    }
+                    // Sketches after the cutoff go before the overlay finishes the rest.
+                    Update::MeetingSketch(crate::meeting::SketchScope::Finishing(id, cutoff)) => {
+                        meeting_marks = None;
+                        if let Some(sketch) = &sketch {
+                            sketch.cut_off(id, cutoff);
+                        }
+                    }
+                    Update::MeetingSketch(crate::meeting::SketchScope::Closed) => {
+                        meeting_marks = None;
+                    }
                     Update::Status(message) if message.starts_with("@notice:@media-result:") => {
                         let text = message
                             .trim_start_matches("@notice:@media-result:")
@@ -987,12 +999,16 @@ fn build_window(
                 let paused = audio_levels
                     .as_ref()
                     .is_some_and(crate::audio::AudioLevels::paused);
-                sketch.update(
-                    &sketch_application,
-                    recording_started.map(|started| (started, sketch_recording)),
-                    asking,
-                    paused,
-                );
+                let target = match &meeting_marks {
+                    Some(scope) => Some(super::sketch::SketchTarget::Meeting(scope.clone())),
+                    None => {
+                        recording_started.map(|started| super::sketch::SketchTarget::Dictation {
+                            started,
+                            recording: sketch_recording,
+                        })
+                    }
+                };
+                sketch.update(&sketch_application, target, asking, paused);
                 if let Some(message) = sketch.take_notice() {
                     if message.redraw_required {
                         pill_message = Some((
@@ -1004,7 +1020,7 @@ fn build_window(
                     notice_until = Some(Instant::now() + Duration::from_secs(12));
                 }
             }
-            let can_undo = recording_started.is_some()
+            let can_undo = (recording_started.is_some() || meeting_marks.is_some())
                 && sketch.as_ref().is_some_and(|sketch| sketch.can_undo());
             undo_drawing.set_enabled(can_undo);
             super::sketch::CAN_UNDO.store(can_undo, std::sync::atomic::Ordering::Release);
@@ -1031,6 +1047,7 @@ fn build_window(
                     }
                     .as_deref(),
                     pill_message.as_ref().map(|(text, _)| text.as_str()),
+                    meeting_pill.as_ref(),
                 );
             }
             status.set_text(
