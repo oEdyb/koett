@@ -54,6 +54,9 @@ impl TrackIngress {
     }
 
     pub(crate) fn push(&mut self, samples: &[f32], at: Instant) -> bool {
+        if !self.stamps.read_is_held() {
+            return false;
+        }
         if samples.is_empty() {
             return true;
         }
