@@ -581,6 +581,7 @@ pub(crate) enum ReplyError {
     DiskLow(String),
     IntentWriteFailed(String),
     ArtifactPending,
+    HelperUnavailable,
     DiskUnreadable(String),
 }
 
@@ -600,6 +601,9 @@ impl ReplyError {
             | Self::IntentWriteFailed(issue)
             | Self::DiskUnreadable(issue) => issue,
             Self::ArtifactPending => "This meeting does not have a committed transcript.",
+            Self::HelperUnavailable => {
+                "Set meeting.gpu_python to the faster-whisper virtual environment's Python."
+            }
         }
     }
 
@@ -615,6 +619,7 @@ impl ReplyError {
             Self::DiskLow(_) => "disk_low",
             Self::IntentWriteFailed(_) => "intent_write_failed",
             Self::ArtifactPending => "artifact_pending",
+            Self::HelperUnavailable => "helper_unavailable",
             Self::DiskUnreadable(_) => "disk_unreadable",
         }
     }

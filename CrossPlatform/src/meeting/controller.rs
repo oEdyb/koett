@@ -263,6 +263,12 @@ impl MeetingController {
             Request::Resume(key) => AdmittedRequest::Resume(key),
             Request::Finish(key) => AdmittedRequest::Finish(key),
             Request::Cancel(key) => AdmittedRequest::Cancel(key),
+            Request::Recover {
+                backend: Some(Backend::Gpu),
+                ..
+            } if settings.meeting.gpu_python.is_none() => {
+                return Err(ReplyError::HelperUnavailable);
+            }
             Request::Recover { id, backend } => {
                 let job = if matches!(self.active, Active::Idle) {
                     self.recover(id, backend)
