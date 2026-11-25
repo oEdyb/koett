@@ -89,14 +89,18 @@ fn each_cli_command_maps_to_the_contract_request() {
         })
     ));
     assert!(matches!(parse(&args(&["get", ID])), Ok(Command::Get(actual)) if actual == id));
+    assert!(matches!(
+        parse(&args(&["search", "meeting", "--limit", "1"])),
+        Ok(Command::Search { query, limit: 1 }) if query == "meeting"
+    ));
     for input in [
-        &["search", "meeting", "--limit", "1"][..],
-        &["asr-check"],
+        &["asr-check"][..],
         &["asr-check", "--fetch"],
+        &["recover", ID, "--backend", "gpu"],
     ] {
         assert_eq!(
-            offline(parse(&args(input)).unwrap(), Ok(false)),
-            json!({"version":1, "ok":false, "error":{"code":"not_available","message":"This meeting command is unavailable in this build."}})
+            offline(parse(&args(input)).unwrap(), Ok(false))["error"]["code"],
+            "helper_unavailable"
         );
     }
     for input in [
@@ -408,4 +412,71 @@ fn meeting_updates_do_not_arm_the_dictation_sketch() {
     assert!(
         matches!(updates.try_recv(), Ok(Update::Status(status)) if !status.starts_with("Recording"))
     );
+}
+
+#[test]
+#[ignore = "private XDG socket fixture for the hardware-free meeting recover gate"]
+fn s5_headless_fixture_daemon() {
+    use crate::meeting::MeetingController;
+    use crate::runtime::{EngineCommand, EngineUpdate};
+    use crate::settings::Settings;
+    use std::sync::atomic::AtomicU8;
+
+    let runtime = std::env::var_os("XDG_RUNTIME_DIR").unwrap();
+    assert!(Path::new(&runtime).join("s5-private-fixture").is_file());
+    let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+    let stop = Path::new(&runtime).join(format!("{display}.stop"));
+    let keep_running = std::env::var_os("KOETT_S5_KEEP_DAEMON").is_some();
+    let listener =
+        std::os::unix::net::UnixListener::bind(super::super::control::path().unwrap()).unwrap();
+    let (actions, incoming) = mpsc::channel();
+    thread::spawn(move || {
+        for connection in listener.incoming() {
+            let mut stream = connection.unwrap();
+            if let Some(bytes) = super::super::control::read_request(&mut stream)
+                && let Some(args) = bytes.strip_prefix(ROUTE)
+            {
+                let values: Vec<String> = serde_json::from_slice(args).unwrap();
+                assert!(matches!(
+                    parse(&values),
+                    Ok(Command::Daemon(
+                        MeetingRequest::Recover { .. } | MeetingRequest::Status(_)
+                    ))
+                ));
+                serve(&mut stream, args, &actions);
+            }
+        }
+    });
+
+    static ACTIVITY: AtomicU8 = AtomicU8::new(0);
+    let (commands, events) = mpsc::channel();
+    let (updates, notices) = mpsc::channel();
+    let settings = Settings::load().unwrap();
+    let mut controller = MeetingController::new(commands, updates, &ACTIVITY);
+    let mut ran_job = false;
+    loop {
+        if let Ok(TrayAction::Meeting(call)) = incoming.try_recv() {
+            controller.dispatch(call, true, &settings);
+        }
+        while let Ok(EngineCommand::MeetingEvent(event)) = events.try_recv() {
+            controller.receive(event, Instant::now());
+        }
+        for notice in notices.try_iter() {
+            match notice {
+                EngineUpdate::Meeting(crate::meeting::MeetingUpdate::View(
+                    MeetingView::Processing { .. },
+                    _,
+                )) => ran_job = true,
+                EngineUpdate::Meeting(crate::meeting::MeetingUpdate::View(
+                    MeetingView::Idle,
+                    _,
+                )) if ran_job && !keep_running => return,
+                _ => {}
+            }
+        }
+        if stop.exists() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
 }

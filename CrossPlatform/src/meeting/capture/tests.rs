@@ -724,3 +724,25 @@ impl Drop for TestDir {
         let _ = fs::remove_dir_all(&self.0);
     }
 }
+
+#[test]
+fn sealed_reader_rejects_damage_inside_the_committed_prefix() {
+    let mut bytes = Vec::new();
+    let mut writer = JournalWriter::new(&mut bytes).unwrap();
+    writer.pcm(Offset(0), &[0.25; BLOCK]).unwrap();
+    writer.pcm(Offset(BLOCK as u64), &[0.5; BLOCK]).unwrap();
+    let seal = read(&bytes, NO_CUTOFF).seal().unwrap();
+    let corrupted = bytes.len() - 1;
+    bytes[corrupted] ^= 1;
+
+    let path =
+        std::env::temp_dir().join(format!("koett-sealed-{}", super::super::MeetingId::new()));
+    fs::write(&path, &bytes).unwrap();
+    let mut reader = TrackReader::open_sealed(&path, NO_CUTOFF, seal).unwrap();
+    fs::remove_file(path).unwrap();
+    assert!(matches!(reader.next(), Some(Ok(TrackChunk::Pcm { .. }))));
+    assert_eq!(
+        reader.next().unwrap().unwrap_err().kind(),
+        io::ErrorKind::InvalidData
+    );
+}

@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
+use crate::history::HistoryStore;
 use crate::meeting::bundle::scan::{DiskState, scan, scan_all};
 use crate::meeting::{
     Backend, CloseGoal, MeetingCall, MeetingId, MeetingRequest, MeetingView, RecoveryReason, Reply,
@@ -24,6 +25,7 @@ enum Command {
     Daemon(MeetingRequest),
     List { recoverable: bool, limit: usize },
     Get(MeetingId),
+    Search { query: String, limit: usize },
     Unavailable,
 }
 
@@ -75,12 +77,20 @@ fn parse(values: &[String]) -> Result<Command, &'static str> {
             };
             return Ok(Command::List { recoverable, limit });
         }
-        ["search", _] | ["asr-check"] | ["asr-check", "--fetch"] => {
+        ["asr-check"] | ["asr-check", "--fetch"] => {
             return Ok(Command::Unavailable);
         }
-        ["search", _, "--limit", limit] => {
-            parse_limit(limit)?;
-            return Ok(Command::Unavailable);
+        ["search", query] => {
+            return Ok(Command::Search {
+                query: (*query).into(),
+                limit: 50,
+            });
+        }
+        ["search", query, "--limit", limit] => {
+            return Ok(Command::Search {
+                query: (*query).into(),
+                limit: parse_limit(limit)?,
+            });
         }
         _ => {
             return Err(
@@ -105,7 +115,11 @@ pub(super) fn run(values: &[String]) -> i32 {
         }
     };
     let reply = match command {
-        Command::Unavailable => failure(&ReplyError::NotAvailable),
+        Command::Unavailable
+        | Command::Daemon(MeetingRequest::Recover {
+            backend: Some(Backend::Gpu),
+            ..
+        }) => failure(&ReplyError::HelperUnavailable),
         command => match connect() {
             Ok(stream) => match command {
                 Command::Daemon(_) => {
@@ -255,7 +269,14 @@ fn offline(command: Command, daemon: Result<bool, &str>) -> Value {
             with_daemon(with_root(|root| list(root, recoverable, limit)), daemon)
         }
         Command::Get(id) => with_daemon(with_root(|root| get(root, id)), daemon),
-        Command::Unavailable => failure(&ReplyError::NotAvailable),
+        Command::Search { query, limit } => {
+            with_daemon(with_root(|root| search(root, &query, limit)), daemon)
+        }
+        Command::Unavailable
+        | Command::Daemon(MeetingRequest::Recover {
+            backend: Some(Backend::Gpu),
+            ..
+        }) => failure(&ReplyError::HelperUnavailable),
         Command::Daemon(_) => match daemon {
             Ok(_) => failure(&ReplyError::DaemonUnavailable),
             Err(issue) => {
@@ -329,6 +350,32 @@ fn get(root: &Path, id: MeetingId) -> Result<Value, ReplyError> {
         MeetingView::Unreadable { issue, .. } => Err(ReplyError::DiskUnreadable(issue)),
         _ => Err(ReplyError::ArtifactPending),
     }
+}
+
+fn search(root: &Path, query: &str, limit: usize) -> Result<Value, ReplyError> {
+    let path = crate::paths::history_database().map_err(ReplyError::DiskUnreadable)?;
+    let Some(store) = HistoryStore::open_read_only(&path).map_err(ReplyError::DiskUnreadable)?
+    else {
+        return Ok(json!({"items": []}));
+    };
+    let hits = store
+        .page(query, None, limit, Some("meeting:"))
+        .map_err(ReplyError::DiskUnreadable)?;
+    let mut items = Vec::new();
+    for hit in hits {
+        let Some(id) = hit.id.strip_prefix("meeting:").and_then(MeetingId::parse) else {
+            continue;
+        };
+        match get(root, id) {
+            Ok(mut data) => {
+                data["snippet"] = json!(hit.preview);
+                items.push(data);
+            }
+            Err(ReplyError::NotFound | ReplyError::ArtifactPending) => {}
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(json!({"items": items}))
 }
 
 fn find(root: &Path, id: MeetingId) -> Result<MeetingView, ReplyError> {

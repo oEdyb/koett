@@ -16,8 +16,12 @@ mod background;
 mod ctc_bias;
 mod hotwords;
 pub use ctc_bias::status as ctc_dictionary_bias_status;
+#[cfg(target_os = "linux")]
+mod meeting;
 mod nemotron;
 mod recovery;
+#[cfg(target_os = "linux")]
+pub(crate) use meeting::{MAX_SPEECH_FRAMES, StreamingVad};
 pub use nemotron::NemotronTranscriber;
 
 pub use background::{BackgroundSession, TranscriptionWorker};
@@ -240,6 +244,13 @@ impl ParakeetTranscriber {
 }
 
 fn load_vad(model_directory: &Path) -> Result<Option<VoiceActivityDetector>, String> {
+    load_vad_with_buffer(model_directory, 60.0)
+}
+
+fn load_vad_with_buffer(
+    model_directory: &Path,
+    buffer_seconds: f32,
+) -> Result<Option<VoiceActivityDetector>, String> {
     let vad_path = model_directory.join(VAD_FILE);
     Ok(if vad_path.is_file() {
         let mut vad_config = VadModelConfig::default();
@@ -253,7 +264,7 @@ fn load_vad(model_directory: &Path) -> Result<Option<VoiceActivityDetector>, Str
         vad_config.num_threads = 1;
         vad_config.provider = Some("cpu".to_string());
         Some(
-            VoiceActivityDetector::create(&vad_config, 60.0)
+            VoiceActivityDetector::create(&vad_config, buffer_seconds)
                 .ok_or_else(|| "sherpa-onnx could not load voice detection".to_string())?,
         )
     } else {

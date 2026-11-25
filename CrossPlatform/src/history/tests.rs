@@ -41,7 +41,7 @@ fn paging_search_retries_restart_and_conflicts() {
     let mut conflict = record("000");
     conflict.text = "changed".into();
     assert!(store.save(&conflict).is_err());
-    let first = store.page("", None, 1000).unwrap();
+    let first = store.page("", None, 1000, None).unwrap();
     assert_eq!(first.len(), 50);
     assert_eq!(first[0].id, "109");
     let last = first.last().unwrap();
@@ -49,7 +49,10 @@ fn paging_search_retries_restart_and_conflicts() {
         id: last.id.clone(),
         created_at_ms: last.created_at_ms,
     };
-    assert_eq!(store.page("", Some(&cursor), 50).unwrap()[0].id, "059");
+    assert_eq!(
+        store.page("", Some(&cursor), 50, None).unwrap()[0].id,
+        "059"
+    );
     for query in [
         "Héllo, 世界!",
         "OR",
@@ -58,9 +61,12 @@ fn paging_search_retries_restart_and_conflicts() {
         "literal*",
         "hello OR",
     ] {
-        assert!(!store.page(query, None, 50).unwrap().is_empty(), "{query}");
+        assert!(
+            !store.page(query, None, 50, None).unwrap().is_empty(),
+            "{query}"
+        );
     }
-    assert!(store.page("*** : ()", None, 50).unwrap().is_empty());
+    assert!(store.page("*** : ()", None, 50, None).unwrap().is_empty());
     drop(store);
     assert_eq!(
         HistoryStore::open(temp.db()).unwrap().get("000").unwrap(),
@@ -127,7 +133,7 @@ fn legacy_unicode_markers_raw_cleaned_retry_and_original_bytes() {
     fs::write(&source, bytes).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 3);
     assert_eq!(store.import_legacy(&source).unwrap(), 3);
-    assert_eq!(store.page("", None, 50).unwrap().len(), 3);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 3);
     let rows: Vec<Vec<u8>> = store
         .connection
         .prepare("SELECT content FROM legacy_fragments ORDER BY byte_offset")
@@ -138,7 +144,7 @@ fn legacy_unicode_markers_raw_cleaned_retry_and_original_bytes() {
         .unwrap();
     assert_eq!(rows.concat(), bytes);
     assert_eq!(fs::read(&source).unwrap(), bytes);
-    let selected = store.page("raw", None, 50).unwrap();
+    let selected = store.page("raw", None, 50, None).unwrap();
     assert_eq!(selected.len(), 1);
     assert_eq!(
         store
@@ -203,10 +209,13 @@ fn benchmark_100k() {
     let store = HistoryStore::open(temp.db()).unwrap();
     let open = start.elapsed();
     let start = std::time::Instant::now();
-    assert_eq!(store.page("", None, 50).unwrap().len(), 50);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 50);
     let recent = start.elapsed();
     let start = std::time::Instant::now();
-    assert_eq!(store.page("searchable 世界", None, 50).unwrap().len(), 50);
+    assert_eq!(
+        store.page("searchable 世界", None, 50, None).unwrap().len(),
+        50
+    );
     let search = start.elapsed();
     eprintln!("100k open={open:?} recent={recent:?} search={search:?}");
 }
@@ -236,7 +245,7 @@ fn interrupted_import_retries_without_duplicate_records() {
     let store = HistoryStore::open(temp.db()).unwrap();
     store.connection.execute_batch("CREATE TRIGGER simulate_interruption BEFORE INSERT ON transcripts WHEN NEW.id='two' BEGIN SELECT RAISE(ABORT,'interrupted'); END;").unwrap();
     assert!(store.import_legacy(&source).is_err());
-    assert_eq!(store.page("", None, 50).unwrap().len(), 0);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 0);
     store
         .connection
         .execute_batch("DROP TRIGGER simulate_interruption")
@@ -244,10 +253,10 @@ fn interrupted_import_retries_without_duplicate_records() {
     drop(store);
     let store = HistoryStore::open(temp.db()).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
-    assert_eq!(store.page("", None, 50).unwrap().len(), 2);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 2);
     fs::write(&source,format!("{bytes}<!-- koett-transcript:dGhyZWU= -->\n## 2026-08-24T12:30:00Z\n\nModel: Parakeet\n\nRepeated.\n\n")).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 3);
-    assert_eq!(store.page("", None, 50).unwrap().len(), 3);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 3);
 }
 
 #[test]
@@ -263,7 +272,10 @@ fn marked_dictation_preserves_timestamp_headings_and_previews_are_bounded() {
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
     assert_eq!(store.get("heading").unwrap().unwrap().text, body);
     assert_eq!(
-        store.page("", None, 50).unwrap()[0].preview.chars().count(),
+        store.page("", None, 50, None).unwrap()[0]
+            .preview
+            .chars()
+            .count(),
         240
     );
 }
@@ -282,12 +294,12 @@ fn huge_unmarked_archive_is_searchable_with_unknown_original_metadata() {
     let store = HistoryStore::open(temp.db()).unwrap();
     let count = store.import_legacy(&source).unwrap();
     assert!(count > 1);
-    let results = store.page("archiveendingneedle", None, 50).unwrap();
+    let results = store.page("archiveendingneedle", None, 50, None).unwrap();
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].created_at_ms, 0);
     assert_eq!(results[0].model, "Imported archive");
     assert_eq!(store.import_legacy(&source).unwrap(), count);
-    assert_eq!(store.page("", None, 50).unwrap().len(), count);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), count);
     assert_eq!(fs::read(&source).unwrap(), text.as_bytes());
     let original: Vec<Vec<u8>> = store
         .connection
@@ -315,7 +327,7 @@ fn archive_chunks_complete_unicode_scalars_and_reconstruct_exact_text() {
         let store = HistoryStore::open(temp.db()).unwrap();
         let count = store.import_legacy(&source).unwrap();
         let mut chunks: Vec<_> = store
-            .page("", None, 50)
+            .page("", None, 50, None)
             .unwrap()
             .into_iter()
             .map(|summary| {
@@ -338,7 +350,7 @@ fn archive_chunks_complete_unicode_scalars_and_reconstruct_exact_text() {
         assert_eq!(reconstructed, text);
         assert_eq!(
             store
-                .page("Unicodeboundaryneedle 世界 café", None, 50)
+                .page("Unicodeboundaryneedle 世界 café", None, 50, None)
                 .unwrap()
                 .len(),
             1
@@ -358,7 +370,7 @@ fn identical_archive_chunks_at_different_offsets_remain_distinct() {
     fs::write(&source, format!("{chunk}{chunk}")).unwrap();
     let store = HistoryStore::open(temp.db()).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
-    let rows = store.page("chunkneedle", None, 50).unwrap();
+    let rows = store.page("chunkneedle", None, 50, None).unwrap();
     assert_eq!(rows.len(), 2);
     assert_ne!(rows[0].id, rows[1].id);
     assert_eq!(
@@ -366,7 +378,7 @@ fn identical_archive_chunks_at_different_offsets_remain_distinct() {
         store.get(&rows[1].id).unwrap().unwrap().text
     );
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
-    assert_eq!(store.page("chunkneedle", None, 50).unwrap().len(), 2);
+    assert_eq!(store.page("chunkneedle", None, 50, None).unwrap().len(), 2);
 }
 
 #[test]
@@ -390,7 +402,10 @@ fn previously_preserved_only_archives_are_indexed_on_explicit_retry() {
         .unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
     assert_eq!(
-        store.page("newlysearchableneedle", None, 50).unwrap().len(),
+        store
+            .page("newlysearchableneedle", None, 50, None)
+            .unwrap()
+            .len(),
         1
     );
 }
@@ -421,7 +436,7 @@ fn default_open_does_not_read_legacy_archive() {
     let legacy = crate::paths::history_file().unwrap();
     fs::create_dir_all(&legacy).unwrap();
     let store = HistoryStore::open_default().unwrap();
-    assert!(store.page("", None, 50).unwrap().is_empty());
+    assert!(store.page("", None, 50, None).unwrap().is_empty());
     assert!(store.get("absent").unwrap().is_none());
     assert!(store.import_default_legacy().is_err());
     fs::remove_dir(&legacy).unwrap();
@@ -434,14 +449,14 @@ fn default_open_does_not_read_legacy_archive() {
     assert!(
         HistoryStore::open_default()
             .unwrap()
-            .page("Explicitstartupimportneedle", None, 50)
+            .page("Explicitstartupimportneedle", None, 50, None)
             .unwrap()
             .is_empty()
     );
     assert_eq!(store.import_default_legacy().unwrap(), 1);
     assert_eq!(
         store
-            .page("Explicitstartupimportneedle", None, 50)
+            .page("Explicitstartupimportneedle", None, 50, None)
             .unwrap()
             .len(),
         1
@@ -460,15 +475,24 @@ fn interrupted_archive_chunk_import_retries_without_duplicates() {
     let store = HistoryStore::open(temp.db()).unwrap();
     store.connection.execute_batch("CREATE TRIGGER interrupt_archive BEFORE INSERT ON transcripts WHEN NEW.text LIKE '%lastchunkneedle%' BEGIN SELECT RAISE(ABORT,'interrupted'); END;").unwrap();
     assert!(store.import_legacy(&source).is_err());
-    assert_eq!(store.page("firstchunkneedle", None, 50).unwrap().len(), 0);
+    assert_eq!(
+        store
+            .page("firstchunkneedle", None, 50, None)
+            .unwrap()
+            .len(),
+        0
+    );
     store
         .connection
         .execute_batch("DROP TRIGGER interrupt_archive")
         .unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
-    assert_eq!(store.page("", None, 50).unwrap().len(), 2);
-    assert_eq!(store.page("lastchunkneedle", None, 50).unwrap().len(), 1);
+    assert_eq!(store.page("", None, 50, None).unwrap().len(), 2);
+    assert_eq!(
+        store.page("lastchunkneedle", None, 50, None).unwrap().len(),
+        1
+    );
 }
 
 fn unmarked(text: &str) -> String {
@@ -483,13 +507,15 @@ fn changed_unmarked_source_replaces_searchable_version_and_preserves_bytes() {
     fs::write(&source, &first).unwrap();
     let store = HistoryStore::open(temp.db()).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
-    let old_id = store.page("firstneedle", None, 50).unwrap()[0].id.clone();
+    let old_id = store.page("firstneedle", None, 50, None).unwrap()[0]
+        .id
+        .clone();
     let second = format!("{first}{}", unmarked("secondneedle"));
     fs::write(&source, &second).unwrap();
     for _ in 0..2 {
         assert_eq!(store.import_legacy(&source).unwrap(), 1);
-        assert_eq!(store.page("firstneedle", None, 50).unwrap().len(), 1);
-        assert_eq!(store.page("secondneedle", None, 50).unwrap().len(), 1);
+        assert_eq!(store.page("firstneedle", None, 50, None).unwrap().len(), 1);
+        assert_eq!(store.page("secondneedle", None, 50, None).unwrap().len(), 1);
         assert!(store.get(&old_id).unwrap().is_none());
     }
     let preserved: i64 = store
@@ -508,7 +534,12 @@ fn changed_unmarked_source_replaces_searchable_version_and_preserves_bytes() {
     fs::write(&source, &first).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
     assert!(store.get(&old_id).unwrap().is_some());
-    assert!(store.page("secondneedle", None, 50).unwrap().is_empty());
+    assert!(
+        store
+            .page("secondneedle", None, 50, None)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -522,15 +553,20 @@ fn appended_ambiguous_tail_reconciles_only_changed_chunk_and_retries() {
     fs::write(&source, format!("{first}tailneedle\n")).unwrap();
     let store = HistoryStore::open(temp.db()).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 2);
-    let stable = store.page("stablechunkneedle", None, 50).unwrap()[0]
+    let stable = store.page("stablechunkneedle", None, 50, None).unwrap()[0]
         .id
         .clone();
-    let stale_tail = store.page("tailneedle", None, 50).unwrap()[0].id.clone();
+    let stale_tail = store.page("tailneedle", None, 50, None).unwrap()[0]
+        .id
+        .clone();
     fs::write(&source, format!("{first}tailneedle\nappendedneedle\n")).unwrap();
     for _ in 0..2 {
         assert_eq!(store.import_legacy(&source).unwrap(), 2);
-        assert_eq!(store.page("tailneedle", None, 50).unwrap().len(), 1);
-        assert_eq!(store.page("appendedneedle", None, 50).unwrap().len(), 1);
+        assert_eq!(store.page("tailneedle", None, 50, None).unwrap().len(), 1);
+        assert_eq!(
+            store.page("appendedneedle", None, 50, None).unwrap().len(),
+            1
+        );
         assert!(store.get(&stable).unwrap().is_some());
         assert!(store.get(&stale_tail).unwrap().is_none());
     }
@@ -544,12 +580,20 @@ fn interrupted_new_version_keeps_previous_search_and_ownership() {
     fs::write(&source, &first).unwrap();
     let store = HistoryStore::open(temp.db()).unwrap();
     store.import_legacy(&source).unwrap();
-    let old = store.page("firstneedle", None, 50).unwrap()[0].clone();
+    let old = store.page("firstneedle", None, 50, None).unwrap()[0].clone();
     fs::write(&source, format!("{first}{}", unmarked("secondneedle"))).unwrap();
     store.connection.execute_batch("CREATE TRIGGER interrupt_completion BEFORE INSERT ON history_imports BEGIN SELECT RAISE(ABORT,'interrupted'); END;").unwrap();
     assert!(store.import_legacy(&source).is_err());
-    assert_eq!(store.page("firstneedle", None, 50).unwrap(), vec![old]);
-    assert!(store.page("secondneedle", None, 50).unwrap().is_empty());
+    assert_eq!(
+        store.page("firstneedle", None, 50, None).unwrap(),
+        vec![old]
+    );
+    assert!(
+        store
+            .page("secondneedle", None, 50, None)
+            .unwrap()
+            .is_empty()
+    );
     let versions: i64 = store
         .connection
         .query_row("SELECT count(*) FROM history_imports", [], |r| r.get(0))
@@ -562,7 +606,7 @@ fn interrupted_new_version_keeps_previous_search_and_ownership() {
     drop(store);
     let store = HistoryStore::open(temp.db()).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
-    assert_eq!(store.page("firstneedle", None, 50).unwrap().len(), 1);
+    assert_eq!(store.page("firstneedle", None, 50, None).unwrap().len(), 1);
 }
 
 #[test]
@@ -576,7 +620,9 @@ fn reconciliation_protects_native_saves_other_sources_and_repeated_dictations() 
     let store = HistoryStore::open(temp.db()).unwrap();
     store.import_legacy(&source).unwrap();
     store.import_legacy(&other).unwrap();
-    let id = store.page("sharedneedle", None, 50).unwrap()[0].id.clone();
+    let id = store.page("sharedneedle", None, 50, None).unwrap()[0]
+        .id
+        .clone();
     fs::write(&source, "replacementneedle\n").unwrap();
     store.import_legacy(&source).unwrap();
     assert!(store.get(&id).unwrap().is_some());
@@ -592,7 +638,10 @@ fn reconciliation_protects_native_saves_other_sources_and_repeated_dictations() 
     repeated.id = "native-two".into();
     store.save(&repeated).unwrap();
     assert_eq!(
-        store.page("samegenuinedictation", None, 50).unwrap().len(),
+        store
+            .page("samegenuinedictation", None, 50, None)
+            .unwrap()
+            .len(),
         2
     );
 }
@@ -623,12 +672,20 @@ fn schema_one_upgrade_is_sqlite_only_and_explicit_import_versions_completion() {
     store.connection.execute_batch("DROP TABLE history_sources; DROP TABLE history_import_records; DROP TABLE history_native_records; PRAGMA user_version=1;").unwrap();
     drop(store);
     let store = HistoryStore::open(temp.db()).unwrap();
-    assert!(store.page("upgradeneedle", None, 50).unwrap().is_empty());
+    assert!(
+        store
+            .page("upgradeneedle", None, 50, None)
+            .unwrap()
+            .is_empty()
+    );
     assert!(store.get("existing-native").unwrap().is_some());
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
     fs::write(&source, format!("{text}{}", unmarked("moreupgradeneedle"))).unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 1);
-    assert_eq!(store.page("upgradeneedle", None, 50).unwrap().len(), 1);
+    assert_eq!(
+        store.page("upgradeneedle", None, 50, None).unwrap().len(),
+        1
+    );
     assert!(store.get("existing-native").unwrap().is_some());
 }
 
@@ -647,4 +704,53 @@ fn schema_upgrade_protects_preexisting_native_id_referenced_by_import() {
     fs::write(&source, "").unwrap();
     assert_eq!(store.import_legacy(&source).unwrap(), 0);
     assert_eq!(store.get(&native.id).unwrap(), Some(native));
+}
+
+#[test]
+fn meeting_only_page_filters_before_limit_and_replacement_updates_fts() {
+    let temp = Temp::new();
+    let store = HistoryStore::open(temp.db()).unwrap();
+    let mut meeting = HistoryRecord {
+        id: "meeting:550e8400-e29b-41d4-a716-446655440000".into(),
+        created_at_ms: 0,
+        model: "parakeet-v3".into(),
+        text: format!("{}oldmeetingneedle", "preamble ".repeat(60)),
+        raw_text: None,
+    };
+    store.save(&meeting).unwrap();
+    for i in 1..=150 {
+        store
+            .save(&HistoryRecord {
+                id: format!("dictation:{i}"),
+                created_at_ms: i,
+                model: "dictation".into(),
+                text: "oldmeetingneedle".into(),
+                raw_text: None,
+            })
+            .unwrap();
+    }
+    let page = |query| store.page(query, None, 1, Some("meeting:")).unwrap();
+    let hits = page("oldmeetingneedle");
+    assert_eq!(hits[0].id, meeting.id);
+    assert!(hits[0].preview.contains("oldmeetingneedle"));
+    assert!(
+        store
+            .replace_meeting(&HistoryRecord {
+                id: "dictation:1".into(),
+                ..meeting.clone()
+            })
+            .is_err()
+    );
+    meeting.text = "newmeetingneedle".into();
+    assert!(store.replace_meeting(&meeting).unwrap());
+    assert!(page("oldmeetingneedle").is_empty());
+    assert_eq!(page("newmeetingneedle")[0].id, meeting.id);
+    assert_eq!(store.get(&meeting.id).unwrap(), Some(meeting));
+    assert_eq!(
+        store
+            .connection
+            .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))
+            .unwrap(),
+        2
+    );
 }

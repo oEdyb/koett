@@ -1,8 +1,10 @@
 pub(crate) mod bundle;
 pub(crate) mod capture;
 mod controller;
+mod job;
 mod session;
 mod ticket;
+mod transcript;
 
 pub(crate) use controller::MeetingController;
 pub(crate) use ticket::Ticket;
@@ -351,7 +353,6 @@ enum RecoverableBundle {
     Fixture,
 }
 
-#[allow(dead_code)] // S5 publishes a transcript and projections.
 struct Published {
     artifact: Artifact,
     projections: Projections,
@@ -367,7 +368,6 @@ enum JobSource {
     Finished(SealedBundle),
     Recover {
         bundle: RecoverableBundle,
-        #[allow(dead_code)] // S5 selects a decoder.
         backend: Option<Backend>,
     },
 }
@@ -580,7 +580,7 @@ pub(crate) enum ReplyError {
     DiskLow(String),
     IntentWriteFailed(String),
     ArtifactPending,
-    NotAvailable,
+    HelperUnavailable,
     DiskUnreadable(String),
 }
 
@@ -600,7 +600,7 @@ impl ReplyError {
             | Self::IntentWriteFailed(issue)
             | Self::DiskUnreadable(issue) => issue,
             Self::ArtifactPending => "This meeting does not have a committed transcript.",
-            Self::NotAvailable => "This meeting command is unavailable in this build.",
+            Self::HelperUnavailable => "The GPU meeting decoder is unavailable in this build.",
         }
     }
 
@@ -616,7 +616,7 @@ impl ReplyError {
             Self::DiskLow(_) => "disk_low",
             Self::IntentWriteFailed(_) => "intent_write_failed",
             Self::ArtifactPending => "artifact_pending",
-            Self::NotAvailable => "not_available",
+            Self::HelperUnavailable => "helper_unavailable",
             Self::DiskUnreadable(_) => "disk_unreadable",
         }
     }

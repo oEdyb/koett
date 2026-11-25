@@ -1,5 +1,6 @@
 mod files;
 pub(crate) mod marks;
+pub(super) mod projections;
 pub(crate) mod records;
 pub(crate) mod scan;
 
@@ -20,7 +21,9 @@ use super::{
 pub(crate) use files::WriteError;
 use files::{AtomicWriter, ensure_directory, private_directory, sync_directory};
 use marks::MarkWriter;
-use records::{Intent, Job, Manifest, ManifestFile, Projections, Publication, Receipt, Seal};
+use records::{
+    Intent, Job, Manifest, ManifestFile, ProjectionFile, Projections, Publication, Receipt, Seal,
+};
 
 const MANIFEST: &str = "manifest.json";
 const INTENT: &str = "intent.json";
@@ -138,7 +141,7 @@ impl Bundle {
         read_optional_json(&self.directory.join(SEAL))
     }
 
-    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
+    #[allow(dead_code)] // S6 stages GPU helper inputs here.
     pub(crate) fn create_job_directory(&self) -> io::Result<PathBuf> {
         let directory = self.directory.join("job");
         ensure_directory(&directory)?;
@@ -153,7 +156,6 @@ impl Bundle {
         read_optional_json(&self.directory.join(JOB))
     }
 
-    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn publish(
         &self,
         markdown: &str,
@@ -163,13 +165,10 @@ impl Bundle {
             transcript_sha256: sha256(markdown.as_bytes()),
             publication,
         };
-        // A crash at either publish step must leave any previous projections eligible for repair.
-        for name in [JOB, PROJECTIONS] {
-            match fs::remove_file(self.directory.join(name)) {
-                Ok(()) => sync_directory(&self.directory).map_err(WriteError::BeforeRename)?,
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-                Err(error) => return Err(WriteError::BeforeRename(error)),
-            }
+        match fs::remove_file(self.directory.join(JOB)) {
+            Ok(()) => sync_directory(&self.directory).map_err(WriteError::BeforeRename)?,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(WriteError::BeforeRename(error)),
         }
         self.writer.json(&self.directory, RECEIPT, &receipt)?;
         self.writer
@@ -177,12 +176,19 @@ impl Bundle {
         Ok(receipt)
     }
 
-    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn write_projections(&self, projections: &Projections) -> Result<(), WriteError> {
-        self.writer.json(&self.directory, PROJECTIONS, projections)
+        let receipt: Receipt =
+            read_json(&self.directory.join(RECEIPT)).map_err(WriteError::BeforeRename)?;
+        self.writer.json(
+            &self.directory,
+            PROJECTIONS,
+            &ProjectionFile {
+                transcript_sha256: receipt.transcript_sha256,
+                projections: *projections,
+            },
+        )
     }
 
-    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn apply_retention(&self) -> io::Result<()> {
         if self.manifest.keep_audio {
             return Ok(());

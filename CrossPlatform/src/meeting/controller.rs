@@ -8,7 +8,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use super::bundle::Bundle;
 use super::bundle::records::Intent;
 use super::bundle::scan::{DiskState, scan, scan_all};
-use super::session::{capture_bundle, drain, open, persist_intent, process_job};
+use super::job::process_job;
+use super::session::{capture_bundle, drain, open, persist_intent};
 use super::*;
 use crate::runtime::{EngineCommand, EngineUpdate};
 use crate::settings::Settings;
@@ -57,7 +58,11 @@ impl MeetingController {
         let scan_root = root.clone();
         let post = commands.clone();
         let boot = thread::spawn(move || {
-            let count = scan_root.and_then(|root| recoverable_count(&root));
+            let count = scan_root.and_then(|root| {
+                let states = scan_all(&root).map_err(|error| error.to_string())?;
+                bundle::projections::replay_pending(&root, &states);
+                Ok(states.iter().filter(|state| state.is_recoverable()).count())
+            });
             emit(&post, Event::BootScanned(count));
         });
         Self {
@@ -158,6 +163,14 @@ impl MeetingController {
             }
             event => event,
         };
+        if let Event::Processed(_, Ok(published)) = &event
+            && published.projections.has_pending()
+        {
+            eprintln!(
+                "Meeting projections pending for {}",
+                published.artifact.markdown.display()
+            );
+        }
         if let Event::Closed(attempt, _) | Event::Processed(attempt, _) = &event
             && self
                 .worker
@@ -250,6 +263,12 @@ impl MeetingController {
             Request::Resume(key) => AdmittedRequest::Resume(key),
             Request::Finish(key) => AdmittedRequest::Finish(key),
             Request::Cancel(key) => AdmittedRequest::Cancel(key),
+            Request::Recover {
+                backend: Some(Backend::Gpu),
+                ..
+            } => {
+                return Err(ReplyError::HelperUnavailable);
+            }
             Request::Recover { id, backend } => {
                 let job = if matches!(self.active, Active::Idle) {
                     self.recover(id, backend)
@@ -323,7 +342,9 @@ impl MeetingController {
             io::ErrorKind::WouldBlock => ReplyError::EngineBusy,
             _ => ReplyError::DiskUnreadable(error.to_string()),
         })?;
-        match bundle.read_state() {
+        let state = bundle.read_state();
+        match state {
+            DiskState::Complete { .. } if backend.is_none() && state.needs_replay() => {}
             DiskState::Recoverable { .. }
             | DiskState::Complete {
                 audio_retained: true,
