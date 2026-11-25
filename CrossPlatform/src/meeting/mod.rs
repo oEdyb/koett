@@ -312,6 +312,8 @@ pub(crate) struct Artifact {
 enum LiveCapture {
     Armed(Box<CaptureResources>),
     #[cfg(test)]
+    Silent(session::SilentCapture),
+    #[cfg(test)]
     Fixture(MarkSink),
 }
 
@@ -319,6 +321,8 @@ impl LiveCapture {
     fn marks(&self) -> MarkSink {
         match self {
             Self::Armed(capture) => capture.marks.sink(),
+            #[cfg(test)]
+            Self::Silent(capture) => capture.marks.sink(),
             #[cfg(test)]
             Self::Fixture(sink) => sink.clone(),
         }

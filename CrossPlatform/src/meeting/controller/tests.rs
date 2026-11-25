@@ -178,3 +178,75 @@ fn shutdown_waits_for_a_drain_with_a_pending_mark() {
     assert_eq!(committed.len(), 1);
     assert_eq!(committed[0].offset, offset);
 }
+
+#[test]
+fn a_shutdown_signal_mid_recording_drains_pending_marks_inline() {
+    static ACTIVITY: AtomicU8 = AtomicU8::new(MeetingActivity::Idle as u8);
+    let info = SessionInfo {
+        id: MeetingId::new(),
+        started_at_ms: 123,
+    };
+    let root = std::env::temp_dir().join(format!("koett-controller-{}", info.id));
+    let mut bundle = Bundle::create(
+        &root,
+        Manifest {
+            info: info.clone(),
+            mic: None,
+            backend_pref: Backend::Parakeet,
+            keep_audio: true,
+            export_dir: None,
+        },
+    )
+    .unwrap();
+    let marks = bundle.start_marks().unwrap();
+    let sink = marks.sink();
+    let directory = bundle.directory().to_owned();
+    let zero = Instant::now().checked_sub(Duration::from_secs(10)).unwrap();
+    let live = Live {
+        info,
+        attempt: Attempt(1),
+        capture: LiveCapture::Silent(super::super::session::SilentCapture {
+            marks,
+            bundle: Arc::new(bundle),
+        }),
+        epoch: MeetingEpoch(zero),
+        health: CaptureHealth::default(),
+        generation: 0,
+    };
+    let (mut controller, _commands, _updates) = controller(Active::Recording(live), &ACTIVITY);
+    let (captured, stalled) = (Offset(16_000), Offset(32_000));
+    assert!(sink.begin(1, captured) && sink.begin(2, stalled));
+
+    let late = thread::spawn(move || {
+        thread::sleep(Duration::from_millis(300));
+        sink.submit(1, captured, vec![1, 2, 3])
+    });
+    let signalled = Instant::now();
+    controller.shutdown();
+    let drained_for = signalled.elapsed();
+    let read = |name| -> serde_json::Value {
+        serde_json::from_slice(&std::fs::read(directory.join(name)).unwrap()).unwrap()
+    };
+    let (seal, intent) = (read("seal.json"), read("intent.json"));
+    let committed = bundle::marks::list_marks(&directory, None).unwrap();
+    std::fs::remove_dir_all(root).unwrap();
+
+    assert!(late.join().unwrap());
+    assert_eq!(controller.active.view(), Some(MeetingView::Idle));
+    assert_eq!(
+        (&intent["goal"], &intent["cause"]["kind"]),
+        (&"interrupted".into(), &"shutdown".into())
+    );
+    assert_eq!(
+        committed.iter().map(|mark| mark.offset).collect::<Vec<_>>(),
+        [captured]
+    );
+    assert_eq!(
+        seal["mark_issues"],
+        serde_json::json!([{"id": 2, "issue": "mark drain timed out"}])
+    );
+    assert!(
+        (Duration::from_secs(8)..Duration::from_secs(9)).contains(&drained_for),
+        "{drained_for:?}"
+    );
+}

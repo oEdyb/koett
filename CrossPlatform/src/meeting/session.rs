@@ -41,6 +41,27 @@ struct ArmedTrack {
     writer: TrackWriter,
 }
 
+/// Marks and a bundle without audio: the real close path minus pw-record.
+#[cfg(test)]
+pub(super) struct SilentCapture {
+    pub(super) marks: MarkWriter,
+    pub(super) bundle: Arc<Bundle>,
+}
+
+#[cfg(test)]
+impl std::fmt::Debug for SilentCapture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.bundle.fmt(f)
+    }
+}
+
+#[cfg(test)]
+impl PartialEq for SilentCapture {
+    fn eq(&self, other: &Self) -> bool {
+        self.bundle == other.bundle
+    }
+}
+
 pub(super) fn open(
     root: &Path,
     attempt: Attempt,
@@ -177,6 +198,8 @@ pub(super) fn capture_bundle(capture: &LiveCapture) -> Option<&Arc<Bundle>> {
     match capture {
         LiveCapture::Armed(capture) => Some(&capture.bundle),
         #[cfg(test)]
+        LiveCapture::Silent(capture) => Some(&capture.bundle),
+        #[cfg(test)]
         LiveCapture::Fixture(_) => None,
     }
 }
@@ -206,6 +229,8 @@ pub(super) fn drain(
     match capture {
         LiveCapture::Armed(capture) => drain_armed(*capture, spec),
         #[cfg(test)]
+        LiveCapture::Silent(capture) => seal_capture(capture.marks, capture.bundle, spec, Ok(())),
+        #[cfg(test)]
         LiveCapture::Fixture(_) => Ok(SealedBundle::Fixture),
     }
 }
@@ -222,7 +247,18 @@ fn drain_armed(
     drop(you.source);
     drop(other.source);
     let you_result = you.writer.finish();
-    let other_result = other.writer.finish();
+    let audio = you_result.and(other.writer.finish());
+    seal_capture(marks, bundle, spec, audio)
+}
+
+/// Waits for marks in flight at the cutoff, then seals. A failed track keeps
+/// the bundle recoverable.
+fn seal_capture(
+    marks: MarkWriter,
+    bundle: Arc<Bundle>,
+    spec: CloseSpec,
+    audio: Result<(), CaptureFault>,
+) -> Result<SealedBundle, (RecoverableBundle, String)> {
     let mark_issues = marks.close(spec.cutoff);
     if matches!(
         &spec.goal,
@@ -236,7 +272,7 @@ fn drain_armed(
     let result = seal(&bundle, Some(spec.cutoff), mark_issues);
     match (result, &spec.goal) {
         (Ok(seal), CloseGoal::Interrupted(_)) => Ok(SealedBundle::Locked { bundle, seal }),
-        (Ok(seal), _) => match you_result.and(other_result) {
+        (Ok(seal), _) => match audio {
             Ok(()) => Ok(SealedBundle::Locked { bundle, seal }),
             Err(error) => {
                 let issue = error.to_string();
