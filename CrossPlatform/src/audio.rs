@@ -590,8 +590,7 @@ where
     let mut square_sum = 0.0_f32;
     let mut peak = 0.0_f32;
     let mut frame_count = 0_usize;
-    for frame in data.chunks_exact(channels) {
-        let sample = frame.iter().copied().map(f32::from_sample).sum::<f32>() / channels as f32;
+    for sample in mono_samples(data, channels) {
         square_sum += sample * sample;
         peak = peak.max(sample.abs());
         frame_count += 1;
@@ -606,7 +605,17 @@ where
     }
 }
 
-fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
+pub(crate) fn mono_samples<T>(data: &[T], channels: usize) -> impl Iterator<Item = f32>
+where
+    T: Sample,
+    f32: FromSample<T>,
+{
+    let channel_count = channels as f32;
+    data.chunks_exact(channels)
+        .map(move |frame| frame.iter().copied().map(f32::from_sample).sum::<f32>() / channel_count)
+}
+
+pub(crate) fn is_recoverable_stream_error(kind: cpal::ErrorKind) -> bool {
     matches!(
         kind,
         cpal::ErrorKind::DeviceChanged | cpal::ErrorKind::RealtimeDenied | cpal::ErrorKind::Xrun

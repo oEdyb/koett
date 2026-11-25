@@ -4,7 +4,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::mpsc::Sender;
 
-fn path() -> Result<std::path::PathBuf, String> {
+pub(super) fn path() -> Result<std::path::PathBuf, String> {
     let base = std::env::var_os("XDG_RUNTIME_DIR").ok_or("XDG_RUNTIME_DIR is unavailable")?;
     use std::os::unix::fs::MetadataExt;
     let directory = std::path::PathBuf::from(base);
@@ -30,7 +30,7 @@ fn path() -> Result<std::path::PathBuf, String> {
 }
 
 // Allow JSON escaping of the bounded 2 KiB token plus its small envelope.
-const MAX_REQUEST: usize = 8192;
+pub(super) const MAX_REQUEST: usize = 8192;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
@@ -98,7 +98,7 @@ fn window_request(command: &[u8]) -> Option<&'static str> {
     }
 }
 
-fn read_request(stream: &mut UnixStream) -> Option<Vec<u8>> {
+pub(super) fn read_request(stream: &mut UnixStream) -> Option<Vec<u8>> {
     let mut bytes = Vec::new();
     Read::by_ref(stream)
         .take(MAX_REQUEST as u64 + 1)
@@ -130,6 +130,10 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
             let Some(bytes) = read_request(&mut stream) else {
                 continue;
             };
+            if let Some(arguments) = bytes.strip_prefix(super::meeting_control::ROUTE) {
+                super::meeting_control::serve(&mut stream, arguments, &sender);
+                continue;
+            }
             if let Ok(request) = serde_json::from_slice::<ActivationRequest>(&bytes) {
                 let update = match request {
                     ActivationRequest::Show { token } if valid_token(&token) => {
@@ -263,7 +267,7 @@ pub fn listen(sender: Sender<TrayAction>, ui: Sender<super::window::Update>) -> 
                 continue;
             }
             if bytes == b"quit" {
-                let result = if super::QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire) {
+                let result = if super::quit_busy() {
                     Err("Finish recording or processing before quitting".into())
                 } else {
                     crate::history::recovery::retry()

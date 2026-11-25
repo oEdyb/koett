@@ -241,7 +241,7 @@ fn current_build() -> u64 {
 }
 
 fn idle() -> bool {
-    !super::QUIT_BUSY.load(Ordering::SeqCst)
+    !super::quit_busy()
         && !UI_BUSY.load(Ordering::Relaxed)
         && crate::history::recovery::pending_count() == 0
 }

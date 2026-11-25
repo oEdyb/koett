@@ -38,6 +38,20 @@ pub(crate) struct Bundle {
     _lock: File,
 }
 
+#[cfg(test)]
+impl std::fmt::Debug for Bundle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.directory.fmt(f)
+    }
+}
+
+#[cfg(test)]
+impl PartialEq for Bundle {
+    fn eq(&self, other: &Self) -> bool {
+        self.directory == other.directory
+    }
+}
+
 impl Bundle {
     pub(crate) fn create(root: &Path, manifest: Manifest) -> io::Result<Self> {
         Self::create_with_writer(root, manifest, AtomicWriter::default())
@@ -124,6 +138,7 @@ impl Bundle {
         read_optional_json(&self.directory.join(SEAL))
     }
 
+    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn create_job_directory(&self) -> io::Result<PathBuf> {
         let directory = self.directory.join("job");
         ensure_directory(&directory)?;
@@ -138,6 +153,7 @@ impl Bundle {
         read_optional_json(&self.directory.join(JOB))
     }
 
+    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn publish(
         &self,
         markdown: &str,
@@ -161,10 +177,12 @@ impl Bundle {
         Ok(receipt)
     }
 
+    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn write_projections(&self, projections: &Projections) -> Result<(), WriteError> {
         self.writer.json(&self.directory, PROJECTIONS, projections)
     }
 
+    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn apply_retention(&self) -> io::Result<()> {
         if self.manifest.keep_audio {
             return Ok(());
@@ -232,6 +250,7 @@ fn read_optional_json<T: DeserializeOwned>(path: &Path) -> io::Result<Option<T>>
     }
 }
 
+#[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
 pub(crate) fn sha256(bytes: &[u8]) -> String {
     digest_hex(digest(&SHA256, bytes))
 }
