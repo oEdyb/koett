@@ -10,7 +10,7 @@ use crate::dictionary::{self, DictionaryEntry};
 
 use super::super::bundle::records::{HistoryReceipt, Manifest, Publication};
 use super::super::bundle::sha256;
-use super::super::{Offset, SAMPLE_RATE};
+use super::super::{MeetingId, Offset, SAMPLE_RATE};
 use super::timeline::{Entry, Speaker};
 
 pub(in crate::meeting) struct Rendered {
@@ -20,12 +20,12 @@ pub(in crate::meeting) struct Rendered {
 
 pub(super) fn render(
     manifest: &Manifest,
+    date: OffsetDateTime,
     cutoff: Offset,
     entries: Vec<Entry>,
     dictionary: &[DictionaryEntry],
     fallback: bool,
 ) -> Result<Rendered, String> {
-    let date = meeting_date(manifest)?;
     let iso = date.format(&Rfc3339).map_err(|err| err.to_string())?;
     let title = date
         .format(format_description!("[year]-[month]-[day] [hour]:[minute]"))
@@ -107,11 +107,6 @@ pub(super) fn render(
     })
 }
 
-fn meeting_date(manifest: &Manifest) -> Result<OffsetDateTime, String> {
-    OffsetDateTime::from_unix_timestamp_nanos(i128::from(manifest.info.started_at_ms) * 1_000_000)
-        .map_err(|err| err.to_string())
-}
-
 fn timestamp(time: Offset) -> String {
     let seconds = time.0 / u64::from(SAMPLE_RATE);
     format!("{:02}:{:02}", seconds / 60, seconds % 60)
@@ -124,12 +119,24 @@ fn speaker_label(speaker: Speaker) -> &'static str {
     }
 }
 
-fn transcript_body(markdown: &str) -> Result<&str, String> {
+fn frontmatter_and_body(markdown: &str) -> Result<(&str, &str), String> {
     markdown
         .strip_prefix("---\n")
         .and_then(|rest| rest.split_once("\n---\n\n"))
-        .map(|(_, body)| body)
         .ok_or_else(|| "Meeting transcript frontmatter is missing".into())
+}
+
+fn frontmatter_field<'a>(frontmatter: &'a str, key: &str) -> Option<&'a str> {
+    let mut values = frontmatter.lines().filter_map(|line| {
+        let (field, value) = line.split_once(':')?;
+        (field == key).then(|| value.trim())
+    });
+    values.next().filter(|_| values.next().is_none())
+}
+
+pub(in crate::meeting) fn vault_note_id(markdown: &str) -> Option<MeetingId> {
+    let (frontmatter, _) = frontmatter_and_body(markdown).ok()?;
+    MeetingId::parse(frontmatter_field(frontmatter, "koett_id")?)
 }
 
 fn strip_comments(body: &str) -> String {
@@ -145,7 +152,8 @@ fn strip_comments(body: &str) -> String {
 }
 
 pub(in crate::meeting) fn history_text(markdown: &str) -> Result<String, String> {
-    Ok(strip_comments(transcript_body(markdown)?))
+    let (_, body) = frontmatter_and_body(markdown)?;
+    Ok(strip_comments(body))
 }
 
 pub(in crate::meeting) fn vault_note(
@@ -155,7 +163,10 @@ pub(in crate::meeting) fn vault_note(
     markdown: &str,
     bundle_path: &Path,
 ) -> Result<(String, String), String> {
-    let date = meeting_date(manifest)?;
+    let (frontmatter, body) = frontmatter_and_body(markdown)?;
+    let date =
+        frontmatter_field(frontmatter, "date").ok_or("Meeting transcript date is missing")?;
+    let date = OffsetDateTime::parse(date, &Rfc3339).map_err(|err| err.to_string())?;
     let day = date.date().to_string();
     let minute = date
         .format(format_description!("[hour][minute]"))
@@ -173,9 +184,9 @@ pub(in crate::meeting) fn vault_note(
         publication.assets.len()
     );
     let mut note = format!(
-        "---\ntype: meeting\ntitle: {title:?}\nsummary: {summary:?}\ndate: {day}\nstatus: complete\ntags: [meeting, koett]\n---\n\n"
+        "---\ntype: meeting\nkoett_id: {id}\ntitle: {title:?}\nsummary: {summary:?}\ndate: {day}\nstatus: complete\ntags: [meeting, koett]\n---\n\n"
     );
-    for line in transcript_body(markdown)?.lines() {
+    for line in body.lines() {
         if let Some((prefix, relative)) = line
             .split_once("] ![Mark ")
             .and_then(|(time, mark)| {

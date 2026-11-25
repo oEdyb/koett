@@ -1,7 +1,7 @@
 use std::path::absolute;
 
 use crate::history::{HistoryRecord, HistoryStore};
-use crate::meeting::transcript::{history_text, vault_note};
+use crate::meeting::transcript::{history_text, vault_note, vault_note_id};
 
 use super::records::{ExportProjection, HistoryProjection};
 use super::*;
@@ -188,18 +188,10 @@ impl Bundle {
             &bundle_path,
         )?;
         ensure_directory(directory).map_err(|err| err.to_string())?;
-        match self.writer.write_new(directory, &name, note.as_bytes()) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                let path = directory.join(name);
-                let existing = fs::read(&path).map_err(|err| err.to_string())?;
-                if existing == note.as_bytes() {
-                    sync_directory(directory).map_err(|err| err.to_string())
-                } else {
-                    Err(format!("Existing note differs at {}", path.display()))
-                }
-            }
-            Err(error) => Err(error.to_string()),
-        }
+        self.writer
+            .write_export(directory, &name, &note, |existing| {
+                vault_note_id(existing) == Some(self.manifest.info.id)
+            })
+            .map_err(|err| err.to_string())
     }
 }

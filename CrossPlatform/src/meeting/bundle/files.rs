@@ -83,14 +83,44 @@ impl AtomicWriter {
         name: &str,
         bytes: &[u8],
     ) -> Result<(), WriteError> {
-        self.install(directory, name, bytes, |source, destination| {
+        self.install(directory, name, bytes, 0o600, |source, destination| {
             fs::rename(source, destination)
         })
     }
 
-    pub(super) fn write_new(&self, directory: &Path, name: &str, bytes: &[u8]) -> io::Result<()> {
-        self.install(directory, name, bytes, rename_new)
-            .map_err(io::Error::from)
+    pub(super) fn write_export(
+        &self,
+        directory: &Path,
+        name: &str,
+        note: &str,
+        owns: impl FnOnce(&str) -> bool,
+    ) -> Result<(), WriteError> {
+        clean_export_temps(directory, name).map_err(WriteError::BeforeRename)?;
+        self.install(
+            directory,
+            name,
+            note.as_bytes(),
+            0o644,
+            |source, destination| match rename_new(source, destination) {
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                    if !destination.symlink_metadata()?.is_file() {
+                        return Err(error);
+                    }
+                    let existing = fs::read_to_string(destination)?;
+                    if existing == note {
+                        fs::remove_file(source)
+                    } else if owns(&existing) {
+                        fs::rename(source, destination)
+                    } else {
+                        Err(io::Error::new(
+                            io::ErrorKind::AlreadyExists,
+                            format!("Existing note differs at {}", destination.display()),
+                        ))
+                    }
+                }
+                result => result,
+            },
+        )
     }
 
     fn install(
@@ -98,10 +128,11 @@ impl AtomicWriter {
         directory: &Path,
         name: &str,
         bytes: &[u8],
+        mode: u32,
         replace: impl FnOnce(&Path, &Path) -> io::Result<()>,
     ) -> Result<(), WriteError> {
         let temporary = directory.join(format!(".{name}.tmp-{}", MeetingId::new()));
-        write_temp(&temporary, bytes).map_err(WriteError::BeforeRename)?;
+        write_temp_with_mode(&temporary, bytes, mode).map_err(WriteError::BeforeRename)?;
         let rename = || {
             #[cfg(test)]
             if let Some(fault) = &self.fault {
@@ -122,11 +153,34 @@ impl AtomicWriter {
     }
 }
 
+fn clean_export_temps(directory: &Path, name: &str) -> io::Result<()> {
+    let prefix = format!(".{name}.tmp-");
+    for entry in fs::read_dir(directory)? {
+        let entry = entry?;
+        let filename = entry.file_name();
+        if filename
+            .to_str()
+            .is_some_and(|name| name.starts_with(&prefix))
+            && entry.file_type()?.is_file()
+        {
+            match fs::remove_file(entry.path()) {
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                result => result?,
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn write_temp(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    write_temp_with_mode(path, bytes, 0o600)
+}
+
+fn write_temp_with_mode(path: &Path, bytes: &[u8], mode: u32) -> io::Result<()> {
     let mut file = OpenOptions::new()
         .create_new(true)
         .write(true)
-        .mode(0o600)
+        .mode(mode)
         .open(path)?;
     let result = file.write_all(bytes).and_then(|()| file.sync_all());
     if result.is_err() {

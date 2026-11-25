@@ -7,7 +7,7 @@ use crate::meeting::transcript::history_text;
 use super::*;
 
 const ID: &str = "550e8400-e29b-41d4-a716-446655440000";
-const MARKDOWN: &str = "---\ntype: meeting-transcript\n---\n\n# Meeting\n\n[00:00] **You:** Recovery needle. <!-- und parakeet-v3 -->\n";
+const MARKDOWN: &str = "---\ntype: meeting-transcript\ndate: 2025-11-24T16:05:12Z\n---\n\n# Meeting\n\n[00:00] **You:** Recovery needle. <!-- und parakeet-v3 -->\n";
 const CHILD_ROOT: &str = "KOETT_S5_PUBLISH_GATE_ROOT";
 const CHILD_BOUNDARY: &str = "KOETT_S5_PUBLISH_GATE_BOUNDARY";
 
@@ -145,16 +145,21 @@ fn conflicting_vault_note_is_preserved_while_history_indexes() {
     let export = root.0.join("export");
     fs::create_dir(&export).unwrap();
     let note = export.join("2025-11-24 1605 Koett meeting 550e8400.md");
-    fs::write(&note, "existing material").unwrap();
+    let foreign_id = "550e8400-9999-9999-9999-999999999999";
+    for existing in [
+        format!("Existing material.\nkoett_id: {ID}\n"),
+        format!("---\nkoett_id: {foreign_id}\n---\n\nDifferent meeting.\n"),
+    ] {
+        fs::write(&note, &existing).unwrap();
+        publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
 
-    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
-
-    let DiskState::Complete { projections, .. } = bundle.read_state() else {
-        panic!("missing publication");
-    };
-    assert_eq!(projections.history, HistoryProjection::Indexed);
-    assert_eq!(projections.export, ExportProjection::Pending);
-    assert_eq!(fs::read_to_string(note).unwrap(), "existing material");
+        let DiskState::Complete { projections, .. } = bundle.read_state() else {
+            panic!("missing publication");
+        };
+        assert_eq!(projections.history, HistoryProjection::Indexed);
+        assert_eq!(projections.export, ExportProjection::Pending);
+        assert_eq!(fs::read_to_string(&note).unwrap(), existing);
+    }
 }
 
 #[test]
@@ -193,4 +198,73 @@ fn projection_file_failure_leaves_a_complete_transcript_with_pending_repairs() {
             .len(),
         1
     );
+}
+
+const NOTE: &str = "2025-11-24 1605 Koett meeting 550e8400.md";
+
+#[test]
+fn vault_export_cleans_up_a_stale_temporary_file() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    let export = root.0.join("export");
+    fs::create_dir(&export).unwrap();
+    let stale = export.join(format!(".{NOTE}.tmp-abandoned"));
+    let unrelated = export.join(format!(".other-note.md.tmp-{}", MeetingId::new()));
+    fs::write(&stale, "interrupted export").unwrap();
+    fs::write(&unrelated, "another file").unwrap();
+
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    assert!(export.join(NOTE).is_file());
+    assert!(!stale.exists());
+    assert!(unrelated.is_file());
+}
+
+#[test]
+fn vault_export_writes_a_note_with_the_meeting_id_and_vault_permissions() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    let path = root.0.join("export").join(NOTE);
+    assert_eq!(
+        fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+        0o644
+    );
+    assert!(
+        fs::read_to_string(path)
+            .unwrap()
+            .contains(&format!("\nkoett_id: {ID}\n"))
+    );
+}
+
+#[test]
+fn vault_export_replaces_a_note_owned_by_the_same_meeting() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    let export = root.0.join("export");
+    fs::create_dir(&export).unwrap();
+    let note = export.join(NOTE);
+    fs::write(
+        &note,
+        format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n"),
+    )
+    .unwrap();
+
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    let DiskState::Complete { projections, .. } = bundle.read_state() else {
+        panic!("missing publication");
+    };
+    assert_eq!(projections.export, ExportProjection::Exported);
+    assert!(
+        fs::read_to_string(note)
+            .unwrap()
+            .contains("Recovery needle.")
+    );
+    assert_eq!(fs::read_dir(export).unwrap().count(), 1);
 }

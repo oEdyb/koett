@@ -5,6 +5,8 @@ mod windows;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use time::{OffsetDateTime, UtcOffset};
+
 use crate::annotation::TimedWord;
 use crate::dictionary::DictionaryEntry;
 use crate::model::{LocalModel, VAD_FILE, ensure_model};
@@ -19,7 +21,7 @@ use super::{Backend, Channel, Offset, SAMPLE_RATE, Span};
 use timeline::{Point, SpeechWord};
 use windows::WindowBuilder;
 
-pub(super) use markdown::{Rendered, history_text, vault_note};
+pub(super) use markdown::{Rendered, history_text, vault_note, vault_note_id};
 
 const BATCH_SIZE: usize = 8;
 const PARAKEET: &str = "parakeet-v3";
@@ -142,8 +144,14 @@ pub(super) fn transcribe(
     }
     batch.decode(&mut points)?;
     check_cancelled(cancelled)?;
+    let utc = OffsetDateTime::from_unix_timestamp_nanos(
+        i128::from(bundle.manifest().info.started_at_ms) * 1_000_000,
+    )
+    .map_err(|err| err.to_string())?;
+    let offset = UtcOffset::local_offset_at(utc).unwrap_or(UtcOffset::UTC);
     markdown::render(
         bundle.manifest(),
+        utc.to_offset(offset),
         seal.cutoff,
         timeline::merge(points),
         dictionary,

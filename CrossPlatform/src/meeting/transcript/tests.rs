@@ -70,6 +70,7 @@ fn renders_stable_turns_marks_and_missing_audio() {
     let dictionary = [DictionaryEntry::new("Koett", &["coat"])];
     let output = markdown::render(
         &manifest(),
+        OffsetDateTime::UNIX_EPOCH,
         Offset(second(7201).0 + 15999),
         timeline::merge(points),
         &dictionary,
@@ -268,6 +269,7 @@ fn vault_note_keeps_a_mark_in_an_absolute_file_url() {
     let manifest = manifest();
     let rendered = markdown::render(
         &manifest,
+        OffsetDateTime::UNIX_EPOCH,
         second(3),
         vec![timeline::Entry::Mark(mark)],
         &[],
@@ -406,6 +408,32 @@ fn review_marks_own_no_words_during_overlap_and_crossing_words_stay() {
             "Other@5000:tie2",
         ]
     );
+}
+
+#[test]
+fn renders_the_local_date_and_exports_using_the_committed_offset() {
+    let manifest = manifest();
+    let date = OffsetDateTime::UNIX_EPOCH.to_offset(UtcOffset::from_hms(-5, 0, 0).unwrap());
+    let rendered = markdown::render(&manifest, date, second(3), vec![], &[], false).unwrap();
+    assert!(
+        rendered
+            .markdown
+            .contains("date: 1969-12-31T19:00:00-05:00\n")
+    );
+    assert!(rendered.markdown.contains("# Meeting · 1969-12-31 19:00\n"));
+
+    let (name, note) = vault_note(
+        &manifest,
+        second(3),
+        &rendered.publication,
+        &rendered.markdown,
+        std::path::Path::new("/tmp/meeting"),
+    )
+    .unwrap();
+    let title = "1969-12-31 1900 Koett meeting 550e8400";
+    assert_eq!(name, format!("{title}.md"));
+    assert!(note.contains(&format!("title: \"{title}\"")));
+    assert!(note.contains("date: 1969-12-31\n"));
 }
 
 #[test]
