@@ -250,3 +250,33 @@ fn a_shutdown_signal_mid_recording_drains_pending_marks_inline() {
         "{drained_for:?}"
     );
 }
+
+#[test]
+fn a_rejected_desktop_request_answers_with_the_current_view() {
+    static ACTIVITY: AtomicU8 = AtomicU8::new(MeetingActivity::Idle as u8);
+    let (mut controller, _commands, updates) = controller(Active::Idle, &ACTIVITY);
+    let recover = MeetingRequest::Recover {
+        id: MeetingId::new(),
+        backend: None,
+    };
+
+    controller.dispatch(MeetingCall::desktop(recover), true, &Settings::default());
+
+    let updates: Vec<MeetingUpdate> = updates
+        .try_iter()
+        .filter_map(|update| match update {
+            EngineUpdate::Meeting(update) => Some(update),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        matches!(
+            updates.as_slice(),
+            [
+                MeetingUpdate::Issue(_),
+                MeetingUpdate::View(MeetingView::Idle, _)
+            ]
+        ),
+        "the control that sent the request waits for a view: {updates:?}"
+    );
+}
