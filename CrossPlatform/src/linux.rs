@@ -3,6 +3,7 @@ use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -25,11 +26,27 @@ use x11rb::protocol::xtest::ConnectionExt as _;
 use x11rb::rust_connection::RustConnection;
 
 use crate::history;
+use crate::meeting::{MeetingActivity, MeetingCall, MeetingRequest, MeetingUpdate, MeetingView};
 use crate::model::ModelProgress;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
 use crate::settings::{PasteShortcut, Settings, ShortcutAction};
 use crate::shortcut::Shortcut;
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
+
+pub(crate) const MEETING_BUSY_MESSAGE: &str = "Finish or cancel the meeting first.";
+pub(crate) static MEETING_ACTIVITY: AtomicU8 = AtomicU8::new(MeetingActivity::Idle as u8);
+
+fn meeting_reserved() -> bool {
+    MEETING_ACTIVITY.load(Ordering::Acquire) == MeetingActivity::Reserved as u8
+}
+
+pub(crate) fn admit_meeting_work() -> Option<std::sync::MutexGuard<'static, ()>> {
+    updates::admit()
+}
+
+fn quit_busy() -> bool {
+    meeting_reserved() || QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)
+}
 
 static QUIT_BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
 
@@ -95,6 +112,7 @@ enum TrayAction {
     CancelMedia,
     SwitchModel(crate::model::LocalModel),
     Formatting(crate::formatting::Formatting),
+    Meeting(MeetingCall),
     Toggle,
     Start,
     Stop,
@@ -103,11 +121,13 @@ enum TrayAction {
     OpenSettings,
     Quit,
     QuitAnyway,
+    Shutdown,
     Recovery(String),
     RecoveryPaste(recovery::PasteRequest),
 }
 
 enum TrayUpdate {
+    Meeting(MeetingUpdate),
     PrepareAsk(Sender<()>),
     Status(String),
     Completed(String),
@@ -137,6 +157,8 @@ struct LinuxTray {
 }
 
 impl LinuxTray {
+    fn update_meeting(&mut self, _view: &MeetingView, _recoverable: usize) {}
+
     fn update_status(&mut self, status: String) {
         if !menu::is_control_message(&status) {
             self.status = status;
@@ -213,9 +235,7 @@ impl ksni::Tray for LinuxTray {
             MenuItem::Separator,
             send(
                 recording.label,
-                recording.enabled
-                    && !(self.status == "Ready"
-                        && QUIT_BUSY.load(std::sync::atomic::Ordering::Acquire)),
+                recording.enabled && !(self.status == "Ready" && quit_busy()),
                 TrayAction::Toggle,
             ),
             #[cfg(feature = "ask")]
@@ -299,6 +319,7 @@ mod ask_settings;
 #[cfg(feature = "ask")]
 mod ask_view;
 mod browser_media;
+pub(crate) mod child;
 mod clipboard_owner;
 mod control;
 mod dictionary_view;
@@ -315,6 +336,8 @@ mod input_preview;
 mod kwin_focus;
 pub(crate) mod media;
 mod media_view;
+pub(crate) mod meeting_audio;
+mod meeting_control;
 mod menu;
 mod menu_preferences;
 mod models_view;
@@ -332,7 +355,29 @@ mod updates;
 mod window;
 mod x11_surface;
 
+fn route_meeting_update(
+    update: MeetingUpdate,
+    ui: &Sender<window::Update>,
+    tray_view: impl FnOnce(&MeetingView, usize),
+) {
+    let message = match update {
+        MeetingUpdate::View(view, recoverable) => {
+            tray_view(&view, recoverable);
+            window::Update::Meeting(view)
+        }
+        MeetingUpdate::Sketch(scope) => window::Update::MeetingSketch(scope),
+        MeetingUpdate::HistoryChanged => window::Update::Status("@refresh".into()),
+        MeetingUpdate::Issue(issue) => window::Update::Status(format!("@notice:{issue}")),
+    };
+    let _ = ui.send(message);
+}
+
 pub fn run() -> Result<(), String> {
+    if std::env::args().nth(1).as_deref() == Some("meeting") {
+        std::process::exit(meeting_control::run(
+            &std::env::args().skip(2).collect::<Vec<_>>(),
+        ));
+    }
     if std::env::args().nth(1).as_deref() == Some("update-build") {
         updates::print_build();
         return Ok(());
@@ -621,6 +666,7 @@ pub fn run() -> Result<(), String> {
     let settings = Settings::load()?;
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
+    install_shutdown_signals()?;
     control::listen(actions.clone(), ui.clone())?;
     updates::start(actions.clone(), ui.clone());
     updates::lab_fault_at_startup();
@@ -661,6 +707,13 @@ pub fn run() -> Result<(), String> {
                     Err(_) => break,
                 };
                 match update {
+                    TrayUpdate::Meeting(update) => {
+                        route_meeting_update(update, &worker_ui, |view, recoverable| {
+                            if let Some(tray) = &tray {
+                                let _ = tray.update(|tray| tray.update_meeting(view, recoverable));
+                            }
+                        })
+                    }
                     TrayUpdate::Levels(levels) => {
                         let _ = worker_ui.send(window::Update::Levels(levels));
                     }
@@ -718,6 +771,35 @@ pub fn run() -> Result<(), String> {
     });
     window::run(actions, updates, command != "--background");
     Ok(())
+}
+
+static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
+
+extern "C" fn request_shutdown(_: libc::c_int) {
+    SHUTDOWN_REQUESTED.store(true, Ordering::Relaxed);
+}
+
+fn install_shutdown_signals() -> Result<(), String> {
+    // A lock-free flag keeps shutdown work on the controller thread.
+    let mut action: libc::sigaction = unsafe { std::mem::zeroed() };
+    action.sa_sigaction = request_shutdown as *const () as usize;
+    action.sa_flags = libc::SA_RESTART;
+    unsafe { libc::sigemptyset(&mut action.sa_mask) };
+    for signal in [libc::SIGTERM, libc::SIGINT, libc::SIGHUP] {
+        if unsafe { libc::sigaction(signal, &action, std::ptr::null_mut()) } != 0 {
+            return Err(format!(
+                "Could not handle shutdown signal {signal}: {}",
+                std::io::Error::last_os_error()
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn shutdown_action() -> Option<TrayAction> {
+    SHUTDOWN_REQUESTED
+        .load(Ordering::Relaxed)
+        .then_some(TrayAction::Shutdown)
 }
 
 pub fn show_fatal_error(error: &str) {
@@ -835,6 +917,7 @@ fn run_x11(
     let mut output = X11Output::new()?;
     let engine = runtime::start(settings.clone());
     let mut app = LinuxEngine::new(engine);
+    app.meeting_updates = tray.map(|tray| tray.sender.clone());
     let mut last_settings_check = Instant::now();
     // Esc cancels only while recording: the grab exists for that window of
     // time, so Esc keeps working everywhere else.
@@ -851,7 +934,7 @@ fn run_x11(
                 let _ = hotkeys.unregister(escape);
             }
         }
-        while let Ok(action) = actions.try_recv() {
+        for action in shutdown_action().into_iter().chain(actions.try_iter()) {
             let (action, paste_request) = match action {
                 TrayAction::RecoveryPaste(request) => {
                     if request.expired() {
@@ -874,6 +957,7 @@ fn run_x11(
                     };
                     let _ = reply.0.send(value);
                 }
+                TrayAction::Meeting(call) => app.meeting(call),
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
@@ -940,15 +1024,15 @@ fn run_x11(
                     }
                     Ok(_) => {}
                 },
-                TrayAction::Quit | TrayAction::QuitAnyway => {
-                    if app.quit_busy() {
+                TrayAction::Quit | TrayAction::QuitAnyway | TrayAction::Shutdown => {
+                    if action != TrayAction::Shutdown && app.quit_busy() {
                         update_tray_status(
                             tray,
                             "@notice:Finish recording or processing before quitting",
                         );
                         continue;
                     }
-                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                    if action == TrayAction::Quit && history::recovery::retry().is_err() {
                         update_tray_status(tray, "@quit-protected");
                         continue;
                     }
@@ -1005,7 +1089,7 @@ fn run_x11(
                             app.open_media(tray)
                         }
                         ShortcutAction::Meeting if event.state == HotKeyState::Pressed => {
-                            meeting_shortcut_pressed()
+                            app.meeting(meeting_shortcut_pressed())
                         }
                         _ => {}
                     }
@@ -1081,6 +1165,7 @@ fn run_x11(
                 }
             },
         );
+        app.finish_delivery();
         if last_settings_check.elapsed() >= Duration::from_millis(500) {
             last_settings_check = Instant::now();
             if let Ok(updated) = Settings::load() {
@@ -1251,7 +1336,9 @@ fn ask_shortcut_command(intent: RecordingIntent) -> EngineCommand {
     }
 }
 
-fn meeting_shortcut_pressed() {}
+fn meeting_shortcut_pressed() -> MeetingCall {
+    MeetingCall::desktop(MeetingRequest::Shortcut)
+}
 
 fn portal_binding(action: ShortcutAction) -> (&'static str, &'static str) {
     match action {
@@ -1412,6 +1499,7 @@ async fn shortcut_events(
     let mut latch = ShortcutLatch::default();
     let mut ask_latch = ShortcutLatch::default();
     let mut media_pressed = false;
+    let mut meeting_pressed = false;
     loop {
         tokio::select! {
             _ = closed.next() => break,
@@ -1426,7 +1514,10 @@ async fn shortcut_events(
             event = presses.next() => {
                 let Some(event) = event else { break; };
                 if serde_json::to_value(event.session_handle()).ok().as_ref() != Some(&session_path) || !active.contains(event.shortcut_id()) { continue; }
-                if event.shortcut_id() == portal_binding(ShortcutAction::Meeting).0 { meeting_shortcut_pressed(); }
+                if event.shortcut_id() == portal_binding(ShortcutAction::Meeting).0 && !meeting_pressed {
+                    meeting_pressed = true;
+                    let _ = actions.send(TrayAction::Meeting(meeting_shortcut_pressed()));
+                }
                 if event.shortcut_id() == "media" && !media_pressed { media_pressed = true; let _ = actions.send(TrayAction::OpenMedia); }
                 if event.shortcut_id() == "ask" {
                     let mode = Settings::load().unwrap_or_else(|_| settings.clone()).recording_mode;
@@ -1446,6 +1537,7 @@ async fn shortcut_events(
                 if ask_latch.release().is_some() { let _ = actions.send(TrayAction::AskStop); }
                 if let Some(intent) = latch.release() { let _ = actions.send(shortcut_action(intent)); }
                 media_pressed = false;
+                meeting_pressed = false;
                 triggers = change.shortcuts().iter().map(|s| (s.id().to_string(), s.trigger_description().to_string())).collect();
                 active = assigned_portal_bindings(&triggers, &enabled);
                 let missing: Vec<_> = enabled.difference(&active).cloned().collect();
@@ -1460,6 +1552,7 @@ async fn shortcut_events(
                 let Some(event) = event else { break; };
                 if serde_json::to_value(event.session_handle()).ok().as_ref() != Some(&session_path) { continue; }
                 if event.shortcut_id() == "media" { media_pressed = false; }
+                if event.shortcut_id() == portal_binding(ShortcutAction::Meeting).0 { meeting_pressed = false; }
                 if event.shortcut_id() == "ask" && ask_latch.release().is_some() { let _ = actions.send(TrayAction::AskStop); }
                 if event.shortcut_id() == SHORTCUT_ID && let Some(intent) = latch.release() {
                     let _ = actions.send(shortcut_action(intent));
@@ -1503,6 +1596,7 @@ async fn run_wayland(
     }));
     let mut output = None;
     let mut app = LinuxEngine::new(runtime::start(settings.clone()));
+    app.meeting_updates = tray.map(|tray| tray.sender.clone());
     let mut timer = tokio::time::interval(Duration::from_millis(16));
     let mut escape = escape::EscapeMonitor::default();
     loop {
@@ -1546,7 +1640,11 @@ async fn run_wayland(
                 app.command(EngineCommand::Cancel, || None);
             }
         }
-        for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
+        for action in shutdown_action()
+            .into_iter()
+            .chain(actions.try_iter())
+            .chain(shortcut_receiver.try_iter())
+        {
             let (action, paste_request) = match action {
                 TrayAction::RecoveryPaste(request) => {
                     if request.expired() {
@@ -1569,6 +1667,7 @@ async fn run_wayland(
                     };
                     let _ = reply.0.send(value);
                 }
+                TrayAction::Meeting(call) => app.meeting(call),
                 TrayAction::AskStart => app.command(EngineCommand::AskStart, || None),
                 TrayAction::AskStop => app.command(EngineCommand::AskStop, || None),
                 TrayAction::Ask => app.command(EngineCommand::Ask, || None),
@@ -1667,15 +1766,15 @@ async fn run_wayland(
                     }
                     Ok(_) => {}
                 },
-                TrayAction::Quit | TrayAction::QuitAnyway => {
-                    if app.quit_busy() {
+                TrayAction::Quit | TrayAction::QuitAnyway | TrayAction::Shutdown => {
+                    if action != TrayAction::Shutdown && app.quit_busy() {
                         update_tray_status(
                             tray,
                             "@notice:Finish recording or processing before quitting",
                         );
                         continue;
                     }
-                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                    if action == TrayAction::Quit && history::recovery::retry().is_err() {
                         update_tray_status(tray, "@quit-protected");
                         continue;
                     }
@@ -1764,6 +1863,7 @@ async fn run_wayland(
                 Ok(None) => update_tray_status(tray, "@refresh"),
             }
         }
+        app.finish_delivery();
     }
 }
 
@@ -2178,6 +2278,8 @@ struct LinuxEngine {
     capture_is_ask: bool,
     capture_refused: bool,
     stop_sent: bool,
+    delivery_session: Option<u64>,
+    meeting_updates: Option<Sender<TrayUpdate>>,
 }
 
 impl LinuxEngine {
@@ -2191,6 +2293,8 @@ impl LinuxEngine {
             capture_is_ask: false,
             capture_refused: false,
             stop_sent: false,
+            delivery_session: None,
+            meeting_updates: None,
         }
     }
 
@@ -2255,6 +2359,10 @@ impl LinuxEngine {
     }
 
     fn current_media(&mut self, tray: Option<&TrayUpdates>) -> serde_json::Value {
+        if meeting_reserved() {
+            update_tray_status(tray, &format!("@notice:{MEETING_BUSY_MESSAGE}"));
+            return serde_json::json!({"ok":false,"error":{"code":"busy","message":MEETING_BUSY_MESSAGE}});
+        }
         if self.quit_busy() {
             return serde_json::json!({"ok":false,"error":{"code":"busy","message":"Finish or cancel the current operation"}});
         }
@@ -2272,7 +2380,12 @@ impl LinuxEngine {
     }
 
     fn quit_busy(&self) -> bool {
-        self.configuration_pending
+        meeting_reserved() || self.ordinary_busy()
+    }
+
+    fn ordinary_busy(&self) -> bool {
+        self.engine.delivery_pending()
+            || self.configuration_pending
             || self.capture_pending
             || matches!(
                 self.status,
@@ -2280,11 +2393,30 @@ impl LinuxEngine {
             )
     }
 
+    fn meeting(&self, call: MeetingCall) {
+        let _ = self.engine.commands.send(EngineCommand::Meeting(call));
+    }
+
+    fn finish_delivery(&mut self) {
+        if let Some(session) = self.delivery_session.take() {
+            self.engine.finish_delivery(session);
+            QUIT_BUSY.store(self.ordinary_busy(), std::sync::atomic::Ordering::Release);
+        }
+    }
+
     fn toggle(&mut self, focused_window: impl FnOnce() -> Option<u32>) {
         self.command(EngineCommand::Toggle, focused_window);
     }
 
     fn command(&mut self, command: EngineCommand, focus: impl FnOnce() -> Option<u32>) {
+        if meeting_reserved() && command.conflicts_with_meeting() {
+            if let Some(updates) = &self.meeting_updates {
+                let _ = updates.send(TrayUpdate::Meeting(MeetingUpdate::Issue(
+                    MEETING_BUSY_MESSAGE.into(),
+                )));
+            }
+            return;
+        }
         // Held until the command has marked the app busy, so an install can't slip in.
         let Some(_admitted) = updates::admit() else {
             return;
@@ -2399,6 +2531,11 @@ impl LinuxEngine {
         let mut interaction_error = None;
         while let Ok(update) = self.engine.updates.try_recv() {
             match update {
+                EngineUpdate::Meeting(update) => {
+                    if let Some(sender) = &self.meeting_updates {
+                        let _ = sender.send(TrayUpdate::Meeting(update));
+                    }
+                }
                 EngineUpdate::PrepareAsk(ack) => prepare_ask(ack),
                 EngineUpdate::Ask(value) => {
                     if value.get("error").is_some()
@@ -2406,7 +2543,7 @@ impl LinuxEngine {
                             == Some("Cancelled")
                     {
                         self.capture_pending = false;
-                        QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
+                        QUIT_BUSY.store(self.ordinary_busy(), std::sync::atomic::Ordering::Release);
                     }
                     #[cfg(feature = "ask")]
                     crate::assistant::update_status(&value);
@@ -2414,7 +2551,7 @@ impl LinuxEngine {
                 }
                 EngineUpdate::FormattingBusy(busy) => {
                     self.configuration_pending = busy;
-                    QUIT_BUSY.store(self.quit_busy(), std::sync::atomic::Ordering::Release);
+                    QUIT_BUSY.store(self.ordinary_busy(), std::sync::atomic::Ordering::Release);
                     status_changed(if busy { "@format-busy" } else { "@format-idle" })
                 }
                 EngineUpdate::ActiveModel(model) => {
@@ -2435,13 +2572,7 @@ impl LinuxEngine {
                     if self.status == AppStatus::Ready {
                         updates::engine_ready();
                     }
-                    QUIT_BUSY.store(
-                        matches!(
-                            self.status,
-                            AppStatus::Starting | AppStatus::Recording | AppStatus::Transcribing
-                        ),
-                        std::sync::atomic::Ordering::Release,
-                    );
+                    QUIT_BUSY.store(self.ordinary_busy(), std::sync::atomic::Ordering::Release);
                     status_changed(status_text(&self.status).as_str());
                 }
                 EngineUpdate::TranscriptReady {
@@ -2449,6 +2580,7 @@ impl LinuxEngine {
                     transcript,
                     session,
                 } => {
+                    self.delivery_session = Some(session);
                     // Cancel may land after decoding finished; never paste or
                     // save a dictation the user discarded.
                     if self.engine.dictation_cancelled(session) {

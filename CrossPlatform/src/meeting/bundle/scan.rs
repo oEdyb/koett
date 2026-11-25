@@ -1,5 +1,6 @@
 use super::records::{ExportProjection, HistoryProjection, JobError};
 use super::*;
+use crate::meeting::{Artifact, MeetingView};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum DiskState {
@@ -26,6 +27,68 @@ pub(crate) enum DiskState {
 }
 
 impl DiskState {
+    pub(crate) fn is_recoverable(&self) -> bool {
+        match self {
+            Self::Recoverable { .. } => true,
+            Self::Complete {
+                receipt,
+                audio_retained,
+                ..
+            } => *audio_retained && receipt.publication.fallback,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn view(self, root: &Path) -> MeetingView {
+        match self {
+            Self::Active { id, manifest } => MeetingView::Active(manifest.map_or(
+                SessionInfo {
+                    id,
+                    started_at_ms: 0,
+                },
+                |manifest| manifest.info,
+            )),
+            Self::Recoverable {
+                manifest, reason, ..
+            } => MeetingView::Recoverable(manifest.info, reason),
+            Self::Complete {
+                manifest,
+                receipt,
+                projections,
+                audio_retained,
+                ..
+            } => {
+                let directory = root.join(manifest.info.id.to_string());
+                let publication = receipt.publication;
+                MeetingView::Complete(
+                    manifest.info,
+                    Artifact {
+                        markdown: directory.join(TRANSCRIPT),
+                        assets: publication
+                            .assets
+                            .into_iter()
+                            .map(|path| directory.join(path))
+                            .collect(),
+                        backends: publication.backends,
+                        fallback: publication.fallback,
+                        audio_retained,
+                    },
+                    projections,
+                )
+            }
+            Self::Unreadable { id, issue } => MeetingView::Unreadable { id, issue },
+        }
+    }
+
+    pub(crate) fn duration(&self) -> Option<Offset> {
+        match self {
+            Self::Recoverable { seal, .. } | Self::Complete { seal, .. } => {
+                seal.as_ref().map(|seal| seal.cutoff)
+            }
+            _ => None,
+        }
+    }
+
     pub(crate) fn id(&self) -> MeetingId {
         match self {
             Self::Recoverable { manifest, .. } | Self::Complete { manifest, .. } => {

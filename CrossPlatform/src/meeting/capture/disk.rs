@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use super::super::Offset;
 
-pub(super) const DISK_WARNING: u64 = 1024 * 1024 * 1024;
+pub(in crate::meeting) const DISK_WARNING: u64 = 1024 * 1024 * 1024;
 const DISK_FLOOR: u64 = 256 * 1024 * 1024;
 const DISK_INTERVAL: Duration = Duration::from_secs(30);
 

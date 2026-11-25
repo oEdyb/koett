@@ -14,6 +14,8 @@ pub enum DrawingRequest {
 }
 
 pub enum Update {
+    Meeting(crate::meeting::MeetingView),
+    MeetingSketch(crate::meeting::SketchScope),
     DrawingCommand(DrawingRequest, Sender<serde_json::Value>, Instant),
     RecordingStatus(Sender<serde_json::Value>),
     MediaCommand(bool, Sender<serde_json::Value>),
@@ -34,6 +36,10 @@ pub enum Update {
     Shortcut(String),
     Levels(crate::audio::AudioLevels),
 }
+
+fn update_meeting(_view: crate::meeting::MeetingView) {}
+
+fn update_meeting_sketch(_scope: crate::meeting::SketchScope) {}
 
 pub fn run(actions: Sender<TrayAction>, updates: Receiver<Update>, visible: bool) {
     let application = gtk::Application::builder()
@@ -637,6 +643,8 @@ fn build_window(
                             delivery_copy.set_label("Copy transcript");
                         }
                     }
+                    Update::Meeting(view) => update_meeting(view),
+                    Update::MeetingSketch(scope) => update_meeting_sketch(scope),
                     Update::Status(message) if message.starts_with("@notice:@media-result:") => {
                         let text = message
                             .trim_start_matches("@notice:@media-result:")

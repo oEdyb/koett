@@ -13,8 +13,17 @@ use crate::transcription::{
     BackgroundSession, ParakeetTranscriber, Transcript, TranscriptionWorker,
 };
 
-#[derive(Clone)]
+#[cfg(target_os = "linux")]
+use crate::meeting::{MeetingCall, MeetingController, MeetingEvent, MeetingUpdate};
+
+#[cfg_attr(not(target_os = "linux"), derive(Clone))]
 pub enum EngineCommand {
+    #[cfg(target_os = "linux")]
+    #[allow(private_interfaces)]
+    Meeting(MeetingCall),
+    #[cfg(target_os = "linux")]
+    #[allow(private_interfaces)]
+    MeetingEvent(MeetingEvent),
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     Media(String),
     #[cfg(any(target_os = "linux", target_os = "windows"))]
@@ -37,6 +46,27 @@ pub enum EngineCommand {
     Quit,
 }
 
+#[cfg(target_os = "linux")]
+impl EngineCommand {
+    pub(crate) fn conflicts_with_meeting(&self) -> bool {
+        matches!(
+            self,
+            Self::Toggle
+                | Self::Start
+                | Self::Stop
+                | Self::Cancel
+                | Self::Ask
+                | Self::AskStart
+                | Self::AskStop
+                | Self::CancelAsk
+                | Self::Media(_)
+                | Self::CancelMedia
+                | Self::SwitchModel(_)
+                | Self::Formatting(_)
+        )
+    }
+}
+
 impl From<crate::state::RecordingIntent> for EngineCommand {
     fn from(intent: crate::state::RecordingIntent) -> Self {
         match intent {
@@ -48,6 +78,9 @@ impl From<crate::state::RecordingIntent> for EngineCommand {
 }
 
 pub enum EngineUpdate {
+    #[cfg(target_os = "linux")]
+    #[allow(private_interfaces)]
+    Meeting(MeetingUpdate),
     #[cfg(target_os = "linux")]
     Ask(serde_json::Value),
     #[cfg(target_os = "linux")]
@@ -72,6 +105,8 @@ pub enum EngineUpdate {
 pub struct DictationSessions {
     current: AtomicU64,
     cancelled: AtomicU64,
+    #[cfg(target_os = "linux")]
+    delivering: AtomicU64,
 }
 
 impl DictationSessions {
@@ -137,6 +172,21 @@ impl EngineHandle {
         self.sessions.begin()
     }
 
+    #[cfg(target_os = "linux")]
+    pub(crate) fn finish_delivery(&self, session: u64) {
+        let _ = self.sessions.delivering.compare_exchange(
+            session,
+            0,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    pub(crate) fn delivery_pending(&self) -> bool {
+        self.sessions.delivering.load(Ordering::Acquire) != 0
+    }
+
     pub fn cancel_ask(&self) {
         self.ask_cancelled.store(true, Ordering::Release);
     }
@@ -148,6 +198,15 @@ impl EngineHandle {
         let _ = self.commands.send(EngineCommand::Quit);
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+impl Drop for EngineHandle {
+    fn drop(&mut self) {
+        if self.worker.is_some() {
+            let _ = self.commands.send(EngineCommand::Quit);
         }
     }
 }
@@ -184,10 +243,16 @@ fn start_source(settings: Settings, source: CaptureSource) -> EngineHandle {
     let sessions = Arc::new(DictationSessions::default());
     let worker_sessions = sessions.clone();
     model::SWITCH_CANCELLED.store(false, Ordering::Release);
+    #[cfg(target_os = "linux")]
+    let post = command_sender.clone();
     let worker = thread::spawn(move || {
         run(
             settings,
-            command_receiver,
+            CommandInbox {
+                receive: command_receiver,
+                #[cfg(target_os = "linux")]
+                post,
+            },
             update_sender,
             worker_cancelled,
             worker_ask_cancelled,
@@ -206,9 +271,15 @@ fn start_source(settings: Settings, source: CaptureSource) -> EngineHandle {
     }
 }
 
+struct CommandInbox {
+    receive: Receiver<EngineCommand>,
+    #[cfg(target_os = "linux")]
+    post: Sender<EngineCommand>,
+}
+
 fn run(
     mut settings: Settings,
-    commands: Receiver<EngineCommand>,
+    inbox: CommandInbox,
     updates: Sender<EngineUpdate>,
     cancelled: Arc<AtomicBool>,
     ask_cancelled: Arc<AtomicBool>,
@@ -217,6 +288,10 @@ fn run(
 ) {
     #[cfg(not(all(target_os = "linux", feature = "ask")))]
     let _ = ask_cancelled;
+    let commands = inbox.receive;
+    #[cfg(target_os = "linux")]
+    let mut meetings =
+        MeetingController::new(inbox.post, updates.clone(), &crate::linux::MEETING_ACTIVITY);
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
 
@@ -300,6 +375,8 @@ fn run(
     #[cfg(all(target_os = "linux", feature = "ask"))]
     let mut speech: Option<crate::assistant::speech::Speech> = None;
     loop {
+        #[cfg(target_os = "linux")]
+        meetings.check_sources(std::time::Instant::now());
         #[cfg(all(target_os = "linux", feature = "ask"))]
         if (ask_image.is_some() || answer.is_some())
             && let Some(active) = &speech
@@ -520,6 +597,37 @@ fn run(
                 Err(RecvTimeoutError::Disconnected) => break,
             }
         };
+        #[cfg(target_os = "linux")]
+        let command = match command {
+            EngineCommand::Meeting(call) => {
+                let ready = status == AppStatus::Ready
+                    && media_operation.is_none()
+                    && preparation.is_none()
+                    && sessions.delivering.load(Ordering::Acquire) == 0;
+                #[cfg(feature = "ask")]
+                let ready = ready
+                    && ask_image.is_none()
+                    && answer.is_none()
+                    && screen_capture.is_none()
+                    && speech.is_none();
+                meetings.dispatch(call, ready, &settings);
+                continue;
+            }
+            EngineCommand::MeetingEvent(event) => {
+                meetings.receive(event, std::time::Instant::now());
+                continue;
+            }
+            command if meetings.reserves_engine() && command.conflicts_with_meeting() => {
+                let _ = updates.send(EngineUpdate::Meeting(MeetingUpdate::Issue(
+                    crate::linux::MEETING_BUSY_MESSAGE.into(),
+                )));
+                if status == AppStatus::Ready {
+                    send_status(&updates, &status);
+                }
+                continue;
+            }
+            command => command,
+        };
         #[cfg(all(target_os = "linux", feature = "ask"))]
         let stopping_question = matches!(command, EngineCommand::AskStop | EngineCommand::Stop)
             || matches!(command, EngineCommand::Ask | EngineCommand::Toggle)
@@ -658,6 +766,8 @@ fn run(
             }
         }
         match command {
+            #[cfg(target_os = "linux")]
+            EngineCommand::Meeting(_) | EngineCommand::MeetingEvent(_) => unreachable!(),
             #[cfg(target_os = "linux")]
             EngineCommand::Ask
             | EngineCommand::CancelAsk
@@ -1022,6 +1132,8 @@ fn run(
                                 cleaner = None;
                             }
                         }
+                        #[cfg(target_os = "linux")]
+                        sessions.delivering.store(session, Ordering::Release);
                         let _ = updates.send(EngineUpdate::TranscriptReady {
                             model: model.clone(),
                             transcript,
@@ -1073,6 +1185,8 @@ fn run(
             | EngineCommand::Cancel => {}
         }
     }
+    #[cfg(target_os = "linux")]
+    meetings.shutdown();
     crate::formatting::CANCELLED.store(true, Ordering::Release);
     if let Some((receiver, worker)) = preparation {
         drop(receiver);

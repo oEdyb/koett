@@ -12,6 +12,7 @@ struct Session {
     info: SessionInfo,
     zero: Instant,
     attempt: Attempt,
+    marks: MarkSink,
 }
 
 impl Session {
@@ -23,14 +24,31 @@ impl Session {
             },
             zero: Instant::now(),
             attempt: Attempt(2),
+            marks: MarkSink::fixture(),
         }
+    }
+
+    fn plan(&self) -> SessionPlan {
+        SessionPlan {
+            manifest: Manifest {
+                info: self.info.clone(),
+                mic: None,
+                backend_pref: Backend::Parakeet,
+                keep_audio: false,
+                export_dir: None,
+            },
+        }
+    }
+
+    fn capture(&self) -> LiveCapture {
+        LiveCapture::Fixture(self.marks.clone())
     }
 
     fn start(&self) -> StartAdmission {
         StartAdmission::New {
             info: self.info.clone(),
             attempt: self.attempt,
-            plan: SessionPlan,
+            plan: self.plan(),
         }
     }
 
@@ -38,7 +56,7 @@ impl Session {
         Event::Opened(
             self.attempt,
             Ok(OpenedCapture {
-                capture: LiveCapture,
+                capture: self.capture(),
                 epoch: MeetingEpoch(self.zero),
                 health: CaptureHealth::default(),
             }),
@@ -84,7 +102,7 @@ impl Session {
     fn processing(&self) -> Active {
         next(
             self.closing(false),
-            Event::Closed(self.attempt, Ok(SealedBundle)),
+            Event::Closed(self.attempt, Ok(SealedBundle::Fixture)),
         )
         .0
     }
@@ -95,7 +113,7 @@ impl Session {
             attempt: self.attempt,
             input: JobInput {
                 source: JobSource::Recover {
-                    bundle: RecoverableBundle,
+                    bundle: RecoverableBundle::Fixture,
                     backend,
                 },
             },
@@ -124,7 +142,7 @@ fn start_and_shortcut_reserve_the_engine_then_reply_recording() {
         let (opening, effects, reply) = session.request(Active::Idle, request);
         assert!(opening.reserves_engine());
         assert_eq!(opening.view(), None);
-        assert_eq!(effects, vec![Effect::Open(session.attempt, SessionPlan)]);
+        assert_eq!(effects, vec![Effect::Open(session.attempt, session.plan())]);
         assert_eq!(reply, Reply::None);
 
         let (recording, effects, reply) = next(opening, session.opened());
@@ -140,6 +158,7 @@ fn start_and_shortcut_reserve_the_engine_then_reply_recording() {
                 Effect::Notify(MeetingUpdate::Sketch(SketchScope::Open(MeetingMarkScope {
                     id: session.info.id,
                     epoch: MeetingEpoch(session.zero),
+                    sink: session.marks.clone(),
                 }))),
                 Effect::NotifyView(expected_view),
             ]
@@ -337,7 +356,7 @@ fn finish_and_cancel_commit_the_admission_cutoff_before_draining() {
                     spec.cutoff
                 ))),
                 Effect::NotifyView(view),
-                Effect::Drain(LiveCapture, spec, DrainMode::Worker),
+                Effect::Drain(session.capture(), spec, DrainMode::Worker),
             ]
         );
     }
@@ -373,7 +392,7 @@ fn rejected_intent_restores_confirmation_and_can_drain_the_original_capture() {
     assert_eq!(
         effects
             .iter()
-            .filter(|effect| matches!(effect, Effect::Drain(LiveCapture, _, _)))
+            .filter(|effect| matches!(effect, Effect::Drain(_, _, _)))
             .count(),
         1
     );
@@ -395,7 +414,7 @@ fn indeterminate_intent_drains_as_interrupted() {
     assert_eq!(
         reply,
         Reply::View(MeetingView::Closing {
-            info: session.info,
+            info: session.info.clone(),
             goal: goal.clone()
         })
     );
@@ -403,7 +422,7 @@ fn indeterminate_intent_drains_as_interrupted() {
     assert_eq!(
         effects.last(),
         Some(&Effect::Drain(
-            LiveCapture,
+            session.capture(),
             CloseSpec {
                 cutoff: Offset(20_001),
                 goal
@@ -469,7 +488,11 @@ fn capture_fault_persists_interruption_at_the_fault_offset_and_drains() {
         );
         assert_eq!(
             effects.last(),
-            Some(&Effect::Drain(LiveCapture, spec.clone(), DrainMode::Worker))
+            Some(&Effect::Drain(
+                session.capture(),
+                spec.clone(),
+                DrainMode::Worker
+            ))
         );
         assert_eq!(reply, Reply::None);
         assert_eq!(
@@ -487,7 +510,7 @@ fn finished_seal_starts_processing_and_releases_the_engine() {
     let session = Session::new();
     let (active, effects, reply) = next(
         session.closing(false),
-        Event::Closed(session.attempt, Ok(SealedBundle)),
+        Event::Closed(session.attempt, Ok(SealedBundle::Fixture)),
     );
     assert!(!active.reserves_engine());
     assert_eq!(reply, Reply::None);
@@ -501,7 +524,7 @@ fn finished_seal_starts_processing_and_releases_the_engine() {
             Effect::Notify(MeetingUpdate::Sketch(SketchScope::Closed)),
             Effect::NotifyView(view.clone()),
             Effect::Process(JobInput {
-                source: JobSource::Finished(SealedBundle)
+                source: JobSource::Finished(SealedBundle::Fixture)
             }),
         ]
     );
@@ -516,11 +539,11 @@ fn held_or_interrupted_seals_and_seal_failures_return_idle_without_processing() 
         Event::CaptureFault(session.attempt, Offset(3), "fault".into()),
     );
     for (active, result) in [
-        (session.closing(true), Ok(SealedBundle)),
-        (interrupted, Ok(SealedBundle)),
+        (session.closing(true), Ok(SealedBundle::Fixture)),
+        (interrupted, Ok(SealedBundle::Fixture)),
         (
             session.closing(false),
-            Err((RecoverableBundle, "seal failure".into())),
+            Err((RecoverableBundle::Fixture, "seal failure".into())),
         ),
     ] {
         let (active, effects, _) = next(active, Event::Closed(session.attempt, result));
@@ -547,7 +570,7 @@ fn recover_launches_an_admitted_bundle_and_passes_through_backend_override() {
         assert_eq!(reply, Reply::View(view.clone()));
         assert!(effects.contains(&Effect::Process(JobInput {
             source: JobSource::Recover {
-                bundle: RecoverableBundle,
+                bundle: RecoverableBundle::Fixture,
                 backend
             }
         })));
@@ -560,7 +583,7 @@ fn successful_processing_returns_idle_and_notifies_history() {
     let session = Session::new();
     let (active, effects, _) = next(
         session.processing(),
-        Event::Processed(session.attempt, Ok(Published)),
+        Event::Processed(session.attempt, Ok(published())),
     );
     assert_eq!(
         effects,
@@ -580,7 +603,7 @@ fn failed_processing_returns_idle_and_reports_recovery_issue() {
         Event::Processed(
             session.attempt,
             Err((
-                RecoverableBundle,
+                RecoverableBundle::Fixture,
                 RecoveryReason::DecodeFailed("decoder exit".into()),
             )),
         ),
@@ -616,9 +639,12 @@ fn shutdown_drains_live_capture_inline_as_interrupted() {
         );
         assert_eq!(
             effects.last(),
-            Some(&Effect::Drain(LiveCapture, spec, DrainMode::Inline))
+            Some(&Effect::Drain(session.capture(), spec, DrainMode::Inline))
         );
-        let (active, _, _) = next(closing, Event::Closed(session.attempt, Ok(SealedBundle)));
+        let (active, _, _) = next(
+            closing,
+            Event::Closed(session.attempt, Ok(SealedBundle::Fixture)),
+        );
         assert_eq!(session.status(active), Reply::View(MeetingView::Idle));
     }
 }
@@ -682,8 +708,11 @@ fn late_worker_completions_for_old_attempts_have_no_effect() {
             committing,
             Event::IntentWritten(old, IntentWrite::Committed),
         ),
-        (session.closing(false), Event::Closed(old, Ok(SealedBundle))),
-        (session.processing(), Event::Processed(old, Ok(Published))),
+        (
+            session.closing(false),
+            Event::Closed(old, Ok(SealedBundle::Fixture)),
+        ),
+        (session.processing(), Event::Processed(old, Ok(published()))),
     ] {
         let previous_view = active.view();
         let reserved = active.reserves_engine();
@@ -739,4 +768,20 @@ fn interrupt_causes_map_to_their_recovery_reasons() {
         InterruptCause::CaptureFault("disk low".into()).recovery_reason(),
         RecoveryReason::CaptureFailed("disk low".into())
     );
+}
+
+fn published() -> Published {
+    Published {
+        artifact: Artifact {
+            markdown: PathBuf::from("transcript.md"),
+            assets: vec![],
+            backends: Default::default(),
+            fallback: false,
+            audio_retained: true,
+        },
+        projections: Projections {
+            history: bundle::records::HistoryProjection::Indexed,
+            export: bundle::records::ExportProjection::Disabled,
+        },
+    }
 }

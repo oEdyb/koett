@@ -15,6 +15,7 @@ use state::{Input, Lifecycle, Operation, State};
 const DRAIN_TIMEOUT: Duration = Duration::from_secs(8);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
 pub(crate) struct MarkRef {
     pub(crate) id: u64,
     pub(crate) offset: Offset,
@@ -35,7 +36,29 @@ impl Shared {
 #[derive(Clone)]
 pub(crate) struct MarkSink(Arc<Shared>);
 
+impl std::fmt::Debug for MarkSink {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MarkSink").finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for MarkSink {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for MarkSink {}
+
 impl MarkSink {
+    #[cfg(test)]
+    pub(in crate::meeting) fn fixture() -> Self {
+        Self(Arc::new(Shared {
+            state: Mutex::default(),
+            changed: Condvar::new(),
+        }))
+    }
+
     pub(crate) fn begin(&self, id: u64, offset: Offset) -> bool {
         self.input(id, Input::Begin(offset))
     }
@@ -180,6 +203,7 @@ fn filename(offset: Offset, id: u64) -> String {
     format!("mark-{:010}-{id:04}.png", offset.0)
 }
 
+#[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
 pub(crate) fn list_marks(directory: &Path, seal: Option<&Seal>) -> io::Result<Vec<MarkRef>> {
     let assets = match fs::read_dir(directory.join("assets")) {
         Ok(assets) => assets,

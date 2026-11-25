@@ -1,9 +1,19 @@
-#![allow(dead_code)]
-
 pub(crate) mod bundle;
 pub(crate) mod capture;
+mod controller;
+mod session;
+mod ticket;
 
-use std::sync::{Arc, atomic::AtomicU8, mpsc::Sender};
+pub(crate) use controller::MeetingController;
+pub(crate) use ticket::Ticket;
+
+use bundle::marks::MarkSink;
+pub(crate) use bundle::records::Projections;
+use bundle::records::{Manifest, Seal};
+use session::CaptureResources;
+use std::path::PathBuf;
+use std::sync::mpsc::Sender;
+
 use std::time::Instant;
 
 use uuid::Uuid;
@@ -29,7 +39,7 @@ impl MeetingId {
 
 impl std::fmt::Display for MeetingId {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.hyphenated().fmt(formatter)
+        self.as_uuid().hyphenated().fmt(formatter)
     }
 }
 
@@ -127,6 +137,7 @@ impl MeetingEpoch {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum MeetingRequest {
     Start(MeetingId),
     Shortcut,
@@ -141,17 +152,53 @@ pub(crate) enum MeetingRequest {
     Status(Option<MeetingId>),
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct MeetingCall {
     request: MeetingRequest,
     reply: ReplyTarget,
 }
 
+impl MeetingCall {
+    pub(crate) fn desktop(request: MeetingRequest) -> Self {
+        Self {
+            request,
+            reply: ReplyTarget::Desktop,
+        }
+    }
+
+    pub(crate) fn socket(request: MeetingRequest, ticket: Ticket, reply: Sender<Reply>) -> Self {
+        Self {
+            request,
+            reply: ReplyTarget::Socket(ticket, reply),
+        }
+    }
+    #[cfg(test)]
+    pub(crate) fn test_reply(self, result: Reply) {
+        let ReplyTarget::Socket(ticket, reply) = self.reply else {
+            panic!("expected socket call")
+        };
+        assert!(ticket.claim(Instant::now()));
+        reply.send(result).unwrap();
+    }
+}
+
+#[derive(Clone, Debug)]
 enum ReplyTarget {
     Desktop,
     Socket(Ticket, Sender<Reply>),
 }
 
-struct Ticket(Arc<AtomicU8>);
+impl PartialEq for ReplyTarget {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Desktop, Self::Desktop) => true,
+            (Self::Socket(ticket, _), Self::Socket(other, _)) => ticket == other,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for ReplyTarget {}
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum MeetingView {
@@ -197,10 +244,33 @@ pub(crate) enum SketchScope {
     Finishing(MeetingId, Offset),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct MeetingMarkScope {
     id: MeetingId,
     epoch: MeetingEpoch,
+    sink: MarkSink,
+}
+
+#[allow(dead_code)] // S4b binds the sketch target to this scope.
+impl MeetingMarkScope {
+    pub(crate) fn id(&self) -> MeetingId {
+        self.id
+    }
+    pub(crate) fn offset(&self, at: Instant) -> Offset {
+        self.epoch.offset(at)
+    }
+    pub(crate) fn begin(&self, id: u64, at: Instant) -> bool {
+        self.sink.begin(id, self.offset(at))
+    }
+    pub(crate) fn submit(&self, id: u64, offset: Offset, png: Vec<u8>) -> bool {
+        self.sink.submit(id, offset, png)
+    }
+    pub(crate) fn undo(&self, id: u64) -> bool {
+        self.sink.undo(id)
+    }
+    pub(crate) fn miss(&self, id: u64, issue: String) -> bool {
+        self.sink.miss(id, issue)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -217,37 +287,80 @@ pub(crate) enum SourceHealth {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Artifact;
+pub(crate) struct Artifact {
+    pub(crate) markdown: PathBuf,
+    pub(crate) assets: Vec<PathBuf>,
+    pub(crate) backends: std::collections::BTreeMap<String, usize>,
+    pub(crate) fallback: bool,
+    pub(crate) audio_retained: bool,
+}
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct Projections;
+#[cfg_attr(test, derive(Debug, PartialEq))]
+enum LiveCapture {
+    Armed(Box<CaptureResources>),
+    #[cfg(test)]
+    Fixture(MarkSink),
+}
+
+impl LiveCapture {
+    fn marks(&self) -> MarkSink {
+        match self {
+            Self::Armed(capture) => capture.marks.sink(),
+            #[cfg(test)]
+            Self::Fixture(sink) => sink.clone(),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
-struct LiveCapture;
+struct SessionPlan {
+    manifest: Manifest,
+}
 
-#[derive(Debug, PartialEq, Eq)]
-struct SessionPlan;
+#[cfg_attr(test, derive(Debug, PartialEq))]
+enum SealedBundle {
+    Locked {
+        bundle: std::sync::Arc<bundle::Bundle>,
+        seal: Seal,
+    },
+    #[cfg(test)]
+    Fixture,
+}
 
-#[derive(Debug, PartialEq, Eq)]
-struct SealedBundle;
+#[cfg_attr(test, derive(Debug, PartialEq))]
+enum RecoverableBundle {
+    Locked(std::sync::Arc<bundle::Bundle>),
+    #[cfg(test)]
+    Fixture,
+}
 
-#[derive(Debug, PartialEq, Eq)]
-struct RecoverableBundle;
+#[allow(dead_code)] // S5 publishes a transcript and projections.
+struct Published {
+    artifact: Artifact,
+    projections: Projections,
+}
 
-struct Published;
-
-#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 struct JobInput {
     source: JobSource,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum JobSource {
     Finished(SealedBundle),
     Recover {
         bundle: RecoverableBundle,
+        #[allow(dead_code)] // S5 selects a decoder.
         backend: Option<Backend>,
     },
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum MeetingActivity {
+    Idle,
+    Reserved,
+    Processing,
 }
 
 enum Active {
@@ -279,7 +392,15 @@ enum Active {
 
 impl Active {
     fn reserves_engine(&self) -> bool {
-        !matches!(self, Self::Idle | Self::Processing { .. })
+        self.activity() == MeetingActivity::Reserved
+    }
+
+    fn activity(&self) -> MeetingActivity {
+        match self {
+            Self::Idle => MeetingActivity::Idle,
+            Self::Processing { .. } => MeetingActivity::Processing,
+            _ => MeetingActivity::Reserved,
+        }
     }
 
     fn view(&self) -> Option<MeetingView> {
@@ -386,6 +507,9 @@ enum Event {
     Opened(Attempt, Result<OpenedCapture, OpenError>),
     IntentWritten(Attempt, IntentWrite),
     Health(Attempt, CaptureHealth),
+    SourceHealth(Attempt, Channel, SourceHealth),
+    DiskHealth(Attempt, Channel, capture::disk::CaptureHealth),
+    BootScanned(Result<usize, String>),
     CaptureFault(Attempt, Offset, String),
     Closed(Attempt, Result<SealedBundle, (RecoverableBundle, String)>),
     Processed(
@@ -394,6 +518,8 @@ enum Event {
     ),
     Shutdown(Instant),
 }
+
+pub(crate) struct MeetingEvent(Event);
 
 #[derive(Debug, PartialEq, Eq)]
 enum IntentPolicy {
@@ -407,7 +533,7 @@ enum DrainMode {
     Inline,
 }
 
-#[derive(Debug, PartialEq)]
+#[cfg_attr(test, derive(Debug, PartialEq))]
 enum Effect {
     Open(Attempt, SessionPlan),
     PersistIntent(CloseSpec, IntentPolicy),
@@ -419,14 +545,14 @@ enum Effect {
 }
 
 #[derive(Debug, PartialEq)]
-enum Reply {
+pub(crate) enum Reply {
     None,
     View(MeetingView),
     Error(ReplyError),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum ReplyError {
+pub(crate) enum ReplyError {
     DaemonUnavailable,
     EngineBusy,
     OutcomeUnknown,
@@ -437,11 +563,31 @@ enum ReplyError {
     DiskLow(String),
     IntentWriteFailed(String),
     ArtifactPending,
-    HelperUnavailable,
+    NotAvailable,
+    DiskUnreadable(String),
 }
 
 impl ReplyError {
-    fn code(&self) -> &'static str {
+    pub(crate) fn message(&self) -> &str {
+        match self {
+            Self::DaemonUnavailable => "Start Koett before running this command.",
+            Self::EngineBusy => "Koett is busy. Try again when it is ready.",
+            Self::OutcomeUnknown => {
+                "The request was admitted. Check meeting status before retrying."
+            }
+            Self::NotFound => "No meeting with that ID was found.",
+            Self::WrongState => "This command is unavailable in the current meeting state.",
+            Self::StaleStopToken => "Use the token from the current stop confirmation.",
+            Self::CaptureUnavailable(issue)
+            | Self::DiskLow(issue)
+            | Self::IntentWriteFailed(issue)
+            | Self::DiskUnreadable(issue) => issue,
+            Self::ArtifactPending => "This meeting does not have a committed transcript.",
+            Self::NotAvailable => "This meeting command is unavailable in this build.",
+        }
+    }
+
+    pub(crate) fn code(&self) -> &'static str {
         match self {
             Self::DaemonUnavailable => "daemon_unavailable",
             Self::EngineBusy => "engine_busy",
@@ -453,7 +599,8 @@ impl ReplyError {
             Self::DiskLow(_) => "disk_low",
             Self::IntentWriteFailed(_) => "intent_write_failed",
             Self::ArtifactPending => "artifact_pending",
-            Self::HelperUnavailable => "helper_unavailable",
+            Self::NotAvailable => "not_available",
+            Self::DiskUnreadable(_) => "disk_unreadable",
         }
     }
 }
@@ -497,6 +644,7 @@ fn next(active: Active, event: Event) -> Transition {
                     let scope = MeetingMarkScope {
                         id: info.id,
                         epoch: opened.epoch,
+                        sink: opened.capture.marks(),
                     };
                     let live = Live {
                         info,
