@@ -81,10 +81,10 @@ def language_audio(index, tracks, waveforms, speech_samples=None):
 
 def detect_language(engine, audio):
     _, _, probabilities = engine.detect_language(audio)
-    return max(
-        (candidate for candidate in probabilities if candidate[0] in ("sv", "en")),
-        key=lambda candidate: candidate[1],
-    )
+    scores = {lang: p for lang, p in probabilities if lang in ("sv", "en")}
+    lang = max(("sv", "en"), key=lambda candidate: scores.get(candidate, 0.0))
+    total = scores.get("sv", 0.0) + scores.get("en", 0.0)
+    return lang, scores.get(lang, 0.0) / total if total > 0 else 0.0
 
 
 def decode(window, audio, context, engines):
