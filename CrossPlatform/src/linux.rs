@@ -819,6 +819,7 @@ pub fn run() -> Result<(), String> {
                 .and_then(|rt| rt.block_on(run_wayland(settings, receiver, Some(&tray_updates))))
         };
         if let Err(error) = result {
+            release_shutdown_signals();
             let _ = ui.send(window::Update::Status(format!("Error: {error}")));
         }
     });
@@ -827,9 +828,16 @@ pub fn run() -> Result<(), String> {
 }
 
 static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
+const SHUTDOWN_SIGNALS: [libc::c_int; 3] = [libc::SIGTERM, libc::SIGINT, libc::SIGHUP];
 
-extern "C" fn request_shutdown(_: libc::c_int) {
-    SHUTDOWN_REQUESTED.store(true, Ordering::Relaxed);
+extern "C" fn request_shutdown(signal: libc::c_int) {
+    // A repeat means the drain is stuck, so the default action ends Koett now.
+    if SHUTDOWN_REQUESTED.swap(true, Ordering::Relaxed) {
+        unsafe {
+            libc::signal(signal, libc::SIG_DFL);
+            libc::raise(signal);
+        }
+    }
 }
 
 fn install_shutdown_signals() -> Result<(), String> {
@@ -838,7 +846,7 @@ fn install_shutdown_signals() -> Result<(), String> {
     action.sa_sigaction = request_shutdown as *const () as usize;
     action.sa_flags = libc::SA_RESTART;
     unsafe { libc::sigemptyset(&mut action.sa_mask) };
-    for signal in [libc::SIGTERM, libc::SIGINT, libc::SIGHUP] {
+    for signal in SHUTDOWN_SIGNALS {
         if unsafe { libc::sigaction(signal, &action, std::ptr::null_mut()) } != 0 {
             return Err(format!(
                 "Could not handle shutdown signal {signal}: {}",
@@ -847,6 +855,17 @@ fn install_shutdown_signals() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// No engine loop is left to drain a meeting, so shutdown signals end Koett
+/// the default way, including one that already arrived.
+fn release_shutdown_signals() {
+    for signal in SHUTDOWN_SIGNALS {
+        unsafe { libc::signal(signal, libc::SIG_DFL) };
+    }
+    if SHUTDOWN_REQUESTED.load(Ordering::Relaxed) {
+        unsafe { libc::raise(libc::SIGTERM) };
+    }
 }
 
 fn shutdown_action() -> Option<TrayAction> {
@@ -1340,6 +1359,59 @@ fn x11_shortcut_intent(
         HotKeyState::Pressed if !editing => latch.press(mode),
         HotKeyState::Released => latch.release(),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod shutdown_signal_tests {
+    use super::*;
+    use std::os::unix::process::ExitStatusExt;
+
+    const PROBE: &str = "KOETT_SHUTDOWN_SIGNAL_PROBE";
+
+    /// Runs `name` alone in a child test process, which reaches `probe`.
+    fn child_signal(name: &str) -> Option<i32> {
+        let test = format!("{}::{name}", module_path!().split_once("::").unwrap().1);
+        std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", &test, "--nocapture", "--test-threads=1"])
+            .env(PROBE, "1")
+            .output()
+            .unwrap()
+            .status
+            .signal()
+    }
+
+    fn probe() -> bool {
+        std::env::var_os(PROBE).is_some()
+    }
+
+    #[test]
+    fn a_second_shutdown_signal_ends_a_stuck_drain() {
+        if probe() {
+            install_shutdown_signals().unwrap();
+            unsafe { libc::raise(libc::SIGTERM) };
+            assert!(shutdown_action().is_some());
+            unsafe { libc::raise(libc::SIGINT) };
+            std::process::exit(0);
+        }
+        assert_eq!(
+            child_signal("a_second_shutdown_signal_ends_a_stuck_drain"),
+            Some(libc::SIGINT)
+        );
+    }
+
+    #[test]
+    fn a_shutdown_signal_ends_koett_once_no_engine_loop_runs() {
+        if probe() {
+            install_shutdown_signals().unwrap();
+            unsafe { libc::raise(libc::SIGHUP) };
+            release_shutdown_signals();
+            std::process::exit(0);
+        }
+        assert_eq!(
+            child_signal("a_shutdown_signal_ends_koett_once_no_engine_loop_runs"),
+            Some(libc::SIGTERM)
+        );
     }
 }
 
