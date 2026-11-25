@@ -152,9 +152,7 @@ fn recovery_reason(directory: &Path) -> RecoveryReason {
     }
     match read_json::<Intent>(&directory.join(INTENT)).map(|intent| intent.goal) {
         Ok(CloseGoal::Hold) => RecoveryReason::HeldByUser,
-        Ok(CloseGoal::Interrupted(issue)) if !issue.is_empty() => {
-            RecoveryReason::CaptureFailed(issue)
-        }
+        Ok(CloseGoal::Interrupted(cause)) => cause.recovery_reason(),
         _ => RecoveryReason::Interrupted,
     }
 }

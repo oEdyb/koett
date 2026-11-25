@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{Backend, CloseGoal, MeetingId, Offset, SessionInfo, TrackSeal, Tracks};
+use crate::meeting::InterruptCause;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct Manifest {
@@ -73,13 +74,30 @@ mod intent_goal {
 
     #[derive(Serialize, Deserialize)]
     #[serde(tag = "goal", rename_all = "snake_case")]
-    enum GoalWire<'a> {
+    enum GoalWire {
         Finish,
         Hold,
         Interrupted {
-            #[serde(default, skip_serializing_if = "str::is_empty")]
-            issue: std::borrow::Cow<'a, str>,
+            #[serde(default = "unknown_cause", with = "InterruptCauseWire")]
+            cause: InterruptCause,
         },
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(
+        remote = "InterruptCause",
+        tag = "kind",
+        content = "message",
+        rename_all = "snake_case"
+    )]
+    enum InterruptCauseWire {
+        Shutdown,
+        CaptureFault(String),
+        IntentUncertain(String),
+    }
+
+    fn unknown_cause() -> InterruptCause {
+        InterruptCause::IntentUncertain(String::new())
     }
 
     pub(super) fn serialize<S: Serializer>(
@@ -89,8 +107,8 @@ mod intent_goal {
         let wire = match goal {
             CloseGoal::Finish => GoalWire::Finish,
             CloseGoal::Hold => GoalWire::Hold,
-            CloseGoal::Interrupted(issue) => GoalWire::Interrupted {
-                issue: issue.as_str().into(),
+            CloseGoal::Interrupted(cause) => GoalWire::Interrupted {
+                cause: cause.clone(),
             },
         };
         wire.serialize(serializer)
@@ -102,7 +120,7 @@ mod intent_goal {
         Ok(match GoalWire::deserialize(deserializer)? {
             GoalWire::Finish => CloseGoal::Finish,
             GoalWire::Hold => CloseGoal::Hold,
-            GoalWire::Interrupted { issue } => CloseGoal::Interrupted(issue.into_owned()),
+            GoalWire::Interrupted { cause } => CloseGoal::Interrupted(cause),
         })
     }
 }

@@ -7,6 +7,7 @@ use super::marks::{MarkRef, list_marks};
 use super::records::{ExportProjection, HistoryProjection, HistoryReceipt, JobError, MarkIssue};
 use super::scan::{DiskState, scan, scan_all};
 use super::*;
+use crate::meeting::InterruptCause;
 
 struct TestRoot(PathBuf);
 
@@ -230,6 +231,66 @@ fn a_bundle_is_private_created_once_and_has_flat_v1_records() {
 }
 
 #[test]
+fn scan_preserves_the_interrupted_intents_typed_reason() {
+    for (cause, expected) in [
+        (InterruptCause::Shutdown, RecoveryReason::Interrupted),
+        (
+            InterruptCause::CaptureFault("mic disconnected".into()),
+            RecoveryReason::CaptureFailed("mic disconnected".into()),
+        ),
+        (
+            InterruptCause::IntentUncertain("intent sync failed".into()),
+            RecoveryReason::Interrupted,
+        ),
+    ] {
+        let root = TestRoot::new();
+        let manifest = manifest();
+        let id = manifest.info.id;
+        let bundle = Bundle::create(&root.0, manifest).unwrap();
+        let intent = Intent {
+            cutoff: Offset(80_000),
+            goal: CloseGoal::Interrupted(cause),
+        };
+        bundle.write_intent(&intent).unwrap();
+        bundle.write_seal(&sample_seal()).unwrap();
+        let saved = bundle.read_intent().unwrap();
+        drop(bundle);
+
+        let Some(DiskState::Recoverable { reason, .. }) = scan(&root.0, id).unwrap() else {
+            panic!("interrupted meeting should be recoverable");
+        };
+        assert_eq!(reason, expected, "{intent:?}");
+        assert_eq!(saved, Some(intent));
+    }
+}
+
+#[test]
+fn legacy_interrupted_intent_keeps_its_cutoff_without_classifying_the_issue() {
+    let root = TestRoot::new();
+    let manifest = manifest();
+    let id = manifest.info.id;
+    let bundle = Bundle::create(&root.0, manifest).unwrap();
+    fs::write(
+        bundle.directory().join(INTENT),
+        br#"{"goal":"interrupted","cutoff":80000,"issue":"shutdown"}"#,
+    )
+    .unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    assert_eq!(
+        bundle.read_intent().unwrap().unwrap().cutoff,
+        Offset(80_000)
+    );
+    drop(bundle);
+    assert!(matches!(
+        scan(&root.0, id).unwrap(),
+        Some(DiskState::Recoverable {
+            reason: RecoveryReason::Interrupted,
+            ..
+        })
+    ));
+}
+
+#[test]
 fn scan_checks_transcript_hash_and_prefers_the_last_job_error() {
     let root = TestRoot::new();
     let manifest = manifest();
@@ -239,7 +300,7 @@ fn scan_checks_transcript_hash_and_prefers_the_last_job_error() {
     bundle
         .write_intent(&Intent {
             cutoff: Offset(80_000),
-            goal: CloseGoal::Interrupted("mic disconnected".into()),
+            goal: CloseGoal::Interrupted(InterruptCause::CaptureFault("mic disconnected".into())),
         })
         .unwrap();
     bundle
