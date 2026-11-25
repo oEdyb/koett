@@ -212,8 +212,8 @@ fn vault_export_cleans_up_a_stale_temporary_file() {
     bundle.write_seal(&sample_seal()).unwrap();
     let export = root.0.join("export");
     fs::create_dir(&export).unwrap();
-    let stale = export.join(format!(".{NOTE}.tmp-abandoned"));
-    let unrelated = export.join(format!(".other-note.md.tmp-{}", MeetingId::new()));
+    let stale = export.join(format!(".koett-export-{}.tmp", MeetingId::new()));
+    let unrelated = export.join(format!(".{NOTE}.tmp-{}", MeetingId::new()));
     fs::write(&stale, "interrupted export").unwrap();
     fs::write(&unrelated, "another file").unwrap();
 
@@ -272,4 +272,53 @@ fn vault_export_stays_pending_when_every_name_holds_a_different_note() {
         );
     }
     assert_eq!(fs::read_dir(&export).unwrap().count(), names.len());
+}
+
+#[test]
+fn vault_export_finds_its_earlier_copy_before_creating_another() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    let export = root.0.join("export");
+    fs::create_dir(&export).unwrap();
+    fs::write(export.join(NOTE), "A note by hand.\n").unwrap();
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+    let copy = export.join(NOTE.replace(".md", " (2).md"));
+    let exported = fs::read(&copy).unwrap();
+
+    fs::remove_file(export.join(NOTE)).unwrap();
+    let note = String::from_utf8(exported.clone()).unwrap();
+    crate::meeting::bundle::files::AtomicWriter::default()
+        .write_export(&export, NOTE, &note)
+        .unwrap();
+
+    assert!(!export.join(NOTE).exists());
+    assert_eq!(fs::read(&copy).unwrap(), exported);
+}
+
+#[test]
+fn vault_export_treats_unreadable_and_linked_notes_as_occupied() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    let export = root.0.join("export");
+    fs::create_dir(&export).unwrap();
+    fs::write(export.join(NOTE), [0xff_u8, 0xfe, 0x00]).unwrap();
+    let elsewhere = root.0.join("elsewhere.md");
+    fs::write(&elsewhere, "not here").unwrap();
+    std::os::unix::fs::symlink(&elsewhere, export.join(NOTE.replace(".md", " (2).md"))).unwrap();
+
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    let DiskState::Complete { projections, .. } = bundle.read_state() else {
+        panic!("missing publication");
+    };
+    assert_eq!(projections.export, ExportProjection::Exported);
+    assert_eq!(fs::read(export.join(NOTE)).unwrap(), [0xff_u8, 0xfe, 0x00]);
+    assert_eq!(fs::read_to_string(&elsewhere).unwrap(), "not here");
+    assert!(
+        fs::read_to_string(export.join(NOTE.replace(".md", " (3).md")))
+            .unwrap()
+            .contains("Recovery needle.")
+    );
 }

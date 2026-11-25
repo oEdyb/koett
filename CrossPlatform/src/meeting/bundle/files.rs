@@ -94,30 +94,62 @@ impl AtomicWriter {
         name: &str,
         note: &str,
     ) -> Result<(), WriteError> {
-        let stem = name.strip_suffix(".md").unwrap_or(name);
-        let mut last = None;
-        for candidate in std::iter::once(name.to_owned())
-            .chain((2..=NOTE_COPIES).map(|copy| format!("{stem} ({copy}).md")))
-        {
-            clean_export_temps(directory, &candidate).map_err(WriteError::BeforeRename)?;
-            match self.install(
-                directory,
-                &candidate,
-                note.as_bytes(),
-                0o644,
-                |source, target| place_note(source, target, note),
-            ) {
-                Err(WriteError::BeforeRename(error))
-                    if error.kind() == io::ErrorKind::AlreadyExists =>
-                {
-                    last = Some(error);
-                }
-                result => return result,
+        let note = note.as_bytes();
+        clean_export_temps(directory).map_err(WriteError::BeforeRename)?;
+        let candidates = note_names(name);
+        for candidate in &candidates {
+            if holds_note(&directory.join(candidate), note).map_err(WriteError::BeforeRename)? {
+                return Ok(());
             }
         }
-        Err(WriteError::BeforeRename(last.unwrap_or_else(|| {
-            io::Error::from(io::ErrorKind::AlreadyExists)
-        })))
+        let temporary = directory.join(format!("{EXPORT_TEMP}{}.tmp", MeetingId::new()));
+        write_temp_with_mode(&temporary, note, 0o644).map_err(WriteError::BeforeRename)?;
+        let placed = self.place_note(directory, &candidates, &temporary, note);
+        if !matches!(placed, Ok(true)) {
+            let _ = fs::remove_file(&temporary);
+        }
+        match placed {
+            Ok(_) => {
+                #[cfg(test)]
+                if let Some(fault) = &self.fault {
+                    fault(name, WriteBoundary::AfterRename).map_err(WriteError::AfterRename)?;
+                }
+                sync_directory(directory).map_err(WriteError::AfterRename)
+            }
+            Err(error) => Err(WriteError::BeforeRename(error)),
+        }
+    }
+
+    fn place_note(
+        &self,
+        directory: &Path,
+        candidates: &[String],
+        temporary: &Path,
+        note: &[u8],
+    ) -> io::Result<bool> {
+        #[cfg(test)]
+        if let Some(fault) = &self.fault {
+            fault(&candidates[0], WriteBoundary::BeforeRename)?;
+        }
+        for candidate in candidates {
+            let target = directory.join(candidate);
+            match rename_new(temporary, &target) {
+                Ok(()) => return Ok(true),
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                    if holds_note(&target, note)? {
+                        return Ok(false);
+                    }
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!(
+                "Every note name for {} holds a different note",
+                candidates[0]
+            ),
+        ))
     }
 
     fn install(
@@ -152,29 +184,43 @@ impl AtomicWriter {
 
 const NOTE_COPIES: u32 = 9;
 
-fn place_note(source: &Path, target: &Path, note: &str) -> io::Result<()> {
-    match rename_new(source, target) {
-        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-            if target.symlink_metadata()?.is_file() && fs::read_to_string(target)? == note {
-                fs::remove_file(source)
-            } else {
-                Err(error)
-            }
-        }
-        result => result,
-    }
+const EXPORT_TEMP: &str = ".koett-export-";
+
+fn note_names(name: &str) -> Vec<String> {
+    let stem = name.strip_suffix(".md").unwrap_or(name);
+    std::iter::once(name.to_owned())
+        .chain((2..=NOTE_COPIES).map(|copy| format!("{stem} ({copy}).md")))
+        .collect()
 }
 
-fn clean_export_temps(directory: &Path, name: &str) -> io::Result<()> {
-    let prefix = format!(".{name}.tmp-");
+fn holds_note(path: &Path, note: &[u8]) -> io::Result<bool> {
+    let file = match OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) if error.raw_os_error() == Some(libc::ELOOP) => return Ok(false),
+        Err(error) => return Err(error),
+    };
+    if !file.metadata()?.is_file() {
+        return Ok(false);
+    }
+    let mut bytes = Vec::with_capacity(note.len());
+    io::Read::read_to_end(&mut io::Read::take(file, note.len() as u64 + 1), &mut bytes)?;
+    Ok(bytes == note)
+}
+
+fn clean_export_temps(directory: &Path) -> io::Result<()> {
     for entry in fs::read_dir(directory)? {
         let entry = entry?;
-        let filename = entry.file_name();
-        if filename
-            .to_str()
-            .is_some_and(|name| name.starts_with(&prefix))
-            && entry.file_type()?.is_file()
-        {
+        let koett_temp = entry.file_name().to_str().is_some_and(|name| {
+            name.strip_prefix(EXPORT_TEMP)
+                .and_then(|rest| rest.strip_suffix(".tmp"))
+                .is_some_and(|id| MeetingId::parse(id).is_some())
+        });
+        if koett_temp && entry.file_type()?.is_file() {
             match fs::remove_file(entry.path()) {
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {}
                 result => result?,
