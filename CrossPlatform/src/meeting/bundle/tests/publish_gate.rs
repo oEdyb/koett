@@ -250,7 +250,7 @@ fn vault_export_replaces_a_note_owned_by_the_same_meeting() {
     fs::create_dir(&export).unwrap();
     let note = export.join(NOTE);
     let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
-    fs::write(&note, sign_note(&earlier, MeetingId::parse(ID).unwrap())).unwrap();
+    fs::write(&note, sign_note(&earlier)).unwrap();
 
     publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
 
@@ -275,7 +275,7 @@ fn vault_export_preserves_a_note_edited_after_export() {
     fs::create_dir(&export).unwrap();
     let note = export.join(NOTE);
     let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
-    let signed = sign_note(&earlier, MeetingId::parse(ID).unwrap());
+    let signed = sign_note(&earlier);
     let edited = format!("{signed}\n## My notes\n\nFollow up on pricing.\n");
     fs::write(&note, &edited).unwrap();
 
