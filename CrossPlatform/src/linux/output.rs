@@ -9,19 +9,19 @@ pub const IMAGE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_mi
 /// Longest wait for the target to start reading pasted text. Without that read,
 /// nothing was pasted, whatever the key events did.
 pub const TEXT_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(1500);
-/// Settle time after the image read, before the clipboard changes to text.
-pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(160);
-/// After the drawing of a result is read, before its text key. T3 Code finishes preparing
-/// an image attachment within about 250 ms even under load; a text pasted while that runs
-/// can be wiped by the editor reset that ends it.
-pub const DRAWING_SETTLE: std::time::Duration = std::time::Duration::from_millis(1000);
+/// Minimum time the drawing stays on the clipboard after its pipe write closes,
+/// before Koett switches the clipboard offer to text.
+pub const AFTER_IMAGE_READ: std::time::Duration = std::time::Duration::from_millis(150);
+/// Minimum gap from the target finishing its drawing read to posting the text paste key.
+/// Contact sheets are capped at 1600 px (below T3 Code's 2000 px re-encode threshold),
+/// where T3 Code finishes image prep in <= 12 ms (<= 40 ms with thumbnailing) under heavy
+/// CPU load; 250 ms leaves comfortable headroom without stalling delivery.
+pub const DRAWING_SETTLE: std::time::Duration = std::time::Duration::from_millis(250);
 /// Keep the previous bounded fallback when the target never requests PNG.
 const UNKNOWN_IMAGE_READ_WAIT: std::time::Duration = std::time::Duration::from_millis(700);
-/// Let the receiver handle its image before the guarded text chord follows.
 /// Another app replaced Koett's offer with different content just before the key.
 pub const CLIPBOARD_TAKEN: &str = "Another app copied something just before the paste";
 const TEXT_MIMES: &[&str] = &["text/plain;charset=utf-8", "text/plain"];
-const FAST_IMAGE_SETTLE: std::time::Duration = std::time::Duration::from_millis(120);
 
 // Only Koett's own, active exclusive layers authorize an underlying-window capture.
 static KEYBOARD_LAYERS: std::sync::LazyLock<
@@ -150,7 +150,15 @@ pub fn focused_window() -> Option<u32> {
     focused_identity().map(|(id, _)| id)
 }
 
-pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Result<(), String> {
+/// Pastes text; when `earliest_post` is in the future, waits the remainder right before the
+/// final focus/clipboard check and paste key so `prepare_paste` and virtual keyboard setup
+/// overlap with the drawing settle window instead of stacking on top of it.
+pub fn deliver(
+    text: &str,
+    target: Option<u32>,
+    shortcut: PasteShortcut,
+    earliest_post: Option<std::time::Instant>,
+) -> Result<(), String> {
     let mut trace = DeliveryStep::new("text", "fallback", text.len());
     // Koett serves the text itself, so it can see whether the target reads it.
     let (payload, read) = super::clipboard_owner::Payload::tracked_text(text);
@@ -163,18 +171,37 @@ pub fn deliver(text: &str, target: Option<u32>, shortcut: PasteShortcut) -> Resu
         }
     };
     trace.prepare_paste(target)?;
-    let read = match read {
-        Some(read) if trace.keep_owned(TEXT_MIMES, text.as_bytes())? => Some(read),
-        _ => None,
-    };
+    let tracked = std::cell::Cell::new(match &read {
+        Some(_) => trace.keep_owned(TEXT_MIMES, text.as_bytes())?,
+        None => false,
+    });
     let mut posted = None;
-    trace.send_fallback_tracked(shortcut, || {
-        if let Some(read) = &read {
-            read.arm();
-        }
-        posted = Some(std::time::Instant::now());
-    })?;
-    confirm_text_read(&mut trace, read.as_ref(), posted)
+    trace.send_fallback_tracked(
+        shortcut,
+        earliest_post,
+        |trace| {
+            if earliest_post.is_some()
+                && tracked.get()
+                && !trace.keep_owned(TEXT_MIMES, text.as_bytes())?
+            {
+                tracked.set(false);
+            }
+            Ok(())
+        },
+        || {
+            if tracked.get()
+                && let Some(read) = &read
+            {
+                read.arm();
+            }
+            posted = Some(std::time::Instant::now());
+        },
+    )?;
+    confirm_text_read(
+        &mut trace,
+        tracked.get().then_some(read.as_ref()).flatten(),
+        posted,
+    )
 }
 
 fn copy_with_wl_copy(text: &str) -> Result<(), String> {
@@ -208,20 +235,34 @@ fn confirm_text_read(
     trace.read_checked(read.is_some(), read_started)
 }
 
+/// Outcome of pasting a contact sheet on the fallback Wayland path.
+pub struct ImageDelivery {
+    pub result: Result<(), String>,
+    pub read_started: bool,
+    /// When the full PNG pipe write completed; `None` if untracked or timed out.
+    pub completed_at: Option<std::time::Instant>,
+}
+
 /// Pastes the contact sheet with Ctrl+V; image paste never uses the terminal
 /// text chord (terminal agents read the image themselves on Ctrl+V).
 /// Also says whether the target started reading the drawing, even when the transfer then
 /// timed out: such a target may still be attaching it.
-pub fn deliver_image_read(png: &[u8], target: Option<u32>) -> (Result<(), String>, bool) {
+pub fn deliver_image(png: &[u8], target: Option<u32>) -> ImageDelivery {
     let mut started = false;
-    let result = deliver_image_tracked(png, target, &mut started);
-    (result, started)
+    let mut completed_at = None;
+    let result = deliver_image_tracked(png, target, &mut started, &mut completed_at);
+    ImageDelivery {
+        result,
+        read_started: started,
+        completed_at,
+    }
 }
 
 fn deliver_image_tracked(
     png: &[u8],
     target: Option<u32>,
     started: &mut bool,
+    completed_at: &mut Option<std::time::Instant>,
 ) -> Result<(), String> {
     let mut trace = DeliveryStep::new("image", "fallback", png.len());
     let (payload, read) = super::clipboard_owner::Payload::tracked_image(png);
@@ -230,10 +271,15 @@ fn deliver_image_tracked(
     let chord = trace.image_chord(target)?;
     let tracked = trace.keep_owned(&["image/png"], png)?;
     let mut posted = None;
-    trace.send_fallback_tracked(chord, || {
-        read.arm();
-        posted = Some(std::time::Instant::now());
-    })?;
+    trace.send_fallback_tracked(
+        chord,
+        None,
+        |_| Ok(()),
+        || {
+            read.arm();
+            posted = Some(std::time::Instant::now());
+        },
+    )?;
     let posted = posted.ok_or("Image paste was not posted")?;
     if !tracked {
         // Another app serves the drawing, so its read can't be seen. The target may be
@@ -255,7 +301,7 @@ fn deliver_image_tracked(
     if !complete {
         return trace.image_unread();
     }
-    std::thread::sleep(FAST_IMAGE_SETTLE.saturating_sub(posted.elapsed()));
+    *completed_at = Some(std::time::Instant::now());
     trace.reason = "image_transfer_complete";
     trace.log("image_wait_end");
     Ok(())
@@ -551,13 +597,25 @@ impl DeliveryStep {
     fn send_fallback_tracked(
         &mut self,
         shortcut: PasteShortcut,
+        earliest_post: Option<std::time::Instant>,
+        mut check_before_post: impl FnMut(&mut Self) -> Result<(), String>,
         before_post: impl FnOnce(),
     ) -> Result<(), String> {
+        let wait_until = |earliest: Option<std::time::Instant>| {
+            if let Some(at) = earliest {
+                let remaining = at.saturating_duration_since(std::time::Instant::now());
+                if !remaining.is_zero() {
+                    std::thread::sleep(remaining);
+                }
+            }
+        };
         if std::env::var_os("NIRI_SOCKET").is_some() {
             self.reason = "native_keyboard_setup";
             let result = super::native_keyboard::paste(shortcut, |key, mask| {
                 self.native_key = Some(key);
                 self.native_mask = Some(mask);
+                wait_until(earliest_post);
+                check_before_post(self)?;
                 self.post()?;
                 before_post();
                 Ok(())
@@ -572,6 +630,8 @@ impl DeliveryStep {
             }
             return result;
         }
+        wait_until(earliest_post);
+        check_before_post(self)?;
         self.post()?;
         before_post();
         match Command::new("wtype")
@@ -917,5 +977,11 @@ mod target_tests {
         );
         assert!(root.join("delivery.previous.log").exists());
         std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn drawing_settle_keeps_clipboard_hold_inside_one_short_budget() {
+        assert!(AFTER_IMAGE_READ >= Duration::from_millis(100));
+        assert!(AFTER_IMAGE_READ < DRAWING_SETTLE);
+        assert!(DRAWING_SETTLE <= Duration::from_millis(300));
     }
 }

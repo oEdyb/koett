@@ -1188,9 +1188,6 @@ fn run_x11(
                 let outcome = match &sheet {
                     Some(png) => {
                         let drawing = output.deliver_image(png, target);
-                        if drawing.is_ok() {
-                            std::thread::sleep(output::DRAWING_SETTLE);
-                        }
                         let text = output.deliver(&final_text, target, paste_shortcut);
                         let pasted = combine(drawing, text);
                         // The drawing goes back on the clipboard with its text, as on Wayland.
@@ -2831,7 +2828,9 @@ impl X11Output {
             .flat_map(x11_surface::window_classes)
             .find(|name| rules.contains_key(name));
         self.paste(image_paste::resolve(chord.as_deref(), &rules))?;
-        std::thread::sleep(Duration::from_millis(500));
+        // X11 cannot observe when the target finishes reading the selection, so one
+        // bounded pause covers both selection transfer and attachment before text.
+        std::thread::sleep(Duration::from_millis(350));
         Ok(())
     }
 
@@ -3042,20 +3041,24 @@ async fn paste_result(
     target: Option<u32>,
     shortcut: PasteShortcut,
 ) -> Result<Pasted, String> {
+    let mut earliest_text_post = None;
     let drawing = match png {
         Some(png) => {
-            let (drawing, read_started) = match output {
+            let (drawing, read_started, completed_at) = match output {
                 Some(output) => {
                     let drawing = output.deliver_image(png, target).await;
                     let read = drawing.is_ok();
-                    (drawing, read)
+                    (drawing, read, None)
                 }
-                None => output::deliver_image_read(png, target),
+                None => {
+                    let delivery = output::deliver_image(png, target);
+                    (
+                        delivery.result,
+                        delivery.read_started,
+                        delivery.completed_at,
+                    )
+                }
             };
-            // A read that started, even one too slow to finish, may still be attaching.
-            if read_started {
-                tokio::time::sleep(output::DRAWING_SETTLE).await;
-            }
             // A newer copy took the clipboard: it wins, so the text doesn't replace it either.
             // The pill keeps the result for Paste and Copy.
             if drawing
@@ -3064,13 +3067,23 @@ async fn paste_result(
             {
                 return Err(output::CLIPBOARD_TAKEN.into());
             }
+            if let Some(done) = completed_at {
+                // Keep the drawing on the clipboard briefly after its pipe closes, then let
+                // text paste preparation overlap with the rest of DRAWING_SETTLE.
+                tokio::time::sleep(output::AFTER_IMAGE_READ).await;
+                earliest_text_post = Some(done + output::DRAWING_SETTLE);
+            } else if read_started {
+                // A read that started without an observed pipe close (portal, mirrored clipboard,
+                // or timed-out transfer) waits the full settle before switching the clipboard.
+                tokio::time::sleep(output::DRAWING_SETTLE).await;
+            }
             drawing.map_err(|error| format!("Contact sheet not pasted: {error}"))
         }
         None => Ok(()),
     };
     let text = match output {
         Some(output) => output.deliver(text, target, shortcut).await,
-        None => output::deliver(text, target, shortcut),
+        None => output::deliver(text, target, shortcut, earliest_text_post),
     };
     combine(drawing, text)
 }
@@ -3258,7 +3271,6 @@ impl WaylandOutput {
         if !mark.read(&self.served) {
             return trace.image_unread();
         }
-        tokio::time::sleep(output::AFTER_IMAGE_READ).await;
         trace.finish(true);
         Ok(())
     }

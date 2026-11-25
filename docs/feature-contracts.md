@@ -371,8 +371,8 @@
 
 ### Drawing clipboard recovery
 
-- Drawing auto-paste sends the drawing, waits 1 s after the target reads it,
-  then sends the text, on the Mac, Linux and Windows. The text is what the user
+- Drawing auto-paste sends the drawing, waits after the target reads it (250 ms
+  on Linux, 1 s on the Mac and Windows), then sends the text. The text is what the user
   waits for, so it lands last and an Enter pressed as soon as it shows sends both
   in one message; the wait lets T3 Code finish attaching the image, since its
   editor reset at the end of that wipes text pasted meanwhile. Afterwards the

@@ -1187,15 +1187,15 @@ mod tests {
         assert!(std::env::var_os("NIRI_SOCKET").is_some());
         let fixture = std::fs::read(std::env::var("KOETT_TEST_PNG").unwrap()).unwrap();
         assert!(
-            super::super::output::deliver_image_read(&fixture, None)
-                .0
+            super::super::output::deliver_image(&fixture, None)
+                .result
                 .is_err()
         );
         for _ in 0..3 {
             assert_eq!(read("image/png"), fixture);
         }
         assert!(
-            super::super::output::deliver(TEXT, None, crate::settings::PasteShortcut::CtrlV)
+            super::super::output::deliver(TEXT, None, crate::settings::PasteShortcut::CtrlV, None)
                 .is_err()
         );
         assert_eq!(read("text/plain"), TEXT.as_bytes());
