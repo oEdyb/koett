@@ -57,9 +57,13 @@ fn seal(bundle: &Bundle, seconds: u64, goal: CloseGoal) {
 }
 
 fn publish(bundle: &Bundle) {
+    publish_markdown(bundle, "---\ntype: meeting-transcript\n---\n\n# Meeting\n");
+}
+
+fn publish_markdown(bundle: &Bundle, markdown: &str) {
     bundle
         .publish(
-            "---\ntype: meeting-transcript\n---\n\n# Meeting\n",
+            markdown,
             Publication {
                 history: HistoryReceipt {
                     id: format!("meeting:{}", bundle.manifest().info.id),
@@ -173,4 +177,39 @@ fn a_meeting_that_crashed_before_any_audio_has_no_duration() {
     assert_eq!(meetings.len(), 1);
     assert_eq!(meetings[0].duration, None);
     assert!(meetings[0].recoverable);
+}
+
+#[test]
+fn copy_gives_the_committed_transcript_with_absolute_marks_even_while_it_is_transcribed_again() {
+    let root = TestRoot::new();
+    let meeting = create(&root.0, 1_000_000);
+    seal(&meeting, 62, CloseGoal::Finish);
+    let id = meeting.manifest().info.id;
+    let folder = root.0.join(id.to_string());
+    let markdown = "---\ntype: meeting-transcript\n---\n\n# Meeting\n\n[00:01] ![Mark 1](assets/mark-0000016000-0001.png)\n\n[00:02] **You:** See [notes](assets/notes.md).\n";
+    publish_markdown(&meeting, markdown);
+
+    assert!(
+        list(&root.0).unwrap().is_empty(),
+        "the lock hides a meeting while it is transcribed again"
+    );
+    let copied = copy_text(&root.0, id).unwrap().unwrap();
+
+    let mark = url::Url::from_file_path(folder.join("assets/mark-0000016000-0001.png")).unwrap();
+    assert_eq!(
+        copied,
+        markdown.replace("(assets/mark-0000016000-0001.png)", &format!("(<{mark}>)"))
+    );
+    assert!(copied.starts_with("---\ntype: meeting-transcript\n"));
+
+    fs::write(folder.join("transcript.md"), "edited by hand\n").unwrap();
+    assert_eq!(
+        copy_text(&root.0, id).unwrap_err().kind(),
+        io::ErrorKind::InvalidData,
+        "a transcript that no longer matches its receipt is not copied as committed"
+    );
+
+    drop(meeting);
+    fs::remove_dir_all(&folder).unwrap();
+    assert_eq!(copy_text(&root.0, id).unwrap(), None);
 }

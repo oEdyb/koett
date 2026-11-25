@@ -9,7 +9,7 @@ mod transcript;
 
 pub(crate) use controller::MeetingController;
 pub(crate) use ticket::Ticket;
-pub(crate) use transcript::absolute_mark_links;
+use transcript::absolute_mark_links;
 
 use bundle::marks::MarkSink;
 pub(crate) use bundle::records::Projections;

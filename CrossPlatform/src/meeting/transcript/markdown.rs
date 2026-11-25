@@ -195,7 +195,7 @@ pub(in crate::meeting) fn vault_note(
 /// Points each mark the receipt lists at its file by absolute `file://` URL, so the
 /// text still shows the drawings outside the meeting folder. Every other line,
 /// link and byte stays as written.
-pub(crate) fn absolute_mark_links(
+pub(in crate::meeting) fn absolute_mark_links(
     markdown: &str,
     folder: &Path,
     assets: &[String],

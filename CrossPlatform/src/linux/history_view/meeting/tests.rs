@@ -289,15 +289,3 @@ fn the_reading_pane_drops_markdown_but_keeps_every_word() {
         [Reading::Other("loose line & more".into())]
     );
 }
-
-#[test]
-fn copy_finds_each_receipt_listed_mark_relative_to_the_folder() {
-    let meeting = transcribed(5_000, false);
-    let Listing::Transcribed(artifact) = &meeting.state else {
-        unreachable!()
-    };
-    assert_eq!(
-        relative_assets(&meeting.folder, artifact),
-        ["assets/mark-0000032000-0001.png"]
-    );
-}

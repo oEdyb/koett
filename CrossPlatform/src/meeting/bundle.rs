@@ -289,6 +289,20 @@ fn digest_hex(hash: ring::digest::Digest) -> String {
         .collect()
 }
 
+/// The committed transcript and the receipt that names it, read without the lock
+/// so a meeting being transcribed again still reads as it was last published.
+pub(crate) fn read_committed(directory: &Path) -> io::Result<(String, Receipt)> {
+    let receipt: Receipt = read_json(&directory.join(RECEIPT))?;
+    let markdown = fs::read_to_string(directory.join(TRANSCRIPT))?;
+    if sha256(markdown.as_bytes()) != receipt.transcript_sha256 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "the transcript is being saved or was edited",
+        ));
+    }
+    Ok((markdown, receipt))
+}
+
 fn valid_transcript(directory: &Path, receipt: &Receipt) -> io::Result<bool> {
     let mut file = match File::open(directory.join(TRANSCRIPT)) {
         Ok(file) => file,

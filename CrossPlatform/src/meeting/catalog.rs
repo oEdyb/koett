@@ -3,8 +3,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
+use super::bundle::read_committed;
 use super::bundle::scan::{DiskState, scan_all};
-use super::{Artifact, MeetingView, Offset, RecoveryReason, SAMPLE_RATE, SessionInfo};
+use super::{
+    Artifact, MeetingId, MeetingView, Offset, RecoveryReason, SAMPLE_RATE, SessionInfo,
+    absolute_mark_links,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Listed {
@@ -35,6 +39,22 @@ pub(crate) fn recoverable(root: &Path) -> io::Result<Vec<Listed>> {
         .into_iter()
         .filter(|meeting| meeting.recoverable)
         .collect())
+}
+
+/// What Copy puts on the clipboard: the committed transcript with each mark its
+/// receipt lists at an absolute file. `None` once the folder is gone.
+pub(crate) fn copy_text(root: &Path, id: MeetingId) -> io::Result<Option<String>> {
+    let folder = root.join(id.to_string());
+    let (markdown, receipt) = match read_committed(&folder) {
+        Ok(committed) => committed,
+        Err(error) if error.kind() == io::ErrorKind::NotFound && !folder.try_exists()? => {
+            return Ok(None);
+        }
+        Err(error) => return Err(error),
+    };
+    absolute_mark_links(&markdown, &folder, &receipt.publication.assets)
+        .map(Some)
+        .map_err(io::Error::other)
 }
 
 fn listed(root: &Path, state: DiskState) -> Option<Listed> {

@@ -4,7 +4,6 @@ use crate::history::{HistoryCursor, HistorySummary};
 use crate::meeting::catalog::{Listed, Listing};
 use crate::meeting::{Artifact, MeetingId, MeetingView, RecoveryReason};
 use std::collections::HashMap;
-use std::path::Path;
 
 const PREFIX: &str = "meeting:";
 
@@ -284,15 +283,6 @@ fn parse(line: &str) -> Reading {
 
 fn unescape(text: &str) -> String {
     text.replace("&lt;", "<").replace("&amp;", "&")
-}
-
-/// Receipt-listed mark paths, relative to the folder as the transcript links them.
-pub(super) fn relative_assets(folder: &Path, artifact: &Artifact) -> Vec<String> {
-    artifact
-        .assets
-        .iter()
-        .filter_map(|asset| asset.strip_prefix(folder).ok()?.to_str().map(Into::into))
-        .collect()
 }
 
 #[cfg(test)]

@@ -21,7 +21,7 @@ use super::{Backend, Channel, Offset, SAMPLE_RATE, Span};
 use timeline::{Point, SpeechWord};
 use windows::WindowBuilder;
 
-pub(crate) use markdown::absolute_mark_links;
+pub(super) use markdown::absolute_mark_links;
 pub(super) use markdown::{Rendered, history_text, vault_note};
 
 const BATCH_SIZE: usize = 8;

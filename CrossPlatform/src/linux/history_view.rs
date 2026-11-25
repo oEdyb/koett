@@ -465,15 +465,18 @@ impl HistoryView {
             let selected_row = selected_row.clone();
             let notice = notice.clone();
             move |button| {
-                let copied = match selected_row.borrow().as_ref() {
-                    Some(Row::Meeting(meeting)) if meeting.transcript().is_some() => {
-                        meeting_markdown(meeting)
-                    }
-                    _ => selected
+                let history_text = || {
+                    selected
                         .borrow()
                         .as_ref()
                         .map(|record| record.text.clone())
-                        .ok_or_else(|| "Nothing to copy yet".to_string()),
+                        .ok_or_else(|| "Nothing to copy yet".to_string())
+                };
+                let copied = match selected_row.borrow().as_ref() {
+                    Some(Row::Meeting(meeting)) => {
+                        meeting_copy(meeting.id).and_then(|text| text.map_or_else(history_text, Ok))
+                    }
+                    _ => history_text(),
                 };
                 match copied {
                     Ok(text) => {
@@ -831,18 +834,11 @@ fn meeting_meta(meeting: &MeetingRow) -> String {
         .join(" · ")
 }
 
-/// The meeting's own Markdown with its marks pointing at absolute files.
-fn meeting_markdown(meeting: &MeetingRow) -> Result<String, String> {
-    let (Some(listed), Some(transcript)) = (&meeting.listed, meeting.transcript()) else {
-        return Err("The meeting transcript is missing".into());
-    };
-    let markdown =
-        std::fs::read_to_string(&transcript.markdown).map_err(|error| error.to_string())?;
-    crate::meeting::absolute_mark_links(
-        &markdown,
-        &listed.folder,
-        &meeting::relative_assets(&listed.folder, transcript),
-    )
+/// The meeting's committed Markdown with absolute marks; `None` once its folder
+/// is gone and only History's text is left.
+fn meeting_copy(id: crate::meeting::MeetingId) -> Result<Option<String>, String> {
+    let root = crate::paths::meetings_directory()?;
+    crate::meeting::catalog::copy_text(&root, id).map_err(|error| error.to_string())
 }
 
 fn open(path: &std::path::Path) -> Result<(), String> {
