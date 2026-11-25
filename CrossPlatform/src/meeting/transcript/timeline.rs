@@ -52,8 +52,7 @@ impl Turn {
     }
 
     fn accepts(&self, word: &SpeechWord) -> bool {
-        self.speaker == word.channel.into()
-            && self.backend == word.backend
+        self.backend == word.backend
             && self.lang == word.lang
             && word.span.first.0.saturating_sub(self.span.end.0) <= MAX_PAUSE
             && word.span.end.0.max(self.span.end.0) - self.span.first.0 <= MAX_TURN
@@ -82,25 +81,89 @@ pub(super) enum Entry {
     MissingAudio { channel: Channel, span: Span },
 }
 
+impl Entry {
+    fn sort_key(&self) -> (Offset, u8, Option<Channel>) {
+        match self {
+            Self::MissingAudio { channel, span } => (span.first, 0, Some(*channel)),
+            Self::Mark(mark) => (mark.offset, 1, None),
+            Self::Turn(turn) => (turn.span.first, 2, Some(turn.words[0].channel)),
+        }
+    }
+}
+
+#[derive(Default)]
+struct Side {
+    open: Option<Turn>,
+    reply_end: Option<Offset>,
+}
+
+impl Side {
+    fn close(&mut self, entries: &mut Vec<Entry>) {
+        self.reply_end = None;
+        if let Some(turn) = self.open.take() {
+            entries.push(Entry::Turn(turn));
+        }
+    }
+
+    fn hear(&mut self, word: &SpeechWord) {
+        if self
+            .open
+            .as_ref()
+            .is_some_and(|turn| word.span.first >= turn.span.end)
+        {
+            let end = word.span.end;
+            self.reply_end = Some(self.reply_end.map_or(end, |earlier| earlier.min(end)));
+        }
+    }
+
+    fn speak(&mut self, word: SpeechWord, entries: &mut Vec<Entry>) {
+        let reply_finished = self
+            .reply_end
+            .take()
+            .is_some_and(|end| end <= word.span.first);
+        match self.open.as_mut() {
+            Some(turn) if !reply_finished && turn.accepts(&word) => {
+                turn.span.end = turn.span.end.max(word.span.end);
+                turn.words.push(word);
+            }
+            _ => {
+                self.close(entries);
+                self.open = Some(Turn::new(word));
+            }
+        }
+    }
+}
+
 pub(super) fn merge(mut points: Vec<Point>) -> Vec<Entry> {
     points.sort_by_key(Point::sort_key);
     let mut entries = Vec::new();
+    let [mut you, mut other] = [Side::default(), Side::default()];
     for point in points {
-        let entry = match point {
-            Point::Mark(mark) => Entry::Mark(mark),
-            Point::MissingAudio { channel, span } => Entry::MissingAudio { channel, span },
-            Point::Word(word) => {
-                if let Some(Entry::Turn(turn)) = entries.last_mut()
-                    && turn.accepts(&word)
-                {
-                    turn.span.end = turn.span.end.max(word.span.end);
-                    turn.words.push(word);
-                    continue;
-                }
-                Entry::Turn(Turn::new(word))
+        match point {
+            Point::Mark(mark) => {
+                you.close(&mut entries);
+                other.close(&mut entries);
+                entries.push(Entry::Mark(mark));
             }
-        };
-        entries.push(entry);
+            Point::MissingAudio { channel, span } => {
+                match channel {
+                    Channel::You => you.close(&mut entries),
+                    Channel::Other => other.close(&mut entries),
+                }
+                entries.push(Entry::MissingAudio { channel, span });
+            }
+            Point::Word(word) => {
+                let (mine, theirs) = match word.channel {
+                    Channel::You => (&mut you, &mut other),
+                    Channel::Other => (&mut other, &mut you),
+                };
+                theirs.hear(&word);
+                mine.speak(word, &mut entries);
+            }
+        }
     }
+    you.close(&mut entries);
+    other.close(&mut entries);
+    entries.sort_by_key(Entry::sort_key);
     entries
 }

@@ -236,3 +236,170 @@ fn vault_note_keeps_a_mark_in_an_absolute_file_url() {
         "[00:01] ![Mark 1](<file:///tmp/Koett%20meetings/%231/assets/mark-0000016000-0001.png>)"
     ));
 }
+
+fn ms_word(channel: Channel, first_ms: u64, end_ms: u64, text: &str) -> Point {
+    Point::Word(SpeechWord {
+        channel,
+        span: Span {
+            first: Offset(first_ms * 16),
+            end: Offset(end_ms * 16),
+        },
+        text: text.into(),
+        lang: "und".into(),
+        backend: PARAKEET.into(),
+    })
+}
+
+fn outline(entries: &[timeline::Entry]) -> Vec<String> {
+    entries
+        .iter()
+        .map(|entry| match entry {
+            timeline::Entry::Turn(turn) => format!(
+                "{}@{}:{}",
+                match turn.speaker {
+                    timeline::Speaker::You => "You",
+                    timeline::Speaker::Other(_) => "Other",
+                },
+                turn.span.first.0 / 16,
+                turn.words
+                    .iter()
+                    .map(|word| word.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ),
+            timeline::Entry::Mark(mark) => format!("Mark@{}", mark.offset.0 / 16),
+            timeline::Entry::MissingAudio { .. } => "Missing".into(),
+        })
+        .collect()
+}
+
+#[test]
+fn review_crosstalk_keeps_one_turn_per_side() {
+    use Channel::{Other, You};
+    let mut points = Vec::new();
+    for i in 0..25 {
+        points.push(ms_word(You, i * 400, i * 400 + 350, "y"));
+        points.push(ms_word(Other, i * 400 + 200, i * 400 + 550, "o"));
+    }
+    let entries = timeline::merge(points);
+    assert_eq!(
+        outline(&entries),
+        [
+            format!("You@0:{}", vec!["y"; 25].join(" ")),
+            format!("Other@200:{}", vec!["o"; 25].join(" ")),
+        ]
+    );
+}
+
+#[test]
+fn review_exchange_in_a_pause_keeps_conversation_order() {
+    use Channel::{Other, You};
+    let points = vec![
+        ms_word(You, 0, 500, "Do"),
+        ms_word(You, 600, 1000, "you"),
+        ms_word(You, 1100, 2000, "see?"),
+        ms_word(Other, 2300, 2600, "Yes."),
+        ms_word(You, 3000, 3400, "Click"),
+        ms_word(You, 3500, 3800, "it."),
+    ];
+    assert_eq!(
+        outline(&timeline::merge(points)),
+        ["You@0:Do you see?", "Other@2300:Yes.", "You@3000:Click it."]
+    );
+}
+
+#[test]
+fn review_backchannel_under_speech_does_not_split_the_speaker() {
+    use Channel::{Other, You};
+    let points = vec![
+        ms_word(You, 0, 400, "one"),
+        ms_word(You, 450, 900, "two"),
+        ms_word(Other, 900, 1000, "mm"),
+        ms_word(You, 950, 1400, "three"),
+    ];
+    assert_eq!(
+        outline(&timeline::merge(points)),
+        ["You@0:one two three", "Other@900:mm"]
+    );
+}
+
+#[test]
+fn review_marks_own_no_words_during_overlap_and_crossing_words_stay() {
+    use Channel::{Other, You};
+    let mark = |ms: u64| {
+        Point::Mark(MarkRef {
+            id: 1,
+            offset: Offset(ms * 16),
+            relative_path: "assets/m.png".into(),
+        })
+    };
+    let points = vec![
+        ms_word(You, 0, 400, "a"),
+        ms_word(Other, 100, 500, "b"),
+        ms_word(You, 4800, 5300, "crossing"),
+        ms_word(Other, 4900, 5000, "c"),
+        mark(5000),
+        ms_word(You, 5000, 5400, "tie"),
+        ms_word(Other, 5000, 5400, "tie2"),
+        ms_word(You, 5500, 5900, "d"),
+    ];
+    assert_eq!(
+        outline(&timeline::merge(points)),
+        [
+            "You@0:a",
+            "Other@100:b",
+            "You@4800:crossing",
+            "Other@4900:c",
+            "Mark@5000",
+            "You@5000:tie d",
+            "Other@5000:tie2",
+        ]
+    );
+}
+
+#[test]
+fn a_whole_word_in_a_pause_splits_a_turn_even_if_the_other_track_then_gaps() {
+    use Channel::{Other, You};
+    let points = vec![
+        ms_word(You, 0, 400, "question"),
+        ms_word(Other, 500, 700, "yes"),
+        Point::MissingAudio {
+            channel: Other,
+            span: span(1, 3),
+        },
+        ms_word(You, 1100, 1400, "answer"),
+    ];
+    assert_eq!(
+        outline(&timeline::merge(points)),
+        [
+            "You@0:question",
+            "Other@500:yes",
+            "Missing",
+            "You@1100:answer"
+        ]
+    );
+}
+
+#[test]
+fn a_gap_only_splits_its_own_track() {
+    use Channel::{Other, You};
+    let points = vec![
+        ms_word(You, 800, 1000, "one"),
+        ms_word(Other, 850, 1000, "before"),
+        Point::MissingAudio {
+            channel: Other,
+            span: span(1, 2),
+        },
+        ms_word(You, 1100, 1400, "two"),
+        ms_word(Other, 2000, 2200, "after"),
+    ];
+    assert_eq!(
+        outline(&timeline::merge(points)),
+        [
+            "You@800:one two",
+            "Other@850:before",
+            "Missing",
+            "Other@2000:after"
+        ]
+    );
+}
