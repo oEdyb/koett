@@ -19,6 +19,8 @@ pub(super) struct MeetingRow {
     pub(super) started_at_ms: i64,
     /// History's text row, once transcribed and indexed.
     pub(super) summary: Option<HistorySummary>,
+    /// The words of the first speech turn in History's text.
+    pub(super) opening: Option<String>,
     /// The folder as it is now; `None` once it is gone.
     pub(super) listed: Option<Listed>,
 }
@@ -90,9 +92,11 @@ impl MeetingRow {
     }
 
     pub(super) fn excerpt(&self) -> Option<Excerpt> {
-        if let Some(summary) = &self.summary {
+        if self.summary.is_some() {
             return Some(
-                opening(&summary.preview).map_or(Excerpt::Status("No speech"), Excerpt::Speech),
+                self.opening
+                    .clone()
+                    .map_or(Excerpt::Status("No speech"), Excerpt::Speech),
             );
         }
         match &self.listed.as_ref()?.state {
@@ -125,14 +129,14 @@ fn status(reason: &RecoveryReason) -> &'static str {
 
 /// History's page, each meeting with its folder attached, plus the meetings
 /// History has no text for whose start falls inside this page. A search only
-/// shows what History matched.
+/// shows what History matched. `text` reads a row's whole text from History.
 pub(super) fn page_rows(
     page: Vec<HistorySummary>,
     meetings: Vec<Listed>,
     query: &str,
     before: Option<&HistoryCursor>,
     next: Option<&HistoryCursor>,
-    indexed: impl Fn(&str) -> bool,
+    text: impl Fn(&str) -> Option<String>,
 ) -> Vec<Row> {
     let mut folders: HashMap<MeetingId, Listed> = meetings
         .into_iter()
@@ -146,6 +150,9 @@ pub(super) fn page_rows(
                     id,
                     started_at_ms: summary.created_at_ms,
                     listed: folders.remove(&id),
+                    opening: whole_lines(&summary.preview)
+                        .and_then(first_turn)
+                        .or_else(|| text(&summary.id).as_deref().and_then(first_turn)),
                     summary: Some(summary),
                 }),
                 None => Row::Dictation(summary),
@@ -158,11 +165,12 @@ pub(super) fn page_rows(
                 id: listed.info.id,
                 started_at_ms: i64::try_from(listed.info.started_at_ms).ok()?,
                 summary: None,
+                opening: None,
                 listed: Some(listed),
             });
             let key = (row.created_at_ms(), row.id());
             let below = |cursor: &HistoryCursor| key < (cursor.created_at_ms, cursor.id.clone());
-            (before.is_none_or(below) && !next.is_some_and(below) && !indexed(&row.id()))
+            (before.is_none_or(below) && !next.is_some_and(below) && text(&row.id()).is_none())
                 .then_some(row)
         }));
         rows.sort_by_cached_key(|row| std::cmp::Reverse((row.created_at_ms(), row.id())));
@@ -170,43 +178,16 @@ pub(super) fn page_rows(
     rows
 }
 
-/// The opening turns of History's meeting text, as `Speaker: words`, enough to
-/// fill a row's two lines.
-fn opening(preview: &str) -> Option<String> {
-    const ENOUGH: usize = 160;
-    let mut turns: Vec<(String, String)> = preview
-        .lines()
-        .filter_map(|line| match parse(line) {
-            Reading::Turn { speaker, text, .. } => Some((speaker, text)),
-            _ => None,
-        })
-        .collect();
-    // History's preview stops mid-line; a cut-off last turn reads as a typo.
-    let cut = !preview.ends_with('\n')
-        && preview
-            .lines()
-            .last()
-            .is_some_and(|line| matches!(parse(line), Reading::Turn { .. }));
-    if cut && turns.len() > 1 {
-        turns.pop();
-    }
-    let mut opening = String::new();
-    let mut last = None;
-    for (speaker, text) in turns {
-        if !opening.is_empty() {
-            opening.push(' ');
-        }
-        if last.as_ref() != Some(&speaker) {
-            opening.push_str(&speaker);
-            opening.push_str(": ");
-        }
-        opening.push_str(&text);
-        last = Some(speaker);
-        if opening.chars().count() >= ENOUGH {
-            break;
-        }
-    }
-    (!opening.is_empty()).then_some(opening)
+/// History's preview stops after 240 characters; a line it cut is not whole.
+fn whole_lines(preview: &str) -> Option<&str> {
+    preview.rfind('\n').map(|end| &preview[..end])
+}
+
+fn first_turn(text: &str) -> Option<String> {
+    text.lines().find_map(|line| match parse(line) {
+        Reading::Turn { text, .. } => Some(text),
+        _ => None,
+    })
 }
 
 /// One line of a meeting as the reading pane shows it.

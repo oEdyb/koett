@@ -68,7 +68,7 @@ fn a_meeting_row_offers_its_folder_and_never_a_paste_or_a_dictation_action() {
         "",
         None,
         None,
-        |_| true,
+        |_| Some(TEXT.into()),
     );
 
     assert_eq!(
@@ -83,7 +83,7 @@ fn a_meeting_row_offers_its_folder_and_never_a_paste_or_a_dictation_action() {
     assert_eq!(
         meeting_row(&rows[0]).excerpt(),
         Some(Excerpt::Speech(
-            "Other: Den blå knappen <b> & inställningarna. You: I see it now.".into()
+            "Den blå knappen <b> & inställningarna.".into()
         ))
     );
     for row in &rows {
@@ -131,7 +131,7 @@ fn meetings_without_text_join_the_page_they_started_in() {
         "",
         Some(&before),
         Some(&next),
-        |_| false,
+        |_| None,
     );
 
     assert_eq!(
@@ -160,7 +160,7 @@ fn a_search_shows_only_what_history_matched() {
         "first",
         None,
         None,
-        |_| false,
+        |_| None,
     );
     assert_eq!(rows.iter().map(Row::id).collect::<Vec<_>>(), ["b"]);
 }
@@ -174,38 +174,45 @@ fn a_folder_history_already_indexed_is_not_listed_twice() {
     );
     let id = format!("meeting:{}", lost_transcript.info.id);
     let rows = page_rows(Vec::new(), vec![lost_transcript], "", None, None, |row| {
-        row == id
+        (row == id).then(|| TEXT.into())
     });
     assert!(rows.is_empty());
 }
 
 #[test]
-fn a_meeting_row_opens_with_its_first_turns_and_says_when_nobody_spoke() {
-    let words = "[00:01] **You:** However, <!-- x -->\n\n[00:02] **You:** that is not true.\n\n[00:03] **Other:** Men det stämmer.\n";
-    let row = |preview: &str| MeetingRow {
-        id: MeetingId::new(),
-        started_at_ms: 1,
-        summary: Some(summary("meeting:x", 1, preview)),
-        listed: None,
+fn a_meeting_row_previews_its_first_turn_and_says_when_nobody_spoke() {
+    let title = "# Meeting · 2026-11-25 14:05\n\n";
+    let marks = "[00:00] ![Mark 1](assets/mark-0000000000-0001.png)\n\n".repeat(5);
+    let turns =
+        "[00:01] **You:** However, that is not true.\n\n[00:03] **Other:** Men det stämmer.\n";
+    let excerpt = |text: &str, whole: String| {
+        let preview: String = text.chars().take(240).collect();
+        let row = summary("meeting:550e8400-e29b-41d4-a716-446655440000", 1, &preview);
+        let rows = page_rows(vec![row], Vec::new(), "", None, None, |_| {
+            Some(whole.clone())
+        });
+        meeting_row(&rows[0]).excerpt()
     };
+    let spoken = format!("{title}{marks}{turns}");
+    let first = Some(Excerpt::Speech("However, that is not true.".into()));
+
+    assert_eq!(excerpt(turns, spoken.clone()), first);
     assert_eq!(
-        row(&words.replace(" <!-- x -->", "")).excerpt(),
-        Some(Excerpt::Speech(
-            "You: However, that is not true. Other: Men det stämmer.".into()
-        ))
+        excerpt(&spoken, spoken.clone()),
+        first,
+        "History's 240-character preview ended in the marks before anyone spoke"
     );
     assert_eq!(
-        row("[00:01] **You:** However, that is not true.\n\n[00:03] **Other:** Men det st")
-            .excerpt(),
-        Some(Excerpt::Speech("You: However, that is not true.".into())),
-        "History's 240-character preview cut the last turn"
+        excerpt(
+            &format!("{title}[00:01] **You:** However, that is not tr"),
+            spoken.clone()
+        ),
+        first,
+        "History's preview cut the first turn"
     );
+    let silent = format!("{title}{marks}");
     assert_eq!(
-        row("[00:01] **You:** However, that is not tr").excerpt(),
-        Some(Excerpt::Speech("You: However, that is not tr".into()))
-    );
-    assert_eq!(
-        row("# Meeting · 2026-11-25 14:05\n\n[00:02] ![Mark 1](assets/mark.png)\n").excerpt(),
+        excerpt(&silent, silent.clone()),
         Some(Excerpt::Status("No speech"))
     );
 }
@@ -219,7 +226,7 @@ fn a_fallback_transcript_can_be_transcribed_again_once_the_meeting_is_idle() {
         "",
         None,
         None,
-        |_| true,
+        |_| Some(TEXT.into()),
     );
     let row = meeting_row(&rows[0]);
     assert_eq!(
@@ -254,7 +261,7 @@ fn a_fallback_transcript_can_be_transcribed_again_once_the_meeting_is_idle() {
 fn a_meeting_whose_folder_is_gone_still_copies_its_history_text() {
     let gone = transcribed(5_000, false);
     let rows = page_rows(vec![indexed_row(&gone)], Vec::new(), "", None, None, |_| {
-        true
+        Some(TEXT.into())
     });
     assert_eq!(rows[0].actions(), [Action::Copy]);
 }

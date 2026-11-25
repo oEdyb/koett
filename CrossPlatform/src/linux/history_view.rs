@@ -749,7 +749,7 @@ fn page(store: &HistoryStore, query: &str, before: Option<&HistoryCursor>) -> Re
         .and_then(|root| crate::meeting::catalog::list(&root).ok())
         .unwrap_or_default();
     let rows = meeting::page_rows(summaries, meetings, query, before, next.as_ref(), |id| {
-        store.get(id).ok().flatten().is_some()
+        store.get(id).ok().flatten().map(|record| record.text)
     });
     Ok(Page { rows, next })
 }
