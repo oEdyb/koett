@@ -32,6 +32,7 @@ pub struct HistoryView {
 }
 const TWO_PANE_WIDTH: i32 = 680;
 const PAGE: usize = 50;
+const COPY_FAILED: &str = "Could not copy";
 /// `.koett-reading` padding on both sides, from theme.css.
 const READING_PADDING: i32 = 48;
 
@@ -497,6 +498,9 @@ impl HistoryView {
                 match copied {
                     Ok(text) => {
                         button.clipboard().set_text(&text);
+                        if notice.text().starts_with(COPY_FAILED) {
+                            notice.set_text("");
+                        }
                         button.set_label("Copied");
                         let button = button.clone();
                         gtk::glib::timeout_add_local_once(
@@ -504,7 +508,7 @@ impl HistoryView {
                             move || button.set_label("Copy"),
                         );
                     }
-                    Err(error) => notice.set_text(&format!("Could not copy: {error}")),
+                    Err(error) => notice.set_text(&format!("{COPY_FAILED}: {error}")),
                 }
             }
         });
