@@ -100,6 +100,7 @@ fn helper_failure_keeps_valid_prefix_and_falls_back_for_rest_of_job() {
         "error",
         "duplicate",
         "wrong-backend",
+        "unknown-language",
     ] {
         let (_root, bundle, python) = fixture(mode);
         let cancelled = AtomicBool::new(false);

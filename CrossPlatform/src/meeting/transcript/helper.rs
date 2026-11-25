@@ -271,8 +271,11 @@ impl WindowResult {
                 words,
             } => (lang, lang_p, backend, words),
         };
-        let expected = if lang == "sv" { SWEDISH } else { TURBO };
-        if backend != expected || !(0.0..=1.0).contains(&lang_p) {
+        if !matches!(
+            (lang.as_str(), backend.as_str()),
+            ("sv", SWEDISH) | ("en", TURBO)
+        ) || !(0.0..=1.0).contains(&lang_p)
+        {
             return Err(format!("Invalid language routing for {:?}", window.id));
         }
         let decoded = DecodedWindow {

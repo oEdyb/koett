@@ -8,6 +8,9 @@ import sys
 TURBO = "whisper-large-v3-turbo"
 SWEDISH = "kb-whisper-large"
 SOURCES = {TURBO: "large-v3-turbo", SWEDISH: "KBLab/kb-whisper-large"}
+SAMPLE_RATE = 16_000
+SHORT_WINDOW = 3 * SAMPLE_RATE
+LANGUAGE_CONTEXT = 10 * SAMPLE_RATE
 
 
 def configure_cuda():
@@ -41,11 +44,49 @@ def send(reply):
     print(json.dumps(reply, allow_nan=False), flush=True)
 
 
-def decode(window, engines):
+def read_audio(window):
     import numpy as np
 
-    audio = np.fromfile(window["pcm"], dtype="<i2").astype(np.float32) / 32768.0
-    lang, probability, _ = engines[TURBO].detect_language(audio)
+    try:
+        return np.fromfile(window["pcm"], dtype="<i2").astype(np.float32) / 32768.0
+    except OSError as error:
+        return error
+
+
+def language_audio(index, tracks, waveforms):
+    import numpy as np
+
+    audio = waveforms[index]
+    if len(audio) >= SHORT_WINDOW:
+        return audio
+    nearby = sorted(
+        (i for i, track in enumerate(tracks) if i != index and track == tracks[index]),
+        key=lambda i: abs(i - index),
+    )
+    parts = {index: audio}
+    remaining = LANGUAGE_CONTEXT - len(audio)
+    for i in nearby:
+        if remaining == 0:
+            break
+        neighbour = waveforms[i]
+        if isinstance(neighbour, OSError):
+            continue
+        part = neighbour[-remaining:] if i < index else neighbour[:remaining]
+        parts[i] = part
+        remaining -= len(part)
+    return np.concatenate([parts[i] for i in sorted(parts)]) if len(parts) > 1 else audio
+
+
+def detect_language(engine, audio):
+    _, _, probabilities = engine.detect_language(audio)
+    return max(
+        (candidate for candidate in probabilities if candidate[0] in ("sv", "en")),
+        key=lambda candidate: candidate[1],
+    )
+
+
+def decode(window, audio, context, engines):
+    lang, probability = detect_language(engines[TURBO], context)
     backend = SWEDISH if lang == "sv" else TURBO
     segments, _ = engines[backend].transcribe(
         audio, language=lang, word_timestamps=True, beam_size=5,
@@ -85,9 +126,15 @@ def main():
         batch = json.loads(line)
         if batch["op"] != "decode":
             raise ValueError("Expected a decode batch")
-        for window in batch["windows"]:
+        windows = batch["windows"]
+        tracks = [window["id"].rsplit("-", 1)[0] for window in windows]
+        waveforms = [read_audio(window) for window in windows]
+        for index, (window, audio) in enumerate(zip(windows, waveforms)):
             try:
-                send(decode(window, engines))
+                if isinstance(audio, OSError):
+                    raise audio
+                context = language_audio(index, tracks, waveforms)
+                send(decode(window, audio, context, engines))
             except Exception as error:
                 send({"id": window["id"], "error": str(error)})
                 return

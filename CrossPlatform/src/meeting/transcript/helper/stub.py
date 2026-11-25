@@ -32,10 +32,11 @@ for line in sys.stdin:
             if mode == "error":
                 print(json.dumps({"id": identifier, "error": "simulated CUDA failure"}), flush=True)
                 sys.exit(0)
+        unsupported_language = mode == "unknown-language" and seen == 2
         reply = json.dumps({
             "id": previous_id if mode == "duplicate" and seen == 2 else identifier,
-            "lang": "sv", "lang_p": 0.9,
-            "backend": "whisper-large-v3-turbo" if mode == "wrong-backend" and seen == 2 else "kb-whisper-large",
+            "lang": "sl" if unsupported_language else "sv", "lang_p": 0.9,
+            "backend": "whisper-large-v3-turbo" if unsupported_language or (mode == "wrong-backend" and seen == 2) else "kb-whisper-large",
             "words": [["Hej", -1.0 if mode == "broken-timestamps" and seen == 2 else 0.4, 0.6]],
         })
         if mode == "split" and seen == 0:
