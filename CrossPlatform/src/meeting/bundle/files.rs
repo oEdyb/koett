@@ -98,7 +98,7 @@ impl AtomicWriter {
         clean_export_temps(directory).map_err(WriteError::BeforeRename)?;
         let candidates = note_names(name);
         for candidate in &candidates {
-            if holds_note(&directory.join(candidate), note).map_err(WriteError::BeforeRename)? {
+            if holds_note(&directory.join(candidate), note) {
                 return Ok(());
             }
         }
@@ -136,7 +136,7 @@ impl AtomicWriter {
             match rename_new(temporary, &target) {
                 Ok(()) => return Ok(true),
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                    if holds_note(&target, note)? {
+                    if holds_note(&target, note) {
                         return Ok(false);
                     }
                 }
@@ -193,23 +193,20 @@ fn note_names(name: &str) -> Vec<String> {
         .collect()
 }
 
-fn holds_note(path: &Path, note: &[u8]) -> io::Result<bool> {
-    let file = match OpenOptions::new()
+fn holds_note(path: &Path, note: &[u8]) -> bool {
+    let Ok(file) = OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
         .open(path)
-    {
-        Ok(file) => file,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
-        Err(error) if error.raw_os_error() == Some(libc::ELOOP) => return Ok(false),
-        Err(error) => return Err(error),
+    else {
+        return false;
     };
-    if !file.metadata()?.is_file() {
-        return Ok(false);
+    if !file.metadata().is_ok_and(|metadata| metadata.is_file()) {
+        return false;
     }
     let mut bytes = Vec::with_capacity(note.len());
-    io::Read::read_to_end(&mut io::Read::take(file, note.len() as u64 + 1), &mut bytes)?;
-    Ok(bytes == note)
+    io::Read::read_to_end(&mut io::Read::take(file, note.len() as u64 + 1), &mut bytes).is_ok()
+        && bytes == note
 }
 
 fn clean_export_temps(directory: &Path) -> io::Result<()> {
@@ -218,7 +215,7 @@ fn clean_export_temps(directory: &Path) -> io::Result<()> {
         let koett_temp = entry.file_name().to_str().is_some_and(|name| {
             name.strip_prefix(EXPORT_TEMP)
                 .and_then(|rest| rest.strip_suffix(".tmp"))
-                .is_some_and(|id| MeetingId::parse(id).is_some())
+                .is_some_and(|id| id.len() == 36 && MeetingId::parse(id).is_some())
         });
         if koett_temp && entry.file_type()?.is_file() {
             match fs::remove_file(entry.path()) {
