@@ -2,10 +2,9 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::bundle::marks::MarkWriter;
-use super::bundle::records::{Intent, Job, JobError, MarkIssue};
+use super::bundle::records::{Intent, MarkIssue};
 use super::bundle::{Bundle, WriteError};
 use super::capture::disk::{CaptureFault, CaptureFaultReason, CaptureNotice, free_disk_bytes};
 use super::capture::journal::{TrackReader, has_record_bytes};
@@ -287,7 +286,11 @@ fn seal_capture(
     }
 }
 
-fn seal(bundle: &Bundle, cutoff: Option<Offset>, mark_issues: Vec<MarkIssue>) -> io::Result<Seal> {
+pub(super) fn seal(
+    bundle: &Bundle,
+    cutoff: Option<Offset>,
+    mark_issues: Vec<MarkIssue>,
+) -> io::Result<Seal> {
     let max = cutoff.unwrap_or(Offset(u64::MAX));
     let read = |channel| match TrackReader::open(&journal_path(bundle.directory(), channel), max) {
         Ok(reader) => reader.seal(),
@@ -305,49 +308,6 @@ fn seal(bundle: &Bundle, cutoff: Option<Offset>, mark_issues: Vec<MarkIssue>) ->
     };
     bundle.write_seal(&seal)?;
     Ok(seal)
-}
-
-pub(super) fn process_job(
-    job: JobInput,
-    cancelled: &AtomicBool,
-) -> Result<Published, (RecoverableBundle, RecoveryReason)> {
-    let (bundle, sealed) = match job.source {
-        JobSource::Finished(SealedBundle::Locked { bundle, seal }) => (bundle, Some(seal)),
-        JobSource::Recover {
-            bundle: RecoverableBundle::Locked(bundle),
-            ..
-        } => (bundle, None),
-        #[cfg(test)]
-        _ => return Err((RecoverableBundle::Fixture, RecoveryReason::Interrupted)),
-    };
-    if cancelled.load(Ordering::Acquire) {
-        return Err((
-            RecoverableBundle::Locked(bundle),
-            RecoveryReason::Interrupted,
-        ));
-    }
-    let result = (|| -> io::Result<()> {
-        if sealed.is_none() && bundle.read_seal()?.is_none() {
-            let cutoff = bundle.read_intent()?.map(|intent| intent.cutoff);
-            seal(&bundle, cutoff, vec![])?;
-        }
-        if !cancelled.load(Ordering::Acquire) {
-            let attempts = bundle
-                .read_job()?
-                .map_or(1, |job| job.attempts.saturating_add(1));
-            bundle.write_job(&Job {
-                attempts,
-                last_error: JobError::Decode("asr not built".into()),
-            })?;
-        }
-        Ok(())
-    })();
-    let reason = match result {
-        Ok(()) if cancelled.load(Ordering::Acquire) => RecoveryReason::Interrupted,
-        Ok(()) => RecoveryReason::DecodeFailed("asr not built".into()),
-        Err(error) => RecoveryReason::DecodeFailed(error.to_string()),
-    };
-    Err((RecoverableBundle::Locked(bundle), reason))
 }
 
 impl Bundle {

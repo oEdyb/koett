@@ -1,4 +1,6 @@
 use crate::paths;
+#[cfg(target_os = "linux")]
+use rusqlite::OpenFlags;
 use rusqlite::{Connection, OptionalExtension, params};
 use std::{
     fs::{self, OpenOptions},
@@ -32,6 +34,27 @@ pub(super) fn error(error: impl std::fmt::Display) -> String {
     error.to_string()
 }
 impl HistoryStore {
+    #[cfg(target_os = "linux")]
+    pub(crate) fn open_read_only(path: &Path) -> Result<Option<Self>, String> {
+        match fs::metadata(path) {
+            Ok(_) => {}
+            Err(issue) if issue.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(issue) => return Err(error(issue)),
+        }
+        let connection =
+            Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(error)?;
+        connection
+            .busy_timeout(Duration::from_secs(5))
+            .map_err(error)?;
+        let version: i64 = connection
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .map_err(error)?;
+        if version > 2 {
+            return Err(format!("unsupported history schema version {version}"));
+        }
+        Ok(Some(Self { connection }))
+    }
+
     pub fn open(path: impl AsRef<Path>) -> Result<Self, String> {
         let path = path.as_ref();
         if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty())
@@ -113,6 +136,19 @@ impl HistoryStore {
         transaction.execute("INSERT INTO history_native_records(transcript_id) VALUES (?1) ON CONFLICT DO NOTHING", [&record.id]).map_err(error)?;
         transaction.commit().map_err(error)
     }
+    #[cfg(any(target_os = "linux", test))]
+    pub(crate) fn replace_meeting(&self, record: &HistoryRecord) -> Result<bool, String> {
+        record
+            .id
+            .strip_prefix("meeting:")
+            .filter(|suffix| !suffix.is_empty())
+            .ok_or("History replacement requires a meeting ID")?;
+        self.connection.execute(
+            "UPDATE transcripts SET created_at_ms=?2,model=?3,text=?4,raw_text=?5 WHERE id=?1 AND id >= 'meeting:' AND id < 'meeting;'",
+            params![record.id, record.created_at_ms, record.model, record.text, record.raw_text],
+        ).map(|updated| updated == 1).map_err(error)
+    }
+
     pub(super) fn insert_record(&self, record: &HistoryRecord) -> Result<(), String> {
         let inserted = self.connection.execute("INSERT INTO transcripts(id,created_at_ms,model,text,raw_text) VALUES (?1,?2,?3,?4,?5) ON CONFLICT(id) DO NOTHING", params![record.id,record.created_at_ms,record.model,record.text,record.raw_text]).map_err(error)?;
         if inserted == 0 && self.get(&record.id)?.as_ref() != Some(record) {
@@ -143,6 +179,7 @@ impl HistoryStore {
         query: &str,
         before: Option<&HistoryCursor>,
         limit: usize,
+        id_prefix: Option<&str>,
     ) -> Result<Vec<HistorySummary>, String> {
         let terms: Vec<_> = query
             .split(|c: char| !c.is_alphanumeric())
@@ -163,8 +200,24 @@ impl HistoryStore {
         } else {
             "transcripts_fts MATCH ?1"
         };
+        let (id_clause, preview) = if id_prefix == Some("meeting:") {
+            let preview = if search.is_empty() {
+                "substr(t.text,1,240)"
+            } else {
+                "substr(snippet(transcripts_fts, 0, '', '', ' … ', 24),1,240)"
+            };
+            (
+                "t.id >= 'meeting:' AND t.id < 'meeting;' AND ?5='meeting:'",
+                preview,
+            )
+        } else {
+            (
+                "(?5 IS NULL OR substr(t.id,1,length(?5))=?5)",
+                "substr(t.text,1,240)",
+            )
+        };
         let sql = format!(
-            "SELECT t.id,t.created_at_ms,t.model,substr(t.text,1,240) FROM {source} WHERE {search_clause} AND (?2 IS NULL OR (t.created_at_ms,t.id)<(?2,?3)) ORDER BY t.created_at_ms DESC,t.id DESC LIMIT ?4"
+            "SELECT t.id,t.created_at_ms,t.model,{preview} FROM {source} WHERE {search_clause} AND {id_clause} AND (?2 IS NULL OR (t.created_at_ms,t.id)<(?2,?3)) ORDER BY t.created_at_ms DESC,t.id DESC LIMIT ?4"
         );
         let mut statement = self.connection.prepare(&sql).map_err(error)?;
         statement
@@ -173,7 +226,13 @@ impl HistoryStore {
                     search,
                     before.map(|c| c.created_at_ms),
                     before.map(|c| &c.id),
-                    i64::try_from(limit.min(50)).map_err(error)?
+                    i64::try_from(if id_prefix == Some("meeting:") {
+                        limit
+                    } else {
+                        limit.min(50)
+                    })
+                    .unwrap_or(i64::MAX),
+                    id_prefix
                 ],
                 |r| {
                     Ok(HistorySummary {

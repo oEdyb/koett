@@ -115,6 +115,7 @@ pub(crate) struct TrackReader<R = BufReader<File>> {
     covered: Option<Offset>,
     seal: TrackSeal,
     pending: Option<TrackChunk>,
+    seal_bytes: Option<u64>,
 }
 
 pub(in crate::meeting) fn has_record_bytes(path: &Path) -> io::Result<bool> {
@@ -130,9 +131,17 @@ impl TrackReader {
         Self::from_reader(BufReader::new(File::open(path)?), cutoff, u64::MAX)
     }
 
-    #[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
     pub(crate) fn open_sealed(path: &Path, cutoff: Offset, seal: TrackSeal) -> io::Result<Self> {
-        Self::from_reader(BufReader::new(File::open(path)?), cutoff, seal.valid_bytes)
+        let mut reader =
+            Self::from_reader(BufReader::new(File::open(path)?), cutoff, seal.valid_bytes)?;
+        if reader.source.is_none() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid sealed track header",
+            ));
+        }
+        reader.seal_bytes = Some(seal.valid_bytes);
+        Ok(reader)
     }
 }
 
@@ -152,6 +161,7 @@ impl<R: Read> TrackReader<R> {
                 captured_until: Offset(0),
             },
             pending: None,
+            seal_bytes: None,
         })
     }
 
@@ -182,6 +192,16 @@ impl<R: Read> TrackReader<R> {
             }
             ended => {
                 self.source = None;
+                if matches!(ended, Ok(None))
+                    && self
+                        .seal_bytes
+                        .is_some_and(|limit| self.seal.valid_bytes != limit)
+                {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Truncated or corrupt sealed track",
+                    ));
+                }
                 ended
             }
         }

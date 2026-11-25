@@ -199,6 +199,30 @@ pub(crate) struct Projections {
     pub(crate) export: ExportProjection,
 }
 
+#[derive(Serialize, Deserialize)]
+pub(super) struct ProjectionFile {
+    pub(super) transcript_sha256: String,
+    #[serde(flatten)]
+    pub(super) projections: Projections,
+}
+
+impl Projections {
+    pub(super) fn pending(manifest: &Manifest) -> Self {
+        Self {
+            history: HistoryProjection::Pending,
+            export: if manifest.export_dir.is_some() {
+                ExportProjection::Pending
+            } else {
+                ExportProjection::Disabled
+            },
+        }
+    }
+
+    pub(in crate::meeting) fn has_pending(self) -> bool {
+        self.history == HistoryProjection::Pending || self.export == ExportProjection::Pending
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum HistoryProjection {

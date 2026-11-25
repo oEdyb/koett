@@ -424,7 +424,6 @@ fn interrupted_republish_does_not_report_an_older_job_error() {
         publish(&bundle, "# Second\n", false),
         Err(WriteError::BeforeRename(_))
     ));
-    assert!(!bundle.directory().join(PROJECTIONS).exists());
     drop(bundle);
 
     assert!(matches!(
@@ -692,3 +691,5 @@ fn lock_retry_waits_out_a_brief_scan_and_nothing_else() {
     assert!(matches!(result, Err(std::fs::TryLockError::Error(_))));
     assert_eq!(calls, 1);
 }
+
+mod publish_gate;

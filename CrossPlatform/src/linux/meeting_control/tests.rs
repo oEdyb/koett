@@ -89,14 +89,18 @@ fn each_cli_command_maps_to_the_contract_request() {
         })
     ));
     assert!(matches!(parse(&args(&["get", ID])), Ok(Command::Get(actual)) if actual == id));
+    assert!(matches!(
+        parse(&args(&["search", "meeting", "--limit", "1"])),
+        Ok(Command::Search { query, limit: 1 }) if query == "meeting"
+    ));
     for input in [
-        &["search", "meeting", "--limit", "1"][..],
-        &["asr-check"],
+        &["asr-check"][..],
         &["asr-check", "--fetch"],
+        &["recover", ID, "--backend", "gpu"],
     ] {
         assert_eq!(
-            offline(parse(&args(input)).unwrap(), Ok(false)),
-            json!({"version":1, "ok":false, "error":{"code":"not_available","message":"This meeting command is unavailable in this build."}})
+            offline(parse(&args(input)).unwrap(), Ok(false))["error"]["code"],
+            "helper_unavailable"
         );
     }
     for input in [
@@ -407,5 +411,145 @@ fn meeting_updates_do_not_arm_the_dictation_sketch() {
     super::super::route_meeting_update(MeetingUpdate::HistoryChanged, &ui, |_, _| ());
     assert!(
         matches!(updates.try_recv(), Ok(Update::Status(status)) if !status.starts_with("Recording"))
+    );
+}
+
+#[test]
+#[ignore = "private XDG socket fixture for the hardware-free meeting recover gate"]
+fn s5_headless_fixture_daemon() {
+    use crate::meeting::MeetingController;
+    use crate::runtime::{EngineCommand, EngineUpdate};
+    use crate::settings::Settings;
+    use std::sync::atomic::AtomicU8;
+
+    let runtime = std::env::var_os("XDG_RUNTIME_DIR").unwrap();
+    assert!(Path::new(&runtime).join("s5-private-fixture").is_file());
+    let display = std::env::var("WAYLAND_DISPLAY").unwrap();
+    let stop = Path::new(&runtime).join(format!("{display}.stop"));
+    let keep_running = std::env::var_os("KOETT_S5_KEEP_DAEMON").is_some();
+    let listener =
+        std::os::unix::net::UnixListener::bind(super::super::control::path().unwrap()).unwrap();
+    let (actions, incoming) = mpsc::channel();
+    thread::spawn(move || {
+        for connection in listener.incoming() {
+            let mut stream = connection.unwrap();
+            if let Some(bytes) = super::super::control::read_request(&mut stream)
+                && let Some(args) = bytes.strip_prefix(ROUTE)
+            {
+                let values: Vec<String> = serde_json::from_slice(args).unwrap();
+                assert!(matches!(
+                    parse(&values),
+                    Ok(Command::Daemon(
+                        MeetingRequest::Recover { .. } | MeetingRequest::Status(_)
+                    ))
+                ));
+                serve(&mut stream, args, &actions);
+            }
+        }
+    });
+
+    static ACTIVITY: AtomicU8 = AtomicU8::new(0);
+    let (commands, events) = mpsc::channel();
+    let (updates, notices) = mpsc::channel();
+    let settings = Settings::load().unwrap();
+    let mut controller = MeetingController::new(commands, updates, &ACTIVITY);
+    let mut ran_job = false;
+    loop {
+        if let Ok(TrayAction::Meeting(call)) = incoming.try_recv() {
+            controller.dispatch(call, true, &settings);
+        }
+        while let Ok(EngineCommand::MeetingEvent(event)) = events.try_recv() {
+            controller.receive(event, Instant::now());
+        }
+        for notice in notices.try_iter() {
+            match notice {
+                EngineUpdate::Meeting(crate::meeting::MeetingUpdate::View(
+                    MeetingView::Processing { .. },
+                    _,
+                )) => ran_job = true,
+                EngineUpdate::Meeting(crate::meeting::MeetingUpdate::View(
+                    MeetingView::Idle,
+                    _,
+                )) if ran_job && !keep_running => return,
+                _ => {}
+            }
+        }
+        if stop.exists() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+}
+
+#[test]
+fn search_skips_and_counts_unreadable_hits_alongside_complete_meetings() {
+    use crate::history::HistoryRecord;
+    use std::fs;
+
+    let root =
+        TestRoot(std::env::temp_dir().join(format!("koett-meeting-search-{}", MeetingId::new())));
+    let store_path = root.0.join("history.sqlite3");
+    let meetings = root.0.join("meetings");
+    let complete = Bundle::create(
+        &meetings,
+        Manifest {
+            info: info(),
+            mic: None,
+            backend_pref: Backend::Parakeet,
+            keep_audio: true,
+            export_dir: None,
+        },
+    )
+    .unwrap();
+    let meeting_id = format!("meeting:{ID}");
+    complete
+        .publish(
+            "# Meeting",
+            Publication {
+                history: HistoryReceipt {
+                    id: meeting_id.clone(),
+                    created_at_ms: STARTED,
+                    model: "parakeet".into(),
+                    text_sha256: "unused".into(),
+                },
+                assets: vec![],
+                backends: Default::default(),
+                fallback: false,
+            },
+        )
+        .unwrap();
+    drop(complete);
+
+    let damaged_id = MeetingId::new();
+    let damaged = meetings.join(damaged_id.to_string());
+    fs::create_dir(&damaged).unwrap();
+    fs::write(damaged.join("manifest.json"), "broken").unwrap();
+    let store = HistoryStore::open(&store_path).unwrap();
+    for (id, created_at_ms) in [(meeting_id, 1), (format!("meeting:{damaged_id}"), 2)] {
+        store
+            .save(&HistoryRecord {
+                id,
+                created_at_ms,
+                model: "parakeet".into(),
+                text: "Samoa surviving search hit".into(),
+                raw_text: None,
+            })
+            .unwrap();
+    }
+    drop(store);
+
+    assert!(matches!(
+        get(&meetings, damaged_id),
+        Err(ReplyError::DiskUnreadable(_))
+    ));
+    let result = search(&meetings, &store_path, "Samoa", 10).unwrap();
+    assert_eq!(result["skipped_unreadable"], 1);
+    assert_eq!(result["items"].as_array().unwrap().len(), 1);
+    assert_eq!(result["items"][0]["id"], ID);
+    assert!(
+        result["items"][0]["snippet"]
+            .as_str()
+            .unwrap()
+            .contains("Samoa")
     );
 }

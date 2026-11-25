@@ -1,4 +1,4 @@
-use super::records::{ExportProjection, HistoryProjection, JobError};
+use super::records::JobError;
 use super::*;
 use crate::meeting::{Artifact, MeetingView};
 
@@ -78,6 +78,12 @@ impl DiskState {
             }
             Self::Unreadable { id, issue } => MeetingView::Unreadable { id, issue },
         }
+    }
+
+    pub(in crate::meeting) fn needs_replay(&self) -> bool {
+        matches!(self, Self::Complete { manifest, receipt, projections, audio_retained, .. }
+            if projections.has_pending()
+                || (*audio_retained && !manifest.keep_audio && !receipt.publication.fallback))
     }
 
     pub(crate) fn duration(&self) -> Option<Offset> {
@@ -175,14 +181,10 @@ pub(super) fn inspect_unlocked(directory: &Path, manifest: Manifest) -> DiskStat
     if let Ok(receipt) = read_json::<Receipt>(&directory.join(RECEIPT))
         && valid_transcript(directory, &receipt).unwrap_or(false)
     {
-        let projections = read_json(&directory.join(PROJECTIONS)).unwrap_or(Projections {
-            history: HistoryProjection::Pending,
-            export: if manifest.export_dir.is_some() {
-                ExportProjection::Pending
-            } else {
-                ExportProjection::Disabled
-            },
-        });
+        let projections = read_json::<ProjectionFile>(&directory.join(PROJECTIONS))
+            .ok()
+            .filter(|file| file.transcript_sha256 == receipt.transcript_sha256)
+            .map_or_else(|| Projections::pending(&manifest), |file| file.projections);
         let audio_retained = ["you.journal", "other.journal"]
             .iter()
             .any(|name| directory.join("audio").join(name).is_file());
