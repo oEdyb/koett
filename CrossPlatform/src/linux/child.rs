@@ -9,7 +9,7 @@ impl ChildGroup {
         command.process_group(0).spawn().map(Self)
     }
 
-    pub(super) fn spawn_monitor(command: &mut Command) -> io::Result<Self> {
+    pub(crate) fn spawn_parent_bound(command: &mut Command) -> io::Result<Self> {
         let parent = std::process::id();
         // The parent may die between fork and prctl. Check again after installing the signal.
         unsafe {

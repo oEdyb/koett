@@ -7,32 +7,40 @@ use super::bundle::records::{Job, JobError, Seal};
 use super::bundle::scan::DiskState;
 use super::session::seal;
 use super::transcript;
-use super::{JobInput, JobSource, Published, RecoverableBundle, RecoveryReason, SealedBundle};
+use super::{
+    Backend, JobInput, JobSource, Published, RecoverableBundle, RecoveryReason, SealedBundle,
+};
 
 pub(super) fn process_job(
     job: JobInput,
     cancelled: &AtomicBool,
 ) -> Result<Published, (RecoverableBundle, RecoveryReason)> {
-    let (bundle, sealed, replay) = match job.source {
-        JobSource::Finished(SealedBundle::Locked { bundle, seal }) => (bundle, Some(seal), false),
+    let (bundle, sealed, backend, replay) = match job.source {
+        JobSource::Finished(SealedBundle::Locked { bundle, seal }) => {
+            (bundle, Some(seal), None, false)
+        }
         JobSource::Recover {
             bundle: RecoverableBundle::Locked(bundle),
             backend,
-        } => (bundle, None, backend.is_none()),
+        } => (bundle, None, backend, backend.is_none()),
         #[cfg(test)]
         _ => return Err((RecoverableBundle::Fixture, RecoveryReason::Interrupted)),
     };
-    run(&bundle, sealed, replay, cancelled)
+    run(&bundle, sealed, backend, replay, cancelled)
         .map_err(|reason| (RecoverableBundle::Locked(bundle), reason))
 }
 
 fn run(
     bundle: &Bundle,
     sealed: Option<Seal>,
+    backend: Option<Backend>,
     replay: bool,
     cancelled: &AtomicBool,
 ) -> Result<Published, RecoveryReason> {
     check_cancelled(cancelled)?;
+    bundle
+        .clear_job_directory()
+        .map_err(|error| RecoveryReason::DecodeFailed(error.to_string()))?;
     let state = bundle.read_state();
     if replay
         && state.needs_replay()
@@ -73,12 +81,12 @@ fn run(
                 }
             },
         };
-        let dictionary = Settings::load()?.dictionary;
+        let settings = Settings::load()?;
         let rendered = transcript::transcribe(
             bundle,
             &sealed,
-            bundle.manifest().backend_pref,
-            &dictionary,
+            backend.unwrap_or(bundle.manifest().backend_pref),
+            &settings,
             cancelled,
         )?;
         Ok::<_, String>((sealed.cutoff, rendered))

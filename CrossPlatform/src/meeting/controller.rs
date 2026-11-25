@@ -266,7 +266,7 @@ impl MeetingController {
             Request::Recover {
                 backend: Some(Backend::Gpu),
                 ..
-            } => {
+            } if settings.meeting.gpu_python.is_none() => {
                 return Err(ReplyError::HelperUnavailable);
             }
             Request::Recover { id, backend } => {

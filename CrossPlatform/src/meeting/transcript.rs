@@ -1,15 +1,18 @@
+pub(crate) mod helper;
 mod markdown;
 mod timeline;
 mod windows;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use time::{OffsetDateTime, UtcOffset};
 
 use crate::annotation::TimedWord;
 use crate::dictionary::DictionaryEntry;
-use crate::model::{LocalModel, VAD_FILE, ensure_model};
+use crate::model::{LocalModel, VAD_FILE, validate_local_model_until_cancelled};
+use crate::settings::Settings;
 use crate::transcription::{ParakeetTranscriber, StreamingVad};
 
 use super::bundle::Bundle;
@@ -18,6 +21,7 @@ use super::bundle::records::Seal;
 use super::capture::journal::{TrackChunk, TrackReader};
 use super::session::journal_path;
 use super::{Backend, Channel, Offset, SAMPLE_RATE, Span};
+use helper::Helper;
 use timeline::{Point, SpeechWord};
 use windows::WindowBuilder;
 
@@ -85,7 +89,13 @@ struct Parakeet<'a> {
 impl Decoder for Parakeet<'_> {
     fn decode(&mut self, windows: &[Window]) -> Result<Vec<DecodedWindow>, String> {
         if self.engine.is_none() {
-            let directory = ensure_model(LocalModel::ParakeetV3, self.cancelled, |_| {})?;
+            check_cancelled(self.cancelled)?;
+            let directory = LocalModel::ParakeetV3.directory()?;
+            validate_local_model_until_cancelled(
+                LocalModel::ParakeetV3,
+                &directory,
+                self.cancelled,
+            )?;
             self.engine = Some(ParakeetTranscriber::load_with_dictionary(
                 &directory,
                 4,
@@ -108,27 +118,74 @@ impl Decoder for Parakeet<'_> {
     }
 }
 
+struct MeetingDecoder<'a, D> {
+    helper: Option<Helper>,
+    fallback: D,
+    cancelled: &'a AtomicBool,
+    batch_base: Duration,
+    per_window: Duration,
+}
+
+impl<D: Decoder> Decoder for MeetingDecoder<'_, D> {
+    fn decode(&mut self, windows: &[Window]) -> Result<Vec<DecodedWindow>, String> {
+        check_cancelled(self.cancelled)?;
+        let Some(mut helper) = self.helper.take() else {
+            return self.fallback.decode(windows);
+        };
+        let budget = self.batch_base + self.per_window * windows.len() as u32;
+        let (mut decoded, failure) = helper.decode_prefix(windows, self.cancelled, budget);
+        if let Some(error) = failure {
+            let error = helper.with_stderr(error);
+            check_cancelled(self.cancelled)?;
+            eprintln!("Meeting ASR helper failed, using Parakeet. {error}");
+            if decoded.len() < windows.len() {
+                decoded.extend(self.fallback.decode(&windows[decoded.len()..])?);
+            }
+        } else {
+            self.helper = Some(helper);
+        }
+        Ok(decoded)
+    }
+}
+
 pub(super) fn transcribe(
     bundle: &Bundle,
     seal: &Seal,
     preferred: Backend,
-    dictionary: &[DictionaryEntry],
+    settings: &Settings,
     cancelled: &AtomicBool,
 ) -> Result<Rendered, String> {
     let marks = list_marks(bundle.directory(), Some(seal)).map_err(|err| err.to_string())?;
     let mut points: Vec<_> = marks.into_iter().map(Point::Mark).collect();
 
-    let local = LocalModel::ParakeetV3.directory()?;
-    let directory = if local.join(VAD_FILE).is_file() {
-        local
+    let parakeet = LocalModel::ParakeetV3.directory()?;
+    let vad_directory = if parakeet.join(VAD_FILE).is_file() {
+        parakeet
     } else {
-        ensure_model(LocalModel::ParakeetV3, cancelled, |_| {})?
+        settings.model_directory()?
     };
-    let mut vad = StreamingVad::load(&directory)?;
-    let mut decoder = Parakeet {
-        dictionary,
+    let mut vad = StreamingVad::load(&vad_directory)?;
+    let helper = match (preferred, settings.meeting.gpu_python.as_deref()) {
+        (Backend::Gpu, Some(python)) => match Helper::start(bundle, python, cancelled) {
+            Ok(helper) => Some(helper),
+            Err(error) => {
+                check_cancelled(cancelled)?;
+                eprintln!("Meeting ASR helper unavailable, using Parakeet. {error}");
+                None
+            }
+        },
+        _ => None,
+    };
+    let mut decoder = MeetingDecoder {
+        helper,
+        fallback: Parakeet {
+            dictionary: &settings.dictionary,
+            cancelled,
+            engine: None,
+        },
         cancelled,
-        engine: None,
+        batch_base: Duration::from_secs(30),
+        per_window: Duration::from_secs(10),
     };
     let mut batch = Batch::new(&mut decoder, preferred);
     for channel in [Channel::You, Channel::Other] {
@@ -154,7 +211,7 @@ pub(super) fn transcribe(
         utc.to_offset(offset),
         seal.cutoff,
         timeline::merge(points),
-        dictionary,
+        &settings.dictionary,
         batch.fallback,
     )
 }

@@ -265,7 +265,7 @@ struct Monitor {
 
 impl Monitor {
     fn start() -> io::Result<Self> {
-        let mut group = ChildGroup::spawn_monitor(
+        let mut group = ChildGroup::spawn_parent_bound(
             Command::new("pw-record")
                 .args(["--raw", "--rate", "16000", "--channels", "1", "--format", "s16",
                     "--latency", "20ms", "-P",

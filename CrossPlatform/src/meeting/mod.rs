@@ -5,6 +5,7 @@ mod job;
 mod session;
 mod ticket;
 mod transcript;
+pub(crate) use transcript::helper::asr_check;
 
 pub(crate) use controller::MeetingController;
 pub(crate) use ticket::Ticket;
@@ -600,7 +601,9 @@ impl ReplyError {
             | Self::IntentWriteFailed(issue)
             | Self::DiskUnreadable(issue) => issue,
             Self::ArtifactPending => "This meeting does not have a committed transcript.",
-            Self::HelperUnavailable => "The GPU meeting decoder is unavailable in this build.",
+            Self::HelperUnavailable => {
+                "Set meeting.gpu_python to the faster-whisper virtual environment's Python."
+            }
         }
     }
 

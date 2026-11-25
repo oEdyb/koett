@@ -26,7 +26,7 @@ enum Command {
     List { recoverable: bool, limit: usize },
     Get(MeetingId),
     Search { query: String, limit: usize },
-    Unavailable,
+    AsrCheck { fetch: bool },
 }
 
 fn parse(values: &[String]) -> Result<Command, &'static str> {
@@ -78,7 +78,9 @@ fn parse(values: &[String]) -> Result<Command, &'static str> {
             return Ok(Command::List { recoverable, limit });
         }
         ["asr-check"] | ["asr-check", "--fetch"] => {
-            return Ok(Command::Unavailable);
+            return Ok(Command::AsrCheck {
+                fetch: values.len() == 2,
+            });
         }
         ["search", query] => {
             return Ok(Command::Search {
@@ -115,11 +117,7 @@ pub(super) fn run(values: &[String]) -> i32 {
         }
     };
     let reply = match command {
-        Command::Unavailable
-        | Command::Daemon(MeetingRequest::Recover {
-            backend: Some(Backend::Gpu),
-            ..
-        }) => failure(&ReplyError::HelperUnavailable),
+        Command::AsrCheck { fetch } => asr_check(fetch),
         command => match connect() {
             Ok(stream) => match command {
                 Command::Daemon(_) => {
@@ -136,6 +134,20 @@ pub(super) fn run(values: &[String]) -> i32 {
     };
     println!("{reply}");
     i32::from(reply["ok"] != true)
+}
+
+fn asr_check(fetch: bool) -> Value {
+    let result = crate::settings::Settings::load().and_then(|settings| {
+        let python = settings
+            .meeting
+            .gpu_python
+            .ok_or("Set meeting.gpu_python to the faster-whisper virtual environment's Python.")?;
+        crate::meeting::asr_check(&python, fetch)
+    });
+    match result {
+        Ok(check) => success(json!(check)),
+        Err(message) => error("helper_unavailable", &message),
+    }
 }
 
 enum ConnectError {
@@ -276,11 +288,7 @@ fn offline(command: Command, daemon: Result<bool, &str>) -> Value {
             }),
             daemon,
         ),
-        Command::Unavailable
-        | Command::Daemon(MeetingRequest::Recover {
-            backend: Some(Backend::Gpu),
-            ..
-        }) => failure(&ReplyError::HelperUnavailable),
+        Command::AsrCheck { .. } => error("bad_usage", "Run koett meeting asr-check locally."),
         Command::Daemon(_) => match daemon {
             Ok(_) => failure(&ReplyError::DaemonUnavailable),
             Err(issue) => {
