@@ -2,10 +2,10 @@ use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
 use super::super::{Offset, SAMPLE_RATE};
-use super::GAP_THRESHOLD;
 
 const WINDOW: u64 = SAMPLE_RATE as u64 * 2;
 const MAX_STEER: i64 = 2;
+const MAX_FORWARD_STEERING_ERROR: i64 = SAMPLE_RATE as i64 * 20 / 1000;
 
 pub(super) fn session_offset(zero: Instant, at: Instant) -> Offset {
     let nanos = at.saturating_duration_since(zero).as_nanos();
@@ -46,7 +46,7 @@ impl TrackClock {
         }
         self.minimums.push_back((stamp, lag));
         let (_, minimum) = self.minimums[0];
-        if minimum.saturating_sub(self.lag) > GAP_THRESHOLD as i64 {
+        if minimum.saturating_sub(self.correction) > MAX_FORWARD_STEERING_ERROR {
             return Some(Offset(nominal.saturating_add_signed(minimum)));
         }
         self.lag = minimum;
