@@ -3,6 +3,7 @@ use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -121,6 +122,7 @@ enum TrayAction {
     OpenSettings,
     Quit,
     QuitAnyway,
+    Shutdown,
     Recovery(String),
     RecoveryPaste(recovery::PasteRequest),
 }
@@ -665,6 +667,7 @@ pub fn run() -> Result<(), String> {
     let settings = Settings::load()?;
     let (actions, receiver) = mpsc::channel();
     let (ui, updates) = mpsc::channel();
+    install_shutdown_signals()?;
     control::listen(actions.clone(), ui.clone())?;
     updates::start(actions.clone(), ui.clone());
     updates::lab_fault_at_startup();
@@ -769,6 +772,35 @@ pub fn run() -> Result<(), String> {
     });
     window::run(actions, updates, command != "--background");
     Ok(())
+}
+
+static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
+
+extern "C" fn request_shutdown(_: libc::c_int) {
+    SHUTDOWN_REQUESTED.store(true, Ordering::Relaxed);
+}
+
+fn install_shutdown_signals() -> Result<(), String> {
+    // A lock-free flag keeps shutdown work on the controller thread.
+    let mut action: libc::sigaction = unsafe { std::mem::zeroed() };
+    action.sa_sigaction = request_shutdown as *const () as usize;
+    action.sa_flags = libc::SA_RESTART;
+    unsafe { libc::sigemptyset(&mut action.sa_mask) };
+    for signal in [libc::SIGTERM, libc::SIGINT, libc::SIGHUP] {
+        if unsafe { libc::sigaction(signal, &action, std::ptr::null_mut()) } != 0 {
+            return Err(format!(
+                "Could not handle shutdown signal {signal}: {}",
+                std::io::Error::last_os_error()
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn shutdown_action() -> Option<TrayAction> {
+    SHUTDOWN_REQUESTED
+        .load(Ordering::Relaxed)
+        .then_some(TrayAction::Shutdown)
 }
 
 pub fn show_fatal_error(error: &str) {
@@ -903,7 +935,7 @@ fn run_x11(
                 let _ = hotkeys.unregister(escape);
             }
         }
-        while let Ok(action) = actions.try_recv() {
+        for action in shutdown_action().into_iter().chain(actions.try_iter()) {
             let (action, paste_request) = match action {
                 TrayAction::RecoveryPaste(request) => {
                     if request.expired() {
@@ -993,15 +1025,15 @@ fn run_x11(
                     }
                     Ok(_) => {}
                 },
-                TrayAction::Quit | TrayAction::QuitAnyway => {
-                    if app.quit_busy() {
+                TrayAction::Quit | TrayAction::QuitAnyway | TrayAction::Shutdown => {
+                    if action != TrayAction::Shutdown && app.quit_busy() {
                         update_tray_status(
                             tray,
                             "@notice:Finish recording or processing before quitting",
                         );
                         continue;
                     }
-                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                    if action == TrayAction::Quit && history::recovery::retry().is_err() {
                         update_tray_status(tray, "@quit-protected");
                         continue;
                     }
@@ -1609,7 +1641,11 @@ async fn run_wayland(
                 app.command(EngineCommand::Cancel, || None);
             }
         }
-        for action in actions.try_iter().chain(shortcut_receiver.try_iter()) {
+        for action in shutdown_action()
+            .into_iter()
+            .chain(actions.try_iter())
+            .chain(shortcut_receiver.try_iter())
+        {
             let (action, paste_request) = match action {
                 TrayAction::RecoveryPaste(request) => {
                     if request.expired() {
@@ -1731,15 +1767,15 @@ async fn run_wayland(
                     }
                     Ok(_) => {}
                 },
-                TrayAction::Quit | TrayAction::QuitAnyway => {
-                    if app.quit_busy() {
+                TrayAction::Quit | TrayAction::QuitAnyway | TrayAction::Shutdown => {
+                    if action != TrayAction::Shutdown && app.quit_busy() {
                         update_tray_status(
                             tray,
                             "@notice:Finish recording or processing before quitting",
                         );
                         continue;
                     }
-                    if action != TrayAction::QuitAnyway && history::recovery::retry().is_err() {
+                    if action == TrayAction::Quit && history::recovery::retry().is_err() {
                         update_tray_status(tray, "@quit-protected");
                         continue;
                     }
