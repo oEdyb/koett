@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender, TryRecvError};
 use std::thread::{self, JoinHandle};
@@ -85,8 +86,21 @@ impl TrackWriter {
                     last_sync: started,
                     samples: Vec::new(),
                 };
-                let mut notify = |health| on_notice(CaptureNotice::Health(health));
-                let result = writer.run(stop_rx, &now, || disk_space(&parent), &mut notify);
+                let result = catch_unwind(AssertUnwindSafe(|| {
+                    writer.run(
+                        stop_rx,
+                        &now,
+                        || disk_space(&parent),
+                        |health| on_notice(CaptureNotice::Health(health)),
+                    )
+                }))
+                .unwrap_or_else(|_| {
+                    Err(CaptureFault {
+                        at: session_offset(session_zero, Instant::now()),
+                        reason: CaptureFaultReason::WorkerPanicked,
+                    })
+                });
+                drop(writer.drain);
                 if let Err(fault) = &result {
                     on_notice(CaptureNotice::Fault(fault.clone()));
                     let _ = writer.recorder.sink().sync_data();

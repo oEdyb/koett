@@ -622,6 +622,37 @@ fn low_disk_fault_preserves_partial_pcm_and_queued_blocks() {
     assert!(pcm[26 * BLOCK..].iter().all(|&sample| sample == 16_384));
 }
 
+#[test]
+fn worker_panic_notifies_before_finish_and_closes_ingress() {
+    let dir = TestDir::new();
+    let zero = Instant::now();
+    let tick = Arc::new(AtomicU64::new(0));
+    let (notice, received) = mpsc::channel();
+    let mut preflight = true;
+    let (writer, mut ingress) = TrackWriter::start_with_clock(
+        dir.config(zero),
+        move |_| {
+            assert!(std::mem::take(&mut preflight), "injected worker panic");
+            Ok(2048 * MIB)
+        },
+        move |event| notice.send(event).unwrap(),
+        {
+            let tick = tick.clone();
+            move || zero + Duration::from_secs(tick.load(Ordering::Acquire))
+        },
+    )
+    .unwrap();
+
+    assert!(ingress.push(&[0.25; BLOCK], zero));
+    tick.store(30, Ordering::Release);
+    let CaptureNotice::Fault(fault) = received.recv_timeout(Duration::from_secs(2)).unwrap() else {
+        panic!("writer panic did not send a fault");
+    };
+    assert_eq!(fault.reason, CaptureFaultReason::WorkerPanicked);
+    assert!(!ingress.push(&[0.25; BLOCK], zero + Duration::from_secs(30)));
+    assert_eq!(writer.finish(), Err(fault));
+}
+
 struct TestDir(PathBuf);
 
 impl TestDir {
