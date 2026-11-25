@@ -291,7 +291,7 @@ mod tests {
         let store = HistoryStore::open(&database).unwrap();
         assert_eq!(store.get(&first.id).unwrap(), Some(first.clone()));
         assert_eq!(store.get(&second.id).unwrap(), Some(second));
-        assert_eq!(store.page("", None, 50).unwrap().len(), 2);
+        assert_eq!(store.page("", None, 50, None).unwrap().len(), 2);
         assert_eq!(fs::read_to_string(last).unwrap(), first.text);
         drop(store);
         fs::remove_dir_all(root).unwrap();

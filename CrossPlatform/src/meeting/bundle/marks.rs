@@ -15,7 +15,6 @@ use state::{Input, Lifecycle, Operation, State};
 const DRAIN_TIMEOUT: Duration = Duration::from_secs(8);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
 pub(crate) struct MarkRef {
     pub(crate) id: u64,
     pub(crate) offset: Offset,
@@ -203,7 +202,6 @@ fn filename(offset: Offset, id: u64) -> String {
     format!("mark-{:010}-{id:04}.png", offset.0)
 }
 
-#[allow(dead_code)] // Used by meeting transcription and publication in S5/S6.
 pub(crate) fn list_marks(directory: &Path, seal: Option<&Seal>) -> io::Result<Vec<MarkRef>> {
     let assets = match fs::read_dir(directory.join("assets")) {
         Ok(assets) => assets,

@@ -205,7 +205,7 @@ impl HistoryView {
                 let reply = match request {
                     Query::Page(generation, query, cursor) => Reply::Page(
                         generation,
-                        result.and_then(|store| store.page(&query, cursor.as_ref(), 50)),
+                        result.and_then(|store| store.page(&query, cursor.as_ref(), 50, None)),
                     ),
                     Query::Get(id) => Reply::Record(result.and_then(|store| store.get(&id))),
                 };

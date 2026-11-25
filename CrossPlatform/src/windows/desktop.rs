@@ -84,13 +84,13 @@ fn history_page(
     text: &str,
     before: Option<&HistoryCursor>,
 ) -> Result<Page, String> {
-    let rows = store.page(text, before, 50)?;
+    let rows = store.page(text, before, 50, None)?;
     let last = rows.last().map(|row| HistoryCursor {
         id: row.id.clone(),
         created_at_ms: row.created_at_ms,
     });
     let next = match last {
-        Some(cursor) if !store.page(text, Some(&cursor), 1)?.is_empty() => Some(cursor),
+        Some(cursor) if !store.page(text, Some(&cursor), 1, None)?.is_empty() => Some(cursor),
         _ => None,
     };
     Ok(Page { rows, next })

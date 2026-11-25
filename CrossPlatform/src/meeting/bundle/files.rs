@@ -1,6 +1,8 @@
+use std::ffi::CString;
 use std::fmt;
 use std::fs::{self, DirBuilder, File, OpenOptions};
 use std::io::{self, Write};
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 use std::path::Path;
 
@@ -57,6 +59,13 @@ pub(super) struct AtomicWriter {
 }
 
 impl AtomicWriter {
+    #[cfg(test)]
+    pub(super) fn checkpoint(&self, name: &str) {
+        if let Some(fault) = &self.fault {
+            let _ = fault(name, WriteBoundary::AfterRename);
+        }
+    }
+
     pub(super) fn json(
         &self,
         directory: &Path,
@@ -74,6 +83,23 @@ impl AtomicWriter {
         name: &str,
         bytes: &[u8],
     ) -> Result<(), WriteError> {
+        self.install(directory, name, bytes, |source, destination| {
+            fs::rename(source, destination)
+        })
+    }
+
+    pub(super) fn write_new(&self, directory: &Path, name: &str, bytes: &[u8]) -> io::Result<()> {
+        self.install(directory, name, bytes, rename_new)
+            .map_err(io::Error::from)
+    }
+
+    fn install(
+        &self,
+        directory: &Path,
+        name: &str,
+        bytes: &[u8],
+        replace: impl FnOnce(&Path, &Path) -> io::Result<()>,
+    ) -> Result<(), WriteError> {
         let temporary = directory.join(format!(".{name}.tmp-{}", MeetingId::new()));
         write_temp(&temporary, bytes).map_err(WriteError::BeforeRename)?;
         let rename = || {
@@ -81,7 +107,7 @@ impl AtomicWriter {
             if let Some(fault) = &self.fault {
                 fault(name, WriteBoundary::BeforeRename)?;
             }
-            fs::rename(&temporary, directory.join(name))
+            replace(&temporary, &directory.join(name))
         };
         if let Err(error) = rename() {
             let _ = fs::remove_file(temporary);
@@ -136,5 +162,25 @@ pub(super) fn ensure_directory(path: &Path) -> io::Result<()> {
             ensure_directory(path)
         }
         Err(error) => Err(error),
+    }
+}
+
+fn rename_new(source: &Path, destination: &Path) -> io::Result<()> {
+    let source = CString::new(source.as_os_str().as_bytes())?;
+    let destination = CString::new(destination.as_os_str().as_bytes())?;
+    // Both pointers refer to live, nul-terminated paths. The kernel checks for conflicts atomically.
+    let status = unsafe {
+        libc::renameat2(
+            libc::AT_FDCWD,
+            source.as_ptr(),
+            libc::AT_FDCWD,
+            destination.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if status == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
 }
