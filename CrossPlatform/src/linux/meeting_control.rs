@@ -224,6 +224,11 @@ fn dispatch_socket(sender: &Sender<TrayAction>, request: MeetingRequest) -> Valu
     });
     match result {
         Ok(Reply::View(view)) => success(view_data(view)),
+        Ok(Reply::Error(ReplyError::EngineBusy)) | Err(ReplyError::EngineBusy)
+            if let MeetingRequest::Status(id) = request =>
+        {
+            with_daemon(with_root(|root| disk_status(root, id)), Ok(true))
+        }
         Ok(Reply::Error(error)) | Err(error) => failure(&error),
         Ok(Reply::None) => failure(&ReplyError::OutcomeUnknown),
     }
