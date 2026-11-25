@@ -1,18 +1,24 @@
 //! Tray items for the one foreground meeting, from its latest view.
-use crate::meeting::{MeetingId, MeetingRequest, MeetingView};
+use super::meeting_confirm::{Choice, Press, Shown};
+use crate::meeting::{MeetingId, MeetingRequest, MeetingView, StopKey};
+use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum MeetingAction {
     /// A fresh id per click, so a replayed menu never reopens an old meeting.
     Start,
-    Send(MeetingRequest),
+    Stop(MeetingId),
+    /// Answers only the confirmation this item was built for.
+    Confirm(Choice, StopKey),
 }
 
 impl MeetingAction {
-    pub(super) fn request(self) -> MeetingRequest {
+    /// What a click at `at` sends, given the confirmation the tray shows now.
+    pub(super) fn request(self, shown: Option<Shown>, at: Instant) -> Option<MeetingRequest> {
         match self {
-            Self::Start => MeetingRequest::Start(MeetingId::new()),
-            Self::Send(request) => request,
+            Self::Start => Some(MeetingRequest::Start(MeetingId::new())),
+            Self::Stop(id) => Some(MeetingRequest::Stop(id)),
+            Self::Confirm(choice, key) => choice.request(Press { key: Some(key), at }, shown),
         }
     }
 }
@@ -32,21 +38,18 @@ fn item(label: &str, action: Option<MeetingAction>) -> MeetingItem {
 }
 
 pub(super) fn items(view: &MeetingView, recoverable: usize) -> Vec<MeetingItem> {
-    use MeetingAction::Send;
+    use MeetingAction::Confirm;
     let mut items = match view {
         MeetingView::Recording { info, .. } => {
-            vec![item(
-                "Stop meeting…",
-                Some(Send(MeetingRequest::Stop(info.id))),
-            )]
+            vec![item("Stop meeting…", Some(MeetingAction::Stop(info.id)))]
         }
         MeetingView::ConfirmStop { key, .. } => vec![
-            item("Finish meeting", Some(Send(MeetingRequest::Finish(*key)))),
+            item("Finish meeting", Some(Confirm(Choice::Finish, *key))),
             item(
                 "Finish without transcript",
-                Some(Send(MeetingRequest::Cancel(*key))),
+                Some(Confirm(Choice::NoTranscript, *key)),
             ),
-            item("Continue meeting", Some(Send(MeetingRequest::Resume(*key)))),
+            item("Continue meeting", Some(Confirm(Choice::Continue, *key))),
         ],
         MeetingView::Closing { .. } => vec![item("Saving meeting…", None)],
         MeetingView::Processing { .. } => vec![item("Transcribing meeting…", None)],
@@ -71,7 +74,7 @@ pub(super) fn live(view: &MeetingView) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::meeting::{CaptureHealth, CloseGoal, SessionInfo, StopKey};
+    use crate::meeting::{CaptureHealth, CloseGoal, SessionInfo};
 
     fn info() -> SessionInfo {
         SessionInfo {
@@ -92,8 +95,9 @@ mod tests {
         let items = items(&MeetingView::Idle, 0);
         assert_eq!(labels(&items), [("Start meeting", true)]);
         let action = items[0].action.unwrap();
-        let (MeetingRequest::Start(first), MeetingRequest::Start(second)) =
-            (action.request(), action.request())
+        let now = Instant::now();
+        let (Some(MeetingRequest::Start(first)), Some(MeetingRequest::Start(second))) =
+            (action.request(None, now), action.request(None, now))
         else {
             panic!("Start meeting must start a meeting");
         };
@@ -110,8 +114,8 @@ mod tests {
         let items = items(&view, 0);
         assert_eq!(labels(&items), [("Stop meeting…", true)]);
         assert_eq!(
-            items[0].action.unwrap().request(),
-            MeetingRequest::Stop(info.id)
+            items[0].action.unwrap().request(None, Instant::now()),
+            Some(MeetingRequest::Stop(info.id))
         );
         assert!(live(&view));
     }
@@ -129,16 +133,26 @@ mod tests {
             key,
         };
         let items = items(&view, 0);
+        let shown = Shown::follow(None, Some(key), Instant::now());
+        let armed = Instant::now() + super::super::meeting_confirm::ARM;
         let requests: Vec<_> = items
             .iter()
-            .map(|item| (item.label.as_str(), item.action.unwrap().request()))
+            .map(|item| {
+                (
+                    item.label.as_str(),
+                    item.action.unwrap().request(shown, armed),
+                )
+            })
             .collect();
         assert_eq!(
             requests,
             [
-                ("Finish meeting", MeetingRequest::Finish(key)),
-                ("Finish without transcript", MeetingRequest::Cancel(key)),
-                ("Continue meeting", MeetingRequest::Resume(key)),
+                ("Finish meeting", Some(MeetingRequest::Finish(key))),
+                (
+                    "Finish without transcript",
+                    Some(MeetingRequest::Cancel(key))
+                ),
+                ("Continue meeting", Some(MeetingRequest::Resume(key))),
             ]
         );
         assert!(live(&view));

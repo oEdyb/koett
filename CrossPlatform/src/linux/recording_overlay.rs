@@ -3,6 +3,7 @@
 //! https://github.com/wmww/gtk4-layer-shell/blob/main/linking.md.
 mod meeting;
 mod position;
+use super::meeting_confirm::{Choice, Press, Shown};
 use gtk4::{self as gtk, glib::translate::ToGlibPtr, prelude::*};
 use libloading::Library;
 pub(super) use meeting::MeetingPill;
@@ -483,8 +484,8 @@ pub struct RecordingOverlay {
     stop: gtk::Button,
     confirm: Vec<gtk::Button>,
     meeting: Rc<RefCell<Option<MeetingPill>>>,
-    /// When the meeting's confirm row appeared, to arm its ending choices.
-    confirm_shown: Rc<std::cell::Cell<Instant>>,
+    /// The confirmation the row answers, and when its key first showed.
+    shown: Rc<std::cell::Cell<Option<Shown>>>,
     cancel: gtk::Button,
     copy: gtk::Button,
     paste: gtk::Button,
@@ -901,10 +902,10 @@ impl RecordingOverlay {
         meeting_controls.set_hexpand(true);
         let stop = pill_button("Stop");
         meeting_controls.append(&stop);
-        let confirm: Vec<gtk::Button> = meeting::Choice::ROW
+        let confirm: Vec<gtk::Button> = Choice::ROW
             .iter()
             .map(|choice| {
-                let button = pill_button(choice.label());
+                let button = pill_button(meeting::label(*choice));
                 meeting_controls.append(&button);
                 button
             })
@@ -926,7 +927,8 @@ impl RecordingOverlay {
             }
         });
         let meeting = Rc::new(RefCell::new(None::<MeetingPill>));
-        let confirm_shown = Rc::new(std::cell::Cell::new(Instant::now()));
+        let shown = Rc::new(std::cell::Cell::new(None::<Shown>));
+        let press = Rc::new(std::cell::Cell::new(None::<Press>));
         let send_meeting = {
             let actions = actions.clone();
             move |request| {
@@ -944,15 +946,29 @@ impl RecordingOverlay {
                 }
             }
         });
-        for (button, choice) in confirm.iter().zip(meeting::Choice::ROW) {
+        for (button, choice) in confirm.iter().zip(Choice::ROW) {
+            // A click lands on release; it answers what was on screen at the press.
+            let pressed = gtk::GestureClick::new();
+            pressed.set_propagation_phase(gtk::PropagationPhase::Capture);
+            pressed.connect_pressed({
+                let (shown, press) = (shown.clone(), press.clone());
+                move |_, _, _, _| {
+                    press.set(Some(Press {
+                        key: shown.get().map(Shown::key),
+                        at: Instant::now(),
+                    }));
+                }
+            });
+            button.add_controller(pressed);
             button.connect_clicked({
-                let meeting = meeting.clone();
-                let shown = confirm_shown.clone();
+                let (shown, press) = (shown.clone(), press.clone());
                 let send = send_meeting.clone();
                 move |_| {
-                    if let Some(request) =
-                        choice.request(meeting.borrow().as_ref(), shown.get(), Instant::now())
-                    {
+                    let begun = press.take().unwrap_or(Press {
+                        key: shown.get().map(Shown::key),
+                        at: Instant::now(),
+                    });
+                    if let Some(request) = choice.request(begun, shown.get()) {
                         send(request);
                     }
                 }
@@ -1028,7 +1044,7 @@ impl RecordingOverlay {
             stop,
             confirm,
             meeting,
-            confirm_shown,
+            shown,
             cancel,
             copy,
             paste,
@@ -1226,9 +1242,11 @@ impl RecordingOverlay {
             pill.morph_started = None;
             self.body.remove_css_class("koett-pill-morph");
         }
-        if pill.phase != phase && phase == Phase::MeetingConfirm {
-            self.confirm_shown.set(Instant::now());
-        }
+        self.shown.set(Shown::follow(
+            self.shown.get(),
+            meeting.and_then(MeetingPill::key),
+            Instant::now(),
+        ));
         pill.phase = phase;
         pill.dark = dark;
         pill.levels = levels.cloned();

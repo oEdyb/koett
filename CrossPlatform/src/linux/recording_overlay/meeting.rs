@@ -1,13 +1,10 @@
 //! The pill while a meeting records: its clock, with Stop on hover, and once a
 //! stop is asked for, one row that finishes, keeps the audio without a
-//! transcript, or continues. Finishing always carries the current stop token.
+//! transcript, or continues (`meeting_confirm` decides what a click sends).
+use super::super::meeting_confirm::Choice;
 use crate::meeting::{
     CaptureHealth, MeetingId, MeetingRequest, MeetingView, SourceHealth, StopKey,
 };
-use std::time::{Duration, Instant};
-
-/// A double-click on Stop must not land on the row that replaces it.
-const ARM: Duration = Duration::from_millis(500);
 
 #[derive(Clone, Debug, PartialEq)]
 pub(in crate::linux) enum MeetingPill {
@@ -46,6 +43,13 @@ impl MeetingPill {
         matches!(self, Self::Confirm { .. })
     }
 
+    pub(super) fn key(&self) -> Option<StopKey> {
+        match self {
+            Self::Confirm { key, .. } => Some(*key),
+            Self::Recording { .. } => None,
+        }
+    }
+
     pub(super) fn elapsed_now(&self) -> u64 {
         let now_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -81,42 +85,12 @@ impl MeetingPill {
     }
 }
 
-/// The confirm row, left to right. Continue sits where Stop was.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Choice {
-    Finish,
-    NoTranscript,
-    Continue,
-}
-
-impl Choice {
-    pub(super) const ROW: [Self; 3] = [Self::Finish, Self::NoTranscript, Self::Continue];
-
-    pub(super) fn label(self) -> &'static str {
-        match self {
-            Self::Finish => "Finish",
-            Self::NoTranscript => "No transcript",
-            Self::Continue => "Continue",
-        }
-    }
-
-    /// What a click sends, given the pill now and when its row appeared.
-    pub(super) fn request(
-        self,
-        pill: Option<&MeetingPill>,
-        shown: Instant,
-        now: Instant,
-    ) -> Option<MeetingRequest> {
-        let Some(MeetingPill::Confirm { key, .. }) = pill else {
-            return None;
-        };
-        let armed = now.saturating_duration_since(shown) >= ARM;
-        match self {
-            Self::Finish if armed => Some(MeetingRequest::Finish(*key)),
-            Self::NoTranscript if armed => Some(MeetingRequest::Cancel(*key)),
-            Self::Continue => Some(MeetingRequest::Resume(*key)),
-            Self::Finish | Self::NoTranscript => None,
-        }
+/// The confirm row's words, left to right. Continue sits where Stop was.
+pub(super) fn label(choice: Choice) -> &'static str {
+    match choice {
+        Choice::Finish => "Finish",
+        Choice::NoTranscript => "No transcript",
+        Choice::Continue => "Continue",
     }
 }
 
@@ -176,54 +150,21 @@ mod tests {
             health: CaptureHealth::default(),
         };
         let pill = MeetingPill::from_view(&view).unwrap();
-        let now = Instant::now();
 
         assert_eq!(pill.stop(), Some(MeetingRequest::Stop(info.id)));
-        for choice in Choice::ROW {
-            assert_eq!(choice.request(Some(&pill), now - ARM, now), None);
-        }
+        assert_eq!(pill.key(), None);
     }
 
     #[test]
-    fn each_choice_carries_the_current_stop_token() {
+    fn the_confirm_row_answers_the_current_stop_token() {
         let (pill, key) = confirm(3);
-        let now = Instant::now();
-        let shown = now - ARM;
 
         assert!(pill.confirming());
         assert_eq!(pill.stop(), None);
+        assert_eq!(pill.key(), Some(key));
         assert_eq!(
-            Choice::Finish.request(Some(&pill), shown, now),
-            Some(MeetingRequest::Finish(key))
-        );
-        assert_eq!(
-            Choice::NoTranscript.request(Some(&pill), shown, now),
-            Some(MeetingRequest::Cancel(key))
-        );
-        assert_eq!(
-            Choice::Continue.request(Some(&pill), shown, now),
-            Some(MeetingRequest::Resume(key))
-        );
-        assert_eq!(Choice::Finish.request(None, shown, now), None);
-    }
-
-    #[test]
-    fn a_double_click_on_stop_cannot_end_the_meeting() {
-        let (pill, key) = confirm(1);
-        let shown = Instant::now();
-        let second_click = shown + Duration::from_millis(250);
-
-        assert_eq!(
-            Choice::Finish.request(Some(&pill), shown, second_click),
-            None
-        );
-        assert_eq!(
-            Choice::NoTranscript.request(Some(&pill), shown, second_click),
-            None
-        );
-        assert_eq!(
-            Choice::Continue.request(Some(&pill), shown, second_click),
-            Some(MeetingRequest::Resume(key))
+            Choice::ROW.map(label),
+            ["Finish", "No transcript", "Continue"]
         );
     }
 

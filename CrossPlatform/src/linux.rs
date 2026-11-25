@@ -155,6 +155,8 @@ struct LinuxTray {
     action_sender: Sender<TrayAction>,
     status: String,
     meeting: MeetingView,
+    /// The stop confirmation the menu shows, and when its key first showed.
+    confirm: Option<meeting_confirm::Shown>,
     recoverable_meetings: usize,
 }
 
@@ -164,11 +166,17 @@ impl LinuxTray {
             action_sender,
             status,
             meeting: MeetingView::Idle,
+            confirm: None,
             recoverable_meetings: 0,
         }
     }
 
     fn update_meeting(&mut self, view: &MeetingView, recoverable: usize) {
+        self.confirm = meeting_confirm::Shown::follow(
+            self.confirm,
+            meeting_confirm::stop_key(view),
+            Instant::now(),
+        );
         self.meeting = view.clone();
         self.recoverable_meetings = recoverable;
     }
@@ -283,8 +291,10 @@ impl ksni::Tray for LinuxTray {
                     Some(action) => StandardItem {
                         label: item.label,
                         activate: Box::new(move |tray: &mut LinuxTray| {
-                            let call = MeetingCall::desktop(action.request());
-                            let _ = tray.action_sender.send(TrayAction::Meeting(call));
+                            if let Some(request) = action.request(tray.confirm, Instant::now()) {
+                                let call = MeetingCall::desktop(request);
+                                let _ = tray.action_sender.send(TrayAction::Meeting(call));
+                            }
                         }),
                         ..Default::default()
                     }
@@ -381,6 +391,7 @@ mod kwin_focus;
 pub(crate) mod media;
 mod media_view;
 pub(crate) mod meeting_audio;
+mod meeting_confirm;
 mod meeting_control;
 mod meeting_menu;
 mod menu;
@@ -3953,7 +3964,7 @@ mod menu_tests {
     }
 
     #[test]
-    fn tray_finishes_a_meeting_with_the_current_stop_token() {
+    fn tray_confirm_items_answer_only_an_armed_confirmation_they_were_built_for() {
         let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
         let mut tray = LinuxTray::new(action_sender, "Ready".into());
@@ -3961,20 +3972,36 @@ mod menu_tests {
             id: crate::meeting::MeetingId::new(),
             started_at_ms: 0,
         };
-        let key = crate::meeting::StopKey {
-            id: info.id,
-            generation: 4,
-        };
-        let view = MeetingView::ConfirmStop {
-            info,
+        let confirm = |generation| MeetingView::ConfirmStop {
+            info: info.clone(),
             health: crate::meeting::CaptureHealth::default(),
-            key,
+            key: crate::meeting::StopKey {
+                id: info.id,
+                generation,
+            },
         };
-        tray.update_meeting(&view, 0);
+        let finish = |tray: &LinuxTray| find_menu_action(tray.menu(), "Finish meeting").unwrap();
 
-        let finish = find_menu_action(tray.menu(), "Finish meeting").unwrap();
-        (finish.activate)(&mut tray);
+        tray.update_meeting(&confirm(1), 0);
+        let stale = finish(&tray);
+        std::thread::sleep(meeting_confirm::ARM);
+        let recording = MeetingView::Recording {
+            info: info.clone(),
+            health: crate::meeting::CaptureHealth::default(),
+        };
+        tray.update_meeting(&recording, 0);
+        tray.update_meeting(&confirm(2), 0);
+        (stale.activate)(&mut tray);
+        let fresh = finish(&tray);
+        (fresh.activate)(&mut tray);
+        let early = receiver.try_recv();
+        std::thread::sleep(meeting_confirm::ARM);
+        (fresh.activate)(&mut tray);
 
+        assert_eq!(early, Err(mpsc::TryRecvError::Empty));
+        let MeetingView::ConfirmStop { key, .. } = confirm(2) else {
+            unreachable!()
+        };
         assert_eq!(
             receiver.try_recv().unwrap(),
             TrayAction::Meeting(MeetingCall::desktop(MeetingRequest::Finish(key)))
