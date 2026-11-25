@@ -293,6 +293,16 @@ fn a_bundle_is_private_created_once_and_has_flat_v1_records() {
 }
 
 #[test]
+fn job_directory_is_private_and_can_be_reopened() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0, manifest()).unwrap();
+    let job = bundle.create_job_directory().unwrap();
+    assert_eq!(job, bundle.directory().join("job"));
+    assert_eq!(job.metadata().unwrap().permissions().mode() & 0o777, 0o700);
+    assert_eq!(bundle.create_job_directory().unwrap(), job);
+}
+
+#[test]
 fn scan_preserves_the_interrupted_intents_typed_reason() {
     for (cause, expected) in [
         (InterruptCause::Shutdown, RecoveryReason::Interrupted),
