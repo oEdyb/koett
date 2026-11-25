@@ -114,7 +114,6 @@ fn scan_follows_the_last_committed_file_at_every_failed_write() {
     use RecoveryReason::{HeldByUser, Interrupted};
 
     for (file, before, after) in [
-        (MANIFEST, "unreadable", "interrupted"),
         (INTENT, "interrupted", "interrupted"),
         (SEAL, "interrupted", "held"),
         (RECEIPT, "held", "held"),
@@ -129,7 +128,6 @@ fn scan_follows_the_last_committed_file_at_every_failed_write() {
             assert!(error.to_string().contains(file));
             let state = scan(&root.0, id).unwrap().unwrap();
             let observed = match state {
-                DiskState::Unreadable { .. } => "unreadable",
                 DiskState::Recoverable {
                     seal: None,
                     reason: Interrupted,
@@ -152,6 +150,19 @@ fn scan_follows_the_last_committed_file_at_every_failed_write() {
             };
             assert_eq!(observed, expected, "fault during {file}");
         }
+    }
+}
+
+#[test]
+fn failed_manifest_write_removes_the_new_bundle_for_retry() {
+    for point in [BeforeRename, AfterRename] {
+        let root = TestRoot::new();
+        let manifest = manifest();
+        let id = manifest.info.id;
+        let error = write_until_failure(&root.0, manifest.clone(), MANIFEST, point).unwrap_err();
+        assert!(error.to_string().contains(MANIFEST));
+        assert_eq!(scan(&root.0, id).unwrap(), None);
+        assert!(Bundle::create(&root.0, manifest).is_ok());
     }
 }
 

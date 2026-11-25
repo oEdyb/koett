@@ -55,18 +55,26 @@ impl Bundle {
             .write(true)
             .create_new(true)
             .mode(0o600)
-            .open(directory.join(LOCK))?;
-        lock.try_lock().map_err(lock_error)?;
-        sync_directory(root)?;
-        private_directory(&directory.join("audio"))?;
-        writer.json(
-            &directory,
-            MANIFEST,
-            &ManifestFile {
-                version: 1,
-                manifest: manifest.clone(),
-            },
-        )?;
+            .open(directory.join(LOCK))
+            .and_then(|lock| {
+                lock.try_lock().map_err(lock_error)?;
+                Ok(lock)
+            })
+            .map_err(|error| clean_failed_create(root, &directory, error))?;
+        let initialize = || -> io::Result<()> {
+            sync_directory(root)?;
+            private_directory(&directory.join("audio"))?;
+            writer.json(
+                &directory,
+                MANIFEST,
+                &ManifestFile {
+                    version: 1,
+                    manifest: manifest.clone(),
+                },
+            )?;
+            Ok(())
+        };
+        initialize().map_err(|error| clean_failed_create(root, &directory, error))?;
         Ok(Self {
             directory,
             manifest,
@@ -173,6 +181,16 @@ impl Bundle {
 
     pub(crate) fn start_marks(&mut self) -> io::Result<MarkWriter> {
         MarkWriter::start(&self.directory)
+    }
+}
+
+fn clean_failed_create(root: &Path, directory: &Path, error: io::Error) -> io::Error {
+    match fs::remove_dir_all(directory).and_then(|()| sync_directory(root)) {
+        Ok(()) => error,
+        Err(cleanup) => io::Error::new(
+            error.kind(),
+            format!("{error}. Could not clean up the incomplete meeting bundle: {cleanup}"),
+        ),
     }
 }
 
