@@ -547,6 +547,81 @@ fn running_writer_warns_recovers_and_faults_at_two_hundred_mib() {
     assert_eq!(writer.finish().unwrap_err(), fault);
 }
 
+#[test]
+fn low_disk_fault_preserves_partial_pcm_and_queued_blocks() {
+    let dir = TestDir::new();
+    let zero = Instant::now();
+    let tick = Arc::new(AtomicU64::new(0));
+    let (notice, received) = mpsc::channel();
+    let (probing, probe_started) = mpsc::channel();
+    let (queued, blocks_queued) = mpsc::channel();
+    let mut preflight = true;
+    let (writer, mut ingress) = TrackWriter::start_with_clock(
+        dir.config(zero),
+        move |_| {
+            if std::mem::take(&mut preflight) {
+                return Ok(2048 * MIB);
+            }
+            probing.send(()).unwrap();
+            blocks_queued.recv_timeout(Duration::from_secs(2)).unwrap();
+            Ok(200 * MIB)
+        },
+        move |event| notice.send(event).unwrap(),
+        {
+            let tick = tick.clone();
+            move || zero + Duration::from_secs(tick.load(Ordering::Acquire))
+        },
+    )
+    .unwrap();
+
+    assert!(ingress.push(&[0.25; 8320], zero));
+    let journal = dir.journal();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while TrackReader::open(&journal, NO_CUTOFF)
+        .unwrap()
+        .seal()
+        .unwrap()
+        .captured_until
+        < Offset(8000)
+    {
+        assert!(
+            Instant::now() < deadline,
+            "writer did not commit its first record"
+        );
+        std::thread::sleep(Duration::from_millis(1));
+    }
+
+    tick.store(30, Ordering::Release);
+    probe_started.recv_timeout(Duration::from_secs(2)).unwrap();
+    for n in 26..30 {
+        assert!(ingress.push(&[0.5; BLOCK], zero + Duration::from_millis(n * 20)));
+    }
+    queued.send(()).unwrap();
+
+    let fault = CaptureFault {
+        at: Offset(480_000),
+        reason: CaptureFaultReason::DiskLow {
+            free_bytes: 200 * MIB,
+        },
+    };
+    assert_eq!(
+        received.recv_timeout(Duration::from_secs(2)).unwrap(),
+        CaptureNotice::Fault(fault.clone())
+    );
+    assert_eq!(writer.finish(), Err(fault));
+    let mut pcm = Vec::new();
+    for chunk in TrackReader::open(&journal, NO_CUTOFF).unwrap() {
+        let TrackChunk::Pcm { first, samples } = chunk.unwrap() else {
+            panic!("the journal should contain contiguous PCM");
+        };
+        assert_eq!(first, Offset(pcm.len() as u64));
+        pcm.extend(samples);
+    }
+    assert_eq!(pcm.len(), 30 * BLOCK);
+    assert!(pcm[..26 * BLOCK].iter().all(|&sample| sample == 8192));
+    assert!(pcm[26 * BLOCK..].iter().all(|&sample| sample == 16_384));
+}
+
 struct TestDir(PathBuf);
 
 impl TestDir {

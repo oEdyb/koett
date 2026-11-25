@@ -132,11 +132,21 @@ impl WriterWorker {
         mut disk_space: impl FnMut() -> io::Result<u64>,
         mut health_changed: impl FnMut(super::disk::CaptureHealth),
     ) -> Result<(), CaptureFault> {
-        while let Err(TryRecvError::Empty) = stop.try_recv() {
+        let stopped = loop {
+            if !matches!(stop.try_recv(), Err(TryRecvError::Empty)) {
+                break Ok(());
+            }
             let tick = now();
             let at = session_offset(self.session_zero, tick);
-            if let Some(health) = self.disk.poll(tick, at, &mut disk_space)? {
-                health_changed(health);
+            match self.disk.poll(tick, at, &mut disk_space) {
+                Err(fault) if matches!(fault.reason, CaptureFaultReason::DiskLow { .. }) => {
+                    break Err(fault);
+                }
+                status => {
+                    if let Some(health) = status? {
+                        health_changed(health);
+                    }
+                }
             }
             if tick.duration_since(self.last_sync) >= SYNC_INTERVAL {
                 self.recorder
@@ -148,9 +158,9 @@ impl WriterWorker {
             if !self.drain_one(at)?
                 && !matches!(stop.recv_timeout(IDLE_WAIT), Err(RecvTimeoutError::Timeout))
             {
-                break;
+                break Ok(());
             }
-        }
+        };
         let at = session_offset(self.session_zero, now());
         for _ in 0..self.drain.pending_blocks() {
             self.drain_one(at)?;
@@ -161,7 +171,8 @@ impl WriterWorker {
         self.recorder
             .sink()
             .sync_data()
-            .map_err(|error| CaptureFault::io(at, error))
+            .map_err(|error| CaptureFault::io(at, error))?;
+        stopped
     }
 
     fn drain_one(&mut self, at: Offset) -> Result<bool, CaptureFault> {
