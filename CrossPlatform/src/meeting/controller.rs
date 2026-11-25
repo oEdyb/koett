@@ -111,6 +111,11 @@ impl MeetingController {
             ReplyTarget::Desktop => {
                 if let Reply::Error(error) = request {
                     self.notify(MeetingUpdate::Issue(error.message().into()));
+                    // The control that sent it stays off until a view arrives.
+                    if let Some(view) = self.active.view() {
+                        let recoverable = self.recoverable.clone().unwrap_or_default();
+                        self.notify(MeetingUpdate::View(view, recoverable));
+                    }
                 }
             }
         }
