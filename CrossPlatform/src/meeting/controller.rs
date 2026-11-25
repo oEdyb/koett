@@ -459,6 +459,12 @@ impl MeetingController {
     }
 }
 
+impl Drop for MeetingController {
+    fn drop(&mut self) {
+        self.reserved.store(false, Ordering::Release);
+    }
+}
+
 pub(super) fn emit(post: &Sender<EngineCommand>, event: Event) {
     let _ = post.send(EngineCommand::MeetingEvent(MeetingEvent(event)));
 }
@@ -475,3 +481,6 @@ fn recoverable_count(root: &Path) -> Result<usize, String> {
         .map(|states| states.iter().filter(|state| state.is_recoverable()).count())
         .map_err(|error| error.to_string())
 }
+
+#[cfg(test)]
+mod tests;
