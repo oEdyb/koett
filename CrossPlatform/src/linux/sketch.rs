@@ -299,6 +299,15 @@ struct Session {
 }
 
 impl Session {
+    fn close(self) {
+        DRAW_LOCKED.store(false, std::sync::atomic::Ordering::Release);
+        MEETING_INK.store(false, std::sync::atomic::Ordering::Release);
+        for surface in self.surfaces {
+            surface.window.destroy();
+        }
+        self.target.set_open(false);
+    }
+
     /// Takes the pointer while the key is held. A running window pick overrides
     /// that: input stays on until the pick is proven, then opens around the pin.
     fn sync_input(&mut self) {
@@ -1291,6 +1300,22 @@ impl SketchOverlay {
         }
     }
 
+    /// The meeting's mark writer has closed, so nothing can take its marks:
+    /// the overlay ends now and its captures still out are dropped. A stalled
+    /// screenshot must never hold the overlay the next dictation needs.
+    pub fn retire_meeting(&self) {
+        let Ok(mut current) = self.session.try_borrow_mut() else {
+            return;
+        };
+        if current
+            .as_ref()
+            .is_some_and(|session| matches!(session.target.owner(), Owner::Meeting(_)))
+            && let Some(done) = current.take()
+        {
+            done.close();
+        }
+    }
+
     /// Tells the user why drawing is limited: in the main window every time,
     /// and as a desktop notification once per run, since the window is usually
     /// hidden while dictating.
@@ -1598,12 +1623,7 @@ impl SketchOverlay {
                     return glib::ControlFlow::Continue;
                 }
                 if let Some(done) = current.take() {
-                    DRAW_LOCKED.store(false, std::sync::atomic::Ordering::Release);
-                    MEETING_INK.store(false, std::sync::atomic::Ordering::Release);
-                    for surface in done.surfaces {
-                        surface.window.destroy();
-                    }
-                    done.target.set_open(false);
+                    done.close();
                 }
                 glib::ControlFlow::Break
             }

@@ -656,6 +656,9 @@ fn build_window(
                     }
                     Update::MeetingSketch(crate::meeting::SketchScope::Closed) => {
                         meeting_marks = None;
+                        if let Some(sketch) = &sketch {
+                            sketch.retire_meeting();
+                        }
                     }
                     Update::Status(message) if message.starts_with("@notice:@media-result:") => {
                         let text = message
