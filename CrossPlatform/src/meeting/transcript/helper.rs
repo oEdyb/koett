@@ -65,6 +65,7 @@ enum Mode {
 struct Input {
     id: String,
     pcm: PathBuf,
+    speech_samples: u64,
 }
 
 #[derive(Deserialize)]
@@ -223,7 +224,12 @@ impl Helper {
                     .flat_map(|sample| ((sample * 32_768.0).round() as i16).to_le_bytes())
                     .collect();
                 fs::write(&pcm, bytes).map_err(|error| error.to_string())?;
-                Ok(Input { id, pcm })
+                let speech_samples = window.core.end.0 - window.core.first.0;
+                Ok(Input {
+                    id,
+                    pcm,
+                    speech_samples,
+                })
             })
             .collect::<Result<Vec<_>, String>>()?;
         let mut line = serde_json::to_vec(&json!({"op": "decode", "windows": inputs}))

@@ -10,7 +10,7 @@ TURBO = "whisper-large-v3-turbo"
 SWEDISH = "kb-whisper-large"
 SOURCES = {TURBO: "large-v3-turbo", SWEDISH: "KBLab/kb-whisper-large"}
 SAMPLE_RATE = 16_000
-SHORT_WINDOW = 3 * SAMPLE_RATE
+SHORT_SPEECH = 3 * SAMPLE_RATE
 LANGUAGE_CONTEXT = 10 * SAMPLE_RATE
 
 
@@ -54,11 +54,11 @@ def read_audio(window):
         return error
 
 
-def language_audio(index, tracks, waveforms):
+def language_audio(index, tracks, waveforms, speech_samples=None):
     import numpy as np
 
     audio = waveforms[index]
-    if len(audio) >= SHORT_WINDOW:
+    if (len(audio) if speech_samples is None else speech_samples) >= SHORT_SPEECH:
         return audio
     nearby = sorted(
         (i for i, track in enumerate(tracks) if i != index and track == tracks[index]),
@@ -140,7 +140,7 @@ def main():
             try:
                 if isinstance(audio, OSError):
                     raise audio
-                context = language_audio(index, tracks, waveforms)
+                context = language_audio(index, tracks, waveforms, window.get("speech_samples"))
                 send(decode(window, audio, context, engines))
             except Exception as error:
                 traceback.print_exc()
