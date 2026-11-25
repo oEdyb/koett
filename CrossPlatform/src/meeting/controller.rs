@@ -1,7 +1,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -22,7 +22,7 @@ pub(crate) struct MeetingController {
     worker: Option<Worker>,
     commands: Sender<EngineCommand>,
     updates: Sender<EngineUpdate>,
-    reserved: &'static AtomicBool,
+    activity: &'static AtomicU8,
     disk_health: Tracks<bool>,
     disconnected: Tracks<Option<Instant>>,
 }
@@ -51,7 +51,7 @@ impl MeetingController {
     pub(crate) fn new(
         commands: Sender<EngineCommand>,
         updates: Sender<EngineUpdate>,
-        reserved: &'static AtomicBool,
+        activity: &'static AtomicU8,
     ) -> Self {
         let root = crate::paths::meetings_directory();
         let scan_root = root.clone();
@@ -69,7 +69,7 @@ impl MeetingController {
             worker: None,
             commands,
             updates,
-            reserved,
+            activity,
             disk_health: Tracks::default(),
             disconnected: Tracks::default(),
         }
@@ -82,16 +82,20 @@ impl MeetingController {
         {
             return;
         }
-        let opening = engine_ready
-            && matches!(self.active, Active::Idle)
-            && matches!(
-                call.request,
-                MeetingRequest::Start(_) | MeetingRequest::Shortcut
-            );
-        let admission = opening.then(crate::linux::admit_meeting_start);
-        let engine_ready = engine_ready && !matches!(admission, Some(None));
+        let starts_work = matches!(self.active, Active::Idle)
+            && match call.request {
+                MeetingRequest::Recover { .. } => true,
+                MeetingRequest::Start(_) | MeetingRequest::Shortcut => engine_ready,
+                _ => false,
+            };
+        let admission = starts_work.then(crate::linux::admit_meeting_work);
+        let updating = matches!(admission, Some(None));
         let previous = self.active.id();
-        let request = match self.admit(call.request, engine_ready, settings) {
+        let admitted = match call.request {
+            MeetingRequest::Recover { .. } if updating => Err(ReplyError::EngineBusy),
+            request => self.admit(request, engine_ready && !updating, settings),
+        };
+        let request = match admitted {
             Ok(request) => self.apply(Event::Request(request, at)),
             Err(error) => Reply::Error(error),
         };
@@ -195,7 +199,8 @@ impl MeetingController {
         if let Some(boot) = self.boot.take() {
             let _ = boot.join();
         }
-        self.reserved.store(false, Ordering::Release);
+        self.activity
+            .store(MeetingActivity::Idle as u8, Ordering::Release);
     }
 
     fn live(&self) -> Option<&Live> {
@@ -352,8 +357,8 @@ impl MeetingController {
         let (active, effects, mut reply) =
             next(std::mem::replace(&mut self.active, Active::Idle), event);
         self.active = active;
-        self.reserved
-            .store(self.reserves_engine(), Ordering::Release);
+        self.activity
+            .store(self.active.activity() as u8, Ordering::Release);
         for effect in effects {
             let completion = match effect {
                 Effect::Open(attempt, plan) => {
@@ -461,7 +466,8 @@ impl MeetingController {
 
 impl Drop for MeetingController {
     fn drop(&mut self) {
-        self.reserved.store(false, Ordering::Release);
+        self.activity
+            .store(MeetingActivity::Idle as u8, Ordering::Release);
     }
 }
 

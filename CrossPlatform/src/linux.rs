@@ -3,7 +3,7 @@ use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -26,7 +26,7 @@ use x11rb::protocol::xtest::ConnectionExt as _;
 use x11rb::rust_connection::RustConnection;
 
 use crate::history;
-use crate::meeting::{MeetingCall, MeetingRequest, MeetingUpdate, MeetingView};
+use crate::meeting::{MeetingActivity, MeetingCall, MeetingRequest, MeetingUpdate, MeetingView};
 use crate::model::ModelProgress;
 use crate::runtime::{self, EngineCommand, EngineHandle, EngineUpdate};
 use crate::settings::{PasteShortcut, Settings, ShortcutAction};
@@ -34,14 +34,13 @@ use crate::shortcut::Shortcut;
 use crate::state::{AppStatus, RecordingIntent, ShortcutLatch};
 
 pub(crate) const MEETING_BUSY_MESSAGE: &str = "Finish or cancel the meeting first.";
-pub(crate) static MEETING_RESERVED: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
+pub(crate) static MEETING_ACTIVITY: AtomicU8 = AtomicU8::new(MeetingActivity::Idle as u8);
 
 fn meeting_reserved() -> bool {
-    MEETING_RESERVED.load(std::sync::atomic::Ordering::Acquire)
+    MEETING_ACTIVITY.load(Ordering::Acquire) == MeetingActivity::Reserved as u8
 }
 
-pub(crate) fn admit_meeting_start() -> Option<std::sync::MutexGuard<'static, ()>> {
+pub(crate) fn admit_meeting_work() -> Option<std::sync::MutexGuard<'static, ()>> {
     updates::admit()
 }
 

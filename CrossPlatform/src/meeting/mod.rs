@@ -355,6 +355,14 @@ enum JobSource {
     },
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum MeetingActivity {
+    Idle,
+    Reserved,
+    Processing,
+}
+
 enum Active {
     Idle,
     Opening {
@@ -384,7 +392,15 @@ enum Active {
 
 impl Active {
     fn reserves_engine(&self) -> bool {
-        !matches!(self, Self::Idle | Self::Processing { .. })
+        self.activity() == MeetingActivity::Reserved
+    }
+
+    fn activity(&self) -> MeetingActivity {
+        match self {
+            Self::Idle => MeetingActivity::Idle,
+            Self::Processing { .. } => MeetingActivity::Processing,
+            _ => MeetingActivity::Reserved,
+        }
     }
 
     fn view(&self) -> Option<MeetingView> {

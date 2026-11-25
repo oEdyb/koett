@@ -241,7 +241,8 @@ fn current_build() -> u64 {
 }
 
 fn idle() -> bool {
-    !super::quit_busy()
+    super::MEETING_ACTIVITY.load(Ordering::Acquire) == crate::meeting::MeetingActivity::Idle as u8
+        && !super::QUIT_BUSY.load(Ordering::Acquire)
         && !UI_BUSY.load(Ordering::Relaxed)
         && crate::history::recovery::pending_count() == 0
 }
@@ -1088,9 +1089,28 @@ mod tests {
 
     #[test]
     fn a_failed_reservation_leaves_the_app_free() {
+        let _guard = super::super::runtime_test_guard();
         super::super::QUIT_BUSY.store(true, Ordering::SeqCst);
         assert!(!reserve());
         assert!(admit().is_some());
         super::super::QUIT_BUSY.store(false, Ordering::SeqCst);
+    }
+    #[test]
+    fn updater_cannot_reserve_during_meeting_processing() {
+        use super::super::{
+            MEETING_ACTIVITY, MeetingActivity, meeting_reserved, runtime_test_guard,
+        };
+        let _guard = runtime_test_guard();
+        assert!(idle());
+
+        MEETING_ACTIVITY.store(MeetingActivity::Processing as u8, Ordering::Release);
+        let reserved = reserve();
+        let dictation_reserved = meeting_reserved();
+        MEETING_ACTIVITY.store(MeetingActivity::Idle as u8, Ordering::Release);
+        RESERVED.store(false, Ordering::SeqCst);
+
+        assert!(!reserved);
+        assert!(!dictation_reserved);
+        assert!(idle());
     }
 }

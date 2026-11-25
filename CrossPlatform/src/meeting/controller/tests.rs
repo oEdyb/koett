@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver};
 
 fn controller(
     active: Active,
-    reserved: &'static AtomicBool,
+    activity: &'static AtomicU8,
 ) -> (
     MeetingController,
     Receiver<EngineCommand>,
@@ -20,7 +20,7 @@ fn controller(
         worker: None,
         commands,
         updates,
-        reserved,
+        activity,
         disk_health: Tracks::default(),
         disconnected: Tracks::default(),
     };
@@ -43,14 +43,20 @@ fn recording(zero: Instant) -> Active {
 
 #[test]
 fn engine_panic_releases_the_meeting_reservation() {
-    static RESERVED: AtomicBool = AtomicBool::new(false);
+    static ACTIVITY: AtomicU8 = AtomicU8::new(MeetingActivity::Idle as u8);
     let result = std::panic::catch_unwind(|| {
         let (mut controller, _commands, _updates) =
-            controller(recording(Instant::now()), &RESERVED);
+            controller(recording(Instant::now()), &ACTIVITY);
         controller.apply(Event::Health(Attempt(1), CaptureHealth::default()));
-        assert!(RESERVED.load(Ordering::Acquire));
+        assert_eq!(
+            ACTIVITY.load(Ordering::Acquire),
+            MeetingActivity::Reserved as u8
+        );
         panic!("fixture engine panic");
     });
     assert!(result.is_err());
-    assert!(!RESERVED.load(Ordering::Acquire));
+    assert_eq!(
+        ACTIVITY.load(Ordering::Acquire),
+        MeetingActivity::Idle as u8
+    );
 }

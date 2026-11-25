@@ -291,7 +291,7 @@ fn run(
     let commands = inbox.receive;
     #[cfg(target_os = "linux")]
     let mut meetings =
-        MeetingController::new(inbox.post, updates.clone(), &crate::linux::MEETING_RESERVED);
+        MeetingController::new(inbox.post, updates.clone(), &crate::linux::MEETING_ACTIVITY);
     let mut status = AppStatus::Starting;
     send_status(&updates, &status);
 
