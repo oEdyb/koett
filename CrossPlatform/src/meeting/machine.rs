@@ -245,12 +245,12 @@ fn stop_and_shortcut_open_confirmation_without_touching_capture() {
 fn repeated_stop_keeps_the_current_token() {
     let session = Session::new();
     let (active, key) = session.stopped();
+    let view = active.view().unwrap();
     let (active, effects, reply) = session.request(active, AdmittedRequest::Stop(session.info.id));
     assert_eq!(token(&reply), Some(key));
+    assert_eq!(reply, Reply::View(view.clone()));
     assert!(effects.is_empty());
-    assert!(
-        matches!(session.status(active), Reply::View(MeetingView::ConfirmStop { key: current, .. }) if current == key)
-    );
+    assert_eq!(session.status(active), Reply::View(view));
 }
 
 #[test]
