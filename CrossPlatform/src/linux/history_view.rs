@@ -260,27 +260,28 @@ impl HistoryView {
         let selected_row = Rc::new(RefCell::new(None::<Row>));
         let rows = Rc::new(RefCell::new(Vec::<Row>::new()));
         let meeting_view = Rc::new(RefCell::new(MeetingView::Idle));
-        // A narrow window puts a meeting's buttons below its heading and stacks them
-        // once one row no longer fits. A dictation keeps its one toolbar row.
+        // A meeting's buttons go below its heading when both no longer fit the reading
+        // pane, and stack once one row no longer fits. A dictation keeps its one row.
         let fit_toolbar: Rc<dyn Fn()> = Rc::new({
-            let root = root.downgrade();
             let selected_row = selected_row.clone();
             let toolbar = toolbar.clone();
+            let transcript_heading = transcript_heading.clone();
             let buttons = buttons.clone();
             let reading = reading.clone();
             move || {
                 let meeting = matches!(selected_row.borrow().as_ref(), Some(Row::Meeting(_)));
-                let narrow = meeting
-                    && root
-                        .upgrade()
-                        .is_some_and(|root| root.width() < TWO_PANE_WIDTH);
+                let room = reading.width() - READING_PADDING;
+                let row = row_width(&buttons);
+                let heading = transcript_heading
+                    .measure(gtk::Orientation::Horizontal, -1)
+                    .1;
+                let narrow = meeting && heading + toolbar.spacing() + row > room;
                 toolbar.set_orientation(if narrow {
                     gtk::Orientation::Vertical
                 } else {
                     gtk::Orientation::Horizontal
                 });
-                let room = reading.width() - READING_PADDING;
-                buttons.set_orientation(if narrow && row_width(&buttons) > room {
+                buttons.set_orientation(if narrow && row > room {
                     gtk::Orientation::Vertical
                 } else {
                     gtk::Orientation::Horizontal
