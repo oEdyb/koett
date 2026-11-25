@@ -95,7 +95,7 @@ fn each_cli_command_maps_to_the_contract_request() {
         &["asr-check", "--fetch"],
     ] {
         assert_eq!(
-            offline(parse(&args(input)).unwrap(), false),
+            offline(parse(&args(input)).unwrap(), Ok(false)),
             json!({"version":1, "ok":false, "error":{"code":"not_available","message":"This meeting command is unavailable in this build."}})
         );
     }
@@ -260,7 +260,7 @@ fn offline_list_get_and_status_return_disk_data_and_paths_without_transcript_tex
     drop(complete);
 
     assert_eq!(
-        with_daemon(list(root, true, 1), false),
+        with_daemon(list(root, true, 1), Ok(false)),
         json!({
             "version":1,"ok":true,"data":{"daemon":false,"items":[{
                 "id": held_info.id.to_string(), "state": "recoverable", "started_at_ms": STARTED + 1,
@@ -268,7 +268,7 @@ fn offline_list_get_and_status_return_disk_data_and_paths_without_transcript_tex
             }]}
         })
     );
-    let artifact = with_daemon(get(root, info().id), false);
+    let artifact = with_daemon(get(root, info().id), Ok(false));
     assert_eq!(
         artifact,
         json!({"version":1,"ok":true,"data":{
@@ -278,7 +278,7 @@ fn offline_list_get_and_status_return_disk_data_and_paths_without_transcript_tex
         }})
     );
     assert_eq!(
-        with_daemon(find(root, held_info.id).map(view_data), false),
+        with_daemon(disk_status(root, Some(held_info.id)), Ok(false)),
         json!({
             "version":1,"ok":true,"data":{"daemon":false,"id":held_info.id.to_string(),
             "state":"recoverable","started_at_ms":STARTED + 1,"reason":"held_by_user"}

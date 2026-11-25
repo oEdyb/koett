@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{Value, json};
 
-use crate::meeting::bundle::scan::{scan, scan_all};
+use crate::meeting::bundle::scan::{DiskState, scan, scan_all};
 use crate::meeting::{
     Backend, CloseGoal, MeetingCall, MeetingId, MeetingRequest, MeetingView, RecoveryReason, Reply,
     ReplyError, SessionInfo, SourceHealth, StopKey, Ticket,
@@ -105,31 +105,40 @@ pub(super) fn run(values: &[String]) -> i32 {
         }
     };
     let reply = match command {
-        Command::Daemon(request) => match connect() {
-            Ok(stream) => request_socket(stream, values).unwrap_or_else(|error| failure(&error)),
-            Err(error)
-                if error.kind() == io::ErrorKind::NotFound
-                    || error.kind() == io::ErrorKind::ConnectionRefused =>
-            {
-                match request {
-                    MeetingRequest::Status(id) => offline_status(id),
-                    _ => failure(&ReplyError::DaemonUnavailable),
+        Command::Unavailable => failure(&ReplyError::NotAvailable),
+        command => match connect() {
+            Ok(stream) => match command {
+                Command::Daemon(_) => {
+                    request_socket(stream, values).unwrap_or_else(|error| failure(&error))
                 }
-            }
-            Err(error) => failure(&ReplyError::DiskUnreadable(error.to_string())),
+                command => {
+                    drop(stream);
+                    offline(command, Ok(true))
+                }
+            },
+            Err(ConnectError::Offline) => offline(command, Ok(false)),
+            Err(ConnectError::Unreachable(issue)) => offline(command, Err(&issue)),
         },
-        command => {
-            let daemon = !matches!(command, Command::Unavailable) && connect().is_ok();
-            offline(command, daemon)
-        }
     };
     println!("{reply}");
     i32::from(reply["ok"] != true)
 }
 
-fn connect() -> io::Result<UnixStream> {
-    let path = super::control::path().map_err(|_| io::Error::from(io::ErrorKind::NotFound))?;
-    UnixStream::connect(path)
+enum ConnectError {
+    Offline,
+    Unreachable(String),
+}
+
+fn connect() -> Result<UnixStream, ConnectError> {
+    let path = super::control::path().map_err(|issue| {
+        ConnectError::Unreachable(format!("Cannot locate the Koett control socket: {issue}."))
+    })?;
+    UnixStream::connect(path).map_err(|error| match error.kind() {
+        io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused => ConnectError::Offline,
+        _ => ConnectError::Unreachable(format!(
+            "Cannot connect to the Koett control socket: {error}."
+        )),
+    })
 }
 
 fn request_socket(mut stream: UnixStream, values: &[String]) -> Result<Value, ReplyError> {
@@ -170,7 +179,7 @@ pub(super) fn serve(stream: &mut UnixStream, bytes: &[u8], sender: &Sender<TrayA
     let reply = match serde_json::from_slice::<Vec<String>>(bytes) {
         Ok(values) => match parse(&values) {
             Ok(Command::Daemon(request)) => dispatch_socket(sender, request),
-            Ok(command) => offline(command, true),
+            Ok(command) => offline(command, Ok(true)),
             Err(message) => error("bad_usage", message),
         },
         Err(_) => error(
@@ -220,36 +229,57 @@ fn dispatch_socket(sender: &Sender<TrayAction>, request: MeetingRequest) -> Valu
     }
 }
 
-fn offline_status(id: Option<MeetingId>) -> Value {
-    let result = match id {
-        Some(id) => with_root(|root| Ok(view_data(find(root, id)?))),
-        None => Ok(view_data(MeetingView::Idle)),
+fn disk_status(root: &Path, id: Option<MeetingId>) -> Result<Value, ReplyError> {
+    let view = match id {
+        Some(id) => find(root, id)?,
+        None => scan_all(root)
+            .map_err(|error| ReplyError::DiskUnreadable(error.to_string()))?
+            .into_iter()
+            .find(|state| matches!(state, DiskState::Active { .. }))
+            .map_or(MeetingView::Idle, |state| state.view(root)),
     };
-    with_daemon(result, false)
+    Ok(view_data(view))
 }
 
-fn offline(command: Command, daemon: bool) -> Value {
+fn offline(command: Command, daemon: Result<bool, &str>) -> Value {
     match command {
+        Command::Daemon(MeetingRequest::Status(id)) => {
+            with_daemon(with_root(|root| disk_status(root, id)), daemon)
+        }
         Command::List { recoverable, limit } => {
             with_daemon(with_root(|root| list(root, recoverable, limit)), daemon)
         }
         Command::Get(id) => with_daemon(with_root(|root| get(root, id)), daemon),
         Command::Unavailable => failure(&ReplyError::NotAvailable),
-        Command::Daemon(_) => failure(&ReplyError::DaemonUnavailable),
+        Command::Daemon(_) => match daemon {
+            Ok(_) => failure(&ReplyError::DaemonUnavailable),
+            Err(issue) => {
+                let mut reply = error(ReplyError::DaemonUnavailable.code(), issue);
+                daemon_fields(&mut reply, daemon);
+                reply
+            }
+        },
     }
 }
 
-fn with_daemon(result: Result<Value, ReplyError>, daemon: bool) -> Value {
+fn with_daemon(result: Result<Value, ReplyError>, daemon: Result<bool, &str>) -> Value {
     match result {
         Ok(mut data) => {
-            data["daemon"] = json!(daemon);
+            daemon_fields(&mut data, daemon);
             success(data)
         }
         Err(error) => {
             let mut reply = failure(&error);
-            reply["daemon"] = json!(daemon);
+            daemon_fields(&mut reply, daemon);
             reply
         }
+    }
+}
+
+fn daemon_fields(value: &mut Value, daemon: Result<bool, &str>) {
+    value["daemon"] = json!(daemon.ok());
+    if let Err(issue) = daemon {
+        value["daemon_issue"] = json!(issue);
     }
 }
 
