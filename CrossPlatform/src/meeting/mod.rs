@@ -50,3 +50,38 @@ pub(crate) struct Tracks<T> {
     pub(crate) you: T,
     pub(crate) other: T,
 }
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct TrackSeal {
+    pub(crate) valid_bytes: u64,
+    pub(crate) captured_until: Offset,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Backend {
+    Gpu,
+    Parakeet,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum CloseGoal {
+    Finish,
+    Hold,
+    Interrupted(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RecoveryReason {
+    Interrupted,
+    HeldByUser,
+    CaptureFailed(String),
+    DecodeFailed(String),
+    PublishFailed(String),
+    FallbackUsed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct SessionInfo {
+    pub(crate) id: MeetingId,
+    pub(crate) started_at_ms: u64,
+}
