@@ -2,7 +2,7 @@ use std::os::unix::process::ExitStatusExt;
 use std::process::Command;
 
 use crate::history::HistoryStore;
-use crate::meeting::transcript::history_text;
+use crate::meeting::transcript::{history_text, sign_note};
 
 use super::*;
 
@@ -249,11 +249,8 @@ fn vault_export_replaces_a_note_owned_by_the_same_meeting() {
     let export = root.0.join("export");
     fs::create_dir(&export).unwrap();
     let note = export.join(NOTE);
-    fs::write(
-        &note,
-        format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n"),
-    )
-    .unwrap();
+    let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
+    fs::write(&note, sign_note(&earlier, MeetingId::parse(ID).unwrap())).unwrap();
 
     publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
 
@@ -267,4 +264,26 @@ fn vault_export_replaces_a_note_owned_by_the_same_meeting() {
             .contains("Recovery needle.")
     );
     assert_eq!(fs::read_dir(export).unwrap().count(), 1);
+}
+
+#[test]
+fn vault_export_preserves_a_note_edited_after_export() {
+    let root = TestRoot::new();
+    let bundle = Bundle::create(&root.0.join("meetings"), fixture_manifest(&root.0)).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    let export = root.0.join("export");
+    fs::create_dir(&export).unwrap();
+    let note = export.join(NOTE);
+    let earlier = format!("---\nkoett_id: {ID}\n---\n\nEarlier decode.\n");
+    let signed = sign_note(&earlier, MeetingId::parse(ID).unwrap());
+    let edited = format!("{signed}\n## My notes\n\nFollow up on pricing.\n");
+    fs::write(&note, &edited).unwrap();
+
+    publish_fixture(&bundle, &root.0.join("history.sqlite3"), None);
+
+    let DiskState::Complete { projections, .. } = bundle.read_state() else {
+        panic!("missing publication");
+    };
+    assert_eq!(projections.export, ExportProjection::Pending);
+    assert_eq!(fs::read_to_string(note).unwrap(), edited);
 }

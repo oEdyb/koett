@@ -285,6 +285,16 @@ fn vault_note_keeps_a_mark_in_an_absolute_file_url() {
     )
     .unwrap();
     assert_eq!(name, "1970-01-01 0000 Koett meeting 550e8400.md");
+    assert!(is_unedited_note_of(&note, manifest.info.id));
+    let edited = format!("{note}\n## My notes\n\nFollow up on pricing.\n");
+    assert!(!is_unedited_note_of(&edited, manifest.info.id));
+    let retagged = note.replacen(
+        "tags: [meeting, koett]",
+        "tags: [meeting, koett, pricing]",
+        1,
+    );
+    assert!(!is_unedited_note_of(&retagged, manifest.info.id));
+    assert!(!is_unedited_note_of(&note, MeetingId::new()));
     assert!(note.contains(
         "[00:01] ![Mark 1](<file:///tmp/Koett%20meetings/%231/assets/mark-0000016000-0001.png>)"
     ));

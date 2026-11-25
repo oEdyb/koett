@@ -134,9 +134,22 @@ fn frontmatter_field<'a>(frontmatter: &'a str, key: &str) -> Option<&'a str> {
     values.next().filter(|_| values.next().is_none())
 }
 
-pub(in crate::meeting) fn vault_note_id(markdown: &str) -> Option<MeetingId> {
-    let (frontmatter, _) = frontmatter_and_body(markdown).ok()?;
-    MeetingId::parse(frontmatter_field(frontmatter, "koett_id")?)
+const NOTE_HASH: &str = "koett_sha256";
+
+pub(in crate::meeting) fn is_unedited_note_of(markdown: &str, id: MeetingId) -> bool {
+    let Ok((frontmatter, _)) = frontmatter_and_body(markdown) else {
+        return false;
+    };
+    frontmatter_field(frontmatter, "koett_id").and_then(MeetingId::parse) == Some(id)
+        && frontmatter_field(frontmatter, NOTE_HASH) == Some(note_hash(markdown).as_str())
+}
+
+fn note_hash(note: &str) -> String {
+    let unsigned: String = note
+        .split_inclusive('\n')
+        .filter(|line| !line.starts_with(&format!("{NOTE_HASH}: ")))
+        .collect();
+    sha256(unsigned.as_bytes())
 }
 
 fn strip_comments(body: &str) -> String {
@@ -204,5 +217,13 @@ pub(in crate::meeting) fn vault_note(
             let _ = writeln!(note, "{line}");
         }
     }
-    Ok((format!("{title}.md"), note))
+    Ok((format!("{title}.md"), sign_note(&note, manifest.info.id)))
+}
+
+pub(in crate::meeting) fn sign_note(note: &str, id: MeetingId) -> String {
+    note.replacen(
+        &format!("koett_id: {id}\n"),
+        &format!("koett_id: {id}\n{NOTE_HASH}: {}\n", note_hash(note)),
+        1,
+    )
 }
