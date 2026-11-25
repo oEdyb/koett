@@ -1,6 +1,13 @@
 use super::*;
 use std::time::Duration;
 
+fn token(reply: &Reply) -> Option<StopKey> {
+    match reply {
+        Reply::View(MeetingView::ConfirmStop { key, .. }) => Some(*key),
+        _ => None,
+    }
+}
+
 struct Session {
     info: SessionInfo,
     zero: Instant,
@@ -53,7 +60,7 @@ impl Session {
     fn stopped(&self) -> (Active, StopKey) {
         let (stopped, _, reply) =
             self.request(self.recording(), AdmittedRequest::Stop(self.info.id));
-        let Reply::StopToken(key) = reply else {
+        let Some(key) = token(&reply) else {
             panic!("expected stop token, got {reply:?}");
         };
         (stopped, key)
@@ -117,7 +124,7 @@ fn start_and_shortcut_reserve_the_engine_then_reply_recording() {
         let (opening, effects, reply) = session.request(Active::Idle, request);
         assert!(opening.reserves_engine());
         assert_eq!(opening.view(), None);
-        assert_eq!(effects, vec![Effect::Open(session.attempt)]);
+        assert_eq!(effects, vec![Effect::Open(session.attempt, SessionPlan)]);
         assert_eq!(reply, Reply::None);
 
         let (recording, effects, reply) = next(opening, session.opened());
@@ -167,10 +174,8 @@ fn start_failure_releases_the_engine_and_reports_the_specific_code() {
 fn start_of_existing_id_replays_without_opening_capture() {
     let session = Session::new();
     let on_disk = MeetingView::Recoverable(session.info.clone(), RecoveryReason::Interrupted);
-    let (active, effects, reply) = session.request(
-        Active::Idle,
-        AdmittedRequest::Start(StartAdmission::Replay(on_disk.clone())),
-    );
+    let (active, effects, reply) =
+        session.request(Active::Idle, AdmittedRequest::Replay(on_disk.clone()));
     assert_eq!(reply, Reply::View(on_disk));
     assert!(effects.is_empty());
     assert_eq!(session.status(active), Reply::View(MeetingView::Idle));
@@ -178,7 +183,7 @@ fn start_of_existing_id_replays_without_opening_capture() {
     let expected = session.recording().view().unwrap();
     let (active, effects, reply) = session.request(
         session.recording(),
-        AdmittedRequest::Start(StartAdmission::Replay(expected.clone())),
+        AdmittedRequest::Replay(expected.clone()),
     );
     assert_eq!(reply, Reply::View(expected.clone()));
     assert!(effects.is_empty());
@@ -196,12 +201,13 @@ fn start_when_engine_is_not_ready_is_busy() {
         ),
         (
             session.processing(),
-            AdmittedRequest::Start(StartAdmission::Busy),
+            AdmittedRequest::Start(session.start()),
         ),
         (
-            session.recording(),
-            AdmittedRequest::Start(StartAdmission::Busy),
+            session.processing(),
+            AdmittedRequest::Shortcut(session.start()),
         ),
+        (session.recording(), AdmittedRequest::Start(session.start())),
     ] {
         let previous = active.view().unwrap();
         let (active, effects, reply) = session.request(active, request);
@@ -229,7 +235,7 @@ fn stop_and_shortcut_open_confirmation_without_touching_capture() {
             key,
         };
         assert!(active.reserves_engine());
-        assert_eq!(reply, Reply::StopToken(key));
+        assert_eq!(token(&reply), Some(key));
         assert_eq!(effects, vec![Effect::NotifyView(view.clone())]);
         assert_eq!(session.status(active), Reply::View(view));
     }
@@ -240,7 +246,7 @@ fn repeated_stop_keeps_the_current_token() {
     let session = Session::new();
     let (active, key) = session.stopped();
     let (active, effects, reply) = session.request(active, AdmittedRequest::Stop(session.info.id));
-    assert_eq!(reply, Reply::StopToken(key));
+    assert_eq!(token(&reply), Some(key));
     assert!(effects.is_empty());
     assert!(
         matches!(session.status(active), Reply::View(MeetingView::ConfirmStop { key: current, .. }) if current == key)
@@ -254,7 +260,7 @@ fn shortcut_in_confirmation_changes_nothing() {
     let view = active.view().unwrap();
     let (active, effects, reply) =
         session.request(active, AdmittedRequest::Shortcut(StartAdmission::Busy));
-    assert_eq!(reply, Reply::StopToken(key));
+    assert_eq!(token(&reply), Some(key));
     assert!(effects.is_empty());
     assert_eq!(session.status(active), Reply::View(view));
 }
@@ -281,7 +287,7 @@ fn stop_resume_stop_rejects_finish_with_the_first_token() {
         generation: 2,
         ..first
     };
-    assert_eq!(reply, Reply::StopToken(current));
+    assert_eq!(token(&reply), Some(current));
     let (active, effects, reply) = session.request(active, AdmittedRequest::Finish(first));
     assert_eq!(reply, Reply::Error(ReplyError::StaleStopToken));
     assert!(effects.is_empty());
@@ -378,7 +384,7 @@ fn indeterminate_intent_drains_as_interrupted() {
     let session = Session::new();
     let (stopped, key) = session.stopped();
     let (committing, _, _) = session.request(stopped, AdmittedRequest::Finish(key));
-    let goal = CloseGoal::Interrupted("sync failed".into());
+    let goal = CloseGoal::Interrupted(InterruptCause::IntentUncertain("sync failed".into()));
     let (closing, effects, reply) = next(
         committing,
         Event::IntentWritten(
@@ -447,7 +453,7 @@ fn capture_fault_persists_interruption_at_the_fault_offset_and_drains() {
     let session = Session::new();
     let spec = CloseSpec {
         cutoff: Offset(17),
-        goal: CloseGoal::Interrupted("writer failure".into()),
+        goal: CloseGoal::Interrupted(InterruptCause::CaptureFault("writer failure".into())),
     };
     for active in [session.recording(), session.stopped().0] {
         let (closing, effects, reply) = next(
@@ -599,7 +605,7 @@ fn shutdown_drains_live_capture_inline_as_interrupted() {
         );
         let spec = CloseSpec {
             cutoff: Offset(672),
-            goal: CloseGoal::Interrupted("shutdown".into()),
+            goal: CloseGoal::Interrupted(InterruptCause::Shutdown),
         };
         assert_eq!(
             effects.first(),
@@ -717,4 +723,20 @@ fn status_resolves_live_or_disk_views_and_reports_missing_ids() {
         assert!(effects.is_empty());
         assert_eq!(reply, expected);
     }
+}
+
+#[test]
+fn interrupt_causes_map_to_their_recovery_reasons() {
+    assert_eq!(
+        InterruptCause::Shutdown.recovery_reason(),
+        RecoveryReason::Interrupted
+    );
+    assert_eq!(
+        InterruptCause::IntentUncertain("sync failed".into()).recovery_reason(),
+        RecoveryReason::Interrupted
+    );
+    assert_eq!(
+        InterruptCause::CaptureFault("disk low".into()).recovery_reason(),
+        RecoveryReason::CaptureFailed("disk low".into())
+    );
 }

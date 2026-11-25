@@ -70,7 +70,23 @@ pub(crate) enum Backend {
 pub(crate) enum CloseGoal {
     Finish,
     Hold,
-    Interrupted(String),
+    Interrupted(InterruptCause),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum InterruptCause {
+    Shutdown,
+    CaptureFault(String),
+    IntentUncertain(String),
+}
+
+impl InterruptCause {
+    pub(crate) fn recovery_reason(&self) -> RecoveryReason {
+        match self {
+            Self::Shutdown | Self::IntentUncertain(_) => RecoveryReason::Interrupted,
+            Self::CaptureFault(issue) => RecoveryReason::CaptureFailed(issue.clone()),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -238,7 +254,6 @@ enum Active {
     Idle,
     Opening {
         info: SessionInfo,
-        plan: SessionPlan,
         attempt: Attempt,
     },
     Recording(Live),
@@ -338,6 +353,7 @@ enum IntentWrite {
 
 enum AdmittedRequest {
     Start(StartAdmission),
+    Replay(MeetingView),
     Shortcut(StartAdmission),
     Stop(MeetingId),
     Resume(StopKey),
@@ -352,7 +368,6 @@ enum AdmittedRequest {
 
 enum StartAdmission {
     Busy,
-    Replay(MeetingView),
     New {
         info: SessionInfo,
         plan: SessionPlan,
@@ -394,7 +409,7 @@ enum DrainMode {
 
 #[derive(Debug, PartialEq)]
 enum Effect {
-    Open(Attempt),
+    Open(Attempt, SessionPlan),
     PersistIntent(CloseSpec, IntentPolicy),
     Drain(LiveCapture, CloseSpec, DrainMode),
     Process(JobInput),
@@ -407,7 +422,6 @@ enum Effect {
 enum Reply {
     None,
     View(MeetingView),
-    StopToken(StopKey),
     Error(ReplyError),
 }
 
@@ -454,11 +468,7 @@ fn next(active: Active, event: Event) -> Transition {
         | (active @ Active::Idle, Event::Request(Request::Shortcut(StartAdmission::Busy), _)) => {
             (active, vec![], Reply::Error(ReplyError::EngineBusy))
         }
-        (active, Event::Request(Request::Start(StartAdmission::Replay(view)), _))
-        | (
-            active @ Active::Idle,
-            Event::Request(Request::Shortcut(StartAdmission::Replay(view)), _),
-        ) => (active, vec![], Reply::View(view)),
+        (active, Event::Request(Request::Replay(view), _)) => (active, vec![], Reply::View(view)),
         (
             Active::Idle,
             Event::Request(
@@ -475,12 +485,8 @@ fn next(active: Active, event: Event) -> Transition {
                 _,
             ),
         ) => (
-            Active::Opening {
-                info,
-                plan,
-                attempt,
-            },
-            vec![Effect::Open(attempt)],
+            Active::Opening { info, attempt },
+            vec![Effect::Open(attempt, plan)],
             Reply::None,
         ),
         (Active::Opening { info, attempt, .. }, Event::Opened(completed, result))
@@ -528,8 +534,17 @@ fn next(active: Active, event: Event) -> Transition {
             if matches!(&request, Request::Shortcut(_))
                 || matches!(&request, Request::Stop(id) if *id == key.id) =>
         {
-            (active, vec![], Reply::StopToken(key))
+            let reply = active.view().map_or(Reply::None, Reply::View);
+            (active, vec![], reply)
         }
+        (
+            active,
+            Event::Request(
+                Request::Start(StartAdmission::New { .. })
+                | Request::Shortcut(StartAdmission::New { .. }),
+                _,
+            ),
+        ) => (active, vec![], Reply::Error(ReplyError::EngineBusy)),
         (Active::ConfirmStop { live, key }, Event::Request(Request::Resume(current), _))
             if key == current =>
         {
@@ -572,7 +587,7 @@ fn next(active: Active, event: Event) -> Transition {
                 Reply::Error(ReplyError::IntentWriteFailed(reason)),
             ),
             IntentWrite::Indeterminate(reason) => {
-                spec.goal = CloseGoal::Interrupted(reason);
+                spec.goal = CloseGoal::Interrupted(InterruptCause::IntentUncertain(reason));
                 close(live, spec, DrainMode::Worker, vec![])
             }
         },
@@ -591,7 +606,12 @@ fn next(active: Active, event: Event) -> Transition {
         (
             Active::Recording(live) | Active::ConfirmStop { live, .. },
             Event::CaptureFault(attempt, cutoff, reason),
-        ) if live.attempt == attempt => interrupt(live, cutoff, reason, DrainMode::Worker),
+        ) if live.attempt == attempt => interrupt(
+            live,
+            cutoff,
+            InterruptCause::CaptureFault(reason),
+            DrainMode::Worker,
+        ),
         (
             Active::Closing {
                 info,
@@ -639,7 +659,7 @@ fn next(active: Active, event: Event) -> Transition {
         }
         (Active::Recording(live) | Active::ConfirmStop { live, .. }, Event::Shutdown(at)) => {
             let cutoff = live.epoch.offset(at);
-            interrupt(live, cutoff, "shutdown".into(), DrainMode::Inline)
+            interrupt(live, cutoff, InterruptCause::Shutdown, DrainMode::Inline)
         }
         (Active::Processing { attempt, .. }, Event::Shutdown(_)) => {
             (Active::Idle, vec![Effect::CancelJob(attempt)], Reply::None)
@@ -672,9 +692,7 @@ fn confirm_stop(mut live: Live) -> Transition {
         id: live.info.id,
         generation: live.generation,
     };
-    let active = Active::ConfirmStop { live, key };
-    let (active, effects, _) = notify_view(active, vec![]);
-    (active, effects, Reply::StopToken(key))
+    viewed(Active::ConfirmStop { live, key }, vec![])
 }
 
 fn close(live: Live, spec: CloseSpec, mode: DrainMode, mut effects: Vec<Effect>) -> Transition {
@@ -692,10 +710,10 @@ fn close(live: Live, spec: CloseSpec, mode: DrainMode, mut effects: Vec<Effect>)
     (active, effects, reply)
 }
 
-fn interrupt(live: Live, cutoff: Offset, reason: String, mode: DrainMode) -> Transition {
+fn interrupt(live: Live, cutoff: Offset, cause: InterruptCause, mode: DrainMode) -> Transition {
     let spec = CloseSpec {
         cutoff,
-        goal: CloseGoal::Interrupted(reason),
+        goal: CloseGoal::Interrupted(cause),
     };
     let effect = Effect::PersistIntent(spec.clone(), IntentPolicy::BestEffort);
     let (active, effects, _) = close(live, spec, mode, vec![effect]);
