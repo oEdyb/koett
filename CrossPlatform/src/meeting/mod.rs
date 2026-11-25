@@ -253,8 +253,21 @@ pub(crate) struct MeetingMarkScope {
     sink: MarkSink,
 }
 
-#[allow(dead_code)] // S4b binds the sketch target to this scope.
 impl MeetingMarkScope {
+    #[cfg(test)]
+    pub(crate) fn writing_to(
+        directory: &std::path::Path,
+        zero: Instant,
+    ) -> (Self, bundle::marks::MarkWriter) {
+        let writer = bundle::marks::MarkWriter::start(directory).unwrap();
+        let scope = Self {
+            id: MeetingId::new(),
+            epoch: MeetingEpoch(zero),
+            sink: writer.sink(),
+        };
+        (scope, writer)
+    }
+
     pub(crate) fn id(&self) -> MeetingId {
         self.id
     }
@@ -301,6 +314,8 @@ pub(crate) struct Artifact {
 enum LiveCapture {
     Armed(Box<CaptureResources>),
     #[cfg(test)]
+    Silent(session::SilentCapture),
+    #[cfg(test)]
     Fixture(MarkSink),
 }
 
@@ -308,6 +323,8 @@ impl LiveCapture {
     fn marks(&self) -> MarkSink {
         match self {
             Self::Armed(capture) => capture.marks.sink(),
+            #[cfg(test)]
+            Self::Silent(capture) => capture.marks.sink(),
             #[cfg(test)]
             Self::Fixture(sink) => sink.clone(),
         }

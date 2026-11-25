@@ -154,14 +154,45 @@ struct TrayUpdates {
 struct LinuxTray {
     action_sender: Sender<TrayAction>,
     status: String,
+    meeting: MeetingView,
+    /// The stop confirmation the menu shows, and when its key first showed.
+    confirm: Option<meeting_confirm::Shown>,
+    recoverable_meetings: usize,
 }
 
 impl LinuxTray {
-    fn update_meeting(&mut self, _view: &MeetingView, _recoverable: usize) {}
+    fn new(action_sender: Sender<TrayAction>, status: String) -> Self {
+        Self {
+            action_sender,
+            status,
+            meeting: MeetingView::Idle,
+            confirm: None,
+            recoverable_meetings: 0,
+        }
+    }
+
+    fn update_meeting(&mut self, view: &MeetingView, recoverable: usize) {
+        self.confirm = meeting_confirm::Shown::follow(
+            self.confirm,
+            meeting_confirm::stop_key(view),
+            Instant::now(),
+        );
+        self.meeting = view.clone();
+        self.recoverable_meetings = recoverable;
+    }
 
     fn update_status(&mut self, status: String) {
         if !menu::is_control_message(&status) {
             self.status = status;
+        }
+    }
+
+    /// Dictation's status, unless a live meeting holds the engine.
+    fn headline(&self) -> String {
+        if meeting_menu::live(&self.meeting) {
+            "Recording meeting".into()
+        } else {
+            self.status.clone()
         }
     }
 }
@@ -176,7 +207,7 @@ impl ksni::Tray for LinuxTray {
     }
 
     fn icon_name(&self) -> String {
-        if self.status.starts_with("Recording") {
+        if self.status.starts_with("Recording") || meeting_menu::live(&self.meeting) {
             "media-record-symbolic"
         } else if self.status.starts_with("Error") {
             "dialog-error-symbolic"
@@ -198,7 +229,7 @@ impl ksni::Tray for LinuxTray {
         ksni::ToolTip {
             icon_name: self.icon_name(),
             title: "Koett".to_string(),
-            description: self.status.clone(),
+            description: self.headline(),
             ..Default::default()
         }
     }
@@ -227,7 +258,7 @@ impl ksni::Tray for LinuxTray {
         let last = history::recovery::last_available();
         let mut items = vec![
             StandardItem {
-                label: self.status.clone(),
+                label: self.headline(),
                 enabled: false,
                 ..Default::default()
             }
@@ -253,6 +284,29 @@ impl ksni::Tray for LinuxTray {
         if asking {
             items.push(send("Cancel Ask", true, TrayAction::CancelAsk));
         }
+        items.extend(
+            meeting_menu::items(&self.meeting, self.recoverable_meetings)
+                .into_iter()
+                .map(|item| match item.action {
+                    Some(action) => StandardItem {
+                        label: item.label,
+                        activate: Box::new(move |tray: &mut LinuxTray| {
+                            if let Some(request) = action.request(tray.confirm, Instant::now()) {
+                                let call = MeetingCall::desktop(request);
+                                let _ = tray.action_sender.send(TrayAction::Meeting(call));
+                            }
+                        }),
+                        ..Default::default()
+                    }
+                    .into(),
+                    None => StandardItem {
+                        label: item.label,
+                        enabled: false,
+                        ..Default::default()
+                    }
+                    .into(),
+                }),
+        );
         items.extend([
             send("Transcribe media…", true, TrayAction::OpenMedia),
             send(
@@ -337,7 +391,9 @@ mod kwin_focus;
 pub(crate) mod media;
 mod media_view;
 pub(crate) mod meeting_audio;
+mod meeting_confirm;
 mod meeting_control;
+mod meeting_menu;
 mod menu;
 mod menu_preferences;
 mod models_view;
@@ -686,12 +742,9 @@ pub fn run() -> Result<(), String> {
     let worker_actions = actions.clone();
     std::thread::spawn(move || {
         let _instance = instance;
-        let tray = LinuxTray {
-            action_sender: worker_actions,
-            status: "Starting…".into(),
-        }
-        .spawn()
-        .ok();
+        let tray = LinuxTray::new(worker_actions, "Starting…".into())
+            .spawn()
+            .ok();
         let (sender, messages) = mpsc::channel();
         let tray_updates = TrayUpdates { sender };
         std::thread::spawn(move || {
@@ -766,6 +819,7 @@ pub fn run() -> Result<(), String> {
                 .and_then(|rt| rt.block_on(run_wayland(settings, receiver, Some(&tray_updates))))
         };
         if let Err(error) = result {
+            release_shutdown_signals();
             let _ = ui.send(window::Update::Status(format!("Error: {error}")));
         }
     });
@@ -774,9 +828,16 @@ pub fn run() -> Result<(), String> {
 }
 
 static SHUTDOWN_REQUESTED: AtomicBool = AtomicBool::new(false);
+const SHUTDOWN_SIGNALS: [libc::c_int; 3] = [libc::SIGTERM, libc::SIGINT, libc::SIGHUP];
 
-extern "C" fn request_shutdown(_: libc::c_int) {
-    SHUTDOWN_REQUESTED.store(true, Ordering::Relaxed);
+extern "C" fn request_shutdown(signal: libc::c_int) {
+    // A repeat means the drain is stuck, so the default action ends Koett now.
+    if SHUTDOWN_REQUESTED.swap(true, Ordering::Relaxed) {
+        unsafe {
+            libc::signal(signal, libc::SIG_DFL);
+            libc::raise(signal);
+        }
+    }
 }
 
 fn install_shutdown_signals() -> Result<(), String> {
@@ -785,7 +846,7 @@ fn install_shutdown_signals() -> Result<(), String> {
     action.sa_sigaction = request_shutdown as *const () as usize;
     action.sa_flags = libc::SA_RESTART;
     unsafe { libc::sigemptyset(&mut action.sa_mask) };
-    for signal in [libc::SIGTERM, libc::SIGINT, libc::SIGHUP] {
+    for signal in SHUTDOWN_SIGNALS {
         if unsafe { libc::sigaction(signal, &action, std::ptr::null_mut()) } != 0 {
             return Err(format!(
                 "Could not handle shutdown signal {signal}: {}",
@@ -794,6 +855,17 @@ fn install_shutdown_signals() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// No engine loop is left to drain a meeting, so shutdown signals end Koett
+/// the default way, including one that already arrived.
+fn release_shutdown_signals() {
+    for signal in SHUTDOWN_SIGNALS {
+        unsafe { libc::signal(signal, libc::SIG_DFL) };
+    }
+    if SHUTDOWN_REQUESTED.load(Ordering::Relaxed) {
+        unsafe { libc::raise(libc::SIGTERM) };
+    }
 }
 
 fn shutdown_action() -> Option<TrayAction> {
@@ -1287,6 +1359,59 @@ fn x11_shortcut_intent(
         HotKeyState::Pressed if !editing => latch.press(mode),
         HotKeyState::Released => latch.release(),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod shutdown_signal_tests {
+    use super::*;
+    use std::os::unix::process::ExitStatusExt;
+
+    const PROBE: &str = "KOETT_SHUTDOWN_SIGNAL_PROBE";
+
+    /// Runs `name` alone in a child test process, which reaches `probe`.
+    fn child_signal(name: &str) -> Option<i32> {
+        let test = format!("{}::{name}", module_path!().split_once("::").unwrap().1);
+        std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", &test, "--nocapture", "--test-threads=1"])
+            .env(PROBE, "1")
+            .output()
+            .unwrap()
+            .status
+            .signal()
+    }
+
+    fn probe() -> bool {
+        std::env::var_os(PROBE).is_some()
+    }
+
+    #[test]
+    fn a_second_shutdown_signal_ends_a_stuck_drain() {
+        if probe() {
+            install_shutdown_signals().unwrap();
+            unsafe { libc::raise(libc::SIGTERM) };
+            assert!(shutdown_action().is_some());
+            unsafe { libc::raise(libc::SIGINT) };
+            std::process::exit(0);
+        }
+        assert_eq!(
+            child_signal("a_second_shutdown_signal_ends_a_stuck_drain"),
+            Some(libc::SIGINT)
+        );
+    }
+
+    #[test]
+    fn a_shutdown_signal_ends_koett_once_no_engine_loop_runs() {
+        if probe() {
+            install_shutdown_signals().unwrap();
+            unsafe { libc::raise(libc::SIGHUP) };
+            release_shutdown_signals();
+            std::process::exit(0);
+        }
+        assert_eq!(
+            child_signal("a_shutdown_signal_ends_koett_once_no_engine_loop_runs"),
+            Some(libc::SIGTERM)
+        );
     }
 }
 
@@ -3789,10 +3914,7 @@ mod menu_tests {
                 };
                 assert!(notice.starts_with("@notice:"));
                 let (action_sender, _) = mpsc::channel();
-                let mut tray = LinuxTray {
-                    action_sender,
-                    status: phase.into(),
-                };
+                let mut tray = LinuxTray::new(action_sender, phase.into());
                 tray.update_status(notice);
                 assert_eq!(tray.status, phase);
                 let ksni::MenuItem::Standard(primary) = tray.menu().remove(2) else {
@@ -3812,10 +3934,7 @@ mod menu_tests {
     fn tray_navigation_and_capture_dispatch_are_distinct() {
         let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
         tray.activate(0, 0);
         assert_eq!(receiver.recv().unwrap(), TrayAction::OpenTranscripts);
         #[cfg(not(feature = "ask"))]
@@ -3856,10 +3975,7 @@ mod menu_tests {
     fn tray_shows_check_for_updates_but_disabled_without_a_feed() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let tray = LinuxTray::new(action_sender, "Ready".into());
         let item = tray
             .menu()
             .into_iter()
@@ -3877,10 +3993,7 @@ mod menu_tests {
     fn tray_keeps_quick_actions_and_links_preferences_to_settings() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let tray = LinuxTray::new(action_sender, "Ready".into());
         fn labels(items: Vec<ksni::MenuItem<LinuxTray>>, into: &mut Vec<String>) {
             for item in items {
                 match item {
@@ -3922,6 +4035,53 @@ mod menu_tests {
         assert!(!found.iter().any(|label| label.starts_with("Model")));
     }
 
+    #[test]
+    fn tray_confirm_items_answer_only_an_armed_confirmation_they_were_built_for() {
+        let _guard = runtime_test_guard();
+        let (action_sender, receiver) = mpsc::channel();
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
+        let info = crate::meeting::SessionInfo {
+            id: crate::meeting::MeetingId::new(),
+            started_at_ms: 0,
+        };
+        let confirm = |generation| MeetingView::ConfirmStop {
+            info: info.clone(),
+            health: crate::meeting::CaptureHealth::default(),
+            key: crate::meeting::StopKey {
+                id: info.id,
+                generation,
+            },
+        };
+        let finish = |tray: &LinuxTray| find_menu_action(tray.menu(), "Finish meeting").unwrap();
+
+        tray.update_meeting(&confirm(1), 0);
+        let stale = finish(&tray);
+        std::thread::sleep(meeting_confirm::ARM);
+        let recording = MeetingView::Recording {
+            info: info.clone(),
+            health: crate::meeting::CaptureHealth::default(),
+        };
+        tray.update_meeting(&recording, 0);
+        tray.update_meeting(&confirm(2), 0);
+        (stale.activate)(&mut tray);
+        let fresh = finish(&tray);
+        (fresh.activate)(&mut tray);
+        let early = receiver.try_recv();
+        std::thread::sleep(meeting_confirm::ARM);
+        (fresh.activate)(&mut tray);
+
+        assert_eq!(early, Err(mpsc::TryRecvError::Empty));
+        let MeetingView::ConfirmStop { key, .. } = confirm(2) else {
+            unreachable!()
+        };
+        assert_eq!(
+            receiver.try_recv().unwrap(),
+            TrayAction::Meeting(MeetingCall::desktop(MeetingRequest::Finish(key)))
+        );
+        assert_eq!(tray.icon_name(), "media-record-symbolic");
+        assert_eq!(tray.tool_tip().description, "Recording meeting");
+    }
+
     fn find_menu_action(
         items: Vec<ksni::MenuItem<LinuxTray>>,
         label: &str,
@@ -3937,10 +4097,7 @@ mod menu_tests {
     fn tray_recovery_and_folder_actions_dispatch_shared_operations() {
         let _guard = runtime_test_guard();
         let (action_sender, receiver) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Ready".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Ready".into());
         for (label, command) in [
             ("Copy last transcript", "copy-last"),
             ("Paste last transcript", "paste-last"),
@@ -3967,10 +4124,7 @@ mod menu_tests {
     fn control_messages_preserve_tray_phase_and_busy_sensitivity() {
         let _guard = runtime_test_guard();
         let (action_sender, _) = mpsc::channel();
-        let mut tray = LinuxTray {
-            action_sender,
-            status: "Transcribing…".into(),
-        };
+        let mut tray = LinuxTray::new(action_sender, "Transcribing…".into());
         for message in [
             "@notice:copy unavailable",
             "@refresh",
