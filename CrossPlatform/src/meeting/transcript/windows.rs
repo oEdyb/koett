@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::ops::Range;
 
-use super::{Window, WindowId};
+use super::{Window, WindowId, WordOwnership};
 use crate::meeting::{Channel, Offset, SAMPLE_RATE, Span};
 use crate::transcription::{MAX_SPEECH_FRAMES, StreamingVad};
 
@@ -16,6 +16,7 @@ pub(super) struct WindowBuilder<'a> {
     received: u64,
     audio: VecDeque<f32>,
     pending: VecDeque<Range<u64>>,
+    awaiting_neighbor: Option<Window>,
 }
 
 impl<'a> WindowBuilder<'a> {
@@ -28,6 +29,7 @@ impl<'a> WindowBuilder<'a> {
             received: 0,
             audio: VecDeque::with_capacity(LOOKBACK),
             pending: VecDeque::new(),
+            awaiting_neighbor: None,
         }
     }
 
@@ -53,6 +55,9 @@ impl<'a> WindowBuilder<'a> {
     ) -> Result<(), String> {
         self.vad.finish(|range| self.pending.push_back(range));
         self.emit_ready(true, &mut emit)?;
+        if let Some(last) = self.awaiting_neighbor.take() {
+            emit(last)?;
+        }
         self.origin = next_origin;
         self.received = 0;
         self.audio.clear();
@@ -89,7 +94,7 @@ impl<'a> WindowBuilder<'a> {
                 )
                 .copied()
                 .collect();
-            emit(Window {
+            let mut next = Window {
                 id: WindowId {
                     channel: self.channel,
                     sequence: self.next_id,
@@ -99,8 +104,14 @@ impl<'a> WindowBuilder<'a> {
                     first: Offset(self.origin.0 + first),
                     end: Offset(self.origin.0 + end),
                 },
+                ownership: WordOwnership::default(),
                 samples,
-            })?;
+            };
+            if let Some(mut earlier) = self.awaiting_neighbor.take() {
+                Window::divide_padding(&mut earlier, &mut next);
+                emit(earlier)?;
+            }
+            self.awaiting_neighbor = Some(next);
             self.next_id += 1;
         }
         Ok(())

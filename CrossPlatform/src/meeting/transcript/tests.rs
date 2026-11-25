@@ -136,6 +136,7 @@ fn window() -> Window {
             first: Offset(second(5).0 + 4800),
             end: Offset(second(7).0 - 4800),
         },
+        ownership: WordOwnership::default(),
         samples: vec![0.; 32000],
     }
 }
@@ -190,8 +191,12 @@ fn rejects_missing_duplicate_and_unexpected_results() {
 }
 
 #[test]
-fn clips_context_by_midpoint_and_converts_retained_words_to_meeting_frames() {
-    let window = window();
+fn clips_context_owned_by_neighbors_and_converts_retained_words_to_meeting_frames() {
+    let mut window = window();
+    window.ownership = WordOwnership {
+        after: Some(4800.0),
+        through: Some(27200.0),
+    };
     let results = vec![result(
         &window,
         &[(0.1, 0.2), (0.2, 0.5), (1.6, 1.9), (1.9, 2.03)],
@@ -205,6 +210,52 @@ fn clips_context_by_midpoint_and_converts_retained_words_to_meeting_frames() {
             end: Offset(88000)
         }
     );
+}
+
+#[test]
+fn isolated_window_keeps_onset_words_in_the_left_pad_for_both_backends() {
+    for backend in [PARAKEET, "kb-whisper-large"] {
+        let window = window();
+        let mut decoded = result(&window, &[(0.0, 0.28)]);
+        decoded.backend = backend.into();
+        let normalized = validate(&[window], vec![decoded]).unwrap();
+        assert_eq!(normalized[0].words.len(), 1);
+        assert_eq!(normalized[0].words[0].span.first, second(5));
+        assert_eq!(normalized[0].words[0].backend, backend);
+    }
+}
+
+#[test]
+fn shared_padding_has_one_owner_and_a_tie_goes_to_the_earlier_core() {
+    for backend in [PARAKEET, "whisper-large-v3-turbo"] {
+        let mut earlier = window();
+        earlier.first = Offset(3200);
+        earlier.core = Span {
+            first: Offset(8000),
+            end: Offset(16000),
+        };
+        earlier.samples.resize(17600, 0.0);
+        let mut later = window();
+        later.id.sequence = 1;
+        later.first = Offset(17600);
+        later.core = Span {
+            first: Offset(22400),
+            end: Offset(32000),
+        };
+        Window::divide_padding(&mut earlier, &mut later);
+
+        let mut before = result(&earlier, &[(0.98, 1.0)]);
+        before.backend = backend.into();
+        let mut after = result(&later, &[(0.08, 0.1)]);
+        after.backend = backend.into();
+        assert!(earlier.ownership.contains(16000.0));
+        assert!(!later.ownership.contains(1600.0));
+
+        let normalized = validate(&[earlier, later], vec![before, after]).unwrap();
+        assert_eq!(normalized[0].words.len(), 1);
+        assert!(normalized[1].words.is_empty());
+        assert_eq!(normalized[0].words[0].span.end, Offset(19200));
+    }
 }
 
 #[test]
@@ -401,5 +452,32 @@ fn a_gap_only_splits_its_own_track() {
             "Missing",
             "Other@2000:after"
         ]
+    );
+}
+
+#[test]
+fn the_word_at_a_twenty_second_split_belongs_to_the_earlier_window_once() {
+    let mut earlier = window();
+    earlier.first = Offset(0);
+    earlier.core = span(0, 20);
+    earlier.samples.resize(324_800, 0.0);
+    let mut later = window();
+    later.id.sequence = 1;
+    later.first = Offset(316_000);
+    later.core = span(20, 21);
+    later.samples.resize(24_800, 0.0);
+    Window::divide_padding(&mut earlier, &mut later);
+
+    let before = result(&earlier, &[(19.875, 20.125)]);
+    let after = result(&later, &[(0.125, 0.375)]);
+    let normalized = validate(&[earlier, later], vec![before, after]).unwrap();
+    assert_eq!(normalized[0].words.len(), 1);
+    assert!(normalized[1].words.is_empty());
+    assert_eq!(
+        normalized[0].words[0].span,
+        Span {
+            first: Offset(318_000),
+            end: Offset(322_000),
+        }
     );
 }

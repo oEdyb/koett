@@ -35,7 +35,32 @@ pub(super) struct Window {
     pub(super) id: WindowId,
     pub(super) first: Offset,
     pub(super) core: Span,
+    ownership: WordOwnership,
     pub(super) samples: Vec<f32>,
+}
+
+#[derive(Default)]
+struct WordOwnership {
+    after: Option<f64>,
+    through: Option<f64>,
+}
+
+impl WordOwnership {
+    fn contains(&self, midpoint: f64) -> bool {
+        self.after.is_none_or(|after| midpoint > after)
+            && self.through.is_none_or(|through| midpoint <= through)
+    }
+}
+
+impl Window {
+    fn divide_padding(earlier: &mut Self, later: &mut Self) {
+        let earlier_end = i128::from(earlier.core.end.0);
+        let later_start = i128::from(later.core.first.0);
+        let doubled_boundary = earlier_end + earlier_end.max(later_start);
+        let from_window = |first: Offset| (doubled_boundary - 2 * i128::from(first.0)) as f64 / 2.0;
+        earlier.ownership.through = Some(from_window(earlier.first));
+        later.ownership.after = Some(from_window(later.first));
+    }
 }
 
 pub(super) struct DecodedWindow {
@@ -302,23 +327,13 @@ fn validate(
     Ok(validated)
 }
 
-fn normalize(window: &Window, result: DecodedWindow) -> Result<NormalizedWindow, String> {
+fn validate_words(window: &Window, result: &DecodedWindow) -> Result<(), String> {
     let duration = window.samples.len() as f64 / SAMPLE_RATE_F64;
-    let relative = |offset: Offset| (offset.0 - window.first.0) as f64;
-    let to_offset = |seconds: f64| {
-        Offset(
-            window
-                .first
-                .0
-                .saturating_add((seconds * SAMPLE_RATE_F64).round() as u64),
-        )
-    };
     let mut previous = 0.0;
-    let mut words = Vec::new();
     if !label(&result.lang) || !label(&result.backend) {
         return Err(format!("Invalid language or backend in {:?}", window.id));
     }
-    for word in result.words {
+    for word in &result.words {
         let start = f64::from(word.start);
         let end = f64::from(word.end);
         if !start.is_finite()
@@ -330,11 +345,26 @@ fn normalize(window: &Window, result: DecodedWindow) -> Result<NormalizedWindow,
             return Err(format!("Invalid word timestamps in {:?}", window.id));
         }
         previous = start;
+    }
+    Ok(())
+}
+
+fn normalize(window: &Window, result: DecodedWindow) -> Result<NormalizedWindow, String> {
+    validate_words(window, &result)?;
+    let to_offset = |seconds: f64| {
+        Offset(
+            window
+                .first
+                .0
+                .saturating_add((seconds * SAMPLE_RATE_F64).round() as u64),
+        )
+    };
+    let mut words = Vec::new();
+    for word in result.words {
+        let start = f64::from(word.start);
+        let end = f64::from(word.end);
         let midpoint = f64::midpoint(start, end) * SAMPLE_RATE_F64;
-        if midpoint >= relative(window.core.first)
-            && midpoint < relative(window.core.end)
-            && !word.text.trim().is_empty()
-        {
+        if window.ownership.contains(midpoint) && !word.text.trim().is_empty() {
             words.push(SpeechWord {
                 channel: window.id.channel,
                 span: Span {
