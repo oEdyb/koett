@@ -376,7 +376,7 @@ fn run(
     let mut speech: Option<crate::assistant::speech::Speech> = None;
     loop {
         #[cfg(target_os = "linux")]
-        meetings.check_sources();
+        meetings.check_sources(std::time::Instant::now());
         #[cfg(all(target_os = "linux", feature = "ask"))]
         if (ask_image.is_some() || answer.is_some())
             && let Some(active) = &speech
@@ -614,7 +614,7 @@ fn run(
                 continue;
             }
             EngineCommand::MeetingEvent(event) => {
-                meetings.receive(event);
+                meetings.receive(event, std::time::Instant::now());
                 continue;
             }
             command if meetings.reserves_engine() && command.conflicts_with_meeting() => {

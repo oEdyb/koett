@@ -115,7 +115,7 @@ impl MeetingController {
         }
     }
 
-    pub(crate) fn receive(&mut self, MeetingEvent(event): MeetingEvent) {
+    pub(crate) fn receive(&mut self, MeetingEvent(event): MeetingEvent, now: Instant) {
         let event = match event {
             Event::BootScanned(result) => {
                 if let Some(boot) = self.boot.take() {
@@ -142,7 +142,7 @@ impl MeetingController {
                 match status {
                     SourceHealth::Receiving => *since = None,
                     SourceHealth::Reconnecting => {
-                        since.get_or_insert_with(Instant::now);
+                        since.get_or_insert(now);
                     }
                 }
                 Event::Health(attempt, health)
@@ -168,16 +168,15 @@ impl MeetingController {
             worker.join();
         }
         self.apply(event);
-        self.check_sources();
+        self.check_sources(now);
     }
 
-    pub(crate) fn check_sources(&mut self) {
+    pub(crate) fn check_sources(&mut self, now: Instant) {
         let Some(live) = self.live() else { return };
         let (Some(you), Some(other)) = (self.disconnected.you, self.disconnected.other) else {
             return;
         };
         // Allow both sources to attempt a reconnect before cutting off the journals.
-        let now = Instant::now();
         if now.saturating_duration_since(you.max(other)) >= Duration::from_secs(2) {
             self.apply(Event::CaptureFault(
                 live.attempt,
