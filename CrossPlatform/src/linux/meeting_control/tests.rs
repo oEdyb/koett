@@ -480,3 +480,76 @@ fn s5_headless_fixture_daemon() {
         thread::sleep(Duration::from_millis(5));
     }
 }
+
+#[test]
+fn search_skips_and_counts_unreadable_hits_alongside_complete_meetings() {
+    use crate::history::HistoryRecord;
+    use std::fs;
+
+    let root =
+        TestRoot(std::env::temp_dir().join(format!("koett-meeting-search-{}", MeetingId::new())));
+    let store_path = root.0.join("history.sqlite3");
+    let meetings = root.0.join("meetings");
+    let complete = Bundle::create(
+        &meetings,
+        Manifest {
+            info: info(),
+            mic: None,
+            backend_pref: Backend::Parakeet,
+            keep_audio: true,
+            export_dir: None,
+        },
+    )
+    .unwrap();
+    let meeting_id = format!("meeting:{ID}");
+    complete
+        .publish(
+            "# Meeting",
+            Publication {
+                history: HistoryReceipt {
+                    id: meeting_id.clone(),
+                    created_at_ms: STARTED,
+                    model: "parakeet".into(),
+                    text_sha256: "unused".into(),
+                },
+                assets: vec![],
+                backends: Default::default(),
+                fallback: false,
+            },
+        )
+        .unwrap();
+    drop(complete);
+
+    let damaged_id = MeetingId::new();
+    let damaged = meetings.join(damaged_id.to_string());
+    fs::create_dir(&damaged).unwrap();
+    fs::write(damaged.join("manifest.json"), "broken").unwrap();
+    let store = HistoryStore::open(&store_path).unwrap();
+    for (id, created_at_ms) in [(meeting_id, 1), (format!("meeting:{damaged_id}"), 2)] {
+        store
+            .save(&HistoryRecord {
+                id,
+                created_at_ms,
+                model: "parakeet".into(),
+                text: "Samoa surviving search hit".into(),
+                raw_text: None,
+            })
+            .unwrap();
+    }
+    drop(store);
+
+    assert!(matches!(
+        get(&meetings, damaged_id),
+        Err(ReplyError::DiskUnreadable(_))
+    ));
+    let result = search(&meetings, &store_path, "Samoa", 10).unwrap();
+    assert_eq!(result["skipped_unreadable"], 1);
+    assert_eq!(result["items"].as_array().unwrap().len(), 1);
+    assert_eq!(result["items"][0]["id"], ID);
+    assert!(
+        result["items"][0]["snippet"]
+            .as_str()
+            .unwrap()
+            .contains("Samoa")
+    );
+}

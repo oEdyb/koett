@@ -269,9 +269,13 @@ fn offline(command: Command, daemon: Result<bool, &str>) -> Value {
             with_daemon(with_root(|root| list(root, recoverable, limit)), daemon)
         }
         Command::Get(id) => with_daemon(with_root(|root| get(root, id)), daemon),
-        Command::Search { query, limit } => {
-            with_daemon(with_root(|root| search(root, &query, limit)), daemon)
-        }
+        Command::Search { query, limit } => with_daemon(
+            with_root(|root| {
+                let path = crate::paths::history_database().map_err(ReplyError::DiskUnreadable)?;
+                search(root, &path, &query, limit)
+            }),
+            daemon,
+        ),
         Command::Unavailable
         | Command::Daemon(MeetingRequest::Recover {
             backend: Some(Backend::Gpu),
@@ -352,16 +356,16 @@ fn get(root: &Path, id: MeetingId) -> Result<Value, ReplyError> {
     }
 }
 
-fn search(root: &Path, query: &str, limit: usize) -> Result<Value, ReplyError> {
-    let path = crate::paths::history_database().map_err(ReplyError::DiskUnreadable)?;
-    let Some(store) = HistoryStore::open_read_only(&path).map_err(ReplyError::DiskUnreadable)?
+fn search(root: &Path, path: &Path, query: &str, limit: usize) -> Result<Value, ReplyError> {
+    let Some(store) = HistoryStore::open_read_only(path).map_err(ReplyError::DiskUnreadable)?
     else {
-        return Ok(json!({"items": []}));
+        return Ok(json!({"items": [], "skipped_unreadable": 0}));
     };
     let hits = store
         .page(query, None, limit, Some("meeting:"))
         .map_err(ReplyError::DiskUnreadable)?;
     let mut items = Vec::new();
+    let mut skipped_unreadable = 0;
     for hit in hits {
         let Some(id) = hit.id.strip_prefix("meeting:").and_then(MeetingId::parse) else {
             continue;
@@ -372,10 +376,11 @@ fn search(root: &Path, query: &str, limit: usize) -> Result<Value, ReplyError> {
                 items.push(data);
             }
             Err(ReplyError::NotFound | ReplyError::ArtifactPending) => {}
+            Err(ReplyError::DiskUnreadable(_)) => skipped_unreadable += 1,
             Err(error) => return Err(error),
         }
     }
-    Ok(json!({"items": items}))
+    Ok(json!({"items": items, "skipped_unreadable": skipped_unreadable}))
 }
 
 fn find(root: &Path, id: MeetingId) -> Result<MeetingView, ReplyError> {
