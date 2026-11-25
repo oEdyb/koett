@@ -643,6 +643,7 @@ fn build_window(
                     }
                     Update::Meeting(view) => {
                         meeting_pill = super::recording_overlay::MeetingPill::from_view(&view);
+                        history.set_meeting(&view);
                     }
                     Update::MeetingSketch(crate::meeting::SketchScope::Open(scope)) => {
                         meeting_marks = Some(scope);
