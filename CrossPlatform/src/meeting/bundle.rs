@@ -142,10 +142,12 @@ impl Bundle {
             publication,
         };
         // A crash at either publish step must leave any previous projections eligible for repair.
-        match fs::remove_file(self.directory.join(PROJECTIONS)) {
-            Ok(()) => sync_directory(&self.directory).map_err(WriteError::BeforeRename)?,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-            Err(error) => return Err(WriteError::BeforeRename(error)),
+        for name in [JOB, PROJECTIONS] {
+            match fs::remove_file(self.directory.join(name)) {
+                Ok(()) => sync_directory(&self.directory).map_err(WriteError::BeforeRename)?,
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                Err(error) => return Err(WriteError::BeforeRename(error)),
+            }
         }
         self.writer.json(&self.directory, RECEIPT, &receipt)?;
         self.writer

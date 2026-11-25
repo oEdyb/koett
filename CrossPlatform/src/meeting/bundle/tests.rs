@@ -365,13 +365,13 @@ fn scan_checks_transcript_hash_and_prefers_the_last_job_error() {
             goal: CloseGoal::Interrupted(InterruptCause::CaptureFault("mic disconnected".into())),
         })
         .unwrap();
+    let receipt = publish(&bundle, "# Hej\n", false).unwrap();
     bundle
         .write_job(&Job {
             attempts: 1,
             last_error: JobError::Decode("decoder failed".into()),
         })
         .unwrap();
-    let receipt = publish(&bundle, "# Hej\n", false).unwrap();
     let transcript = bundle.directory().join(TRANSCRIPT);
     drop(bundle);
 
@@ -386,6 +386,44 @@ fn scan_checks_transcript_hash_and_prefers_the_last_job_error() {
     assert!(
         matches!(scan(&root.0, id).unwrap(), Some(DiskState::Recoverable { reason: RecoveryReason::CaptureFailed(issue), .. }) if issue == "mic disconnected")
     );
+}
+
+#[test]
+fn interrupted_republish_does_not_report_an_older_job_error() {
+    let root = TestRoot::new();
+    let manifest = manifest();
+    let id = manifest.info.id;
+    let mut bundle = Bundle::create(&root.0, manifest).unwrap();
+    bundle.write_seal(&sample_seal()).unwrap();
+    publish(&bundle, "# First\n", true).unwrap();
+    bundle.write_projections(&PROJECTED).unwrap();
+    bundle
+        .write_job(&Job {
+            attempts: 1,
+            last_error: JobError::Decode("helper crashed".into()),
+        })
+        .unwrap();
+    bundle.writer.fault = Some(Box::new(|name, point| {
+        if (name, point) == (TRANSCRIPT, BeforeRename) {
+            Err(io::Error::other("transcript write failed"))
+        } else {
+            Ok(())
+        }
+    }));
+    assert!(matches!(
+        publish(&bundle, "# Second\n", false),
+        Err(WriteError::BeforeRename(_))
+    ));
+    assert!(!bundle.directory().join(PROJECTIONS).exists());
+    drop(bundle);
+
+    assert!(matches!(
+        scan(&root.0, id).unwrap(),
+        Some(DiskState::Recoverable {
+            reason: RecoveryReason::Interrupted,
+            ..
+        })
+    ));
 }
 
 #[test]
