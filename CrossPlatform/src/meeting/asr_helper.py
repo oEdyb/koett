@@ -102,6 +102,7 @@ def decode(window, audio, context, engines):
 def main():
     configure_cuda()
     fetch = sys.argv[1:] == ["--fetch"]
+    check = fetch or sys.argv[1:] == ["--check"]
     if fetch:
         os.environ.pop("HF_HUB_OFFLINE", None)
     else:
@@ -121,7 +122,12 @@ def main():
         engines[backend] = WhisperModel(
             snapshot, device="cuda", compute_type="float16", local_files_only=True,
         )
-    send({"ready": True, "device": "cuda", "models": snapshots, "vram_mb": vram_mb()})
+    ready = {"ready": True, "device": "cuda", "models": snapshots}
+    if check:
+        ready["vram_mb"] = vram_mb()
+    send(ready)
+    if check:
+        return
     for line in sys.stdin:
         batch = json.loads(line)
         if batch["op"] != "decode":

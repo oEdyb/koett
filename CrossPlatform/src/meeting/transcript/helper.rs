@@ -54,6 +54,12 @@ struct Ready {
     vram_mb: Option<u64>,
 }
 
+enum Mode {
+    Decode,
+    Check,
+    Fetch,
+}
+
 #[derive(Serialize)]
 struct Input {
     id: String,
@@ -87,7 +93,8 @@ pub(crate) fn asr_check(python: &Path, fetch: bool) -> Result<Check, String> {
         .mode(0o700)
         .create(&path)
         .map_err(|error| error.to_string())?;
-    let (_helper, ready) = Helper::spawn(Scratch(path), python, fetch, &AtomicBool::new(false))?;
+    let mode = if fetch { Mode::Fetch } else { Mode::Check };
+    let (_helper, ready) = Helper::spawn(Scratch(path), python, mode, &AtomicBool::new(false))?;
     Ok(Check {
         device: ready.device,
         models: ready.models,
@@ -106,13 +113,13 @@ impl Helper {
         let directory = bundle
             .create_job_directory()
             .map_err(|error| error.to_string())?;
-        Self::spawn(Scratch(directory), python, false, cancelled).map(|(helper, _)| helper)
+        Self::spawn(Scratch(directory), python, Mode::Decode, cancelled).map(|(helper, _)| helper)
     }
 
     fn spawn(
         directory: Scratch,
         python: &Path,
-        fetch: bool,
+        mode: Mode,
         cancelled: &AtomicBool,
     ) -> Result<(Self, Ready), String> {
         check_cancelled(cancelled)?;
@@ -131,10 +138,16 @@ impl Helper {
             .stdin(OwnedFd::from(stdin))
             .stdout(OwnedFd::from(remote))
             .stderr(Stdio::from(log));
-        if fetch {
-            command.arg("--fetch");
-        } else {
-            command.env("HF_HUB_OFFLINE", "1");
+        match mode {
+            Mode::Decode => {
+                command.env("HF_HUB_OFFLINE", "1");
+            }
+            Mode::Check => {
+                command.arg("--check").env("HF_HUB_OFFLINE", "1");
+            }
+            Mode::Fetch => {
+                command.arg("--fetch");
+            }
         }
         let child = ChildGroup::spawn_parent_bound(&mut command)
             .map_err(|error| format!("Could not start meeting ASR helper: {error}"))?;
