@@ -434,6 +434,7 @@ impl MeetingController {
                         let cancelled = Arc::new(AtomicBool::new(false));
                         let token = cancelled.clone();
                         let worker = thread::spawn(move || {
+                            run_in_background();
                             emit(&post, Event::Processed(attempt, process_job(job, &token)));
                         });
                         self.worker = Some(Worker::Job(attempt, worker, cancelled));
@@ -510,3 +511,16 @@ fn recoverable_count(root: &Path) -> Result<usize, String> {
 
 #[cfg(test)]
 mod tests;
+
+/// Transcribing runs at the lowest CPU and disk priority, so the desktop stays
+/// responsive. Linux applies `nice` per thread; the helper and fallback threads
+/// started from here inherit it.
+fn run_in_background() {
+    // SAFETY: plain syscalls on the calling thread's own id with constant arguments.
+    unsafe {
+        let tid = libc::gettid();
+        libc::setpriority(libc::PRIO_PROCESS, tid as libc::id_t, 19);
+        // ioprio_set(IOPRIO_WHO_PROCESS, tid, IOPRIO_CLASS_IDLE << 13)
+        libc::syscall(libc::SYS_ioprio_set, 1, tid, 3 << 13);
+    }
+}
