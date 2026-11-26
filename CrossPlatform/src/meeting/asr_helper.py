@@ -87,6 +87,23 @@ def detect_language(engine, audio):
     return lang, scores.get(lang, 0.0) / total if total > 0 else 0.0
 
 
+class Engines(dict):
+    """Loads a model on first use, so an English-only meeting never loads KB-Whisper."""
+
+    def __init__(self, model, snapshots):
+        super().__init__()
+        self.model = model
+        self.snapshots = snapshots
+
+    def __missing__(self, backend):
+        engine = self.model(
+            self.snapshots[backend], device="cuda", compute_type="float16",
+            cpu_threads=2, local_files_only=True,
+        )
+        self[backend] = engine
+        return engine
+
+
 def decode(window, audio, context, engines):
     lang, probability = detect_language(engines[TURBO], audio)
     if context is not audio and probability < OWN_LABEL_CONFIDENCE:
@@ -117,15 +134,17 @@ def main():
     from faster_whisper.utils import download_model
 
     snapshots = {}
-    engines = {}
     for backend, source in SOURCES.items():
         snapshot = download_model(source, local_files_only=not fetch)
         if not (Path(snapshot) / "tokenizer.json").is_file():
             raise FileNotFoundError(f"Missing cached tokenizer for {source}")
         snapshots[backend] = snapshot
-        engines[backend] = WhisperModel(
-            snapshot, device="cuda", compute_type="float16", local_files_only=True,
-        )
+    engines = Engines(WhisperModel, snapshots)
+    if check:
+        for backend in SOURCES:
+            engines[backend]
+    else:
+        engines[TURBO]
     ready = {"ready": True, "device": "cuda", "models": snapshots}
     if check:
         ready["vram_mb"] = vram_mb()
