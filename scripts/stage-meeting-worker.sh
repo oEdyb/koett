@@ -11,5 +11,9 @@ cp "$products/koett-meeting-asr" "$app/Contents/MacOS/koett-meeting-asr"
 cp "$library" "$app/Contents/Frameworks/libKoettMeetingWhisper.dylib"
 ditto "$products/Koett_MeetingASRProtocol.bundle" "$app/Contents/Resources/Koett_MeetingASRProtocol.bundle"
 ditto "$repo/Sources/MeetingASRWorker/Native/Notices" "$app/Contents/Resources/Meeting ASR Notices"
-codesign --force --options runtime --sign "$identity" "$app/Contents/Frameworks/libKoettMeetingWhisper.dylib"
-codesign --force --options runtime --sign "$identity" "$app/Contents/MacOS/koett-meeting-asr"
+sign_options=(--force --sign "$identity")
+if [[ "$identity" != - ]]; then
+    sign_options+=(--options runtime --timestamp)
+fi
+codesign "${sign_options[@]}" "$app/Contents/Frameworks/libKoettMeetingWhisper.dylib"
+codesign "${sign_options[@]}" "$app/Contents/MacOS/koett-meeting-asr"
