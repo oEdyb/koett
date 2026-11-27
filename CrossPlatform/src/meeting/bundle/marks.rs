@@ -7,9 +7,9 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::Offset;
 use super::files::{private_directory, sync_directory, write_temp};
 use super::records::{MarkIssue, Seal};
+use super::{MeetingId, Offset};
 use state::{Input, Lifecycle, Operation, State};
 
 const DRAIN_TIMEOUT: Duration = Duration::from_secs(8);
@@ -53,7 +53,7 @@ impl MarkSink {
     #[cfg(test)]
     pub(in crate::meeting) fn fixture() -> Self {
         Self(Arc::new(Shared {
-            state: Mutex::default(),
+            state: Mutex::new(State::new(MeetingId::new())),
             changed: Condvar::new(),
         }))
     }
@@ -86,12 +86,12 @@ pub(crate) struct MarkWriter {
 }
 
 impl MarkWriter {
-    pub(in crate::meeting) fn start(directory: &Path) -> io::Result<Self> {
+    pub(in crate::meeting) fn start(directory: &Path, meeting: MeetingId) -> io::Result<Self> {
         let assets = directory.join("assets");
         private_directory(&assets)?;
         sync_directory(directory)?;
         let shared = Arc::new(Shared {
-            state: Mutex::new(State::default()),
+            state: Mutex::new(State::new(meeting)),
             changed: Condvar::new(),
         });
         let worker = Arc::clone(&shared);

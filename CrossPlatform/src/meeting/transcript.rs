@@ -155,9 +155,7 @@ pub(super) fn transcribe(
     settings: &Settings,
     cancelled: &AtomicBool,
 ) -> Result<Rendered, String> {
-    let marks = list_marks(bundle.directory(), Some(seal)).map_err(|err| err.to_string())?;
-    let mut points: Vec<_> = marks.into_iter().map(Point::Mark).collect();
-
+    let mut points = mark_points(bundle, seal)?;
     let parakeet = LocalModel::ParakeetV3.directory()?;
     let vad_directory = if parakeet.join(VAD_FILE).is_file() {
         parakeet
@@ -201,6 +199,26 @@ pub(super) fn transcribe(
     }
     batch.decode(&mut points)?;
     check_cancelled(cancelled)?;
+    render(bundle, seal, points, &settings.dictionary, batch.fallback)
+}
+
+#[cfg(test)]
+pub(super) fn render_marks(bundle: &Bundle, seal: &Seal) -> Result<Rendered, String> {
+    render(bundle, seal, mark_points(bundle, seal)?, &[], false)
+}
+
+fn mark_points(bundle: &Bundle, seal: &Seal) -> Result<Vec<Point>, String> {
+    let marks = list_marks(bundle.directory(), Some(seal)).map_err(|err| err.to_string())?;
+    Ok(marks.into_iter().map(Point::Mark).collect())
+}
+
+fn render(
+    bundle: &Bundle,
+    seal: &Seal,
+    points: Vec<Point>,
+    dictionary: &[DictionaryEntry],
+    fallback: bool,
+) -> Result<Rendered, String> {
     let utc = OffsetDateTime::from_unix_timestamp_nanos(
         i128::from(bundle.manifest().info.started_at_ms) * 1_000_000,
     )
@@ -211,8 +229,8 @@ pub(super) fn transcribe(
         utc.to_offset(offset),
         seal.cutoff,
         timeline::merge(points),
-        &settings.dictionary,
-        batch.fallback,
+        dictionary,
+        fallback,
     )
 }
 

@@ -878,7 +878,9 @@ impl Session {
                     self.groups[index].phase = Phase::Reading(now);
                 }
                 Err(error) => {
-                    eprintln!("Sketch capture failed: {error}");
+                    if matches!(self.target, SketchTarget::Dictation { .. }) {
+                        eprintln!("Sketch capture failed: {error}");
+                    }
                     self.notices
                         .push(format!("Drawing capture failed · {error}"));
                     self.drop_group(index, Removal::Lost(error));
