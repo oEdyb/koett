@@ -439,6 +439,9 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
     pause_media.set_use_underline(true);
     pause_media.set_active(settings.pause_media);
     recording.append(&pause_media);
+    let pill_glow = gtk::CheckButton::with_label("Pill glow");
+    pill_glow.set_active(settings.pill_glow);
+    recording.append(&pill_glow);
     let recording_sounds = gtk::CheckButton::with_label("Play start and stop sounds");
     recording_sounds.set_active(settings.recording_sounds);
     recording.append(&recording_sounds);
@@ -708,6 +711,7 @@ Escape cancels while recording with keyboard access. Settings → Draw on screen
                 }
             };
             updated.pause_media = pause_media.is_active();
+            updated.pill_glow = pill_glow.is_active();
             updated.recording_sounds = recording_sounds.is_active();
             updated.recording_sounds_volume = sounds_volume.value().round() as u32;
             updated.draw_while_dictating = draw.is_active();

@@ -120,12 +120,18 @@ fn build_window(
     shortcut.add_css_class("koett-metadata");
     shortcut.set_ellipsize(gtk::pango::EllipsizeMode::End);
     shortcut.set_max_width_chars(28);
-    if let Ok(settings) = Settings::load() {
+    let saved = Settings::load().ok();
+    if let Some(settings) = &saved {
         shortcut.set_text(&settings.shortcut);
     }
+    let pill_glow = Rc::new(std::cell::Cell::new(
+        saved.as_ref().is_none_or(|settings| settings.pill_glow),
+    ));
     let settings_saved: Rc<dyn Fn(&Settings)> = Rc::new({
         let shortcut = shortcut.clone();
+        let pill_glow = pill_glow.clone();
         move |settings| {
+            pill_glow.set(settings.pill_glow);
             if std::env::var_os("WAYLAND_DISPLAY").is_none() {
                 shortcut.set_text(&settings.shortcut);
             }
@@ -1031,6 +1037,7 @@ fn build_window(
             undo_drawing.set_enabled(can_undo);
             super::sketch::CAN_UNDO.store(can_undo, std::sync::atomic::Ordering::Release);
             if let Some(overlay) = &overlay {
+                overlay.set_glow(pill_glow.get());
                 overlay.update(
                     if media_result && recovering {
                         "Media result"

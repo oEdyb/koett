@@ -1,4 +1,4 @@
-//! The pill's surface: the pill, the light under it, and one lane of chips and
+//! The pill's surface: the pill, the light around it, and one lane of chips and
 //! notices above it (below it when the pill sits too close to the screen top).
 //! The surface is larger than the pill so the light is cut only by the screen
 //! edge; the input region stays the pill and the chips on screen. The pill
@@ -23,6 +23,9 @@ const LANE_HEIGHT: i32 = 30;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Light {
     Calm,
+    Dictation,
+    Ask,
+    Media,
     Drawing,
     Meeting,
     MeetingDrawing,
@@ -31,8 +34,11 @@ pub(super) enum Light {
 }
 
 impl Light {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 9] = [
         Self::Calm,
+        Self::Dictation,
+        Self::Ask,
+        Self::Media,
         Self::Drawing,
         Self::Meeting,
         Self::MeetingDrawing,
@@ -43,19 +49,15 @@ impl Light {
     fn class(self) -> &'static str {
         match self {
             Self::Calm => "koett-light-calm",
+            Self::Dictation => "koett-light-dictation",
+            Self::Ask => "koett-light-ask",
+            Self::Media => "koett-light-media",
             Self::Drawing => "koett-light-drawing",
             Self::Meeting => "koett-light-meeting",
             Self::MeetingDrawing => "koett-light-meeting-drawing",
             Self::Confirm => "koett-light-confirm",
             Self::Issue => "koett-light-issue",
         }
-    }
-
-    fn breathes(self) -> bool {
-        matches!(
-            self,
-            Self::Drawing | Self::Meeting | Self::MeetingDrawing | Self::Issue
-        )
     }
 }
 
@@ -113,8 +115,10 @@ impl Stage {
         lane.append(&notice);
         lane.append(&chips);
 
-        root.put(&glow, 0.0, 0.0);
+        // Above the face: the light is drawn only outside the pill, over its
+        // shadow, so it is as strong below the pill as above it.
         root.put(&face, 0.0, 0.0);
+        root.put(&glow, 0.0, 0.0);
         root.put(&lane, 0.0, 0.0);
         let stage = Self {
             root,
@@ -196,18 +200,24 @@ impl Stage {
         }
     }
 
-    pub(super) fn set_light(&self, light: Light, animate: bool) {
+    /// Sets the mode's light; `breathe` while audio is being captured.
+    pub(super) fn set_light(&self, light: Light, breathe: bool) {
         for other in Light::ALL {
             if other != light {
                 self.root.remove_css_class(other.class());
             }
         }
         self.root.add_css_class(light.class());
-        if animate && light.breathes() {
+        if breathe && !matches!(light, Light::Calm | Light::Confirm) {
             self.glow.add_css_class("koett-breathe");
         } else {
             self.glow.remove_css_class("koett-breathe");
         }
+    }
+
+    /// Off hides the light in every mode; the rim still shows the mode.
+    pub(super) fn set_glow(&self, on: bool) {
+        self.glow.set_visible(on);
     }
 
     /// Shows the lane with this notice and these chips, or fades it out. A
@@ -278,6 +288,33 @@ mod tests {
         assert!(lane_above((0, LANE_GAP + LANE_HEIGHT)));
         assert!(!lane_above((PAD_X, LANE_GAP + LANE_HEIGHT - 1)));
         assert!(!lane_above((PAD_X, 0)));
+    }
+
+    /// A light that is offset, or that reaches past the 24 px below a resting
+    /// pill, is cut by the screen edge and looks lopsided.
+    #[test]
+    fn every_light_is_centred_and_fades_out_inside_the_surface() {
+        let below = surface(WIDTH).1 - ROW - RESTING.1;
+        let rules: Vec<_> = include_str!("../theme.css")
+            .lines()
+            .filter(|line| line.contains(".koett-pill-glow { "))
+            .collect();
+        assert!(rules.len() > Light::ALL.len(), "a light per mode and theme");
+        for rule in rules {
+            let shadow = rule.split("box-shadow:").nth(1).unwrap();
+            let shadow = shadow.split(';').next().unwrap();
+            for layer in shadow.split("),") {
+                let parts: Vec<_> = layer.split_whitespace().collect();
+                assert_eq!(&parts[..2], ["0", "0"], "centred: {rule}");
+                let px = |value: &str| value.trim_end_matches("px").parse::<f64>().unwrap();
+                let (blur, spread) = (px(parts[2]), px(parts[3]));
+                // The blur's Gaussian has sigma blur/2 and is gone by three sigma.
+                assert!(
+                    1.5 * blur + spread < f64::from(below),
+                    "fades inside: {rule}"
+                );
+            }
+        }
     }
 
     #[test]

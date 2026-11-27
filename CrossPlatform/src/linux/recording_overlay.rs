@@ -405,15 +405,51 @@ fn saving_hold(
     }
 }
 
-/// The light around the pill: red while drawing, the meeting colour in a
-/// meeting, amber while a meeting has a problem, none otherwise.
-fn light(phase: Phase, drawing: bool, issue: bool) -> Light {
+/// What the pill is working on, for its light.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Task {
+    Dictation,
+    Ask,
+    Media,
+}
+
+/// Media while a media transcription runs; Ask while an Ask question records.
+fn task(state: &str, asking: bool) -> Task {
+    if matches!(
+        state,
+        "Fetching audio…" | "Converting audio…" | "Transcribing locally…"
+    ) {
+        Task::Media
+    } else if asking {
+        Task::Ask
+    } else {
+        Task::Dictation
+    }
+}
+
+/// The assistant is recording an Ask question.
+fn ask_listening() -> bool {
+    #[cfg(feature = "ask")]
+    return crate::assistant::status()["phase"] == "Listening…";
+    #[cfg(not(feature = "ask"))]
+    false
+}
+
+/// The light around the pill: the task's colour while it captures or
+/// transcribes, red while drawing, the meeting colour in a meeting, amber while
+/// a meeting has a problem, none on a result.
+fn light(phase: Phase, task: Task, drawing: bool, issue: bool) -> Light {
     match phase {
         Phase::Recording if drawing => Light::Drawing,
         Phase::Meeting | Phase::MeetingConfirm if drawing => Light::MeetingDrawing,
         Phase::Meeting | Phase::MeetingConfirm if issue => Light::Issue,
         Phase::Meeting => Light::Meeting,
         Phase::MeetingConfirm => Light::Confirm,
+        Phase::Recording | Phase::Transcribing => match task {
+            Task::Dictation => Light::Dictation,
+            Task::Ask => Light::Ask,
+            Task::Media => Light::Media,
+        },
         _ => Light::Calm,
     }
 }
@@ -1045,6 +1081,11 @@ impl RecordingOverlay {
         self.copy_failed.set(true);
     }
 
+    /// Off hides the light around the pill in every mode.
+    pub fn set_glow(&self, on: bool) {
+        self.stage.set_glow(on);
+    }
+
     /// Up on screen, including a result still waiting to be read.
     pub fn is_shown(&self) -> bool {
         self.window.is_visible()
@@ -1316,8 +1357,10 @@ impl RecordingOverlay {
             }
         }
         self.stage.show_lane(notice, &chips);
-        self.stage
-            .set_light(light(phase, inked, issue.is_some()), !reduced);
+        self.stage.set_light(
+            light(phase, task(state, ask_listening()), inked, issue.is_some()),
+            !reduced && phase.records(),
+        );
         self.drawing.set_content_height(ROW);
         let (surface_width, surface_height) = self.stage.surface();
         self.window.set_default_size(surface_width, surface_height);
@@ -1590,18 +1633,41 @@ mod tests {
 
     #[test]
     fn each_mode_has_its_own_light() {
-        assert_eq!(light(Phase::Recording, false, false), Light::Calm);
-        assert_eq!(light(Phase::Recording, true, false), Light::Drawing);
-        assert_eq!(light(Phase::Transcribing, false, false), Light::Calm);
-        assert_eq!(light(Phase::Meeting, false, false), Light::Meeting);
-        assert_eq!(light(Phase::Meeting, true, true), Light::MeetingDrawing);
-        assert_eq!(light(Phase::Meeting, false, true), Light::Issue);
-        assert_eq!(light(Phase::MeetingConfirm, false, false), Light::Confirm);
+        let dictation = task("Recording", false);
+        assert_eq!(dictation, Task::Dictation);
+        assert_eq!(task("Recording", true), Task::Ask);
+        assert_eq!(task("Transcribing locally…", true), Task::Media);
+        for state in [
+            "Fetching audio…",
+            "Converting audio…",
+            "Transcribing locally…",
+        ] {
+            assert_eq!(task(state, false), Task::Media, "{state}");
+        }
+        assert_eq!(task("Transcribing…", false), Task::Dictation);
+        let lit = |phase, drawing, issue| light(phase, dictation, drawing, issue);
+        assert_eq!(lit(Phase::Recording, false, false), Light::Dictation);
+        assert_eq!(lit(Phase::Recording, true, false), Light::Drawing);
+        assert_eq!(lit(Phase::Transcribing, false, false), Light::Dictation);
+        assert_eq!(lit(Phase::Meeting, false, false), Light::Meeting);
+        assert_eq!(lit(Phase::Meeting, true, true), Light::MeetingDrawing);
+        assert_eq!(lit(Phase::Meeting, false, true), Light::Issue);
+        assert_eq!(lit(Phase::MeetingConfirm, false, false), Light::Confirm);
         assert_eq!(
-            light(Phase::MeetingConfirm, true, false),
+            lit(Phase::MeetingConfirm, true, false),
             Light::MeetingDrawing
         );
-        assert_eq!(light(Phase::MeetingSaving, false, true), Light::Calm);
-        assert_eq!(light(Phase::Done, false, false), Light::Calm);
+        assert_eq!(lit(Phase::MeetingSaving, false, true), Light::Calm);
+        assert_eq!(lit(Phase::Done, false, false), Light::Calm);
+        assert_eq!(lit(Phase::Media, false, false), Light::Calm);
+        assert_eq!(light(Phase::Recording, Task::Ask, false, false), Light::Ask);
+        assert_eq!(
+            light(Phase::Recording, Task::Ask, true, false),
+            Light::Drawing
+        );
+        assert_eq!(
+            light(Phase::Transcribing, Task::Media, false, false),
+            Light::Media
+        );
     }
 }

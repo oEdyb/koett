@@ -172,6 +172,8 @@ pub struct Settings {
     /// On by default: a pin also reads the app, window, page and selection. Off
     /// gives pins with the image only.
     pub pin_page_details: bool,
+    /// On by default: a soft light in each mode's colour around the pill.
+    pub pill_glow: bool,
     pub selected_model: crate::model::LocalModel,
     pub model_directory: Option<PathBuf>,
     pub meeting: MeetingSettings,
@@ -207,6 +209,7 @@ impl Default for Settings {
             draw_may_take_keyboard: false,
             pin_selected_text: true,
             pin_page_details: true,
+            pill_glow: true,
             selected_model: crate::model::LocalModel::default(),
             model_directory: None,
             meeting: MeetingSettings::default(),
@@ -407,6 +410,9 @@ impl Settings {
         if self.pin_page_details != opened.pin_page_details {
             merged.pin_page_details = self.pin_page_details;
         }
+        if self.pill_glow != opened.pill_glow {
+            merged.pill_glow = self.pill_glow;
+        }
         merged
     }
 
@@ -493,6 +499,23 @@ mod tests {
         assert!(!off.pin_page_details);
         let merged = off.clone().merge_editor(&old, old.clone());
         assert!(!merged.pin_page_details);
+    }
+
+    #[test]
+    fn the_pill_glows_until_turned_off_and_the_choice_persists() {
+        let old: super::Settings = serde_json::from_str("{}").unwrap();
+        assert!(old.pill_glow, "a settings file from before the setting");
+        let path = temporary_file("pill-glow");
+        let mut off = old.clone();
+        off.pill_glow = false;
+        off.save_to(&path).unwrap();
+        let saved: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(saved["pill_glow"], false);
+        assert!(!super::Settings::load_from(&path).unwrap().pill_glow);
+        let _ = std::fs::remove_file(&path);
+        let merged = off.merge_editor(&old, old.clone());
+        assert!(!merged.pill_glow, "the editor's choice survives a merge");
     }
 
     #[test]

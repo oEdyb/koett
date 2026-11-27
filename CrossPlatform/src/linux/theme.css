@@ -82,17 +82,29 @@ window.koett-pill { background: transparent; }
 .koett-pill-light .koett-light-confirm .koett-pill-face { box-shadow: 0 0 0 1px rgba(88, 96, 230, 0.3), 0 8px 22px -6px rgba(0, 0, 0, 0.22); }
 .koett-pill-light .koett-light-issue .koett-pill-face { box-shadow: 0 0 0 1px rgba(217, 139, 17, 0.7), 0 8px 22px -6px rgba(0, 0, 0, 0.22); }
 
-/* The light pooled under the pill, in the mode's colour; it breathes while live. */
-.koett-pill-glow { border-radius: 24px; box-shadow: 0 10px 26px -4px rgba(132, 140, 255, 0), 0 0 30px 0 rgba(132, 140, 255, 0); transition: box-shadow 320ms cubic-bezier(0.23, 1, 0.32, 1); }
-.koett-light-drawing .koett-pill-glow { box-shadow: 0 10px 26px -4px rgba(255, 79, 66, 0.65), 0 0 30px 0 rgba(255, 79, 66, 0.175); }
-.koett-light-meeting .koett-pill-glow { box-shadow: 0 10px 26px -4px rgba(132, 140, 255, 0.78), 0 0 30px 0 rgba(132, 140, 255, 0.21); }
-.koett-light-meeting-drawing .koett-pill-glow { box-shadow: 0 10px 26px -4px rgba(132, 140, 255, 0.73), 0 0 30px 0 rgba(132, 140, 255, 0.2); }
-.koett-light-confirm .koett-pill-glow { box-shadow: 0 10px 26px -4px rgba(132, 140, 255, 0.39), 0 0 30px 0 rgba(132, 140, 255, 0.1); }
-.koett-light-issue .koett-pill-glow { box-shadow: 0 10px 26px -4px rgba(255, 178, 56, 0.6), 0 0 30px 0 rgba(255, 178, 56, 0.16); }
-@keyframes koett-breath { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-.koett-pill-glow.koett-breathe { animation: koett-breath 5s ease-in-out infinite; }
-.koett-light-drawing .koett-pill-glow.koett-breathe { animation-duration: 2400ms; }
-.koett-light-issue .koett-pill-glow.koett-breathe { animation-duration: 1600ms; }
+/* The light around the pill, centred and faint, in the mode's colour; it breathes while live.
+   It fades out within 16 px, inside the 24 px below a resting pill. */
+.koett-pill-glow { border-radius: 24px; box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0), 0 0 14px 0 rgba(0, 0, 0, 0); transition: box-shadow 320ms cubic-bezier(0.23, 1, 0.32, 1); }
+.koett-pill-dark .koett-light-dictation .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(92, 200, 245, 0.3), 0 0 14px 0 rgba(92, 200, 245, 0.18); }
+.koett-pill-dark .koett-light-ask .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(200, 120, 255, 0.3), 0 0 14px 0 rgba(200, 120, 255, 0.18); }
+.koett-pill-dark .koett-light-media .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(86, 214, 150, 0.3), 0 0 14px 0 rgba(86, 214, 150, 0.18); }
+.koett-pill-dark .koett-light-drawing .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(255, 79, 66, 0.3), 0 0 14px 0 rgba(255, 79, 66, 0.18); }
+.koett-pill-dark .koett-light-meeting .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(132, 140, 255, 0.3), 0 0 14px 0 rgba(132, 140, 255, 0.18); }
+.koett-pill-dark .koett-light-confirm .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(132, 140, 255, 0.16), 0 0 14px 0 rgba(132, 140, 255, 0.1); }
+.koett-pill-dark .koett-light-issue .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(255, 178, 56, 0.3), 0 0 14px 0 rgba(255, 178, 56, 0.18); }
+.koett-pill-dark .koett-light-meeting-drawing .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(255, 79, 66, 0.3), 0 0 14px 0 rgba(132, 140, 255, 0.18); }
+.koett-pill-light .koett-light-dictation .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(14, 150, 205, 0.24), 0 0 14px 0 rgba(14, 150, 205, 0.16); }
+.koett-pill-light .koett-light-ask .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(150, 72, 225, 0.24), 0 0 14px 0 rgba(150, 72, 225, 0.16); }
+.koett-pill-light .koett-light-media .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(22, 160, 100, 0.24), 0 0 14px 0 rgba(22, 160, 100, 0.16); }
+.koett-pill-light .koett-light-drawing .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(217, 68, 58, 0.24), 0 0 14px 0 rgba(217, 68, 58, 0.16); }
+.koett-pill-light .koett-light-meeting .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(88, 96, 230, 0.24), 0 0 14px 0 rgba(88, 96, 230, 0.16); }
+.koett-pill-light .koett-light-confirm .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(88, 96, 230, 0.13), 0 0 14px 0 rgba(88, 96, 230, 0.09); }
+.koett-pill-light .koett-light-issue .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(217, 139, 17, 0.24), 0 0 14px 0 rgba(217, 139, 17, 0.16); }
+.koett-pill-light .koett-light-meeting-drawing .koett-pill-glow { box-shadow: 0 0 6px 0 rgba(217, 68, 58, 0.24), 0 0 14px 0 rgba(88, 96, 230, 0.16); }
+@keyframes koett-breath { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+.koett-pill-glow.koett-breathe { animation: koett-breath 7s ease-in-out infinite; }
+.koett-light-drawing .koett-pill-glow.koett-breathe { animation-duration: 4s; }
+.koett-light-issue .koett-pill-glow.koett-breathe { animation-duration: 2400ms; }
 
 /* Above the pill: chips and a notice, shown on hover or when they need an answer. */
 .koett-pill-lane { opacity: 0; transform: translateY(4px); transition: opacity 140ms ease-out, transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
