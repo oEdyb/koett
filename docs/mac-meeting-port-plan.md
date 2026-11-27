@@ -58,15 +58,15 @@ Add `MeetingTranscription.swift`, `MeetingPublication.swift`, `Sources/MeetingAS
 
 **Check.** `swift test --filter 'Meeting(ASR|Publication|History|Worker)Tests'` and `zsh -n install-macos.sh`. Add a `MeetingASRProfileTests` opt-in fixture that compares routed Metal, turbo only and Parakeet v3 on the same bilingual two-track sample. Record language/word errors (especially negatives, names and switches), wall time per meeting minute, peak worker footprint, memory pressure and dictation stop-to-text while the worker is active. Proposed gate on warm models is ≤15 s per meeting minute, ≤6 GiB peak worker footprint and no foreground audio drops or sustained memory pressure. Keep routed Metal if Swedish accuracy improves over turbo alone and it meets that gate.
 
-**M5 Air profile, 2026-11-27.** The worker ran with networking blocked on two synthetic 29 s tracks using Alva and Samantha. Eight utterances included two overlapping stretches, short replies, names, negatives and changes of language on both tracks. Warm timing includes both tracks and coincident Parakeet v2 dictation. The same warm dictation took 74 ms alone.
+**M5 Air profile, 2026-11-27.** The ad-hoc-signed release worker ran with networking blocked on two synthetic 29 s tracks using Alva and Samantha. Eight utterances included overlap, short replies, names, negatives and changes of language on both tracks. Warm timing includes both tracks and coincident Parakeet v2 dictation. The same warm dictation took 79 ms alone.
 
 | Worker | Swedish word errors | English word errors | Language errors | Warm s/min | Peak footprint | Dictation to text | Memory pressure sample |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| Routed Metal | 0/40 | 0/23 | 0/8 | 24.6 | 3.67 GiB | 121 ms | 2 |
-| Turbo only | 0/40 | 0/23 | 0/8 | 20.9 | 1.30 GiB | 146 ms | 1 |
-| Parakeet v3 | 2/40 | 1/23 | No language ID | 6.6 | 0.57 GiB | 111 ms | 1 |
+| Routed Metal | 0/40 | 0/23 | 0/8 | 23.4 | 3.67 GiB | 158 ms | 1 |
+| Turbo only | 0/40 | 0/23 | 0/8 | 19.8 | 1.30 GiB | 157 ms | 1 |
+| Parakeet v3 | 2/40 | 1/23 | No language ID | 4.2 | 0.57 GiB | 129 ms | 1 |
 
-Parakeet misheard the Tuesday/Thursday alternatives and replaced “price” with “prize.” All three preserved the tested negatives and names. The fixture measures stop-to-ASR-text from a WAV and one memory-pressure sample per run. The real microphone, paste receiver, sustained pressure and within-window language changes still need H2. Routed Metal exceeded 15 s/min and tied turbo's Swedish WER on this sample. The core therefore uses Parakeet v3 provisionally and retains audio for a future primary decode. The optional `meetingUseRoutedMetal` preference selects the routed worker for further evaluation. Provision the hash-pinned assets with `scripts/fetch-meeting-models.sh`. The worker never fetches weights.
+Parakeet misheard the Tuesday/Thursday alternatives and replaced “price” with “prize.” All three preserved the tested negatives and names. The fixture measures stop-to-ASR-text from a WAV and one memory-pressure sample per run. The real microphone, paste receiver, sustained pressure and within-window language changes still need H2. Routed Metal exceeded 15 s/min and tied turbo's Swedish WER on this sample. The core therefore uses Parakeet v3 provisionally and retains audio for a future primary decode. The optional `meetingUseRoutedMetal` preference selects the routed worker for further evaluation. Provision the hash-pinned assets with `scripts/fetch-meeting-models.sh`. The worker never fetches weights. The same signed worker returned Parakeet text with turbo both missing and corrupted.
 
 
 ### S4 · Non-UI · CLI and hotkey routing
@@ -95,7 +95,7 @@ Subscribe to `MeetingController.onSnapshot` on the main actor or read `snapshot`
 
 The Mac `SketchPaste.swift` still waits 1 s after a detected image read. Port the 250 ms staging target only when the signed Mac build delivers ordered image then text into the real receiver, including delayed image consumption. Keep paste-target, pasteboard-generation and retry checks.
 
-**Check.** `swift test --filter 'Sketch(Paste|Clipboard)|PasteCoordinatorTests'`. Use an isolated clipboard fixture for guard and timeout paths. Test the real receiver under load before shortening the wait. [Linux timing change](https://github.com/oEdyb/koett/pull/198) · [Mac paste path](../Sources/Koett/SketchPaste.swift)
+**Check.** `swift test --filter 'Sketch(Paste|Clipboard)|PasteCoordinatorTests'`. Use an isolated clipboard fixture for guard and timeout paths. The isolated fixture passed with a 150 ms delayed image read and the existing 1 s settle. Test the real receiver under load before shortening the wait. [Linux timing change](https://github.com/oEdyb/koett/pull/198) · [Mac paste path](../Sources/Koett/SketchPaste.swift)
 
 ## Physical Mac gates
 
