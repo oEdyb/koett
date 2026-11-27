@@ -1,7 +1,8 @@
 //! The pill's surface: the pill, the light under it, and one lane of chips and
 //! notices above it (below it when the pill sits too close to the screen top).
 //! The surface is larger than the pill so the light is cut only by the screen
-//! edge; the input region stays the pill and the chips on screen.
+//! edge; the input region stays the pill and the chips on screen. The pill
+//! widens past `WIDTH` only when its clock needs the room.
 use super::{ROW, WIDTH};
 use gtk4::{self as gtk, prelude::*};
 use std::cell::Cell;
@@ -9,9 +10,12 @@ use std::cell::Cell;
 pub(super) const PAD_X: i32 = 32;
 pub(super) const PAD_TOP: i32 = 48;
 pub(super) const PAD_BOTTOM: i32 = 32;
-pub(super) const SURFACE: (i32, i32) = (WIDTH + 2 * PAD_X, PAD_TOP + ROW + PAD_BOTTOM);
+/// The surface around a pill this wide.
+pub(super) const fn surface(width: i32) -> (i32, i32) {
+    (width + 2 * PAD_X, PAD_TOP + ROW + PAD_BOTTOM)
+}
 /// The pill on a surface anchored to the bottom edge: centred, 24 px up.
-pub(super) const RESTING: (i32, i32) = (PAD_X, SURFACE.1 - ROW - 24);
+pub(super) const RESTING: (i32, i32) = (PAD_X, surface(WIDTH).1 - ROW - 24);
 const LANE_GAP: i32 = 8;
 const LANE_HEIGHT: i32 = 30;
 
@@ -62,6 +66,7 @@ pub(super) fn lane_above(inset: (i32, i32)) -> bool {
 
 pub(super) struct Stage {
     root: gtk::Fixed,
+    content: gtk::Widget,
     glow: gtk::Box,
     face: gtk::Box,
     lane: gtk::Box,
@@ -69,20 +74,18 @@ pub(super) struct Stage {
     notice_text: gtk::Label,
     chips: gtk::Box,
     inset: Cell<(i32, i32)>,
+    width: Cell<i32>,
 }
 
 impl Stage {
     pub(super) fn new(content: &impl IsA<gtk::Widget>) -> Self {
         let root = gtk::Fixed::new();
         root.add_css_class("koett-pill-stage");
-        root.set_size_request(SURFACE.0, SURFACE.1);
         let glow = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         glow.add_css_class("koett-pill-glow");
-        glow.set_size_request(WIDTH, ROW);
         glow.set_can_target(false);
         let face = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         face.add_css_class("koett-pill-face");
-        face.set_size_request(WIDTH, ROW);
         face.set_overflow(gtk::Overflow::Hidden);
         face.append(content);
 
@@ -107,7 +110,6 @@ impl Stage {
         chips.set_valign(gtk::Align::Center);
         let lane = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         lane.add_css_class("koett-pill-lane");
-        lane.set_size_request(WIDTH, LANE_HEIGHT);
         lane.append(&notice);
         lane.append(&chips);
 
@@ -116,6 +118,7 @@ impl Stage {
         root.put(&lane, 0.0, 0.0);
         let stage = Self {
             root,
+            content: content.clone().upcast(),
             glow,
             face,
             lane,
@@ -123,7 +126,9 @@ impl Stage {
             notice_text,
             chips,
             inset: Cell::new((-1, -1)),
+            width: Cell::new(0),
         };
+        stage.set_width(WIDTH);
         stage.set_inset(RESTING);
         stage.set_light(Light::Calm, false);
         stage
@@ -141,6 +146,32 @@ impl Stage {
 
     pub(super) fn inset(&self) -> (i32, i32) {
         self.inset.get()
+    }
+
+    /// The pill's size now.
+    pub(super) fn pill(&self) -> (i32, i32) {
+        (self.width.get(), ROW)
+    }
+
+    pub(super) fn surface(&self) -> (i32, i32) {
+        surface(self.width.get())
+    }
+
+    /// Resizes the pill; its light, its lane and the surface follow.
+    pub(super) fn set_width(&self, width: i32) {
+        if self.width.replace(width) == width {
+            return;
+        }
+        let (surface_width, surface_height) = surface(width);
+        self.root.set_size_request(surface_width, surface_height);
+        for widget in [
+            &self.content,
+            self.glow.upcast_ref(),
+            self.face.upcast_ref(),
+        ] {
+            widget.set_size_request(width, ROW);
+        }
+        self.lane.set_size_request(width, LANE_HEIGHT);
     }
 
     /// Moves the pill within its surface; the lane follows it.
@@ -209,8 +240,10 @@ impl Stage {
     /// so the pointer can travel from one to the other without leaving.
     pub(super) fn input_region(&self, chips: &[&gtk::Button]) -> gtk::cairo::Region {
         let (x, y) = self.inset.get();
-        let region =
-            gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(x, y, WIDTH, ROW));
+        let (width, height) = self.pill();
+        let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
+            x, y, width, height,
+        ));
         for chip in chips {
             let Some(bounds) = chip.compute_bounds(&self.root) else {
                 continue;
@@ -249,9 +282,9 @@ mod tests {
 
     #[test]
     fn the_surface_leaves_room_for_the_light_and_a_lane_either_side() {
-        assert_eq!(SURFACE, (364, 128));
+        assert_eq!(surface(WIDTH), (364, 128));
         assert_eq!(RESTING, (32, 56));
-        let below = SURFACE.1 - ROW - (LANE_GAP + LANE_HEIGHT - 1);
+        let below = surface(WIDTH).1 - ROW - (LANE_GAP + LANE_HEIGHT - 1);
         assert!(below >= LANE_GAP + LANE_HEIGHT, "a flipped lane fits");
     }
 }

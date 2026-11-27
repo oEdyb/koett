@@ -11,7 +11,7 @@ use crate::meeting::{MeetingScope, Tracks};
 use gtk4::{self as gtk, glib::translate::ToGlibPtr, prelude::*};
 use libloading::Library;
 pub(super) use meeting::MeetingPill;
-use stage::{Light, SURFACE, Stage};
+use stage::{Light, Stage};
 use std::os::unix::process::CommandExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -281,11 +281,13 @@ const COPY_W: i32 = 48;
 const COPY_X: f64 = (WIDTH - 11 - COPY_W) as f64;
 const PASTE_W: i32 = 52;
 const PASTE_X: f64 = COPY_X - 6.0 - PASTE_W as f64;
-/// The clock ends 14 px inside the pill and fits 1:12:40; the strip keeps
-/// `CLOCK_GAP` clear of its text.
-const CLOCK_W: i32 = 56;
-const CLOCK_X: f64 = (WIDTH - 14 - CLOCK_W) as f64;
+/// The clock ends `CLOCK_INSET` inside the pill in a box that fits 10:00:05;
+/// the strip keeps at least `CLOCK_GAP` clear of its text.
+const CLOCK_W: i32 = 64;
+const CLOCK_INSET: i32 = 14;
 const CLOCK_GAP: f64 = 6.0;
+/// Most a long clock may widen the pill.
+const CLOCK_GROWTH: i32 = 64;
 /// Saving stays up at least this long once a meeting closes, then fades.
 const SAVING_HOLD: Duration = Duration::from_millis(1_200);
 const SAVING_FADE: Duration = Duration::from_millis(250);
@@ -389,6 +391,20 @@ fn with_meeting(
     }
 }
 
+/// Saving's hold, started the moment a meeting closes into Saving. The pill
+/// polls views, so a close and the view after it can land in one poll; the
+/// hold must not wait to be seen.
+fn saving_hold(
+    meeting: Option<&MeetingPill>,
+    saving_until: Option<Instant>,
+    now: Instant,
+) -> Option<Instant> {
+    match meeting {
+        Some(pill) if pill.saving() => saving_until.or(Some(now + SAVING_HOLD)),
+        _ => saving_until,
+    }
+}
+
 /// The light around the pill: red while drawing, the meeting colour in a
 /// meeting, amber while a meeting has a problem, none otherwise.
 fn light(phase: Phase, drawing: bool, issue: bool) -> Light {
@@ -447,6 +463,13 @@ fn time_scale() -> u64 {
     {
         1
     }
+}
+
+/// The pill's width for a clock `text` px wide, where m:ss is `short` px: a
+/// longer clock widens the pill by the difference, so the strip, the gap to
+/// the clock and the clock's right edge all stay where they are at 0:12.
+fn clock_width(text: i32, short: i32) -> i32 {
+    WIDTH + (text - short).clamp(0, CLOCK_GROWTH)
 }
 
 /// m:ss, and h:mm:ss from the first hour on.
@@ -673,8 +696,8 @@ impl RecordingOverlay {
             .title("Koett recording")
             .decorated(false)
             .resizable(false)
-            .default_width(SURFACE.0)
-            .default_height(SURFACE.1)
+            .default_width(stage::surface(WIDTH).0)
+            .default_height(stage::surface(WIDTH).1)
             .build();
         let state = Rc::new(RefCell::new(Pill {
             phase: Phase::Hidden,
@@ -702,8 +725,9 @@ impl RecordingOverlay {
         drawing.set_can_target(false);
         drawing.set_draw_func({
             let state = state.clone();
-            move |_, context, _, height| {
-                if let Err(error) = paint::paint(context, &state.borrow(), f64::from(height)) {
+            move |_, context, width, height| {
+                let size = (f64::from(width), f64::from(height));
+                if let Err(error) = paint::paint(context, &state.borrow(), size) {
                     eprintln!("Recording pill drawing failed: {error}");
                 }
             }
@@ -959,6 +983,23 @@ impl RecordingOverlay {
         }
     }
 
+    /// Takes each meeting view as it arrives, before the next can replace it.
+    pub fn meeting_view(&self, meeting: Option<&MeetingPill>) {
+        self.saving_until.set(saving_hold(
+            meeting,
+            self.saving_until.get(),
+            Instant::now(),
+        ));
+    }
+
+    /// Pixel width of `text` in the pill label's font.
+    fn text_width(&self, text: &str) -> i32 {
+        let layout = self.primary.layout().copy();
+        layout.set_width(-1);
+        layout.set_text(text);
+        layout.pixel_size().0
+    }
+
     pub fn hovered(&self) -> bool {
         !self.closed.get() && self.state.borrow().hovered
     }
@@ -1196,21 +1237,27 @@ impl RecordingOverlay {
         } else {
             self.primary.remove_css_class("koett-pill-quiet");
         }
-        let clocked = strip
-            || matches!(
-                phase,
-                Phase::Recording | Phase::Meeting | Phase::MeetingConfirm | Phase::MeetingSaving
-            );
-        let clock_left = clocked.then(|| {
-            CLOCK_X + f64::from(CLOCK_W) - f64::from(self.primary.layout().pixel_size().0)
-        });
+        let timed = matches!(
+            phase,
+            Phase::Recording | Phase::Meeting | Phase::MeetingConfirm | Phase::MeetingSaving
+        );
+        let clocked = strip || timed;
+        let label = self.text_width(&text);
+        let width = if timed {
+            clock_width(label, self.text_width(&clock(0)))
+        } else {
+            WIDTH
+        };
+        let clock_right = width - CLOCK_INSET;
+        let clock_left = clocked.then(|| f64::from(clock_right - label));
         self.state.borrow_mut().strip =
             paint::Strip::ending_at(clock_left.map_or(f64::MAX, |left| left - CLOCK_GAP));
+        self.stage.set_width(width);
         if clocked {
             self.primary.set_xalign(1.0);
             self.primary.set_size_request(CLOCK_W, ROW);
             if let Some(main) = self.primary.parent().and_downcast::<gtk::Fixed>() {
-                main.move_(&self.primary, CLOCK_X, 0.0);
+                main.move_(&self.primary, f64::from(clock_right - CLOCK_W), 0.0);
             }
         } else {
             self.primary.set_xalign(0.0);
@@ -1229,7 +1276,7 @@ impl RecordingOverlay {
             }
         }
         self.primary.set_max_width_chars(match phase {
-            _ if clocked => 7,
+            _ if clocked => 8,
             Phase::Message => 36,
             _ => 22,
         });
@@ -1272,7 +1319,8 @@ impl RecordingOverlay {
         self.stage
             .set_light(light(phase, inked, issue.is_some()), !reduced);
         self.drawing.set_content_height(ROW);
-        self.window.set_default_size(SURFACE.0, SURFACE.1);
+        let (surface_width, surface_height) = self.stage.surface();
+        self.window.set_default_size(surface_width, surface_height);
         if let PillLayer::Layer(layer) = &self.layer_shell {
             position::apply(&self.window, layer, &self.stage);
         }
@@ -1409,6 +1457,27 @@ mod tests {
     }
 
     #[test]
+    fn a_long_clock_widens_the_pill_and_keeps_the_strip_and_gap() {
+        // 13 px tabular figures: 0:12, 10:00, 1:16:35 and 10:00:05.
+        let short = 27;
+        let start = |text: i32| clock_width(text, short) - CLOCK_INSET - text;
+        assert_eq!(clock_width(short, short), WIDTH);
+        assert_eq!(clock_width(short - 3, short), WIDTH, "never narrower");
+        for text in [35, 48, 56] {
+            assert_eq!(clock_width(text, short), WIDTH + text - short);
+            assert_eq!(start(text), start(short), "same gap after the strip");
+            assert!(text <= CLOCK_W, "the clock box fits it");
+        }
+        let strip = paint::Strip::ending_at(f64::from(start(48)) - CLOCK_GAP);
+        assert_eq!(
+            strip,
+            paint::Strip::default(),
+            "the strip is not pushed left"
+        );
+        assert_eq!(clock_width(short + 500, short), WIDTH + CLOCK_GROWTH);
+    }
+
+    #[test]
     fn labels_are_short_and_never_invent_progress() {
         assert_eq!(clock(0), "0:00");
         assert_eq!(clock(62_999), "1:02");
@@ -1488,6 +1557,34 @@ mod tests {
         assert_eq!(
             with_meeting(None, Phase::Done, until, after),
             (Phase::Done, None)
+        );
+    }
+
+    #[test]
+    fn a_close_replaced_within_one_poll_still_shows_saving() {
+        use crate::meeting::{CaptureHealth, CloseGoal, MeetingView};
+        let now = Instant::now();
+        let live = meeting(MeetingView::Recording {
+            info: info(),
+            health: CaptureHealth::default(),
+        });
+        let closing = meeting(MeetingView::Closing {
+            info: info(),
+            goal: CloseGoal::Finish,
+        });
+        assert_eq!(saving_hold(Some(&live), None, now), None);
+        let held = saving_hold(Some(&closing), None, now);
+        assert_eq!(held, Some(now + SAVING_HOLD));
+        let poll = now + Duration::from_millis(80);
+        assert_eq!(
+            with_meeting(None, Phase::Hidden, saving_hold(None, held, poll), poll),
+            (Phase::MeetingSaving, held),
+            "the view after Closing arrived in the same poll"
+        );
+        assert_eq!(
+            saving_hold(Some(&closing), held, poll),
+            held,
+            "a repeated Closing keeps the hold it started"
         );
     }
 

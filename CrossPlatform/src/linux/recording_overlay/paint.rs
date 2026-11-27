@@ -1,7 +1,7 @@
 //! Cairo content of the pill: the glyph, the level strip and its sketch bands.
 //! The pill's fill, rim and light are CSS on the stage.
 use super::timeline::{self, Bar, COLUMNS};
-use super::{Phase, Pill, STEP, STRIP_X, WIDTH, shows_pencil};
+use super::{Phase, Pill, STEP, STRIP_X, shows_pencil};
 use gtk4 as gtk;
 
 type Rgb = (f64, f64, f64);
@@ -73,21 +73,14 @@ pub(super) fn rounded(
 pub(super) fn paint(
     context: &gtk::cairo::Context,
     pill: &Pill,
-    height: f64,
+    (width, height): (f64, f64),
 ) -> Result<(), gtk::cairo::Error> {
     if pill.phase == Phase::Hidden {
         return Ok(());
     }
     let palette = if pill.dark { &DARK } else { &LIGHT };
     // Morphing content slides; keep it inside the pill.
-    rounded(
-        context,
-        1.0,
-        1.0,
-        f64::from(WIDTH) - 2.0,
-        height - 2.0,
-        height / 2.0,
-    );
+    rounded(context, 1.0, 1.0, width - 2.0, height - 2.0, height / 2.0);
     context.clip();
     let cy = height / 2.0;
     match (pill.morph_from, pill.morph_progress()) {
@@ -233,7 +226,7 @@ fn x_of(unit: f64) -> f64 {
 }
 
 /// Where the strip's columns sit. It ends where its full width ends, or
-/// further left when a wide clock (1:12:40 in a wide font) needs the room.
+/// further left when a label that does not widen the pill (100%) needs the room.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(super) struct Strip {
     shift: f64,

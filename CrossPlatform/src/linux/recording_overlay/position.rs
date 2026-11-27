@@ -1,7 +1,5 @@
-use super::stage::{PAD_TOP, PAD_X, RESTING, SURFACE, Stage};
+use super::stage::{self, PAD_TOP, PAD_X, RESTING, Stage};
 use super::*;
-
-const PILL: (i32, i32) = (WIDTH, ROW);
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 struct Position {
@@ -129,19 +127,20 @@ fn monitor_under(rects: &[Rect], (x, y): (f64, f64)) -> Option<usize> {
     })
 }
 
-/// Where the surface goes for a pill at `pill` on a monitor, and where the
-/// pill then sits inside it: the surface stays on the monitor, so its light is
-/// cut only by the screen edge and the pill never moves.
+/// Where the surface goes for a `size` pill at `pill` on a monitor, and where
+/// the pill then sits inside it: the surface stays on the monitor, so its light
+/// is cut only by the screen edge and the pill never moves.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Placement {
     surface: (i32, i32),
     inset: (i32, i32),
 }
 
-fn placement(rect: Rect, pill: (i32, i32)) -> Placement {
+fn placement(rect: Rect, pill: (i32, i32), size: (i32, i32)) -> Placement {
+    let around = stage::surface(size.0);
     let surface = (
-        (pill.0 - PAD_X).clamp(0, (rect.width - SURFACE.0).max(0)),
-        (pill.1 - PAD_TOP).clamp(0, (rect.height - SURFACE.1).max(0)),
+        (pill.0 - PAD_X).clamp(0, (rect.width - around.0).max(0)),
+        (pill.1 - PAD_TOP).clamp(0, (rect.height - around.1).max(0)),
     );
     Placement {
         surface,
@@ -150,10 +149,10 @@ fn placement(rect: Rect, pill: (i32, i32)) -> Placement {
 }
 
 /// The pill's resting place on a monitor: centred, 24 px above the bottom.
-fn resting(rect: Rect) -> (i32, i32) {
+fn resting(rect: Rect, size: (i32, i32)) -> (i32, i32) {
     (
-        (rect.width - PILL.0) / 2,
-        (rect.height - PILL.1 - 24).max(0),
+        (rect.width - size.0) / 2,
+        (rect.height - size.1 - 24).max(0),
     )
 }
 
@@ -171,7 +170,8 @@ fn place(window: &gtk::Window, layer: &LayerShell, stage: &Stage, position: &Pos
         return;
     };
     let rect = Rect::from(monitor.geometry());
-    let at = placement(rect, pixels(position, rect, PILL));
+    let size = stage.pill();
+    let at = placement(rect, pixels(position, rect, size), size);
     if let Err(error) = layer.position(window, &monitor, at.surface.0, at.surface.1) {
         eprintln!("Pill position failed: {error}");
     }
@@ -197,21 +197,22 @@ pub(super) fn origin(
     monitor: Option<&gtk::gdk::Monitor>,
     stage: &Stage,
 ) -> Option<(i32, i32)> {
+    let size = stage.pill();
     let (monitor, pill) = match load() {
         Some(position) => {
             let monitor = saved_monitor(window, &position)?;
             let rect = Rect::from(monitor.geometry());
-            (rect, pixels(&position, rect, PILL))
+            (rect, pixels(&position, rect, size))
         }
         None => {
             let monitor = monitor
                 .cloned()
                 .or_else(|| monitors(window).into_iter().next())?;
             let rect = Rect::from(monitor.geometry());
-            (rect, resting(rect))
+            (rect, resting(rect, size))
         }
     };
-    let at = placement(monitor, pill);
+    let at = placement(monitor, pill, size);
     stage.set_inset(at.inset);
     Some((monitor.x + at.surface.0, monitor.y + at.surface.1))
 }
@@ -219,9 +220,13 @@ pub(super) fn origin(
 /// Remembers where a desktop's own drag left the surface.
 fn save_origin(window: &gtk::Window, stage: &Stage, (x, y): (i32, i32)) {
     let (x, y) = (x + stage.inset().0, y + stage.inset().1);
+    let size = stage.pill();
     let outputs = monitors(window);
     let rects: Vec<Rect> = outputs.iter().map(|m| Rect::from(m.geometry())).collect();
-    let center = (f64::from(x) + 150.0, f64::from(y) + 24.0);
+    let center = (
+        f64::from(x) + f64::from(size.0) / 2.0,
+        f64::from(y) + f64::from(size.1) / 2.0,
+    );
     let Some(index) = monitor_under(&rects, center).or((!rects.is_empty()).then_some(0)) else {
         return;
     };
@@ -231,8 +236,8 @@ fn save_origin(window: &gtk::Window, stage: &Stage, (x, y): (i32, i32)) {
             .connector()
             .map(|connector| connector.to_string()),
         rect,
-        PILL,
-        clamped(rect, PILL, (f64::from(x - rect.x), f64::from(y - rect.y))),
+        size,
+        clamped(rect, size, (f64::from(x - rect.x), f64::from(y - rect.y))),
     ));
 }
 
@@ -294,13 +299,23 @@ fn current_monitor(window: &gtk::Window) -> Option<gtk::gdk::Monitor> {
         .or_else(|| monitors(window).into_iter().next())
 }
 
-/// Where the pill is right now, from its monitor's top-left corner.
-fn current_pill(monitor: &gtk::gdk::Monitor) -> (i32, i32) {
+/// Where a `size` pill is right now, from its monitor's top-left corner.
+fn current_pill(monitor: &gtk::gdk::Monitor, size: (i32, i32)) -> (i32, i32) {
     let rect = Rect::from(monitor.geometry());
     match load().filter(|saved| saved.connector.as_deref() == monitor.connector().as_deref()) {
-        Some(saved) => pixels(&saved, rect, PILL),
-        None => resting(rect),
+        Some(saved) => pixels(&saved, rect, size),
+        None => resting(rect, size),
     }
+}
+
+/// Where a press on the surface holds the pill, from the pill's top-left.
+fn grip((x, y): (f64, f64), inset: (i32, i32)) -> (f64, f64) {
+    (x - f64::from(inset.0), y - f64::from(inset.1))
+}
+
+/// The pointer, for a pill at `pill` held at `grip`.
+fn pointer_at(pill: (f64, f64), grip: (f64, f64)) -> (f64, f64) {
+    (pill.0 + grip.0, pill.1 + grip.1)
 }
 
 /// The live copy that follows the pointer: a picture of the real surface,
@@ -312,7 +327,8 @@ struct Carrier {
 }
 
 /// Shows the live copy with its pill at `pill` on `monitor`. Layer windows take no
-/// focus, and this one takes no input either, so the grab stays with the real pill.
+/// focus, and this one takes no input either, so the grab stays with the real pill
+/// and a click just after the drop reaches whatever is under the lingering copy.
 fn carry(
     carrier: &mut Option<Carrier>,
     window: &gtk::Window,
@@ -323,13 +339,19 @@ fn carry(
     pill: (i32, i32),
 ) {
     if carrier.is_none() {
+        let around = stage.surface();
         let copy = gtk::Window::builder()
             .title("Koett recording")
             .decorated(false)
             .resizable(false)
-            .default_width(SURFACE.0)
-            .default_height(SURFACE.1)
+            .default_width(around.0)
+            .default_height(around.1)
             .build();
+        copy.connect_realize(|copy| {
+            if let Some(surface) = copy.surface() {
+                surface.set_input_region(Some(&gtk::cairo::Region::create()));
+            }
+        });
         if let Some(application) = window.application() {
             copy.set_application(Some(&application));
         }
@@ -350,7 +372,7 @@ fn carry(
         let picture = gtk::Picture::for_paintable(&gtk::WidgetPaintable::new(Some(stage.root())));
         picture.set_can_shrink(false);
         let content = gtk::Fixed::new();
-        content.set_size_request(SURFACE.0, SURFACE.1);
+        content.set_size_request(around.0, around.1);
         content.set_overflow(gtk::Overflow::Hidden);
         content.put(&picture, 0.0, 0.0);
         copy.set_child(Some(&content));
@@ -366,7 +388,7 @@ fn carry(
         });
     }
     if let Some(carrier) = carrier {
-        let at = placement(Rect::from(monitor.geometry()), pill);
+        let at = placement(Rect::from(monitor.geometry()), pill, stage.pill());
         let real = stage.inset();
         carrier.content.move_(
             &carrier.picture,
@@ -406,6 +428,7 @@ pub(super) fn attach(
     layer: Rc<LayerShell>,
 ) {
     let body = stage.root().clone();
+    // Where the press holds the pill, from the pill's top-left (not the surface's).
     let press = Rc::new(std::cell::Cell::new((0.0, 0.0)));
     let drag = Rc::new(RefCell::new(None::<Drag>));
     let gesture = gtk::GestureDrag::new();
@@ -413,12 +436,13 @@ pub(super) fn attach(
     gesture.connect_drag_begin({
         let body = body.clone();
         let press = press.clone();
+        let stage = stage.clone();
         move |gesture, x, y| {
             if button_at(body.upcast_ref(), x, y) {
                 gesture.set_state(gtk::EventSequenceState::Denied);
                 return;
             }
-            press.set((x, y));
+            press.set(grip((x, y), stage.inset()));
         }
     });
     gesture.connect_drag_update({
@@ -438,7 +462,7 @@ pub(super) fn attach(
                 let Some(monitor) = current_monitor(&window) else {
                     return;
                 };
-                let margins = current_pill(&monitor);
+                let margins = current_pill(&monitor, stage.pill());
                 let rect = monitor.geometry();
                 *drag = Some(Drag {
                     global: (
@@ -461,13 +485,12 @@ pub(super) fn attach(
                 f64::from(origin.x + drag.start.0) + dx,
                 f64::from(origin.y + drag.start.1) + dy,
             );
-            let (px, py) = press.get();
-            let pointer = (drag.global.0 + px, drag.global.1 + py);
+            let pointer = pointer_at(drag.global, press.get());
             let target = target_monitor(&window, pointer).unwrap_or_else(|| drag.monitor.clone());
             let rect = Rect::from(target.geometry());
             let pill = clamped(
                 rect,
-                PILL,
+                stage.pill(),
                 (
                     drag.global.0 - f64::from(rect.x),
                     drag.global.1 - f64::from(rect.y),
@@ -498,20 +521,20 @@ pub(super) fn attach(
             };
             DRAGGING.with(|dragging| dragging.set(false));
             body.set_cursor_from_name(None);
-            let (px, py) = press.get();
-            let pointer = (drag.global.0 + px, drag.global.1 + py);
+            let pointer = pointer_at(drag.global, press.get());
             let target = target_monitor(&window, pointer).unwrap_or_else(|| drag.monitor.clone());
             let rect = Rect::from(target.geometry());
+            let size = stage.pill();
             let pill = clamped(
                 rect,
-                PILL,
+                size,
                 (
                     drag.global.0 - f64::from(rect.x),
                     drag.global.1 - f64::from(rect.y),
                 ),
             );
             let position =
-                position_for(target.connector().map(|v| v.to_string()), rect, PILL, pill);
+                position_for(target.connector().map(|v| v.to_string()), rect, size, pill);
             save(&position);
             place(&window, &layer, &stage, &position);
             shell.set_opacity(1.0);
@@ -540,11 +563,12 @@ pub(super) fn attach(
             }
             if let Some(monitor) = current_monitor(&window) {
                 let rect = Rect::from(monitor.geometry());
+                let size = stage.pill();
                 let position = position_for(
                     monitor.connector().map(|v| v.to_string()),
                     rect,
-                    PILL,
-                    resting(rect),
+                    size,
+                    resting(rect, size),
                 );
                 place(&window, &layer, &stage, &position);
                 save(&position);
@@ -598,18 +622,32 @@ mod tests {
         );
     }
 
+    const PILL: (i32, i32) = (WIDTH, ROW);
+    /// A pill widened for an h:mm:ss clock.
+    const WIDE: (i32, i32) = (WIDTH + 21, ROW);
+
     #[test]
     fn the_surface_stays_on_screen_and_the_pill_never_moves() {
-        for pill in [(0, 0), (1620, 1032), (811, 377), resting(FIRST), (20, 1000)] {
-            let at = placement(FIRST, pill);
-            assert_eq!((at.surface.0 + at.inset.0, at.surface.1 + at.inset.1), pill);
-            assert!(at.surface.0 >= 0 && at.surface.0 + SURFACE.0 <= FIRST.width);
-            assert!(at.surface.1 >= 0 && at.surface.1 + SURFACE.1 <= FIRST.height);
-            assert!((0..=SURFACE.0 - WIDTH).contains(&at.inset.0));
-            assert!((0..=SURFACE.1 - ROW).contains(&at.inset.1));
+        for size in [PILL, WIDE] {
+            let around = stage::surface(size.0);
+            let right = FIRST.width - size.0;
+            for pill in [
+                (0, 0),
+                (right, 1032),
+                (811, 377),
+                resting(FIRST, size),
+                (20, 1000),
+            ] {
+                let at = placement(FIRST, pill, size);
+                assert_eq!((at.surface.0 + at.inset.0, at.surface.1 + at.inset.1), pill);
+                assert!(at.surface.0 >= 0 && at.surface.0 + around.0 <= FIRST.width);
+                assert!(at.surface.1 >= 0 && at.surface.1 + around.1 <= FIRST.height);
+                assert!((0..=around.0 - size.0).contains(&at.inset.0));
+                assert!((0..=around.1 - ROW).contains(&at.inset.1));
+            }
         }
         assert_eq!(
-            placement(FIRST, (811, 377)).inset,
+            placement(FIRST, (811, 377), PILL).inset,
             (PAD_X, PAD_TOP),
             "room on every side: the full light"
         );
@@ -617,8 +655,48 @@ mod tests {
 
     #[test]
     fn the_resting_pill_matches_the_bottom_anchored_surface() {
-        assert_eq!(resting(FIRST), (810, 1008));
-        assert_eq!(placement(FIRST, resting(FIRST)).inset, RESTING);
+        assert_eq!(resting(FIRST, PILL), (810, 1008));
+        assert_eq!(placement(FIRST, resting(FIRST, PILL), PILL).inset, RESTING);
+        assert_eq!(placement(FIRST, resting(FIRST, WIDE), WIDE).inset, RESTING);
+    }
+
+    #[test]
+    fn a_wider_pill_keeps_its_saved_place_on_screen() {
+        let saved = position_for(None, FIRST, PILL, (FIRST.width - PILL.0, 500));
+        let (left, _) = pixels(&saved, FIRST, WIDE);
+        assert_eq!(
+            left + WIDE.0,
+            FIRST.width,
+            "grows leftwards at the right edge"
+        );
+        let centred = position_for(None, FIRST, PILL, resting(FIRST, PILL));
+        let (left, top) = pixels(&centred, FIRST, WIDE);
+        let resting = resting(FIRST, WIDE);
+        assert!(
+            (left - resting.0).abs() <= 1 && top == resting.1,
+            "stays centred"
+        );
+    }
+
+    #[test]
+    fn a_drag_near_the_right_edge_stays_on_its_monitor() {
+        // The pill against the first monitor's right edge, held 20 px from it.
+        for size in [PILL, WIDE] {
+            let pill = (FIRST.width - size.0, 500);
+            let at = placement(FIRST, pill, size);
+            assert!(
+                at.inset.0 > PAD_X,
+                "the surface is clamped, so the inset grows"
+            );
+            let press = (
+                f64::from(at.inset.0 + size.0 - 20),
+                f64::from(at.inset.1 + 24),
+            );
+            let held = grip(press, at.inset);
+            let pointer = pointer_at((f64::from(pill.0), f64::from(pill.1)), held);
+            assert_eq!(pointer, (f64::from(FIRST.width - 20), 524.0));
+            assert_eq!(monitor_under(&[FIRST, SECOND], pointer), Some(0));
+        }
     }
 
     #[test]

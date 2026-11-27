@@ -643,6 +643,9 @@ fn build_window(
                     }
                     Update::Meeting(view) => {
                         meeting_pill = super::recording_overlay::MeetingPill::from_view(&view);
+                        if let Some(overlay) = &overlay {
+                            overlay.meeting_view(meeting_pill.as_ref());
+                        }
                     }
                     Update::MeetingSketch(crate::meeting::SketchScope::Open(scope)) => {
                         meeting_scope = Some(scope);
