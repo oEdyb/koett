@@ -2,7 +2,9 @@
 //! newest audio enters at the right edge and older columns slide left and out
 //! at a constant rate, silence included. The width never changes and no column
 //! is ever re-binned, so the strip looks the same at 5 s and at 20 min. Every
-//! column comes from measured microphone input.
+//! column comes from measured input: the microphone, and in a meeting also the
+//! system audio, each in its own lane.
+use crate::meeting::Tracks;
 use crate::sketch::SketchEvent;
 
 /// Columns in the strip (2 px bar + 1 px gap each).
@@ -17,21 +19,36 @@ pub(super) const MAX_SKETCHES: usize = 256;
 /// Columns kept in memory: the visible window plus the two sliding in/out.
 const KEPT: usize = COLUMNS + 2;
 
+/// One column of audio: how loud each side was, and whether a side was cut off
+/// (reconnecting) during it. Dictation only uses `you`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(super) struct Column {
+    pub level: Tracks<f64>,
+    pub lost: Tracks<bool>,
+}
+
 /// One drawn column. `x` is in column units from the strip's left edge
-/// (fractional while sliding); `level` is `None` before the dictation started.
+/// (fractional while sliding); `column` is `None` before the recording started.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Bar {
     pub x: f64,
-    pub level: Option<f64>,
+    pub column: Option<Column>,
+}
+
+impl Bar {
+    /// The microphone level, as dictation draws it.
+    pub fn level(&self) -> Option<f64> {
+        self.column.map(|column| column.level.you)
+    }
 }
 
 #[derive(Default)]
 pub(super) struct Timeline {
-    levels: std::collections::VecDeque<f64>,
+    levels: std::collections::VecDeque<Column>,
     first_column: u64,
     latest_ms: u64,
     sketches: Vec<SketchEvent>,
-    smoothed: f64,
+    smoothed: Tracks<f64>,
     started: bool,
 }
 
@@ -49,10 +66,26 @@ impl Timeline {
         *self = Self::default();
     }
 
-    /// Adds one meter sample. Call it on a steady clock (30 Hz) even in
+    /// Adds one microphone sample. Call it on a steady clock (30 Hz) even in
     /// silence: the strip's position follows the latest sample time.
     pub fn push(&mut self, elapsed_ms: u64, rms: f32) {
-        self.smoothed = self.smoothed * 0.55 + level(rms) * 0.45;
+        self.push_sides(
+            elapsed_ms,
+            Tracks {
+                you: Some(rms),
+                other: Some(0.0),
+            },
+        );
+    }
+
+    /// Adds one sample per side; `None` is a side that is reconnecting.
+    pub fn push_sides(&mut self, elapsed_ms: u64, sides: Tracks<Option<f32>>) {
+        let smooth =
+            |previous: f64, rms: Option<f32>| previous * 0.55 + rms.map_or(0.0, level) * 0.45;
+        self.smoothed = Tracks {
+            you: smooth(self.smoothed.you, sides.you),
+            other: smooth(self.smoothed.other, sides.other),
+        };
         self.started = true;
         self.latest_ms = self.latest_ms.max(elapsed_ms);
         let column = elapsed_ms / COLUMN_MS;
@@ -64,12 +97,16 @@ impl Timeline {
                 self.levels.clear();
                 self.first_column = column + 1 - missing as u64;
             }
-            self.levels.extend(std::iter::repeat_n(0.0, missing));
+            self.levels
+                .extend(std::iter::repeat_n(Column::default(), missing));
         }
         if let Some(position) = column.checked_sub(self.first_column)
             && let Some(slot) = self.levels.get_mut(position as usize)
         {
-            *slot = slot.max(self.smoothed);
+            slot.level.you = slot.level.you.max(self.smoothed.you);
+            slot.level.other = slot.level.other.max(self.smoothed.other);
+            slot.lost.you |= sides.you.is_none();
+            slot.lost.other |= sides.other.is_none();
         }
         while self.levels.len() > KEPT {
             self.levels.pop_front();
@@ -101,16 +138,16 @@ impl Timeline {
                     return None;
                 }
                 if column < 0 {
-                    return Some(Bar { x, level: None });
+                    return Some(Bar { x, column: None });
                 }
-                let level = (column as u64)
+                let column = (column as u64)
                     .checked_sub(self.first_column)
                     .and_then(|position| self.levels.get(position as usize))
                     .copied()
-                    .unwrap_or(0.0);
+                    .unwrap_or_default();
                 Some(Bar {
                     x,
-                    level: Some(level),
+                    column: Some(column),
                 })
             })
             .collect()
@@ -194,8 +231,12 @@ mod tests {
         let bars = timeline.bars();
         assert!(bars.first().unwrap().x <= 0.0, "reaches the left edge");
         assert_eq!(bars.last().unwrap().x, (COLUMNS - 1) as f64);
-        assert!(bars[..bars.len() - 1].iter().all(|bar| bar.level.is_none()));
-        assert!(bars.last().unwrap().level.unwrap() > SILENT);
+        assert!(
+            bars[..bars.len() - 1]
+                .iter()
+                .all(|bar| bar.level().is_none())
+        );
+        assert!(bars.last().unwrap().level().unwrap() > SILENT);
         for end in [5_000, 30_000, 60_000, 300_000, 1_200_000] {
             let from = timeline.latest_ms + 33;
             run(&mut timeline, from, end, 0..0);
@@ -208,7 +249,7 @@ mod tests {
             assert!(bars.len() <= COLUMNS + 1);
             assert!(timeline.levels.len() <= KEPT, "memory stays bounded");
         }
-        assert!(timeline.bars().iter().all(|bar| bar.level.is_some()));
+        assert!(timeline.bars().iter().all(|bar| bar.level().is_some()));
     }
 
     #[test]
@@ -219,7 +260,7 @@ mod tests {
             timeline
                 .bars()
                 .iter()
-                .filter(|bar| bar.level.is_some_and(|level| level > 0.5))
+                .filter(|bar| bar.level().is_some_and(|level| level > 0.5))
                 .map(|bar| bar.x)
                 .fold(f64::NEG_INFINITY, f64::max)
         };
@@ -249,9 +290,9 @@ mod tests {
         assert!(
             bars[..bars.len() - 1]
                 .iter()
-                .all(|bar| bar.level == Some(0.0))
+                .all(|bar| bar.level() == Some(0.0))
         );
-        assert!(bars.last().unwrap().level.unwrap() < 0.5);
+        assert!(bars.last().unwrap().level().unwrap() < 0.5);
         timeline.reset();
         assert!(timeline.is_empty());
     }
@@ -306,5 +347,47 @@ mod tests {
         timeline.reset();
         assert!(timeline.sketches().is_empty());
         assert!(timeline.apply(sketch(100_001, 0, 10, false)));
+    }
+
+    #[test]
+    fn a_meeting_draws_each_side_in_its_own_lane_and_marks_lost_time() {
+        let mut timeline = Timeline::default();
+        let mut ms = 0;
+        let mut run = |timeline: &mut Timeline, until: u64, sides: Tracks<Option<f32>>| {
+            while ms <= until {
+                timeline.push_sides(ms, sides);
+                ms += 33;
+            }
+        };
+        let you = Tracks {
+            you: Some(0.3),
+            other: Some(0.0),
+        };
+        let them = Tracks {
+            you: Some(0.0),
+            other: Some(0.3),
+        };
+        let lost = Tracks {
+            you: Some(0.0),
+            other: None,
+        };
+        run(&mut timeline, 3_000, you);
+        run(&mut timeline, 6_000, them);
+        run(&mut timeline, 9_000, lost);
+        let at = |x: f64| {
+            let bars = timeline.bars();
+            bars.iter()
+                .min_by(|a, b| (a.x - x).abs().total_cmp(&(b.x - x).abs()))
+                .and_then(|bar| bar.column)
+                .unwrap()
+        };
+        let speaking = at(COLUMNS as f64 - 1.0 - 50.0);
+        assert!(speaking.level.you > 0.5 && speaking.level.other < SILENT);
+        let listening = at(COLUMNS as f64 - 1.0 - 30.0);
+        assert!(listening.level.other > 0.5 && listening.level.you < SILENT);
+        let cut = at(COLUMNS as f64 - 2.0);
+        assert!(cut.lost.other && !cut.lost.you);
+        assert!(cut.level.other < SILENT, "a lost side is flat");
+        assert!(!listening.lost.other);
     }
 }

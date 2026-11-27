@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use super::super::{Offset, SAMPLE_RATE, Span};
 use super::disk::{CaptureFault, CaptureFaultReason, CaptureHealth, CaptureNotice};
-use super::ingress::{Stamp, TrackDrain};
+use super::ingress::{Stamp, TrackDrain, TrackLevel};
 use super::journal::{GapCause, JournalWriter, TrackChunk, TrackReader};
 use super::recorder::TrackRecorder;
 use super::writer::{TrackConfig, TrackWriter};
@@ -745,4 +745,36 @@ fn sealed_reader_rejects_damage_inside_the_committed_prefix() {
         reader.next().unwrap().unwrap_err().kind(),
         io::ErrorKind::InvalidData
     );
+}
+
+#[test]
+fn each_track_meters_what_it_receives_and_goes_flat_when_it_stops() {
+    let (mut you, _you_drain) = TrackIngress::pair(SAMPLE_RATE, EPOCH);
+    let (other, _other_drain) = TrackIngress::pair(SAMPLE_RATE, EPOCH);
+    let (you_level, other_level) = (you.level(), other.level());
+    let at = Instant::now();
+    assert_eq!(you_level.rms(at), 0.0, "nothing received yet");
+
+    assert!(you.push(&[0.5, -0.5, 0.5, -0.5], at));
+    assert!((you_level.rms(at + Duration::from_millis(100)) - 0.5).abs() < 1e-6);
+    assert_eq!(other_level.rms(at), 0.0, "a silent side stays flat");
+    assert_ne!(you_level, other_level);
+    assert_eq!(you_level, you.level());
+
+    assert_eq!(
+        you_level.rms(at + Duration::from_millis(300)),
+        0.0,
+        "stalled"
+    );
+}
+
+#[test]
+fn a_closed_track_stops_metering() {
+    let (mut ingress, drain) = TrackIngress::pair(SAMPLE_RATE, EPOCH);
+    let level: TrackLevel = ingress.level();
+    let at = Instant::now();
+    assert!(ingress.push(&[0.25; 4], at));
+    drain.close();
+    assert!(!ingress.push(&[1.0; 4], at + Duration::from_millis(10)));
+    assert!((level.rms(at + Duration::from_millis(20)) - 0.25).abs() < 1e-6);
 }

@@ -13,6 +13,7 @@ struct Session {
     zero: Instant,
     attempt: Attempt,
     marks: MarkSink,
+    levels: Tracks<capture::TrackLevel>,
 }
 
 impl Session {
@@ -25,6 +26,7 @@ impl Session {
             zero: Instant::now(),
             attempt: Attempt(2),
             marks: MarkSink::fixture(),
+            levels: Tracks::default(),
         }
     }
 
@@ -59,6 +61,7 @@ impl Session {
                 capture: self.capture(),
                 epoch: MeetingEpoch(self.zero),
                 health: CaptureHealth::default(),
+                levels: self.levels.clone(),
             }),
         )
     }
@@ -155,10 +158,11 @@ fn start_and_shortcut_reserve_the_engine_then_reply_recording() {
         assert_eq!(
             effects,
             vec![
-                Effect::Notify(MeetingUpdate::Sketch(SketchScope::Open(MeetingMarkScope {
+                Effect::Notify(MeetingUpdate::Sketch(SketchScope::Open(MeetingScope {
                     id: session.info.id,
                     epoch: MeetingEpoch(session.zero),
                     sink: session.marks.clone(),
+                    levels: session.levels.clone(),
                 }))),
                 Effect::NotifyView(expected_view),
             ]

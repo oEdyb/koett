@@ -1,9 +1,10 @@
 //! The pill while a meeting records: its clock, with Stop on hover, and once a
 //! stop is asked for, one row that finishes, keeps the audio without a
 //! transcript, or continues (`meeting_confirm` decides what a click sends).
+//! Finish and No transcript hand the meeting to the tray through Saving.
 use super::super::meeting_confirm::Choice;
 use crate::meeting::{
-    CaptureHealth, MeetingId, MeetingRequest, MeetingView, SourceHealth, StopKey,
+    CaptureHealth, CloseGoal, MeetingId, MeetingRequest, MeetingView, SourceHealth, StopKey, Tracks,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -18,11 +19,15 @@ pub(in crate::linux) enum MeetingPill {
         started_at_ms: u64,
         health: CaptureHealth,
     },
+    Saving {
+        started_at_ms: u64,
+    },
 }
 
 impl MeetingPill {
-    /// Only a live meeting shows in the pill; closing and transcribing leave it
-    /// free for dictation and show in the tray.
+    /// A live meeting shows in the pill, and a closing one that keeps its audio
+    /// says Saving there until any dictation wants the pill. Transcribing
+    /// shows in the tray.
     pub(in crate::linux) fn from_view(view: &MeetingView) -> Option<Self> {
         match view {
             MeetingView::Recording { info, health } => Some(Self::Recording {
@@ -35,8 +40,35 @@ impl MeetingPill {
                 started_at_ms: info.started_at_ms,
                 health: *health,
             }),
+            MeetingView::Closing {
+                info,
+                goal: CloseGoal::Finish | CloseGoal::Hold,
+            } => Some(Self::Saving {
+                started_at_ms: info.started_at_ms,
+            }),
             _ => None,
         }
+    }
+
+    pub(super) fn saving(&self) -> bool {
+        matches!(self, Self::Saving { .. })
+    }
+
+    fn health(&self) -> Option<&CaptureHealth> {
+        match self {
+            Self::Recording { health, .. } | Self::Confirm { health, .. } => Some(health),
+            Self::Saving { .. } => None,
+        }
+    }
+
+    /// The sides that are reconnecting, drawn flat in the strip.
+    pub(super) fn lost(&self) -> Tracks<bool> {
+        self.health()
+            .map(|health| Tracks {
+                you: health.tracks.you == SourceHealth::Reconnecting,
+                other: health.tracks.other == SourceHealth::Reconnecting,
+            })
+            .unwrap_or_default()
     }
 
     pub(super) fn confirming(&self) -> bool {
@@ -46,7 +78,7 @@ impl MeetingPill {
     pub(super) fn key(&self) -> Option<StopKey> {
         match self {
             Self::Confirm { key, .. } => Some(*key),
-            Self::Recording { .. } => None,
+            Self::Recording { .. } | Self::Saving { .. } => None,
         }
     }
 
@@ -60,13 +92,15 @@ impl MeetingPill {
     }
 
     pub(super) fn elapsed_ms(&self, now_ms: u64) -> u64 {
-        let (Self::Recording { started_at_ms, .. } | Self::Confirm { started_at_ms, .. }) = self;
+        let (Self::Recording { started_at_ms, .. }
+        | Self::Confirm { started_at_ms, .. }
+        | Self::Saving { started_at_ms }) = self;
         now_ms.saturating_sub(*started_at_ms)
     }
 
-    /// The line under the pill when audio or disk needs attention.
+    /// The notice above the pill when audio or disk needs attention.
     pub(super) fn issue(&self) -> Option<&'static str> {
-        let (Self::Recording { health, .. } | Self::Confirm { health, .. }) = self;
+        let health = self.health()?;
         match (health.tracks.you, health.tracks.other) {
             (SourceHealth::Reconnecting, SourceHealth::Reconnecting) => Some("Audio reconnecting"),
             (SourceHealth::Reconnecting, _) => Some("Microphone reconnecting"),
@@ -80,7 +114,7 @@ impl MeetingPill {
     pub(super) fn stop(&self) -> Option<MeetingRequest> {
         match self {
             Self::Recording { id, .. } => Some(MeetingRequest::Stop(*id)),
-            Self::Confirm { .. } => None,
+            Self::Confirm { .. } | Self::Saving { .. } => None,
         }
     }
 }
@@ -134,11 +168,23 @@ mod tests {
             MeetingView::Idle,
             MeetingView::Closing {
                 info: info.clone(),
-                goal: crate::meeting::CloseGoal::Finish,
+                goal: CloseGoal::Interrupted(crate::meeting::InterruptCause::Shutdown),
             },
             MeetingView::Processing { info, done: 0.0 },
         ] {
             assert_eq!(MeetingPill::from_view(&view), None);
+        }
+    }
+
+    #[test]
+    fn finish_and_no_transcript_hand_off_through_saving() {
+        for goal in [CloseGoal::Finish, CloseGoal::Hold] {
+            let view = MeetingView::Closing { info: info(), goal };
+            let pill = MeetingPill::from_view(&view).unwrap();
+            assert!(pill.saving() && !pill.confirming());
+            assert_eq!(pill.elapsed_ms(61_000), 60_000);
+            assert_eq!((pill.stop(), pill.key(), pill.issue()), (None, None, None));
+            assert_eq!(pill.lost(), Tracks::default());
         }
     }
 
@@ -197,6 +243,13 @@ mod tests {
                 health,
             };
             assert_eq!(pill.issue(), expected);
+            assert_eq!(
+                pill.lost(),
+                Tracks {
+                    you: health.tracks.you == Reconnecting,
+                    other: health.tracks.other == Reconnecting,
+                }
+            );
         }
     }
 }

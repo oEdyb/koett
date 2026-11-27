@@ -40,6 +40,12 @@ impl Shown {
     pub(super) fn key(self) -> StopKey {
         self.key
     }
+
+    /// Finish and No transcript answer only once this confirmation has shown
+    /// for `ARM`.
+    pub(super) fn armed(self, now: Instant) -> bool {
+        now.saturating_duration_since(self.since) >= ARM
+    }
 }
 
 pub(super) fn stop_key(view: &MeetingView) -> Option<StopKey> {
@@ -63,7 +69,7 @@ impl Choice {
     /// What `press` sends, given the confirmation on screen now.
     pub(super) fn request(self, press: Press, shown: Option<Shown>) -> Option<MeetingRequest> {
         let shown = shown.filter(|shown| press.key == Some(shown.key))?;
-        let armed = press.at.saturating_duration_since(shown.since) >= ARM;
+        let armed = shown.armed(press.at);
         match self {
             Self::Finish if armed => Some(MeetingRequest::Finish(shown.key)),
             Self::NoTranscript if armed => Some(MeetingRequest::Cancel(shown.key)),

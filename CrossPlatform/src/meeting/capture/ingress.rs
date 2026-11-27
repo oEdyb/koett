@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::Instant;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use ringbuf::{HeapCons, HeapProd, HeapRb};
@@ -10,6 +10,9 @@ use super::SourceEpoch;
 const RING_SECONDS: usize = 8;
 const MAX_STAMPS: usize = 8_192;
 const INGRESS_CLOSED: u64 = 1 << 63;
+/// A track that delivered nothing for this long reads as silent.
+const LEVEL_STALE: Duration = Duration::from_millis(250);
+const NEVER: u64 = u64::MAX;
 
 #[derive(Clone, Copy)]
 pub(super) struct Stamp {
@@ -19,12 +22,82 @@ pub(super) struct Stamp {
     pub(super) epoch: SourceEpoch,
 }
 
+/// How loud one meeting track is now, for the pill. The capture thread stores
+/// the RMS of each block it hands over; a track that stops delivering reads as
+/// silence within [`LEVEL_STALE`].
+#[derive(Clone)]
+pub(crate) struct TrackLevel(Arc<LevelCell>);
+
+struct LevelCell {
+    zero: Instant,
+    rms: AtomicU32,
+    at_us: AtomicU64,
+}
+
+impl TrackLevel {
+    pub(crate) fn new() -> Self {
+        Self(Arc::new(LevelCell {
+            zero: Instant::now(),
+            rms: AtomicU32::new(0),
+            at_us: AtomicU64::new(NEVER),
+        }))
+    }
+
+    fn record(&self, samples: &[f32], at: Instant) {
+        if samples.is_empty() {
+            return;
+        }
+        let energy = samples.iter().map(|sample| sample * sample).sum::<f32>();
+        let rms = (energy / samples.len() as f32).sqrt();
+        let since = at.saturating_duration_since(self.0.zero).as_micros();
+        self.0.rms.store(rms.to_bits(), Ordering::Relaxed);
+        self.0
+            .at_us
+            .store(u64::try_from(since).unwrap_or(NEVER - 1), Ordering::Release);
+    }
+
+    /// The latest block's RMS, or 0 when nothing arrived within `LEVEL_STALE`.
+    pub(crate) fn rms(&self, now: Instant) -> f32 {
+        let at_us = self.0.at_us.load(Ordering::Acquire);
+        if at_us == NEVER {
+            return 0.0;
+        }
+        let at = self.0.zero + Duration::from_micros(at_us);
+        if now.saturating_duration_since(at) > LEVEL_STALE {
+            0.0
+        } else {
+            f32::from_bits(self.0.rms.load(Ordering::Relaxed))
+        }
+    }
+}
+
+impl Default for TrackLevel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl PartialEq for TrackLevel {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for TrackLevel {}
+
+impl std::fmt::Debug for TrackLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TrackLevel").finish_non_exhaustive()
+    }
+}
+
 pub(crate) struct TrackIngress {
     pcm: HeapProd<f32>,
     stamps: HeapProd<Stamp>,
     epoch: SourceEpoch,
     published_frames: Arc<AtomicU64>,
     dropped: Arc<AtomicU64>,
+    level: TrackLevel,
 }
 
 impl TrackIngress {
@@ -41,6 +114,7 @@ impl TrackIngress {
                 epoch,
                 published_frames: published_frames.clone(),
                 dropped: dropped.clone(),
+                level: TrackLevel::new(),
             },
             TrackDrain {
                 pcm: pcm_rx,
@@ -56,6 +130,11 @@ impl TrackIngress {
         self.epoch = epoch;
     }
 
+    /// The live level of what this ingress receives.
+    pub(crate) fn level(&self) -> TrackLevel {
+        self.level.clone()
+    }
+
     pub(crate) fn push(&mut self, samples: &[f32], at: Instant) -> bool {
         let published = self.published_frames.load(Ordering::Relaxed);
         if published & INGRESS_CLOSED != 0 {
@@ -64,6 +143,7 @@ impl TrackIngress {
         if samples.is_empty() {
             return true;
         }
+        self.level.record(samples, at);
         if self.stamps.is_full() || self.pcm.vacant_len() < samples.len() {
             self.dropped
                 .fetch_add(samples.len() as u64, Ordering::Relaxed);

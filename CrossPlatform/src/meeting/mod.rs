@@ -243,18 +243,21 @@ pub(crate) enum MeetingUpdate {
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum SketchScope {
     Closed,
-    Open(MeetingMarkScope),
+    Open(MeetingScope),
     Finishing(MeetingId, Offset),
 }
 
+/// What the desktop holds while a meeting records: where its marks go and how
+/// loud each side is.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct MeetingMarkScope {
+pub(crate) struct MeetingScope {
     id: MeetingId,
     epoch: MeetingEpoch,
     sink: MarkSink,
+    levels: Tracks<capture::TrackLevel>,
 }
 
-impl MeetingMarkScope {
+impl MeetingScope {
     #[cfg(test)]
     pub(crate) fn writing_to(
         directory: &std::path::Path,
@@ -265,12 +268,20 @@ impl MeetingMarkScope {
             id: MeetingId::new(),
             epoch: MeetingEpoch(zero),
             sink: writer.sink(),
+            levels: Tracks::default(),
         };
         (scope, writer)
     }
 
     pub(crate) fn id(&self) -> MeetingId {
         self.id
+    }
+    /// When the meeting's audio clock reads zero.
+    pub(crate) fn zero(&self) -> Instant {
+        self.epoch.0
+    }
+    pub(crate) fn levels(&self) -> &Tracks<capture::TrackLevel> {
+        &self.levels
     }
     pub(crate) fn offset(&self, at: Instant) -> Offset {
         self.epoch.offset(at)
@@ -471,6 +482,7 @@ struct OpenedCapture {
     capture: LiveCapture,
     epoch: MeetingEpoch,
     health: CaptureHealth,
+    levels: Tracks<capture::TrackLevel>,
 }
 
 enum OpenError {
@@ -661,10 +673,11 @@ fn next(active: Active, event: Event) -> Transition {
         {
             match result {
                 Ok(opened) => {
-                    let scope = MeetingMarkScope {
+                    let scope = MeetingScope {
                         id: info.id,
                         epoch: opened.epoch,
                         sink: opened.capture.marks(),
+                        levels: opened.levels,
                     };
                     let live = Live {
                         info,
