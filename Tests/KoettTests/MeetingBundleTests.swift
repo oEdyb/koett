@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import XCTest
 @testable import Koett
@@ -81,6 +82,34 @@ final class MeetingBundleTests: XCTestCase {
         }
     }
 
+    func testKilledWriterCanRecoverAroundIntentAndSeal() throws {
+        let root = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for stage in 0...2 {
+            let id = UUID()
+            try killMeetingFixture(type: Self.self, method: "testCrashWriterFixture", root: root, id: id, stage: stage) {
+                XCTAssertThrowsError(try MeetingBundle.open(in: root, id: id))
+            }
+            let bundle = try MeetingBundle.open(in: root, id: id)
+            let seal = try bundle.recoverSeal()
+            XCTAssertEqual(seal.intent.goal, stage == 0 ? .interrupted : .finish)
+            XCTAssertEqual(seal.intent.cutoff, stage == 0 ? 103 : 102)
+            XCTAssertEqual(seal.tracks[.you]?.capturedUntil, seal.intent.cutoff)
+        }
+    }
+
+    func testCrashWriterFixture() throws {
+        let (root, id, stage) = try meetingCrashFixtureInput()
+        let bundle = try MeetingBundle.create(in: root, manifest: .init(id: id, startedAt: .now))
+        let writer = try MeetingJournal.Writer(bundle.audio(.you))
+        try writer.append(.pcm(first: 100, samples: [1, 2, 3]))
+        try writer.sync()
+        let intent = MeetingIntent(cutoff: 102, goal: .finish)
+        if stage >= 1 { try bundle.write(intent, "intent.json") }
+        if stage >= 2 { _ = try bundle.seal() }
+        try withExtendedLifetime(bundle) { try waitForMeetingFixtureKill(root: root, id: id) }
+    }
+
     func testFailedIntentBeforeCommitLeavesPriorMetadataIntact() throws {
         let root = try meetingTestDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -94,7 +123,62 @@ final class MeetingBundleTests: XCTestCase {
 }
 
 func meetingTestDirectory() throws -> URL {
-    let directory = FileManager.default.temporaryDirectory.appending(path: "meeting-test-\(UUID())")
+    let directory = FileManager.default.temporaryDirectory.appending(path: "ktt-\(UUID().uuidString.prefix(16))")
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
     return directory
+}
+
+func meetingCrashFixtureInput() throws -> (URL, UUID, Int) {
+    let env = ProcessInfo.processInfo.environment
+    guard let path = env["KOETT_TEST_CRASH_ROOT"],
+          let raw = env["KOETT_TEST_CRASH_ID"], let id = UUID(uuidString: raw),
+          let value = env["KOETT_TEST_CRASH_STAGE"], let stage = Int(value)
+    else { throw XCTSkip("Child-only crash fixture") }
+    return (URL(fileURLWithPath: path), id, stage)
+}
+
+func waitForMeetingFixtureKill(root: URL, id: UUID) throws {
+    try Data().write(to: root.appending(path: "\(id.uuidString).ready"), options: .atomic)
+    _ = FileHandle.standardInput.readDataToEndOfFile()
+    XCTFail("The fixture exited without reaching the kill checkpoint.")
+}
+
+func killMeetingFixture(
+    type: XCTestCase.Type, method: String, root: URL, id: UUID, stage: Int, whileWaiting: () throws -> Void = {}
+) throws {
+    let process = Process()
+    let fence = Pipe()
+    process.standardInput = fence
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+    process.arguments = ["xctest", "-XCTest", "KoettTests.\(String(describing: type))/\(method)", Bundle(for: type).bundleURL.path]
+    var env = ProcessInfo.processInfo.environment
+    env["KOETT_TEST_CRASH_ROOT"] = root.path
+    env["KOETT_TEST_CRASH_ID"] = id.uuidString
+    env["KOETT_TEST_CRASH_STAGE"] = String(stage)
+    process.environment = env
+    let output = root.appending(path: "\(id.uuidString).log")
+    try Data().write(to: output)
+    let log = try FileHandle(forWritingTo: output)
+    defer { try? log.close() }
+    process.standardOutput = log
+    process.standardError = log
+    try process.run()
+    defer {
+        if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        process.waitUntilExit()
+    }
+    let ready = root.appending(path: "\(id.uuidString).ready")
+    let deadline = ContinuousClock.now + .seconds(5)
+    while process.isRunning, ContinuousClock.now < deadline, !FileManager.default.fileExists(atPath: ready.path) {
+        usleep(10_000)
+    }
+    guard FileManager.default.fileExists(atPath: ready.path) else {
+        XCTFail("Crash fixture did not reach its checkpoint. \((try? String(contentsOf: output, encoding: .utf8)) ?? "")")
+        return
+    }
+    try whileWaiting()
+    XCTAssertEqual(kill(process.processIdentifier, SIGKILL), 0)
+    process.waitUntilExit()
+    XCTAssertEqual(process.terminationReason, .uncaughtSignal)
+    XCTAssertEqual(process.terminationStatus, SIGKILL)
 }
