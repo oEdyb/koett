@@ -43,8 +43,15 @@ final class MeetingJournalTests: XCTestCase {
         let before = writer.seal
         try writer.append(.gap(first: 8, count: 2, cause: .overrun))
         let bytes = try Data(contentsOf: path)
-        XCTAssertEqual(Data(bytes.prefix(12)), Data("KOETTJNL".utf8) + Data([1, 1, 128, 62]))
-        XCTAssertEqual(bytes[16], 1)
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appending(path: "Fixtures/linux-meeting-journal.bin")
+        XCTAssertEqual(bytes, try Data(contentsOf: fixture))
+        var linuxRecords: [MeetingJournal.Record] = []
+        XCTAssertEqual(try MeetingJournal.read(fixture, sealedBytes: writer.seal.validBytes) {
+            linuxRecords.append($0)
+        }, writer.seal)
+        XCTAssertEqual(linuxRecords, [.epoch(first: 0, generation: 1), .pcm(first: 4, samples: [1, -2, 3, 4]),
+                                      .gap(first: 8, count: 2, cause: .overrun)])
         for tail in [Data(bytes.dropLast()), Data(bytes.dropLast()) + Data([bytes.last! ^ 1])] {
             let damaged = root.appending(path: "damaged")
             try tail.write(to: damaged)

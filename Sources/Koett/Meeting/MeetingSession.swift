@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import MeetingASRProtocol
+import OSLog
 
 struct MeetingSnapshot: Codable, Sendable {
     var phase: MeetingState.Phase
@@ -38,6 +39,7 @@ final class MeetingController {
     private var capture: Capture?
     private var timer: Timer?
     private var task: Task<Void, Never>?
+    private var pending: [UUID] = []
     private var status: [MeetingTrack: MeetingTrackStatus] = [:]
     private var issue: String?
     private var progress: Double?
@@ -105,59 +107,83 @@ final class MeetingController {
         return snapshot
     }
 
+    static func shortcutEnabled(in defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: "meetingShortcutEnabled")
+    }
+
+    func sendShortcut() {
+        do { _ = try send(.toggle) }
+        catch {
+            issue = error.localizedDescription
+            Logger(subsystem: "com.olledyberg.Koett", category: "meeting").error("Meeting shortcut: \(error.localizedDescription, privacy: .public)")
+            publish()
+        }
+    }
+
+    func enqueuePending(_ ids: [UUID]) {
+        for id in ids where id != state.id && !pending.contains(id) { pending.append(id) }
+        launchPending()
+        publish()
+    }
+
     func shutdown() {
+        pending.removeAll()
         interrupt("Koett quit before finishing the meeting.")
         task?.cancel()
     }
 
     func poll() {
         guard let capture, state.phase == .recording || state.phase == .confirmStop else { return }
-        do {
-            let levels = try capture.writer.update(capture.sources.mapValues(\.ring))
-            let now = capture.clock.offset()
-            for track in MeetingTrack.allCases {
-                let source = capture.sources[track]
-                let hasData = source?.ring.received.load(ordering: .acquiring) == true
-                if hasData { capture.received.insert(track) }
-                if now >= 48_000 && !capture.received.contains(track) {
-                    let message = track == .other
-                        ? "No system audio arrived. Check System Audio Recording access and retry."
-                        : "No microphone audio arrived. Check Microphone access and retry."
-                    interrupt(message)
-                    return
-                }
-                var sourceUnavailable = false
-                if let source {
-                    let opened = capture.openedAt[track, default: 0]
-                    let arrival = source.ring.lastCallback.load(ordering: .acquiring)
-                    let last = arrival == 0 ? opened : capture.clock.offset(arrival)
-                    sourceUnavailable = now > last && now - last >= 48_000
-                    if now >= capture.nextRouteCheck[track, default: 0] {
-                        capture.nextRouteCheck[track] = now + 4_000
-                        sourceUnavailable = sourceUnavailable || !source.isConnected
-                    }
-                }
-                if sourceUnavailable {
-                    source?.stop()
-                    if let source { _ = try capture.writer.update([track: source.ring]) }
-                    capture.sources[track] = nil
-                    capture.writer.restart(track)
-                    capture.nextRetry[track] = now + 8_000
-                }
-                if capture.sources[track] == nil, now >= (capture.nextRetry[track] ?? 0) {
-                    capture.sources[track] = try? makeSource(track)
-                    capture.openedAt[track] = now
-                    capture.nextRouteCheck[track] = now + 4_000
-                    capture.nextRetry[track] = now + 16_000
-                }
-                let receiving = capture.sources[track]?.ring.received.load(ordering: .acquiring) == true
-                status[track] = .init(health: receiving ? .receiving : capture.received.contains(track) ? .reconnecting : .waiting,
-                                      level: receiving ? levels[track, default: 0] : 0)
-            }
-            publish()
-        } catch {
-            interrupt("Meeting audio could not be saved. \(error.localizedDescription)")
+        let reading = capture.writer.reading
+        if let failure = reading.failure {
+            interrupt("Meeting audio could not be saved. \(failure)")
+            return
         }
+        let now = capture.clock.offset()
+        for track in MeetingTrack.allCases {
+            let source = capture.sources[track]
+            let hasData = source?.ring.received.load(ordering: .acquiring) == true
+            if hasData { capture.received.insert(track) }
+            if now >= 48_000 && !capture.received.contains(track) {
+                let message = track == .other
+                    ? "No system audio arrived. Check System Audio Recording access and retry."
+                    : "No microphone audio arrived. Check Microphone access and retry."
+                interrupt(message)
+                return
+            }
+            var sourceUnavailable = false
+            if let source {
+                let opened = capture.openedAt[track, default: 0]
+                let arrival = source.ring.lastCallback.load(ordering: .acquiring)
+                let last = arrival == 0 ? opened : capture.clock.offset(arrival)
+                sourceUnavailable = now > last && now - last >= 48_000
+                if now >= capture.nextRouteCheck[track, default: 0] {
+                    capture.nextRouteCheck[track] = now + 4_000
+                    sourceUnavailable = sourceUnavailable || !source.isConnected
+                }
+            }
+            if sourceUnavailable {
+                source?.stop()
+                capture.sources[track] = nil
+                capture.writer.setSource(nil, for: track)
+                capture.nextRetry[track] = now + 8_000
+            }
+            if capture.sources[track] == nil, now >= (capture.nextRetry[track] ?? 0) {
+                if let source = try? makeSource(track) {
+                    capture.sources[track] = source
+                    capture.writer.setSource(source.ring, for: track)
+                }
+                capture.openedAt[track] = now
+                capture.nextRouteCheck[track] = now + 4_000
+                capture.nextRetry[track] = now + 16_000
+            }
+            let receiving = capture.sources[track]?.ring.received.load(ordering: .acquiring) == true
+            let silence = track == .other && receiving && reading.silentSystemAudio
+            status[track] = .init(health: receiving ? .receiving : capture.received.contains(track) ? .reconnecting : .waiting,
+                                  level: receiving ? reading.levels[track, default: 0] : 0,
+                                  issue: silence ? "System audio is silent. If sound is playing, check System Audio Recording access." : nil)
+        }
+        publish()
     }
 
     private func start(_ id: UUID) throws {
@@ -172,7 +198,13 @@ final class MeetingController {
             let bundle = try MeetingBundle.create(in: root, manifest: manifest(id))
             let opened = try Capture(bundle)
             capture = opened
-            for track in MeetingTrack.allCases { opened.sources[track] = try makeSource(track) }
+            opened.activity = ProcessInfo.processInfo.beginActivity(options: [.userInitiated, .idleSystemSleepDisabled],
+                                                                    reason: "Recording a meeting")
+            for track in MeetingTrack.allCases {
+                let source = try makeSource(track)
+                opened.sources[track] = source
+                opened.writer.setSource(source.ring, for: track)
+            }
             _ = state.transition(.opened(state.attempt))
             let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] timer in
                 guard let self else { timer.invalidate(); return }
@@ -187,6 +219,7 @@ final class MeetingController {
                 _ = state.transition(.startFailed(state.attempt))
                 issue = error.localizedDescription
                 reserve(false)
+                launchPending()
             }
             throw error
         }
@@ -206,7 +239,7 @@ final class MeetingController {
 
         issue = nil
         _ = state.transition(.closing(key, goal, intent.cutoff))
-        try drain(capture, intent: intent)
+        drain(capture, intent: intent)
     }
 
     private func interrupt(_ message: String) {
@@ -215,40 +248,49 @@ final class MeetingController {
         _ = state.transition(.interrupted(state.attempt, intent.cutoff))
         issue = message
         try? capture.bundle.write(intent, "intent.json")
-        try? drain(capture, intent: intent)
+        drain(capture, intent: intent)
     }
 
-    private func drain(_ capture: Capture, intent: MeetingIntent) throws {
+    private func drain(_ capture: Capture, intent: MeetingIntent) {
         publish()
         timer?.invalidate()
         timer = nil
-        let rings = capture.sources.mapValues(\.ring)
         capture.sources.values.forEach { $0.stop() }
         capture.sources.removeAll()
+        if let activity = capture.activity {
+            ProcessInfo.processInfo.endActivity(activity)
+            capture.activity = nil
+        }
         let id = capture.bundle.manifest.id
-        var enqueue = false
-        defer {
+        let writer = capture.writer
+        Task { [weak self] in
+            var saved = false
+            do {
+                try await writer.finish(intent)
+                saved = true
+            } catch {
+                self?.issue = "Could not finish saving. Use meeting recovery. \(error.localizedDescription)"
+            }
+            guard let self else { return }
             self.capture = nil
             status.removeAll()
+            let enqueue = saved && intent.goal == .finish && process != nil
             _ = state.transition(.sealed(state.attempt, process: enqueue))
             reserve(false)
-            if enqueue { launch(id) }
+            if enqueue { launch(id) } else { launchPending() }
             publish()
-        }
-        do {
-            let tracks = try capture.writer.finish(cutoff: intent.cutoff, rings: rings)
-            let clipped = tracks.mapValues {
-                MeetingTrackSeal(validBytes: $0.validBytes, capturedUntil: min($0.capturedUntil, intent.cutoff))
-            }
-            try capture.bundle.write(MeetingSeal(intent: intent, tracks: clipped), "seal.json")
-            enqueue = intent.goal == .finish && process != nil
-        } catch {
-            issue = "Could not finish saving. Use meeting recovery. \(error.localizedDescription)"
-            throw error
         }
     }
 
+    private func launchPending() {
+        guard process != nil, state.phase == .idle, !pending.isEmpty else { return }
+        let id = pending.removeFirst()
+        _ = state.transition(.recover(id))
+        launch(id)
+    }
+
     private func launch(_ id: UUID) {
+        pending.removeAll { $0 == id }
         let attempt = state.attempt
         issue = nil
         progress = 0
@@ -264,6 +306,7 @@ final class MeetingController {
             if state.transition(.processed(attempt)) == .changed {
                 progress = nil
                 task = nil
+                launchPending()
                 publish()
             }
         }
@@ -275,6 +318,7 @@ final class MeetingController {
         let bundle: MeetingBundle
         let clock = MeetingAudioClock()
         let writer: MeetingAudioWriter
+        var activity: (any NSObjectProtocol)?
         var sources: [MeetingTrack: any MeetingAudioSource] = [:]
         var received: Set<MeetingTrack> = []
         var nextRetry: [MeetingTrack: UInt64] = [:]
@@ -329,6 +373,10 @@ extension KoettController {
 
     func replayMeetingPublications() {
         let transcription = MeetingTranscription(root: meeting.root, history: transcriptStore)
-        Task(priority: .background) { await transcription.replayCommitted() }
+        Task(priority: .background) {
+            let pending = await transcription.replayAtLaunch()
+            guard !Task.isCancelled else { return }
+            meeting.enqueuePending(pending)
+        }
     }
 }

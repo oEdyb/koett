@@ -591,12 +591,14 @@ final class KoettController: NSObject {
             modifierFlags: modifierFlags,
             keyIsDown: modifierKeyIsDown
         )
-        if meetingShortcut.isAvailableForMeeting(
-            dictation: dictationShortcut, media: mediaShortcut,
-            assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
-            dictationUsesToggle: recordingMode == .toggle
-        ), meetingShortcut.matchesDown(type: type, keyCode: keyCode, modifierFlags: modifierFlags, isRepeat: isRepeat) {
-            _ = try? meeting.send(.toggle)
+        if MeetingController.shortcutEnabled(in: microphoneDefaults),
+           meetingShortcut.isAvailableForMeeting(
+               dictation: dictationShortcut, media: mediaShortcut,
+               assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
+               dictationUsesToggle: recordingMode == .toggle
+           ),
+           meetingShortcut.matchesDown(type: type, keyCode: keyCode, modifierFlags: modifierFlags, isRepeat: isRepeat) {
+            meeting.sendShortcut()
             return
         }
 

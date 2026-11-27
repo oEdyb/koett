@@ -34,8 +34,8 @@ final class MeetingAudioRing: @unchecked Sendable {
     }
 
     let rate: Double
+    let channels: Int
     private let capacity: Int
-    private let slotFloats: Int
     private let samples: UnsafeMutablePointer<Float>
     private let stamps: UnsafeMutablePointer<Stamp>
     private let writeIndex = Atomic<Int>(0)
@@ -45,18 +45,16 @@ final class MeetingAudioRing: @unchecked Sendable {
     let received = Atomic<Bool>(false)
     let lastCallback = Atomic<UInt64>(0)
 
-    init(rate: Double, capacity: Int = 64, slotFloats: Int = 16_384) {
+    init(rate: Double, channels: Int = 1, capacityFrames: Int? = nil) {
         self.rate = rate
-        self.capacity = capacity
-        self.slotFloats = slotFloats
-        samples = .allocate(capacity: capacity * slotFloats)
+        self.channels = channels
+        capacity = capacityFrames ?? Int((rate * 8).rounded(.up))
+        samples = .allocate(capacity: capacity * channels)
         stamps = .allocate(capacity: capacity)
-        stamps.initialize(repeating: .init(), count: capacity)
     }
 
     deinit {
         samples.deallocate()
-        stamps.deinitialize(count: capacity)
         stamps.deallocate()
     }
 
@@ -65,32 +63,34 @@ final class MeetingAudioRing: @unchecked Sendable {
     func copy(_ buffers: UnsafePointer<AudioBufferList>, hostTime: UInt64) {
         guard enabled.load(ordering: .acquiring) else { return }
         let list = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: buffers))
-        guard let first = list.first, first.mNumberChannels > 0 else { return }
+        guard let first = list.first else { return }
         let planar = list.count > 1
-        let frames = Int(first.mDataByteSize) / (MemoryLayout<Float>.size * Int(first.mNumberChannels))
-        let channels = planar ? list.count : Int(first.mNumberChannels)
-        guard frames > 0 else { return }
+        let bufferChannels = planar ? 1 : channels
+        let frameBytes = bufferChannels * MemoryLayout<Float>.size
+        let frames = Int(first.mDataByteSize) / frameBytes
+        guard frames > 0, (planar ? list.count == channels : list.count == 1),
+              list.allSatisfy({ $0.mNumberChannels == bufferChannels && $0.mDataByteSize == frames * frameBytes && $0.mData != nil })
+        else { return }
+        lastCallback.store(AudioGetCurrentHostTime(), ordering: .releasing)
         let write = writeIndex.load(ordering: .relaxed)
-        guard frames <= slotFloats / channels, write - readIndex.load(ordering: .acquiring) < capacity else {
+        guard frames <= capacity - (write - readIndex.load(ordering: .acquiring)) else {
             overrun.store(true, ordering: .relaxed)
             return
         }
         let index = write % capacity
-        let destination = samples.advanced(by: index * slotFloats)
-        let bytes = frames * MemoryLayout<Float>.size
-        if planar {
-            for (channel, buffer) in list.enumerated() {
-                guard buffer.mNumberChannels == 1, buffer.mDataByteSize == bytes, let data = buffer.mData else { return }
-                memcpy(destination.advanced(by: channel * frames), data, bytes)
-            }
-        } else {
-            guard let data = first.mData else { return }
-            memcpy(destination, data, bytes * channels)
+        let floatCapacity = capacity * channels
+        let floatsPerBuffer = frames * bufferChannels
+        for (channel, buffer) in list.enumerated() {
+            guard let data = buffer.mData else { return }
+            let start = (index * channels + channel * floatsPerBuffer) % floatCapacity
+            let head = min(floatsPerBuffer, floatCapacity - start) * MemoryLayout<Float>.size
+            memcpy(samples.advanced(by: start), data, head)
+            let tail = Int(buffer.mDataByteSize) - head
+            if tail > 0 { memcpy(samples, data.advanced(by: head), tail) }
         }
-        stamps[index] = .init(hostTime: hostTime, frames: frames, channels: channels, planar: planar,
-                              dropped: overrun.exchange(false, ordering: .relaxed))
-        writeIndex.store(write + 1, ordering: .releasing)
-        lastCallback.store(AudioGetCurrentHostTime(), ordering: .releasing)
+        stamps.advanced(by: index).initialize(to: .init(hostTime: hostTime, frames: frames, channels: channels, planar: planar,
+                              dropped: overrun.exchange(false, ordering: .relaxed)))
+        writeIndex.store(write + frames, ordering: .releasing)
         received.store(true, ordering: .releasing)
     }
 
@@ -100,8 +100,17 @@ final class MeetingAudioRing: @unchecked Sendable {
         while read < end {
             let index = read % capacity
             let stamp = stamps[index]
-            try consume(stamp, .init(start: samples.advanced(by: index * slotFloats), count: stamp.frames * stamp.channels))
-            read += 1
+            let head = min(stamp.frames, capacity - index) * channels
+            let source = UnsafeBufferPointer(start: samples.advanced(by: index * channels), count: head)
+            let tail = stamp.frames * channels - head
+            if tail > 0 {
+                var packet = Array(source)
+                packet.append(contentsOf: UnsafeBufferPointer(start: samples, count: tail))
+                try packet.withUnsafeBufferPointer { try consume(stamp, $0) }
+            } else {
+                try consume(stamp, source)
+            }
+            read += stamp.frames
             readIndex.store(read, ordering: .releasing)
         }
     }
@@ -127,7 +136,7 @@ final class MeetingMicrophone: MeetingAudioSource {
         self.resolve = resolve
         device = try resolve()
         input = try MicrophoneInput(device: device)
-        let ring = MeetingAudioRing(rate: input.format.sampleRate)
+        let ring = MeetingAudioRing(rate: input.format.sampleRate, channels: Int(input.format.channelCount))
         self.ring = ring
         try input.startTimestamped { buffer, hostTime in ring.copy(buffer.audioBufferList, hostTime: hostTime) }
     }

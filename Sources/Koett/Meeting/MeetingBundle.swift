@@ -85,7 +85,12 @@ final class MeetingBundle {
     }
 
     func write<T: Encodable>(_ value: T, _ name: String) throws {
-        try MeetingFiles.write(JSONEncoder().encode(value), to: directory.appending(path: name))
+        try Self.write(value, name, in: directory)
+    }
+
+    static func write<T: Encodable>(_ value: T, _ name: String, in directory: URL) throws {
+        let fullSync = ["intent.json", "seal.json", "receipt.json"].contains(name)
+        try MeetingFiles.write(JSONEncoder().encode(value), to: directory.appending(path: name), fullSync: fullSync)
     }
 
     func read<T: Decodable>(_ name: String) throws -> T? {
@@ -136,7 +141,7 @@ enum MeetingFiles {
         guard fsync(fd) == 0 else { throw posixError }
     }
 
-    static func write(_ bytes: Data, to url: URL, replace: Bool = true) throws {
+    static func write(_ bytes: Data, to url: URL, replace: Bool = true, fullSync: Bool = false) throws {
         let directory = url.deletingLastPathComponent()
         let temporary = directory.appending(path: ".\(UUID().uuidString).tmp")
         let fd = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
@@ -148,7 +153,11 @@ enum MeetingFiles {
         }
         do {
             try file.write(contentsOf: bytes)
-            try file.synchronize()
+            if fullSync {
+                guard fcntl(fd, F_FULLFSYNC) == 0 else { throw posixError }
+            } else {
+                try file.synchronize()
+            }
             let status = replace ? rename(temporary.path, url.path) : link(temporary.path, url.path)
             guard status == 0 else { throw posixError }
         } catch { throw MeetingBundleError.beforeCommit(error) }

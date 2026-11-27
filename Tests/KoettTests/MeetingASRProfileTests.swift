@@ -1,5 +1,3 @@
-import CoreML
-import FluidAudio
 import Foundation
 import MeetingASRProtocol
 import XCTest
@@ -15,74 +13,78 @@ final class MeetingASRProfileTests: XCTestCase {
         let root = URL(fileURLWithPath: path)
         let temporary = try meetingTestDirectory()
         defer { try? FileManager.default.removeItem(at: temporary) }
-        let (tracks, utterances, dictation) = try fixture(temporary)
-        let meetingSeconds = Double(tracks.map(\.count).max() ?? 0) / 16_000
+        let mode = environment["KOETT_MEETING_PROFILE_MODE"].flatMap(MeetingASRMode.init(rawValue:)) ?? .routed
+        let (tracks, utterances, _) = try fixture(temporary)
+        let (denseTracks, expected) = denseFixture(tracks, utterances)
+        let meetingSeconds = Double(denseTracks.map(\.count).max() ?? 0) / 16_000
+        XCTAssertGreaterThanOrEqual(meetingSeconds, 180)
 
-        let config = MLModelConfiguration()
-        config.computeUnits = .cpuAndNeuralEngine
-        let cpu = MLModelConfiguration()
-        cpu.computeUnits = .cpuOnly
-        let v2 = root.appending(path: "parakeet-tdt-0.6b-v2")
-        let vocabulary = try JSONDecoder().decode([Int: String].self, from: Data(contentsOf: v2.appending(path: "parakeet_vocab.json")))
-        let manager = AsrManager(config: .init(parallelChunkConcurrency: 1))
-        let loaded = try AsrModels(
-            encoder: MLModel(contentsOf: v2.appending(path: "Encoder.mlmodelc"), configuration: config),
-            preprocessor: MLModel(contentsOf: v2.appending(path: "Preprocessor.mlmodelc"), configuration: cpu),
-            decoder: MLModel(contentsOf: v2.appending(path: "Decoder.mlmodelc"), configuration: config),
-            joint: MLModel(contentsOf: v2.appending(path: "JointDecision.mlmodelc"), configuration: config),
-            configuration: config, vocabulary: vocabulary, version: .v2
-        )
-        try await manager.loadModels(loaded)
-        _ = try await DictationTranscriber.transcribe(dictation, using: manager)
-        let baseline = try await measureDictation(dictation, manager: manager)
-        print("MEETING_PROFILE fixture \(meetingSeconds)s, baseline dictation \(baseline) ms")
-        for mode in MeetingASRMode.allCases {
-            let client = try MeetingWorkerClient(executable: URL(fileURLWithPath: worker), models: root,
-                                                 library: URL(fileURLWithPath: library), mode: mode, networkDenied: true)
-            defer { client.cancel() }
-            let requests = tracks.map { MeetingASRRequest(pcm: $0, ownershipStart: 0, ownershipEnd: $0.count) }
-            let cold = ContinuousClock.now
-            for request in requests {
-                let warm = try client.decode(request)
-                XCTAssertFalse(warm.fallback)
-                XCTAssertFalse(warm.turns.isEmpty)
-            }
-            let coldMilliseconds = ms(since: cold)
-            let started = ContinuousClock.now
-            let concurrent = Task.detached(priority: .background) {
-                try requests.map(client.decode)
-            }
-            try await Task.sleep(for: .milliseconds(50))
-            let pressure = memoryPressure()
-            let during = try await measureDictation(dictation, manager: manager)
-            let replies = try await concurrent.value
-            let warmMilliseconds = ms(since: started)
-            let samples = replies.enumerated().flatMap { track, reply in
-                reply.turns.map { (track, $0) }
-            }
-            let peak = replies.map(\.peakBytes).max() ?? 0
-            XCTAssertGreaterThan(peak, 0)
-            var wordErrors = ["sv": 0, "en": 0]
-            var wordCounts = ["sv": 0, "en": 0]
-            var languageErrors = 0
-            var billed = Set<Int>()
-            for entry in utterances {
-                let matches = samples.enumerated().filter { _, sample in
-                    guard sample.0 == entry.track else { return false }
-                    let center = sample.1.first + (sample.1.end - sample.1.first) / 2
-                    return entry.range.contains(center)
-                }
-                let hypothesis = matches.map { $0.element.1.text }.joined(separator: " ")
-                for (index, _) in matches { billed.insert(index) }
-                let reference = words(entry.reference)
-                wordCounts[entry.language, default: 0] += reference.count
-                wordErrors[entry.language, default: 0] += distance(reference, words(hypothesis))
-                if mode != .parakeet, matches.first?.element.1.language != entry.language { languageErrors += 1 }
-                print("MEETING_PROFILE \(mode.rawValue) \(entry.language) [\(matches.first?.element.1.language ?? "–")] \(entry.reference) => \(hypothesis)")
-            }
-            let insertions = samples.enumerated().filter { !billed.contains($0.offset) }.reduce(0) { $0 + words($1.element.1.text).count }
-            print("MEETING_PROFILE \(mode.rawValue) sv \(wordErrors["sv"] ?? 0)/\(wordCounts["sv"] ?? 0), en \(wordErrors["en"] ?? 0)/\(wordCounts["en"] ?? 0), unassigned insertions \(insertions), language errors \(mode == .parakeet ? "unavailable" : String(languageErrors)), cold ms \(coldMilliseconds), warm s/min \(warmMilliseconds / 1000 * 60 / meetingSeconds), peak bytes \(peak), dictation ms \(during), pressure \(pressure)")
+        let history = TranscriptStore(fileURL: temporary.appending(path: "history.sqlite3"))
+        let id = UUID()
+        try writeMeeting(id, root: temporary, tracks: denseTracks)
+        let transcription = MeetingTranscription(root: temporary, history: history, mode: mode,
+                                                 models: root, executable: URL(fileURLWithPath: worker),
+                                                 library: URL(fileURLWithPath: library), networkDenied: true)
+        let start = ContinuousClock.now
+        try await transcription.run(id, progress: { _ in })
+        let elapsed = ms(since: start)
+        let directory = MeetingBundle.directory(in: temporary, id: id)
+        let (receipt, markdown) = try XCTUnwrap(MeetingPublication.receipt(at: directory))
+        XCTAssertFalse(receipt.fallback)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appending(path: "audio/you.journal").path))
+        XCTAssertFalse(try MeetingControl.inspect(id: id, root: temporary).recoverable)
+        XCTAssertTrue(try MeetingPublication.projections(at: directory, receipt: receipt).historyIndexed)
+        XCTAssertFalse(receipt.backends.isEmpty)
+        var errors = [String: Int]()
+        var counts = [String: Int]()
+        for track in MeetingTrack.allCases {
+            let actual = markdown.split(whereSeparator: \.isNewline).compactMap { line -> String? in
+                guard let divider = line.range(of: "**\(track.label)** ("), let end = line[divider.upperBound...].range(of: "): ")
+                else { return nil }
+                return String(line[end.upperBound...])
+            }.joined(separator: " ")
+            let reference = words(expected[track == .you ? 0 : 1])
+            errors[track.rawValue] = distance(reference, words(actual))
+            counts[track.rawValue] = reference.count
+            XCTAssertFalse(actual.isEmpty)
         }
+        print("MEETING_PROFILE \(mode.rawValue) \(meetingSeconds) meeting seconds, cold \(elapsed / 1000) s, \(elapsed * 0.06 / meetingSeconds) s/min, errors \(errors), words \(counts), backends \(receipt.backends)")
+    }
+
+    private func denseFixture(_ tracks: [[Int16]], _ utterances: [Utterance]) -> ([[Int16]], [String]) {
+        var result = [[Int16]]()
+        var references = [String]()
+        for track in tracks.indices {
+            // Each cycle contains adjacent same-language sentences and a switch.
+            let lines = utterances.filter { $0.track == track }.sorted { $0.language < $1.language }
+            var samples = Array(repeating: Int16(0), count: track * 8_000)
+            var text: [String] = []
+            while samples.count < 180 * 16_000 {
+                for line in lines {
+                    samples.append(contentsOf: tracks[track][line.range.clamped(to: tracks[track].indices)])
+                    samples.append(contentsOf: repeatElement(0, count: 10_400))
+                    text.append(line.reference)
+                }
+            }
+            result.append(samples)
+            references.append(text.joined(separator: " "))
+        }
+        return (result, references)
+    }
+
+    private func writeMeeting(_ id: UUID, root: URL, tracks: [[Int16]]) throws {
+        let cutoff = UInt64(tracks.map(\.count).max() ?? 0)
+        let bundle = try MeetingBundle.create(in: root, manifest: .init(id: id, startedAt: .now))
+        for (track, samples) in zip(MeetingTrack.allCases, tracks) {
+            let writer = try MeetingJournal.Writer(bundle.audio(track))
+            try writer.append(.epoch(first: 0, generation: 1))
+            for first in stride(from: 0, to: samples.count, by: MeetingJournal.maxFrames) {
+                let end = min(first + MeetingJournal.maxFrames, samples.count)
+                try writer.append(.pcm(first: UInt64(first), samples: Array(samples[first..<end])))
+            }
+            try writer.sync()
+        }
+        _ = try bundle.seal(.init(cutoff: cutoff, goal: .finish))
     }
 
     func testWorkerFallsBackWithMissingAndCorruptTurboOffline() throws {
@@ -149,23 +151,9 @@ final class MeetingASRProfileTests: XCTestCase {
         return (tracks, utterances, root.appending(path: "1.wav"))
     }
 
-    private func measureDictation(_ url: URL, manager: AsrManager) async throws -> Double {
-        let point = ContinuousClock.now
-        let result = try await DictationTranscriber.transcribe(url, using: manager)
-        XCTAssertFalse(result.text.isEmpty)
-        return ms(since: point)
-    }
-
     private func ms(since point: ContinuousClock.Instant) -> Double {
         let duration = point.duration(to: .now).components
         return Double(duration.seconds) * 1_000 + Double(duration.attoseconds) / 1e15
-    }
-
-    private func memoryPressure() -> Int32 {
-        var level: Int32 = -1
-        var size = MemoryLayout<Int32>.size
-        _ = sysctlbyname("kern.memorystatus_vm_pressure_level", &level, &size, nil, 0)
-        return level
     }
 
     private func words(_ value: String) -> [String] {

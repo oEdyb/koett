@@ -6,16 +6,14 @@ import Foundation
 final class MeetingSystemAudio: MeetingAudioSource {
     let ring: MeetingAudioRing
     private let resources: Resources
-    private let route: AudioDeviceID
     private let format: AudioStreamBasicDescription
 
     init() throws {
-        route = try Self.defaultOutput()
         let process: AudioObjectID = try Self.property(
             Self.system, kAudioHardwarePropertyTranslatePIDToProcessObject,
             initial: kAudioObjectUnknown, qualifier: getpid()
         )
-        let description = CATapDescription(monoGlobalTapButExcludeProcesses: [process])
+        let description = CATapDescription(monoGlobalTapButExcludeProcesses: try Self.excludingProcess(process))
         description.name = "Koett meeting audio"
         description.isPrivate = true
         description.muteBehavior = .unmuted
@@ -23,7 +21,7 @@ final class MeetingSystemAudio: MeetingAudioSource {
         let resources = Resources()
         try Self.check(AudioHardwareCreateProcessTap(description, &resources.tap))
         let format = try Self.tapFormat(resources.tap)
-        let ring = MeetingAudioRing(rate: format.mSampleRate)
+        let ring = MeetingAudioRing(rate: format.mSampleRate, channels: Int(format.mChannelsPerFrame))
         let aggregate: [String: Any] = [
             kAudioAggregateDeviceNameKey: "Koett meeting audio",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
@@ -45,12 +43,22 @@ final class MeetingSystemAudio: MeetingAudioSource {
     }
 
     var isConnected: Bool {
-        guard (try? Self.defaultOutput()) == route,
-              (try? Self.property(route, kAudioDevicePropertyDeviceIsAlive, initial: UInt32(0))) == 1,
-              let current = try? Self.tapFormat(resources.tap)
-        else { return false }
-        return format.mSampleRate == current.mSampleRate && format.mChannelsPerFrame == current.mChannelsPerFrame
-            && format.mFormatFlags == current.mFormatFlags
+        guard let current = try? Self.property(resources.tap, kAudioTapPropertyFormat, initial: AudioStreamBasicDescription())
+        else { return true }
+        return Self.sameFormat(format, current)
+    }
+
+    nonisolated static func sameFormat(_ old: AudioStreamBasicDescription, _ new: AudioStreamBasicDescription) -> Bool {
+        old.mSampleRate == new.mSampleRate && old.mChannelsPerFrame == new.mChannelsPerFrame
+            && old.mFormatID == new.mFormatID && old.mFormatFlags == new.mFormatFlags
+            && old.mBytesPerFrame == new.mBytesPerFrame && old.mBitsPerChannel == new.mBitsPerChannel
+    }
+
+    nonisolated static func excludingProcess(_ process: AudioObjectID) throws -> [AudioObjectID] {
+        guard process != kAudioObjectUnknown else {
+            throw failure(kAudioHardwareBadObjectError)
+        }
+        return [process]
     }
 
     func stop() { ring.stop(); resources.close() }
@@ -88,16 +96,11 @@ final class MeetingSystemAudio: MeetingAudioSource {
 
     private static let system = AudioObjectID(kAudioObjectSystemObject)
 
-    private static func defaultOutput() throws -> AudioDeviceID {
-        let id = try property(system, kAudioHardwarePropertyDefaultOutputDevice, initial: kAudioObjectUnknown)
-        guard id != kAudioObjectUnknown else { throw failure(kAudioHardwareBadDeviceError) }
-        return id
-    }
-
     private static func tapFormat(_ tap: AudioObjectID) throws -> AudioStreamBasicDescription {
         let format = try property(tap, kAudioTapPropertyFormat, initial: AudioStreamBasicDescription())
         guard format.mSampleRate.isFinite, (8_000...384_000).contains(format.mSampleRate),
               format.mFormatID == kAudioFormatLinearPCM, format.mBitsPerChannel == 32,
+              format.mChannelsPerFrame > 0,
               format.mFormatFlags & kAudioFormatFlagIsFloat != 0
         else { throw failure(kAudioHardwareUnsupportedOperationError) }
         return format
@@ -122,7 +125,7 @@ final class MeetingSystemAudio: MeetingAudioSource {
         guard status == noErr else { throw failure(status) }
     }
 
-    private static func failure(_ status: OSStatus) -> NSError {
+    nonisolated private static func failure(_ status: OSStatus) -> NSError {
         NSError(domain: "Koett.Meeting.SystemAudio", code: Int(status), userInfo: [
             NSLocalizedDescriptionKey: "System audio unavailable (\(status)). Check System Audio Recording access and retry."
         ])

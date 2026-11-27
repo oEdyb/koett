@@ -8,19 +8,23 @@ struct MeetingTranscription: Sendable {
     let executable: URL
     let library: URL
     let mode: MeetingASRMode
+    let networkDenied: Bool
 
-    init(root: URL, history: TranscriptStore, bundle: Bundle = .main, mode: MeetingASRMode = .parakeet) {
+    init(root: URL, history: TranscriptStore, bundle: Bundle = .main, mode: MeetingASRMode = .parakeet,
+         models: URL? = nil, executable: URL? = nil, library: URL? = nil, networkDenied: Bool = false) {
         self.root = root
         self.history = history
-        models = URL.cachesDirectory.appending(path: "koett-meeting-models")
+        self.models = models ?? URL.cachesDirectory.appending(path: "koett-meeting-models")
         let bin = bundle.executableURL ?? URL(fileURLWithPath: CommandLine.arguments[0])
-        executable = bin.deletingLastPathComponent().appending(path: "koett-meeting-asr")
-        library = bin.deletingLastPathComponent().appending(path: "../Frameworks/libKoettMeetingWhisper.dylib").standardizedFileURL
+        self.executable = executable ?? bin.deletingLastPathComponent().appending(path: "koett-meeting-asr")
+        self.library = library ?? bin.deletingLastPathComponent().appending(path: "../Frameworks/libKoettMeetingWhisper.dylib").standardizedFileURL
         self.mode = mode
+        self.networkDenied = networkDenied
     }
 
     @concurrent
     func run(_ id: UUID, progress: @escaping @MainActor @Sendable (Double) -> Void) async throws {
+        try Task.checkCancellation()
         let bundle = try MeetingBundle.open(in: root, id: id)
         if let (receipt, markdown) = try MeetingPublication.receipt(at: bundle.directory) {
             let projection = try MeetingPublication.projections(at: bundle.directory, receipt: receipt)
@@ -37,9 +41,8 @@ struct MeetingTranscription: Sendable {
         }
         var stage = "decode"
         do {
-            var result = try await decode(bundle: bundle, seal: seal, progress: progress)
+            let result = try await decode(bundle: bundle, seal: seal, progress: progress)
             try Task.checkCancellation()
-            result.fallback = result.fallback || mode == .parakeet
             stage = "publication"
             let assets = marks(bundle: bundle, cutoff: seal.intent.cutoff)
             let markdown = result.render(seal: seal, assets: assets)
@@ -47,6 +50,7 @@ struct MeetingTranscription: Sendable {
                                                         fallback: result.fallback, assets: assets.map(\.path))
             _ = try MeetingPublication.replay(bundle: bundle, receipt: receipt, markdown: markdown, history: history)
         } catch {
+            try Task.checkCancellation()
             if !(error is CancellationError) {
                 try? bundle.write(MeetingJobFailure(stage: stage, message: error.localizedDescription), "job.json")
             }
@@ -55,28 +59,31 @@ struct MeetingTranscription: Sendable {
     }
 
     @concurrent
-    func replayCommitted() async {
+    func replayAtLaunch() async -> [UUID] {
         guard let directories = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
-        else { return }
+        else { return [] }
+        var pending: [(id: UUID, startedAt: Date)] = []
         for directory in directories {
-            guard !Task.isCancelled,
-                  FileManager.default.fileExists(atPath: directory.appending(path: "receipt.json").path),
-                  let id = UUID(uuidString: directory.lastPathComponent)
-            else { continue }
+            guard !Task.isCancelled, let id = UUID(uuidString: directory.lastPathComponent) else { continue }
             do {
                 let bundle = try MeetingBundle.open(in: root, id: id)
                 if let (receipt, markdown) = try MeetingPublication.receipt(at: bundle.directory) {
                     _ = try MeetingPublication.replay(bundle: bundle, receipt: receipt, markdown: markdown, history: history)
+                } else if let seal: MeetingSeal = try bundle.read("seal.json"), seal.intent.goal == .finish,
+                          seal.tracks.values.contains(where: { $0.capturedUntil > 0 }),
+                          !(FileManager.default.fileExists(atPath: bundle.directory.appending(path: "job.json").path)) {
+                    pending.append((id, bundle.manifest.startedAt))
                 }
             } catch MeetingBundleError.busy {
                 continue
-            } catch { fputs("Meeting publication replay: \(error.localizedDescription)\n", stderr) }
+            } catch { fputs("Meeting launch recovery: \(error.localizedDescription)\n", stderr) }
         }
+        return pending.sorted { ($0.startedAt, $0.id.uuidString) < ($1.startedAt, $1.id.uuidString) }.map(\.id)
     }
 
     private func decode(bundle: MeetingBundle, seal: MeetingSeal,
                         progress: @escaping @MainActor @Sendable (Double) -> Void) async throws -> Decoded {
-        let worker = try MeetingWorkerClient(executable: executable, models: models, library: library, mode: mode)
+        let worker = try MeetingWorkerClient(executable: executable, models: models, library: library, mode: mode, networkDenied: networkDenied)
         defer { worker.cancel() }
         return try await withTaskCancellationHandler {
             var decoded = Decoded()
@@ -210,15 +217,36 @@ struct MeetingBatch {
                          _ send: (UInt64, MeetingASRRequest) throws -> Void) throws {
         if samples.isEmpty { first = offset }
         samples.append(contentsOf: pcm)
-        let ownershipEnd = ownershipStart + Self.core
-        if samples.count >= ownershipEnd + Self.overlap {
-            let part = Array(samples[..<(ownershipEnd + Self.overlap)])
-            try send(first, .init(pcm: part, ownershipStart: ownershipStart, ownershipEnd: ownershipEnd))
-            let discard = ownershipEnd - Self.overlap
+        while samples.count >= ownershipStart + Self.core + Self.overlap {
+            let (end, silent) = quietBoundary(before: ownershipStart + Self.core)
+            let padding = silent ? 0 : Self.overlap
+            let part = Array(samples[..<(end + padding)])
+            try send(first, .init(pcm: part, ownershipStart: ownershipStart, ownershipEnd: end))
+            let discard = end - padding
             samples.removeFirst(discard)
             first += UInt64(discard)
-            ownershipStart = Self.overlap
+            ownershipStart = padding
         }
+    }
+
+    private func quietBoundary(before limit: Int) -> (end: Int, silent: Bool) {
+        let width = MeetingASRRequest.rate / 5
+        let step = width / 4
+        let earliest = limit - 2 * MeetingASRRequest.rate
+        var best = limit - width
+        var quietest = Int64.max
+        for first in stride(from: best, through: earliest, by: -step) {
+            let energy = samples[first..<(first + width)].reduce(Int64(0)) { sum, sample in
+                let amplitude = Int64(sample)
+                return sum + amplitude * amplitude
+            }
+            if energy < quietest {
+                best = first
+                quietest = energy
+                if energy == 0 { break }
+            }
+        }
+        return (best + width / 2, quietest == 0)
     }
 
     mutating func flush(_ send: (UInt64, MeetingASRRequest) throws -> Void) throws {

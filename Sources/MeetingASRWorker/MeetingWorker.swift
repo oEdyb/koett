@@ -14,7 +14,12 @@ struct MeetingWorker {
         watch.setEventHandler { _exit(1) }
         watch.activate()
         guard getppid() == parent else { exit(2) }
-        _ = setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)
+        if ProcessInfo.processInfo.environment["KOETT_MEETING_PROFILE_NO_DARWIN_BG"] != "1" {
+            _ = setpriority(PRIO_DARWIN_PROCESS, 0, PRIO_DARWIN_BG)
+        }
+        if ProcessInfo.processInfo.environment["KOETT_MEETING_PROFILE_TIMINGS"] != nil {
+            fputs("MEETING_WHISPER darwin_bg \(getpriority(PRIO_DARWIN_PROCESS, 0))\n", stderr)
+        }
         let output = FileHandle(fileDescriptor: dup(STDOUT_FILENO), closeOnDealloc: true)
         dup2(STDERR_FILENO, STDOUT_FILENO)
         let root = URL(fileURLWithPath: args[1], isDirectory: true)
@@ -108,24 +113,43 @@ private final class Engines {
                               _ request: MeetingASRRequest) throws -> [MeetingASRTurn] {
         guard !spans.isEmpty else { return [] }
         let turbo = try bridge.model(MeetingModelPins.turbo) { try modelPath(MeetingModelPins.turbo) }
-        var turns: [MeetingASRTurn] = []
-        for (index, speech) in spans.enumerated() {
+        let languages = try spans.indices.map { index in
+            let speech = spans[index]
             let window = padded(speech, count: samples.count)
             let audio = Array(samples[window])
-            var (language, confidence) = try bridge.language(turbo, audio)
+            let (language, confidence) = try bridge.language(turbo, audio)
             if speech.count < 48_000, confidence < 0.99 {
                 let extra = context(index, spans, samples, window)
-                if extra.count > audio.count { (language, confidence) = try bridge.language(turbo, extra) }
+                if extra.count > audio.count { return try bridge.language(turbo, extra).0 }
             }
+            return language
+        }
+        var turns: [MeetingASRTurn] = []
+        var first = spans.startIndex
+        while first < spans.endIndex {
+            let language = languages[first]
+            var last = first
+            let start = padded(spans[first], count: samples.count).lowerBound
+            while last + 1 < spans.endIndex, languages[last + 1] == language,
+                  spans[last + 1].lowerBound - spans[last].upperBound <= 32_000,
+                  padded(spans[last + 1], count: samples.count).upperBound - start <= 28 * 16_000 {
+                last += 1
+            }
+            let window = start..<padded(spans[last], count: samples.count).upperBound
             let swedish = mode == .routed && language == "sv"
             let model = swedish
                 ? try bridge.model(MeetingModelPins.swedish) { try modelPath(MeetingModelPins.swedish) }
                 : turbo
-            let words = try bridge.words(model, audio, language)
-            if let turn = turn(words, window: window, ownership: ownership(index, spans, window), request: request, language: language,
-                               backend: swedish ? "kb-whisper-large-q5_0" : "whisper-large-v3-turbo-q5_0") {
-                turns.append(turn)
+            let words = try bridge.words(model, Array(samples[window]), language)
+            let backend = swedish ? "kb-whisper-large-q5_0" : "whisper-large-v3-turbo-q5_0"
+            for index in first...last {
+                let ownWindow = padded(spans[index], count: samples.count)
+                if let turn = turn(words, window: window, ownership: ownership(index, spans, ownWindow), request: request,
+                                   language: language, backend: backend) {
+                    turns.append(turn)
+                }
             }
+            first = last + 1
         }
         return turns
     }

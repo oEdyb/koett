@@ -26,6 +26,90 @@ final class MeetingPublicationTests: XCTestCase {
         XCTAssertEqual(try history.page(query: "Cedar").count, MeetingPublication.Step.allCases.count)
     }
 
+    @MainActor
+    func testKilledProcessingIsQueuedAgainOnLaunch() async throws {
+        let root = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID()
+        try killMeetingFixture(type: Self.self, method: "testCrashDuringProcessingFixture", root: root, id: id, stage: 0)
+        try fixtureSeal(root: root, id: UUID(), goal: .hold)
+        try fixtureSeal(root: root, id: UUID(), goal: .interrupted)
+        let failed = UUID()
+        try fixtureSeal(root: root, id: failed, goal: .finish)
+        do {
+            let bundle = try MeetingBundle.open(in: root, id: failed)
+            try bundle.write(MeetingJobFailure(stage: "decode", message: "Missing model"), "job.json")
+        }
+        let history = TranscriptStore(fileURL: root.appending(path: "history.sqlite3"))
+        let transcription = MeetingTranscription(root: root, history: history)
+        let pending = await transcription.replayAtLaunch()
+        XCTAssertEqual(pending, [id])
+        let controller = MeetingController(root: root, canStart: { true }, reserve: { _ in XCTFail() },
+                                           makeSource: { _ in throw POSIXError(.EPERM) })
+        controller.process = { id, _ in
+            let bundle = try MeetingBundle.open(in: root, id: id)
+            let receipt = try MeetingPublication.commit("Resumed transcript", bundle: bundle, backends: [:], fallback: false, assets: [])
+            _ = try MeetingPublication.replay(bundle: bundle, receipt: receipt, markdown: "Resumed transcript", history: history)
+        }
+        controller.enqueuePending(pending)
+        XCTAssertEqual(controller.snapshot.phase, .processing)
+        XCTAssertEqual(controller.snapshot.id, id)
+        await waitForMeeting { controller.snapshot.phase == .idle }
+        let status = try MeetingControl.inspect(id: id, root: root)
+        XCTAssertEqual(status.phase, "complete")
+        XCTAssertFalse(status.recoverable)
+        XCTAssertEqual(try history.page(query: "Resumed").count, 1)
+        let after = await transcription.replayAtLaunch()
+        XCTAssertTrue(after.isEmpty)
+    }
+
+    @MainActor
+    func testCancelledWorkerLeavesFinishedMeetingQueuedWithoutJobFailure() async throws {
+        let root = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let id = UUID()
+        try fixtureSeal(root: root, id: id, goal: .finish)
+        let worker = root.appending(path: "worker")
+        try """
+        #!/bin/sh
+        /bin/dd bs=4 count=1 of=/dev/null 2>/dev/null
+        exec 3>&1
+        /usr/bin/touch "$2/worker.ready"
+        exec /bin/cat > /dev/null
+        """.write(to: worker, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: worker.path)
+        let history = TranscriptStore(fileURL: root.appending(path: "history.sqlite3"))
+        let transcription = MeetingTranscription(root: root, history: history, models: root, executable: worker)
+        let processing = Task { try await transcription.run(id, progress: { _ in XCTFail() }) }
+        await waitForMeeting { FileManager.default.fileExists(atPath: root.appending(path: "worker.ready").path) }
+        processing.cancel()
+        do {
+            try await processing.value
+            XCTFail("The cancelled worker returned a transcript.")
+        } catch is CancellationError {
+            // Terminating the worker closes its pipe before the run reports cancellation.
+        }
+        let directory = MeetingBundle.directory(in: root, id: id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appending(path: "job.json").path))
+        let pending = await transcription.replayAtLaunch()
+        XCTAssertEqual(pending, [id])
+    }
+
+    func testCrashDuringProcessingFixture() throws {
+        let (root, id, _) = try meetingCrashFixtureInput()
+        try fixtureSeal(root: root, id: id, goal: .finish)
+        let bundle = try MeetingBundle.open(in: root, id: id)
+        try withExtendedLifetime(bundle) { try waitForMeetingFixtureKill(root: root, id: id) }
+    }
+
+    private func fixtureSeal(root: URL, id: UUID, goal: MeetingCloseGoal) throws {
+        let bundle = try MeetingBundle.create(in: root, manifest: .init(id: id, startedAt: .now))
+        let writer = try MeetingJournal.Writer(bundle.audio(.you))
+        try writer.append(.pcm(first: 0, samples: [1, 2]))
+        try writer.sync()
+        _ = try bundle.seal(.init(cutoff: 2, goal: goal))
+    }
+
     func testCrashPublicationFixture() throws {
         let (root, id, stage) = try meetingCrashFixtureInput()
         let export = root.appending(path: "vault-\(id.uuidString)")
@@ -123,6 +207,30 @@ final class MeetingHistoryTests: XCTestCase {
 }
 
 final class MeetingASRTests: XCTestCase {
+    func testBatchKeepsSpeechCrossingTheOldBoundaryInOneRequest() throws {
+        let rate = MeetingASRRequest.rate
+        var audio = Array(repeating: Int16(2_000), count: 31 * rate)
+        let quiet = (27 * rate)..<(27 * rate + rate / 4)
+        audio.replaceSubrange(quiet, with: repeatElement(0, count: quiet.count))
+        let crossing = (28 * rate - 1_600)..<(28 * rate + 1_600)
+        audio.replaceSubrange(crossing, with: repeatElement(12_345, count: crossing.count))
+        var batch = MeetingBatch()
+        var requests: [(UInt64, MeetingASRRequest)] = []
+        let send: (UInt64, MeetingASRRequest) throws -> Void = { requests.append(($0, $1)) }
+        try batch.append(audio[...], at: 0, send)
+        try batch.flush(send)
+        XCTAssertEqual(requests.count, 2)
+        let first = try XCTUnwrap(requests.first)
+        let second = try XCTUnwrap(requests.last)
+        XCTAssertTrue(quiet.contains(first.1.ownershipEnd))
+        XCTAssertEqual(first.1.pcm.count / 2, first.1.ownershipEnd)
+        XCTAssertEqual(second.0, UInt64(first.1.ownershipEnd))
+        let samples = second.1.pcm.withUnsafeBytes { Array($0.bindMemory(to: Int16.self)) }
+        let local = (crossing.lowerBound - Int(second.0))..<(crossing.upperBound - Int(second.0))
+        guard local.lowerBound >= 0, local.upperBound <= samples.count else { return XCTFail("Speech spans two requests") }
+        XCTAssertEqual(Array(samples[local]), Array(repeating: 12_345, count: crossing.count))
+    }
+
     func testBoundedAudioBatchesOwnEachSampleExactlyOnce() throws {
         var batch = MeetingBatch()
         var next: UInt64 = 123

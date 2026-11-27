@@ -33,7 +33,7 @@ enum MeetingPublication {
     ) throws -> MeetingArtifact {
         let bytes = Data(markdown.utf8)
         let receipt = MeetingArtifact(transcriptSHA256: hash(bytes), backends: backends, fallback: fallback, assets: assets)
-        try keepIdentical(bytes, at: bundle.directory.appending(path: receipt.fileName))
+        try keepIdentical(bytes, at: bundle.directory.appending(path: receipt.fileName), fullSync: true)
         try checkpoint(.markdown)
         try bundle.write(receipt, "receipt.json")
         try checkpoint(.receipt)
@@ -136,11 +136,16 @@ enum MeetingPublication {
         path.range(of: #"^assets/mark-[0-9]+(?:-[0-9]+)?\.png$"#, options: .regularExpression) != nil
     }
 
-    private static func keepIdentical(_ bytes: Data, at url: URL) throws {
-        do { try MeetingFiles.write(bytes, to: url, replace: false) }
+    private static func keepIdentical(_ bytes: Data, at url: URL, fullSync: Bool = false) throws {
+        do { try MeetingFiles.write(bytes, to: url, replace: false, fullSync: fullSync) }
         catch MeetingBundleError.beforeCommit(let error as POSIXError) where error.code == .EEXIST {
             let existing = try Data(contentsOf: url, options: [.mappedIfSafe])
             guard existing == bytes else { throw MeetingBundleError.beforeCommit(error) }
+            if fullSync {
+                let file = try FileHandle(forReadingFrom: url)
+                defer { try? file.close() }
+                guard fcntl(file.fileDescriptor, F_FULLFSYNC) == 0 else { throw MeetingFiles.posixError }
+            }
             try MeetingFiles.syncDirectory(url.deletingLastPathComponent())
         }
     }
