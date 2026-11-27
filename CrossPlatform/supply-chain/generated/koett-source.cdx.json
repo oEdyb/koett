@@ -12987,6 +12987,41 @@
       "version": "1.22.3"
     },
     {
+      "bom-ref": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.6"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4d46e659151f31535b3947e322a58b0c604d3cbe93dfb284294e989a19d25ad7"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "whisper.cpp",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "native-library"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "bundled"
+        }
+      ],
+      "purl": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
+      "type": "library",
+      "version": "1.9.6"
+    },
+    {
       "bom-ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
       "externalReferences": [
         {
@@ -13273,6 +13308,146 @@
       "purl": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
       "type": "machine-learning-model",
       "version": "ee09c569f73759e6d44c9bd16766f477b2b36d39"
+    },
+    {
+      "bom-ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9ec6dcf0f9d20ea6837567338acb2af889d871013ccea529f93d0041ab99871c"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "CC-BY-4.0"
+        }
+      ],
+      "name": "Parakeet v3 INT8 Core ML",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "external-download"
+        }
+      ],
+      "purl": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "type": "machine-learning-model",
+      "version": "7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+    },
+    {
+      "bom-ref": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/KBLab/kb-whisper-large/tree/d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6d2863812d7410322bb7d8647a5c7260761300fa946714c9ed66d22bb30bcb19"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "Apache-2.0"
+        }
+      ],
+      "name": "KB-Whisper large Q5_0",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "external-download"
+        }
+      ],
+      "purl": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "type": "machine-learning-model",
+      "version": "d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+    },
+    {
+      "bom-ref": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/ggerganov/whisper.cpp/tree/5359861c739e955e79d9a303bcbc70fb988958b1"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "Whisper large-v3-turbo Q5_0",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "external-download"
+        }
+      ],
+      "purl": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "type": "machine-learning-model",
+      "version": "5359861c739e955e79d9a303bcbc70fb988958b1"
+    },
+    {
+      "bom-ref": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://huggingface.co/ggml-org/whisper-vad/tree/9ffd54a1e1ee413ddf265af9913beaf518d1639b"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
+        }
+      ],
+      "licenses": [
+        {
+          "acknowledgement": "declared",
+          "expression": "MIT"
+        }
+      ],
+      "name": "Silero VAD 6.2.0",
+      "properties": [
+        {
+          "name": "koett:group",
+          "value": "model"
+        },
+        {
+          "name": "koett:notice-state",
+          "value": "external-download"
+        }
+      ],
+      "purl": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "type": "machine-learning-model",
+      "version": "9ffd54a1e1ee413ddf265af9913beaf518d1639b"
     },
     {
       "bom-ref": "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
@@ -14404,6 +14579,7 @@
         "pkg:cargo/base64@0.23.1",
         "pkg:cargo/bzip2@0.6.1",
         "pkg:cargo/cpal@0.18.2",
+        "pkg:cargo/crc32fast@1.5.1",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/gdk4-wayland@0.11.5",
@@ -14439,6 +14615,7 @@
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
         "pkg:github/NSIS-Dev/nsis@v312",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
+        "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
         "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -14448,6 +14625,10 @@
         "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
         "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
         "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+        "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+        "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+        "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
         "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
         "pkg:npm/dompurify@3.4.14",
         "pkg:npm/highlight.js@11.12.0",
@@ -15980,6 +16161,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0"
     },
     {
@@ -16013,6 +16198,22 @@
     {
       "dependsOn": [],
       "ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b"
     },
     {
       "dependsOn": [],

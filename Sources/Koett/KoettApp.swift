@@ -198,6 +198,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
         controller.configureUpdates()
         controller.installMenu()
         controller.startLocalControl()
+        controller.replayMeetingPublications()
         print("Checking microphone and Accessibility access...")
         Task { @MainActor in
             await controller.start()

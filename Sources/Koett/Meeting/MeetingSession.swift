@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import MeetingASRProtocol
 
 struct MeetingSnapshot: Codable, Sendable {
     var phase: MeetingState.Phase
@@ -41,7 +42,7 @@ final class MeetingController {
     private var issue: String?
     private var progress: Double?
     var onSnapshot: ((MeetingSnapshot) -> Void)?
-    var process: ((UUID, @escaping @MainActor (Double) -> Void) async throws -> Void)?
+    var process: ((UUID, @escaping @MainActor @Sendable (Double) -> Void) async throws -> Void)?
 
     init(
         root: URL, canStart: @escaping () -> Bool, reserve: @escaping (Bool) -> Void,
@@ -273,7 +274,7 @@ final class MeetingController {
 extension KoettController {
     func makeMeetingController() -> MeetingController {
         let root = transcriptStore.databaseURL.deletingLastPathComponent().appending(path: "Meetings")
-        return MeetingController(root: root, canStart: { [weak self] in self?.canStartSession == true },
+        let controller = MeetingController(root: root, canStart: { [weak self] in self?.canStartSession == true },
                                  reserve: { [weak self] reserved in
             guard let self else { return }
             if reserved {
@@ -301,5 +302,16 @@ extension KoettController {
             return .init(id: id, startedAt: .now, exportDirectory: export,
                          keepAudio: self?.microphoneDefaults.bool(forKey: "meetingKeepAudio") ?? false)
         })
+        let history = transcriptStore
+        controller.process = { [weak self] id, progress in
+            let mode: MeetingASRMode = self?.microphoneDefaults.bool(forKey: "meetingUseRoutedMetal") == true ? .routed : .parakeet
+            try await MeetingTranscription(root: root, history: history, mode: mode).run(id, progress: progress)
+        }
+        return controller
+    }
+
+    func replayMeetingPublications() {
+        let transcription = MeetingTranscription(root: meeting.root, history: transcriptStore)
+        Task(priority: .background) { await transcription.replayCommitted() }
     }
 }

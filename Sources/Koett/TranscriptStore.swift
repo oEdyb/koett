@@ -88,6 +88,28 @@ struct TranscriptStore: Sendable {
         return true
     }
 
+    func upsertMeeting(id: UUID, date: Date, model: String, text: String) throws {
+        let id = "meeting:\(id.uuidString.lowercased())"
+        let database = try HistoryDatabase(url: databaseURL)
+        try database.transaction {
+            try database.statement("""
+                INSERT INTO transcripts(id, created_at_ms, model, text, raw_text) VALUES (?, ?, ?, ?, NULL)
+                ON CONFLICT(id) DO UPDATE SET model=excluded.model, text=excluded.text, raw_text=NULL
+                WHERE transcripts.model != excluded.model OR transcripts.text != excluded.text
+                """) { statement in
+                try database.bind(id, to: 1, in: statement)
+                try database.bind(Self.milliseconds(date), to: 2, in: statement)
+                try database.bind(model, to: 3, in: statement)
+                try database.bind(text, to: 4, in: statement)
+                try database.step(statement)
+            }
+            try database.statement("INSERT INTO history_native_records(transcript_id) VALUES (?) ON CONFLICT DO NOTHING") { statement in
+                try database.bind(id, to: 1, in: statement)
+                try database.step(statement)
+            }
+        }
+    }
+
     func get(_ id: String) throws -> TranscriptRecord? {
         try get(id, in: HistoryDatabase(url: databaseURL))
     }

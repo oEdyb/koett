@@ -33,6 +33,13 @@ def validate_app(app):
     details = run('codesign', '-d', '--verbose=4', app)
     if f'TeamIdentifier={TEAM}' not in details or 'Authority=Developer ID Application:' not in details:
         raise ValueError('The app requires the Koett Developer ID Application signature')
+    for name in ('MacOS/koett-meeting-asr', 'Frameworks/libKoettMeetingWhisper.dylib'):
+        component = app / 'Contents' / name
+        run('codesign', '--verify', '--strict', component)
+        if f'TeamIdentifier={TEAM}' not in run('codesign', '-d', '--verbose=4', component):
+            raise ValueError(f'The meeting component requires the Koett signing team: {name}')
+    if not (app / 'Contents/Resources/Koett_MeetingASRProtocol.bundle').is_dir():
+        raise ValueError('The signed app is missing its meeting model manifest')
     run('xcrun', 'stapler', 'validate', app)
     assessment = run('spctl', '--assess', '--type', 'execute', '--verbose=2', app)
     if 'Notarized Developer ID' not in assessment:

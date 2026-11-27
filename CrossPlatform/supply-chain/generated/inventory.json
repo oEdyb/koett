@@ -271,6 +271,52 @@
       "version": "ee09c569f73759e6d44c9bd16766f477b2b36d39"
     },
     {
+      "assets": [
+        {
+          "bytes": 4926,
+          "path": "Sources/MeetingASRProtocol/Resources/Models.tsv",
+          "sha256": "9ec6dcf0f9d20ea6837567338acb2af889d871013ccea529f93d0041ab99871c"
+        }
+      ],
+      "group": "model",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6d2863812d7410322bb7d8647a5c7260761300fa946714c9ed66d22bb30bcb19"
+        }
+      ],
+      "license": {
+        "expression": "Apache-2.0"
+      },
+      "license_files": [],
+      "name": "KB-Whisper large Q5_0",
+      "notice_state": "external-download",
+      "sbom_ref": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "source_url": "https://huggingface.co/KBLab/kb-whisper-large/tree/d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "type": "machine-learning-model",
+      "version": "d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+    },
+    {
+      "assets": [
+        {
+          "bytes": 4926,
+          "path": "Sources/MeetingASRProtocol/Resources/Models.tsv",
+          "sha256": "9ec6dcf0f9d20ea6837567338acb2af889d871013ccea529f93d0041ab99871c"
+        }
+      ],
+      "group": "model",
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
+      "license_files": [],
+      "name": "Parakeet v3 INT8 Core ML",
+      "notice_state": "external-download",
+      "sbom_ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "source_url": "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "type": "machine-learning-model",
+      "version": "7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+    },
+    {
       "assets": [],
       "group": "model",
       "hashes": [
@@ -316,6 +362,58 @@
       "source_url": "https://github.com/snakers4/silero-vad",
       "type": "machine-learning-model",
       "version": "sha256-9e2449e10874"
+    },
+    {
+      "assets": [
+        {
+          "bytes": 4926,
+          "path": "Sources/MeetingASRProtocol/Resources/Models.tsv",
+          "sha256": "9ec6dcf0f9d20ea6837567338acb2af889d871013ccea529f93d0041ab99871c"
+        }
+      ],
+      "group": "model",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
+        }
+      ],
+      "license": {
+        "expression": "MIT"
+      },
+      "license_files": [],
+      "name": "Silero VAD 6.2.0",
+      "notice_state": "external-download",
+      "sbom_ref": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "source_url": "https://huggingface.co/ggml-org/whisper-vad/tree/9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "type": "machine-learning-model",
+      "version": "9ffd54a1e1ee413ddf265af9913beaf518d1639b"
+    },
+    {
+      "assets": [
+        {
+          "bytes": 4926,
+          "path": "Sources/MeetingASRProtocol/Resources/Models.tsv",
+          "sha256": "9ec6dcf0f9d20ea6837567338acb2af889d871013ccea529f93d0041ab99871c"
+        }
+      ],
+      "group": "model",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2"
+        }
+      ],
+      "license": {
+        "expression": "MIT"
+      },
+      "license_files": [],
+      "name": "Whisper large-v3-turbo Q5_0",
+      "notice_state": "external-download",
+      "sbom_ref": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp/tree/5359861c739e955e79d9a303bcbc70fb988958b1",
+      "type": "machine-learning-model",
+      "version": "5359861c739e955e79d9a303bcbc70fb988958b1"
     },
     {
       "assets": [
@@ -636,6 +734,48 @@
       "status": "asr-only-source-build-candidate",
       "type": "library",
       "version": "0.7"
+    },
+    {
+      "assets": [
+        {
+          "bytes": 714,
+          "path": "Sources/MeetingASRWorker/Native/CMakeLists.txt",
+          "sha256": "1716f90b8a617f2a424cce4f830f622ef585e4aefc3385c912b5b418b39e791d"
+        },
+        {
+          "bytes": 3406,
+          "path": "Sources/MeetingASRWorker/Native/bridge.c",
+          "sha256": "99e06c0482b272bd91d763b07943c49b61a02317727a2505ecf46de94cef45ca"
+        },
+        {
+          "bytes": 1060,
+          "path": "scripts/build-meeting-whisper.sh",
+          "sha256": "7ed044f1e36ddc6487437ed5b79f4fedca5b0ff8b2907f9267d9d1dcf1e3ad5c"
+        }
+      ],
+      "group": "native-library",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4d46e659151f31535b3947e322a58b0c604d3cbe93dfb284294e989a19d25ad7"
+        }
+      ],
+      "license": {
+        "expression": "MIT"
+      },
+      "license_files": [
+        {
+          "bytes": 1078,
+          "path": "Sources/MeetingASRWorker/Native/Notices/whisper.cpp-LICENSE.txt",
+          "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+        }
+      ],
+      "name": "whisper.cpp",
+      "notice_state": "bundled",
+      "sbom_ref": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
+      "source_url": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.6",
+      "type": "library",
+      "version": "1.9.6"
     },
     {
       "bundled_license_files": [
@@ -12965,6 +13105,7 @@
         "pkg:cargo/base64@0.23.1",
         "pkg:cargo/bzip2@0.6.1",
         "pkg:cargo/cpal@0.18.2",
+        "pkg:cargo/crc32fast@1.5.1",
         "pkg:cargo/directories@6.0.0",
         "pkg:cargo/futures-util@0.3.34",
         "pkg:cargo/gdk4-wayland@0.11.5",
@@ -13000,6 +13141,7 @@
         "pkg:github/FluidInference/text-processing-rs@v0.3.0",
         "pkg:github/NSIS-Dev/nsis@v312",
         "pkg:github/csukuangfj/kaldi-native-fbank@v1.22.3",
+        "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
         "pkg:github/k2-fsa/kaldi-decoder@v0.3.0",
         "pkg:github/k2-fsa/kaldifst@v1.8.0",
         "pkg:github/k2-fsa/sherpa-onnx@3dc7c569f31ca2cd4a20ed6f7db780327e6714c5",
@@ -13009,6 +13151,10 @@
         "pkg:github/sparkle-project/Sparkle@ab7d71291238df6e0492143b120c9b696a35f603",
         "pkg:huggingface/FluidInference/nemotron-speech-streaming-en-0.6b-coreml@e673531caa6d25ab7baf5a8c14c9b99ba1551838",
         "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v2-coreml@ee09c569f73759e6d44c9bd16766f477b2b36d39",
+        "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+        "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+        "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+        "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
         "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292",
         "pkg:npm/dompurify@3.4.14",
         "pkg:npm/highlight.js@11.12.0",
@@ -14541,6 +14687,10 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:github/k2-fsa/kaldi-decoder@v0.3.0"
     },
     {
@@ -14577,6 +14727,22 @@
     },
     {
       "dependsOn": [],
+      "ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1"
+    },
+    {
+      "dependsOn": [],
+      "ref": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b"
+    },
+    {
+      "dependsOn": [],
       "ref": "pkg:huggingface/superwhisper/s1-mini-GGUF@ee2c0f56e56345f475749a44ff2893e21c3cb292"
     },
     {
@@ -14598,14 +14764,14 @@
   ],
   "inputs": [
     {
-      "bytes": 85841,
+      "bytes": 85855,
       "path": "CrossPlatform/Cargo.lock",
-      "sha256": "276bd6ca77bc812c526afe7d81cc964b30095c570c482e4306ea394e4462f8de"
+      "sha256": "cb4f4b35d3b75b30e155e13105fb58dda15e04cc3303b46a6921a91d8a33b069"
     },
     {
-      "bytes": 3820,
+      "bytes": 3841,
       "path": "CrossPlatform/Cargo.toml",
-      "sha256": "2e135059a94ce1e2cfb59935b193ee68120071b7b5abd75945f56f73af7502e3"
+      "sha256": "e7dae1cea8c78985af6b5b4d6bd4d66c54deb33ebcb6b560d99b6dcdc4cab5d9"
     },
     {
       "bytes": 6849,
@@ -14628,9 +14794,9 @@
       "sha256": "c654032d61ae8b3370914ac8f3c4434961306823b9da808dc6a28bd658fd0fe3"
     },
     {
-      "bytes": 19773,
+      "bytes": 23904,
       "path": "CrossPlatform/supply-chain/inventory-policy.json",
-      "sha256": "18f7af403075a1903578e458caf7ab024d88f42c8f42483f2e7ee6ae3fb623f4"
+      "sha256": "dfe068b8152d3e1a10e628b1f1509a5d80048f811e5ee4dfeee0a7eeaf9909fe"
     },
     {
       "bytes": 2501,
@@ -14653,9 +14819,9 @@
       "sha256": "6c0254b77538372e8846c8f818da1aabb35e18f7aa7b6afecdcb4508f7ab8f02"
     },
     {
-      "bytes": 2602,
+      "bytes": 3041,
       "path": "Package.swift",
-      "sha256": "7934377fa9e9539854f30cffb39a75e1a4053bf9c9080619daef1197af338be4"
+      "sha256": "ea8e52b13390700e58ef4916a765cf998d75567dbcee2a712343c924ed1ce7c3"
     },
     {
       "bytes": 458,
@@ -16044,10 +16210,10 @@
   "summary": {
     "blocked_control_components": 0,
     "bundled_javascript": 4,
-    "components": 361,
-    "models": 8,
-    "native_libraries": 9,
-    "notice_gaps": 32,
+    "components": 366,
+    "models": 12,
+    "native_libraries": 10,
+    "notice_gaps": 36,
     "rust_packages": 337,
     "swift_packages": 2
   }
