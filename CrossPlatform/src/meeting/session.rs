@@ -9,7 +9,7 @@ use super::bundle::{Bundle, WriteError};
 use super::capture::disk::{CaptureFault, CaptureFaultReason, CaptureNotice, free_disk_bytes};
 use super::capture::journal::{TrackReader, has_record_bytes};
 use super::capture::writer::{TrackConfig, TrackWriter};
-use super::capture::{CapturePlatform, SourceEpoch, Timing};
+use super::capture::{CapturePlatform, SourceEpoch, Timing, TrackLevel};
 use super::controller::emit;
 use super::*;
 use crate::linux::meeting_audio::{LinuxCapture, Source};
@@ -38,6 +38,7 @@ impl PartialEq for CaptureResources {
 struct ArmedTrack {
     source: Source,
     writer: TrackWriter,
+    level: TrackLevel,
 }
 
 /// Marks and a bundle without audio: the real close path minus pw-record.
@@ -71,6 +72,10 @@ pub(super) fn open(
     let result = arm(attempt, &mut bundle, commands);
     match result {
         Ok((marks, tracks, epoch)) => Ok(OpenedCapture {
+            levels: Tracks {
+                you: tracks.you.level.clone(),
+                other: tracks.other.level.clone(),
+            },
             capture: LiveCapture::Armed(Box::new(CaptureResources {
                 marks,
                 tracks,
@@ -129,7 +134,7 @@ fn arm(
     ) {
         Ok(you) => Ok((marks, Tracks { you, other }, epoch)),
         Err(error) => {
-            let ArmedTrack { source, writer } = other;
+            let ArmedTrack { source, writer, .. } = other;
             drop(source);
             let _ = writer.finish();
             Err(error)
@@ -173,8 +178,13 @@ fn arm_track(
         },
     )
     .map_err(writer_open_error)?;
+    let level = ingress.level();
     match platform.arm(channel, ingress) {
-        Ok(source) => Ok(ArmedTrack { source, writer }),
+        Ok(source) => Ok(ArmedTrack {
+            source,
+            writer,
+            level,
+        }),
         Err(error) => {
             let _ = writer.finish();
             Err(unavailable(error))

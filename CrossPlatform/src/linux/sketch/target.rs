@@ -1,15 +1,15 @@
-//! Where a drawing session's sketches go: a dictation's keyframes and pill
-//! timeline, or a meeting's timestamped marks. Meeting marks never touch the
-//! frame store, the pill timeline or the speech-linking clock.
+//! Where a drawing session's sketches go: a dictation's keyframes, or a
+//! meeting's timestamped marks; both are numbered on the pill's timeline.
+//! Meeting marks never touch the frame store or the speech-linking clock.
 use super::Group;
 use super::frames::{self, Keyframe};
-use crate::meeting::{MeetingId, MeetingMarkScope, Offset};
+use crate::meeting::{MeetingId, MeetingScope, Offset};
 use crate::pin_context::PinContext;
 use std::time::{Duration, Instant};
 
 pub(in crate::linux) enum SketchTarget {
     Dictation { started: Instant, recording: u64 },
-    Meeting(MeetingMarkScope),
+    Meeting(MeetingScope),
 }
 
 /// Identifies one dictation or one meeting, so an overlay opens once for it.
@@ -98,34 +98,41 @@ impl SketchTarget {
         }
     }
 
-    /// Republishes every dictation sketch to the recording pill's timeline.
-    /// Numbers follow start order, matching the pasted contact sheet and
-    /// bullets. Times are pill (wall-clock) times, which include pauses;
-    /// speech linking uses `audio_start` instead. A meeting only tells the pill
-    /// whether a stroke is live.
+    /// The clock the pill's timeline runs on for this session.
+    fn pill_zero(&self) -> Instant {
+        match self {
+            Self::Dictation { started, .. } => *started,
+            Self::Meeting(scope) => scope.zero(),
+        }
+    }
+
+    /// Republishes every sketch to the recording pill's timeline. Numbers
+    /// follow start order, matching a dictation's pasted contact sheet and
+    /// bullets and a meeting's numbered marks. Times are pill (wall-clock)
+    /// times, which include pauses; speech linking uses `audio_start` instead.
     pub(super) fn publish(&self, groups: &[Group], stroking: Option<u64>) {
-        let Self::Dictation { started, .. } = self else {
+        let started = self.pill_zero();
+        if matches!(self, Self::Meeting(_)) {
             super::MEETING_INK.store(stroking.is_some(), std::sync::atomic::Ordering::Release);
-            return;
-        };
+        }
         let mut groups: Vec<&Group> = groups.iter().collect();
         groups.sort_by_key(|group| group.id);
         for (index, group) in groups.into_iter().enumerate() {
             crate::sketch::publish_for(
-                *started,
+                started,
                 crate::sketch::SketchEvent {
                     index: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                    start_ms: super::pill_ms(*started, group.start),
-                    end_ms: super::pill_ms(*started, group.end),
+                    start_ms: super::pill_ms(started, group.start),
+                    end_ms: super::pill_ms(started, group.end),
                     live: stroking == Some(group.id),
                 },
             );
         }
     }
 
-    /// `remaining` excludes the removed sketch. A dictation's later numbers
-    /// shift down, so the pill gets the renumbered list and loses the
-    /// now-unused highest number.
+    /// `remaining` excludes the removed sketch. Later numbers shift down, so
+    /// the pill gets the renumbered list and loses the now-unused highest
+    /// number.
     pub(super) fn remove(
         &self,
         removed: u64,
@@ -146,6 +153,8 @@ impl SketchTarget {
                     Removal::Lost(issue) => scope.miss(removed, issue),
                 };
                 self.publish(remaining, stroking);
+                let before = u32::try_from(remaining.len() + 1).unwrap_or(u32::MAX);
+                crate::sketch::remove_for(scope.zero(), before);
             }
         }
     }
@@ -221,7 +230,7 @@ mod tests {
     fn a_meeting_sketch_lands_as_a_mark_at_its_first_ink() {
         let folder = Folder::new();
         let zero = Instant::now();
-        let (scope, writer) = MeetingMarkScope::writing_to(&folder.0, zero);
+        let (scope, writer) = MeetingScope::writing_to(&folder.0, zero);
         let target = SketchTarget::Meeting(scope);
         let first_ink = zero + Duration::from_millis(2_500);
         let group = sketch(1, first_ink);
@@ -240,7 +249,7 @@ mod tests {
         let _ink = ink();
         let folder = Folder::new();
         let zero = Instant::now();
-        let (scope, writer) = MeetingMarkScope::writing_to(&folder.0, zero);
+        let (scope, writer) = MeetingScope::writing_to(&folder.0, zero);
         let target = SketchTarget::Meeting(scope);
         let kept = sketch(1, zero + Duration::from_secs(1));
         let undone = sketch(2, zero + Duration::from_secs(3));
@@ -265,7 +274,7 @@ mod tests {
         let _ink = ink();
         let folder = Folder::new();
         let zero = Instant::now();
-        let (scope, writer) = MeetingMarkScope::writing_to(&folder.0, zero);
+        let (scope, writer) = MeetingScope::writing_to(&folder.0, zero);
         let target = SketchTarget::Meeting(scope);
         let group = sketch(1, zero);
 
@@ -283,7 +292,7 @@ mod tests {
         let _ink = ink();
         let folder = Folder::new();
         let zero = Instant::now();
-        let (scope, _writer) = MeetingMarkScope::writing_to(&folder.0, zero);
+        let (scope, _writer) = MeetingScope::writing_to(&folder.0, zero);
         let target = SketchTarget::Meeting(scope);
         let groups = [sketch(1, zero), sketch(2, zero + Duration::from_secs(1))];
         for group in &groups {
@@ -298,6 +307,47 @@ mod tests {
 
         assert!(other_undone);
         assert!(!live_undone);
+    }
+
+    #[test]
+    fn meeting_marks_are_numbered_on_the_pill_in_start_order() {
+        let _ink = ink();
+        let _registry = crate::sketch::TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let folder = Folder::new();
+        let zero = Instant::now();
+        let (scope, _writer) = MeetingScope::writing_to(&folder.0, zero);
+        crate::sketch::set_recording_start(Some(zero));
+        crate::sketch::drain();
+        let target = SketchTarget::Meeting(scope);
+        let groups = [
+            sketch(1, zero + Duration::from_secs(1)),
+            sketch(2, zero + Duration::from_secs(4)),
+        ];
+
+        target.publish(&groups, Some(2));
+        target.remove(1, Removal::Undone, &groups[1..], Some(2));
+        let updates = crate::sketch::drain();
+        crate::sketch::set_recording_start(None);
+
+        let mark = |index, ms, live| {
+            crate::sketch::SketchUpdate::Upsert(crate::sketch::SketchEvent {
+                index,
+                start_ms: ms,
+                end_ms: ms,
+                live,
+            })
+        };
+        assert_eq!(
+            updates,
+            [
+                mark(1, 1_000, false),
+                mark(2, 4_000, true),
+                mark(1, 4_000, true),
+                crate::sketch::SketchUpdate::Removed { index: 2 },
+            ]
+        );
     }
 
     #[test]
@@ -325,7 +375,7 @@ mod tests {
     #[test]
     fn only_dictation_follows_pause_and_reads_pin_context() {
         let folder = Folder::new();
-        let (scope, _writer) = MeetingMarkScope::writing_to(&folder.0, Instant::now());
+        let (scope, _writer) = MeetingScope::writing_to(&folder.0, Instant::now());
         let meeting = SketchTarget::Meeting(scope);
         let dictation = SketchTarget::Dictation {
             started: Instant::now(),

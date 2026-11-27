@@ -12,7 +12,7 @@ use std::io;
 
 use super::{Channel, SAMPLE_RATE};
 
-pub(crate) use ingress::TrackIngress;
+pub(crate) use ingress::{TrackIngress, TrackLevel};
 
 const PCM_FRAMES: usize = SAMPLE_RATE as usize / 2;
 const GAP_THRESHOLD: u64 = SAMPLE_RATE as u64 * 300 / 1000;
