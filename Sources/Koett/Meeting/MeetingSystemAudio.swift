@@ -28,7 +28,7 @@ final class MeetingSystemAudio: MeetingAudioSource {
             kAudioAggregateDeviceNameKey: "Koett meeting audio",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
             kAudioAggregateDeviceIsPrivateKey: true,
-            kAudioAggregateDeviceTapAutoStartKey: true,
+            kAudioAggregateDeviceTapAutoStartKey: false,
             kAudioAggregateDeviceTapListKey: [[
                 kAudioSubTapUIDKey: description.uuid.uuidString,
                 kAudioSubTapDriftCompensationKey: true

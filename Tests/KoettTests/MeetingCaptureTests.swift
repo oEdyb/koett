@@ -82,6 +82,7 @@ final class MeetingCaptureTests: XCTestCase {
         controller.poll()
         you = replacement
         first.isConnected = false
+        try await Task.sleep(for: .milliseconds(270))
         controller.poll()
         XCTAssertEqual(controller.snapshot.tracks["you"]?.health, .reconnecting)
         XCTAssertEqual(other.stops, 0)
@@ -102,6 +103,29 @@ final class MeetingCaptureTests: XCTestCase {
         }
         XCTAssertEqual(epochs, [1, 2])
         XCTAssertTrue(gaps.contains(.sourceRestart))
+    }
+
+    @MainActor
+    func testFailedStopIntentKeepsBothSourcesRecording() async throws {
+        let root = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let you = FakeMeetingSource(), other = FakeMeetingSource()
+        let controller = MeetingController(root: root, canStart: { true }, reserve: { _ in },
+                                           makeSource: { $0 == .you ? you : other })
+        let id = UUID()
+        try controller.send(.start(id))
+        let key = try XCTUnwrap(controller.send(.stop(id)).confirmation)
+        let intent = MeetingBundle.directory(in: root, id: id).appending(path: "intent.json")
+        try FileManager.default.createDirectory(at: intent, withIntermediateDirectories: false)
+        XCTAssertThrowsError(try controller.send(.finish(key))) {
+            XCTAssertEqual(($0 as? MeetingCommandError)?.code, "intent_write_failed")
+        }
+        XCTAssertEqual(controller.snapshot.phase, .confirmStop)
+        XCTAssertEqual(controller.snapshot.confirmation, key)
+        XCTAssertEqual(you.stops + other.stops, 0)
+        try FileManager.default.removeItem(at: intent)
+        try controller.send(.cancel(key))
+        XCTAssertEqual(you.stops + other.stops, 2)
     }
 
     @MainActor

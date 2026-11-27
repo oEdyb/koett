@@ -83,6 +83,7 @@ final class MeetingController {
             guard state.transition(.stop(id)) != .wrongState else { throw MeetingCommandError.wrongState }
         case let .resume(key):
             guard state.transition(.resume(key)) == .changed else { throw MeetingCommandError.stale }
+            issue = nil
         case let .finish(key):
             try close(key, goal: .finish)
         case let .cancel(key):
@@ -125,7 +126,18 @@ final class MeetingController {
                     interrupt(message)
                     return
                 }
-                if source?.isConnected == false {
+                var sourceUnavailable = false
+                if let source {
+                    let opened = capture.openedAt[track, default: 0]
+                    let arrival = source.ring.lastCallback.load(ordering: .acquiring)
+                    let last = arrival == 0 ? opened : capture.clock.offset(arrival)
+                    sourceUnavailable = now > last && now - last >= 48_000
+                    if now >= capture.nextRouteCheck[track, default: 0] {
+                        capture.nextRouteCheck[track] = now + 4_000
+                        sourceUnavailable = sourceUnavailable || !source.isConnected
+                    }
+                }
+                if sourceUnavailable {
                     source?.stop()
                     if let source { _ = try capture.writer.update([track: source.ring]) }
                     capture.sources[track] = nil
@@ -134,6 +146,8 @@ final class MeetingController {
                 }
                 if capture.sources[track] == nil, now >= (capture.nextRetry[track] ?? 0) {
                     capture.sources[track] = try? makeSource(track)
+                    capture.openedAt[track] = now
+                    capture.nextRouteCheck[track] = now + 4_000
                     capture.nextRetry[track] = now + 16_000
                 }
                 let receiving = capture.sources[track]?.ring.received.load(ordering: .acquiring) == true
@@ -190,6 +204,7 @@ final class MeetingController {
             throw error
         }
 
+        issue = nil
         _ = state.transition(.closing(key, goal, intent.cutoff))
         try drain(capture, intent: intent)
     }
@@ -263,6 +278,8 @@ final class MeetingController {
         var sources: [MeetingTrack: any MeetingAudioSource] = [:]
         var received: Set<MeetingTrack> = []
         var nextRetry: [MeetingTrack: UInt64] = [:]
+        var nextRouteCheck: [MeetingTrack: UInt64] = [:]
+        var openedAt: [MeetingTrack: UInt64] = [:]
 
         init(_ bundle: MeetingBundle) throws {
             self.bundle = bundle

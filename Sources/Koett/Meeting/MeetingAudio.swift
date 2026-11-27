@@ -43,6 +43,7 @@ final class MeetingAudioRing: @unchecked Sendable {
     private let overrun = Atomic<Bool>(false)
     private let enabled = Atomic<Bool>(true)
     let received = Atomic<Bool>(false)
+    let lastCallback = Atomic<UInt64>(0)
 
     init(rate: Double, capacity: Int = 64, slotFloats: Int = 16_384) {
         self.rate = rate
@@ -89,6 +90,7 @@ final class MeetingAudioRing: @unchecked Sendable {
         stamps[index] = .init(hostTime: hostTime, frames: frames, channels: channels, planar: planar,
                               dropped: overrun.exchange(false, ordering: .relaxed))
         writeIndex.store(write + 1, ordering: .releasing)
+        lastCallback.store(AudioGetCurrentHostTime(), ordering: .releasing)
         received.store(true, ordering: .releasing)
     }
 
