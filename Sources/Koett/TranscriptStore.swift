@@ -88,6 +88,28 @@ struct TranscriptStore: Sendable {
         return true
     }
 
+    func upsertMeeting(id: UUID, date: Date, model: String, text: String) throws {
+        let id = "meeting:\(id.uuidString.lowercased())"
+        let database = try HistoryDatabase(url: databaseURL)
+        try database.transaction {
+            try database.statement("""
+                INSERT INTO transcripts(id, created_at_ms, model, text, raw_text) VALUES (?, ?, ?, ?, NULL)
+                ON CONFLICT(id) DO UPDATE SET model=excluded.model, text=excluded.text, raw_text=NULL
+                WHERE transcripts.model != excluded.model OR transcripts.text != excluded.text
+                """) { statement in
+                try database.bind(id, to: 1, in: statement)
+                try database.bind(Self.milliseconds(date), to: 2, in: statement)
+                try database.bind(model, to: 3, in: statement)
+                try database.bind(text, to: 4, in: statement)
+                try database.step(statement)
+            }
+            try database.statement("INSERT INTO history_native_records(transcript_id) VALUES (?) ON CONFLICT DO NOTHING") { statement in
+                try database.bind(id, to: 1, in: statement)
+                try database.step(statement)
+            }
+        }
+    }
+
     func get(_ id: String) throws -> TranscriptRecord? {
         try get(id, in: HistoryDatabase(url: databaseURL))
     }
@@ -131,6 +153,28 @@ struct TranscriptStore: Sendable {
                     model: database.string(statement, 2) ?? "",
                     preview: database.string(statement, 3) ?? ""
                 ))
+            }
+            return rows
+        }
+    }
+
+    func searchMeetings(_ query: String) throws -> [HistorySummary] {
+        guard FileManager.default.fileExists(atPath: databaseURL.path) else { return [] }
+        let database = try HistoryDatabase(url: databaseURL, readOnly: true)
+        let search = query.split(whereSeparator: { $0.isWhitespace }).map {
+            "\"" + $0.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }.joined(separator: " AND ")
+        return try database.statement("""
+            SELECT t.id, t.created_at_ms, t.model, substr(t.text, 1, 120)
+            FROM transcripts_fts JOIN transcripts t ON t.rowid = transcripts_fts.rowid
+            WHERE transcripts_fts MATCH ? AND t.id GLOB 'meeting:*'
+            ORDER BY t.created_at_ms DESC, t.id DESC LIMIT 15
+            """) { statement in
+            try database.bind(search, to: 1, in: statement)
+            var rows: [HistorySummary] = []
+            while try database.step(statement) {
+                rows.append(.init(id: database.string(statement, 0) ?? "", createdAtMS: database.integer(statement, 1),
+                                  model: database.string(statement, 2) ?? "", preview: database.string(statement, 3) ?? ""))
             }
             return rows
         }

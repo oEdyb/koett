@@ -32,6 +32,22 @@ struct ShortcutBinding: Codable, Equatable {
         modifierOnly: false
     )
 
+    static let defaultMeeting = ShortcutBinding(
+        keyCodes: [46],
+        modifiersRawValue: NSEvent.ModifierFlags([.control, .shift]).rawValue,
+        keyName: "M",
+        modifierOnly: false
+    )
+
+    func isAvailableForMeeting(
+        dictation: ShortcutBinding, media: ShortcutBinding, assistant: ShortcutBinding?,
+        dictationUsesToggle: Bool
+    ) -> Bool {
+        isValid && !modifierOnly
+            && !Self.shortcutsConflict(dictation: dictation, media: self, dictationUsesToggle: dictationUsesToggle)
+            && !conflicts(with: media) && assistant.map { !conflicts(with: $0) } != false
+    }
+
     let keyCodes: [UInt16]
     let modifiersRawValue: UInt
     let keyName: String

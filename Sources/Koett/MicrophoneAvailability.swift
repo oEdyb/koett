@@ -42,6 +42,11 @@ extension KoettController {
         }
     }
 
+    func selectedMicrophone() throws -> MicrophoneDevice {
+        guard !meeting.state.reservesForeground else { throw MicrophoneDevices.failure("Meeting in progress") }
+        return try reconcileMicrophoneSelection(in: availableMicrophones())
+    }
+
     func reconcileMicrophoneSelection(in devices: [MicrophoneDevice]) throws -> MicrophoneDevice {
         let previous = microphoneSelection.uid
         defer {

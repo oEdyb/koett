@@ -13,6 +13,7 @@ extension KoettController {
 
     func handleControl(_ arguments: [String]) -> ControlReply {
         let command = arguments.first ?? "status"
+        if command == "meeting" { return handleMeetingControl(Array(arguments.dropFirst())) }
         func result(_ failure: ControlReply.Failure? = nil) -> ControlReply {
             .init(ok: failure == nil, phase: String(describing: state), model: speechEngine.rawValue,
                   error: failure, paste: pasteDiagnostics.latest, pasteLogError: pasteDiagnostics.writeError, pasteAccessGranted: pasteAccessGranted,
@@ -85,4 +86,25 @@ extension KoettController {
         }
         return result()
     }
+
+    private func handleMeetingControl(_ arguments: [String]) -> ControlReply {
+        do {
+            let request = try MeetingControl.Request(arguments)
+            switch request {
+            case let .action(command):
+                if case let .start(id) = command, meeting.snapshot.id != id,
+                   let existing = try? MeetingControl.inspect(id: id, root: meeting.root) {
+                    return .init(ok: true, phase: existing.phase, model: nil, meetingDisk: existing)
+                }
+                let snapshot = try meeting.send(command)
+                return .init(ok: true, phase: snapshot.phase.rawValue, model: nil, meeting: snapshot)
+            case let .status(id) where id == nil || meeting.snapshot.id == id:
+                let snapshot = meeting.snapshot
+                return .init(ok: true, phase: snapshot.phase.rawValue, model: nil, meeting: snapshot)
+            default:
+                return try MeetingControl.query(request, root: meeting.root, history: transcriptStore)
+            }
+        } catch { return MeetingControl.failure(error) }
+    }
+
 }

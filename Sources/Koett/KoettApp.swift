@@ -26,6 +26,22 @@ private struct Koett {
     static func main() {
         let arguments = CommandLine.arguments.dropFirst()
 
+        if arguments.first == "meeting" {
+            let commands = Array(arguments.dropFirst())
+            if commands == ["--help"] || commands == ["help"] {
+                print(MeetingControl.usage)
+                return
+            }
+            let root = ProcessInfo.processInfo.environment["KOETT_MEETING_DATA_ROOT"]
+                .flatMap { $0.hasPrefix("/") ? URL(fileURLWithPath: $0, isDirectory: true) : nil }
+                ?? LocalControlSocket.defaultURL.deletingLastPathComponent()
+            let reply = MeetingControl.runCLI(commands, dataRoot: root)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            if let data = try? encoder.encode(reply), let json = String(data: data, encoding: .utf8) { print(json) }
+            exit(reply.ok ? EXIT_SUCCESS : EXIT_FAILURE)
+        }
+
         if let flag = arguments.firstIndex(of: "--control") {
             let commands = Array(arguments.dropFirst(flag - arguments.startIndex + 1))
             let reply: ControlReply
@@ -127,6 +143,7 @@ private struct Koett {
             print("Usage: koett [--parakeet | --parakeet-v3 | --parakeet-110m | --nemotron]")
             print("       koett --control COMMAND [ARG]   (local JSON control; status by default)")
             print("       koett --import-dictionary FILE   (while Koett is quit)")
+            print(MeetingControl.usage)
             print("Command-line model flags override the saved model for this launch.")
             print("Use the menu-bar icon to choose the model, mode, and shortcut.")
             return
@@ -198,6 +215,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
         controller.configureUpdates()
         controller.installMenu()
         controller.startLocalControl()
+        controller.replayMeetingPublications()
         print("Checking microphone and Accessibility access...")
         Task { @MainActor in
             await controller.start()
@@ -205,6 +223,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        controller.meeting.shutdown()
         controller.controlServer?.stop()
         controller.stopS1Mini()
     }

@@ -43,6 +43,125 @@
   },
   "manual_components": [
     {
+      "bom_ref": "pkg:github/ggml-org/whisper.cpp@96ec4d9823e9d0211944172da35f9f29134af990",
+      "type": "library",
+      "group": "native-library",
+      "name": "whisper.cpp",
+      "version": "1.9.6",
+      "license": {
+        "expression": "MIT"
+      },
+      "source_url": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.6",
+      "notice_state": "bundled",
+      "license_paths": [
+        "Sources/MeetingASRWorker/Native/Notices/whisper.cpp-LICENSE.txt"
+      ],
+      "asset_paths": [
+        "scripts/build-meeting-whisper.sh",
+        "Sources/MeetingASRWorker/Native/CMakeLists.txt",
+        "Sources/MeetingASRWorker/Native/bridge.c"
+      ],
+      "asset_markers": [
+        "96ec4d9823e9d0211944172da35f9f29134af990"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4d46e659151f31535b3947e322a58b0c604d3cbe93dfb284294e989a19d25ad7"
+        }
+      ]
+    },
+    {
+      "bom_ref": "pkg:huggingface/ggerganov/whisper.cpp@5359861c739e955e79d9a303bcbc70fb988958b1",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "Whisper large-v3-turbo Q5_0",
+      "version": "5359861c739e955e79d9a303bcbc70fb988958b1",
+      "license": {
+        "expression": "MIT"
+      },
+      "source_url": "https://huggingface.co/ggerganov/whisper.cpp/tree/5359861c739e955e79d9a303bcbc70fb988958b1",
+      "notice_state": "external-download",
+      "asset_paths": [
+        "Sources/MeetingASRProtocol/Resources/Models.tsv"
+      ],
+      "asset_markers": [
+        "5359861c739e955e79d9a303bcbc70fb988958b1"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2"
+        }
+      ]
+    },
+    {
+      "bom_ref": "pkg:huggingface/KBLab/kb-whisper-large@d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "KB-Whisper large Q5_0",
+      "version": "d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "license": {
+        "expression": "Apache-2.0"
+      },
+      "source_url": "https://huggingface.co/KBLab/kb-whisper-large/tree/d5d5984b4d8f7c4847a8ea203f1976285fb28300",
+      "notice_state": "external-download",
+      "asset_paths": [
+        "Sources/MeetingASRProtocol/Resources/Models.tsv"
+      ],
+      "asset_markers": [
+        "d5d5984b4d8f7c4847a8ea203f1976285fb28300"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6d2863812d7410322bb7d8647a5c7260761300fa946714c9ed66d22bb30bcb19"
+        }
+      ]
+    },
+    {
+      "bom_ref": "pkg:huggingface/ggml-org/whisper-vad@9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "Silero VAD 6.2.0",
+      "version": "9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "license": {
+        "expression": "MIT"
+      },
+      "source_url": "https://huggingface.co/ggml-org/whisper-vad/tree/9ffd54a1e1ee413ddf265af9913beaf518d1639b",
+      "notice_state": "external-download",
+      "asset_paths": [
+        "Sources/MeetingASRProtocol/Resources/Models.tsv"
+      ],
+      "asset_markers": [
+        "9ffd54a1e1ee413ddf265af9913beaf518d1639b"
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
+        }
+      ]
+    },
+    {
+      "bom_ref": "pkg:huggingface/FluidInference/parakeet-tdt-0.6b-v3-coreml@7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "type": "machine-learning-model",
+      "group": "model",
+      "name": "Parakeet v3 INT8 Core ML",
+      "version": "7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "license": {
+        "expression": "CC-BY-4.0"
+      },
+      "source_url": "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/7dd20fe6b1797d35f5e3307e8b1732d9a178edfe",
+      "notice_state": "external-download",
+      "asset_paths": [
+        "Sources/MeetingASRProtocol/Resources/Models.tsv"
+      ],
+      "asset_markers": [
+        "7dd20fe6b1797d35f5e3307e8b1732d9a178edfe"
+      ]
+    },
+    {
       "bom_ref": "pkg:github/FluidInference/FluidAudio@4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
       "type": "library",
       "group": "swift-package",

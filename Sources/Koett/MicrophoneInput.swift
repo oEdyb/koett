@@ -88,6 +88,10 @@ final class MicrophoneInput: MicrophoneCapturing {
     }
 
     func start(onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
+        try startTimestamped { buffer, _ in onAudio(buffer) }
+    }
+
+    func startTimestamped(onAudio: @escaping @Sendable (AVAudioPCMBuffer, UInt64) -> Void) throws {
         try callbackReservation.reserve()
         var maximumFrames: UInt32 = 0
         var size: UInt32 = 4
@@ -148,7 +152,7 @@ final class MicrophoneInput: MicrophoneCapturing {
         state.buffer.frameLength = frames
         let status = AudioUnitRender(state.unit, flags, time, 1, frames, state.buffer.mutableAudioBufferList)
         if status == noErr {
-            state.onAudio(state.buffer)
+            state.onAudio(state.buffer, time.pointee.mFlags.contains(.hostTimeValid) ? time.pointee.mHostTime : 0)
         } else {
             state.errorStatus.store(status, ordering: .releasing)
         }
@@ -175,10 +179,10 @@ struct MicrophoneCallbackReservation {
 private final class InputCallbackState {
     let unit: AudioUnit
     let buffer: AVAudioPCMBuffer
-    let onAudio: @Sendable (AVAudioPCMBuffer) -> Void
+    let onAudio: @Sendable (AVAudioPCMBuffer, UInt64) -> Void
     let errorStatus = Atomic<OSStatus>(noErr)
 
-    init(unit: AudioUnit, buffer: AVAudioPCMBuffer, onAudio: @escaping @Sendable (AVAudioPCMBuffer) -> Void) {
+    init(unit: AudioUnit, buffer: AVAudioPCMBuffer, onAudio: @escaping @Sendable (AVAudioPCMBuffer, UInt64) -> Void) {
         self.unit = unit
         self.buffer = buffer
         self.onAudio = onAudio

@@ -12,6 +12,7 @@ let package = Package(
         .executable(name: "nemotron-streaming-baseline", targets: ["NemotronStreamingBaseline"]),
         .executable(name: "parakeet-baseline", targets: ["ParakeetBaseline"]),
         .executable(name: "sentence-recorder", targets: ["SentenceRecorder"]),
+        .executable(name: "koett-meeting-asr", targets: ["MeetingASRWorker"]),
         .executable(name: "koett", targets: ["Koett"]),
     ],
     dependencies: [
@@ -48,10 +49,17 @@ let package = Package(
             dependencies: [.product(name: "FluidAudio", package: "FluidAudio")]
         ),
         .executableTarget(name: "SentenceRecorder"),
+        .target(name: "MeetingASRProtocol", resources: [.copy("Resources/Models.tsv")]),
+        .executableTarget(
+            name: "MeetingASRWorker",
+            dependencies: ["MeetingASRProtocol", .product(name: "FluidAudio", package: "FluidAudio")],
+            exclude: ["Native"]
+        ),
         .executableTarget(
             name: "Koett",
             dependencies: [
                 "CSQLite",
+                "MeetingASRProtocol",
                 .product(name: "Sparkle", package: "Sparkle"),
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ],
@@ -64,7 +72,7 @@ let package = Package(
         ),
         .testTarget(
             name: "KoettTests",
-            dependencies: ["Koett"]
+            dependencies: ["Koett", "MeetingASRProtocol"]
         ),
     ],
     swiftLanguageModes: [.v6]

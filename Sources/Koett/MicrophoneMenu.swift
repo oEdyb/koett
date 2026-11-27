@@ -60,8 +60,4 @@ extension KoettController {
         refreshMicrophoneAvailability()
         microphonePreview?.refresh()
     }
-
-    func selectedMicrophone() throws -> MicrophoneDevice {
-        try reconcileMicrophoneSelection(in: availableMicrophones())
-    }
 }

@@ -31,6 +31,7 @@ final class KoettController: NSObject {
         postEvent: { [weak self] in self?.postPasteEvent(flags: $0) ?? false },
         record: { [weak self] in self?.pasteDiagnostics.record($0) }
     )
+    lazy var meeting = makeMeetingController()
     var controlRequested = false
     var controlServer: LocalControlServer?
     var automaticPasteTarget: PasteTarget?
@@ -61,6 +62,7 @@ final class KoettController: NSObject {
     var dictationShortcut: ShortcutBinding
     var mediaShortcut: ShortcutBinding
     var assistantShortcut: ShortcutBinding
+    private(set) lazy var meetingShortcut = Self.loadShortcut(key: "meetingShortcut", defaults: microphoneDefaults) ?? .defaultMeeting
     var assistantProvider: AssistantProvider
     var assistantVoice: AssistantVoice
     var assistantSpeechEnabled: Bool
@@ -589,6 +591,17 @@ final class KoettController: NSObject {
             modifierFlags: modifierFlags,
             keyIsDown: modifierKeyIsDown
         )
+        if MeetingController.shortcutEnabled(in: microphoneDefaults),
+           meetingShortcut.isAvailableForMeeting(
+               dictation: dictationShortcut, media: mediaShortcut,
+               assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
+               dictationUsesToggle: recordingMode == .toggle
+           ),
+           meetingShortcut.matchesDown(type: type, keyCode: keyCode, modifierFlags: modifierFlags, isRepeat: isRepeat) {
+            meeting.sendShortcut()
+            return
+        }
+
         let assistantIsDown = AssistantAvailability.isEnabled && (assistantShortcut.modifierOnly
             ? assistantModifierTransition.releasedWithoutChord
             : assistantShortcut.matchesDown(
@@ -915,10 +928,10 @@ final class KoettController: NSObject {
         relaunch(with: newEngine)
     }
 
-    var canStartSession: Bool { state == .ready && !isRelaunching && appUpdater?.gate.isInstalling != true }
+    var canStartSession: Bool { state == .ready && !meeting.state.reservesForeground && !isRelaunching && appUpdater?.gate.isInstalling != true }
 
     var isIdleForUpdates: Bool {
-        state == .ready && !isRelaunching && activeDictationID == nil
+        state == .ready && !meeting.state.reservesForeground && !isRelaunching && activeDictationID == nil
             && (!recordingOverlay.isPresented || appUpdater?.gate.hasReservationNotice == true) && !transcriptPersistence.hasVolatileTranscripts
     }
 
@@ -1023,6 +1036,19 @@ final class KoettController: NSObject {
 
     static func failure(_ message: String, code: Int = 1) -> NSError {
         NSError(domain: "Koett", code: code, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    func configureMeetingShortcut(_ binding: ShortcutBinding) throws {
+        guard binding.isAvailableForMeeting(
+            dictation: dictationShortcut, media: mediaShortcut,
+            assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            throw MeetingCommandError(code: "shortcut_conflict", message: "Choose a key chord that Koett does not already use.")
+        }
+        let encoded = try JSONEncoder().encode(binding)
+        microphoneDefaults.set(encoded, forKey: "meetingShortcut")
+        meetingShortcut = binding
     }
 
     private static func loadShortcut(

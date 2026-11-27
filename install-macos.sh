@@ -51,7 +51,14 @@ if ! command -v swift >/dev/null 2>&1; then
     print -u2 "Swift is required. Run: xcode-select --install"
     exit 1
 fi
+if ! command -v cmake >/dev/null 2>&1; then
+    print -u2 "CMake is required to build the local meeting decoder."
+    exit 1
+fi
 swift build -c release --product koett
+swift build -c release --product koett-meeting-asr
+meeting_products="$(swift build -c release --show-bin-path)"
+meeting_library="$("$project_dir/scripts/build-meeting-whisper.sh")"
 
 resource_bundle=".build/release/Koett_Koett.bundle"
 if [[ ! -d "$resource_bundle" ]]; then
@@ -87,6 +94,7 @@ else
     echo "Signing Koett with a stable identity."
 fi
 
+"$project_dir/scripts/stage-meeting-worker.sh" "$stage_app" "$meeting_products" "$meeting_library" "$signing_identity"
 "$project_dir/scripts/embed-sparkle.sh" "$stage_app" "$signing_identity"
 
 codesign --force --options runtime \
