@@ -427,6 +427,20 @@ fn task(state: &str, asking: bool) -> Task {
     }
 }
 
+/// The task a capture keeps until the pill leaves recording and transcribing:
+/// Ask and Media are recognised from their first states (Ask's "Listening…",
+/// a fetch's "Fetching audio…"), and the generic progress text that follows
+/// must not turn them back into dictation.
+fn kept_task(previous: Option<Task>, phase: Phase, fresh: Task) -> Option<Task> {
+    if !matches!(phase, Phase::Recording | Phase::Transcribing) {
+        return None;
+    }
+    Some(match previous {
+        Some(kept @ (Task::Ask | Task::Media)) => kept,
+        _ => fresh,
+    })
+}
+
 /// The assistant is recording an Ask question.
 fn ask_listening() -> bool {
     #[cfg(feature = "ask")]
@@ -648,6 +662,8 @@ pub struct RecordingOverlay {
     note: std::cell::Cell<Option<&'static str>>,
     /// Copy was pressed and failed; said in the row until the pill changes.
     copy_failed: std::cell::Cell<bool>,
+    /// The current capture's task, kept across its progress texts.
+    task: std::cell::Cell<Option<Task>>,
     acted: Rc<std::cell::Cell<Option<Acted>>>,
     /// The meeting clock as last shown; Saving keeps it still.
     meeting_ms: std::cell::Cell<u64>,
@@ -963,6 +979,7 @@ impl RecordingOverlay {
             latest,
             note: std::cell::Cell::new(None),
             copy_failed: std::cell::Cell::new(false),
+            task: std::cell::Cell::new(None),
             acted,
             meeting_ms: std::cell::Cell::new(0),
             saving_until: std::cell::Cell::new(None),
@@ -1357,8 +1374,15 @@ impl RecordingOverlay {
             }
         }
         self.stage.show_lane(notice, &chips);
+        let kept = kept_task(self.task.get(), phase, task(state, ask_listening()));
+        self.task.set(kept);
         self.stage.set_light(
-            light(phase, task(state, ask_listening()), inked, issue.is_some()),
+            light(
+                phase,
+                kept.unwrap_or(Task::Dictation),
+                inked,
+                issue.is_some(),
+            ),
             !reduced && phase.records(),
         );
         self.drawing.set_content_height(ROW);
@@ -1628,6 +1652,41 @@ mod tests {
             saving_hold(Some(&closing), held, poll),
             held,
             "a repeated Closing keeps the hold it started"
+        );
+    }
+
+    #[test]
+    fn ask_and_media_keep_their_light_through_progress_text() {
+        let ask = kept_task(None, Phase::Recording, Task::Ask);
+        assert_eq!(ask, Some(Task::Ask));
+        let ask = kept_task(ask, Phase::Transcribing, task("Transcribing…", false));
+        assert_eq!(
+            ask,
+            Some(Task::Ask),
+            "Ask stays violet while it transcribes"
+        );
+
+        let media = kept_task(None, Phase::Transcribing, task("Fetching audio…", false));
+        let media = kept_task(media, Phase::Transcribing, task("Transcribing…", false));
+        assert_eq!(
+            media,
+            Some(Task::Media),
+            "generic progress keeps the media light"
+        );
+
+        let late = kept_task(None, Phase::Transcribing, task("Transcribing…", false));
+        let late = kept_task(late, Phase::Transcribing, task("Converting audio…", false));
+        assert_eq!(
+            late,
+            Some(Task::Media),
+            "a media state arriving later still wins"
+        );
+
+        assert_eq!(kept_task(media, Phase::Media, Task::Dictation), None);
+        assert_eq!(
+            kept_task(None, Phase::Recording, Task::Dictation),
+            Some(Task::Dictation),
+            "the next capture starts fresh"
         );
     }
 
