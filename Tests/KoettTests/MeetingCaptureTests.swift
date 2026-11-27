@@ -128,6 +128,30 @@ final class MeetingCaptureTests: XCTestCase {
         XCTAssertEqual(you.stops + other.stops, 2)
     }
 
+    func testSystemAudioCallbackAcceptsBuffersOffTheMainActor() async {
+        let ring = MeetingAudioRing(rate: 48_000)
+        await Task.detached {
+            let callback = MeetingSystemAudio.callback(for: ring)
+            var samples: [Float] = [0.25, 0.5]
+            samples.withUnsafeMutableBytes {
+                var input = AudioBufferList(mNumberBuffers: 1, mBuffers: .init(
+                    mNumberChannels: 1, mDataByteSize: UInt32($0.count), mData: $0.baseAddress))
+                var output = AudioBufferList()
+                var now = AudioTimeStamp(), inputTime = AudioTimeStamp(), outputTime = AudioTimeStamp()
+                inputTime.mFlags = .hostTimeValid
+                inputTime.mHostTime = 123
+                callback(&now, &input, &inputTime, &output, &outputTime)
+            }
+        }.value
+        var frames = 0
+        ring.drain { stamp, samples in
+            XCTAssertEqual(stamp.hostTime, 123)
+            XCTAssertEqual(Array(samples), [0.25, 0.5])
+            frames += stamp.frames
+        }
+        XCTAssertEqual(frames, 2)
+    }
+
     @MainActor
     func testRingOverrunMarksNextBuffer() {
         let source = FakeMeetingSource(capacity: 1)

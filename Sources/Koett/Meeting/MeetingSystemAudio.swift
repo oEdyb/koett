@@ -35,9 +35,7 @@ final class MeetingSystemAudio: MeetingAudioSource {
             ]]
         ]
         try Self.check(AudioHardwareCreateAggregateDevice(aggregate as CFDictionary, &resources.device))
-        try Self.check(AudioDeviceCreateIOProcIDWithBlock(&resources.proc, resources.device, nil) { _, input, time, _, _ in
-            ring.copy(input, hostTime: time.pointee.mFlags.contains(.hostTimeValid) ? time.pointee.mHostTime : 0)
-        })
+        try Self.check(AudioDeviceCreateIOProcIDWithBlock(&resources.proc, resources.device, nil, Self.callback(for: ring)))
         guard let proc = resources.proc else { throw Self.failure(kAudioHardwareUnspecifiedError) }
         try Self.check(AudioDeviceStart(resources.device, proc))
         resources.started = true
@@ -80,6 +78,12 @@ final class MeetingSystemAudio: MeetingAudioSource {
         }
 
         deinit { close() }
+    }
+
+    nonisolated static func callback(for ring: MeetingAudioRing) -> AudioDeviceIOBlock {
+        { _, input, time, _, _ in
+            ring.copy(input, hostTime: time.pointee.mFlags.contains(.hostTimeValid) ? time.pointee.mHostTime : 0)
+        }
     }
 
     private static let system = AudioObjectID(kAudioObjectSystemObject)
