@@ -85,6 +85,35 @@ final class MeetingASRProfileTests: XCTestCase {
         }
     }
 
+    func testWorkerFallsBackWithMissingAndCorruptTurboOffline() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let path = environment["KOETT_MEETING_PROFILE_MODELS"],
+              let worker = environment["KOETT_MEETING_PROFILE_WORKER"],
+              let library = environment["KOETT_MEETING_PROFILE_LIBRARY"]
+        else { throw XCTSkip("Provision the pinned meeting profile assets") }
+        let root = URL(fileURLWithPath: path)
+        let temporary = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let (tracks, _, _) = try fixture(temporary)
+        for component in [MeetingModelPins.parakeet, MeetingModelPins.vad] {
+            try FileManager.default.createSymbolicLink(at: temporary.appending(path: component),
+                                                       withDestinationURL: root.appending(path: component))
+        }
+        for corrupt in [false, true] {
+            if corrupt {
+                try Data([0, 1, 2]).write(to: temporary.appending(path: MeetingModelPins.turbo))
+            }
+            let client = try MeetingWorkerClient(executable: URL(fileURLWithPath: worker), models: temporary,
+                                                 library: URL(fileURLWithPath: library), mode: .routed, networkDenied: true)
+            defer { client.cancel() }
+            let samples = Array(tracks[0].prefix(7 * 16_000))
+            let reply = try client.decode(.init(pcm: samples, ownershipStart: 0, ownershipEnd: samples.count))
+            XCTAssertTrue(reply.fallback)
+            XCTAssertFalse(reply.turns.isEmpty)
+            XCTAssertEqual(Set(reply.turns.map(\.backend)), ["parakeet-v3-int8"])
+        }
+    }
+
     private struct Utterance {
         let track: Int
         let language: String

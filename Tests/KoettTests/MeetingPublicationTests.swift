@@ -4,6 +4,44 @@ import XCTest
 @testable import Koett
 
 final class MeetingPublicationTests: XCTestCase {
+    func testKillAndReplayAtEachPublicationCheckpoint() throws {
+        let root = try meetingTestDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let history = TranscriptStore(fileURL: root.appending(path: "history.sqlite3"))
+        let markdown = "**You** Cedar meeting transcript"
+        for step in MeetingPublication.Step.allCases {
+            let id = UUID()
+            try killMeetingFixture(type: Self.self, method: "testCrashPublicationFixture", root: root, id: id, stage: step.rawValue)
+            let bundle = try MeetingBundle.open(in: root, id: id)
+            let existing = try MeetingPublication.receipt(at: bundle.directory)
+            XCTAssertEqual(existing == nil, step == .markdown)
+            let receipt = try existing?.0 ?? MeetingPublication.commit(markdown, bundle: bundle, backends: [:], fallback: false, assets: [])
+            let projection = try MeetingPublication.replay(bundle: bundle, receipt: receipt, markdown: markdown, history: history)
+            XCTAssertTrue(projection.historyIndexed)
+            let note = try XCTUnwrap(projection.vaultPath)
+            let folder = URL(fileURLWithPath: note).deletingLastPathComponent()
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: folder.path).count, 1)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: bundle.audio(.you).path))
+        }
+        XCTAssertEqual(try history.page(query: "Cedar").count, MeetingPublication.Step.allCases.count)
+    }
+
+    func testCrashPublicationFixture() throws {
+        let (root, id, stage) = try meetingCrashFixtureInput()
+        let export = root.appending(path: "vault-\(id.uuidString)")
+        let bundle = try MeetingBundle.create(in: root, manifest: .init(id: id, startedAt: .now, exportDirectory: export))
+        let writer = try MeetingJournal.Writer(bundle.audio(.you))
+        try writer.append(.pcm(first: 0, samples: [1]))
+        try writer.sync()
+        let history = TranscriptStore(fileURL: root.appending(path: "history.sqlite3"))
+        let markdown = "**You** Cedar meeting transcript"
+        let checkpoint: (MeetingPublication.Step) throws -> Void = { step in
+            if step.rawValue == stage { try waitForMeetingFixtureKill(root: root, id: id) }
+        }
+        let receipt = try MeetingPublication.commit(markdown, bundle: bundle, backends: [:], fallback: false, assets: [], checkpoint: checkpoint)
+        _ = try MeetingPublication.replay(bundle: bundle, receipt: receipt, markdown: markdown, history: history, checkpoint: checkpoint)
+    }
+
     func testReceiptBeforeProjectionAndReplayKeepsEditedNotes() throws {
         let root = try meetingTestDirectory()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -24,13 +24,19 @@ struct MeetingJobFailure: Codable {
 }
 
 enum MeetingPublication {
+    enum Step: Int, CaseIterable {
+        case markdown, receipt, retention, history, vault, projections
+    }
     static func commit(
-        _ markdown: String, bundle: MeetingBundle, backends: [String: Int], fallback: Bool, assets: [String]
+        _ markdown: String, bundle: MeetingBundle, backends: [String: Int], fallback: Bool, assets: [String],
+        checkpoint: (Step) throws -> Void = { _ in }
     ) throws -> MeetingArtifact {
         let bytes = Data(markdown.utf8)
         let receipt = MeetingArtifact(transcriptSHA256: hash(bytes), backends: backends, fallback: fallback, assets: assets)
         try keepIdentical(bytes, at: bundle.directory.appending(path: receipt.fileName))
+        try checkpoint(.markdown)
         try bundle.write(receipt, "receipt.json")
+        try checkpoint(.receipt)
         return receipt
     }
 
@@ -53,7 +59,8 @@ enum MeetingPublication {
     }
 
     static func replay(
-        bundle: MeetingBundle, receipt: MeetingArtifact, markdown: String, history: TranscriptStore
+        bundle: MeetingBundle, receipt: MeetingArtifact, markdown: String, history: TranscriptStore,
+        checkpoint: (Step) throws -> Void = { _ in }
     ) throws -> MeetingProjections {
         var state = try projections(at: bundle.directory, receipt: receipt)
         if !receipt.fallback, !bundle.manifest.keepAudio {
@@ -64,6 +71,7 @@ enum MeetingPublication {
             }
             try? MeetingFiles.syncDirectory(bundle.directory.appending(path: "audio"))
         }
+        try checkpoint(.retention)
         if !state.historyIndexed {
             do {
                 let model = receipt.fallback ? "meeting-parakeet-v3-fallback" : "meeting-local"
@@ -72,13 +80,16 @@ enum MeetingPublication {
                 state.historyIssue = nil
             } catch { state.historyIssue = error.localizedDescription }
         }
+        try checkpoint(.history)
         if let export = bundle.manifest.exportDirectory, state.vaultPath == nil {
             do {
                 state.vaultPath = try exportNote(markdown, bundle: bundle, receipt: receipt, to: export).path
                 state.vaultIssue = nil
             } catch { state.vaultIssue = error.localizedDescription }
         }
+        try checkpoint(.vault)
         try bundle.write(state, "projections.json")
+        try checkpoint(.projections)
         return state
     }
 
@@ -100,9 +111,17 @@ enum MeetingPublication {
         }
         let bytes = Data(note.utf8)
         let stem = "Meeting \(date.replacingOccurrences(of: ":", with: "-")) \(id)"
-        for index in 1...9 {
+        let candidates = (1...9).map { index in
             let suffix = index == 1 ? "" : " (\(index))"
-            let target = folder.appending(path: "\(stem)\(suffix).md")
+            return folder.appending(path: "\(stem)\(suffix).md")
+        }
+        for path in candidates {
+            if (try? Data(contentsOf: path, options: [.mappedIfSafe])) == bytes {
+                try MeetingFiles.syncDirectory(folder)
+                return path
+            }
+        }
+        for target in candidates {
             do {
                 try keepIdentical(bytes, at: target)
                 return target

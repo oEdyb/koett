@@ -53,6 +53,7 @@ private final class Engines {
     private var whisper: WhisperBridge?
     private var parakeet: AsrManager?
     private var primaryProblem: String?
+    private var vadProblem: String?
 
     init(root: URL, library: String, mode: MeetingASRMode) throws {
         self.root = root
@@ -70,21 +71,23 @@ private final class Engines {
             (0..<count).map { Float(Int16(littleEndian: bytes.loadUnaligned(fromByteOffset: $0 * 2, as: Int16.self))) / 32_768 }
         }
         var speech: [Range<Int>]?
-        if primaryProblem == nil {
+        if vadProblem == nil {
             do {
                 let bridge = try runtime()
                 speech = try bridge.speech(samples) { try modelPath(MeetingModelPins.vad) }
-                if mode != .parakeet {
-                    let turns = try whisperTurns(bridge, samples, speech ?? [], request)
-                    return .init(turns: turns)
-                }
+            } catch { vadProblem = error.localizedDescription }
+        }
+        if mode != .parakeet, primaryProblem == nil, let whisper, let speech {
+            do {
+                let turns = try whisperTurns(whisper, samples, speech, request)
+                return .init(turns: turns)
             } catch { primaryProblem = error.localizedDescription }
         }
         do {
             let turns = try await parakeetTurns(samples, speech ?? energySpeech(samples), request)
             return .init(turns: turns, fallback: mode != .parakeet)
         } catch {
-            let message = [primaryProblem, error.localizedDescription].compactMap { $0 }.joined(separator: " ")
+            let message = [vadProblem, primaryProblem, error.localizedDescription].compactMap { $0 }.joined(separator: " ")
             throw MeetingASRError.inference(message)
         }
     }
@@ -119,7 +122,7 @@ private final class Engines {
                 ? try bridge.model(MeetingModelPins.swedish) { try modelPath(MeetingModelPins.swedish) }
                 : turbo
             let words = try bridge.words(model, audio, language)
-            if let turn = turn(words, window: window, speech: speech, request: request, language: language,
+            if let turn = turn(words, window: window, ownership: ownership(index, spans, window), request: request, language: language,
                                backend: swedish ? "kb-whisper-large-q5_0" : "whisper-large-v3-turbo-q5_0") {
                 turns.append(turn)
             }
@@ -147,14 +150,14 @@ private final class Engines {
         guard !spans.isEmpty else { return [] }
         let manager = try await parakeetManager()
         var turns: [MeetingASRTurn] = []
-        for speech in spans {
+        for (index, speech) in spans.enumerated() {
             let window = padded(speech, count: samples.count)
             var decoder = TdtDecoderState.make(decoderLayers: 2)
             let result = try await manager.transcribe(Array(samples[window]), decoderState: &decoder)
             let words = buildWordTimings(from: result.tokenTimings ?? []).map {
                 Word(text: $0.word, first: Int($0.startTime * 16_000), end: Int($0.endTime * 16_000))
             }
-            if let turn = turn(words, window: window, speech: speech, request: request,
+            if let turn = turn(words, window: window, ownership: ownership(index, spans, window), request: request,
                                language: nil, backend: "parakeet-v3-int8") {
                 turns.append(turn)
             }
@@ -190,14 +193,21 @@ private final class Engines {
         max(0, speech.lowerBound - 4_800)..<min(count, speech.upperBound + 4_800)
     }
 
-    private func turn(_ words: [Word], window: Range<Int>, speech: Range<Int>, request: MeetingASRRequest,
+    private func ownership(_ index: Int, _ spans: [Range<Int>], _ window: Range<Int>) -> Range<Int> {
+        let speech = spans[index]
+        let lower = index == 0 ? window.lowerBound : max(window.lowerBound, (spans[index - 1].upperBound + speech.lowerBound) / 2)
+        let upper = index + 1 == spans.count ? window.upperBound : min(window.upperBound, (speech.upperBound + spans[index + 1].lowerBound) / 2)
+        return min(lower, upper)..<upper
+    }
+
+    private func turn(_ words: [Word], window: Range<Int>, ownership: Range<Int>, request: MeetingASRRequest,
                       language: String?, backend: String) -> MeetingASRTurn? {
         let owned = words.compactMap { word -> Word? in
             let start = window.lowerBound + min(window.count, max(0, word.first))
             let end = window.lowerBound + min(window.count, max(word.first, word.end, 0))
             let midpoint = start + (end - start) / 2
             guard midpoint >= request.ownershipStart, midpoint < request.ownershipEnd,
-                  padded(speech, count: window.upperBound).contains(midpoint) else { return nil }
+                  ownership.contains(midpoint) else { return nil }
             return .init(text: word.text, first: start, end: end)
         }
         guard let first = owned.first, let last = owned.last else { return nil }
