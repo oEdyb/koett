@@ -205,6 +205,7 @@ private final class KoettDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        controller.meeting.shutdown()
         controller.controlServer?.stop()
         controller.stopS1Mini()
     }

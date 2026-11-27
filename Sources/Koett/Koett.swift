@@ -31,6 +31,7 @@ final class KoettController: NSObject {
         postEvent: { [weak self] in self?.postPasteEvent(flags: $0) ?? false },
         record: { [weak self] in self?.pasteDiagnostics.record($0) }
     )
+    lazy var meeting = makeMeetingController()
     var controlRequested = false
     var controlServer: LocalControlServer?
     var automaticPasteTarget: PasteTarget?
@@ -915,10 +916,10 @@ final class KoettController: NSObject {
         relaunch(with: newEngine)
     }
 
-    var canStartSession: Bool { state == .ready && !isRelaunching && appUpdater?.gate.isInstalling != true }
+    var canStartSession: Bool { state == .ready && !meeting.state.reservesForeground && !isRelaunching && appUpdater?.gate.isInstalling != true }
 
     var isIdleForUpdates: Bool {
-        state == .ready && !isRelaunching && activeDictationID == nil
+        state == .ready && !meeting.state.reservesForeground && !isRelaunching && activeDictationID == nil
             && (!recordingOverlay.isPresented || appUpdater?.gate.hasReservationNotice == true) && !transcriptPersistence.hasVolatileTranscripts
     }
 

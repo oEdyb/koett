@@ -1,0 +1,305 @@
+import AVFoundation
+import Foundation
+
+struct MeetingSnapshot: Codable, Sendable {
+    var phase: MeetingState.Phase
+    var id: UUID?
+    var confirmation: MeetingStopKey?
+    var elapsedFrames: UInt64
+    var tracks: [String: MeetingTrackStatus]
+    var issue: String?
+    var progress: Double?
+}
+
+enum MeetingCommand: Sendable {
+    case start(UUID), stop(UUID), finish(MeetingStopKey), cancel(MeetingStopKey), resume(MeetingStopKey)
+    case recover(UUID), toggle
+}
+
+struct MeetingCommandError: LocalizedError {
+    let code: String
+    let message: String
+    var errorDescription: String? { message }
+
+    static let busy = Self(code: "busy", message: "Wait until Koett is ready.")
+    static let stale = Self(code: "stale_stop_token", message: "Use the current meeting ID and stop token.")
+    static let wrongState = Self(code: "wrong_state", message: "This action is unavailable in the current meeting state.")
+}
+
+@MainActor
+final class MeetingController {
+    let root: URL
+    private let canStart: () -> Bool
+    private let reserve: (Bool) -> Void
+    private let makeSource: (MeetingTrack) throws -> any MeetingAudioSource
+    private let manifest: (UUID) -> MeetingManifest
+    private(set) var state = MeetingState()
+    private var capture: Capture?
+    private var timer: Timer?
+    private var task: Task<Void, Never>?
+    private var status: [MeetingTrack: MeetingTrackStatus] = [:]
+    private var issue: String?
+    private var progress: Double?
+    var onSnapshot: ((MeetingSnapshot) -> Void)?
+    var process: ((UUID, @escaping @MainActor (Double) -> Void) async throws -> Void)?
+
+    init(
+        root: URL, canStart: @escaping () -> Bool, reserve: @escaping (Bool) -> Void,
+        makeSource: @escaping (MeetingTrack) throws -> any MeetingAudioSource,
+        manifest: @escaping (UUID) -> MeetingManifest = { .init(id: $0, startedAt: .now) }
+    ) {
+        self.root = root
+        self.canStart = canStart
+        self.reserve = reserve
+        self.makeSource = makeSource
+        self.manifest = manifest
+    }
+
+    var snapshot: MeetingSnapshot {
+        .init(phase: state.phase, id: state.id, confirmation: state.confirmation,
+              elapsedFrames: state.cutoff ?? capture?.clock.offset() ?? 0,
+              tracks: Dictionary(uniqueKeysWithValues: status.map { ($0.key.rawValue, $0.value) }),
+              issue: issue, progress: progress)
+    }
+
+    func offset(atHostTime hostTime: UInt64) -> UInt64? {
+        guard state.phase == .recording || state.phase == .confirmStop else { return nil }
+        return capture?.clock.offset(hostTime)
+    }
+
+    @discardableResult
+    func send(_ command: MeetingCommand) throws -> MeetingSnapshot {
+        defer { publish() }
+        switch command {
+        case let .start(id):
+            let directory = MeetingBundle.directory(in: root, id: id)
+            if state.id == id { return snapshot }
+            if FileManager.default.fileExists(atPath: directory.path) {
+                throw MeetingCommandError(code: "already_exists", message: "This meeting ID already has a bundle. Check its status.")
+            }
+            try start(id)
+        case let .stop(id):
+            guard state.transition(.stop(id)) != .wrongState else { throw MeetingCommandError.wrongState }
+        case let .resume(key):
+            guard state.transition(.resume(key)) == .changed else { throw MeetingCommandError.stale }
+        case let .finish(key):
+            try close(key, goal: .finish)
+        case let .cancel(key):
+            try close(key, goal: .hold)
+        case let .recover(id):
+            guard process != nil, state.phase == .idle else { throw MeetingCommandError.busy }
+            _ = try MeetingBundle.readManifest(at: MeetingBundle.directory(in: root, id: id), id: id)
+            _ = state.transition(.recover(id))
+            launch(id)
+        case .toggle:
+            switch state.phase {
+            case .idle: try start(UUID())
+            case .recording:
+                if let id = state.id { _ = state.transition(.stop(id)) }
+            case .confirmStop: break
+            default: throw MeetingCommandError.busy
+            }
+        }
+        return snapshot
+    }
+
+    func shutdown() {
+        interrupt("Koett quit before finishing the meeting.")
+        task?.cancel()
+    }
+
+    func poll() {
+        guard let capture, state.phase == .recording || state.phase == .confirmStop else { return }
+        do {
+            let levels = try capture.writer.update(capture.sources.mapValues(\.ring))
+            let now = capture.clock.offset()
+            for track in MeetingTrack.allCases {
+                let source = capture.sources[track]
+                let hasData = source?.ring.received.load(ordering: .acquiring) == true
+                if hasData { capture.received.insert(track) }
+                if now >= 48_000 && !capture.received.contains(track) {
+                    let message = track == .other
+                        ? "No system audio arrived. Check System Audio Recording access and retry."
+                        : "No microphone audio arrived. Check Microphone access and retry."
+                    interrupt(message)
+                    return
+                }
+                if source?.isConnected == false {
+                    source?.stop()
+                    if let source { _ = try capture.writer.update([track: source.ring]) }
+                    capture.sources[track] = nil
+                    capture.writer.restart(track)
+                    capture.nextRetry[track] = now + 8_000
+                }
+                if capture.sources[track] == nil, now >= (capture.nextRetry[track] ?? 0) {
+                    capture.sources[track] = try? makeSource(track)
+                    capture.nextRetry[track] = now + 16_000
+                }
+                let receiving = capture.sources[track]?.ring.received.load(ordering: .acquiring) == true
+                status[track] = .init(health: receiving ? .receiving : capture.received.contains(track) ? .reconnecting : .waiting,
+                                      level: receiving ? levels[track, default: 0] : 0)
+            }
+            publish()
+        } catch {
+            interrupt("Meeting audio could not be saved. \(error.localizedDescription)")
+        }
+    }
+
+    private func start(_ id: UUID) throws {
+        guard state.phase == .idle, canStart() else { throw MeetingCommandError.busy }
+        _ = state.transition(.start(id))
+        issue = nil
+        progress = nil
+        status = Dictionary(uniqueKeysWithValues: MeetingTrack.allCases.map { ($0, .init()) })
+        reserve(true)
+        publish()
+        do {
+            let bundle = try MeetingBundle.create(in: root, manifest: manifest(id))
+            let opened = try Capture(bundle)
+            capture = opened
+            for track in MeetingTrack.allCases { opened.sources[track] = try makeSource(track) }
+            _ = state.transition(.opened(state.attempt))
+            let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] timer in
+                guard let self else { timer.invalidate(); return }
+                MainActor.assumeIsolated { self.poll() }
+            }
+            self.timer = timer
+            RunLoop.main.add(timer, forMode: .common)
+        } catch {
+            if capture != nil {
+                interrupt(error.localizedDescription)
+            } else {
+                _ = state.transition(.startFailed(state.attempt))
+                issue = error.localizedDescription
+                reserve(false)
+            }
+            throw error
+        }
+    }
+
+    private func close(_ key: MeetingStopKey, goal: MeetingCloseGoal) throws {
+        guard key == state.confirmation, let capture else { throw MeetingCommandError.stale }
+        let intent = MeetingIntent(cutoff: capture.clock.offset(), goal: goal)
+        do { try capture.bundle.write(intent, "intent.json") }
+        catch MeetingBundleError.beforeCommit(let error) {
+            issue = error.localizedDescription
+            throw MeetingCommandError(code: "intent_write_failed", message: "Could not save the stop request. Recording is still active.")
+        } catch {
+            interrupt("Stop request durability is uncertain. \(error.localizedDescription)")
+            throw error
+        }
+
+        _ = state.transition(.closing(key, goal, intent.cutoff))
+        try drain(capture, intent: intent)
+    }
+
+    private func interrupt(_ message: String) {
+        guard state.reservesForeground, state.phase != .saving, let capture else { return }
+        let intent = MeetingIntent(cutoff: capture.clock.offset(), goal: .interrupted, issue: message)
+        _ = state.transition(.interrupted(state.attempt, intent.cutoff))
+        issue = message
+        try? capture.bundle.write(intent, "intent.json")
+        try? drain(capture, intent: intent)
+    }
+
+    private func drain(_ capture: Capture, intent: MeetingIntent) throws {
+        publish()
+        timer?.invalidate()
+        timer = nil
+        let rings = capture.sources.mapValues(\.ring)
+        capture.sources.values.forEach { $0.stop() }
+        capture.sources.removeAll()
+        let id = capture.bundle.manifest.id
+        var enqueue = false
+        defer {
+            self.capture = nil
+            status.removeAll()
+            _ = state.transition(.sealed(state.attempt, process: enqueue))
+            reserve(false)
+            if enqueue { launch(id) }
+            publish()
+        }
+        do {
+            let tracks = try capture.writer.finish(cutoff: intent.cutoff, rings: rings)
+            let clipped = tracks.mapValues {
+                MeetingTrackSeal(validBytes: $0.validBytes, capturedUntil: min($0.capturedUntil, intent.cutoff))
+            }
+            try capture.bundle.write(MeetingSeal(intent: intent, tracks: clipped), "seal.json")
+            enqueue = intent.goal == .finish && process != nil
+        } catch {
+            issue = "Could not finish saving. Use meeting recovery. \(error.localizedDescription)"
+            throw error
+        }
+    }
+
+    private func launch(_ id: UUID) {
+        let attempt = state.attempt
+        issue = nil
+        progress = 0
+        task = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await process?(id) { [weak self] value in
+                    guard let self, state.attempt == attempt, state.phase == .processing else { return }
+                    progress = min(1, max(0, value))
+                    publish()
+                }
+            } catch { issue = error.localizedDescription }
+            if state.transition(.processed(attempt)) == .changed {
+                progress = nil
+                task = nil
+                publish()
+            }
+        }
+    }
+
+    private func publish() { onSnapshot?(snapshot) }
+
+    private final class Capture {
+        let bundle: MeetingBundle
+        let clock = MeetingAudioClock()
+        let writer: MeetingAudioWriter
+        var sources: [MeetingTrack: any MeetingAudioSource] = [:]
+        var received: Set<MeetingTrack> = []
+        var nextRetry: [MeetingTrack: UInt64] = [:]
+
+        init(_ bundle: MeetingBundle) throws {
+            self.bundle = bundle
+            writer = try MeetingAudioWriter(bundle: bundle, clock: clock)
+        }
+    }
+}
+
+extension KoettController {
+    func makeMeetingController() -> MeetingController {
+        let root = transcriptStore.databaseURL.deletingLastPathComponent().appending(path: "Meetings")
+        return MeetingController(root: root, canStart: { [weak self] in self?.canStartSession == true },
+                                 reserve: { [weak self] reserved in
+            guard let self else { return }
+            if reserved {
+                microphonePreview?.suspend()
+                if AssistantAvailability.isEnabled { assistantSpeech.stop() }
+            } else {
+                microphonePreview?.refresh()
+            }
+            appUpdater?.stateDidChange()
+        }, makeSource: { [weak self] track in
+            switch track {
+            case .you:
+                guard AVCaptureDevice.authorizationStatus(for: .audio) == .authorized else {
+                    throw MicrophoneDevices.failure("Allow Microphone access in System Settings before recording a meeting.")
+                }
+                return try MeetingMicrophone { [weak self] in
+                    guard let self else { throw MeetingCommandError.wrongState }
+                    return try microphoneSelection.resolve(in: availableMicrophones(), defaultID: (try? defaultMicrophoneID()) ?? 0)
+                }
+            case .other: return try MeetingSystemAudio()
+            }
+        }, manifest: { [weak self] id in
+            let path = self?.microphoneDefaults.string(forKey: "meetingExportDirectory")
+            let export = path.flatMap { $0.hasPrefix("/") ? URL(fileURLWithPath: $0, isDirectory: true) : nil }
+            return .init(id: id, startedAt: .now, exportDirectory: export,
+                         keepAudio: self?.microphoneDefaults.bool(forKey: "meetingKeepAudio") ?? false)
+        })
+    }
+}

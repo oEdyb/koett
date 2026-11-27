@@ -2,6 +2,10 @@ import AppKit
 
 extension KoettController {
     func prepareTermination() -> NSApplication.TerminateReply {
+        guard !meeting.state.reservesForeground else {
+            recordingOverlay.showError("Meeting in progress · Stop before quitting")
+            return .terminateCancel
+        }
         switch state {
         case .ready, .loading:
             guard appUpdater?.prepareForTermination() != false else {

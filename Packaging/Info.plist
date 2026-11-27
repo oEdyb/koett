@@ -29,7 +29,9 @@
 	<key>SUVerifyUpdateBeforeExtraction</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Koett uses the microphone for dictation, input level previews, and permission checks.</string>
+	<string>Koett uses the microphone for dictation, meetings, input level previews, and permission checks.</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Koett records system audio when you start a meeting recording.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Koett captures the screen when you draw or pin.</string>
 	<key>NSAppleEventsUsageDescription</key>
