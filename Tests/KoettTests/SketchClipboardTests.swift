@@ -69,6 +69,35 @@ final class SketchClipboardTests: XCTestCase {
         XCTAssertEqual(board.string(forType: .string), "Settled text")
     }
 
+    func testTextWaitsForDelayedImageConsumptionOnAnIsolatedPasteboard() async throws {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+        let image = try png()
+        var consumedAt: ContinuousClock.Instant?
+        var read: Task<Void, Never>?
+        let result = try await SketchPaste.deliver(
+            png: image, text: "After the drawing", pasteboard: board,
+            postImage: {
+                read = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    XCTAssertEqual(board.data(forType: .png), image)
+                    consumedAt = .now
+                }
+                return true
+            },
+            postText: {
+                if let consumedAt {
+                    XCTAssertGreaterThanOrEqual(ContinuousClock.now - consumedAt, SketchPaste.drawingSettle)
+                } else { XCTFail("Text was posted before the receiver consumed the image.") }
+                XCTAssertEqual(board.string(forType: .string), "After the drawing")
+                return true
+            },
+            persist: { self.noStorage }
+        )
+        await read?.value
+        XCTAssertTrue(result.drawingLanded)
+    }
+
     func testRestorationWaitsForTheAsynchronousTextRead() async throws {
         let board = NSPasteboard.withUniqueName()
         defer { board.releaseGlobally() }
