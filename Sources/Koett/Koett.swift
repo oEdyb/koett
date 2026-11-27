@@ -62,6 +62,7 @@ final class KoettController: NSObject {
     var dictationShortcut: ShortcutBinding
     var mediaShortcut: ShortcutBinding
     var assistantShortcut: ShortcutBinding
+    private(set) lazy var meetingShortcut = Self.loadShortcut(key: "meetingShortcut", defaults: microphoneDefaults) ?? .defaultMeeting
     var assistantProvider: AssistantProvider
     var assistantVoice: AssistantVoice
     var assistantSpeechEnabled: Bool
@@ -590,6 +591,15 @@ final class KoettController: NSObject {
             modifierFlags: modifierFlags,
             keyIsDown: modifierKeyIsDown
         )
+        if meetingShortcut.isAvailableForMeeting(
+            dictation: dictationShortcut, media: mediaShortcut,
+            assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
+            dictationUsesToggle: recordingMode == .toggle
+        ), meetingShortcut.matchesDown(type: type, keyCode: keyCode, modifierFlags: modifierFlags, isRepeat: isRepeat) {
+            _ = try? meeting.send(.toggle)
+            return
+        }
+
         let assistantIsDown = AssistantAvailability.isEnabled && (assistantShortcut.modifierOnly
             ? assistantModifierTransition.releasedWithoutChord
             : assistantShortcut.matchesDown(
@@ -1024,6 +1034,19 @@ final class KoettController: NSObject {
 
     static func failure(_ message: String, code: Int = 1) -> NSError {
         NSError(domain: "Koett", code: code, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
+    func configureMeetingShortcut(_ binding: ShortcutBinding) throws {
+        guard binding.isAvailableForMeeting(
+            dictation: dictationShortcut, media: mediaShortcut,
+            assistant: AssistantAvailability.isEnabled ? assistantShortcut : nil,
+            dictationUsesToggle: recordingMode == .toggle
+        ) else {
+            throw MeetingCommandError(code: "shortcut_conflict", message: "Choose a key chord that Koett does not already use.")
+        }
+        let encoded = try JSONEncoder().encode(binding)
+        microphoneDefaults.set(encoded, forKey: "meetingShortcut")
+        meetingShortcut = binding
     }
 
     private static func loadShortcut(

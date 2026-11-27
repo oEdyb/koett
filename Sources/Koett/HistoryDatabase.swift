@@ -15,7 +15,23 @@ struct HistoryFailure: LocalizedError {
 final class HistoryDatabase {
     private var connection: OpaquePointer?
 
-    init(url: URL) throws {
+    init(url: URL, readOnly: Bool = false) throws {
+        if readOnly {
+            var handle: OpaquePointer?
+            guard sqlite3_open_v2(url.path, &handle, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK,
+                  let handle else {
+                if let handle { sqlite3_close(handle) }
+                throw HistoryFailure(message: "Could not open History for reading.")
+            }
+            connection = handle
+            do { try check(sqlite3_busy_timeout(handle, 1_000)) }
+            catch {
+                sqlite3_close(handle)
+                connection = nil
+                throw error
+            }
+            return
+        }
         let directory = url.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         // Create privately before SQLite opens it (also protects journal/WAL inheritance).

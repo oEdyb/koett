@@ -158,6 +158,28 @@ struct TranscriptStore: Sendable {
         }
     }
 
+    func searchMeetings(_ query: String) throws -> [HistorySummary] {
+        guard FileManager.default.fileExists(atPath: databaseURL.path) else { return [] }
+        let database = try HistoryDatabase(url: databaseURL, readOnly: true)
+        let search = query.split(whereSeparator: { $0.isWhitespace }).map {
+            "\"" + $0.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }.joined(separator: " AND ")
+        return try database.statement("""
+            SELECT t.id, t.created_at_ms, t.model, substr(t.text, 1, 120)
+            FROM transcripts_fts JOIN transcripts t ON t.rowid = transcripts_fts.rowid
+            WHERE transcripts_fts MATCH ? AND t.id GLOB 'meeting:*'
+            ORDER BY t.created_at_ms DESC, t.id DESC LIMIT 15
+            """) { statement in
+            try database.bind(search, to: 1, in: statement)
+            var rows: [HistorySummary] = []
+            while try database.step(statement) {
+                rows.append(.init(id: database.string(statement, 0) ?? "", createdAtMS: database.integer(statement, 1),
+                                  model: database.string(statement, 2) ?? "", preview: database.string(statement, 3) ?? ""))
+            }
+            return rows
+        }
+    }
+
     func legacyFragmentCount() throws -> Int64 {
         let database = try HistoryDatabase(url: databaseURL)
         return try database.statement("SELECT count(*) FROM legacy_fragments") { statement in

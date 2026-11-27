@@ -13,6 +13,11 @@ struct ControlReply: Codable, Sendable {
     var drawLocked: Bool? = nil
     var drawStrokeCount: Int? = nil
     var updates: UpdateStatus? = nil
+    var meeting: MeetingSnapshot? = nil
+    var meetingDisk: MeetingDiskStatus? = nil
+    var meetingList: [MeetingDiskStatus]? = nil
+    var meetingSearch: [MeetingSearchResult]? = nil
+    var meetingRequestID: UUID? = nil
 
     static func failure(_ code: String, _ message: String) -> Self {
         .init(ok: false, phase: "unavailable", model: nil, error: .init(code: code, message: message))
@@ -20,6 +25,20 @@ struct ControlReply: Codable, Sendable {
 }
 
 enum LocalControlSocket {
+    static let replyLimit = 16_384
+    static let admissionTimeout = Duration.milliseconds(1_800)
+
+    enum RequestError: LocalizedError {
+        case unavailable, outcomeUnknown
+
+        var errorDescription: String? {
+            switch self {
+            case .unavailable: "Koett is not running with local control. Start the installed app and retry."
+            case .outcomeUnknown: "The command may have run. Check meeting status before retrying."
+            }
+        }
+    }
+
     static var defaultURL: URL {
         URL.applicationSupportDirectory.appendingPathComponent("Koett/control.sock")
     }
@@ -88,11 +107,16 @@ enum LocalControlSocket {
         defer { Darwin.close(descriptor) }
         configure(descriptor)
         let connected = try address(url.path) { Darwin.connect(descriptor, $0, $1) }
-        guard connected == 0 else { throw failure("Koett is not running with local control. Start the installed app and retry.") }
-        try writeLine(data, to: descriptor)
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(ControlReply.self, from: readLine(descriptor, limit: 4_096))
+        guard connected == 0 else { throw RequestError.unavailable }
+        var uid: uid_t = 0
+        var gid: gid_t = 0
+        guard getpeereid(descriptor, &uid, &gid) == 0, uid == geteuid() else { throw RequestError.unavailable }
+        do {
+            try writeLine(data, to: descriptor)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            return try decoder.decode(ControlReply.self, from: readLine(descriptor, limit: replyLimit))
+        } catch { throw RequestError.outcomeUnknown }
     }
 }
 
@@ -166,17 +190,27 @@ final class LocalControlServer {
         }
         clients += 1
         LocalControlSocket.configure(client)
+        let deadline = ContinuousClock.now.advanced(by: LocalControlSocket.admissionTimeout)
         Task { @concurrent [weak self, handler] in
             defer { Darwin.close(client) }
             let reply: ControlReply
             do {
                 let data = try LocalControlSocket.readLine(client, limit: 2_048)
                 let arguments = try JSONDecoder().decode([String].self, from: data)
-                reply = await handler(arguments)
+                reply = await MainActor.run {
+                    guard ContinuousClock.now < deadline else {
+                        return .failure("admission_expired", "The command expired before it could run.")
+                    }
+                    return handler(arguments)
+                }
             } catch { reply = .failure("invalid_request", "Send a JSON command array smaller than 2048 bytes.") }
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
-            if let encoded = try? encoder.encode(reply) { try? LocalControlSocket.writeLine(encoded, to: client) }
+            if let encoded = try? encoder.encode(reply) {
+                let bounded = encoded.count < LocalControlSocket.replyLimit ? encoded :
+                    (try? encoder.encode(ControlReply.failure("reply_too_large", "Use status with a meeting ID.")))
+                if let bounded { try? LocalControlSocket.writeLine(bounded, to: client) }
+            }
             await self?.finishedRequest()
         }
     }
