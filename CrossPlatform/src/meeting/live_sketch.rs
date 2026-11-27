@@ -8,7 +8,7 @@ pub(crate) fn finish_with_sketches(
     root: &Path,
     zero: Instant,
     finish_at: Instant,
-    draw: impl FnOnce(MeetingMarkScope, &Path),
+    draw: impl FnOnce(MeetingScope, &Path),
 ) -> (PathBuf, Seal) {
     let info = SessionInfo {
         id: MeetingId::new(),
@@ -40,6 +40,7 @@ pub(crate) fn finish_with_sketches(
                 }),
                 epoch,
                 health: CaptureHealth::default(),
+                levels: Tracks::default(),
             }),
         ),
     );
