@@ -75,8 +75,13 @@ impl MarkSink {
     }
 
     fn input(&self, id: u64, input: Input) -> bool {
-        let accepted = self.0.lock().input(id, input);
+        let (accepted, reports) = {
+            let mut state = self.0.lock();
+            let accepted = state.input(id, input);
+            (accepted, state.take_reports())
+        };
         self.0.changed.notify_all();
+        emit(&reports);
         accepted
     }
 }
@@ -125,7 +130,10 @@ impl MarkWriter {
         }
 
         let issues = state.close();
+        let reports = state.take_reports();
+        drop(state);
         self.shared.changed.notify_all();
+        emit(&reports);
         issues
     }
 }
@@ -166,7 +174,22 @@ fn run(assets: &Path, shared: &Shared) {
             state = shared.lock();
         }
         state.finish(id, result.map_err(|error| error.to_string()));
+        let reports = state.take_reports();
         shared.changed.notify_all();
+        if !reports.is_empty() {
+            drop(state);
+            emit(&reports);
+            state = shared.lock();
+        }
+    }
+}
+
+/// Best effort: a full or stalled log must never panic or hold the mark lock.
+fn emit(reports: &[String]) {
+    use std::io::Write;
+    let mut stderr = io::stderr().lock();
+    for line in reports {
+        let _ = writeln!(stderr, "{line}");
     }
 }
 
