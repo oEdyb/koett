@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, btree_map::Entry};
 
-use super::{MarkIssue, Offset};
+use super::{MarkIssue, MeetingId, Offset};
 
 pub(super) enum Lifecycle {
     Open,
@@ -20,16 +20,9 @@ impl Lifecycle {
 
 pub(super) struct State {
     pub(super) lifecycle: Lifecycle,
+    meeting: MeetingId,
     groups: BTreeMap<u64, Option<Group>>,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            lifecycle: Lifecycle::Open,
-            groups: BTreeMap::new(),
-        }
-    }
+    reports: Vec<String>,
 }
 
 pub(super) enum Input {
@@ -111,6 +104,15 @@ impl Group {
 }
 
 impl State {
+    pub(super) fn new(meeting: MeetingId) -> Self {
+        Self {
+            lifecycle: Lifecycle::Open,
+            meeting,
+            groups: BTreeMap::new(),
+            reports: Vec::new(),
+        }
+    }
+
     pub(super) fn input(&mut self, id: u64, input: Input) -> bool {
         if matches!(self.lifecycle, Lifecycle::Closed) {
             return false;
@@ -138,12 +140,20 @@ impl State {
                     return false;
                 };
                 match input {
-                    Input::Submit(offset, png)
-                        if offset == group.offset && matches!(group.phase, Phase::Capturing) =>
-                    {
+                    Input::Submit(offset, png) if matches!(group.phase, Phase::Capturing) => {
+                        if offset != group.offset {
+                            let issue = format!(
+                                "image offset {} differs from first ink offset {}",
+                                offset.0, group.offset.0
+                            );
+                            report(&mut self.reports, self.meeting, id, "save", &issue);
+                            group.transition(Event::Miss(issue));
+                            return false;
+                        }
                         group.transition(Event::Submit(png));
                     }
                     Input::Miss(issue) if matches!(group.phase, Phase::Capturing) => {
+                        report(&mut self.reports, self.meeting, id, "save", &issue);
                         group.transition(Event::Miss(issue));
                     }
                     Input::Undo => group.transition(Event::Undo),
@@ -164,6 +174,10 @@ impl State {
         }
     }
 
+    pub(super) fn take_reports(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.reports)
+    }
+
     pub(super) fn pending(&self) -> bool {
         self.groups.values().flatten().any(Group::pending)
     }
@@ -176,7 +190,15 @@ impl State {
                 let group = group.as_ref()?;
                 let issue = match &group.phase {
                     Phase::Failed(issue) => issue.clone(),
-                    _ if group.pending() => "mark drain timed out".into(),
+                    _ if group.pending() => {
+                        let action = match group.phase {
+                            Phase::RemoveQueued | Phase::Removing => "remove",
+                            _ => "save",
+                        };
+                        let issue = "mark drain timed out";
+                        report(&mut self.reports, self.meeting, id, action, issue);
+                        issue.into()
+                    }
                     _ => return None,
                 };
                 Some(MarkIssue { id, issue })
@@ -214,7 +236,24 @@ impl State {
 
     pub(super) fn finish(&mut self, id: u64, result: Result<(), String>) {
         if let Some(Some(group)) = self.groups.get_mut(&id) {
+            if let Err(issue) = &result
+                && !matches!(self.lifecycle, Lifecycle::Closed)
+            {
+                match group.phase {
+                    Phase::Writing => report(&mut self.reports, self.meeting, id, "save", issue),
+                    Phase::Removing => report(&mut self.reports, self.meeting, id, "remove", issue),
+                    _ => {}
+                }
+            }
             group.transition(Event::Finish(result));
         }
     }
+}
+
+/// Queued so the caller can write it after releasing the mark lock.
+fn report(reports: &mut Vec<String>, meeting: MeetingId, id: u64, action: &str, issue: &str) {
+    reports.push(format!(
+        "Meeting {meeting} could not {action} mark {id}: {}",
+        issue.replace(['\r', '\n'], " ")
+    ));
 }

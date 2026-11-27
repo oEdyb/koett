@@ -263,9 +263,10 @@ impl MeetingScope {
         directory: &std::path::Path,
         zero: Instant,
     ) -> (Self, bundle::marks::MarkWriter) {
-        let writer = bundle::marks::MarkWriter::start(directory).unwrap();
+        let id = MeetingId::new();
+        let writer = bundle::marks::MarkWriter::start(directory, id).unwrap();
         let scope = Self {
-            id: MeetingId::new(),
+            id,
             epoch: MeetingEpoch(zero),
             sink: writer.sink(),
             levels: Tracks::default(),
@@ -936,4 +937,8 @@ fn recovery_issue(reason: RecoveryReason) -> String {
 }
 
 #[cfg(test)]
+mod live_sketch;
+#[cfg(test)]
 mod machine;
+#[cfg(test)]
+pub(crate) use live_sketch::finish_with_sketches;

@@ -245,6 +245,62 @@ mod tests {
     }
 
     #[test]
+    fn a_live_meeting_publishes_sketches_and_logs_a_failed_write() {
+        const CHILD_ROOT: &str = "KOETT_TEST_LIVE_MARKS_ROOT";
+        if let Some(root) = std::env::var_os(CHILD_ROOT) {
+            let zero = Instant::now();
+            let pixels = gtk4::glib::Bytes::from_owned(vec![255; 16]);
+            use gtk4::prelude::TextureExt;
+            let png =
+                gtk4::gdk::MemoryTexture::new(2, 2, gtk4::gdk::MemoryFormat::R8g8b8a8, &pixels, 8)
+                    .save_to_png_bytes();
+            let (directory, seal) = crate::meeting::finish_with_sketches(
+                std::path::Path::new(&root),
+                zero,
+                zero + Duration::from_secs(4),
+                |scope, directory| {
+                    std::fs::create_dir(directory.join("assets/.tmp-2")).unwrap();
+                    let target = SketchTarget::Meeting(scope);
+                    for id in 1..=3 {
+                        let group = sketch(id, zero + Duration::from_secs(id));
+                        assert!(target.begin(id, group.start));
+                        target.deliver(&group, png.to_vec(), None);
+                    }
+                },
+            );
+            assert_eq!(seal.mark_issues.len(), 1);
+            assert_eq!(seal.mark_issues[0].id, 2);
+            let first = "assets/mark-0000016000-0001.png";
+            let third = "assets/mark-0000048000-0003.png";
+            for asset in [first, third] {
+                assert_eq!(std::fs::read(directory.join(asset)).unwrap(), png.as_ref());
+            }
+            let markdown = std::fs::read_to_string(directory.join("transcript.md")).unwrap();
+            assert!(markdown.contains(&format!("[00:01] ![Mark 1]({first})")));
+            assert!(markdown.contains(&format!("[00:03] ![Mark 2]({third})")));
+            assert!(!markdown.contains("mark-0000032000-0002.png"));
+            return;
+        }
+
+        let folder = Folder::new();
+        let test = format!(
+            "{}::a_live_meeting_publishes_sketches_and_logs_a_failed_write",
+            module_path!().split_once("::").unwrap().1
+        );
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", &test, "--nocapture"])
+            .env(CHILD_ROOT, &folder.0)
+            .output()
+            .unwrap();
+        let stderr = String::from_utf8_lossy(&child.stderr);
+        assert!(child.status.success(), "{stderr}");
+        let failures: Vec<_> = stderr.lines().collect();
+        assert_eq!(failures.len(), 1, "{stderr}");
+        assert!(failures[0].contains("could not save mark 2"), "{stderr}");
+        assert!(failures[0].contains("File exists"), "{stderr}");
+    }
+
+    #[test]
     fn undoing_a_meeting_sketch_removes_its_mark() {
         let _ink = ink();
         let folder = Folder::new();

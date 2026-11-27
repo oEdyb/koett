@@ -7,9 +7,9 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use super::Offset;
 use super::files::{private_directory, sync_directory, write_temp};
 use super::records::{MarkIssue, Seal};
+use super::{MeetingId, Offset};
 use state::{Input, Lifecycle, Operation, State};
 
 const DRAIN_TIMEOUT: Duration = Duration::from_secs(8);
@@ -53,7 +53,7 @@ impl MarkSink {
     #[cfg(test)]
     pub(in crate::meeting) fn fixture() -> Self {
         Self(Arc::new(Shared {
-            state: Mutex::default(),
+            state: Mutex::new(State::new(MeetingId::new())),
             changed: Condvar::new(),
         }))
     }
@@ -75,8 +75,13 @@ impl MarkSink {
     }
 
     fn input(&self, id: u64, input: Input) -> bool {
-        let accepted = self.0.lock().input(id, input);
+        let (accepted, reports) = {
+            let mut state = self.0.lock();
+            let accepted = state.input(id, input);
+            (accepted, state.take_reports())
+        };
         self.0.changed.notify_all();
+        emit(&reports);
         accepted
     }
 }
@@ -86,12 +91,12 @@ pub(crate) struct MarkWriter {
 }
 
 impl MarkWriter {
-    pub(in crate::meeting) fn start(directory: &Path) -> io::Result<Self> {
+    pub(in crate::meeting) fn start(directory: &Path, meeting: MeetingId) -> io::Result<Self> {
         let assets = directory.join("assets");
         private_directory(&assets)?;
         sync_directory(directory)?;
         let shared = Arc::new(Shared {
-            state: Mutex::new(State::default()),
+            state: Mutex::new(State::new(meeting)),
             changed: Condvar::new(),
         });
         let worker = Arc::clone(&shared);
@@ -125,7 +130,10 @@ impl MarkWriter {
         }
 
         let issues = state.close();
+        let reports = state.take_reports();
+        drop(state);
         self.shared.changed.notify_all();
+        emit(&reports);
         issues
     }
 }
@@ -166,7 +174,22 @@ fn run(assets: &Path, shared: &Shared) {
             state = shared.lock();
         }
         state.finish(id, result.map_err(|error| error.to_string()));
+        let reports = state.take_reports();
         shared.changed.notify_all();
+        if !reports.is_empty() {
+            drop(state);
+            emit(&reports);
+            state = shared.lock();
+        }
+    }
+}
+
+/// Best effort: a full or stalled log must never panic or hold the mark lock.
+fn emit(reports: &[String]) {
+    use std::io::Write;
+    let mut stderr = io::stderr().lock();
+    for line in reports {
+        let _ = writeln!(stderr, "{line}");
     }
 }
 

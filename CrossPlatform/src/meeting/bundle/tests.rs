@@ -587,6 +587,8 @@ fn mark_drain_reports_misses_and_excludes_late_files_after_seal() {
     assert!(sink.begin(1, Offset(30)));
     assert!(sink.begin(2, Offset(40)));
     assert!(sink.miss(2, "crop failed".into()));
+    assert!(sink.begin(4, Offset(41)));
+    assert!(!sink.submit(4, Offset(42), b"mismatched offset".to_vec()));
     let mark_issues = writer.close_for(Offset(50), Duration::from_millis(20));
     assert_eq!(
         mark_issues,
@@ -598,6 +600,10 @@ fn mark_drain_reports_misses_and_excludes_late_files_after_seal() {
             MarkIssue {
                 id: 2,
                 issue: "crop failed".into()
+            },
+            MarkIssue {
+                id: 4,
+                issue: "image offset 42 differs from first ink offset 41".into(),
             },
         ]
     );

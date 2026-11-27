@@ -218,7 +218,7 @@ impl Bundle {
     }
 
     pub(crate) fn start_marks(&mut self) -> io::Result<MarkWriter> {
-        MarkWriter::start(&self.directory)
+        MarkWriter::start(&self.directory, self.manifest.info.id)
     }
 }
 
